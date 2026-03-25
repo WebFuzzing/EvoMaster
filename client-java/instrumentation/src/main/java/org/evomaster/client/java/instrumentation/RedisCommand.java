@@ -60,6 +60,13 @@ public class RedisCommand implements Serializable {
          * This operation is limited to 64-bit signed integers.
          * <a href="https://redis.io/docs/latest/commands/incr/">INCR Documentation</a>
          */
+        HSET("hset", "hash", false),
+        /**
+         * Sets the specified fields to their respective values in the hash stored at key.
+         * This command overwrites the values of specified fields that exist in the hash.
+         * If key doesn't exist, a new key holding a hash is created.
+         * <a href="https://redis.io/docs/latest/commands/hset/">HSET Documentation</a>
+         */
         INCR("incr", "string", false),
         /**
          * Returns all keys matching pattern.
@@ -215,5 +222,9 @@ public class RedisCommand implements Serializable {
 
     public long getExecutionTime() {
         return executionTime;
+    }
+
+    public String toString(){
+        return this.getType().getLabel() + " " + String.join(" ", this.getArgs());
     }
 }

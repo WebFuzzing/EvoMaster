@@ -1,7 +1,6 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Alias;
-import net.sf.jsqlparser.expression.NullValue;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -9,12 +8,12 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.internal.SqlColumnId;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.SqlTableId;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Resolves table names and columns in a SQL query.
@@ -75,27 +74,36 @@ public class TableColumnResolver {
      * @param r a (potentially null) name
      * @return
      */
-    private boolean equalNames(String l, String r) {
+    private static boolean equalNames(String l, String r) {
         Objects.requireNonNull(l);
         return l.equalsIgnoreCase(r);
     }
 
-    private boolean isBaseTable(String tableName) {
+
+    private boolean isBaseTable(String schemaName, String tableName) {
         Objects.requireNonNull(tableName);
 
         return this.schema.tables.stream()
-                .filter(t -> equalNames(t.id.name, tableName))
-                .count() > 0;
+                .anyMatch(t -> (new TableNameMatcher(t.id).matches(schemaName, tableName)));
+    }
+
+    private TableIdDto findFirstTableIdDto(String schemaName, String tableName) {
+        Objects.requireNonNull(tableName);
+
+        return this.schema.tables.stream()
+                .filter(t -> (new TableNameMatcher(t.id).matches(schemaName, tableName)))
+                .map(t -> t.id)
+                .findFirst()
+                .orElse(null);
     }
 
     private boolean hasColumn(SqlTableId sqlTableId, SqlColumnId sqlColumnId) {
         Objects.requireNonNull(sqlTableId);
 
         return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.id.name).equals(sqlTableId))
+                .filter(t -> (new TableNameMatcher(t.id).matches(sqlTableId.getSchemaName(), sqlTableId.getTableName())))
                 .flatMap(t -> t.columns.stream())
-                .filter(c -> new SqlColumnId(c.name).equals(sqlColumnId))
-                .count() > 0;
+                .anyMatch(c -> new SqlColumnId(c.name).equals(sqlColumnId));
     }
 
     /**
@@ -114,7 +122,7 @@ public class TableColumnResolver {
          */
         for (Statement contextStatement : contextStatementStack) {
             SqlColumnReference sqlColumnReference = resolveInContextStatement(column, contextStatement);
-            if (sqlColumnReference!=null) {
+            if (sqlColumnReference != null) {
                 return sqlColumnReference;
             }
         }
@@ -138,10 +146,10 @@ public class TableColumnResolver {
                     if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                         return new SqlColumnReference(sqlBaseTableReference, column.getColumnName());
                     }
-                } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                    final SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                    if (findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), column.getColumnName()) != null) {
-                        return new SqlColumnReference(sqlDerivedTableReference, column.getColumnName());
+                } else if (sqlTableReference instanceof SqlDerivedTable) {
+                    final SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) sqlTableReference;
+                    if (findBaseTableColumnReference(sqlDerivedTable.getSelect(), column.getColumnName()) != null) {
+                        return new SqlColumnReference(sqlDerivedTable, column.getColumnName());
                     }
                 } else {
                     throw new IllegalArgumentException("Unknown table reference type: " + sqlTableReference.getClass().getName());
@@ -202,7 +210,7 @@ public class TableColumnResolver {
         } else if (contextStatement instanceof Select) {
             Select select = (Select) contextStatement;
             if (findBaseTableColumnReference(select, columnName) != null) {
-                return new SqlColumnReference(new SqlDerivedTableReference(select), columnName);
+                return new SqlColumnReference(new SqlDerivedTable(select), columnName);
             }
         }
         // column was not found in this context statement
@@ -248,7 +256,7 @@ public class TableColumnResolver {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
             return createColumnReference(parenthesedFromItem.getFromItem(), columnName);
         } else {
-            return new SqlColumnReference(new SqlDerivedTableReference((Select) fromItem), columnName);
+            return new SqlColumnReference(new SqlDerivedTable((Select) fromItem), columnName);
         }
     }
 
@@ -261,17 +269,38 @@ public class TableColumnResolver {
     public SqlTableReference resolve(Table table) {
         Objects.requireNonNull(table);
         Objects.requireNonNull(table.getName());
+        final String schemaName = table.getSchemaName();
         final String tableName = table.getName();
-        if (tableAliasResolver.isAliasDeclaredInAnyContext(tableName)) {
-            return tableAliasResolver.resolveTableReference(tableName);
-        } else if (isBaseTable(tableName)) {
-            return new SqlBaseTableReference(tableName);
-        } else {
-            // table was not found in any context
-            return null;
-        }
-    }
 
+        // 1. Explicitly qualified table → always a base reference
+        if (schemaName != null) {
+            // if schema is used, assume table is a base table
+            TableIdDto tableIdDto = findFirstTableIdDto(schemaName, tableName);
+            return new SqlBaseTableReference(tableIdDto.catalog, tableIdDto.schema, tableIdDto.name);
+        }
+
+        // 2. No schema → maybe it's an alias?
+        if (tableAliasResolver.isAliasDeclaredInAnyContext(tableName)) {
+            SqlTableReference tableReference = tableAliasResolver.resolveAlias(tableName);
+            if (tableReference instanceof SqlTableName) {
+                SqlTableName sqlTableName = (SqlTableName) tableReference;
+                return resolve(sqlTableName.getTable());
+            } else if (tableReference instanceof SqlDerivedTable) {
+                return (SqlDerivedTable) tableReference;
+            } else {
+                throw new IllegalArgumentException("Unexpected table reference type: " + tableReference.getClass().getName());
+            }
+        }
+
+        // 3. Otherwise, try resolving as a base table in the default schema
+        if (isBaseTable(null, tableName)) {
+            TableIdDto tableIdDto = findFirstTableIdDto(null, tableName);
+            return new SqlBaseTableReference(tableIdDto.catalog, tableIdDto.schema, tableIdDto.name);
+        }
+
+        // 4. Unknown table
+        return null;
+    }
 
     private SqlColumnReference findBaseTableColumnReference(FromItem fromItem, String columnName) {
         Objects.requireNonNull(fromItem);
@@ -286,15 +315,8 @@ public class TableColumnResolver {
             }
         } else if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
-            String tableName = table.getFullyQualifiedName();
-            SqlTableReference sqlTableReference;
-            if (tableAliasResolver.isAliasDeclaredInAnyContext(tableName)) {
-                sqlTableReference = tableAliasResolver.resolveTableReference(tableName);
-            } else if (isBaseTable(tableName)) {
-                sqlTableReference = new SqlBaseTableReference(table.getFullyQualifiedName());
-            } else {
-                // table was expected to be in the schema, but it is missing.
-                // Therefore, we cannot resolve the column
+            SqlTableReference sqlTableReference = resolve(table);
+            if (sqlTableReference == null) {
                 return null;
             }
             if (sqlTableReference instanceof SqlBaseTableReference) {
@@ -303,9 +325,9 @@ public class TableColumnResolver {
                 if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
-            } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                if (findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), columnName) != null) {
+            } else if (sqlTableReference instanceof SqlDerivedTable) {
+                SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) sqlTableReference;
+                if (findBaseTableColumnReference(sqlDerivedTable.getSelect(), columnName) != null) {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
             } else {
@@ -395,12 +417,12 @@ public class TableColumnResolver {
                 }
             } else {
                 Alias alias = selectItem.getAlias();
-                if (alias!=null && equalNames(alias.getName(), columnName)) {
+                if (alias != null && equalNames(alias.getName(), columnName)) {
                     /* If an alias exists in the current SELECT that
                        defines the column name, then the column is
                        defined within the current SELECT (i.e., a derived table)
                      */
-                    return new SqlColumnReference(new SqlDerivedTableReference(plainSelect), columnName);
+                    return new SqlColumnReference(new SqlDerivedTable(plainSelect), columnName);
                 }
             }
         }

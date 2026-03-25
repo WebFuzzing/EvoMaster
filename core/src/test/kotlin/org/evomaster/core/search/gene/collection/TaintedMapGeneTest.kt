@@ -62,6 +62,36 @@ class TaintedMapGeneTest{
     }
 
 
+    @Test
+    fun testCopyFrom() {
+
+        val foo = TaintedMapGene("foo", TaintInputName.getTaintName(42))
+        foo.doInitialize()
+        assertEquals(1, foo.getSizeOfElements())
+
+        //x
+        foo.registerKey("x")
+        foo.evolve()
+        foo.registerNewType("x", "java/lang/Integer")
+        foo.evolve()
+
+        val bar = TaintedMapGene("bar", TaintInputName.getTaintName(66))
+        bar.doInitialize()
+
+        //y
+        bar.registerKey("y")
+        bar.evolve()
+        bar.registerNewType("y", "java/lang/Boolean")
+        bar.evolve()
+
+        assertFalse(foo.containsSameValueAs(bar))
+
+        val copied = foo.copyValueFrom(bar)
+        assertTrue(copied)
+
+        assertTrue(foo.containsSameValueAs(bar))
+    }
+
     private fun verifyCollection(key: String, type: String, lambda: (ArrayDto) -> Any?){
 
         val gene = TaintedMapGene("foo", TaintInputName.getTaintName(42))

@@ -192,7 +192,7 @@ public class SqlHandler {
         sqlExecutionsDto.failedWhere.putAll(getTableToColumnsMap(failedWhere));
         sqlExecutionsDto.insertedData.putAll(getTableToColumnsMap(insertedData));
         sqlExecutionsDto.updatedData.putAll(getTableToColumnsMap(updatedData));
-        sqlExecutionsDto.deletedData.addAll(deletedData.stream().map(SqlTableId::getTableId).collect(Collectors.toSet()));
+        sqlExecutionsDto.deletedData.addAll(deletedData.stream().map(SqlTableId::getTableName).collect(Collectors.toSet()));
         sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
         sqlExecutionsDto.sqlParseFailureCount = this.sqlParseFailureCount;
         sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedSqlCommands);
@@ -202,7 +202,7 @@ public class SqlHandler {
     private static Map<String, Set<String>> getTableToColumnsMap(Map<SqlTableId, Set<SqlColumnId>> originalMap) {
         Map<String, Set<String>> result = new HashMap<>();
         for (Map.Entry<SqlTableId, Set<SqlColumnId>> originalEntry : originalMap.entrySet()) {
-            result.put(originalEntry.getKey().getTableId(), originalEntry.getValue().stream().map(SqlColumnId::getColumnId).collect(Collectors.toSet()));
+            result.put(originalEntry.getKey().getTableName(), originalEntry.getValue().stream().map(SqlColumnId::getColumnId).collect(Collectors.toSet()));
         }
         return result;
     }
@@ -345,15 +345,20 @@ public class SqlHandler {
     private List<QueryResult> getQueryResultsForComputingSqlDistance(final Map<SqlTableId, Set<SqlColumnId>> columnsInWhere) throws SQLException {
         List<QueryResult> queryResults = new ArrayList<>();
         // we sort the table and column identifiers to improve testeability (i.e. allow mocking)
-        for (SqlTableId tableId : columnsInWhere.keySet().stream().sorted().collect(Collectors.toList())) {
-            List<SqlColumnId> columnIds = columnsInWhere.get(tableId).stream().sorted().collect(Collectors.toList());
+        for (SqlTableId tableId : columnsInWhere.keySet()
+                .stream()
+                .sorted(Comparator.comparing(Object::toString))
+                .collect(Collectors.toList())) {
+            List<SqlColumnId> columnIds = columnsInWhere.get(tableId).stream()
+                    .sorted(Comparator.comparing(Object::toString))
+                    .collect(Collectors.toList());
             final String select;
             if (columnIds.isEmpty()) {
                 // the table is required but no specific column was required.
                 // Therefore, we need to fetch all columns for DELETE and UPDATE.
-                select = createSelectForSingleTable(tableId, Collections.singletonList(new SqlColumnId("*")));
+                select = SqlSelectBuilder.buildSelect(schema.databaseType, tableId, Collections.singletonList(new SqlColumnId("*")));
             } else {
-                select = createSelectForSingleTable(tableId, columnIds);
+                select = SqlSelectBuilder.buildSelect(schema.databaseType, tableId, columnIds);
             }
             QueryResult queryResult = SqlScriptRunner.execCommand(connection, select);
             queryResults.add(queryResult);
@@ -431,7 +436,7 @@ public class SqlHandler {
                 tableName = tableToColumns.getKey();
                 columnNames = tableToColumns.getValue().stream().sorted().collect(Collectors.toList());
             }
-            select = createSelectForSingleTable(tableName, columnNames);
+            select = SqlSelectBuilder.buildSelect(schema.databaseType, tableName, columnNames);
         }
 
         QueryResult data;
@@ -443,20 +448,6 @@ public class SqlHandler {
         }
 
         return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
-    }
-
-    private static String createSelectForSingleTable(SqlTableId tableId, List<SqlColumnId> columnIds) {
-
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("SELECT ");
-
-        String variables = columnIds.stream().map(SqlColumnId::getColumnId).collect(Collectors.joining(", "));
-
-        buffer.append(variables);
-        buffer.append(" FROM ");
-        buffer.append(tableId.getTableId());
-
-        return buffer.toString();
     }
 
     /**
@@ -488,17 +479,17 @@ public class SqlHandler {
             @Override
             public void visit(Column column) {
 
-                String tableName = context.getFullyQualifiedTableName(column);
+                String fullyQualifiedTableName = context.getFullyQualifiedTableName(column);
 //                String tableName = context.getTableName(column);
 
-                if (tableName.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
+                if (fullyQualifiedTableName.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
                     // TODO handle it properly when ll have support for sub-selects
                     return;
                 }
 
                 String columnName = column.getColumnName().toLowerCase();
 
-                if (!context.hasColumn(tableName, columnName)) {
+                if (!context.hasColumn(fullyQualifiedTableName, columnName)) {
 
                     /*
                         This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
@@ -518,13 +509,13 @@ public class SqlHandler {
                         //case in which a boolean constant is wrongly treated as a column name.
                         //TODO not sure what we can really do here without modifying the parser
                     } else {
-                        SimpleLogger.warn("Cannot find column '" + columnName + "' in table '" + tableName + "'");
+                        SimpleLogger.warn("Cannot find column '" + columnName + "' in table '" + fullyQualifiedTableName + "'");
                     }
                     return;
                 }
-
-                result.putIfAbsent(new SqlTableId(tableName), new HashSet<>());
-                Set<SqlColumnId> columnIds = result.get(new SqlTableId(tableName));
+                final SqlTableId tableId = SqlTableIdParser.parseFullyQualifiedTableName(fullyQualifiedTableName, schema.databaseType);
+                result.putIfAbsent(tableId, new HashSet<>());
+                Set<SqlColumnId> columnIds = result.get(tableId);
                 columnIds.add(new SqlColumnId(columnName));
             }
         };

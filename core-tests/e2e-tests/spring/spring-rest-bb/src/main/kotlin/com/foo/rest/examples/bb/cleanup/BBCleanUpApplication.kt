@@ -19,11 +19,21 @@ open class BBCleanUpApplication {
         val data = mutableMapOf<String,BBCleanUpDto>()
     }
 
+    private fun containsUnsafeUrlCharacters(str: String): Boolean {
+        // Characters that are problematic in URL path parameters
+        val unsafeChars = setOf('<', '>', '"', '\'', '&', '/', '\\', '{', '}', '|', '^', '[', ']', '`', ' ')
+        return str.any { it in unsafeChars || it.code < 32 || it.code > 126 }
+    }
 
     @PostMapping(path = ["/items"], consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun postCreate(@RequestBody dto: BBCleanUpDto) : ResponseEntity<BBCleanUpDto> {
 
         if(dto.id.isNullOrBlank() || dto.x == null) return ResponseEntity.status(400).build()
+
+        // Check if ID contains characters that are not safe for URL path parameters
+        if(containsUnsafeUrlCharacters(dto.id!!)) {
+            return ResponseEntity.status(400).build()
+        }
 
         if(data.containsKey(dto.id)){
             return ResponseEntity.status(409).build()
@@ -33,7 +43,6 @@ open class BBCleanUpApplication {
         data[dto.id!!] = dto
         return ResponseEntity.status(201).body(dto)
     }
-
 
     @DeleteMapping(path = ["/items/{id}"])
     fun delete(@PathVariable id: String) : ResponseEntity<Void> {

@@ -18,7 +18,6 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -317,7 +316,7 @@ class RestResourceCalls(
 
     fun repairFK(previous: List<SqlAction>) {
 
-        if (!SqlActionUtils.verifyForeignKeys(previous.plus(sqlActions))) {
+        if (!SqlActionUtils.isValidForeignKeys(previous.plus(sqlActions))) {
             val current = previous.toMutableList()
             sqlActions.forEach { d ->
                 val ok = SqlActionUtils.repairFk(d, current)
@@ -327,7 +326,7 @@ class RestResourceCalls(
                 current.add(d)
             }
 
-            Lazy.assert { SqlActionUtils.verifyForeignKeys(previous.plus(sqlActions)) }
+            Lazy.assert { SqlActionUtils.isValidForeignKeys(previous.plus(sqlActions)) }
         }
     }
 

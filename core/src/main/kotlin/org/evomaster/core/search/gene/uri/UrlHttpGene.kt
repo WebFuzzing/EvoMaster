@@ -79,16 +79,6 @@ class UrlHttpGene(
         return "$s://$h$p/$e"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UrlHttpGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({scheme.copyValueFrom(other.scheme) &&
-                host.copyValueFrom(other.host) &&
-                port.copyValueFrom(other.port) &&
-                path.copyValueFrom(other.path)}, true)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -99,24 +89,32 @@ class UrlHttpGene(
                 && path.containsSameValueAs(other.path)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return false
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is UrlHttpGene) {
+            return false
+        }
+        return scheme.unsafeCopyValueFrom(other.scheme) &&
+                host.unsafeCopyValueFrom(other.host) &&
+                port.unsafeCopyValueFrom(other.port) &&
+                path.unsafeCopyValueFrom(other.path)
     }
+
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
      * If the provided string is a valid, URL method will return
      * true, otherwise false.
      */
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         return try {
             val url = URL(value)
-            scheme.setValueBasedOn(url.protocol)
-            host.setValueBasedOn(url.host)
-            port.setValueBasedOn(url.port.toString())
+            scheme.unsafeSetFromStringValue(url.protocol)
+            host.unsafeSetFromStringValue(url.host)
+            port.unsafeSetFromStringValue(url.port.toString())
             // This to make the String similar to what is expected in ArrayGene
             val pathValues = url.path.drop(1).replace("/", ",")
-            path.setValueBasedOn(pathValues)
+            path.unsafeSetFromStringValue(pathValues)
             true
         } catch (e: java.lang.Exception) {
             false

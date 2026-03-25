@@ -46,6 +46,7 @@ class SqlPolygonGene(
         val pointList = mutableListOf<SqlPointGene>()
         repeat(minLengthOfPolygonRing) {
             val newGene = points.template.copy() as SqlPointGene
+            newGene.doInitialize(randomness)
             pointList.add(newGene)
             do {
                 newGene.randomize(randomness, tryToForceNewValue)
@@ -53,7 +54,7 @@ class SqlPolygonGene(
         }
         points.randomize(randomness, tryToForceNewValue)
         points.killAllChildren()
-        pointList.map { points.addChild(it) }
+        pointList.forEach { points.addChild(it) }
         assert(isLocallyValid())
     }
 
@@ -175,11 +176,11 @@ class SqlPolygonGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPolygonGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid({this.points.copyValueFrom(other.points)}, false)
+        return this.points.unsafeCopyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -187,20 +188,6 @@ class SqlPolygonGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.points.containsSameValueAs(other.points)
-    }
-
-
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlPolygonGene -> {
-                points.setValueBasedOn(gene.points)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

@@ -7,6 +7,8 @@ auth:
         - name: "Authorization"
           value: "foo 123"
       token:
-        headerPrefix: "Bearer "
-        extractFromField: "/token/authToken"
-        httpHeaderName: "Authorization"
+        extractFrom: "body"
+        extractSelector: "/token/authToken"
+        sendIn: "header"
+        sendName: "Authorization"
+        sendTemplate: "Bearer {token}"

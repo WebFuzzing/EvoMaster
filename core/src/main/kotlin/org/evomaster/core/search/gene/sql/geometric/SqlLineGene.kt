@@ -38,14 +38,12 @@ class SqlLineGene(
         q.copy() as SqlPointGene
     )
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlLineGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.p.copyValueFrom(other.p)
-                    && this.q.copyValueFrom(other.q)}, true
-        )
+        return this.p.unsafeCopyValueFrom(other.p)
+                    && this.q.unsafeCopyValueFrom(other.q)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -54,19 +52,6 @@ class SqlLineGene(
         }
         return this.p.containsSameValueAs(other.p)
                 && this.q.containsSameValueAs(other.q)
-    }
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlLineGene -> {
-                p.setValueBasedOn(gene.p) &&
-                        q.setValueBasedOn(gene.q)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PointGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

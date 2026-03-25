@@ -19,7 +19,7 @@ import com.google.common.collect.EvictingQueue
  * short-term view of performance rather than lifetime history.
  */
 class ModelMetricsWithTimeWindow(
-    bufferSize: Int = 100
+    bufferSize: Int
 ) : ModelMetrics {
 
     /** Lifetime counter of total evaluated requests. Important for warm-up logic. */

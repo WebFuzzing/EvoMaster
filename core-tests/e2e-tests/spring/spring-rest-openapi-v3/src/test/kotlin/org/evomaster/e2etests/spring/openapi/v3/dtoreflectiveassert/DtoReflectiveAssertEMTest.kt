@@ -7,11 +7,14 @@ import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.Optional.ofNullable
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaMethod
 
 class DtoReflectiveAssertEMTest: SpringTestBase() {
 
@@ -43,6 +46,11 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/parent", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-inline", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-components", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/enum-type", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/enum-examples", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-inline", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-ref", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-no-root", "OK")
         }
 
         assertPrimitiveTypeDtoCreated()
@@ -51,6 +59,11 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertItemsInlineDtoCreated()
         assertAnyOfDtoCreated()
         assertOneOfDtoCreated()
+        assertEnumTypeDtoCreated()
+        assertEnumExampleDtoCreated()
+        assertAdditionalPropertiesInlineDtoCreated()
+        assertAdditionalPropertiesRefDtoCreated()
+        assertAdditionalPropertiesNoRootDtoCreated()
     }
 
     private fun assertPrimitiveTypeDtoCreated() {
@@ -70,9 +83,9 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
 
     private fun assertParentAndChildDtosCreated() {
         val (parentKlass, parentInstance) = initDtoClass("ParentSchema")
-        val (childKass, childInstance) = initDtoClass("ChildSchema")
-        assertProperty(childKass, childInstance, "name", "Philip")
-        assertProperty(childKass, childInstance, "age", 31)
+        val (childKlass, childInstance) = initDtoClass("ChildSchema")
+        assertProperty(childKlass, childInstance, "name", "Philip")
+        assertProperty(childKlass, childInstance, "age", 31)
         assertProperty(parentKlass, parentInstance, "label", "EM_TEST")
         assertProperty(parentKlass, parentInstance, "child", childInstance)
     }
@@ -107,6 +120,47 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertProperty(klass, instance, "mouse", "Jerry")
     }
 
+    private fun assertEnumTypeDtoCreated() {
+        val (klass, instance) = initDtoClass("EnumType")
+        assertProperty(klass, instance, "name", "EvoMaster")
+        assertProperty(klass, instance, "status", "active")
+        assertProperty(klass, instance, "intStatus", 1)
+    }
+
+    private fun assertEnumExampleDtoCreated() {
+        val (klass, instance) = initDtoClass("EnumExample")
+        assertProperty(klass, instance, "textValue", "A text value")
+        assertProperty(klass, instance, "flagValue", true)
+        assertProperty(klass, instance, "countValue", 33)
+        assertProperty(klass, instance, "scoreValue", 3.14f)
+        assertProperty(klass, instance, "listValue", mutableListOf("s1", "s2", "s3"))
+    }
+
+    private fun assertAdditionalPropertiesInlineDtoCreated() {
+        val (parentKlass, parentInstance) = initDtoClass("POST__additional_properties_inline")
+        assertProperty(parentKlass, parentInstance, "stringProp", "A text value")
+        val (childKlass, childInstance) = initDtoClass("POST__additional_properties_inline_ap")
+        assertProperty(childKlass, childInstance, "value", "My value")
+        assertAdditionalPropertiesFunction(parentKlass, parentInstance, "aRandomKey", childInstance)
+    }
+
+    private fun assertAdditionalPropertiesRefDtoCreated() {
+        val (parentKlass, parentInstance) = initDtoClass("POST__additional_properties_ref")
+        assertProperty(parentKlass, parentInstance, "stringProp", "A text value")
+        val (childKlass, childInstance) = initDtoClass("ChildSchema")
+        assertProperty(childKlass, childInstance, "name", "Philip")
+        assertProperty(childKlass, childInstance, "age", 31)
+        assertAdditionalPropertiesFunction(parentKlass, parentInstance, "anotherRandomKey", childInstance)
+    }
+
+    private fun assertAdditionalPropertiesNoRootDtoCreated() {
+        val (parentKlass, parentInstance) = initDtoClass("POST__additional_properties_no_root")
+        val (childKlass, childInstance) = initDtoClass("POST__additional_properties_no_root_ap")
+        assertProperty(childKlass, childInstance, "value", "WebFuzzing")
+        assertProperty(childKlass, childInstance, "source", "Dataset")
+        assertAdditionalPropertiesFunction(parentKlass, parentInstance, "no_root_key", childInstance)
+    }
+
     private fun initDtoClass(name: String): Pair<KClass<out Any>, Any> {
         val className = ClassName("org.foo.dto.$name")
         val klass = loadClass(className).kotlin
@@ -121,9 +175,27 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
 
         property?.let {
             it.isAccessible = true
-            it.set(instance, propertyValue) // Set the value
+            it.set(instance, ofNullable(propertyValue)) // Set the value
         }
-        Assertions.assertEquals(propertyValue, property?.get(instance))
+        Assertions.assertEquals(ofNullable(propertyValue), property?.get(instance))
+    }
+
+    private fun assertAdditionalPropertiesFunction(klass: KClass<out Any>, instance: Any, propertyName: String, propertyValue: Any?) {
+        val setterFunction = klass.memberFunctions.firstOrNull {
+            it.name == "addAdditionalProperty"
+        }?.javaMethod
+        Assertions.assertNotNull(setterFunction)
+        setterFunction?.isAccessible = true
+        setterFunction?.invoke(instance, propertyName, propertyValue)
+
+        val getterFunction = klass.memberFunctions.firstOrNull {
+            it.name == "getAdditionalProperties"
+        }?.javaMethod
+        Assertions.assertNotNull(getterFunction)
+        getterFunction?.isAccessible = true
+        val map = getterFunction?.invoke(instance) as MutableMap<*, *>
+        Assertions.assertNotNull(map)
+        Assertions.assertEquals(propertyValue, map[propertyName])
     }
 
 }

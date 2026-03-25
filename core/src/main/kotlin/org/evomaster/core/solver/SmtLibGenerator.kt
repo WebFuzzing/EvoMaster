@@ -10,9 +10,11 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
+import net.sf.jsqlparser.JSQLParserException
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
@@ -113,7 +115,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     smt.addNode(constraint)
                 }
             } catch (e: SqlConditionParserException) {
-                throw RuntimeException("Error parsing check expression: " + check.sqlCheckExpression, e)
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+            } catch (e: JSQLParserException) {
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
             }
         }
     }
@@ -275,7 +279,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         for (foreignKey in table.foreignKeys) {
             val referencedTable = findReferencedTable(foreignKey)
             val referencedTableName = referencedTable.id.name.lowercase()
-            val referencedColumnSelector = findReferencedPKSelector(referencedTable, foreignKey)
+            val referencedColumnSelector = findReferencedPKSelector(table, referencedTable, foreignKey)
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
@@ -327,13 +331,24 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param foreignKey The foreign key constraint.
      * @return The primary key column name in the referenced table.
      */
-    private fun findReferencedPKSelector(referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
+    private fun findReferencedPKSelector(sourceTable: TableDto, referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
         val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
-        if (referencedPrimaryKeys.isEmpty()) {
-            throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
+        val sourceColumnName = foreignKey.sourceColumns.firstOrNull()
+        val sourceSmtType = sourceColumnName?.let { scn ->
+            sourceTable.columns.firstOrNull { it.name.equals(scn, ignoreCase = true) }
+                ?.let { TYPE_MAP[it.type.uppercase()] }
         }
-        // Assuming single-column primary keys
-        return referencedPrimaryKeys[0].name
+        if (referencedPrimaryKeys.isNotEmpty() &&
+            (sourceSmtType == null || TYPE_MAP[referencedPrimaryKeys[0].type.uppercase()] == sourceSmtType)) {
+            return referencedPrimaryKeys[0].name
+        }
+        // No PK or type mismatch: find a type-compatible column
+        if (sourceSmtType != null) {
+            referencedTable.columns.firstOrNull { TYPE_MAP[it.type.uppercase()] == sourceSmtType }
+                ?.let { return it.name }
+        }
+        return referencedTable.columns.firstOrNull()?.name
+            ?: throw RuntimeException("Referenced table has no columns: ${foreignKey.targetTable}")
     }
 
     /**
@@ -363,11 +378,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val where = plainSelect.where
 
             if (where != null) {
-                val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
-                val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                for (i in 1..numberOfRows) {
-                    val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                    smt.addNode(constraint)
+                try {
+                    val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                    val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                    for (i in 1..numberOfRows) {
+                        val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
+                        smt.addNode(constraint)
+                    }
+                } catch (e: RuntimeException) {
+                    LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
                 }
             }
         }
@@ -386,13 +405,18 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
-                    val onExpression = join.onExpression
-                    if (onExpression != null) {
-                        val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                        val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                        for (i in 1..numberOfRows) {
-                            val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                            smt.addNode(constraint)
+                    val onExpressions = join.onExpressions
+                    if (onExpressions.isNotEmpty()) {
+                        val onExpression = onExpressions.elementAt(0)
+                        try {
+                            val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
+                            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            for (i in 1..numberOfRows) {
+                                val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
+                                smt.addNode(constraint)
+                            }
+                        } catch (e: RuntimeException) {
+                            LoggingUtil.getInfoLogger().warn("Could not translate JOIN ON clause to SMT-LIB, skipping: ${onExpression}. Reason: ${e.message}")
                         }
                     }
                 }
@@ -459,7 +483,17 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         val tablesFinder = TablesNamesFinder()
 
         // Add tables from the FROM clause
-        for (tableName in tablesFinder.getTables(sqlQuery)){
+        val tables = try {
+            tablesFinder.getTables(sqlQuery)
+        } catch (e: Exception) {
+            // This is because the jsqlParser does not support visit(Execute execute) {
+            //        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); }
+            // https://github.com/JSQLParser/JSqlParser/blob/484eaa1c0f623cc67f8bf324e4367f8474eb77f1/src/main/java/net/sf/jsqlparser/util/TablesNamesFinder.java#L1180
+            LoggingUtil.getInfoLogger().error("Failed to find tables: ${e.message}")
+            emptySet<String>()
+        }
+
+        for (tableName in tables){
             tablesMentioned.add(tableName.lowercase())
         }
 
@@ -511,8 +545,16 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
+            "BIT" to "Int",
             "INTEGER" to "Int",
+            "INT2" to "Int",
+            "INT4" to "Int",
+            "INT8" to "Int",
+            "TINYINT" to "Int",
+            "SMALLINT" to "Int",
+            "NUMERIC" to "Int",
             "TIMESTAMP" to "Int",
+            "DATE" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
             "DECIMAL" to "Real",
@@ -520,8 +562,13 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
             "VARCHAR" to "String",
+            "TEXT" to "String",
             "CHARACTER LARGE OBJECT" to "String",
-            "BOOLEAN" to "String", // TODO: Check this
+            "BOOLEAN" to "String",
+            "BOOL" to "String",
+            "UUID" to "String",
+            "JSONB" to "String",
+            "BYTEA" to "String",
         )
     }
 }

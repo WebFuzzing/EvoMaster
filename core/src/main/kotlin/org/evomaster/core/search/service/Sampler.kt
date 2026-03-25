@@ -99,7 +99,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         samplePostProcessing(ind)
 
-        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(true); true }
         return ind
     }
 

@@ -11,6 +11,9 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -18,10 +21,13 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -48,24 +54,13 @@ class DtoWriter(
 
     fun write(testSuitePath: Path, testSuitePackage: String, solution: Solution<*>) {
         calculateDtos(solution)
+        val dtoOutput = when {
+            outputFormat.isJava() -> JavaDtoOutput()
+            outputFormat.isKotlin() -> KotlinDtoOutput()
+            else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
+        }
         dtoCollector.forEach {
-            when {
-                outputFormat.isJava() -> JavaDtoOutput().writeClass(
-                    testSuitePath,
-                    testSuitePackage,
-                    outputFormat,
-                    it.value
-                )
-
-                outputFormat.isKotlin() -> KotlinDtoOutput().writeClass(
-                    testSuitePath,
-                    testSuitePackage,
-                    outputFormat,
-                    it.value
-                )
-
-                else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
-            }
+            dtoOutput.writeClass(outputFormat, testSuitePath, testSuitePackage, it.value)
         }
     }
 
@@ -93,10 +88,10 @@ class DtoWriter(
 
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        // TODO: should we handle EnumGene?
         if (hasObjectOrArrayGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
-            val dtoClass = DtoClass(dtoName)
+
+            val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(dtoName) }
             val children = gene.getViewOfChildren()
             // merge options into a single DTO
             children.forEach { childGene ->
@@ -110,7 +105,7 @@ class DtoWriter(
                     }
                 }
             }
-            dtoCollector.put(dtoName, dtoClass)
+            dtoCollector[dtoName] = dtoClass
         }
     }
 
@@ -122,11 +117,22 @@ class DtoWriter(
         when {
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+            gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
             isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
         }
+    }
+
+    private fun calculateDtoFromFixedMapGene(gene: FixedMapGene<*, *>, actionName: String) {
+        val dtoName = TestWriterUtils.safeVariableName(actionName)
+        val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(dtoName) }
+        val additionalProperties = gene.getViewOfChildren()!!.filter {
+            it.isPrintable() && !isInactiveOptionalGene(it)
+        } as List<PairGene<Gene, Gene>>
+        addAdditionalProperties(dtoClass, additionalProperties)
+        dtoCollector[dtoName] = dtoClass
     }
 
     private fun isPrimitiveGene(gene: Gene): Boolean {
@@ -139,16 +145,15 @@ class DtoWriter(
     private fun calculateDtoFromObject(gene: ObjectGene, actionName: String) {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
         val dtoName = TestWriterUtils.safeVariableName(gene.refType?:actionName)
-        val dtoClass = DtoClass(dtoName)
-        // TODO: add support for additionalFields
+        val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(dtoName) }
         populateDtoClass(dtoClass, gene)
-        dtoCollector.put(dtoName, dtoClass)
+        dtoCollector[dtoName] = dtoClass
     }
 
     private fun calculateDtoFromArray(gene: ArrayGene<*>, actionName: String) {
         val template = gene.template
-        // TODO consider ChoiceGene. Primitive types won't be considered, an array of strings should not be wrapped
-        //  into a DTO but just use List<String> for setting the payload.
+        // Primitive types won't be considered, an array of strings should not be wrapped
+        // into a DTO but just use List<String> for setting the payload.
         if (template is ObjectGene) {
             calculateDtoFromObject(template, actionName)
         } else {
@@ -157,12 +162,16 @@ class DtoWriter(
     }
 
     private fun populateDtoClass(dtoClass: DtoClass, gene: ObjectGene) {
-        gene.fixedFields.forEach { field ->
+        val includedFields = gene.fixedFields.filter {
+            it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
+        } .filter { it.isPrintable() }
+
+        includedFields.forEach { field ->
             try {
                 val wrappedGene = field.getLeafGene()
                 val dtoField = getDtoField(field.name, wrappedGene)
-                dtoClass.addField(dtoField)
-                if (wrappedGene is ObjectGene && !dtoCollector.contains(dtoField.type)) {
+                dtoClass.addField(field.name, dtoField)
+                if (wrappedGene is ObjectGene) {
                     calculateDtoFromObject(wrappedGene, dtoField.type)
                 }
                 if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
@@ -176,6 +185,40 @@ class DtoWriter(
                 assert(false)
             }
         }
+        if (!gene.isFixed) {
+            val additionalFields = gene.additionalFields!!.filter {
+                it.isPrintable() && !isInactiveOptionalGene(it)
+            } as List<PairGene<Gene, Gene>>
+            addAdditionalProperties(dtoClass, additionalFields)
+        }
+    }
+
+    private fun addAdditionalProperties(dtoClass: DtoClass, additionalProperties: List<PairGene<Gene, Gene>>) {
+        if (additionalProperties.isEmpty()) {
+            return
+        }
+        additionalProperties.forEach { field ->
+            try {
+                val wrappedGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
+                if (wrappedGene is ObjectGene) {
+                    val additionalPropertiesDtoName = wrappedGene.refType?:"${dtoClass.name}_ap"
+                    dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                    calculateDtoFromObject(wrappedGene, additionalPropertiesDtoName)
+                }
+                if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
+                    val additionalPropertiesDtoName = wrappedGene.template.refType?:"${dtoClass.name}_ap"
+                    dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                    calculateDtoFromObject(wrappedGene.template, additionalPropertiesDtoName)
+                }
+            } catch (ex: Exception) {
+                log.warn(
+                    "A failure has occurred when collecting DTO additional properties. \n"
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                )
+                assert(false)
+            }
+        }
     }
 
     private fun getDtoField(fieldName: String, field: Gene?): DtoField {
@@ -184,7 +227,6 @@ class DtoWriter(
 
     private fun getDtoType(fieldName: String, field: Gene?): String {
         return when (field) {
-            // TODO: handle nested arrays, objects and extend type system for dto fields
             is StringGene -> "String"
             is IntegerGene -> if (outputFormat.isJava()) "Integer" else "Int"
             is LongGene -> "Long"
@@ -199,6 +241,7 @@ class DtoWriter(
             is BooleanGene -> "Boolean"
             is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
             is ArrayGene<*> -> if (outputFormat.isJava()) "List<${getDtoType(field.name, field.template)}>" else "MutableList<${getDtoType(field.name, field.template)}>"
+            is EnumGene<*> -> field.getValueType(outputFormat.isKotlin())
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
         }
     }

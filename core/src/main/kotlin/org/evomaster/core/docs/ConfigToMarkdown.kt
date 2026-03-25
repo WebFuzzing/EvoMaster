@@ -188,6 +188,10 @@ object ConfigToMarkdown {
             buffer.append(" *Constraints*: `${description.constraints.replace("|","\\|")}`.")
         }
 
+        if(description.dependsOn.isNotBlank()){
+            buffer.append(" *Depends on*: `${description.dependsOn}`.")
+        }
+
         if (description.enumValidValues.isNotBlank()) {
             buffer.append(" *Valid values*: `${description.enumValidValues}`.")
           }
@@ -195,8 +199,6 @@ object ConfigToMarkdown {
         if (description.enumExperimentalValues.isNotBlank()) {
             buffer.append(" *Experimental values*: `${description.enumExperimentalValues}`.")
         }
-
-
 
         buffer.append(" *Default value*: `$default`.")
 

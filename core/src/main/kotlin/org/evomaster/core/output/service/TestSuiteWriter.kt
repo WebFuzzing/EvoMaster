@@ -63,6 +63,10 @@ class TestSuiteWriter {
         private const val fixture = "_fixture"
         private const val browser = "browser"
         private var containsDtos = false
+
+        private const val EXTRACT_JDK_PATH_ENV_VAR_METHOD = "extractJDKPathWithEnvVarName"
+        private const val EXTRACT_SUT_PATH_ENV_VAR_METHOD = "extractSutJarNameWithEnvVarName"
+
     }
 
     @Inject
@@ -341,8 +345,18 @@ class TestSuiteWriter {
         lines.addBlockCommentLine(" Needed budget for current results: ${searchTimeController.neededBudget()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" ${solution.termination.comment}")
-        lines.endCommentBlock()
+        classDescriptionEmptyLine(lines)
 
+        if(config.couldSupportDtoForPayload() && !config.dtoForRequestPayload){
+            lines.addBlockCommentLine(" ******************************** IMPORTANT ********************************")
+            lines.addBlockCommentLine(" * If you are planning to modify these test cases manually, you might")
+            lines.addBlockCommentLine(" * want to consider using the '--dtoForRequestPayload true' option to")
+            lines.addBlockCommentLine(" * generate statically typed DTOs instead of payloads defined with strings.")
+            lines.addBlockCommentLine(" ***************************************************************************")
+            classDescriptionEmptyLine(lines)
+        }
+
+        lines.endCommentBlock()
     }
 
     /**
@@ -445,6 +459,10 @@ class TestSuiteWriter {
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
+            // BigInteger and BigDecimal
+            addImport("java.math.BigDecimal", lines)
+            addImport("java.math.BigInteger", lines)
+
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
@@ -537,6 +555,11 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+
+            if(config.sqli){
+                lines.add("import time")
+            }
+
             if (config.testTimeout > 0) {
                 //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
                 lines.add("import os")
@@ -604,6 +627,10 @@ class TestSuiteWriter {
     }
 
     private fun getJavaCommand(): String {
+        if (config.useEnvVarsForPathInTests){
+            return ".setJavaCommand($EXTRACT_JDK_PATH_ENV_VAR_METHOD(\"${config.jdkEnvVarName}\"))"
+        }
+
         if (config.javaCommand != "java") {
             val java = config.javaCommand.replace("\\", "\\\\")
             return ".setJavaCommand(\"$java\")"
@@ -620,8 +647,12 @@ class TestSuiteWriter {
 
         val wireMockServers = getActiveWireMockServers()
 
-        val executable = if (controllerInput.isNullOrBlank()) ""
-        else "\"$controllerInput\"".replace("\\", "\\\\")
+        val executable = if (config.useEnvVarsForPathInTests){
+            "$EXTRACT_SUT_PATH_ENV_VAR_METHOD(\"${config.sutDistEnvVarName}\", \"${config.sutJarEnvVarName}\")"
+        }else{
+            if (controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\", "\\\\")
+        }
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
@@ -643,6 +674,7 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
+                    addStatement("private static final String SSRF_METADATA_TAG = \"SSRF\"", lines)
                 }
             }
 
@@ -674,7 +706,9 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
+                    addStatement("private const val SSRF_METADATA_TAG: String = \"SSRF\" ", lines)
                 }
+                assertionUtilFunctionForSSRF(lines, config.outputFormat)
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -1036,6 +1070,10 @@ class TestSuiteWriter {
 
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
+
+        if (config.ssrf && solution.hasSsrfFaults() && config.outputFormat.isJavaOrKotlin()) {
+            assertionUtilFunctionForSSRF(lines, config.outputFormat)
+        }
     }
 
 
@@ -1142,6 +1180,39 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
+        lines.addEmpty(1)
+
+        val methodComment = "Method to verify whether the HttpCallbackVerifier has received any requests."
+        when {
+            format.isKotlin() -> {
+                lines.addSingleCommentLine(methodComment)
+                lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
+            }
+            format.isJava() -> {
+                lines.startCommentBlock()
+                lines.addBlockCommentLine(methodComment)
+                lines.endCommentBlock()
+                lines.add("public static boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
+            }
+        }
+        lines.block {
+            lines.add("return verifier")
+            lines.indented {
+                if (format.isKotlin()) {
+                    lines.add(".allServeEvents")
+                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                    lines.add(".any { it.stubMapping.metadata.getString(SSRF_METADATA_TAG) == actionName }")
+                }
+                if (format.isJava()) {
+                    lines.add(".getAllServeEvents()")
+                    lines.add(".stream().filter( r -> r.getWasMatched() && r.getStubMapping().getMetadata() != null)")
+                    lines.add(".anyMatch( r -> r.getStubMapping().getMetadata().getString(SSRF_METADATA_TAG).equals(actionName));")
+                }
+            }
+        }
     }
 
 }

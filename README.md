@@ -1,18 +1,24 @@
 # EvoMaster: A Tool For Automatically Generating System-Level Test Cases
 
 
-![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
+[//]: # (![]&#40;docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash"&#41;)
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.evomaster/evomaster-client-java.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
-[![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5052036.svg)](https://doi.org/10.5281/zenodo.5052036)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Github All Releases](https://img.shields.io/github/downloads/WebFuzzing/evomaster/total.svg)](https://github.com/WebFuzzing/EvoMaster/releases)
 
 
+
 ### Summary
+
+[//]: # (<div style="float: left; margin-right: 15px; margin-bottom: 10px;">)
+<img align="left" src="docs/img/em_mascot.png" alt="AI-generated mascot, with Bing" width="100" />
+
+[//]: # (</div>)
 
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source AI-driven tool
 that automatically *generates* system-level test cases
@@ -123,10 +129,9 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
-* _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
-  format (either _v2_ or _v3_).
+* _Schema_: REST APIs must provide a schema in [OpenAPI format](https://www.openapis.org/). We support versions _2.0_, _3.0_ and _3.1_. Unfortunately, support for version _3.2_ is currently on hold due to [swagger-parser](https://github.com/swagger-api/swagger-parser/issues/2248).
 
-* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin, as well as test suites in Python and JavaScript. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
+* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either _Java_ or _Kotlin_, as well as test suites in _Python_ and _JavaScript_. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
   Some examples are: PYTHON_UNITTEST, KOTLIN_JUNIT_5, JAVA_JUNIT_4 and JS_JEST.
   Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
   These will need to be setup in your projects, [see documentation](docs/library_dependencies.md).
@@ -198,7 +203,9 @@ Examples of Fortune 500 companies using _EvoMaster_ are:
 
 ![](docs/img/video-player-flaticon.png)
 
-* A [45-minute talk given at TestCon'25](https://www.youtube.com/watch?v=uKKRo3LrNiw&list=PLqYhGsQ9iSEoXaRmW9WQjjXJK_1NbLlZ6&index=15) on Fuzz Testing Web APIs gives an overview of what can be expected from this kind of fuzzers.   
+* A [45-minute talk given at TestCon'25](https://www.youtube.com/watch?v=uKKRo3LrNiw&list=PLqYhGsQ9iSEoXaRmW9WQjjXJK_1NbLlZ6&index=15) on Fuzz Testing Web APIs gives an overview of what can be expected from this kind of fuzzers. 
+ A [shorter version (16 minutes)](https://www.youtube.com/watch?v=iJdhVzGedjM) 
+  was given at Nordic APIs 2025 Platform Summit.   
 
 * A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
   shows the use of _EvoMaster_ on one of the
@@ -225,10 +232,11 @@ Existing open-source tools for REST API fuzzing, with at least 100 stars on GitH
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
 [Restler](https://github.com/microsoft/restler-fuzzer),
+[Schemathesis](https://github.com/schemathesis/schemathesis)
 and
-[Schemathesis](https://github.com/schemathesis/schemathesis).
+[WuppieFuzz](https://github.com/TNO-S3/WuppieFuzz).
 
-All these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
+Apart from WuppieFuzz, all these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
 As we are the authors of EvoMaster, we are too biased to compare it properly with those other black-box tools.
 However, different independent studies (e.g., in [2022](https://arxiv.org/abs/2204.08348) and [2024](https://arxiv.org/abs/2410.12547)) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 

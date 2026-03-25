@@ -21,7 +21,12 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
+        val gene = RegexGene(
+            "regex",
+            disjList,
+            text,
+            RegexType.POSTGRES_SIMILAR_TO
+        )
 
         return VisitResult(gene)
     }

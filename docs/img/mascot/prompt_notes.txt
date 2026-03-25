@@ -1,0 +1,39 @@
+Create me an image to be used as a mascot for a GitHub open-source project.
+
+The mascot is a black-cat, with a devil-like shaped tail.
+Make sure the tail ends with an arrowhead shape.
+The cat has only one single tail.
+The cat wears a wizard hood, of red color.
+Make sure it is a hood, and not a witch hat.
+As a mascot, the style should not be realistic, but cartoonish.
+The cat should look cute.
+The cat should be faced looking directly toward the user.
+No background, which must be left transparent.
+No accessory or item should be shown next to the cat.
+Make sure there is no trident anywhere in the image.
+
+
+white background + no shadow + clean edges
+
+simplify to use it as mascot logo
+
+Black-cat mascot, devil-like arrowhead shaped single tail.
+Red wizard hood, and no witch hat.
+Cartoonish style.
+Facing straight to user.
+Cat smiling.
+No background.
+No accessory.
+
+
+—---------------------------------
+Black-cat mascot, devil-like arrowhead shaped single tail.
+Red wizard hood.
+Cartoonish style.
+Facing straight to user.
+Cat smiling.
+
+No background.
+No accessory.
+No trident.
+No witch hat.

@@ -34,7 +34,7 @@ public class IndexController {
             description = "Return 200"
     )
     @ApiResponse(responseCode = "200", description = "Working POST route")
-    @Post(value="{?x,y}", produces = MediaType.APPLICATION_JSON)
+    @Post(value="{?x,y}", produces = MediaType.APPLICATION_JSON, consumes = MediaType.ALL)
     public HttpResponse<String> indexPost(@Nullable @PositiveOrZero Integer x, @Nullable @PositiveOrZero Integer y) {
         int z = ( x != null && y != null) ? x + y : 0;
         return HttpResponse.status(HttpStatus.OK).body("{\"message\":\"Working!\",\"answer\":" + z + "}");

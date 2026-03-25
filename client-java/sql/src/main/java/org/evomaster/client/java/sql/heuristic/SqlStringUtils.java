@@ -40,13 +40,31 @@ public class SqlStringUtils {
      * @param a the first string to compare, may be null
      * @param b the second string to compare, may be null
      * @return {@code true} if both strings are equal ignoring case, or both are null;
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
-    public static boolean nullSafeEqualsIgnoreCase(String a, String b){
-        if (a==null) {
-            return b==null;
+    public static boolean nullSafeEqualsIgnoreCase(String a, String b) {
+        if (a == null) {
+            return b == null;
         } else {
             return a.equalsIgnoreCase(b);
+        }
+    }
+
+    /**
+     * Checks if a string ends with another string, ignoring case considerations.
+     * It safely handles null values.
+     *
+     * @param a
+     * @param suffix
+     * @return
+     */
+    public static boolean nullSafeEndsWithIgnoreCase(String a, String suffix) {
+        if (a == null) {
+            return false;
+        } else if (suffix == null) {
+            return false;
+        } else {
+            return a.toLowerCase().endsWith(suffix.toLowerCase());
         }
     }
 }

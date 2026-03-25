@@ -64,7 +64,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
             GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
         }
 
-        setupAuthentication(infoDto)
+        setupAuthenticationForWhiteBox(infoDto)
 
         //TODO this will require refactoring
         initSqlInfo(infoDto)
@@ -83,7 +83,8 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val gqlEndpoint = config.bbTargetUrl
 
         /*
-         Configuration of the headers
+         Configuration of the headers.
+          FIXME this should be refactored with other Auth settings
          */
         val headers = listOf(config.header0, config.header1, config.header2)
             .filter { it.isNotBlank() }
@@ -91,7 +92,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint, headers)
 
-        addAuthFromConfig()
+        setupAuthenticationForBlackBox()
 
         actionCluster.clear()
 

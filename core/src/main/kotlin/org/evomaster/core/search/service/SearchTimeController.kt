@@ -22,6 +22,11 @@ class SearchTimeController {
         private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
 
         /**
+         * Invoke the [function] lambda, which will return some result of generic type [T].
+         * Once this is completed, the [loggingFunction] will be automatically called with,
+         * as input, the execution time expressed in milliseconds, as well as the [function]'s result
+         * of type [T].
+         *
          * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
          */
         inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
@@ -32,6 +37,19 @@ class SearchTimeController {
             loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
 
             return result
+        }
+
+        fun getElapsedTime(totalInSeconds: Long) : String{
+
+            val seconds = totalInSeconds
+            val minutes = seconds / 60.0
+            val hours = minutes / 60.0
+
+            val ps = "%d".format(seconds % 60)
+            val pm = "%d".format(minutes.toInt() % 60)
+            val ph = "%d".format(hours.toInt())
+
+            return "${ph}h ${pm}m ${ps}s"
         }
     }
 
@@ -238,18 +256,7 @@ class SearchTimeController {
     }
 
     fun getElapsedTime() : String{
-
-        val seconds = getElapsedSeconds()
-
-        val minutes = seconds / 60.0
-
-        val hours = minutes / 60.0
-
-        val ps = "%d".format(seconds % 60)
-        val pm = "%d".format(minutes.toInt() % 60)
-        val ph = "%d".format(hours.toInt())
-
-        return "${ph}h ${pm}m ${ps}s"
+        return getElapsedTime(getElapsedSeconds().toLong())
     }
 
     fun shouldContinueSearch(): Boolean{

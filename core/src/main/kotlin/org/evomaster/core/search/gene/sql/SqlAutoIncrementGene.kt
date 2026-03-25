@@ -35,11 +35,17 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
      *
      * Man: need to check with Andrea, copyValueFrom of [ImmutableDataHolderGene] throw an exception
      */
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlAutoIncrementGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        //do nothing
+        /*
+            auto-increment are always unique... so a copy over should never work.
+            however, here we return true instead of false to fulfill invariant that
+            copyFrom a copy should always work...
+
+            TODO might check for side-effects, and see if need more complex handling
+         */
         return true
     }
 
@@ -50,9 +56,15 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
      */
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlAutoIncrementGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return this === other
+
+        /*
+            auto-increment are always unique... but need to satisfy invariants on copyFrom...
+            TODO  might check for side-effects, and see if need more complex handling
+         */
+        //return this === other
+        return true
     }
 
     override fun isMutable() = false
@@ -62,8 +74,5 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
     override fun mutationWeight(): Double = 0.0
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // do nothing, cannot bind with others
-        return true
-    }
+
 }

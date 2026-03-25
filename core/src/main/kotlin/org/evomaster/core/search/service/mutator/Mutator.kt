@@ -159,7 +159,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{current.individual.verifyValidity(); true}
+            Lazy.assert{current.individual.verifyValidity(true); true}
 
             // skip to mutate the individual if any new harvested external actions are added
             val mutatedInd = if (!anyHarvestedExternalServiceActions)
@@ -171,7 +171,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             sampler.applyDerivedParamModifications(mutatedInd)
 
-            Lazy.assert{mutatedInd.verifyValidity(); true}
+            Lazy.assert{mutatedInd.verifyValidity(true); true}
 
             //FIXME: why setOf()??? are we skipping coverage collection here???
             // or always added non-covered from archive? if so, name "targets" is confusing

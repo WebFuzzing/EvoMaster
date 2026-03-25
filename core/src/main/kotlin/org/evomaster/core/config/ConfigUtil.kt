@@ -1,5 +1,6 @@
 package org.evomaster.core.config
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.webfuzzing.commons.auth.AuthenticationInfo
@@ -29,6 +30,7 @@ object ConfigUtil {
             throw IllegalArgumentException("Specified configuration file path is not of valid type." +
                     " Supported types are YAML and TOML. Wrong path: $stringPath")
         }
+        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
 
         val cff = try{
             mapper.readValue(path.toFile(), ConfigsFromFile::class.java)

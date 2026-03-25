@@ -44,4 +44,29 @@ class DtoReflectiveAssertRest {
         return ResponseEntity.ok("OK")
     }
 
+    @PostMapping(path = ["/enum-examples"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun enumExamples(@RequestBody body: EnumExamplesDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
+    @PostMapping(path = ["/enum-type"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun enumType(@RequestBody body: EnumTypeDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
+    @PostMapping(path = ["/additional-properties-inline"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun additionalPropertiesInline(@RequestBody body: AdditionalPropsInlineDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
+    @PostMapping(path = ["/additional-properties-ref"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun additionalPropertiesRef(@RequestBody body: AdditionalPropsRefDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
+    @PostMapping(path = ["/additional-properties-no-root"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun additionalPropertiesNoRoot(@RequestBody body: AdditionalPropsNoRootDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
 }

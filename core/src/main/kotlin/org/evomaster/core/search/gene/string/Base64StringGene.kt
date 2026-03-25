@@ -31,17 +31,8 @@ class Base64StringGene(
         data.randomize(randomness, tryToForceNewValue)
     }
 
-
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
-    }
-
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is Base64StringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({this.data.copyValueFrom(other.data)}, false)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -51,17 +42,35 @@ class Base64StringGene(
         return this.data.containsSameValueAs(other.data)
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        val gene = other.getPhenotype()
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){
-            is Base64StringGene -> data.setValueBasedOn(gene.data)
-            is StringGene -> data.setValueBasedOn(gene)
+            is Base64StringGene -> data.unsafeCopyValueFrom(gene.data)
+            is StringGene -> data.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
                 false
             }
+        }
+    }
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        // Since getValueAsPrintableString() uses encodeToString(), if the given
+        // string is base64 encoded, value will be decoded to original string.
+        // Otherwise, given value will be set.
+        return try {
+            // Charset is set to UTF_8 to ensure decoding works properly
+            val value = Base64
+                .getDecoder()
+                .decode(value)
+                .toString(Charsets.UTF_8)
+
+            data.unsafeSetFromStringValue(value)
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -73,5 +82,4 @@ class Base64StringGene(
     ): Boolean {
         return false
     }
-
 }

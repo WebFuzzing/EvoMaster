@@ -67,7 +67,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
         assertEquals(200, (forgottenAuth.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
 
-        val ind = RestIndividualBuilder.merge(authenticated.individual, forgottenAuth.individual)
+        val ind = getBuilder().merge(authenticated.individual, forgottenAuth.individual)
         assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[2].verb)
@@ -86,7 +86,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(403, r2.getStatusCode())
         assertEquals(200, r3.getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(get42NotAuth.getName(), ei.individual, ei.seeResults())
+        val faultDetected = getSecurityOracle().hasForgottenAuthentication(get42NotAuth.getName(), ei.individual, ei.seeResults())
         assertTrue(faultDetected)
 
         //fault should be put on 200 with no authentication
@@ -115,7 +115,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         val authenticated = createIndividual(listOf(put42), SampleType.SECURITY)
         val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
 
-        val ind = RestIndividualBuilder.merge(authenticated.individual, forgottenAuth.individual)
+        val ind = getBuilder().merge(authenticated.individual, forgottenAuth.individual)
         assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
 
@@ -129,7 +129,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(200, r1.getStatusCode())
 
         // we couldn't say this is forgotten because GET could be open, so we cannot be sure.
-        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(put42.getName(), ei.individual, ei.seeResults())
+        val faultDetected = getSecurityOracle().hasForgottenAuthentication(put42.getName(), ei.individual, ei.seeResults())
         assertFalse(faultDetected)
 
         assertEquals(0, r0.getFaults().size)

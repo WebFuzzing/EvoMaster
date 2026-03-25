@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -45,9 +44,6 @@ class UriDataGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-
-
-
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,
@@ -62,17 +58,6 @@ class UriDataGene(
         return "data:$t$b64,$d"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UriDataGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = copy()
-
-        return updateValueOnlyIfValid(
-            {type.copyValueFrom(other.type) && base64.copyValueFrom(other.base64) && data.copyValueFrom(other.data)}, true
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -82,9 +67,16 @@ class UriDataGene(
                 && data.containsSameValueAs(other.data)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return false
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is UriDataGene) {
+            return false
+        }
+
+        return type.unsafeCopyValueFrom(other.type)
+                && base64.unsafeCopyValueFrom(other.base64)
+                && data.unsafeCopyValueFrom(other.data)
     }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
@@ -95,4 +87,29 @@ class UriDataGene(
         return false
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        // TODO: Charset value is not handled in UriDataGene.
+        //  If the encoded string uses a different Charset test will fail,
+        //  since the Base64StringGene.unsafeSetFromStringValue() use UTF_8 to decode the value.
+        return try {
+            val uri = URI(value)
+
+            if (uri.scheme == "data") {
+                val uriParts = uri.schemeSpecificPart
+                val parts = uriParts.split(",", limit = 2)
+                val metadata = parts[0].split(";")
+                val b64Value = metadata[2].equals("base64", ignoreCase = true)
+
+                val t = type.unsafeSetFromStringValue(metadata[0])
+                val b64 = base64.unsafeSetFromStringValue(b64Value.toString())
+                val data = data.unsafeSetFromStringValue(parts[1])
+                t && b64 && data
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationResultDto;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.DbSpecification;
 
@@ -181,7 +182,7 @@ public interface SutHandler {
 
     default Object getOpenSearchConnection() {return null;}
 
-    default Object getRedisConnection() {return null;}
+    default ReflectionBasedRedisClient getRedisConnection() {return null;}
 
     /**
      * <p>

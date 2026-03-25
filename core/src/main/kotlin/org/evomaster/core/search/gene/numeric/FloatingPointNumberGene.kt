@@ -77,7 +77,19 @@ abstract class FloatingPointNumberGene<T:Number>(
         //Need to remove scientific notation, which is default when printing double/float
         val plainValue = if(value is BigDecimal){
             (value as BigDecimal).toPlainString()
-        } else BigDecimal(value.toString()).toPlainString()
+        } else {
+            //this can happen when we try to copy from a large double into a float
+            if(value.toString().contains("Infinity")){
+                return false
+            }
+            try{
+                BigDecimal(value.toString()).toPlainString()
+            } catch (e: NumberFormatException) {
+                //this should never happen, ie, that we create an invalid value representation
+                assert(false) { "'$value' is not a valid number to convert to BigDecimal: ${e.message}" }
+                return false
+            }
+        }
 
         return  super.checkForLocallyValidIgnoringChildren() && (scale == null
                 || !plainValue.contains(".")

@@ -109,14 +109,14 @@ object BindingBuilder {
     }
 
     private fun bindValues(p: Pair<Gene,Gene>, doBuildBindingGene: Boolean){
-        val ok = p.first.setFromDifferentGene(p.second)
+        val ok = p.first.copyValueFrom(p.second)
         if (ok && doBuildBindingGene){
             p.first.addBindingGene(p.second)
             p.second.addBindingGene(p.first)
         }
 
-        val first = ParamUtil.getValueGene(p.first)
-        val second = ParamUtil.getValueGene(p.second)
+        val first = p.first.getLeafGene()
+        val second = p.second.getLeafGene()
         if(ok && !doBuildBindingGene && first is StringGene && TaintInputName.isTaintInput(first.value)){
             //do not use same tainted value in non-bound genes
             if(second is StringGene){

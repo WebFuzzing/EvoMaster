@@ -43,6 +43,7 @@ class CharacterClassEscapeRxGene(
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value
+        copy.name = this.name //in case name is changed from its default
         return copy
     }
 
@@ -91,19 +92,7 @@ class CharacterClassEscapeRxGene(
        return value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if(other !is CharacterClassEscapeRxGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is CharacterClassEscapeRxGene){
@@ -113,7 +102,10 @@ class CharacterClassEscapeRxGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
             return true

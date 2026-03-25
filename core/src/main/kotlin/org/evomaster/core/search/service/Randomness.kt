@@ -119,7 +119,7 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        val k = min + random.nextDouble() * calculateIncrement(min, max)
+        val k = min + random.nextDouble() * calculateIncrement(min, max, Double.MAX_VALUE)
 
         log.trace("nextDouble(min {}, max {}): {}", min, max, k)
         return k

@@ -99,8 +99,8 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         val oneQuoteStr = "'"
         val twoQuotesStr = "'hi'"
 
-        (genes[1] as StringGene).copyValueFrom(StringGene(genes[1].name, oneQuoteStr))
-        ((genes[2] as NullableGene).gene as StringGene).copyValueFrom(StringGene(genes[1].name, twoQuotesStr))
+        (genes[1] as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, oneQuoteStr))
+        ((genes[2] as NullableGene).gene as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, twoQuotesStr))
 
         val query = "Select * from people where id=%s".format(idValue)
 

@@ -7,9 +7,9 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabil
 
 
 class Gaussian400Classifier(
-    warmup: Int = 10,
-    encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    warmup: Int,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     randomness: Randomness
 ) : AbstractProbabilistic400Classifier<Gaussian400EndpointModel>(
     warmup, encoderType, metricType, randomness) {

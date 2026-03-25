@@ -3,10 +3,7 @@ package org.evomaster.core
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
-import org.evomaster.core.output.service.NoTestCaseWriter
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.TestCaseWriter
-import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -87,6 +84,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
                 .asEagerSingleton()
 
         bind(SMTLibZ3DbConstraintSolver::class.java)
+            .asEagerSingleton()
+
+        bind(ExecutionStats::class.java)
             .asEagerSingleton()
 
         //no longer needed if TestSuiteWriter is moved out?

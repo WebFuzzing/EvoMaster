@@ -1,0 +1,13 @@
+auth:
+ - name: "loginextractheader"
+   loginEndpointAuth:
+    endpoint: "/api/logintokenextractheader/login"
+    payloadRaw: "{\"userId\": \"foo\", \"password\":\"123\"}"
+    verb: "POST"
+    contentType: "application/json"
+    token:
+      extractSelector: "X-Auth-Token"
+      extractFrom: "header"
+      sendName: "Authorization"
+      sendIn: "header"
+      sendTemplate: "Bearer {token}"

@@ -17,7 +17,6 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 
 /**
@@ -180,6 +179,9 @@ abstract class EnterpriseIndividual(
      */
     fun ensureFlattenedStructure() : Boolean{
 
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
+
         val before = seeAllActions().size
 
         val issues = doFlattenStructure()
@@ -189,16 +191,29 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
-        /*
-            FIXME There is some major bugs in Gene regarding
-            copyValueFrom() and setFromDifferentGene()
-            until fixed, this check will fail.
-            but the fix will require some major refactoring and testing... it will take time
-            TODO put back once fixed
-         */
-        //verifyValidity()
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
 
         return issues
+    }
+
+    override fun verifyValidity(checkForTaints: Boolean){
+
+        super.verifyValidity(checkForTaints)
+
+        val errors = mutableListOf<String>()
+        val ok = isValidInitializationActions(errors)
+        if(!ok){
+            throw IllegalStateException("Invalid initialization actions:\n${errors.joinToString("\n")}")
+        }
+    }
+
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
+        return SqlActionUtils.isValidActions(
+            seeInitializingActions().filterIsInstance<SqlAction>(),
+            isFlattenedStructure(),
+            errors
+        )
     }
 
     protected open fun doFlattenStructure() : Boolean{
@@ -207,7 +222,7 @@ abstract class EnterpriseIndividual(
         return false
     }
 
-    private fun isFlattenedStructure() : Boolean{
+    protected fun isFlattenedStructure() : Boolean{
         return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
     }
 
@@ -307,9 +322,7 @@ abstract class EnterpriseIndividual(
      */
     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
-    override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
-    }
+
 
     override fun repairInitializationActions(randomness: Randomness) {
 
@@ -331,14 +344,25 @@ abstract class EnterpriseIndividual(
          * Note: this is only for DB Actions in the initialization phase, and NOT if there is any
          * afterwards (eg in resource-based handling).
          */
-        if (!verifyInitializationActions()) {
-            if (log.isTraceEnabled)
-                log.trace("invoke GeneUtils.repairBrokenDbActionsList")
+        if (!isValidInitializationActions()) {
+            if (log.isTraceEnabled){
+                log.trace("invoke SqlActionUtils.repairBrokenDbActionsList")
+            }
             val previous = sqlInitialization.toMutableList()
-            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
-            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
+            val relatedActionInMain = seeFixedMainActions()
+                .flatMap { it.flatten() }
+                .filterIsInstance<SqlAction>()
+
+            //first try to repair considering all actions... but side effects on removal will be ignored
+            SqlActionUtils.repairBrokenDbActionsList(
+                previous.plus(relatedActionInMain).toMutableList(),
+                randomness
+            )
+            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            //needed if actions were removed in the list "previous"
             resetInitializingActions(previous)
-            Lazy.assert{verifyInitializationActions()}
+
+            Lazy.assert{isValidInitializationActions()}
         }
     }
 
@@ -388,7 +412,9 @@ abstract class EnterpriseIndividual(
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
         }
 
-        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        var skipped = 0
+
+        skipped += addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
@@ -400,7 +426,9 @@ abstract class EnterpriseIndividual(
 
         addInitializingHostnameResolutionActions(actions = uniqueHostnames)
 
-        return  hostnameActions.size - uniqueHostnames.size
+        skipped += hostnameActions.size - uniqueHostnames.size
+
+        return skipped
     }
 
 
@@ -408,12 +436,42 @@ abstract class EnterpriseIndividual(
      * add [actions] at [relativePosition]
      * if [relativePosition] = -1, append the [actions] at the end
      */
-    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
-        if (relativePosition < 0)  {
-            addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
-        } else{
-            addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>) : Int{
+
+        var skipped = 0
+
+        /*
+            SQL actions representing existing data must ALWAYS be at the beginning.
+            Recall those are only used for FKs.
+         */
+        val (existing, others) = actions.filterIsInstance<SqlAction>()
+                                        .partition { it.representExistingData }
+
+        if(existing.isNotEmpty()){
+
+            val already = this.sqlInitialization.filter { it.representExistingData }
+
+            val (toAdd, duplicates) = existing.partition {x ->
+                already.none { it.insertionId == x.insertionId }
+            }
+
+            if(toAdd.isNotEmpty()) {
+                addChildrenToGroup(getFirstIndexOfDbActionToAdd(), toAdd, GroupsOfChildren.INITIALIZATION_SQL)
+            }
+
+            skipped += duplicates.size
         }
+
+        if(others.isNotEmpty()) {
+            val pos = if (relativePosition < 0) {
+                getLastIndexOfDbActionToAdd()
+            } else {
+                getFirstIndexOfDbActionToAdd() + relativePosition
+            }
+            addChildrenToGroup(pos, others, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+
+        return skipped
     }
 
     fun addInitializingScheduleTaskActions(relativePosition: Int=-1, actions: List<Action>){

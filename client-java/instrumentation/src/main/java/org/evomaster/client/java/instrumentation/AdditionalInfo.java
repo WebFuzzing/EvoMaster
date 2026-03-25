@@ -106,6 +106,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
+    private final Set<Neo4JRunCommand> neo4JRunCommandData = new CopyOnWriteArraySet<>();
+
     private final Set<OpenSearchCommand> openSearchCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<RedisCommand> redisCommandData = new CopyOnWriteArraySet<>();
@@ -118,6 +120,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<MongoFindCommand> getMongoInfoData(){
         return Collections.unmodifiableSet(mongoFindCommandData);
+    }
+
+    public Set<Neo4JRunCommand> getNeo4JInfoData(){
+        return Collections.unmodifiableSet(neo4JRunCommandData);
     }
 
     public Set<OpenSearchCommand> getOpenSearchInfoData() {
@@ -138,6 +144,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoInfo(MongoFindCommand info){
         mongoFindCommandData.add(info);
+    }
+
+    public void addNeo4JInfo(Neo4JRunCommand info){
+        neo4JRunCommandData.add(info);
     }
 
     public void addOpenSearchInfo(OpenSearchCommand info){
@@ -170,7 +180,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
         if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
-            throw new IllegalArgumentException("No valid input name: " + taintInputName);
+            //this can happen in E2E where libraries used by "core" are instrumented (eg Kotlin)
+            SimpleLogger.error("No valid taint input name for specialization: " + taintInputName);
+            //throw new IllegalArgumentException();
+            return;
         }
         Objects.requireNonNull(info);
 

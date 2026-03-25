@@ -125,15 +125,6 @@ open class DateTimeGene(
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DateTimeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)}, true
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -143,21 +134,17 @@ open class DateTimeGene(
     }
 
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        val gene = other.getPhenotype()
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is DateTimeGene -> {
-                date.setValueBasedOn(gene.date) &&
-                        time.setValueBasedOn(gene.time)
+                date.unsafeCopyValueFrom(gene.date)
+                        && time.unsafeCopyValueFrom(gene.time)
             }
-            gene is DateGene -> date.setValueBasedOn(gene)
-            gene is TimeGene -> time.setValueBasedOn(gene)
-            gene is StringGene && gene.getSpecializationGene() != null -> {
-                setValueBasedOn(gene.getSpecializationGene()!!)
-            }
-            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype()as Gene)
+            gene is DateGene -> date.unsafeCopyValueFrom(gene)
+            gene is TimeGene -> time.unsafeCopyValueFrom(gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false

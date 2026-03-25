@@ -9,21 +9,20 @@ import net.sf.jsqlparser.statement.update.Update;
 import java.util.*;
 
 /**
- * This class is responsible for resolving table aliases in SQL statements.
- * Every time a new SQL alias context (e.g. subselect) is entered, the
- * method enterAliasContext should be called. Every time the context is exited,
- * the method exitAliasContext should be called.
+ * The TableAliasResolver class is designed to manage and resolve
+ * table aliases in SQL statements. It maintains a stack-based alias
+ * resolution context and supports various SQL operations including
+ * SELECT, UPDATE, and DELETE statements.
  *
- * Alias resolution is case-insensitive.
+ * The class ensures correct mapping of aliases to corresponding tables
+ * or derived tables within SQL query structures.
+ *
+ * Since it has no access to the database schema, it does not resolve
+ * if a given table name is a physical table or a view.
  */
 class TableAliasResolver {
 
-
-
-    /**
-     * A stack of maps to store table aliases in different contexts.
-     */
-    private final Deque<TreeMap<String, SqlTableReference>> stackOfTableAliases = new ArrayDeque<>();
+    private final Deque<TableAliasContext> stackOfTableAliases = new ArrayDeque<>();
 
     /**
      * This method is called when entering a new alias context.
@@ -100,8 +99,7 @@ class TableAliasResolver {
         } else if (select instanceof ParenthesedSelect) {
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
             if (parenthesedSelect.getAlias() != null) {
-                final String lowerCaseAliasName = parenthesedSelect.getAlias().getName();
-                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlDerivedTableReference(parenthesedSelect));
+                stackOfTableAliases.peek().addAliasToDerivedTable(parenthesedSelect.getAlias(), parenthesedSelect);
             }
             Select innerSelect = parenthesedSelect.getSelect();
             processSelect(innerSelect);
@@ -110,22 +108,17 @@ class TableAliasResolver {
     }
 
     private void createNewAliasContext() {
-        stackOfTableAliases.push(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+        stackOfTableAliases.push(new TableAliasContext());
     }
 
     private void processWithItemsList(List<WithItem> withItemsList) {
         for (WithItem withItem : withItemsList) {
             if (withItem.getAlias() != null) {
-
-                final String aliasName = withItem.getAlias().getName();
-                final String lowerCaseAliasName = aliasName.toLowerCase();
                 final Select subquery = withItem.getSelect();
-                final SqlTableReference derivedSqlTableReference = new SqlDerivedTableReference(subquery);
-                stackOfTableAliases.peek().put(lowerCaseAliasName, derivedSqlTableReference);
+                stackOfTableAliases.peek().addAliasToDerivedTable(withItem.getAlias(), subquery);
             }
         }
     }
-
 
     private void processPlainSelect(PlainSelect select) {
         Objects.requireNonNull(select, "select cannot be null");
@@ -148,13 +141,31 @@ class TableAliasResolver {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {
                 final String lowerCaseAliasName = table.getAlias().getName().toLowerCase();
-                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlBaseTableReference(table.getFullyQualifiedName()));
+                final String schemaName = table.getSchemaName();
+                final String tableName = table.getName();
+                if (schemaName == null && isAliasDeclaredInCurrentContext(tableName)) {
+                    // if there is an alias, then we need to resolve to the actual table reference
+                    // (e.g. could be an alias to a common table expression)
+                    final SqlTableReference tableReference = this.resolveAlias(tableName);
+                    if (tableReference instanceof SqlDerivedTable) {
+                        SqlDerivedTable derivedTable = (SqlDerivedTable) tableReference;
+                        stackOfTableAliases.peek().addAliasToDerivedTable(table.getAlias(), derivedTable.getSelect());
+                    } else if (tableReference instanceof SqlTableName) {
+                        SqlTableName tableNameRef = (SqlTableName) tableReference;
+                        stackOfTableAliases.peek().addAliasToTableName(table.getAlias(), tableNameRef.getTable());
+                    } else {
+                        throw new IllegalArgumentException("Unexpected table reference type: " + tableReference.getClass().getName());
+                    }
+                } else {
+                    // if no alias is declared in the current context, we can safely assume that it is a table from the schema
+                    stackOfTableAliases.peek().addAliasToTableName(table.getAlias(), table);
+                }
             }
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
             if (subSelect.getAlias() != null) {
                 final String lowerCaseAliasName = subSelect.getAlias().getName().toLowerCase();
-                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlDerivedTableReference(subSelect));
+                stackOfTableAliases.peek().addAliasToDerivedTable(subSelect.getAlias(), subSelect);
             }
         }
     }
@@ -166,7 +177,7 @@ class TableAliasResolver {
      * @param alias the alias to resolve
      * @return a TableReference object with the table or the derived table (e.g. view)
      */
-    public SqlTableReference resolveTableReference(String alias) {
+    public SqlTableReference resolveAlias(String alias) {
         if (!isAliasDeclaredInAnyContext(alias)) {
             throw new IllegalArgumentException("Alias not found in any context: " + alias);
         }
@@ -175,9 +186,9 @@ class TableAliasResolver {
          * The Deque<> iterator traverses the stack of context maps
          * in a LIFO (Last-In-First-Out) order.
          */
-        for (Map<String, SqlTableReference> context : stackOfTableAliases) {
-            if (context.containsKey(alias)) {
-                return context.get(alias);
+        for (TableAliasContext context : stackOfTableAliases) {
+            if (context.containsAlias(alias)) {
+                return context.getTableReference(alias);
             }
         }
         throw new IllegalArgumentException("Alias not found in any context: " + alias);
@@ -202,30 +213,28 @@ class TableAliasResolver {
     /**
      * Checks if the alias is declared in the current context.
      *
-     * @param alias The alias to check.
+     * @param aliasName The alias to check.
      * @return true if the alias is declared in the current context, false otherwise.
      */
-    public boolean isAliasDeclaredInCurrentContext(String alias) {
-        Objects.requireNonNull(alias, "alias cannot be null");
+    public boolean isAliasDeclaredInCurrentContext(String aliasName) {
+        Objects.requireNonNull(aliasName, "alias cannot be null");
 
         if (stackOfTableAliases.isEmpty()) {
-            throw new IllegalArgumentException("Alias stack is empty. Cannot resolve alias: " + alias);
+            throw new IllegalArgumentException("Alias stack is empty. Cannot resolve alias: " + aliasName);
         }
-        final String lowerCaseAliasName = alias.toLowerCase();
-        return stackOfTableAliases.peek().containsKey(lowerCaseAliasName);
+        return stackOfTableAliases.peek().containsAlias(aliasName);
     }
 
     /**
      * Checks if the alias is declared in any context.
      *
-     * @param alias
+     * @param aliasName
      * @return
      */
-    public boolean isAliasDeclaredInAnyContext(String alias) {
-        Objects.requireNonNull(alias, "alias cannot be null");
-        final String lowerCaseAliasName = alias.toLowerCase();
-        for (Map<String, SqlTableReference> context : stackOfTableAliases) {
-            if (context.containsKey(lowerCaseAliasName)) {
+    public boolean isAliasDeclaredInAnyContext(String aliasName) {
+        Objects.requireNonNull(aliasName, "alias cannot be null");
+        for (TableAliasContext context : stackOfTableAliases) {
+            if (context.containsAlias(aliasName)) {
                 return true;
             }
         }

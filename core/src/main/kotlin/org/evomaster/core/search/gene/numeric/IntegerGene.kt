@@ -73,7 +73,7 @@ class IntegerGene(
         }
     }
 
-    override fun setValueBasedOn(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
 
         try{
             this.value = value.toInt()
@@ -105,19 +105,7 @@ class IntegerGene(
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is IntegerGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is IntegerGene) {
@@ -180,7 +168,10 @@ class IntegerGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         when (gene) {
             is IntegerGene -> value = gene.value
             is FloatGene -> value = gene.value.toInt()
@@ -200,11 +191,8 @@ class IntegerGene(
             is SqlPrimaryKeyGene -> {
                 value = gene.uniqueId.toInt()
             }
-            is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
-            }
             is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
+                return this.unsafeCopyValueFrom(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")

@@ -34,6 +34,7 @@ class DisjunctionListRxGene(
     override fun copyContent(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
+        copy.name = this.name //in case name is changed from its default
         return copy
     }
 
@@ -134,25 +135,6 @@ class DisjunctionListRxGene(
                 .getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DisjunctionListRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        //TODO: Man, shall we check the size of [disjunctions]
-
-        return updateValueOnlyIfValid({
-            var ok = true
-            for (i in 0 until disjunctions.size) {
-                ok = ok && this.disjunctions[i].copyValueFrom(other.disjunctions[i])
-            }
-            if (ok){
-                this.activeDisjunction = other.activeDisjunction
-            }
-            ok
-        }, true)
-
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DisjunctionListRxGene) {
@@ -167,27 +149,22 @@ class DisjunctionListRxGene(
                 .containsSameValueAs(other.disjunctions[activeDisjunction])
     }
 
-
-
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){
-            var result = true
-            disjunctions.indices.forEach { i->
-                val r = disjunctions[i].setValueBasedOn(gene.disjunctions[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${disjunctions[i].name}) at index $i")
-                result = result && r
-            }
-
-            activeDisjunction = gene.activeDisjunction
-            return result
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is DisjunctionListRxGene
+            || other.disjunctions.size != disjunctions.size) {
+            return false
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionListRxGene with ${gene::class.java.simpleName}")
-        return false
+        var ok = true
+        for (i in 0 until disjunctions.size) {
+            ok = ok && this.disjunctions[i].unsafeCopyValueFrom(other.disjunctions[i])
+        }
+        if (ok){
+            this.activeDisjunction = other.activeDisjunction
+        }
+        return ok
     }
 
     override fun isChildUsed(child: Gene) : Boolean {

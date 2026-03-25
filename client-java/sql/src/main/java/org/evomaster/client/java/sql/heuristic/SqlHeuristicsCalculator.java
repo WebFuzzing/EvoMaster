@@ -2,6 +2,7 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.Parenthesis;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -10,15 +11,13 @@ import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
-import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.QueryResultSet;
-import org.evomaster.client.java.sql.VariableDescriptor;
+import org.evomaster.client.java.sql.*;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
+import org.evomaster.client.java.sql.internal.SqlTableId;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -406,36 +405,67 @@ public class SqlHeuristicsCalculator {
     SqlHeuristicResult computeHeuristic(Select select) {
         tableColumnResolver.enterStatementeContext(select);
         final SqlHeuristicResult heuristicResult;
-        if (select instanceof SetOperationList) {
-            SetOperationList unionQuery = (SetOperationList) select;
-            List<Select> subqueries = unionQuery.getSelects();
-            heuristicResult = computeHeuristicUnion(subqueries);
-        } else if (select instanceof ParenthesedSelect) {
-            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
-            Select subquery = parenthesedSelect.getSelect();
-            heuristicResult = computeHeuristic(subquery);
-        } else if (select instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) select;
-            final FromItem fromItem = getFrom(plainSelect);
-            final List<Join> joins = getJoins(plainSelect);
-            final Expression whereClause = getWhere(plainSelect);
-            if (plainSelect.getGroupBy() != null) {
-                heuristicResult = computeHeuristicSelectGroupByHaving(
-                        plainSelect.getSelectItems(),
-                        fromItem,
-                        joins,
-                        whereClause,
-                        plainSelect.getGroupBy().getGroupByExpressionList(),
-                        plainSelect.getHaving());
-            } else {
-                heuristicResult = computeHeuristicSelect(
-                        plainSelect.getSelectItems(),
-                        fromItem,
-                        joins,
-                        whereClause);
-            }
+        if (select.getLimit() != null && getLimitValue(select.getLimit()) == 0) {
+            // Handle case of LIMIT 0
+            heuristicResult = new SqlHeuristicResult(FALSE_TRUTHNESS, new QueryResult(Collections.emptyList()));
         } else {
-            throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
+            if (select instanceof SetOperationList) {
+                // Handle case of UNION/INTERSECT/EXCEPT
+                SetOperationList unionQuery = (SetOperationList) select;
+                List<Select> subqueries = unionQuery.getSelects();
+                heuristicResult = computeHeuristicUnion(subqueries, unionQuery.getLimit());
+            } else if (select instanceof ParenthesedSelect) {
+                // Handle case of parenthesed SELECT
+                ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
+                Select subquery = parenthesedSelect.getSelect();
+                final SqlHeuristicResult subqueryHeuristicResult = computeHeuristic(subquery);
+                if (parenthesedSelect.getLimit() != null) {
+                    long limitValue = getLimitValue(parenthesedSelect.getLimit());
+                    QueryResult queryResult = subqueryHeuristicResult.getQueryResult().limit(limitValue);
+                    heuristicResult = new SqlHeuristicResult(subqueryHeuristicResult.getTruthness(), queryResult);
+                } else {
+                    heuristicResult = subqueryHeuristicResult;
+                }
+            } else if (select instanceof PlainSelect) {
+                // Handle case of plain SELECT
+                PlainSelect plainSelect = (PlainSelect) select;
+                final FromItem fromItem = getFrom(plainSelect);
+                final List<Join> joins = getJoins(plainSelect);
+                final Expression whereClause = getWhere(plainSelect);
+                if (plainSelect.getGroupBy() != null) {
+                    heuristicResult = computeHeuristicSelectGroupByHaving(
+                            plainSelect.getSelectItems(),
+                            fromItem,
+                            joins,
+                            whereClause,
+                            plainSelect.getGroupBy().getGroupByExpressionList(),
+                            plainSelect.getHaving(),
+                            plainSelect.getOrderByElements(),
+                            plainSelect.getLimit());
+                } else {
+                    SqlHeuristicResult heuristicResultBeforeDistinct = computeHeuristicSelect(
+                            plainSelect.getSelectItems(),
+                            fromItem,
+                            joins,
+                            whereClause,
+                            plainSelect.getOrderByElements(),
+                            plainSelect.getLimit());
+
+                    if (plainSelect.getDistinct() != null) {
+                        QueryResult distinctQueryResult;
+                        if (plainSelect.getDistinct().getOnSelectItems() != null && !plainSelect.getDistinct().getOnSelectItems().isEmpty()) {
+                            distinctQueryResult = createQueryResultDistinctOn(heuristicResultBeforeDistinct.getQueryResult(), plainSelect.getDistinct().getOnSelectItems());
+                        } else {
+                            distinctQueryResult = QueryResultUtils.createDistinctQueryResult(heuristicResultBeforeDistinct.getQueryResult());
+                        }
+                        heuristicResult = new SqlHeuristicResult(heuristicResultBeforeDistinct.getTruthness(), distinctQueryResult);
+                    } else {
+                        heuristicResult = heuristicResultBeforeDistinct;
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
+            }
         }
         tableColumnResolver.exitCurrentStatementContext();
         return heuristicResult;
@@ -448,13 +478,54 @@ public class SqlHeuristicsCalculator {
         return heuristicResult;
     }
 
+    private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems,
+                                                      FromItem fromItem,
+                                                      List<Join> joins,
+                                                      Expression whereClause,
+                                                      Limit limit) {
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+        QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
+
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        return heuristicResult;
+    }
+
+    private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems,
+                                                      FromItem fromItem,
+                                                      List<Join> joins,
+                                                      Expression whereClause,
+                                                      List<OrderByElement> orderByElements,
+                                                      Limit limit) {
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+        QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+
+        if (orderByElements != null && !orderByElements.isEmpty()) {
+            queryResult = createQueryResultOrderBy(queryResult, orderByElements);
+        }
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
+
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        return heuristicResult;
+    }
+
     private SqlHeuristicResult computeHeuristicSelectGroupByHaving(
             List<SelectItem<?>> selectItems,
             FromItem fromItem,
             List<Join> joins,
             Expression whereClause,
             List<Expression> groupByExpressions,
-            Expression having) {
+            Expression having,
+            List<OrderByElement> orderByElements,
+            Limit limit) {
 
         final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
 
@@ -475,9 +546,11 @@ public class SqlHeuristicsCalculator {
         final List<Truthness> truthnesses = new ArrayList<>();
         for (QueryResult groupByQueryResult : groupByQueryResults.values()) {
             QueryResult aggregatedQueryResult = createQueryResult(groupByQueryResult, selectItems);
-            if (aggregatedQueryResult.size() != 1) {
-                throw new IllegalStateException("An aggregated query result cannot have " + aggregatedQueryResult.size() + "rows");
+            if (aggregatedQueryResult.isEmpty()) {
+                throw new IllegalStateException("An aggregated query result cannot be empty");
             }
+            // If more than one row is present, we always pick the first one.
+            // This is the semantics of the SELECT DISTINCT ON (columns) in PostgreSQL
             DataRow dataRow = aggregatedQueryResult.seeRows().get(0);
             if (having != null) {
                 final Truthness truthness = evaluateAll(Collections.singletonList(having), groupByQueryResult);
@@ -490,7 +563,7 @@ public class SqlHeuristicsCalculator {
             }
         }
         final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, sourceQueryResult.seeVariableDescriptors());
-        final QueryResult queryResult = new QueryResult(variableDescriptors);
+        QueryResult queryResult = new QueryResult(variableDescriptors);
         for (DataRow groupByDataRow : groupByDataRows) {
             queryResult.addRow(groupByDataRow);
         }
@@ -504,6 +577,15 @@ public class SqlHeuristicsCalculator {
         final Truthness groupByHavingTruthness = TruthnessUtils.buildAndAggregationTruthness(
                 intermediateHeuristicResult.getTruthness(),
                 havingTruthness);
+
+        if (orderByElements != null && !orderByElements.isEmpty()) {
+            queryResult = createQueryResultOrderBy(queryResult, orderByElements);
+        }
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
 
         return new SqlHeuristicResult(groupByHavingTruthness, queryResult);
     }
@@ -669,6 +751,9 @@ public class SqlHeuristicsCalculator {
                     }
                 }
             }
+        } else if (expression instanceof Parenthesis) {
+            Parenthesis parenthesisExpression = (Parenthesis) expression;
+            return hasAnyTableColumn(parenthesisExpression.getExpression());
         }
         return false;
     }
@@ -728,7 +813,7 @@ public class SqlHeuristicsCalculator {
         return selectVariableDescriptors;
     }
 
-    private SqlHeuristicResult computeHeuristicUnion(List<Select> subqueries) {
+    private SqlHeuristicResult computeHeuristicUnion(List<Select> subqueries, Limit limit) {
         List<SqlHeuristicResult> subqueryResults = new ArrayList<>();
         for (Select subquery : subqueries) {
             SqlHeuristicResult subqueryResult = computeHeuristic(subquery);
@@ -742,7 +827,12 @@ public class SqlHeuristicsCalculator {
         List<QueryResult> queryResults = subqueryResults.stream()
                 .map(SqlHeuristicResult::getQueryResult)
                 .collect(Collectors.toList());
-        final QueryResult unionRowSet = QueryResultUtils.createUnionRowSet(queryResults);
+        QueryResult unionRowSet = QueryResultUtils.createUnionRowSet(queryResults);
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            unionRowSet = unionRowSet.limit(limitValue);
+        }
 
         return new SqlHeuristicResult(t, unionRowSet);
     }
@@ -826,23 +916,127 @@ public class SqlHeuristicsCalculator {
         return evaluateAll(conditions, row, null);
     }
 
+    private QueryResult createQueryResultDistinctOn(QueryResult queryResult, List<SelectItem<?>> distinctOnSelectItems) {
+        if (distinctOnSelectItems == null || distinctOnSelectItems.isEmpty()) {
+            throw new IllegalArgumentException("Cannot evaluate empty DISTINCT ON select items");
+        }
+
+        QueryResult result = new QueryResult(queryResult.seeVariableDescriptors());
+
+        // LinkedHashSet keeps insertion order (important: DISTINCT ON keeps FIRST matching row)
+        Set<List<Object>> seenKeys = new LinkedHashSet<>();
+
+        for (DataRow row : queryResult.seeRows()) {
+
+            List<Object> key = new ArrayList<>(distinctOnSelectItems.size());
+            for (SelectItem selectItem : distinctOnSelectItems) {
+                Expression expression = selectItem.getExpression();
+                Object value = evaluate(expression, row);
+                key.add(value);
+            }
+
+            // If this combination of values hasn't been seen, collect the row
+            if (!seenKeys.contains(key)) {
+                seenKeys.add(key);
+                result.addRow(row);
+            }
+        }
+        return result;
+    }
+
+
+    private QueryResult createQueryResultOrderBy(QueryResult queryResult, List<OrderByElement> orderByElements) {
+        if (orderByElements == null || orderByElements.isEmpty()) {
+            throw new IllegalArgumentException("Cannot evaluate empty orderBy elements");
+        }
+
+        QueryResult sortedResult = new QueryResult(queryResult.seeVariableDescriptors());
+
+        List<DataRow> sortedRows = new ArrayList<>(queryResult.seeRows());
+        sortedRows.sort(new OrderByComparator(orderByElements));
+
+        for (DataRow row : sortedRows) {
+            sortedResult.addRow(row);
+        }
+
+        return sortedResult;
+    }
+
     private QueryResult createQueryResult(FromItem fromItem) {
-        final QueryResult tableData;
         if (fromItem == null) {
-            tableData = new QueryResult(Collections.emptyList());
+            return new QueryResult(Collections.emptyList());
         } else {
             if (!SqlParserUtils.isTable(fromItem)) {
                 throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + fromItem);
             }
             String tableName = SqlParserUtils.getTableName(fromItem);
 
-            if (fromItem.getAlias() != null) {
-                tableData = QueryResultUtils.addAliasToQueryResult(sourceQueryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
+            final QueryResult tableData;
+            Table table = (Table) fromItem;
+            if (this.tableColumnResolver.resolve(table) != null) {
+                SqlTableReference sqlTableReference = this.tableColumnResolver.resolve(table);
+                if (sqlTableReference instanceof SqlBaseTableReference) {
+                    SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
+                    SqlTableId sqlTableId = sqlBaseTableReference.getTableId();
+                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableName());
+                } else if (sqlTableReference instanceof SqlDerivedTable) {
+                    SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) sqlTableReference;
+                    Select select = sqlDerivedTable.getSelect();
+                    SqlHeuristicResult sqlHeuristicResult = this.computeHeuristic(select);
+                    tableData = sqlHeuristicResult.getQueryResult();
+                } else {
+                    throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + table);
+                }
             } else {
+                // if no table reference is found for the table, then we default to base table
                 tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
             }
+            if (fromItem.getAlias() != null) {
+                // add alias to table data
+                return QueryResultUtils.addAliasToQueryResult(tableData, fromItem.getAlias().getName());
+            } else {
+                return tableData;
+            }
         }
-        return tableData;
+    }
+
+    private class OrderByComparator implements Comparator<DataRow> {
+
+        private final List<OrderByElement> orderByElements;
+
+        public OrderByComparator(List<OrderByElement> orderByElements) {
+            this.orderByElements = orderByElements;
+        }
+
+        @Override
+        public int compare(DataRow r1, DataRow r2) {
+            for (OrderByElement orderByElement : orderByElements) {
+                Expression orderByElementExpression = orderByElement.getExpression();
+                Object val1 = evaluate(orderByElementExpression, r1);
+                Object val2 = evaluate(orderByElementExpression, r2);
+
+                int comparison;
+                if (val1 == null && val2 == null) {
+                    comparison = 0;
+                } else if (val1 == null) {
+                    comparison = -1;
+                } else if (val2 == null) {
+                    comparison = 1;
+                } else {
+                    if (val1 instanceof Comparable && val2 instanceof Comparable) {
+                        comparison = ((Comparable) val1).compareTo(val2);
+                    } else {
+                        // Cannot compare, treat as equal
+                        comparison = 0;
+                    }
+                }
+
+                if (comparison != 0) {
+                    return orderByElement.isAsc() ? comparison : -comparison;
+                }
+            }
+            return 0;
+        }
     }
 
 

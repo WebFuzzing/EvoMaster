@@ -30,14 +30,14 @@ class StackTraceDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.SECURITY_STACK_TRACE.code.toString())
+            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.LEAKED_STACK_TRACES.code.toString())
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertFalse(ExperimentalFaultCategory.SECURITY_STACK_TRACE in faults)
+            assertFalse(ExperimentalFaultCategory.LEAKED_STACK_TRACES in faults)
 
         }
     }

@@ -69,18 +69,32 @@ class WFCReportWriter {
             ?: throw IllegalArgumentException("Resource not found: $path")
     }
 
+    private fun getWFCVersion() : String{
+        val pomPropertiesPath = "META-INF/maven/com.webfuzzing/commons/pom.properties"
+        return WFCReportWriter::class.java.classLoader.getResourceAsStream(pomPropertiesPath)
+            ?.use { stream ->
+                Properties().apply { load(stream) }
+                    .getProperty("version")
+                    ?.let { return it }
+
+            }
+            ?: "not specified"
+    }
+
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
-        val report = com.webfuzzing.commons.report.Report()
+        val data = statistics.getData(solution)
+
+        val report = Report()
         val toolName = "EvoMaster"
 
-        report.schemaVersion = "0.0.1" //TODO
+        report.schemaVersion = getWFCVersion()
         report.toolName = toolName
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
         report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         report.totalTests = solution.individuals.size
         report.testFilePaths = suites.map { it.testSuitePath }.toSet()
-
+        report.executionTimeInSeconds = getElement(data, Statistics.ELAPSED_SECONDS).toInt()
 
         val faults = Faults()
         report.faults = faults
@@ -119,7 +133,10 @@ class WFCReportWriter {
             val rest = RESTReport()
             report.problemDetails.rest = rest
 
-            rest.totalHttpCalls = solution.individuals.sumOf { it.individual.size() }
+            rest.outputHttpCalls = solution.individuals.sumOf { it.individual.size() }
+            //TODO make sure that auth is counted here if making calls... i am quite sure it is currently not :(
+            //TODO might need to collect auth counter separately, and then added here, or maybe not?
+            rest.evaluatedHttpCalls = getElement(data, Statistics.EVALUATED_ACTIONS).toInt()
             rest.endpointIds = sampler.getActionDefinitions().map { it.getName() }.toSet()
 
             for(suite in suites) {
@@ -144,20 +161,19 @@ class WFCReportWriter {
         //TODO other problem types
 
         if(!config.blackBox){
-            val data = statistics.getData(solution)
             val coverage = Coverage()
             coverage.toolName = toolName
 
             val lines = CoverageCriterion()
             lines.name = "Line Coverage"
-            lines.covered = data.first{ it.header == Statistics.COVERED_LINES }.element.toInt()
-            lines.total = data.first{ it.header == Statistics.TOTAL_LINES }.element.toInt()
+            lines.covered = getElement(data,Statistics.COVERED_LINES ).toInt()
+            lines.total = getElement(data, Statistics.TOTAL_LINES ).toInt()
             coverage.criteria.add(lines)
 
             val branches = CoverageCriterion()
             branches.name = "Branch Coverage"
-            branches.covered = data.first{ it.header == Statistics.COVERED_BRANCHES }.element.toInt()
-            branches.total = data.first{ it.header == Statistics.TOTAL_BRANCHES }.element.toInt()
+            branches.covered = getElement(data, Statistics.COVERED_BRANCHES).toInt()
+            branches.total = getElement(data, Statistics.TOTAL_BRANCHES).toInt()
             coverage.criteria.add(branches)
 
             report.extra.add(coverage)
@@ -174,5 +190,9 @@ class WFCReportWriter {
         Files.createFile(path)
 
         path.toFile().appendText(json)
+    }
+
+    private fun getElement(data:  List<Statistics.Pair>, headerName: String):  String{
+        return data.first{ it.header == headerName }.element
     }
 }
