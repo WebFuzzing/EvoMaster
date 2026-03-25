@@ -7,6 +7,7 @@ import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.Optional.ofNullable
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
@@ -174,9 +175,9 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
 
         property?.let {
             it.isAccessible = true
-            it.set(instance, propertyValue) // Set the value
+            it.set(instance, ofNullable(propertyValue)) // Set the value
         }
-        Assertions.assertEquals(propertyValue, property?.get(instance))
+        Assertions.assertEquals(ofNullable(propertyValue), property?.get(instance))
     }
 
     private fun assertAdditionalPropertiesFunction(klass: KClass<out Any>, instance: Any, propertyName: String, propertyValue: Any?) {

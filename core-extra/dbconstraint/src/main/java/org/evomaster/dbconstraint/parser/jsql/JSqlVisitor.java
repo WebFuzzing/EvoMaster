@@ -310,8 +310,11 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(NotEqualsTo notEqualsTo) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        notEqualsTo.getLeftExpression().accept(this);
+        SqlCondition left = stack.pop();
+        notEqualsTo.getRightExpression().accept(this);
+        SqlCondition right = stack.pop();
+        stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.NOT_EQUALS_TO, right));
     }
 
     @Override

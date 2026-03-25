@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
@@ -120,6 +121,8 @@ class GeneToDto(
                         val children = parent.getViewOfChildren()
                         val otherChoice = children.find { child -> child != leafGene }
                         result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(otherChoice)}"))
+                    } else if (parent is NullableGene) {
+                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${parent.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
                     } else {
                         result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
                     }
