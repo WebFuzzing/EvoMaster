@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-class HolidaysEMTest: EnterpriseTestBase() {
+class HolidaysManualTest: EnterpriseTestBase() {
 
     companion object {
 
