@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneRandomizationFailed
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -49,6 +50,8 @@ abstract class MapGene<K, V>(
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
         const val MAX_SIZE = 5
 
+        const val MAX_RANDOMIZE_ATTEMPTS = 100
+
         fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
@@ -61,17 +64,31 @@ abstract class MapGene<K, V>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
-        //maybe not so important here to complicate code to enable forceNewValue
+        /*
+         * tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements,
+         * and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene.
+         */
 
         killAllChildren()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        (0 until n).forEach {
+
+        val minSize = getMinSizeOrDefault()
+        val targetSize = randomness.nextInt(minSize, getMaxSizeUsedInRandomize())
+        val maxAddElementCount = maxOf(MAX_RANDOMIZE_ATTEMPTS, targetSize)
+        var addElementCount = 0
+
+        while (elements.size < targetSize && addElementCount < maxAddElementCount) {
             val gene = createRandomElement(randomness, false)
-            // if the key of gene exists, the value would be replaced with the latest one
+
+            // Observe that, if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
+            addElementCount++
         }
+
+        if (elements.size < minSize) {
+            throw GeneRandomizationFailed("Couldn't generate a valid MapGene after $addElementCount attempts.")
+        }
+
     }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
