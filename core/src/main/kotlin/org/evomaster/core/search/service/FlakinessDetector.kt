@@ -104,7 +104,7 @@ class FlakinessDetector<T: Individual> {
             } else {
                 val normO = derive(oBody)
                 if (rBody != normO) {
-                    resultToUpdate.setFlakyBody(oBody)
+                    resultToUpdate.setFlakyBody(normO)
                 }
             }
         }
@@ -132,7 +132,7 @@ class FlakinessDetector<T: Individual> {
                  */
                 val normO = derive(oMsg)
                 if (rMsg != normO) {
-                    resultToUpdate.setFlakyErrorMessage(oMsg)
+                    resultToUpdate.setFlakyErrorMessage(normO)
                 }
             }
         }
