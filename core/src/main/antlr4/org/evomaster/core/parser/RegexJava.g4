@@ -129,6 +129,8 @@ fragment CharacterEscape
  //| IdentityEscape
  ;
 
+// basic US-ASCII only predefined POSIX character classes
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#:~:text=character%3A%20%5B%5E%5Cw%5D-,POSIX,-character%20classes%20(US
 fragment PosixCharacterClassLabel
  : 'Lower'
  | 'Upper'
@@ -251,6 +253,7 @@ AtomEscape
 
 fragment CharacterClassEscape
  //one of d D s S w W v V h H
+ // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
  : [dDsSwWvVhH]
  ;
 

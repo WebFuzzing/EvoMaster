@@ -16,7 +16,7 @@ class Randomness {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Randomness::class.java)
 
-        private fun stringToListOfCharPairs(s: String) : List<CharacterRange> {
+        private fun stringToListOfCharacterRanges(s: String) : List<CharacterRange> {
             return s.map { CharacterRange(it, it) }
         }
     }
@@ -42,11 +42,12 @@ class Randomness {
     private val digitSet = listOf(CharacterRange('0', '9'))
     private val asciiLetterSet = listOf(CharacterRange('a', 'z'), CharacterRange('A', 'Z'))
     private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
-    private val spaceSet = stringToListOfCharPairs(" \t\r\n\u000C\u000b")
+    private val spaceSet = stringToListOfCharacterRanges(" \t\r\n\u000C\u000b") // u000b, u000c being line
+                                                            // tabulation (VT) & form feed (FF, \f) respectively
     private val horizontalSpaceSet = listOf(CharacterRange(0x2000.toChar(), 0x200a.toChar())) +
-            stringToListOfCharPairs(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
-    private val verticalSpaceSet = stringToListOfCharPairs("\n\u000B\u000C\r\u0085\u2028\u2029")
-    private val punctuationSet = stringToListOfCharPairs("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+            stringToListOfCharacterRanges(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
+    private val verticalSpaceSet = stringToListOfCharacterRanges("\n\u000B\u000C\r\u0085\u2028\u2029")
+    private val punctuationSet = stringToListOfCharacterRanges("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
     private val digitCharClass = CharacterRangeRxGene(false, digitSet)
     private val asciiLetterCharClass = CharacterRangeRxGene(false, asciiLetterSet)
@@ -71,9 +72,9 @@ class Randomness {
         "Alnum" to digitSet + asciiLetterSet,
         "Punct" to punctuationSet,
         "Graph" to digitSet + asciiLetterSet + punctuationSet,
-        "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharPairs("\u0020"),
-        "Blank" to stringToListOfCharPairs(" \t"),
-        "Cntrl" to listOf(CharacterRange(0.toChar(), 0x1f.toChar())) + stringToListOfCharPairs("\u007f"),
+        "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
+        "Blank" to stringToListOfCharacterRanges(" \t"),
+        "Cntrl" to listOf(CharacterRange(0.toChar(), 0x1f.toChar())) + stringToListOfCharacterRanges("\u007f"),
         "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
         "Space" to spaceSet
     ).mapValues { (_, value) -> CharacterRangeRxGene(false, value) }

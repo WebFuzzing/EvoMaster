@@ -12,10 +12,21 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
 
-data class CharacterRange(val start: Char, val end: Char){
+class CharacterRange(val start: Char, val end: Char){
+    companion object {
+        operator fun invoke(a: Char, b: Char): CharacterRange =
+            if (a <= b) CharacterRange(a, b) else CharacterRange(b, a)
+
+        operator fun invoke(a: Int, b: Int): CharacterRange =
+            invoke(a.toChar(), b.toChar())
+    }
+
     val size: Int
         get() = end.code - start.code + 1
     operator fun contains(char: Char): Boolean = char in start..end
+
+    operator fun component1(): Char = start
+    operator fun component2(): Char = end
 }
 
 class CharacterRangeRxGene(
@@ -27,6 +38,9 @@ class CharacterRangeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
+    /**
+     * this represents the valid ranges for a character class, removing overlaps and applying negation
+     */
     private var internalRanges = mutableListOf<CharacterRange>()
 
     init {
@@ -37,21 +51,20 @@ class CharacterRangeRxGene(
         // this limits the character class complements to 0xffff instead of allowing up to 0x10ffff, but values over
         // 0xffff are not permitted on Char as they need 2 Chars to be represented; to allow this, we would need to
         // use String or Int in every possible step as methods which return a single Char cannot return these characters
-        if(negated) internalRanges.add(CharacterRange(Character.MIN_VALUE,Character.MAX_VALUE))
+        if(negated) {
+            internalRanges.add(CharacterRange(Character.MIN_VALUE, Character.MAX_VALUE))
+        }
         for (range in ranges) {
-            val max = maxOf(range.start, range.end)
-            val min = minOf(range.start, range.end)
             if(negated){
-                remove(CharacterRange(min, max))
+                remove(CharacterRange(range.start, range.end))
             } else {
-                add(CharacterRange(min, max))
+                add(CharacterRange(range.start, range.end))
             }
         }
 
-        ranges.forEach {
-            if(it.start.code > it.end.code){
-                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.start}' is greater than '${it.end}'")
-            }
+        // this could happen for example if we got a character class like [^\u0000-\uffff]
+        if(internalRanges.isEmpty()){
+            throw IllegalArgumentException("No defined ranges")
         }
     }
 
@@ -117,7 +130,7 @@ class CharacterRangeRxGene(
     }
 
     override fun isMutable(): Boolean {
-        return internalRanges.size > 1 || internalRanges[0].let { it.start != it.end }
+        return internalRanges.size > 1 || internalRanges[0].size > 1
     }
 
     override fun copyContent(): Gene {
@@ -128,12 +141,10 @@ class CharacterRangeRxGene(
     }
 
     override fun setValueWithRawString(value: String) {
+        // need to check
         val c = value.toCharArray().firstOrNull()
-        if (c!= null){
-            val prev = this.value
+        if (c!= null)
             this.value = c
-            if (!isLocallyValid()) this.value = prev
-        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -151,7 +162,7 @@ class CharacterRangeRxGene(
             }
             currentRangeMinValue = currentRangeMaxValue
         }
-        throw IllegalArgumentException("No defined ranges")
+        assert(false) // internalRanges being empty should never happen
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
