@@ -2,6 +2,7 @@ package org.evomaster.dbconstraint.ast;
 
 public enum SqlComparisonOperator {
     EQUALS_TO("="),
+    NOT_EQUALS_TO("<>"),
     GREATER_THAN(">"),
     GREATER_THAN_OR_EQUAL(">="),
     LESS_THAN("<"),

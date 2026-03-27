@@ -11,6 +11,8 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 
 class BigDecimalGeneTest {
 
@@ -45,4 +47,5 @@ class BigDecimalGeneTest {
             assertTrue(gene.isLocallyValid(), "BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
         }
     }
+
 }

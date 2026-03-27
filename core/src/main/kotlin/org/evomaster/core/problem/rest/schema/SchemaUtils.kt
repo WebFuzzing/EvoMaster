@@ -8,8 +8,16 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
+import org.evomaster.core.logging.LoggingUtil
 import java.net.URI
 import java.net.URISyntaxException
+import java.nio.file.Files
+import java.nio.file.Paths
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
+import kotlin.io.path.name
+import kotlin.io.path.readText
+import kotlin.io.path.walk
 
 /**
  * https://swagger.io/docs/specification/v3_0/using-ref/
@@ -256,4 +264,41 @@ object SchemaUtils {
         return response
     }
 
+
+    /**
+     * depending on whether path is a file or folder, return a list with 1 or more Overlays.
+     * Suffix check is only done if folder.
+     * If path is empty, return null.
+     */
+    fun readOverlayFiles(path: String, suffixes: String): List<String>? {
+
+        if(path.isBlank()){
+            //nothing to do
+            return null
+        }
+
+        val ap = Paths.get(path).toAbsolutePath()
+
+        if(!ap.exists()){
+            throw IllegalArgumentException("Path $path does not point to any existing file or folder")
+        }
+
+        if(Files.isRegularFile(ap)){
+            //only one file
+            LoggingUtil.getInfoLogger().info("Retrieving Overlay from: $path")
+            return listOf(ap.readText())
+        }
+
+        val options = suffixes.split(',').map { it.trim() }
+
+        LoggingUtil.getInfoLogger().info("Scanning for Overlay files with possible suffix '$suffixes' in $path")
+
+        return ap.walk()
+            .filter{file ->  options.any{s ->  file.name.endsWith(s) } }
+            .map {
+                LoggingUtil.getInfoLogger().info("Retrieving Overlay from: ${it.absolutePathString()}")
+                it.readText()
+            }
+            .toList()
+    }
 }
