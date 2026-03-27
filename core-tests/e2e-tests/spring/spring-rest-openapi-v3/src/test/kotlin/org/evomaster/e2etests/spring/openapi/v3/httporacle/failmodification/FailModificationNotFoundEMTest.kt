@@ -26,7 +26,7 @@ class FailModificationNotFoundEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "FailedModificationNotFoundEM",
-                2000
+                50
         ) { args: MutableList<String> ->
 
             setOption(args, "schemaOracles", "false")

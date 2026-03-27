@@ -1205,21 +1205,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for non-working DELETE, as it has been disabled via configuration")
-        } else {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
             handleDeleteShouldDelete(individual, actionResults, fv)
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
-        } else {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
-        } else {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
         }
     }
