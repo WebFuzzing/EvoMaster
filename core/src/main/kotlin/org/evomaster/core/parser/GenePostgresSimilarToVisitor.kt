@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.utils.CharacterRange
 
 /**
  * Created by arcuri82 on 12-Jun-19.

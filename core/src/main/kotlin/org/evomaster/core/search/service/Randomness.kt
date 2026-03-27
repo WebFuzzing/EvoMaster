@@ -3,7 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.regex.CharacterRangeRxGene
-import org.evomaster.core.search.gene.regex.CharacterRange
+import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -44,7 +44,7 @@ class Randomness {
     private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
     private val spaceSet = stringToListOfCharacterRanges(" \t\r\n\u000C\u000b") // u000b, u000c being line
                                                             // tabulation (VT) & form feed (FF, \f) respectively
-    private val horizontalSpaceSet = listOf(CharacterRange(0x2000.toChar(), 0x200a.toChar())) +
+    private val horizontalSpaceSet = listOf(CharacterRange(0x2000, 0x200a)) +
             stringToListOfCharacterRanges(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
     private val verticalSpaceSet = stringToListOfCharacterRanges("\n\u000B\u000C\r\u0085\u2028\u2029")
     private val punctuationSet = stringToListOfCharacterRanges("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
@@ -66,7 +66,7 @@ class Randomness {
     private val posixCharClasses = mapOf(
         "Lower" to listOf(CharacterRange('a', 'z')),
         "Upper" to listOf(CharacterRange('A', 'Z')),
-        "ASCII" to listOf(CharacterRange(0.toChar(), 0x7f.toChar())),
+        "ASCII" to listOf(CharacterRange(0, 0x7f)),
         "Alpha" to asciiLetterSet,
         "Digit" to digitSet,
         "Alnum" to digitSet + asciiLetterSet,
@@ -74,7 +74,7 @@ class Randomness {
         "Graph" to digitSet + asciiLetterSet + punctuationSet,
         "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
         "Blank" to stringToListOfCharacterRanges(" \t"),
-        "Cntrl" to listOf(CharacterRange(0.toChar(), 0x1f.toChar())) + stringToListOfCharacterRanges("\u007f"),
+        "Cntrl" to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
         "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
         "Space" to spaceSet
     ).mapValues { (_, value) -> CharacterRangeRxGene(false, value) }

@@ -28,6 +28,7 @@ import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.CharacterRange
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger

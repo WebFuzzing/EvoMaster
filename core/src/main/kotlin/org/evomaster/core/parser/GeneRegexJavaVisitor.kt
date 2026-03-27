@@ -1,6 +1,7 @@
 package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.utils.CharacterRange
 
 private const val EOF_TOKEN = "<EOF>"
 /**

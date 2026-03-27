@@ -3,6 +3,7 @@ package org.evomaster.core.search.structuralelement.gene
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.utils.CharacterRange
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -51,7 +52,7 @@ class CharacterClassEscapeRxGeneStructureTest : GeneStructuralElementBaseTest() 
 }
 
 class CharacterRangeRxGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = CharacterRangeRxGene(false, listOf(CharacterRange('0','9'))).apply { value='2'}
+    override fun getCopyFromTemplate(): Gene = CharacterRangeRxGene(false, listOf(CharacterRange('0', '9'))).apply { value='2'}
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is CharacterRangeRxGene)
@@ -59,7 +60,12 @@ class CharacterRangeRxGeneStructureTest : GeneStructuralElementBaseTest() {
         assertEquals('2', (base as CharacterRangeRxGene).value)
     }
 
-    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(CharacterRange('0','z'))).apply { value= 'w' }
+    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(
+        CharacterRange(
+            '0',
+            'z'
+        )
+    )).apply { value= 'w' }
 
     override fun getExpectedChildrenSize(): Int  = 0
 }

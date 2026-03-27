@@ -10,24 +10,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.CharacterRange
 import org.slf4j.LoggerFactory
-
-class CharacterRange(val start: Char, val end: Char){
-    companion object {
-        operator fun invoke(a: Char, b: Char): CharacterRange =
-            if (a <= b) CharacterRange(a, b) else CharacterRange(b, a)
-
-        operator fun invoke(a: Int, b: Int): CharacterRange =
-            invoke(a.toChar(), b.toChar())
-    }
-
-    val size: Int
-        get() = end.code - start.code + 1
-    operator fun contains(char: Char): Boolean = char in start..end
-
-    operator fun component1(): Char = start
-    operator fun component2(): Char = end
-}
 
 class CharacterRangeRxGene(
     val negated: Boolean,
