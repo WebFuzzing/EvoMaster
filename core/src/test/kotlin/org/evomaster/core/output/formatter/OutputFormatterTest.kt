@@ -116,10 +116,10 @@ class OutputFormatterTest {
         val formatted = OutputFormatter.JSON_FORMATTER.getFormatted(json)
         val expected = """
             {
-              "id": 4821943963580588583,
-              "name": "n4QtYI",
-              "rdId": 937,
-              "value": 859
+              "id" : 4821943963580588583,
+              "name" : "n4QtYI",
+              "rdId" : 937,
+              "value" : 859
             }
         """.trimIndent()
         assertEquals(expected, formatted)

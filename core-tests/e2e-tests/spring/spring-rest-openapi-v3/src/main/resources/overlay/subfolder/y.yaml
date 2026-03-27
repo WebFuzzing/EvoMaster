@@ -1,0 +1,10 @@
+overlay: 1.1.0
+info:
+  title: Add example to x parameter
+  version: 1.0.0
+actions:
+  - target: $.paths.['/api/overlay'].get.parameters[?(@.name == 'y')]
+    update:
+      examples:
+        foo:
+          value: "Some Y value like 777"

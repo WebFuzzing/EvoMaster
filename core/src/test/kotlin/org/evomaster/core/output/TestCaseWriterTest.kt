@@ -15,6 +15,7 @@ import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
@@ -23,8 +24,11 @@ import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -1520,5 +1524,81 @@ public void test() throws Exception {
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         assertEquals(3, getNumberOfFlakyComment(config,lines.toString()))
+    }
+
+    @Test
+    fun testNumberMatchesForLong(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_5
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody(
+            """
+            {
+              "p0": [3000000000, 3000000001, 3000000002]
+            }
+            """.trimIndent()
+        )
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+        lines.toString().apply {
+            assertTrue(contains("numberMatches(3000000000L)"))
+            assertTrue(contains("numberMatches(3000000001L)"))
+            assertTrue(contains("numberMatches(3000000002L)"))
+        }
+    }
+
+    @Test
+    fun testInActiveBodyParamInTest(){
+        val stringGene = StringGene("stringGene")
+        val optionalGene = OptionalGene(stringGene.name, stringGene)
+        optionalGene.isActive = false
+        val enumGene = EnumGene("contentType", listOf("text/plain"))
+        stringGene.value = "EX_123"
+        enumGene.index = 0
+        val bodyParam = BodyParam(gene = optionalGene, typeGene = enumGene)
+        bodyParam.contentRemoveQuotesGene.gene.value = false
+
+        val format = OutputFormat.JAVA_JUNIT_5
+
+        val textBody = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+        assertEquals("", textBody)
+
+        val baseUrlOfSut = "baseUrlOfSut"
+        val action = RestCallAction("1", HttpVerb.PUT, RestPath("/"), mutableListOf(bodyParam))
+        val restActions = listOf(action).toMutableList()
+        val individual = RestIndividual(restActions, SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual)
+
+        val fitnessVal = FitnessValue(0.0)
+        val result = RestCallResult(action.getLocalId())
+        result.setTimedout(timedout = true)
+        val results = listOf(result)
+        val ei = EvaluatedIndividual(fitnessVal, individual, results)
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        assertFalse(lines.toString().contains(".body()"))
+
     }
 }

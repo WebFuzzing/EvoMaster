@@ -15,7 +15,7 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
@@ -28,6 +28,10 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -139,6 +143,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             // Find table from schema and create SQL actions
             val table = findTableByName(schemaDto, tableName)
 
+            /*
+             * The invariant requires that action.insertionId == primaryKey.uniqueId (and same for FK).
+             * So we must use the same id for the action and all its PK/FK genes.
+             */
+            val actionId = idCounter
+            idCounter++
+
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
             for (columnName in columns.fields) {
@@ -153,7 +164,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                     }
                     is LongValue -> {
                         gene = if (hasColumnType(schemaDto, table, columnName, "TIMESTAMP")) {
-                            LongGene(columnName, columnValue.value.toLong())
+                            val epochSeconds = columnValue.value.toLong()
+                            val localDateTime = LocalDateTime.ofInstant(
+                                Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
+                            )
+                            val formatted = localDateTime.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                            )
+                            ImmutableDataHolderGene(columnName, formatted, inQuotes = true)
                         } else {
                             IntegerGene(columnName, columnValue.value.toInt())
                         }
@@ -164,15 +182,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
                 val currentColumn = table.columns.firstOrNull(){ it.name.equals(columnName, ignoreCase = true) }
                 if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, idCounter)
-                    idCounter++
+                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, actionId)
                 }
                 gene.markAllAsInitialized()
                 genes.add(gene)
             }
 
-            val sqlAction = SqlAction(table, table.columns, idCounter, genes.toList())
-            idCounter++
+            val sqlAction = SqlAction(table, table.columns, actionId, genes.toList())
             actions.add(sqlAction)
         }
 

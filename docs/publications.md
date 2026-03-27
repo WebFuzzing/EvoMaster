@@ -13,9 +13,17 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* M. Zhang, T. Yue, A. Arcuri.
+  *Fuzzing Microservices in Face of Intrinsic Uncertainties*.
+  [[arxiv](https://arxiv.org/abs/2603.02551)]
+
+* H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
+  *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
+  [[arxiv](https://arxiv.org/abs/2505.19625)]
+
 * P. Garrett, J. P. Galeotti, A. Arcuri, A. Poth, O. Rrjolli.
   *Generating REST API Tests With Descriptive Names*. 
-  [[arxiv]()]
+  [[arxiv](https://arxiv.org/abs/2512.01690)]
 
 * O. Sahin, M. Zhang, A. Arcuri. 
   *WFC/WFD: Web Fuzzing Commons, Dataset and Guidelines to Support Experimentation in REST API Fuzzing*. 

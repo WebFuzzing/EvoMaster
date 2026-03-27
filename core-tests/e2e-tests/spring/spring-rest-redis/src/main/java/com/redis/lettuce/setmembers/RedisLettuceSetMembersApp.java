@@ -1,4 +1,4 @@
-package com.redis.lettuce;
+package com.redis.lettuce.setmembers;
 
 import com.redis.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -8,13 +8,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class RedisLettuceApp extends SwaggerConfiguration {
-    public RedisLettuceApp() {
-        super("redislettuce");
+public class RedisLettuceSetMembersApp extends SwaggerConfiguration {
+    public RedisLettuceSetMembersApp() {
+        super("redislettucesetmembers");
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(RedisLettuceApp.class, args);
+        SpringApplication.run(RedisLettuceSetMembersApp.class, args);
     }
 
 }

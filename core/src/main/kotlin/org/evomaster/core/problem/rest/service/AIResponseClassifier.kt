@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.InputFieldType
 import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
@@ -14,6 +15,8 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400Classi
 import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -295,20 +298,49 @@ class AIResponseClassifier : AIModel {
                 return
             }
         }
-        //TODO
     }
 
     private fun repairAction(
         call: RestCallAction,
         classification: AIResponseClassification
     ) {
-        call.randomize(randomness, true)
-
         /*
-            TODO: in the future we might want to only modify the variables that break the constraints.
+            We might want to only modify the variables that break the constraints.
             This information might be available when using a Decision Tree, but likely not for a Neural Network.
-            Anyway, AIResponseClassification would need to be extended to handle this extra info, when available.
          */
+        if (classification.invalidFields.isEmpty()) {
+            //no info available
+            call.randomize(randomness, true)
+            return
+        }
+
+        for (field in classification.invalidFields) {
+            when (field.type) {
+
+                InputFieldType.QUERY -> {
+                    val param = call.parameters.find { it.name == field.name }
+                        ?: throw IllegalStateException("Field '${field.name}' is not referring to any valid query parameter")
+                    param.seeGenes()
+                        .filter { it.isMutable() }
+                        .forEach { it.randomize(randomness, true) }
+                }
+
+                InputFieldType.BODY -> {
+                    val body = call.parameters.find{ it is BodyParam}
+                        ?: throw IllegalStateException("Using field in body but no payload is defined")
+                    if(field.isWholeBody()){
+                        body.primaryGene().randomize(randomness, true)
+                    } else {
+                        //TODO if we going to handle other types of genes in payload, we need to extend this
+                        val payload = body.primaryGene() as ObjectGene
+                        val target = payload.getField(field.name)
+                            ?: throw IllegalStateException("Field '${field.name}' is not referring to any valid payload")
+                        target.randomize(randomness, true)
+                    }
+                }
+            }
+        }
+        call.postRandomizedChecks(randomness)
     }
 
     /**

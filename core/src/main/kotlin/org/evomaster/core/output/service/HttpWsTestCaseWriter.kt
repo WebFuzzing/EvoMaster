@@ -579,29 +579,32 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else if (bodyParam.isTextPlain()) {
 
                 val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                if (body != "\"\"") {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-                        format.isPython() -> {
-                            if (body.trim().isNullOrBlank()) {
-                                lines.add("body = \"\"")
-                            } else {
-                                lines.add("body = $body")
+                // handle body only if it is not black
+                if (body.isNotBlank()){
+                    if (body != "\"\"") {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                             }
+                            format.isPython() -> {
+                                if (body.trim().isNullOrBlank()) {
+                                    lines.add("body = \"\"")
+                                } else {
+                                    lines.add("body = $body")
+                                }
+                            }
+                            else -> lines.add(".$send($body)")
                         }
-                        else -> lines.add(".$send($body)")
-                    }
-                } else {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                    } else {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                            }
+                            format.isPython() -> {
+                                lines.add("body = \"\"")
+                            }
+                            else -> lines.add(".$send(\"${"""\"\""""}\")")
                         }
-                        format.isPython() -> {
-                            lines.add("body = \"\"")
-                        }
-                        else -> lines.add(".$send(\"${"""\"\""""}\")")
                     }
                 }
 
@@ -623,8 +626,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                     else -> lines.add(".$send(\"$body\")")
                 }
+            } else if (bodyParam.isXml()) {
+
+                val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+                // Escape quotes for string literal in generated code
+                val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
+
+                when {
+                    format.isPython() -> {
+                        lines.add("body = \"$escapedXml\"")
+                    }
+                    else -> lines.add(".$send(\"$escapedXml\")")
+                }
             } else {
-                //TODO XML
                 LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
             }
         }
