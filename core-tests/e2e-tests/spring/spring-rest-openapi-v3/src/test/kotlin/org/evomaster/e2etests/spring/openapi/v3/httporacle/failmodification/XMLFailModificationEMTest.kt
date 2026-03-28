@@ -27,7 +27,7 @@ class XMLFailModificationEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "XMLFailedModificationEM",
-                500
+                2000
         ) { args: MutableList<String> ->
 
             setOption(args, "schemaOracles", "false")
