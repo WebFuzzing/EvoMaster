@@ -19,6 +19,7 @@ import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -254,7 +255,6 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
@@ -377,6 +377,11 @@ public class EMController {
                     if (!noKillSwitch(() -> sutController.isSutRunning())) {
                         noKillSwitch(() -> sutController.bootingSut(true));
                         baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
+                        // Configure CDG generation on the agent, if requested by core
+                        Boolean enableGraphs = dto.enableControlDependenceGraphs;
+                        if (enableGraphs != null) noKillSwitch(() -> sutController.setControlDependenceGraphsEnabled(enableGraphs));
+                        Boolean writeCfg = dto.writeCfg;
+                        if (writeCfg != null) noKillSwitch(() -> sutController.setWriteCfgEnabled(writeCfg));
                         noKillSwitch(() -> sutController.bootingSut(false));
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
@@ -588,6 +593,12 @@ public class EMController {
                     String msg = "Failed to collect additional info";
                     SimpleLogger.error(msg);
                     return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
+
+            List<ControlDependenceGraphDto> cdgs =
+                    noKillSwitch(() -> sutController.getControlDependenceGraphs());
+            if (cdgs != null && !cdgs.isEmpty()) {
+                dto.controlDependenceGraphs.addAll(cdgs);
                 }
 //            }
 //        else {

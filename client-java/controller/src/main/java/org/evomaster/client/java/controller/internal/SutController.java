@@ -51,6 +51,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTyped
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -1611,6 +1612,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingAction(boolean executingAction);
 
+    /**
+     * Enable/disable Control Dependence Graph generation in the Java agent.
+     */
+    public abstract void setControlDependenceGraphsEnabled(boolean enableGraphs);
+
+    /**
+     * Enable/disable writing graphs to disk in the Java agent.
+     */
+    public abstract void setWriteCfgEnabled(boolean writeCfg);
 
     /**
      * specify whether the SUT is booting (ie starting up), or not.
@@ -1622,6 +1632,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     public abstract BootTimeInfoDto getBootTimeInfoDto();
+
+    public abstract List<ControlDependenceGraphDto> getControlDependenceGraphs();
 
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
         if (info == null)
