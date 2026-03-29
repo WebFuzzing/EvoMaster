@@ -20,11 +20,12 @@ class FlakinessDetectRest {
 
     companion object{
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS yyyy-MM-dd EEEE 'Week' ww")
+        private val START_UP_OBJECT_TAG = arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString()
     }
     @GetMapping(path = ["/objectFlag"])
     open fun getEmptyFlag()  : ResponseEntity<String> {
 
-        return ResponseEntity.ok( arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString())
+        return ResponseEntity.ok(START_UP_OBJECT_TAG)
     }
 
     @GetMapping(path = ["/stringuuid"])
