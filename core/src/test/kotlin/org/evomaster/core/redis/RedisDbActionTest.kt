@@ -9,7 +9,6 @@ class RedisDbActionTest {
     @Test
     fun testSeeTopGenesReturnsValueGene() {
         val action = RedisDbAction(
-            keyspace = "0",
             key = "user:1",
             valueGene = StringGene("value"),
             dataType = RedisDbAction.RedisDataType.STRING
@@ -23,7 +22,6 @@ class RedisDbActionTest {
     @Test
     fun testGetName() {
         val action = RedisDbAction(
-            keyspace = "0",
             key = "user:1",
             valueGene = StringGene("value"),
             dataType = RedisDbAction.RedisDataType.STRING
@@ -35,7 +33,6 @@ class RedisDbActionTest {
     @Test
     fun testCopyContentPreservesFields() {
         val original = RedisDbAction(
-            keyspace = "2",
             key = "session:abc",
             valueGene = StringGene("value", "someData"),
             dataType = RedisDbAction.RedisDataType.STRING
@@ -43,7 +40,6 @@ class RedisDbActionTest {
 
         val copy = original.copy() as RedisDbAction
 
-        assertEquals(original.keyspace, copy.keyspace)
         assertEquals(original.key, copy.key)
         assertEquals(original.dataType, copy.dataType)
         assertEquals(original.valueGene.value, copy.valueGene.value)
@@ -52,7 +48,6 @@ class RedisDbActionTest {
     @Test
     fun testCopyContentIsIndependent() {
         val original = RedisDbAction(
-            keyspace = "0",
             key = "product:1",
             valueGene = StringGene("value", "original"),
             dataType = RedisDbAction.RedisDataType.STRING
@@ -66,16 +61,4 @@ class RedisDbActionTest {
         assertEquals("modified", copy.valueGene.value)
     }
 
-    @Test
-    fun testNonDefaultKeyspace() {
-        val action = RedisDbAction(
-            keyspace = "5",
-            key = "cache:key",
-            valueGene = StringGene("value"),
-            dataType = RedisDbAction.RedisDataType.STRING
-        )
-
-        assertEquals("5", action.keyspace)
-        assertEquals("Redis_STRING_cache:key", action.getName())
-    }
 }

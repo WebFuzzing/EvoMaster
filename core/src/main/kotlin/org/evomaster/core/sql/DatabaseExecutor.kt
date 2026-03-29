@@ -33,5 +33,5 @@ interface DatabaseExecutor {
      * Execute the given INSERT REDIS command (in DTO format).
      * Return the result of whether it success
      */
-    fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandDto): RedisInsertionResultsDto?
+    fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto?
 }

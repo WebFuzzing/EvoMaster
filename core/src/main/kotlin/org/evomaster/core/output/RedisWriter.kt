@@ -58,7 +58,7 @@ object RedisWriter {
                         index == 0 && format.isKotlin() ->
                             "val $insertionVar = redis($previousVar)"
                         else -> ".and()"
-                    } + ".set(\"$escapedKey\", \"$escapedValue\", ${evaluatedRedisDbAction.redisAction.keyspace})"
+                    } + ".set(\"$escapedKey\", \"$escapedValue\")"
                 )
 
                 if (index == 0) {

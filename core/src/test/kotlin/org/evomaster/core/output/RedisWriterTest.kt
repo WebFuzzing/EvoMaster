@@ -13,11 +13,9 @@ class RedisWriterTest {
     private fun makeEvaluated(
         key: String,
         value: String,
-        keyspace: String = "0",
         success: Boolean = true
     ): EvaluatedRedisDbAction {
         val action = RedisDbAction(
-            keyspace = keyspace,
             key = key,
             valueGene = StringGene("value", value),
             dataType = RedisDbAction.RedisDataType.STRING
@@ -133,13 +131,6 @@ class RedisWriterTest {
         )
 
         assertTrue(output.contains("insertions_redis_42"))
-    }
-
-    @Test
-    fun testNonDefaultKeyspaceIsWritten() {
-        val output = writeKotlin(listOf(makeEvaluated("key:1", "val", keyspace = "3")))
-
-        assertTrue(output.contains(".set(\"key:1\", \"val\", 3)"))
     }
 
     @Test

@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.database.operations;
 
+/**
+ * Contains data to be inserted into Redis.
+ */
 public class RedisInsertionDto {
 
     /** The Redis key.*/
@@ -7,7 +10,4 @@ public class RedisInsertionDto {
 
     /** The serialized value to set for that key. */
     public String value;
-
-    /** Keyspace index, default 0. */
-    public int keyspace = 0;
 }

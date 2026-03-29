@@ -40,7 +40,7 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
     }
 
     @Override
-    public RedisStatementDsl set(String key, String value, int keyspace) {
+    public RedisStatementDsl set(String key, String value) {
         checkDsl();
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Unspecified key");
@@ -48,7 +48,6 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
         RedisInsertionDto dto = new RedisInsertionDto();
         dto.key = key;
         dto.value = value;
-        dto.keyspace = keyspace;
         list.add(dto);
         return this;
     }

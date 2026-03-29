@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.redis;
 
-import org.evomaster.client.java.utils.SimpleLogger;
-
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,13 +29,13 @@ public class ReflectionBasedRedisClient {
     private static final String SYNC_METHOD = "sync";
     private static final String TYPE_METHOD = "type";
 
-    public ReflectionBasedRedisClient(String host, int port) {
+    public ReflectionBasedRedisClient(String host, int port, int keyspace) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
             Class<?> redisURIClass = Class.forName("io.lettuce.core.RedisURI");
 
             Method createUri = redisURIClass.getMethod(CREATE_METHOD, String.class);
-            Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
+            Object uri = createUri.invoke(null, "redis://" + host + ":" + port + "/" + keyspace);
 
             Method createClient = redisClientClass.getMethod(CREATE_METHOD, redisURIClass);
             this.lettuceClient = createClient.invoke(null, uri);

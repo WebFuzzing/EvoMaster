@@ -24,7 +24,7 @@ public class RedisCommandExecutorTest {
     public static void initClass() {
         redis.start();
         int port = redis.getMappedPort(REDIS_PORT);
-        client = new ReflectionBasedRedisClient("localhost", port);
+        client = new ReflectionBasedRedisClient("localhost", port, 0);
     }
 
     @AfterEach
@@ -37,7 +37,6 @@ public class RedisCommandExecutorTest {
         RedisInsertionDto dto = new RedisInsertionDto();
         dto.key = "user:1";
         dto.value = "Alice";
-        dto.keyspace = 0;
 
         RedisInsertionResultsDto results =
                 RedisCommandExecutor.executeInsert(client, Collections.singletonList(dto));
@@ -51,12 +50,10 @@ public class RedisCommandExecutorTest {
         RedisInsertionDto dto1 = new RedisInsertionDto();
         dto1.key = "product:1";
         dto1.value = "chair";
-        dto1.keyspace = 0;
 
         RedisInsertionDto dto2 = new RedisInsertionDto();
         dto2.key = "product:2";
         dto2.value = "table";
-        dto2.keyspace = 0;
 
         RedisInsertionResultsDto results =
                 RedisCommandExecutor.executeInsert(client, Arrays.asList(dto1, dto2));
@@ -65,21 +62,6 @@ public class RedisCommandExecutorTest {
         assertTrue(results.executionResults.get(1));
         assertEquals("chair", client.getValue("product:1"));
         assertEquals("table", client.getValue("product:2"));
-    }
-
-    @Test
-    public void testInsertInNonDefaultKeyspace() {
-        RedisInsertionDto dto = new RedisInsertionDto();
-        dto.key = "session:abc";
-        dto.value = "data";
-        dto.keyspace = 1;
-
-        RedisInsertionResultsDto results =
-                RedisCommandExecutor.executeInsert(client, Collections.singletonList(dto));
-
-        assertTrue(results.executionResults.get(0));
-        // the executor left the connection in keyspace 1, so getValue reads from there
-        assertEquals("data", client.getValue("session:abc"));
     }
 
     @Test
@@ -99,13 +81,11 @@ public class RedisCommandExecutorTest {
         RedisInsertionDto first = new RedisInsertionDto();
         first.key = "overwrite:key";
         first.value = "old";
-        first.keyspace = 0;
         RedisCommandExecutor.executeInsert(client, Collections.singletonList(first));
 
         RedisInsertionDto second = new RedisInsertionDto();
         second.key = "overwrite:key";
         second.value = "new";
-        second.keyspace = 0;
         RedisCommandExecutor.executeInsert(client, Collections.singletonList(second));
 
         assertEquals("new", client.getValue("overwrite:key"));

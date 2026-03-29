@@ -932,7 +932,7 @@ public class EMController {
     @Consumes(Formats.JSON_V1)
     @POST
     public Response executeRedisInsertion(
-            RedisDatabaseCommandDto dto,
+            RedisDatabaseCommandsDto dto,
             @Context HttpServletRequest httpServletRequest) {
 
         assert trackRequestSource(httpServletRequest);

@@ -503,7 +503,7 @@ class SamplerVerifierTest {
             return null
         }
 
-        override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandDto): RedisInsertionResultsDto? {
+        override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
             return null
         }
 

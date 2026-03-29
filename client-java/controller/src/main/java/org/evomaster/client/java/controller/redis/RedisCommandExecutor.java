@@ -30,9 +30,6 @@ public class RedisCommandExecutor {
         for (int i = 0; i < insertions.size(); i++) {
             RedisInsertionDto dto = insertions.get(i);
             try {
-                if (dto.keyspace != 0) {
-                    client.select(dto.keyspace);
-                }
                 client.setValue(dto.key, dto.value);
                 results.set(i, true);
             } catch (Exception e) {

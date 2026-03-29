@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 /**
  * Transforms a failed Redis command in an insert action.
  *
- * Example: GET key -> RedisDbAction(key, SET, StringGene)
+ * Example: GET key -> RedisDbAction(key, StringGene, RedisDataType STRING)
  */
 object RedisInsertBuilder {
 
@@ -20,11 +20,12 @@ object RedisInsertBuilder {
         return failedCommands
             .filter { it.key !in existingKeys }
             .map { cmd ->
+                // Only GET commands with a StringGene as value is supported at the moment.
+                // More complex types will be included in the future.
                 val valueGene = StringGene("value").also {
                     it.randomize(randomness, false)
                 }
                 RedisDbAction(
-                    keyspace = "0",
                     key = cmd.key,
                     valueGene = valueGene,
                     dataType = RedisDbAction.RedisDataType.STRING

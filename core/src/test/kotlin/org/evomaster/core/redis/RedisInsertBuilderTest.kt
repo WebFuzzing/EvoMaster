@@ -55,15 +55,6 @@ class RedisInsertBuilderTest {
     }
 
     @Test
-    fun testDefaultKeyspaceIsZero() {
-        val actions = RedisInsertBuilder.buildInsertActions(
-            listOf(failedCommand("key:1")), emptySet(), randomness
-        )
-
-        assertEquals("0", actions[0].keyspace)
-    }
-
-    @Test
     fun testDataTypeIsString() {
         val actions = RedisInsertBuilder.buildInsertActions(
             listOf(failedCommand("key:1")), emptySet(), randomness

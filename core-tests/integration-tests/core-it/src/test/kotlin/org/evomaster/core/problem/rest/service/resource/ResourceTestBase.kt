@@ -90,7 +90,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             return null
         }
 
-        override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandDto): RedisInsertionResultsDto? {
+        override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
             return null
         }
 

@@ -10,10 +10,9 @@ public interface RedisSequenceDsl {
      *
      * @param key   the key under which the value will be stored in Redis
      * @param value the string value to store
-     * @param keyspace logical redis db.
      * @return a statement object on which the sequence can be continued or closed
      */
-    RedisStatementDsl set(String key, String value, int keyspace);
+    RedisStatementDsl set(String key, String value);
 
     /**
      * Build the DTOs (Data Transfer Object) from this DSL,

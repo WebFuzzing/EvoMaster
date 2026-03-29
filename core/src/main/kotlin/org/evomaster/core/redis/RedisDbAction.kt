@@ -8,10 +8,6 @@ import org.evomaster.core.search.gene.string.StringGene
 class RedisDbAction(
 
     /**
-     * The database logical index.
-     */
-    val keyspace: String,
-    /**
      * Immutable key corresponding to the failed command.
      */
     val key: String,
@@ -33,7 +29,6 @@ class RedisDbAction(
 
     override fun copyContent(): Action {
         return RedisDbAction(
-            keyspace,
             key,
             valueGene.copy() as StringGene,
             dataType
