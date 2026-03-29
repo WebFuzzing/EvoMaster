@@ -94,7 +94,7 @@ class RedisWriterTest {
         val output = writeKotlin(listOf(makeEvaluated("user:1", "Alice")))
 
         assertTrue(output.contains("val insertions_redis = redis()"))
-        assertTrue(output.contains(".set(\"user:1\", \"Alice\", 0)"))
+        assertTrue(output.contains(".set(\"user:1\", \"Alice\")"))
         assertTrue(output.contains(".dtos()"))
         assertTrue(output.contains("val insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
     }
@@ -104,7 +104,7 @@ class RedisWriterTest {
         val output = writeJava(listOf(makeEvaluated("user:1", "Alice")))
 
         assertTrue(output.contains("List<RedisInsertionDto> insertions_redis = redis()"))
-        assertTrue(output.contains(".set(\"user:1\", \"Alice\", 0)"))
+        assertTrue(output.contains(".set(\"user:1\", \"Alice\")"))
         assertTrue(output.contains("RedisInsertionResultsDto insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
     }
 
