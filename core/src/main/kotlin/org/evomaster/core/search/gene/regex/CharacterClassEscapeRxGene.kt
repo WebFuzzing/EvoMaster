@@ -10,7 +10,9 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.CharacterRange
 import org.slf4j.LoggerFactory
+import kotlin.collections.contains
 
 /*
 \w	Find a word character
@@ -27,14 +29,65 @@ class CharacterClassEscapeRxGene(
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
+
+        private fun stringToListOfCharacterRanges(s: String) : List<CharacterRange> {
+            return s.map { CharacterRange(it, it) }
+        }
+
+        private val digitSet = listOf(CharacterRange('0', '9'))
+        private val asciiLetterSet = listOf(CharacterRange('a', 'z'), CharacterRange('A', 'Z'))
+        private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
+        private val spaceSet = stringToListOfCharacterRanges(" \t\r\n\u000C\u000b") // u000b, u000c being line
+        // tabulation (VT) & form feed (FF, \f) respectively
+        private val horizontalSpaceSet = listOf(CharacterRange(0x2000, 0x200a)) +
+                stringToListOfCharacterRanges(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
+        private val verticalSpaceSet = stringToListOfCharacterRanges("\n\u000B\u000C\r\u0085\u2028\u2029")
+        private val punctuationSet = stringToListOfCharacterRanges("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+
+        // US-ASCII POSIX character classes (\p{X})
+        private val posixSets = mapOf(
+            "Lower" to listOf(CharacterRange('a', 'z')),
+            "Upper" to listOf(CharacterRange('A', 'Z')),
+            "ASCII" to listOf(CharacterRange(0, 0x7f)),
+            "Alpha" to asciiLetterSet,
+            "Digit" to digitSet,
+            "Alnum" to digitSet + asciiLetterSet,
+            "Punct" to punctuationSet,
+            "Graph" to digitSet + asciiLetterSet + punctuationSet,
+            "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
+            "Blank" to stringToListOfCharacterRanges(" \t"),
+            "Cntrl" to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
+            "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
+            "Space" to spaceSet
+        )
     }
 
     var value: String = ""
+    private var charClass: CharacterRangeRxGene
 
     init {
-        if (!listOf("w", "W", "d", "D", "s", "S", "v", "V", "h", "H").contains(type) && 'p' != type[0]) {
+        if (type[0] !in "wWdDsSvVhHp") {
             throw IllegalArgumentException("Invalid type: $type")
         }
+
+        val charSet = when(type[0]){
+            'w', 'W' -> wordSet
+            'd', 'D' -> digitSet
+            's', 'S' -> spaceSet
+            'v', 'V' -> verticalSpaceSet
+            'h', 'H' -> horizontalSpaceSet
+            'p' ->
+                if (type.substring(2, type.length - 1) !in posixSets){
+                    throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
+                } else {
+                    posixSets[type.substring(2, type.length - 1)]!!
+                }
+            else -> //this should never happen due to check in init
+                throw IllegalStateException("Type '\\$type' not supported yet")
+        }
+
+        val negated = type[0].isUpperCase()
+        charClass = CharacterRangeRxGene(negated, charSet)
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -56,22 +109,8 @@ class CharacterClassEscapeRxGene(
 
         val previous = value
 
-        value = when(type[0]){
-            'd' -> randomness.nextDigitChar()
-            'D' -> randomness.nextNonDigitChar()
-            'w' -> randomness.nextWordChar()
-            'W' -> randomness.nextNonWordChar()
-            's' -> randomness.nextSpaceChar()
-            'S' -> randomness.nextNonSpaceChar()
-            'v' -> randomness.nextVerticalSpaceChar()
-            'V' -> randomness.nextNonVerticalSpaceChar()
-            'h' -> randomness.nextHorizontalSpaceChar()
-            'H' -> randomness.nextNonHorizontalSpaceChar()
-            'p' -> randomness.nextPosixCharClassChar(type)
-            else ->
-                //this should never happen due to check in init
-                throw IllegalStateException("Type '\\$type' not supported yet")
-        }.toString()
+        charClass.randomize(randomness, tryToForceNewValue)
+        value = charClass.value.toString()
 
         if(tryToForceNewValue && previous == value){
             randomize(randomness, tryToForceNewValue)
