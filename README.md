@@ -1,7 +1,7 @@
 # EvoMaster: A Tool For Automatically Generating System-Level Test Cases
 
 
-![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
+[//]: # (![]&#40;docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash"&#41;)
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.evomaster/evomaster-client-java.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
@@ -12,7 +12,13 @@
 [![Github All Releases](https://img.shields.io/github/downloads/WebFuzzing/evomaster/total.svg)](https://github.com/WebFuzzing/EvoMaster/releases)
 
 
+
 ### Summary
+
+[//]: # (<div style="float: left; margin-right: 15px; margin-bottom: 10px;">)
+<img align="left" src="docs/img/em_mascot.png" alt="AI-generated mascot, with Bing" width="100" />
+
+[//]: # (</div>)
 
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source AI-driven tool
 that automatically *generates* system-level test cases
