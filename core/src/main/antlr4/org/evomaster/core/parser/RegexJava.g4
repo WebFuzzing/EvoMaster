@@ -125,7 +125,8 @@ fragment CharacterEscape
  | HexEscapeSequence
  | UnicodeEscapeSequence
  | OctalEscapeSequence
- | 'p' BRACE_open PosixCharacterClassLabel BRACE_close
+ | 'p' BRACE_open PosixCharacterClassLabel BRACE_close // this is only implemented in Java at the moment as on JS this
+                                                       // is allowed only while certain flags are enabled
  //| IdentityEscape
  ;
 
@@ -254,6 +255,7 @@ AtomEscape
 fragment CharacterClassEscape
  //one of d D s S w W v V h H
  // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
+ // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
  : [dDsSwWvVhH]
  ;
 
