@@ -39,6 +39,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitOpenSearch = false;
 
+    private static boolean executingInitNeo4J = false;
+
     /**
      * indicate whether now it is to execute action during the search
      */
@@ -201,6 +203,10 @@ public class ExecutionTracer {
 
     public static void setExecutingInitRedis(boolean executingInitRedis) {
         ExecutionTracer.executingInitRedis = executingInitRedis;
+    }
+
+    public static void setExecutingInitNeo4J(boolean executingInitNeo4J) {
+        ExecutionTracer.executingInitNeo4J = executingInitNeo4J;
     }
 
     public static boolean isExecutingAction() {
@@ -429,6 +435,11 @@ public class ExecutionTracer {
     public static void addMongoInfo(MongoFindCommand info){
         if (!executingInitMongo)
             getCurrentAdditionalInfo().addMongoInfo(info);
+    }
+
+    public static void addNeo4JInfo(Neo4JRunCommand info){
+        if (!executingInitNeo4J)
+            getCurrentAdditionalInfo().addNeo4JInfo(info);
     }
 
     public static void addOpenSearchInfo(OpenSearchCommand info) {

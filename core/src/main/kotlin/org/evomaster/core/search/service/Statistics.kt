@@ -6,7 +6,9 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.utils.IncrementalAverage
@@ -15,6 +17,9 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.javaType
+import kotlin.reflect.typeOf
 
 
 class Statistics : SearchListener {
@@ -65,6 +70,9 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var epc : ExecutionPhaseController
 
+    @Inject(optional = true)
+    private lateinit var callGraphService: CallGraphService
+
     /**
      * How often test executions did timeout
      */
@@ -109,11 +117,16 @@ class Statistics : SearchListener {
         time.addListener(this)
     }
 
+    fun getHeadersAndElementsCSVLines(solution: Solution<*>): kotlin.Pair<String,String>{
+        val data = getData(solution)
+        val headers = data.joinToString(",") { it.header }
+        val elements = data.joinToString(",") { it.element }
+        return kotlin.Pair(headers, elements)
+    }
+
     fun writeStatistics(solution: Solution<*>) {
 
-        val data = getData(solution)
-        val headers = data.map { it.header }.joinToString(",")
-        val elements = data.map { it.element }.joinToString(",")
+        val (headers,elements) = getHeadersAndElementsCSVLines(solution)
 
         val path = Paths.get(config.statisticsFile).toAbsolutePath()
 
@@ -519,7 +532,13 @@ class Statistics : SearchListener {
 
         val properties = EMConfig.getConfigurationProperties()
         properties.forEach { p ->
-            list.add(Pair(p.name, p.getter.call(config).toString()))
+            var entry = p.getter.call(config).toString()
+            // should check for "," regardless of type
+            //p.getter.returnType.isSubtypeOf(typeOf<String>())
+            if(entry.contains(",")){
+                entry = "\"$entry\""
+            }
+            list.add(Pair(p.name, entry))
         }
     }
 
@@ -536,22 +555,6 @@ class Statistics : SearchListener {
                 .count()
     }
 
-//    private fun failedOracle(solution: Solution<*>): Int {
-//
-//        //count the distinct number of API paths for which we have a failed oracle
-//        // NOTE: calls with an error code (5xx) are excluded from this count.
-//        return solution.individuals
-//                .flatMap { it.evaluatedMainActions() }
-//                .filter {
-//                    it.result is HttpWsCallResult
-//                            && it.action is RestCallAction
-//                            && !(it.result as HttpWsCallResult).hasErrorCode()
-//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-//                }
-//                .map { it.action.getName() }
-//                .distinct()
-//                .count()
-//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 
@@ -561,6 +564,8 @@ class Statistics : SearchListener {
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
+                // in phases like Security we might create calls that do not exist in schema
+                .filter{ it.action is RestCallAction && callGraphService.isDeclared(it.action.verb,it.action.path)}
                 .map { it.action.getName() }
                 .distinct()
                 .count()

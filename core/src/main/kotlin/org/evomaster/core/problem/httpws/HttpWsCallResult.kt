@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.rest.data.HttpVerb
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
@@ -25,6 +26,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
+        const val ALLOW = "ALLOW"
         const val RESPONSE_TIME_MS = "RESPONSE_TIME_MS"
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
@@ -49,7 +51,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
 
     fun setStatusCode(code: Int) {
-        if (code < 100 || code >= 600) {
+        if (code !in 100..<600) {
             throw IllegalArgumentException("Invalid HTTP code $code")
         }
 
@@ -65,6 +67,32 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getLocation(): String? = getResultValue(LOCATION)
+
+    fun setAllow(allow: String?){
+        if(allow != null) {
+            addResultValue(ALLOW, allow)
+        }
+    }
+
+    fun getAllow(): String? = getResultValue(ALLOW)
+
+    /**
+     * Return verbs based on "allow" header.
+     * It can return null to indicate there was no allow header.
+     */
+    fun getAllowedVerbs() : Set<HttpVerb>?{
+        val allow = getAllow() ?: return null
+        val fromAllow = allow.split(",")
+            .mapNotNull {
+                try{
+                    HttpVerb.valueOf(it.trim())
+                } catch (e: IllegalArgumentException){
+                    //a bug, but we do not check this here
+                    null
+                }
+            }
+        return fromAllow.toSet()
+    }
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 

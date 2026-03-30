@@ -21,12 +21,15 @@ class GQLActionTest {
 
         val expected = """
 {
-  "query": " mutation{ add  (foo : \"foo\\\"\")         } "
+  "query": " mutation{ add  (foo : \"foo\\\"\")         } ",
+  "variables":null
 }
         """.trimIndent()
+            .let{ OutputFormatter.JSON_FORMATTER.getFormatted(it)}
 
         assertNotNull(body)
-        assertEquals(expected,  OutputFormatter.JSON_FORMATTER.getFormatted(body!!.entity))
+        val result = OutputFormatter.JSON_FORMATTER.getFormatted(body!!.entity)
+        assertEquals(expected,  result)
     }
 
 }

@@ -2,16 +2,30 @@
 
 Under development in `master` branch.
 
-### New Features
+### Miscellaneous
 
-- Introduced _--maxTestsPerTestSuite_, with default value of 200. 
-  This is to avoid generating single output test files with thousands of tests.
-  Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
-   A negative value means no constraint is applied (i.e., old behavior).  
-- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info. 
+- Introduced a mascot for EvoMaster: a red-sorcerer black cat with an arrowhead tail. 
 
 ### Fixed Bugs
 
+- Fixed issue in generated `statistics.csv`, where entries containing `,` commas are now quoted. 
+
+# Version 5.1.0
+
+### New Features
+
+- Support for OpenAPI 3.1: proper handling of changes between 3.0 and 3.1 regarding nullability and numeric range inclusiveness.
+- Introduced `--maxTestsPerTestSuite`, with default value of 200. 
+  This is to avoid generating single output test files with thousands of tests.
+  Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
+   A negative value means no constraint is applied (i.e., old behavior).  
+- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info.
+- For REAST APIs in which the chosen output format is either Java or Kotlin, there is now a new option `--dtoForRequestPayload` to enable the generation of statically typed DTOs for JSON request body payloads. This would replace current string payloads. This can be useful if you need to modify test cases manually after they are generated. However, as this might reduce test readability, this option is not on by default.
+- XML type is now fully supported in body payloads, including proper handling of XML extra information in the OpenAPI schemas. 
+
+### Fixed Bugs
+
+- making sure Docker image works for both amd64 and arm64 architectures.
 - fixed a connection leak when authentication fails.
 - fixed few edge cases that led to crashes related to handling of MongoDB objects.
 - fixed bug in handling of SQL databases, where commands leading to inconsistent state (eg, duplicated keys) were not properly removed. 
