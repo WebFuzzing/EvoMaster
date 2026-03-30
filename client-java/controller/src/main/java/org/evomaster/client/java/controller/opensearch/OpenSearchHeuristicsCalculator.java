@@ -22,6 +22,7 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 public class OpenSearchHeuristicsCalculator {
+
     private final TaintHandler taintHandler;
 
     public OpenSearchHeuristicsCalculator() {
@@ -508,8 +509,10 @@ public class OpenSearchHeuristicsCalculator {
         String actualStr = actualValue.toString();
         
         try {
-            // Create pattern with case insensitive flag if needed
-            // Using Java regex as an approximation of Lucene/OpenSearch regex for distance calculation
+            // OpenSearch uses Lucene regular expression syntax, which is similar but NOT identical
+            // to Java regex. Here we use Java regex as an approximation for the exact-match check.
+            // See: https://opensearch.org/docs/latest/query-dsl/term/regexp/
+            //      https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/util/automaton/RegExp.html
             java.util.regex.Pattern pattern;
             if (caseInsensitive != null && caseInsensitive) {
                 pattern = java.util.regex.Pattern.compile(regex, java.util.regex.Pattern.CASE_INSENSITIVE);
@@ -520,10 +523,12 @@ public class OpenSearchHeuristicsCalculator {
             if (pattern.matcher(actualStr).matches()) {
                 return 0.0;
             }
-            
-            // For non-matches, return a distance based on string similarity
-            return (double) DistanceHelper.getLeftAlignmentDistance(actualStr, regex);
-            
+
+            // For non-matches, return a positive distance > 0.
+            // Proper distance calculation for regex would require taint analysis support,
+            // which is deferred to a future PR.
+            return 1.0;
+
         } catch (java.util.regex.PatternSyntaxException e) {
             // Invalid regex pattern
             return Double.MAX_VALUE;
@@ -557,7 +562,10 @@ public class OpenSearchHeuristicsCalculator {
                 if (distance == 0.0) {
                     return Double.MAX_VALUE; // If any must_not clause matches
                 }
-                // For must_not, closer matches are worse, so we invert the distance logic
+                // For must_not, closer matches are worse, so we add a penalty proportional
+                // to how close the actual value is to matching the clause.
+                // The threshold 10.0 is an arbitrary heuristic constant: if the distance already
+                // exceeds it, the document is considered "far enough" and contributes 0.
                 totalDistance += Math.max(0, 10.0 - distance);
             }
         }

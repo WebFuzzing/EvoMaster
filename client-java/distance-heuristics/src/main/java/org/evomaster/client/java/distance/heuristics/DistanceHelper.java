@@ -335,6 +335,13 @@ public class DistanceHelper {
 
     /**
      * Calculate edit distance between two strings.
+     *
+     * @param allowTranspositions if {@code true}, uses Damerau-Levenshtein distance, which counts
+     *                            a transposition of two adjacent characters (e.g. "ab" → "ba") as a
+     *                            single edit operation. If {@code false}, uses standard Levenshtein
+     *                            distance, which only counts insertions, deletions, and substitutions.
+     *                            This matches the OpenSearch/Elasticsearch {@code fuzzy} query parameter
+     *                            of the same name.
      */
     public static int calculateEditDistance(String s1, String s2, boolean allowTranspositions) {
         if (allowTranspositions) {
@@ -346,6 +353,10 @@ public class DistanceHelper {
 
     /**
      * Calculate standard Levenshtein distance between two strings.
+     * <p>
+     * Note: {@code org.apache.commons.text.similarity.LevenshteinDistance} exists in {@code core},
+     * but this module is part of the client-side driver and must not depend on {@code core} libraries.
+     * This is therefore a standalone DP implementation of the same algorithm.
      */
     public static int calculateLevenshteinDistance(String s1, String s2) {
         int[][] dp = new int[s1.length() + 1][s2.length() + 1];

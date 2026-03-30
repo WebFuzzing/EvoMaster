@@ -33,7 +33,9 @@ public class OpenSearchHandler {
 
      /**
      * Info about schemas of the documents of the index extracted from Spring framework.
-     * Documents of the index will be mapped to the Repository type
+     * Documents of the index will be mapped to the Repository type.
+     * Key: index name (String)
+     * Value: JSON schema representing the document type
      */
      private final Map<String, String> indexSchemas;
 
