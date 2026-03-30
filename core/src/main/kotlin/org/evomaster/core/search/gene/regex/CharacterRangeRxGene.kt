@@ -11,114 +11,34 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.MultiCharacterRange
 import org.slf4j.LoggerFactory
 
-class CharacterRangeRxGene(
-    val negated: Boolean,
-    val ranges: List<CharacterRange>
+class CharacterRangeRxGene private constructor(
+    /**
+     * this represents the valid ranges for a character class, removing overlaps and applying negation
+     */
+    val validRanges: MultiCharacterRange
 ) : RxAtom, SimpleGene("."){
+
+    constructor(negated: Boolean, ranges: List<CharacterRange>) : this(MultiCharacterRange(negated, ranges))
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    /**
-     * this represents the valid ranges for a character class, removing overlaps and applying negation
-     */
-    private var internalRanges = mutableListOf<CharacterRange>()
-
-    init {
-        if(ranges.isEmpty()){
-            throw IllegalArgumentException("No defined ranges")
-        }
-
-        // this limits the character class complements to 0xffff instead of allowing up to 0x10ffff, but values over
-        // 0xffff are not permitted on Char as they need 2 Chars to be represented; to allow this, we would need to
-        // use String or Int in every possible step as methods which return a single Char cannot return these characters
-        if(negated) {
-            internalRanges.add(CharacterRange(Character.MIN_VALUE, Character.MAX_VALUE))
-        }
-        for (range in ranges) {
-            if(negated){
-                remove(CharacterRange(range.start, range.end))
-            } else {
-                add(CharacterRange(range.start, range.end))
-            }
-        }
-
-        // this could happen for example if we got a character class like [^\u0000-\uffff]
-        if(internalRanges.isEmpty()){
-            throw IllegalArgumentException("No defined ranges")
-        }
-    }
-
-    var value : Char = internalRanges[0].start
-
-    /**
-     * Adds a character range to a [org.evomaster.core.search.gene.regex.CharacterRangeRxGene].
-     *
-     * The range is added to the character class in a way that does not generate repeated elements.
-     *
-     * @param toAdd The character range to be added to the character class.
-     */
-    private fun add(toAdd: CharacterRange) {
-        val newInternalRanges = mutableListOf<CharacterRange>()
-        var currentStart = toAdd.start
-        var currentEnd = toAdd.end
-        var merged = false
-
-        for ((start, end) in internalRanges.sortedBy { it.start }){
-            when {
-                end < currentStart - 1 -> newInternalRanges += CharacterRange(start, end)
-                start > currentEnd + 1 -> {
-                    if (!merged) {
-                        newInternalRanges += CharacterRange(currentStart, currentEnd)
-                        merged = true
-                    }
-                    newInternalRanges += CharacterRange(start, end)
-                }
-                else -> {
-                    currentStart = minOf(currentStart, start)
-                    currentEnd = maxOf(currentEnd, end)
-                }
-            }
-        }
-
-        if (!merged) {
-            newInternalRanges += CharacterRange(currentStart, currentEnd)
-        }
-
-        internalRanges = newInternalRanges
-    }
-
-    /**
-     * Safely removes a character range from a [org.evomaster.core.search.gene.regex.CharacterRangeRxGene].
-     *
-     * @param toRemove The character range to be removed from the character class.
-     */
-    private fun remove(toRemove: CharacterRange) {
-        internalRanges = internalRanges.flatMap { r ->
-            when {
-                toRemove.end < r.start || toRemove.start > r.end ->
-                    listOf(r)
-                else -> buildList {
-                    if (toRemove.start > r.start) add(CharacterRange(r.start, toRemove.start - 1))
-                    if (toRemove.end < r.end) add(CharacterRange(toRemove.end + 1, r.end))
-                }
-            }
-        }.toMutableList()
-    }
+    var value : Char = validRanges[0].start
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return internalRanges.any { value in it }
+        return validRanges.any { value in it }
     }
 
     override fun isMutable(): Boolean {
-        return internalRanges.size > 1 || internalRanges[0].size > 1
+        return validRanges.size > 1 || validRanges[0].size > 1
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterRangeRxGene(negated, ranges)
+        val copy = CharacterRangeRxGene(validRanges)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
         return copy
@@ -132,10 +52,10 @@ class CharacterRangeRxGene(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        val total = internalRanges.sumOf { it.size }
+        val total = validRanges.sumOf { it.size }
         val sampledValue = randomness.nextInt(total)
         var currentRangeMinValue = 0
-        for (r in internalRanges) {
+        for (r in validRanges) {
             val currentRangeMaxValue = currentRangeMinValue + r.size
             if (sampledValue < currentRangeMaxValue) {
                 val codePoint = r.start.code + (sampledValue - currentRangeMinValue)
@@ -151,8 +71,8 @@ class CharacterRangeRxGene(
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         var t = 0
-        for(i in 0 until internalRanges.size){
-            val p = internalRanges[i]
+        for(i in 0 until validRanges.size){
+            val p = validRanges[i]
             if(value in p){
                 t = i
                 break
@@ -161,18 +81,18 @@ class CharacterRangeRxGene(
 
         val delta = randomness.choose(listOf(1,-1))
 
-        if(value + delta > internalRanges[t].end){
+        if(value + delta > validRanges[t].end){
             /*
                 going over current max range. check next range
                 and take its minimum
              */
-            val next = (t+1) % internalRanges.size
-            value = internalRanges[next].start
+            val next = (t+1) % validRanges.size
+            value = validRanges[next].start
 
-        } else if(value + delta < internalRanges[t].start){
+        } else if(value + delta < validRanges[t].start){
 
-            val previous = (t - 1 + internalRanges.size) % internalRanges.size
-            value = internalRanges[previous].end
+            val previous = (t - 1 + validRanges.size) % validRanges.size
+            value = validRanges[previous].end
 
         } else {
             value += delta
