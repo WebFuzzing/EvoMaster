@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * DSL (Domain Specific Language) for operations on
+ * DSL (Domain Specific Language) for insertions on
  * the Redis Database.
  */
 public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {

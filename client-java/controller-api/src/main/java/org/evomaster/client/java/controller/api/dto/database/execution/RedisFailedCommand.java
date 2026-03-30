@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
 /**
- * Each time a Redis command is executed, we keep track of which keys were involved,
+ * Each time a Redis command is executed and returns no data, we keep track of which keys were involved,
  * as well as relevant information such as the command type.
  */
 public class RedisFailedCommand {

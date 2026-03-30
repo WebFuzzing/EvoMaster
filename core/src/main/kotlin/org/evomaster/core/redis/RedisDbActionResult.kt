@@ -4,7 +4,8 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 
 /**
- * sql insert action execution result
+ * Represents the result of executing a [RedisDbAction] against a Redis database.
+ * Stores whether the insertion was executed successfully.
  */
 class RedisDbActionResult : ActionResult {
 

@@ -29,6 +29,12 @@ public class ReflectionBasedRedisClient {
     private static final String SYNC_METHOD = "sync";
     private static final String TYPE_METHOD = "type";
 
+    /**
+     * Creates the Redis connection.
+     * @param host Redis database host.
+     * @param port Redis database port.
+     * @param keyspace Logical database index. Default is 0.
+     */
     public ReflectionBasedRedisClient(String host, int port, int keyspace) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
@@ -65,7 +71,13 @@ public class ReflectionBasedRedisClient {
         } catch (Exception ignored) {}
     }
 
-    /** Select a keyspace */
+    /** Selects the logical database for subsequent commands on this connection.
+     * <p>Redis supports multiple logical databases identified by a zero-based integer index,
+     * referred to as a keyspace. All keys are scoped to the selected keyspace, meaning that
+     * the same key can exist independently in different keyspaces. The default keyspace is 0.
+     *
+     * @param keyspace the zero-based index of the logical database to select
+     */
     public void select(int keyspace) {
         invoke(SELECT_METHOD, keyspace);
     }

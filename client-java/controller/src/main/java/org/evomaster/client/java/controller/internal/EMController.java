@@ -968,8 +968,13 @@ public class EMController {
                         .entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            return Response.status(200)
-                    .entity(WrappedResponseDto.withData(redisResultsDto)).build();
+            if (!redisResultsDto.executionResults.isEmpty()) {
+                return Response.status(200)
+                        .entity(WrappedResponseDto.withData(redisResultsDto)).build();
+            } else {
+                return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+            }
+
 
         } catch (RuntimeException e) {
             String msg = "Thrown exception: " + e.getMessage();

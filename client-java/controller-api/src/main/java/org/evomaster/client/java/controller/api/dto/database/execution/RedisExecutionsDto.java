@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Each time a Redis command is executed, we keep track of those that have a positive heuristic value associated.
+ * Each time a Redis command is executed, we keep track of those that return no data.
  * This class summarizes every failed command in a given execution.
  */
 public class RedisExecutionsDto {

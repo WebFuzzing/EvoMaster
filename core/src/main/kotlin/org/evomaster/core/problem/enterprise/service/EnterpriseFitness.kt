@@ -208,6 +208,14 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return true
     }
 
+    /** Transforms and executes a list of Redis [RedisDbAction] as insertion commands
+     * against the remote Redis database via the SUT controller.
+     *
+     * @param allRedisActions Redis actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Redis action will be appended, preserving the same order as [allRedisActions].
+     * @return whether [allRedisActions] execute successfully.
+     */
     fun doRedisDbCalls(
         allRedisActions: List<RedisDbAction>,
         actionResults: MutableList<ActionResult>

@@ -5,10 +5,14 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
 
+/**
+ * Represents an action to insert data into a Redis database, generated in response
+ * to a failed Redis read command.
+ */
 class RedisDbAction(
 
     /**
-     * Immutable key corresponding to the failed command.
+     * Immutable key for which Redis returned no data.
      */
     val key: String,
     /**

@@ -217,18 +217,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
 
-        val fw = individual.fitness.getViewOfAggregatedFailedRedisCommands()
+        val failedRedisCommands = individual.fitness.getViewOfAggregatedFailedRedisCommands()
 
-        if (fw.isEmpty()) {
+        if (failedRedisCommands.isEmpty()) {
             return
         }
 
         val oldRedisDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedRedisDbInsertions = handleFailedRedisCommands(ind, fw)
+        val addedRedisDbInsertions = handleFailedRedisCommands(ind, failedRedisCommands)
             .let { if (it.isEmpty()) emptyList() else listOf(it) }
 
-        ind.repairInitializationActions(randomness)
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
