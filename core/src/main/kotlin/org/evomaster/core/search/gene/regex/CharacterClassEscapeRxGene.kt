@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.MultiCharacterRange
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains
 
@@ -24,7 +25,7 @@ import kotlin.collections.contains
 \p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
-        val type: String
+    val type: String
 ) : RxAtom, SimpleGene("\\$type") {
 
     companion object{
@@ -44,8 +45,20 @@ class CharacterClassEscapeRxGene(
         private val verticalSpaceSet = stringToListOfCharacterRanges("\n\u000B\u000C\r\u0085\u2028\u2029")
         private val punctuationSet = stringToListOfCharacterRanges("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
+        private val digitMultiCharRange = MultiCharacterRange(false, digitSet)
+        private val wordMultiCharRange = MultiCharacterRange(false, wordSet)
+        private val spaceMultiCharRange = MultiCharacterRange(false, spaceSet)
+        private val horizontalSpaceMultiCharRange = MultiCharacterRange(false, horizontalSpaceSet)
+        private val verticalSpaceMultiCharRange = MultiCharacterRange(false, verticalSpaceSet)
+
+        private val nonDigitMultiCharRange = MultiCharacterRange(true, digitSet)
+        private val nonWordMultiCharRange = MultiCharacterRange(true, wordSet)
+        private val nonSpaceMultiCharRange = MultiCharacterRange(true, spaceSet)
+        private val nonHorizontalSpaceMultiCharRange = MultiCharacterRange(true, horizontalSpaceSet)
+        private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
+
         // US-ASCII POSIX character classes (\p{X})
-        private val posixSets = mapOf(
+        private val posixMultiCharRanges = mapOf(
             "Lower" to listOf(CharacterRange('a', 'z')),
             "Upper" to listOf(CharacterRange('A', 'Z')),
             "ASCII" to listOf(CharacterRange(0, 0x7f)),
@@ -59,35 +72,37 @@ class CharacterClassEscapeRxGene(
             "Cntrl" to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
             "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
             "Space" to spaceSet
-        )
+        ).mapValues { (_, value) -> MultiCharacterRange(false, value) }
     }
 
     var value: String = ""
-    private var charClass: CharacterRangeRxGene
+    private var multiCharRange: MultiCharacterRange
 
     init {
         if (type[0] !in "wWdDsSvVhHp") {
             throw IllegalArgumentException("Invalid type: $type")
         }
 
-        val charSet = when(type[0]){
-            'w', 'W' -> wordSet
-            'd', 'D' -> digitSet
-            's', 'S' -> spaceSet
-            'v', 'V' -> verticalSpaceSet
-            'h', 'H' -> horizontalSpaceSet
+        multiCharRange = when(type[0]){
+            'w' -> wordMultiCharRange
+            'W' -> nonWordMultiCharRange
+            'd' -> digitMultiCharRange
+            'D' -> nonDigitMultiCharRange
+            's' -> spaceMultiCharRange
+            'S' -> nonSpaceMultiCharRange
+            'v' -> verticalSpaceMultiCharRange
+            'V' -> nonVerticalSpaceMultiCharRange
+            'h' -> horizontalSpaceMultiCharRange
+            'H' -> nonHorizontalSpaceMultiCharRange
             'p' ->
-                if (type.substring(2, type.length - 1) !in posixSets){
+                if (type.substring(2, type.length - 1) !in posixMultiCharRanges){
                     throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
                 } else {
-                    posixSets[type.substring(2, type.length - 1)]!!
+                    posixMultiCharRanges[type.substring(2, type.length - 1)]!!
                 }
             else -> //this should never happen due to check in init
                 throw IllegalStateException("Type '\\$type' not supported yet")
         }
-
-        val negated = type[0].isUpperCase()
-        charClass = CharacterRangeRxGene(negated, charSet)
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -109,8 +124,7 @@ class CharacterClassEscapeRxGene(
 
         val previous = value
 
-        charClass.randomize(randomness, tryToForceNewValue)
-        value = charClass.value.toString()
+        value = multiCharRange.sample(randomness).toString()
 
         if(tryToForceNewValue && previous == value){
             randomize(randomness, tryToForceNewValue)
@@ -134,7 +148,7 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-       return value
+        return value
     }
 
 
