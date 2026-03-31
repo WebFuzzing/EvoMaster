@@ -52,21 +52,14 @@ class CharacterRangeRxGene private constructor(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        val total = validRanges.sumOf { it.size }
-        val sampledValue = randomness.nextInt(total)
-        var currentRangeMinValue = 0
-        for (r in validRanges) {
-            val currentRangeMaxValue = currentRangeMinValue + r.size
-            if (sampledValue < currentRangeMaxValue) {
-                val codePoint = r.start.code + (sampledValue - currentRangeMinValue)
-                // is it necessary to log this?
-                log.trace("using Int {} as character selector for character class, resulting in code point: {}, which is: {}", sampledValue, codePoint, codePoint.toChar())
-                value = codePoint.toChar()
-                return
-            }
-            currentRangeMinValue = currentRangeMaxValue
+
+        val previous = value
+
+        value = validRanges.sample(randomness)
+
+        if(tryToForceNewValue && previous == value){
+            randomize(randomness, tryToForceNewValue)
         }
-        assert(false) // internalRanges being empty should never happen
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
