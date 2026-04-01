@@ -1,12 +1,13 @@
 package org.evomaster.core.utils
 
-class CharacterRange private constructor(val start: Char, val end: Char){
-    companion object {
-        operator fun invoke(a: Char, b: Char): CharacterRange =
-            if (a <= b) CharacterRange(a, b) else CharacterRange(b, a)
-    }
-
+class CharacterRange constructor(val start: Char, val end: Char){
     constructor(a: Int, b: Int) : this(a.toChar(), b.toChar())
+
+    init {
+        if (start > end){
+            throw IllegalArgumentException("Range out of order in character class")
+        }
+    }
 
     val size: Int
         get() = end.code - start.code + 1
