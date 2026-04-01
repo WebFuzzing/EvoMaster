@@ -52,7 +52,8 @@ class SqlRangeGene<T>(
 
     private fun swapLeftRightValues() {
         val copyOfLeftGene = left.copy()
-        left.unsafeCopyValueFrom(right)
+        val copyOfRightGene = right.copy()
+        left.unsafeCopyValueFrom(copyOfRightGene)
         right.unsafeCopyValueFrom(copyOfLeftGene)
     }
 
@@ -106,8 +107,8 @@ class SqlRangeGene<T>(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         log.trace("Randomizing SqlRangeGene")
-        listOf(isRightClosed, left, right, isRightClosed)
-                .forEach { it.randomize(randomness, tryToForceNewValue) }
+        listOf(isLeftClosed, left, right, isRightClosed)
+            .forEach { it.randomize(randomness, tryToForceNewValue) }
         repairGeneIfNeeded()
     }
 
@@ -136,11 +137,11 @@ class SqlRangeGene<T>(
             return "\"empty\""
         else
             return String.format(
-                    "\"%s %s , %s %s\"",
-                    if (isRightOpen()) '(' else '[',
+                    "\"%c %s , %s %c\"",
+                    if (isLeftOpen()) '(' else '[',
                     left.getValueAsRawString(),
                     right.getValueAsRawString(),
-                    if (isLeftOpen()) ')' else ']'
+                    if (isRightOpen()) ')' else ']'
             )
     }
 
