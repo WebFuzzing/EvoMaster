@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.oracle
 
-import com.google.gson.JsonParser
+import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 
 object HttpSemanticsOracle {
+
 
 
     fun hasRepeatedCreatePut(individual: RestIndividual,
@@ -161,6 +162,13 @@ object HttpSemanticsOracle {
             return false
         }
 
+        // this oracle only supports JSON, XML, and form-urlencoded request bodies;
+        // other content types (e.g. text/plain, multipart, binary) are not handled
+        val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
+        if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
+            return false
+        }
+
         // after GET must be 2xx
         if(!StatusGroup.G_2xx.isInGroup(resAfter.getStatusCode())) {
             return false
@@ -183,7 +191,7 @@ object HttpSemanticsOracle {
             && !bodyBefore.isNullOrEmpty()
             && !bodyAfter.isNullOrEmpty()
             && !bodyModify.isNullOrEmpty()) {
-            return hasChangedModifiedFields(bodyBefore, bodyAfter, bodyModify, modifiedFieldNames)
+            return hasChangedModifiedFields(bodyBefore, bodyAfter, bodyModify, modifiedFieldNames, bodyParam)
         }
 
         return false
@@ -192,7 +200,13 @@ object HttpSemanticsOracle {
     private fun extractRequestBody(modify: RestCallAction): String? {
         val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
             ?: return null
-        return bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON)
+        val mode = when {
+            bodyParam.isJson() -> GeneUtils.EscapeMode.JSON
+            bodyParam.isXml()  -> GeneUtils.EscapeMode.XML
+            bodyParam.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
+            else               -> null
+        }
+        return bodyParam.getValueAsPrintableString(mode = mode)
     }
 
     /**
@@ -333,43 +347,109 @@ object HttpSemanticsOracle {
      * Compares only the fields that were sent in the PUT/PATCH request.
      * Returns true if any of those fields changed between the before and after GET responses.
      *
-     * NOTE: This only works when the request payload is a JSON object that directly
-     * matches the resource structure. It does NOT support operation-based payloads
-     * such as JSON Patch (RFC 6902).
+     * Dispatches to a format-specific comparison based on [bodyParam] content type:
+     * - JSON         : field-by-field comparison via [OutputFormatter.JSON_FORMATTER]
+     * - XML          : field-by-field comparison via XML DOM parsing
+     * - form-encoded : GET responses parsed as JSON or XML, request parsed as key=value pairs
+     * - other        : returns false (incl. text/plain, which may cause too many false positives)
+     *
+     * NOTE: Does not support operation-based payloads such as JSON Patch (RFC 6902).
      */
     internal fun hasChangedModifiedFields(
         bodyBefore: String,
         bodyAfter: String,
         bodyModify: String,
+        fieldNames: Set<String>,
+        bodyParam: BodyParam? = null
+    ): Boolean {
+        return when {
+            bodyParam == null || bodyParam.isJson() ->
+                hasChangedModifiedFieldsStructured(OutputFormatter.JSON_FORMATTER, bodyBefore, bodyAfter, bodyModify, fieldNames)
+            bodyParam.isXml() ->
+                hasChangedModifiedFieldsStructured(OutputFormatter.XML_FORMATTER, bodyBefore, bodyAfter, bodyModify, fieldNames)
+            bodyParam.isForm() ->
+                hasChangedModifiedFieldsForm(bodyBefore, bodyAfter, bodyModify, fieldNames)
+            else -> false
+        }
+    }
+
+    /**
+     * Generic field-level comparison for structured formats (JSON, XML).
+     * Uses [formatter]'s [OutputFormatter.readFields] to extract field values from all three bodies.
+     */
+    private fun hasChangedModifiedFieldsStructured(
+        formatter: OutputFormatter,
+        bodyBefore: String,
+        bodyAfter: String,
+        bodyModify: String,
         fieldNames: Set<String>
     ): Boolean {
+        val fieldsBefore = formatter.readFields(bodyBefore, fieldNames) ?: return false
+        val fieldsAfter  = formatter.readFields(bodyAfter,  fieldNames) ?: return false
+        val fieldsModify = formatter.readFields(bodyModify, fieldNames) ?: return false
 
-        try {
-            val jsonBefore = JsonParser.parseString(bodyBefore)
-            val jsonAfter = JsonParser.parseString(bodyAfter)
-            val jsonModify = JsonParser.parseString(bodyModify)
+        for (field in fieldNames) {
+            val valueBefore = fieldsBefore[field] ?: continue
+            val valueAfter  = fieldsAfter[field]
 
-            if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject || !jsonModify.isJsonObject){
-                return false
+            // field existed before but disappeared after the failed modification
+            if (valueAfter == null) return true
+
+            val valueModify = fieldsModify[field] ?: continue
+
+            // checking valueModify==valueAfter (not just valueAfter!=valueBefore) is done to
+            // deal with possible flakiness issues (e.g. timestamps changing between the two GETs)
+            if (valueBefore != valueAfter && valueModify == valueAfter) return true
+        }
+        return false
+    }
+
+    /**
+     * Handles the case where the PUT/PATCH request body is form-encoded.
+     * GET responses (bodyBefore / bodyAfter) can be JSON or XML; the format is auto-detected
+     * by trying each formatter in order and using the first one that parses both responses.
+     * Values are compared as strings since form-encoded values are always strings.
+     */
+    private fun hasChangedModifiedFieldsForm(
+        bodyBefore: String,
+        bodyAfter: String,
+        bodyModify: String,
+        fieldNames: Set<String>
+    ): Boolean {
+        val formFields = parseFormBody(bodyModify)
+        if (formFields.isEmpty()) return false
+
+        for (formatter in listOf(OutputFormatter.JSON_FORMATTER, OutputFormatter.XML_FORMATTER)) {
+            val fieldsBefore = formatter.readFields(bodyBefore, fieldNames) ?: continue
+            val fieldsAfter  = formatter.readFields(bodyAfter,  fieldNames) ?: continue
+
+            for (field in fieldNames) {
+                val valueBefore = fieldsBefore[field] ?: continue
+                val valueAfter  = fieldsAfter[field]
+
+                // field existed before but disappeared after the failed modification
+                if (valueAfter == null) return true
+
+                val valueModify = formFields[field]   ?: continue
+
+                // checking valueModify==valueAfter (not just valueAfter!=valueBefore) is done to
+                // deal with possible flakiness issues (e.g. timestamps changing between the two GETs)
+                if (valueBefore != valueAfter && valueModify == valueAfter) return true
             }
-
-            val objBefore = jsonBefore.asJsonObject
-            val objAfter = jsonAfter.asJsonObject
-            val objModify = jsonModify.asJsonObject
-
-            for(field in fieldNames){
-                val valueBefore = objBefore.get(field)
-                val valueAfter = objAfter.get(field)
-                val valueModify = objModify.get(field)
-
-                if(valueBefore != valueAfter && valueModify == valueAfter){
-                    return true
-                }
-            }
-
-            return false
-        } catch (e: Exception) {
             return false
         }
+        return false
+    }
+
+    private fun parseFormBody(body: String): Map<String, String> {
+        return body.split("&").mapNotNull { pair ->
+            val parts = pair.split("=", limit = 2)
+            if (parts.size == 2) {
+                try {
+                    java.net.URLDecoder.decode(parts[0], "UTF-8") to
+                        java.net.URLDecoder.decode(parts[1], "UTF-8")
+                } catch (e: Exception) { null }
+            } else null
+        }.toMap()
     }
 }

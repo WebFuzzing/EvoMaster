@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationController
+import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationXMLController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -10,13 +11,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class FailModificationEMTest : SpringTestBase(){
+class XMLFailModificationEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(FailModificationController())
+            initClass(FailModificationXMLController())
         }
     }
 
@@ -25,8 +26,8 @@ class FailModificationEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "FailedModificationEM",
-                1000
+                "XMLFailedModificationEM",
+                2000
         ) { args: MutableList<String> ->
 
             setOption(args, "schemaOracles", "false")

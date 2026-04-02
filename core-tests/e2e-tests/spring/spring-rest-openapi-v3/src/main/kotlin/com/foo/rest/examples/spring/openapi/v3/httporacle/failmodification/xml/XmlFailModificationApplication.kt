@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.base
+package com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.xml
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -12,16 +12,19 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import javax.xml.bind.annotation.XmlAccessType
+import javax.xml.bind.annotation.XmlAccessorType
+import javax.xml.bind.annotation.XmlRootElement
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/resources"])
 @RestController
-open class FailModificationApplication {
+open class XmlFailModificationApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(FailModificationApplication::class.java, *args)
+            SpringApplication.run(XmlFailModificationApplication::class.java, *args)
         }
 
         private val data = mutableMapOf<Int, ResourceData>()
@@ -34,32 +37,36 @@ open class FailModificationApplication {
         }
     }
 
-    data class ResourceData(
-        var name: String,
-        var value: Int
+    @XmlRootElement(name = "resourceData")
+    @XmlAccessorType(XmlAccessType.FIELD)
+    open class ResourceData(
+        var name: String = "",
+        var value: Int = 0
     )
 
-    data class UpdateRequest(
-        val name: String,
-        val value: Int
+    @XmlRootElement(name = "updateRequest")
+    @XmlAccessorType(XmlAccessType.FIELD)
+    open class UpdateRequest(
+        var name: String = "",
+        var value: Int = 0
     )
 
 
-    @PostMapping(path = ["/empty"])
+    @PostMapping(path = ["/empty"], consumes = ["application/xml"], produces = ["application/xml"])
     open fun create(@RequestBody body: ResourceData): ResponseEntity<ResourceData> {
         val id = data.size + 1
-        data[id] = body.copy()
+        data[id] = ResourceData(body.name, body.value)
         return ResponseEntity.status(201).body(data[id])
     }
 
-    @GetMapping(path = ["/empty/{id}"])
+    @GetMapping(path = ["/empty/{id}"], produces = ["application/xml"])
     open fun get(@PathVariable("id") id: Int): ResponseEntity<ResourceData> {
         val resource = data[id]
             ?: return ResponseEntity.status(404).build()
         return ResponseEntity.status(200).body(resource)
     }
 
-    @PutMapping(path = ["/empty/{id}"])
+    @PutMapping(path = ["/empty/{id}"], consumes = ["application/xml"], produces = ["text/plain"])
     open fun put(
         @PathVariable("id") id: Int,
         @RequestBody body: UpdateRequest
@@ -80,7 +87,7 @@ open class FailModificationApplication {
         return ResponseEntity.status(400).body("Invalid request")
     }
 
-    @PatchMapping(path = ["/empty/{id}"])
+    @PatchMapping(path = ["/empty/{id}"], consumes = ["application/xml"], produces = ["text/plain"])
     open fun patch(
         @PathVariable("id") id: Int,
         @RequestBody body: UpdateRequest
@@ -100,21 +107,21 @@ open class FailModificationApplication {
 
     // pre-populated resource to test that it is not modified by failed PUT
 
-    @PostMapping(path = ["/notempty"])
+    @PostMapping(path = ["/notempty"], consumes = ["application/xml"], produces = ["application/xml"])
     open fun createnotempty(@RequestBody body: ResourceData): ResponseEntity<ResourceData> {
         val id = dataAlreadyExists.size + 1
-        dataAlreadyExists[id] = body.copy()
+        dataAlreadyExists[id] = ResourceData(body.name, body.value)
         return ResponseEntity.status(201).body(dataAlreadyExists[id])
     }
 
-    @GetMapping(path = ["/notempty/{id}"])
+    @GetMapping(path = ["/notempty/{id}"], produces = ["application/xml"])
     open fun getnotempty(@PathVariable("id") id: Int): ResponseEntity<ResourceData> {
         val resource = dataAlreadyExists[id]
             ?: return ResponseEntity.status(404).build()
         return ResponseEntity.status(200).body(resource)
     }
 
-    @PutMapping(path = ["/notempty/{id}"])
+    @PutMapping(path = ["/notempty/{id}"], consumes = ["application/xml"], produces = ["text/plain"])
     open fun putnotempty(
         @PathVariable("id") id: Int,
         @RequestBody body: UpdateRequest
@@ -130,7 +137,7 @@ open class FailModificationApplication {
         return ResponseEntity.status(400).body("Invalid request")
     }
 
-    @PatchMapping(path = ["/notempty/{id}"])
+    @PatchMapping(path = ["/notempty/{id}"], consumes = ["application/xml"], produces = ["text/plain"])
     open fun patchnotempty(
         @PathVariable("id") id: Int,
         @RequestBody body: UpdateRequest

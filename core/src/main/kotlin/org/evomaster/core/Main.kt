@@ -262,6 +262,9 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
+            // 403 are usually not found during search, but created on purpose during security phase by
+            // mixing different users in the same test. as some http oracles might depend on 403s,
+            // we make sure to run security phase first
             solution = phaseSecurity(injector, config, epc, solution)
             solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseFlaky(injector, config, epc, solution)
@@ -674,7 +677,7 @@ class Main {
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<GraphQLIndividual>>() {})
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
-                    
+
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
                 EMConfig.Algorithm.BreederGA ->
@@ -713,7 +716,7 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.LIPS ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RPCIndividual>>() {})
-        
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.MuLambdaEA ->
@@ -753,7 +756,7 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.LIPS ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<WebIndividual>>() {})
-                    
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.MuLambdaEA ->

@@ -1,22 +1,21 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
 
-import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationController
+import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationURLEncodedController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
-import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class FailModificationEMTest : SpringTestBase(){
+class URLEncodedFailModificationEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(FailModificationController())
+            initClass(FailModificationURLEncodedController())
         }
     }
 
@@ -25,8 +24,8 @@ class FailModificationEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "FailedModificationEM",
-                1000
+                "URLEncodedFailedModificationEM",
+                100
         ) { args: MutableList<String> ->
 
             setOption(args, "schemaOracles", "false")
@@ -39,7 +38,7 @@ class FailModificationEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertEquals(2, faults.size)
+            assertEquals(1, faults.size)
             assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
         }
     }
