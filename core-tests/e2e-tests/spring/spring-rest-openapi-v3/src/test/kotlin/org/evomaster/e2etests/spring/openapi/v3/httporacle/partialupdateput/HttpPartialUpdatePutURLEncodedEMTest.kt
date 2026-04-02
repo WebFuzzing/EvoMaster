@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.partialupdateput
 
-import com.foo.rest.examples.spring.openapi.v3.httporacle.partialupdateput.HttpPartialUpdatePutController
+import com.foo.rest.examples.spring.openapi.v3.httporacle.partialupdateput.HttpPartialUpdatePutURLEncodedController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HttpPartialUpdatePutEMTest : SpringTestBase(){
+class HttpPartialUpdatePutURLEncodedEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(HttpPartialUpdatePutController())
+            initClass(HttpPartialUpdatePutURLEncodedController())
         }
     }
 
@@ -25,7 +25,7 @@ class HttpPartialUpdatePutEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "HttpPartialUpdatePutEM",
+                "HttpPartialUpdatePutURLEncodedEM",
                 1000
         ) { args: MutableList<String> ->
 

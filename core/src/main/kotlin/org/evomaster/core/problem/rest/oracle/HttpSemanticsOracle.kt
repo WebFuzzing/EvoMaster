@@ -250,8 +250,8 @@ object HttpSemanticsOracle {
     /**
      * Checks the PUT full-replacement oracle:
      *
-     *   PUT /path  → 2xx  (successful update/create with body B)
-     *   GET /path  → 2xx  (must return exactly the fields that were PUT)
+     *   PUT /path  -> 2xx  (successful update/create with body B)
+     *   GET /path  -> 2xx  (must return exactly the fields that were PUT)
      *
      * Returns true if any field sent in the PUT body has a different value
      * in the subsequent GET response (i.e. partial update bug).
@@ -282,6 +282,11 @@ object HttpSemanticsOracle {
         if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
         if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
 
+        val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
+        if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
+            return false
+        }
+
         val putBody = extractRequestBody(put)
         val getBody = resGet.getBody()
 
@@ -290,7 +295,7 @@ object HttpSemanticsOracle {
         val fieldNames = extractModifiedFieldNames(put)
         if (fieldNames.isEmpty()) return false
 
-        return hasMismatchedPutFields(putBody, getBody, fieldNames)
+        return hasMismatchedPutFields(putBody, getBody, fieldNames, bodyParam)
     }
 
     /**
@@ -300,27 +305,62 @@ object HttpSemanticsOracle {
     internal fun hasMismatchedPutFields(
         putBody: String,
         getBody: String,
+        fieldNames: Set<String>,
+        bodyParam: BodyParam? = null
+    ): Boolean {
+        return when {
+            bodyParam == null || bodyParam.isJson() ->
+                hasMismatchedPutFieldsStructured(OutputFormatter.JSON_FORMATTER, putBody, getBody, fieldNames)
+            bodyParam.isXml() ->
+                hasMismatchedPutFieldsStructured(OutputFormatter.XML_FORMATTER, putBody, getBody, fieldNames)
+            bodyParam.isForm() ->
+                hasMismatchedPutFieldsForm(putBody, getBody, fieldNames)
+            else -> false
+        }
+    }
+
+    private fun hasMismatchedPutFieldsStructured(
+        formatter: OutputFormatter,
+        putBody: String,
+        getBody: String,
         fieldNames: Set<String>
     ): Boolean {
-        try {
-            val jsonPut = JsonParser.parseString(putBody)
-            val jsonGet = JsonParser.parseString(getBody)
+        val fieldsPut = formatter.readFields(putBody, fieldNames) ?: return false
+        if (fieldsPut.isEmpty()) return false
 
-            if (!jsonPut.isJsonObject || !jsonGet.isJsonObject) return false
+        val fieldsGet = formatter.readFields(getBody, fieldsPut.keys.toSet()) ?: return false
 
-            val objPut = jsonPut.asJsonObject
-            val objGet = jsonGet.asJsonObject
+        for ((field, valuePut) in fieldsPut) {
+            val valueGet = fieldsGet[field] ?: return true  // field absent from GET -> mismatch
+            if (valuePut != valueGet) return true
+        }
+
+        return false
+    }
+
+    /**
+     * Handles the case where the PUT request body is form-encoded.
+     * The GET response format is auto-detected by trying JSON then XML.
+     */
+    private fun hasMismatchedPutFieldsForm(
+        putBody: String,
+        getBody: String,
+        fieldNames: Set<String>
+    ): Boolean {
+        val formFields = parseFormBody(putBody)
+        if (formFields.isEmpty()) return false
+
+        for (formatter in listOf(OutputFormatter.JSON_FORMATTER, OutputFormatter.XML_FORMATTER)) {
+            val fieldsGet = formatter.readFields(getBody, fieldNames) ?: continue
 
             for (field in fieldNames) {
-                val valuePut = objPut.get(field) ?: continue
-                val valueGet = objGet.get(field) ?: return true  // field absent from GET → mismatch
+                val valuePut = formFields[field] ?: continue
+                val valueGet = fieldsGet[field] ?: return true  // field absent from GET -> mismatch
                 if (valuePut != valueGet) return true
             }
-
-            return false
-        } catch (e: Exception) {
             return false
         }
+        return false
     }
 
     /**

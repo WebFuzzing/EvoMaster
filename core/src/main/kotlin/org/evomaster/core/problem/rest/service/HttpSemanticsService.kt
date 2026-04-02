@@ -373,5 +373,42 @@ class HttpSemanticsService {
         prepareEvaluateAndSave(ind)
     }
 
+    /**
+     * HTTP_PARTIAL_UPDATE_PUT oracle: PUT makes a full replacement, not a partial update.
+     * If only some fields should be modified, PATCH must be used instead.
+     *
+     * Sequence checked:
+     *   PUT /X  body=B  ->  2xx
+     *   GET /X          ->  response body must match exactly B
+     *                       (no field from a previous state should bleed through)
+     *
+     * Finds the shortest 2xx PUT individual, slices it to end at that PUT,
+     * then appends a bound GET on the same resolved path to verify the full replacement.
+     */
+    private fun partialUpdatePut() {
 
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: return@forEach
+
+            val successPuts = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+            if (successPuts.isEmpty()) return@forEach
+
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                successPuts.minBy { it.individual.size() },
+                HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+
+            val last = ind.seeMainExecutableActions().last() // the PUT 2xx
+            val getAfter = builder.createBoundActionFor(getDef, last)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
 }
