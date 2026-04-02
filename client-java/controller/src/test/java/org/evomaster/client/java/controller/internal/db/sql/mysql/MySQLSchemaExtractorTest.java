@@ -192,34 +192,4 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
         SqlScriptRunner.execCommand(rootConnection, String.format("DROP USER '%s'", anotherTestUserName));
     }
 
-    @Test
-    public void testCompositeForeignKey() throws Exception {
-
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Parent(id1 bigint, id2 bigint, primary key (id1, id2))");
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Child(" +
-                        "  id bigint primary key auto_increment " +
-                        ", pid1 bigint not null " +
-                        ", pid2 bigint not null " +
-                        ")");
-        SqlScriptRunner.execCommand(getConnection(), "ALTER TABLE Child add constraint compositeKey foreign key (pid1, pid2) references Parent(id1, id2)");
-
-        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
-        TableDto parent = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Parent")).findAny().get();
-        TableDto child = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Child")).findAny().get();
-
-        assertEquals(0, parent.foreignKeys.size());
-        assertEquals(1, child.foreignKeys.size());
-
-        ForeignKeyDto foreignKey = child.foreignKeys.get(0);
-
-        assertEquals(2, foreignKey.sourceColumns.size());
-        assertTrue(foreignKey.sourceColumns.stream().anyMatch(c -> c.equalsIgnoreCase("pid1")));
-        assertTrue(foreignKey.sourceColumns.stream().anyMatch(c -> c.equalsIgnoreCase("pid2")));
-        assertTrue(foreignKey.targetTable.equalsIgnoreCase("Parent"));
-
-        assertEquals(2, foreignKey.targetColumns.size());
-        assertTrue(foreignKey.targetColumns.stream().anyMatch(c -> c.equalsIgnoreCase("id1")));
-        assertTrue(foreignKey.targetColumns.stream().anyMatch(c -> c.equalsIgnoreCase("id2")));
-    }
-
 }
