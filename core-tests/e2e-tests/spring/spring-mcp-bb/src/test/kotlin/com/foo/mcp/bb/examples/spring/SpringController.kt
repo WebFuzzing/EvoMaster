@@ -60,6 +60,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
     }
 
     override fun getProblemInfo(): ProblemInfo {
+        // TODO change to McpProblem when implemented
         return GraphQlProblem("${getBaseURL()}/graphql")
     }
 
