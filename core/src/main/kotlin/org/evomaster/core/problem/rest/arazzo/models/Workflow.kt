@@ -6,7 +6,7 @@ class Workflow(
     val workflowId: String,
     val summary: String?,
     val description: String?,
-    val inputs: String?,
+    val inputs: JsonNode?,
     val dependsOn: List<String>?,
     val steps: List<Step>,
     val successActions: List<JsonNode>?,

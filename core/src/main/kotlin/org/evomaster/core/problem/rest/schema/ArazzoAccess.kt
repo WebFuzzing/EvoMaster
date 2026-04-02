@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.schema
 
+import org.evomaster.core.problem.rest.arazzo.parser.ArazzoParser
 import org.evomaster.core.problem.rest.schema.SchemaArazzo
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.LoggerFactory
@@ -16,11 +17,9 @@ object ArazzoAccess {
 
     fun parseArazzo(schemaText: String, sourceLocation: SchemaLocation): SchemaArazzo {
 
-        //Parser
+        val schemaParsed = ArazzoParser.parserSchemaText(schemaText)
+        return SchemaArazzo(schemaText, schemaParsed, sourceLocation)
 
-        //Schema
-
-        return SchemaArazzo(schemaText, schema, sourceLocation)
     }
 
     fun getArazzoFromLocation(

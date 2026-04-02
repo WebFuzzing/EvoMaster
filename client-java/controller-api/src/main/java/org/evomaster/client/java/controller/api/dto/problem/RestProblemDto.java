@@ -30,4 +30,9 @@ public class RestProblemDto extends ProblemInfoDto{
 
 
     public List<RestDerivedParamDto> derivedParams;
+
+    /**
+     * The full URL of where the Arazzo Specifications schema can be located.
+     */
+    public String arazzoURL;
 }
