@@ -328,7 +328,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -427,7 +427,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", true, -1L)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, true, -1L)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -585,7 +585,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, false, pkGeneUniqueId)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -640,13 +640,13 @@ class TestCaseWriterTest : WriterTestBase(){
 
 
         val insertId1 = 1002L
-        val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, "Table0", false, insertId0)
+        val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, TableId("Table0"), table0_Id.name, false, insertId0)
         val pkGene1 = SqlPrimaryKeyGene(table1_Id.name, "Table1", fkGene0, insertId1)
         val insert1 = SqlAction(table1, setOf(table1_Id), insertId1, listOf(pkGene1))
 
 
         val insertId2 = 1003L
-        val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, "Table1", false, insertId1)
+        val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, TableId("Table1"), table1_Id.name, false, insertId1)
         val pkGene2 = SqlPrimaryKeyGene(table2_Id.name, "Table2", fkGene1, insertId2)
         val insert2 = SqlAction(table2, setOf(table2_Id), insertId2, listOf(pkGene2))
 
@@ -1027,7 +1027,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val fooInsertionId = 1001L
         val fooInsertion = SqlAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, TableId("Foo"), fooId.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
@@ -1099,7 +1099,7 @@ public void test() throws Exception {
         val fooInsertionId = 1001L
         val fooInsertion = SqlAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, TableId("Foo"), fooId.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())

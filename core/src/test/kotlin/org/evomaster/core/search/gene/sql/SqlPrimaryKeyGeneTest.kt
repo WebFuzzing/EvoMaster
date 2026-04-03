@@ -126,9 +126,9 @@ class SqlPrimaryKeyGeneTest {
         val tableId = TableId("table")
         val pk = SqlPrimaryKeyGene("pk", tableId, IntegerGene("id", 1), 10L)
 
-        val fk1 = SqlForeignKeyGene("fk", 100L, tableId, false, 10L) // bound to pk
-        val fk2 = SqlForeignKeyGene("fk2", 101L, tableId, false, 20L) // bound to something else
-        val fk3 = SqlForeignKeyGene("fk3", 102L, tableId, false, -1L) // unbound
+        val fk1 = SqlForeignKeyGene("fk", 100L, tableId, "id", false, 10L) // bound to pk
+        val fk2 = SqlForeignKeyGene("fk2", 101L, tableId, "id", false, 20L) // bound to something else
+        val fk3 = SqlForeignKeyGene("fk3", 102L, tableId, "id", false, -1L) // unbound
 
         val table = Table(tableId, emptySet(), emptySet())
         val action1 = SqlAction(table, emptySet(), 10L, listOf(pk))
