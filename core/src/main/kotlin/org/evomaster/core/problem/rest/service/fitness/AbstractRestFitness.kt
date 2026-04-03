@@ -1205,17 +1205,44 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for non-working DELETE, as it has been disabled via configuration")
-        } else {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
             handleDeleteShouldDelete(individual, actionResults, fv)
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
-        } else {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
+            handleFailedModification(individual, actionResults, fv)
+        }
+    }
+
+    private fun handleFailedModification(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        // covers normal / 401 / 403 cases: GET 2xx → PUT|PATCH 4xx → GET 2xx (fields unchanged)
+        val hasSideEffect = HttpSemanticsOracle.hasSideEffectFailedModification(individual, actionResults)
+        // covers the 404 special case: GET 404 → PUT|PATCH 404 → GET (must still be 404)
+        val hasSideEffect404 = HttpSemanticsOracle.hasSideEffectIn404Modification(individual, actionResults)
+
+        if (!hasSideEffect && !hasSideEffect404) {
+            return
+        }
+
+        val putOrPatch = individual.seeMainExecutableActions().filter {
+            it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH
+        }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == putOrPatch.getLocalId() } as RestCallResult?
+            ?: return
+        ar.addFault(DetectedFault(category, putOrPatch.getName(), null))
     }
 
     private fun handleRepeatedCreatePut(

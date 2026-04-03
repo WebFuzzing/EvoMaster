@@ -13,10 +13,10 @@ import kotlin.math.max
  * of individuals at a time:
  * Only replaces selected parents with offspring if the offspring are better
  *
- * This class inherits from StandardGeneticAlgorithm to reuse shared components,
+ * This class inherits from AbstractGeneticAlgorithm to reuse shared components,
  * but overrides search behavior to follow steady-state principles.
  */
-class SteadyStateGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Individual {
+class SteadyStateGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.SteadyStateGA
