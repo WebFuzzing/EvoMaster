@@ -36,7 +36,7 @@ class SqlForeignKeyGeneTest {
         val foreignKey = ForeignKey(listOf(fkColumn), targetTableId, listOf(pkColumn))
         val sourceTable = Table(sourceTableId, setOf(fkColumn), setOf(foreignKey))
         val uniqueId2 = 3L
-        val fkGene = SqlForeignKeyGene("col_fk", uniqueId2, targetTableId, "col_pk", nullable = false)
+        val fkGene = SqlForeignKeyGene("col_fk", uniqueId2, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
         val action3 = SqlAction(sourceTable, setOf(fkColumn), uniqueId2, listOf(fkGene))
 
         RestIndividual(
@@ -254,8 +254,8 @@ class SqlForeignKeyGeneTest {
         val sourceTable = Table(sourceTableId, setOf(fk1, fk2), setOf(foreignKey1, foreignKey2))
 
         val uniqueIdSource = 3L
-        val fkGene1 = SqlForeignKeyGene("fk1", uniqueIdSource, targetTableId, "col_pk", nullable = false)
-        val fkGene2 = SqlForeignKeyGene("fk2", uniqueIdSource, targetTableId, "col_pk", nullable = false)
+        val fkGene1 = SqlForeignKeyGene("fk1", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
+        val fkGene2 = SqlForeignKeyGene("fk2", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
 
         val actionSource = SqlAction(sourceTable, setOf(fk1, fk2), uniqueIdSource, listOf(fkGene1, fkGene2))
 
@@ -277,18 +277,18 @@ class SqlForeignKeyGeneTest {
 
         // Randomize fkGene1. It should NOT force fkGene2 to change (if fkGene2 was already bound)
         // OR more importantly, if we randomize fkGene2, it should NOT be forced to point to whatever fkGene1 points to.
-        
+
         // Let's randomize fkGene2. Because it's "bound" (to uniqueIdTarget2), and fkGene1 is also bound (to uniqueIdTarget1).
-        // In the current BUGGY implementation, fkGene2.randomize() will find fkGene1 in 'otherFksInSameAction', 
+        // In the current BUGGY implementation, fkGene2.randomize() will find fkGene1 in 'otherFksInSameAction',
         // see it's bound to uniqueIdTarget1, and FORCE fkGene2 to also point to uniqueIdTarget1.
-        
+
         fkGene2.randomize(randomness, tryToForceNewValue = false)
-        
+
         // If the bug exists, fkGene2.uniqueIdOfPrimaryKey will now be equal to fkGene1.uniqueIdOfPrimaryKey (uniqueIdTarget1)
         // But they are independent FKs, so they SHOULD be allowed to point to different PKs.
         // Actually, randomize() might choose a new value if it wasn't forced, but here it's forced by 'alreadyBoundId'
-        
-        assertNotEquals(fkGene1.uniqueIdOfPrimaryKey, fkGene2.uniqueIdOfPrimaryKey, 
+
+        assertNotEquals(fkGene1.uniqueIdOfPrimaryKey, fkGene2.uniqueIdOfPrimaryKey,
             "Independent FKs in the same action should NOT be forced to point to the same PK")
     }
 }
