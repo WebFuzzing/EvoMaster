@@ -291,4 +291,92 @@ class SqlForeignKeyGeneTest {
         assertNotEquals(fkGene1.uniqueIdOfPrimaryKey, fkGene2.uniqueIdOfPrimaryKey,
             "Independent FKs in the same action should NOT be forced to point to the same PK")
     }
+
+    @Test
+    fun testIsReferenceToNonPrintableMultiColumnForeignKey() {
+        val targetTableId = TableId("targetTable")
+        // Column 1 is printable, Column 2 is non-printable (AutoIncrement)
+        val pkColumn1 = Column("col_pk1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, primaryKey = true)
+        val pkColumn2 = Column("col_pk2", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, primaryKey = true)
+        val targetTable = Table(targetTableId, setOf(pkColumn1, pkColumn2), emptySet())
+
+        // First row in target table
+        val uniqueId0 = 1L
+        val pkGene1_1 = SqlPrimaryKeyGene("col_pk1", targetTableId, IntegerGene("col_pk1", 1), uniqueId0)
+        val pkGene1_2 = SqlPrimaryKeyGene("col_pk2", targetTableId, SqlAutoIncrementGene("col_pk2"), uniqueId0)
+        val action1 = SqlAction(targetTable, setOf(pkColumn1, pkColumn2), uniqueId0, listOf(pkGene1_1, pkGene1_2))
+
+        val sourceTableId = TableId("sourceTable")
+        val fkColumn1 = Column("col_fk1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
+        val fkColumn2 = Column("col_fk2", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
+
+        val foreignKey = ForeignKey(listOf(fkColumn1, fkColumn2), targetTableId, listOf(pkColumn1, pkColumn2))
+        val sourceTable = Table(sourceTableId, setOf(fkColumn1, fkColumn2), setOf(foreignKey))
+
+        // First row in source table
+        val uniqueId2 = 3L
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2, listOf(fkGene1, fkGene2))
+
+        val previousGenes = listOf(pkGene1_1, pkGene1_2, fkGene1, fkGene2)
+
+        // Bind FK genes to PK genes with uniqueId0
+        fkGene1.uniqueIdOfPrimaryKey = uniqueId0
+        fkGene2.uniqueIdOfPrimaryKey = uniqueId0
+
+        // fkGene1 points to pkGene1_1 which is printable (IntegerGene)
+        assertFalse(fkGene1.isReferenceToNonPrintable(previousGenes))
+        // fkGene2 points to pkGene1_2 which is non-printable (SqlAutoIncrementGene)
+        assertTrue(fkGene2.isReferenceToNonPrintable(previousGenes))
+
+        // Unbind them
+        fkGene1.uniqueIdOfPrimaryKey = -1
+        fkGene2.uniqueIdOfPrimaryKey = -1
+        assertFalse(fkGene1.isReferenceToNonPrintable(previousGenes))
+        assertFalse(fkGene2.isReferenceToNonPrintable(previousGenes))
+    }
+
+    @Test
+    fun testGetValueAsPrintableStringMultiColumnForeignKey() {
+        val targetTableId = TableId("targetTable")
+        val pkColumn1 = Column("col_pk1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, primaryKey = true)
+        val pkColumn2 = Column("col_pk2", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, primaryKey = true)
+        val targetTable = Table(targetTableId, setOf(pkColumn1, pkColumn2), emptySet())
+
+        // First row in target table
+        val uniqueId0 = 1L
+        val pkGene1_1 = SqlPrimaryKeyGene("col_pk1", targetTableId, IntegerGene("col_pk1", 1), uniqueId0)
+        val pkGene1_2 = SqlPrimaryKeyGene("col_pk2", targetTableId, IntegerGene("col_pk2", 10), uniqueId0)
+        val action1 = SqlAction(targetTable, setOf(pkColumn1, pkColumn2), uniqueId0, listOf(pkGene1_1, pkGene1_2))
+
+        val sourceTableId = TableId("sourceTable")
+        val fkColumn1 = Column("col_fk1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
+        val fkColumn2 = Column("col_fk2", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
+
+        val foreignKey = ForeignKey(listOf(fkColumn1, fkColumn2), targetTableId, listOf(pkColumn1, pkColumn2))
+        val sourceTable = Table(sourceTableId, setOf(fkColumn1, fkColumn2), setOf(foreignKey))
+
+        // First row in source table
+        val uniqueId2 = 3L
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2, listOf(fkGene1, fkGene2))
+
+        val ind = RestIndividual(
+            resourceCalls = mutableListOf(),
+            sampleType = SampleType.RANDOM,
+            dbInitialization = mutableListOf(action1, action3)
+        )
+
+        // Bind FK genes to PK genes with uniqueId0
+        fkGene1.uniqueIdOfPrimaryKey = uniqueId0
+        fkGene2.uniqueIdOfPrimaryKey = uniqueId0
+
+        val previousGenes = listOf(pkGene1_1, pkGene1_2, fkGene1, fkGene2)
+
+        assertEquals("1", fkGene1.getValueAsPrintableString(previousGenes, null, null))
+        assertEquals("10", fkGene2.getValueAsPrintableString(previousGenes, null, null))
+    }
+
 }

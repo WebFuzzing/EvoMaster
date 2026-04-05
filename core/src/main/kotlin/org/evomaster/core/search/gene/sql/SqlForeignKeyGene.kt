@@ -211,8 +211,11 @@ class SqlForeignKeyGene(
             }
         }
 
-        val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
-                ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
+        val pk = previousGenes.find {
+            it is SqlPrimaryKeyGene &&
+                    it.uniqueId == uniqueIdOfPrimaryKey &&
+                    it.name == targetColumn
+        } ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey and column $targetColumn")
 
         if (!pk.isPrintable()) {
             //this can happen if the PK is autoincrement
@@ -228,8 +231,8 @@ class SqlForeignKeyGene(
         }
 
         val pk = previousGenes.filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey }
-                ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
+                .find { it.uniqueId == uniqueIdOfPrimaryKey && it.name == targetColumn }
+                ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey and column $targetColumn")
 
 
         if (!pk.isPrintable()) {
