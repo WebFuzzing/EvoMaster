@@ -51,7 +51,12 @@ class SqlForeignKeyGene(
          * Otherwise, it should be equal to the uniqueId of
          * a previous SqlPrimaryKey
          */
-        var uniqueIdOfPrimaryKey: Long = -1
+        var uniqueIdOfPrimaryKey: Long = -1,
+        /**
+         * names of columns that form a composite foreign key
+         * together with this one.
+         */
+        val otherSourceColumnsInCompositeFK: List<String> = emptyList()
 
 ) : SqlWrapperGene, SimpleGene(sourceColumn) {
 
@@ -82,7 +87,7 @@ class SqlForeignKeyGene(
         return this
     }
 
-    override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, targetColumn, nullable, uniqueIdOfPrimaryKey)
+    override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, targetColumn, nullable, uniqueIdOfPrimaryKey, otherSourceColumnsInCompositeFK)
 
     override fun setValueWithRawString(value: String) {
         throw IllegalStateException("cannot set value with string ($value) for ${this.javaClass.simpleName}")
@@ -119,6 +124,22 @@ class SqlForeignKeyGene(
                 .filter { it.tableName == targetTable }
                 .map { it.uniqueId }
                 .toSet()
+
+        // For composite FKs, we need to make sure all the genes point to the same PK.
+        // We find other FK genes in the same action that point to the same target table AND are part of the same composite FK.
+        val otherFksInSameAction = allGenes.asSequence()
+                .flatMap { it.flatView().asSequence() }
+                .filterIsInstance<SqlForeignKeyGene>()
+                .filter { it.uniqueId == uniqueId && it !== this && it.targetTable == targetTable }
+                .filter { otherSourceColumnsInCompositeFK.contains(it.name) }
+                .toList()
+
+        val alreadyBoundId = otherFksInSameAction.find { it.isBound() }?.uniqueIdOfPrimaryKey
+
+        if (alreadyBoundId != null) {
+            uniqueIdOfPrimaryKey = alreadyBoundId
+            return
+        }
 
         if (pks.isEmpty()) {
             /*

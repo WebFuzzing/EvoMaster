@@ -10,7 +10,6 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
-import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -417,12 +416,14 @@ class SqlActionGeneBuilder {
             throw IllegalArgumentException("Column $column is not part of foreign key $fk")
         }
         val targetColumn = fk.targetColumns[indexOfSourceColumn]
+        val otherSourceColumnsInCompositeFK = fk.sourceColumns.filter { it != column }.map { it.name }
         return SqlForeignKeyGene(
-            column.name,
-            id,
-            fk.targetTableId,
-            targetColumn.name,
-            column.nullable
+            sourceColumn = column.name,
+            uniqueId = id,
+            targetTable = fk.targetTableId,
+            targetColumn = targetColumn.name,
+            nullable = column.nullable,
+            otherSourceColumnsInCompositeFK = otherSourceColumnsInCompositeFK
         )
     }
 
