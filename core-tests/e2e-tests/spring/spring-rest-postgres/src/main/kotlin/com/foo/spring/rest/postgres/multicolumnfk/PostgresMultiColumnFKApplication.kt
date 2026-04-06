@@ -28,7 +28,7 @@ open class PostgresMultiColumnFKApplication : SwaggerConfiguration() {
 
     @GetMapping(path = ["/testFK"])
     open fun testFK(): ResponseEntity<Any> {
-        val query = em.createNativeQuery("select 1 from Child c join Parent p on c.parent_id1 = p.id1 and c.parent_id2 = p.id2")
+        val query = em.createNativeQuery("select * from Parent p JOIN Child c ON p.id1 = c.parent_id1 AND p.id2 = c.parent_id2 WHERE c.parent_id1>0 AND c.parent_id2>0")
         val res = query.resultList
 
         val status = if (res.isNotEmpty()) 200 else 400

@@ -18,7 +18,6 @@ class PostgresMultiColumnFKEMTest : SpringRestPostgresTestBase() {
         }
     }
 
-    @Disabled
     @Test
     fun testRunEM() {
 

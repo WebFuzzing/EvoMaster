@@ -139,14 +139,11 @@ object SqlWriter {
 
         val uniqueIdOfPrimaryKey = fkg.uniqueIdOfPrimaryKey
 
-        /*
-            TODO: the code here is not handling multi-column PKs/FKs
-         */
         val pkExisting = allActions
                 .filter { it.representExistingData }
                 .flatMap { it.seeTopGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey }
+                .find { it.uniqueId == uniqueIdOfPrimaryKey && it.name == fkg.targetColumn }
 
         /*
            This FK might point to a PK of data already existing in the database.
@@ -175,7 +172,7 @@ object SqlWriter {
         val pkg = allActions
                 .flatMap { it.seeTopGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey }!!
+                .find { it.uniqueId == uniqueIdOfPrimaryKey && it.name == fkg.targetColumn }!!
 
         val pk = getPrintableValue(format, pkg)
         return ".d(\"$variableName\", \"$pk\")"
