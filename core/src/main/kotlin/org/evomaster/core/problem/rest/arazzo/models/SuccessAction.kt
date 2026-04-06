@@ -5,6 +5,6 @@ class SuccessAction(
     val type: String,
     val workflowId: String?,
     val stepId: String?,
-    val criteria: List<Criterion>
+    val criteria: List<Criterion>?
 ) {
 }

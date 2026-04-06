@@ -75,10 +75,10 @@ class ArazzoLocalURLIssueTest {
             "file://$arazzoTestDirectory/arazzo_pet.yaml"
         }
 
-        // create swagger from URL
+        // create arazzo from URL
         val arazzo = ArazzoAccess.getArazzoFromLocation(urlArazzoToTest)
 
-        // a valid swagger is created with 13 endpoints
+        // a valid arazzo is created with 3 workflows
         Assertions.assertTrue(arazzo.schemaParsed.workflows.size == 3)
     }
 

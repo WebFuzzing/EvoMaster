@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import org.evomaster.core.problem.rest.arazzo.models.ArazzoSpecifications
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.schema.SchemaArazzo
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 
@@ -13,7 +12,7 @@ object ArazzoParser {
     val jsonMapper = ObjectMapper().findAndRegisterModules()
     val yamlMapper = ObjectMapper(YAMLFactory()).findAndRegisterModules()
 
-    fun parserSchemaText(schemaText: String): ArazzoSpecifications {
+    fun parseSchemaText(schemaText: String): ArazzoSpecifications {
         val schemaTextClean = schemaText.trimStart()
 
         var arazzoSpecifications: ArazzoSpecifications?
@@ -33,7 +32,11 @@ object ArazzoParser {
     }
 
     fun validateSchema(schemaArazzo: SchemaArazzo, schemaOpenAPI: SchemaOpenAPI) {
-
+        schemaArazzo.schemaParsed.sourceDescriptions.forEach {
+            sourceDescription -> ArazzoValidator.validateSourceDescriptions(sourceDescription)
+        }
+        ArazzoValidator.validateWorkflows(schemaArazzo.schemaParsed.workflows)
+        ArazzoValidator.validateComponents(schemaArazzo.schemaParsed.components)
     }
 
 }

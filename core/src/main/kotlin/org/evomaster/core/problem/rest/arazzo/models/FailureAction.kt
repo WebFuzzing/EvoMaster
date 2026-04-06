@@ -7,6 +7,6 @@ class FailureAction(
     val stepId: String?,
     val retryAfter: Number?,
     val retryLimit: Integer?,
-    val criteria: Criterion
+    val criteria: List<Criterion>?
 ) {
 }

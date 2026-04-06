@@ -1,11 +1,13 @@
 package org.evomaster.core.problem.rest.arazzo.models
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import org.evomaster.core.problem.rest.arazzo.deserializer.CriterionTypeDeserializer
 
 class Criterion(
-    val context: String?,
+    val context: RuntimeExpression?,
     val condition: String,
-    val type: JsonNode?
+    @JsonDeserialize(using = CriterionTypeDeserializer::class)
+    val type: CriterionType?
 ) {
 
 }
