@@ -37,6 +37,8 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_REPEATED_CREATE_PUT(914, "Repeated PUT Creates Resource With 201", "repeatedCreatePut",
         "TODO"),
+    HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(915, "A failed PUT or PATCH must not change the resource", "sideEffectsFailedModification",
+        "TODO"),
 
 
     //3xx: GraphQL
