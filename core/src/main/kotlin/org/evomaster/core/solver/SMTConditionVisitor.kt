@@ -1,6 +1,6 @@
 package org.evomaster.core.solver
 
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
@@ -20,7 +20,7 @@ import java.util.*
 class SMTConditionVisitor(
     private val defaultTableName: String,
     private val tableAliases: Map<String, String>,
-    private val tables: List<TableDto>,
+    private val tables: List<Table>,
     private val rowIndex: Int
 ) : SqlConditionVisitor<SMTNode, Void> {
 
@@ -156,6 +156,7 @@ class SMTConditionVisitor(
                     it.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
         }
     }
+
 
     /**
      * Maps SQL comparison operators to SMT-LIB comparators.

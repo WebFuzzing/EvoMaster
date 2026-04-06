@@ -16,8 +16,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
@@ -38,7 +38,6 @@ import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
-import kotlin.text.equals
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -91,13 +90,93 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
         // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
 
-        val generator = SmtLibGenerator(schemaDto, numberOfRows)
+        // Convert DTOs to domain objects at the boundary, before any business logic
+        val smtTables = Companion.buildSmtTables(schemaDto)
+
+        val generator = SmtLibGenerator(smtTables, schemaDto.databaseType, numberOfRows)
         val queryStatement = parseStatement(sqlQuery)
         val smtLib = generator.generateSMT(queryStatement)
         val fileName = storeToTmpFile(smtLib)
         val z3Response = executor.solveFromFile(fileName)
 
-        return toSqlActionList(schemaDto, z3Response)
+        return toSqlActionList(smtTables, z3Response)
+    }
+
+    companion object {
+
+        /**
+         * Converts a [DbInfoDto] schema to a list of [SmtTable] domain objects.
+         *
+         * This is the boundary where DTOs are translated into domain objects.
+         * Exposed as a companion method so tests can build a [SmtLibGenerator] directly
+         * without going through the full solver pipeline.
+         */
+        fun buildSmtTables(schemaDto: DbInfoDto): List<SmtTable> {
+            return schemaDto.tables.map { tableDto ->
+                val columns = buildColumns(schemaDto.databaseType, tableDto)
+                val foreignKeys = buildForeignKeys(tableDto, columns)
+                val table = Table(TableId(tableDto.id.name), columns, foreignKeys)
+                val checkExpressions = tableDto.tableCheckExpressions.map { it.sqlCheckExpression }
+                SmtTable(table, checkExpressions)
+            }
+        }
+
+        private fun buildColumns(databaseType: DatabaseType, tableDto: TableDto): Set<Column> {
+            return tableDto.columns.map { columnDto ->
+                toColumn(columnDto, databaseType)
+            }.toSet()
+        }
+
+        private fun buildForeignKeys(tableDto: TableDto, columns: Set<Column>): Set<ForeignKey> {
+            return tableDto.foreignKeys.map { fkDto ->
+                val sourceColumns = fkDto.sourceColumns.mapNotNull { colName ->
+                    columns.firstOrNull { it.name.equals(colName, ignoreCase = true) }
+                }.toSet()
+                ForeignKey(sourceColumns, TableId(fkDto.targetTable))
+            }.toSet()
+        }
+
+        private fun toColumn(columnDto: ColumnDto, databaseType: DatabaseType): Column {
+            return Column(
+                name = columnDto.name,
+                type = getColumnDataType(columnDto.type),
+                size = columnDto.size,
+                primaryKey = columnDto.primaryKey,
+                nullable = columnDto.nullable,
+                unique = columnDto.unique,
+                autoIncrement = columnDto.autoIncrement,
+                foreignKeyToAutoIncrement = columnDto.foreignKeyToAutoIncrement,
+                lowerBound = null,
+                upperBound = null,
+                enumValuesAsStrings = null,
+                similarToPatterns = null,
+                likePatterns = null,
+                databaseType = databaseType,
+                isUnsigned = false,
+                compositeType = null,
+                compositeTypeName = null,
+                isNotBlank = null,
+                minSize = null,
+                maxSize = null,
+                javaRegExPattern = null
+            )
+        }
+
+        /**
+         * Maps column type strings (from SQL schema) to [ColumnDataType] enum values.
+         */
+        private fun getColumnDataType(type: String): ColumnDataType {
+            return when (type.uppercase()) {
+                "BIGINT" -> ColumnDataType.BIGINT
+                "INTEGER", "INT" -> ColumnDataType.INTEGER
+                "FLOAT" -> ColumnDataType.FLOAT
+                "DOUBLE" -> ColumnDataType.DOUBLE
+                "TIMESTAMP" -> ColumnDataType.TIMESTAMP
+                "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
+                "CHAR" -> ColumnDataType.CHAR
+                else -> ColumnDataType.CHARACTER_VARYING // Default type
+            }
+        }
     }
 
     /**
@@ -127,10 +206,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Converts Z3's response to a list of SqlActions.
      *
+     * @param smtTables The pre-built domain tables, used to look up schema metadata.
      * @param z3Response The response from Z3.
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbInfoDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
+    private fun toSqlActionList(smtTables: List<SmtTable>, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
         if (!z3Response.isPresent) {
             return emptyList()
         }
@@ -138,11 +218,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val actions = mutableListOf<SqlAction>()
 
         for (row in z3Response.get()) {
-            val tableName = getTableName(row.key)
+            val smtTableName = getTableName(row.key)
             val columns = row.value as StructValue
 
-            // Find table from schema and create SQL actions
-            val table = findTableByName(schemaDto, tableName)
+            // Find the SmtTable by its SMT-safe name (which is what Z3 returns)
+            val smtTable = smtTables.firstOrNull { it.smtName == smtTableName }
+                ?: throw RuntimeException("Table not found for SMT name: $smtTableName")
+            val table = smtTable.table
 
             /*
              * The invariant requires that action.insertionId == primaryKey.uniqueId (and same for FK).
@@ -153,7 +235,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            // smtColumn is the Ascii version from SmtLib; resolve back to original DB column name
+            // smtColumn is the ASCII version from SmtLib; resolve back to original DB column name
             for (smtColumn in columns.fields) {
                 val dbColumn = table.columns.firstOrNull {
                     convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
@@ -163,14 +245,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 var gene: Gene = IntegerGene(dbColumnName, 0)
                 when (val columnValue = columns.getField(smtColumn)) {
                     is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "BOOLEAN")) {
+                        gene = if (dbColumn?.type == ColumnDataType.BOOLEAN || dbColumn?.type == ColumnDataType.BOOL) {
                             BooleanGene(dbColumnName, toBoolean(columnValue.value))
                         } else {
                             StringGene(dbColumnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "TIMESTAMP")) {
+                        gene = if (dbColumn?.type == ColumnDataType.TIMESTAMP) {
                             val epochSeconds = columnValue.value.toLong()
                             val localDateTime = LocalDateTime.ofInstant(
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
@@ -205,26 +287,6 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return value.equals("True", ignoreCase = true)
     }
 
-    private fun hasColumnType(
-        schemaDto: DbInfoDto,
-        table: Table,
-        columnName: String?,
-        expectedType: String
-    ): Boolean {
-
-        if (columnName == null) return false
-
-        val tableDto = schemaDto.tables.firstOrNull {
-            it.id.name.equals(table.id.name, ignoreCase = true)
-        } ?: return false
-
-        val col = tableDto.columns.firstOrNull {
-            it.name.equals(columnName, ignoreCase = true)
-        } ?: return false
-
-        return col.type.equals(expectedType, ignoreCase = true)
-    }
-
     /**
      * Extracts the table name from the key by removing the last character (index).
      *
@@ -233,117 +295,6 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private fun getTableName(key: String): String {
         return key.substring(0, key.length - 1) // Remove last character
-    }
-
-    /**
-     * Finds a table by its name from the schema and constructs a Table object.
-     *
-     * @param schema The database schema.
-     * @param tableName The name of the table to find.
-     * @return The Table object.
-     */
-    private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
-        val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
-            ?: throw RuntimeException("Table not found: $tableName")
-        return Table(
-            TableId(tableDto.id.name) , //TODO other info, eg schema
-            findColumns(schema,tableDto), // Convert columns from DTO
-            findForeignKeys(tableDto) // TODO: Implement this method
-        )
-    }
-
-    /**
-     * Converts a list of ColumnDto to a set of Column objects.
-     *
-     * @param tableDto The table DTO containing column definitions.
-     * @return A set of Column objects.
-     */
-    private fun findColumns(schemaDto: DbInfoDto, tableDto: TableDto): Set<Column> {
-        return tableDto.columns.map { columnDto ->
-            toColumnFromDto(columnDto, schemaDto.databaseType)
-        }.toSet()
-    }
-
-    /**
-     * Converts ColumnDto to a Column object.
-     *
-     * @param columnDto The column DTO.
-     * @param databaseType The type of the database.
-     * @return The Column object.
-     */
-    private fun toColumnFromDto(
-        columnDto: ColumnDto,
-        databaseType: DatabaseType
-    ): Column {
-        val name = columnDto.name
-        val type = getColumnDataType(columnDto.type)
-        val nullable: Boolean = columnDto.nullable
-        val primaryKey = columnDto.primaryKey
-        val unique = columnDto.unique
-        val autoIncrement = columnDto.autoIncrement
-        val foreignKeyToAutoIncrement = columnDto.foreignKeyToAutoIncrement
-        val size = columnDto.size
-        val lowerBound = null
-        val upperBound = null
-        val enumValuesAsStrings = null
-        val similarToPatterns = null
-        val likePatterns = null
-        val isUnsigned = false
-        val compositeType = null
-        val compositeTypeName = 0
-        val isNotBlank = null
-        val minSize = null
-        val maxSize = null
-        val javaRegExPattern = null
-
-        val column = Column(
-            name,
-            type,
-            size,
-            primaryKey,
-            nullable,
-            unique,
-            autoIncrement,
-            foreignKeyToAutoIncrement,
-            lowerBound,
-            upperBound,
-            enumValuesAsStrings,
-            similarToPatterns,
-            likePatterns,
-            databaseType,
-            isUnsigned,
-            compositeType,
-            compositeTypeName,
-            isNotBlank,
-            minSize,
-            maxSize,
-            javaRegExPattern
-        )
-        return column
-    }
-
-    /**
-     * Maps column types to ColumnDataType.
-     *
-     * @param type The column type as a string.
-     * @return The corresponding ColumnDataType.
-     */
-    private fun getColumnDataType(type: String): ColumnDataType {
-        return when (type) {
-            "BIGINT" -> ColumnDataType.BIGINT
-            "INTEGER" -> ColumnDataType.INTEGER
-            "FLOAT" -> ColumnDataType.FLOAT
-            "DOUBLE" -> ColumnDataType.DOUBLE
-            "TIMESTAMP" -> ColumnDataType.TIMESTAMP
-            "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
-            "CHAR" -> ColumnDataType.CHAR
-            else -> ColumnDataType.CHARACTER_VARYING // Default type
-        }
-    }
-
-    // TODO: Implement this method
-    private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet() // Placeholder
     }
 
     /**

@@ -7,10 +7,9 @@ import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
-import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.ForeignKey
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
 import net.sf.jsqlparser.JSQLParserException
@@ -23,15 +22,22 @@ import org.evomaster.solver.smtlib.assertion.*
 /**
  * Generates SMT-LIB constraints from SQL queries and schema definitions.
  *
- * @param schema The database schema containing tables and constraints.
+ * @param smtTables The tables in the schema, pre-wrapped with SMT-safe identifiers.
+ * @param databaseType The database type, used to select the correct SQL dialect when parsing constraints.
  * @param numberOfRows The number of rows to be considered in constraints.
  */
-class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
+class SmtLibGenerator(
+    private val smtTables: List<SmtTable>,
+    private val databaseType: DatabaseType,
+    private val numberOfRows: Int
+) {
 
-    private var parser = JSqlConditionParser()
+    private val parser = JSqlConditionParser()
 
-    private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
     private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
+
+    /** Flat list of domain [org.evomaster.core.sql.schema.Table] objects, passed to [SMTConditionVisitor]. */
+    private val tables: List<org.evomaster.core.sql.schema.Table> = smtTables.map { it.table }
 
     /**
      * Main method to generate SMT-LIB representation from SQL query.
@@ -91,7 +97,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smtTable The table for which unique constraints are added.
      */
     private fun appendUniqueConstraints(smt: SMTLib, smtTable: SmtTable) {
-        for (column in smtTable.dto.columns) {
+        for (column in smtTable.table.columns) {
             if (column.unique) {
                 val nodes = assertForDistinctField(smtTable.smtColumnName(column.name), smtTable.smtName)
                 smt.addNodes(nodes)
@@ -106,17 +112,17 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smtTable The table for which check constraints are added.
      */
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
-        for (check in smtTable.dto.tableCheckExpressions) {
+        for (sqlExpression in smtTable.checkExpressions) {
             try {
-                val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
+                val condition: SqlCondition = parser.parse(sqlExpression, toDBType(databaseType))
                 for (i in 1..numberOfRows) {
                     val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
                     smt.addNode(constraint)
                 }
             } catch (e: SqlConditionParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $sqlExpression. Reason: ${e.message}")
             } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $sqlExpression. Reason: ${e.message}")
             }
         }
     }
@@ -130,7 +136,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The corresponding SMT node.
      */
     private fun parseCheckExpression(smtTable: SmtTable, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(smtTable.smtName, emptyMap(), schema.tables, index)
+        val visitor = SMTConditionVisitor(smtTable.smtName, emptyMap(), tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -166,8 +172,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
-            for (column in smtTable.dto.columns) {
-                if (column.type.equals("BOOLEAN", ignoreCase = true)) {
+            for (column in smtTable.table.columns) {
+                if (column.type == ColumnDataType.BOOLEAN || column.type == ColumnDataType.BOOL) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
                     for (i in 1..numberOfRows) {
                         smt.addNode(
@@ -192,8 +198,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
-            for (column in smtTable.dto.columns) {
-                if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
+            for (column in smtTable.table.columns) {
+                if (column.type == ColumnDataType.TIMESTAMP) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
                     val lowerBound = 0 // Example for Unix epoch start
                     val upperBound = 32503680000 // Example for year 3000 in seconds
@@ -229,9 +235,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smtTable The table for which primary key constraints are added.
      */
     private fun appendPrimaryKeyConstraints(smt: SMTLib, smtTable: SmtTable) {
-        val primaryKeys = smtTable.dto.columns.filter { it.primaryKey }
-
-        for (primaryKey in primaryKeys) {
+        for (primaryKey in smtTable.table.primaryKeys()) {
             val nodes = assertForDistinctField(smtTable.smtColumnName(primaryKey.name), smtTable.smtName)
             smt.addNodes(nodes)
         }
@@ -270,15 +274,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smtTable The table for which foreign key constraints are added.
      */
     private fun appendForeignKeyConstraints(smt: SMTLib, smtTable: SmtTable) {
-        for (foreignKey in smtTable.dto.foreignKeys) {
+        for (foreignKey in smtTable.table.foreignKeys) {
             val referencedSmtTable = findReferencedSmtTable(foreignKey)
             val referencedColumnSelector = referencedSmtTable.smtColumnName(
-                findReferencedPKSelector(smtTable.dto, referencedSmtTable.dto, foreignKey)
+                findReferencedPKSelector(smtTable.table, referencedSmtTable.table, foreignKey)
             )
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
-                    smtTable.smtColumnName(sourceColumn), smtTable.smtName,
+                    smtTable.smtColumnName(sourceColumn.name), smtTable.smtName,
                     referencedColumnSelector, referencedSmtTable.smtName
                 )
                 smt.addNodes(nodes)
@@ -320,30 +324,35 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     }
 
     /**
-     * Finds the primary key column name in the referenced table.
+     * Finds the primary key column name in the referenced table that is type-compatible with the source FK column.
      *
+     * @param sourceTable The source table containing the foreign key.
      * @param referencedTable The referenced table.
      * @param foreignKey The foreign key constraint.
      * @return The primary key column name in the referenced table.
      */
-    private fun findReferencedPKSelector(sourceTable: TableDto, referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
-        val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
-        val sourceColumnName = foreignKey.sourceColumns.firstOrNull()
+    private fun findReferencedPKSelector(
+        sourceTable: org.evomaster.core.sql.schema.Table,
+        referencedTable: org.evomaster.core.sql.schema.Table,
+        foreignKey: ForeignKey
+    ): String {
+        val referencedPrimaryKeys = referencedTable.primaryKeys()
+        val sourceColumnName = foreignKey.sourceColumns.firstOrNull()?.name
         val sourceSmtType = sourceColumnName?.let { scn ->
             sourceTable.columns.firstOrNull { it.name.equals(scn, ignoreCase = true) }
-                ?.let { TYPE_MAP[it.type.uppercase()] }
+                ?.let { TYPE_MAP[it.type] }
         }
         if (referencedPrimaryKeys.isNotEmpty() &&
-            (sourceSmtType == null || TYPE_MAP[referencedPrimaryKeys[0].type.uppercase()] == sourceSmtType)) {
+            (sourceSmtType == null || TYPE_MAP[referencedPrimaryKeys[0].type] == sourceSmtType)) {
             return referencedPrimaryKeys[0].name
         }
         // No PK or type mismatch: find a type-compatible column
         if (sourceSmtType != null) {
-            referencedTable.columns.firstOrNull { TYPE_MAP[it.type.uppercase()] == sourceSmtType }
+            referencedTable.columns.firstOrNull { TYPE_MAP[it.type] == sourceSmtType }
                 ?.let { return it.name }
         }
         return referencedTable.columns.firstOrNull()?.name
-            ?: throw RuntimeException("Referenced table has no columns: ${foreignKey.targetTable}")
+            ?: throw RuntimeException("Referenced table has no columns: ${foreignKey.targetTableId.name}")
     }
 
     /**
@@ -352,9 +361,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param foreignKey The foreign key constraint.
      * @return The referenced [SmtTable].
      */
-    private fun findReferencedSmtTable(foreignKey: ForeignKeyDto): SmtTable {
-        return smtTableByOriginalName[foreignKey.targetTable.lowercase()]
-            ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
+    private fun findReferencedSmtTable(foreignKey: ForeignKey): SmtTable {
+        return smtTableByOriginalName[foreignKey.targetTableId.name.lowercase()]
+            ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTableId.name}")
     }
 
     /**
@@ -374,7 +383,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
             if (where != null) {
                 try {
-                    val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                    val condition = parser.parse(where.toString(), toDBType(databaseType))
                     val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
                     for (i in 1..numberOfRows) {
                         val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
@@ -404,7 +413,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     if (onExpressions.isNotEmpty()) {
                         val onExpression = onExpressions.elementAt(0)
                         try {
-                            val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
+                            val condition = parser.parse(onExpression.toString(), toDBType(databaseType))
                             val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
                             for (i in 1..numberOfRows) {
                                 val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
@@ -431,7 +440,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun parseQueryCondition(tableAliases: Map<String, String>, defaultTableName: String, condition: SqlCondition, index: Int): SMTNode {
         val smtDefaultTableName = smtTableByOriginalName[defaultTableName.lowercase()]?.smtName
             ?: convertToAscii(defaultTableName)
-        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, schema.tables, index)
+        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -480,7 +489,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         val tablesFinder = TablesNamesFinder()
 
         // Add tables from the FROM clause
-        val tables = try {
+        val queryTables = try {
             tablesFinder.getTables(sqlQuery)
         } catch (e: Exception) {
             // This is because the jsqlParser does not support visit(Execute execute) {
@@ -490,7 +499,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             emptySet<String>()
         }
 
-        for (tableName in tables){
+        for (tableName in queryTables){
             tablesMentioned.add(tableName.lowercase())
         }
 
@@ -530,8 +539,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return A list of SMT nodes for column constructors.
      */
     private fun getConstructors(smtTable: SmtTable): List<DeclareConstSMTNode> {
-        return smtTable.dto.columns.map { c ->
-            val smtType = TYPE_MAP[c.type.uppercase()]
+        return smtTable.table.columns.map { c ->
+            val smtType = TYPE_MAP[c.type]
                 ?: throw RuntimeException("Unsupported column type: ${c.type}")
             DeclareConstSMTNode(smtTable.smtColumnName(c.name), smtType)
         }
@@ -539,37 +548,37 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     companion object {
 
-        // Maps database column types to SMT-LIB types
+        // Maps domain column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
-            "BIGINT" to "Int",
-            "BIT" to "Int",
-            "INTEGER" to "Int",
-            "INT" to "Int",
-            "INT2" to "Int",
-            "INT4" to "Int",
-            "INT8" to "Int",
-            "TINYINT" to "Int",
-            "SMALLINT" to "Int",
-            "NUMERIC" to "Int",
-            "SERIAL" to "Int",
-            "SMALLSERIAL" to "Int",
-            "BIGSERIAL" to "Int",
-            "TIMESTAMP" to "Int",
-            "DATE" to "Int",
-            "FLOAT" to "Real",
-            "DOUBLE" to "Real",
-            "DECIMAL" to "Real",
-            "REAL" to "Real",
-            "CHARACTER VARYING" to "String",
-            "CHAR" to "String",
-            "VARCHAR" to "String",
-            "TEXT" to "String",
-            "CHARACTER LARGE OBJECT" to "String",
-            "BOOLEAN" to "String",
-            "BOOL" to "String",
-            "UUID" to "String",
-            "JSONB" to "String",
-            "BYTEA" to "String",
+            ColumnDataType.BIGINT to "Int",
+            ColumnDataType.BIT to "Int",
+            ColumnDataType.INTEGER to "Int",
+            ColumnDataType.INT to "Int",
+            ColumnDataType.INT2 to "Int",
+            ColumnDataType.INT4 to "Int",
+            ColumnDataType.INT8 to "Int",
+            ColumnDataType.TINYINT to "Int",
+            ColumnDataType.SMALLINT to "Int",
+            ColumnDataType.NUMERIC to "Int",
+            ColumnDataType.SERIAL to "Int",
+            ColumnDataType.SMALLSERIAL to "Int",
+            ColumnDataType.BIGSERIAL to "Int",
+            ColumnDataType.TIMESTAMP to "Int",
+            ColumnDataType.DATE to "Int",
+            ColumnDataType.FLOAT to "Real",
+            ColumnDataType.DOUBLE to "Real",
+            ColumnDataType.DECIMAL to "Real",
+            ColumnDataType.REAL to "Real",
+            ColumnDataType.CHARACTER_VARYING to "String",
+            ColumnDataType.CHAR to "String",
+            ColumnDataType.VARCHAR to "String",
+            ColumnDataType.TEXT to "String",
+            ColumnDataType.CHARACTER_LARGE_OBJECT to "String",
+            ColumnDataType.BOOLEAN to "String",
+            ColumnDataType.BOOL to "String",
+            ColumnDataType.UUID to "String",
+            ColumnDataType.JSONB to "String",
+            ColumnDataType.BYTEA to "String",
         )
     }
 }
