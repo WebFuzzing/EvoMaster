@@ -13,7 +13,6 @@ class OutputFormatterTest {
 
     @Test
     fun test(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val body = """
                 {
                    "authorId": "VZyJz8z_Eu2",
@@ -28,7 +27,6 @@ class OutputFormatterTest {
 
     @Test
     fun testMismatched(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val body = """
 
                    "authorId": "VZyJz8z_Eu2",
@@ -43,7 +41,6 @@ class OutputFormatterTest {
     }
     @Test
     fun testEscapes(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val body = """
             {
             "name":"T\""
@@ -56,7 +53,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes2(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
 
         val string = """{"id":"9d8UV_=e1T0eWTlc", "value":"93${'$'}v98g"}"""
         OutputFormatter.JSON_FORMATTER.getFormatted(string)
@@ -64,7 +60,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes3(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
 
         val string = """
             {"id":"19r\"l_", "value":""}
@@ -74,7 +69,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes4(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val testGene = StringGene("QuoteGene", "Test For the quotes${'"'}escape")
 
         OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.KOTLIN_JUNIT_5))
@@ -82,7 +76,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes6(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
 
         val string = """
             {"id":"19r\\l_"}
@@ -92,7 +85,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes7(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
 
         val string = """
            {"id":"Ot${'$'}Ag", "value":"Q"}
@@ -102,7 +94,6 @@ class OutputFormatterTest {
 
     @Test
     fun testEscapes8(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val testGene = StringGene("DollarGene", "Test For the dollar${'$'}escape")
 
         OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.KOTLIN_JUNIT_5))
@@ -165,5 +156,246 @@ class OutputFormatterTest {
         assertTrue(isValid)
     }
 
+    @Test
+    fun testXml(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 2)
+        val body = """
+        <root>
+            <authorId>VZyJz8z_Eu2</authorId>
+            <creationTime>1921-3-13T10:18:56.000Z</creationTime>
+            <newsId>L</newsId>
+        </root>
+    """.trimIndent()
 
+        // should throw no exception
+        OutputFormatter.XML_FORMATTER.getFormatted(body)
+    }
+
+    @Test
+    fun testXmlMismatched(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 2)
+        val body = """
+        <root>
+            <authorId>VZyJz8z_Eu2</authorId>
+            <creationTime>1921-3-13T10:18:56.000Z</creationTime>
+            <newsId>L</newsId>
+    """.trimIndent()
+
+        assertThrows<Exception> {
+            OutputFormatter.XML_FORMATTER.getFormatted(body)
+        }
+    }
+
+    @Test
+    fun testValidXml() {
+        val xml = "<root><name>Hello World</name></root>"
+        val isValid = OutputFormatter.XML_FORMATTER.isValid(xml)
+        assertTrue(isValid)
+    }
+
+    @Test
+    fun testInvalidXml() {
+        val xml = "<root><name>Hello World</root>"
+        val isValid = OutputFormatter.XML_FORMATTER.isValid(xml)
+        assertFalse(isValid)
+    }
+
+    @Test
+    fun testXmlScientificNotationLikeValues() {
+        val body = """
+        <root>
+            <value>1e10</value>
+            <small>2.5e-3</small>
+        </root>
+    """.trimIndent()
+
+        val formatted = OutputFormatter.XML_FORMATTER.getFormatted(body)
+        assertNotNull(formatted)
+    }
+
+    @Test
+    fun testXmlWithAttributes() {
+        val body = """
+        <root>
+            <item id="123" type="example">Content</item>
+        </root>
+    """.trimIndent()
+
+        val formatted = OutputFormatter.XML_FORMATTER.getFormatted(body)
+        assertNotNull(formatted)
+    }
+
+    @Test
+    fun testXmlWithSpecialCharacters() {
+        val body = """
+        <root>
+            <text>&lt;test&gt; &amp; &quot;quote&quot;</text>
+        </root>
+    """.trimIndent()
+
+        val formatted = OutputFormatter.XML_FORMATTER.getFormatted(body)
+        assertNotNull(formatted)
+    }
+
+    @Test
+    fun testXmlNestedElements() {
+        val body = """
+        <root>
+            <parent>
+                <child>
+                    <subchild>value</subchild>
+                </child>
+            </parent>
+        </root>
+    """.trimIndent()
+
+        val formatted = OutputFormatter.XML_FORMATTER.getFormatted(body)
+        assertNotNull(formatted)
+    }
+
+    @Test
+    fun testXmlSelfClosingTag() {
+        val body = """
+        <root>
+            <empty />
+        </root>
+    """.trimIndent()
+
+        val formatted = OutputFormatter.XML_FORMATTER.getFormatted(body)
+        assertNotNull(formatted)
+    }
+
+    @Test
+    fun testXmlInvalidEscape() {
+        val body = """
+        <root>
+            <text>&invalid;</text>
+        </root>
+    """.trimIndent()
+
+        assertThrows<Exception> {
+            OutputFormatter.XML_FORMATTER.getFormatted(body)
+        }
+    }
+
+    @Test
+    fun testXmlUnclosedTag() {
+        val body = """
+        <root>
+            <child>value
+        </root>
+    """.trimIndent()
+
+        assertThrows<Exception> {
+            OutputFormatter.XML_FORMATTER.getFormatted(body)
+        }
+    }
+
+    @Test
+    fun testJsonReadFields() {
+        val body = """
+        {
+          "authorId": "VZyJz8z_Eu2",
+          "creationTime": "1921-3-13T10:18:56.000Z",
+          "newsId": "L",
+          "title": "Hello"
+        }
+    """.trimIndent()
+
+        val result = OutputFormatter.JSON_FORMATTER.readFields(
+            body,
+            setOf("authorId", "newsId")
+        )
+
+        assertNotNull(result)
+        assertEquals("VZyJz8z_Eu2", result?.get("authorId"))
+        assertEquals("L", result?.get("newsId"))
+        assertEquals(2, result?.size)
+    }
+
+    @Test
+    fun testJsonReadFieldsMissingAndInvalid() {
+        val body = """
+        {
+          "authorId": "VZyJz8z_Eu2",
+          "title": "Hello"
+        }
+    """.trimIndent()
+
+        val result = OutputFormatter.JSON_FORMATTER.readFields(
+            body,
+            setOf("authorId", "newsId")
+        )
+
+        assertNotNull(result)
+        assertEquals("VZyJz8z_Eu2", result?.get("authorId"))
+        assertFalse(result?.containsKey("newsId") ?: true)
+
+        val invalidBody = """
+        {
+          "authorId": "VZyJz8z_Eu2",
+          "title": "Hello"
+    """.trimIndent()
+
+        val invalidResult = OutputFormatter.JSON_FORMATTER.readFields(
+            invalidBody,
+            setOf("authorId", "title")
+        )
+
+        assertNull(invalidResult)
+    }
+
+    @Test
+    fun testXmlReadFields() {
+        val body = """
+        <root>
+            <authorId>VZyJz8z_Eu2</authorId>
+            <creationTime>1921-3-13T10:18:56.000Z</creationTime>
+            <newsId>L</newsId>
+            <title>Hello</title>
+        </root>
+    """.trimIndent()
+
+        val result = OutputFormatter.XML_FORMATTER.readFields(
+            body,
+            setOf("authorId", "newsId")
+        )
+
+        assertNotNull(result)
+        assertEquals("VZyJz8z_Eu2", result?.get("authorId"))
+        assertEquals("L", result?.get("newsId"))
+        assertEquals(2, result?.size)
+    }
+
+    @Test
+    fun testXmlReadFieldsMissingAndInvalid() {
+        val body = """
+        <root>
+            <authorId>VZyJz8z_Eu2</authorId>
+            <title>Hello</title>
+        </root>
+    """.trimIndent()
+
+        val result = OutputFormatter.XML_FORMATTER.readFields(
+            body,
+            setOf("authorId", "newsId")
+        )
+
+        assertNotNull(result)
+        assertEquals("VZyJz8z_Eu2", result?.get("authorId"))
+        assertFalse(result?.containsKey("newsId") ?: true)
+
+        val invalidBody = """
+        <root>
+            <authorId>VZyJz8z_Eu2</authorId>
+            <title>Hello</title>
+    """.trimIndent()
+
+        val invalidResult = OutputFormatter.XML_FORMATTER.readFields(
+            invalidBody,
+            setOf("authorId", "title")
+        )
+
+        assertNull(invalidResult)
+    }
 }
