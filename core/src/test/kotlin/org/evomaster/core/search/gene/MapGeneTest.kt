@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -120,4 +121,21 @@ internal class MapGeneTest{
         assertEquals(1, fMap.getAllElements().size)
         assertEquals(element, fMap.getViewOfChildren().first() as PairGene<*,*>)
     }
+
+    @Test
+    fun testGeneRandomizationFailedIsRisen() {
+        val enumValues = listOf("ONE") // Only one value, so we can't have more than one entry in the map
+        val enumKey = EnumGene("key", enumValues)
+        val strValue = StringGene("value", "foo")
+        
+        // minSize is 2, but only 1 unique key is available
+        val map = FixedMapGene("FailMap", enumKey, strValue, minSize = 2, maxSize = 5)
+        
+        val randomness = Randomness()
+        
+        assertThrows(GeneRandomizationFailed::class.java) {
+            map.randomize(randomness, false)
+        }
+    }
+
 }

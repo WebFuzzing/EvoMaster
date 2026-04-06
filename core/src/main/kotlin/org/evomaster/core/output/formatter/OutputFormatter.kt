@@ -3,10 +3,13 @@ package org.evomaster.core.output.formatter
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonParser
-import javax.ws.rs.client.Entity.json
-
+import java.io.ByteArrayInputStream
+import java.io.StringWriter
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 
 /**
  * @javatypes: manzhang
@@ -64,9 +67,65 @@ open abstract class OutputFormatter (val name: String) {
                 }
                 throw MismatchedFormatException(this, content)
             }
+
+            override fun readFields(content: String, fieldNames: Set<String>): Map<String, String>? {
+                return try {
+                    val node = objectMapper.readTree(content)
+                    if (!node.isObject) return null
+                    fieldNames.mapNotNull { field ->
+                        val value = node.get(field) ?: return@mapNotNull null
+                        field to value.asText()
+                    }.toMap()
+                } catch (e: Exception) {
+                    null
+                }
+            }
         }
+
+
+        val XML_FORMATTER = object : OutputFormatter("XML_FORMATTER") {
+            private val xmlFactory = DocumentBuilderFactory.newInstance()
+
+            override fun isValid(content: String): Boolean {
+                return try {
+                    xmlFactory.newDocumentBuilder()
+                        .parse(ByteArrayInputStream(content.toByteArray(Charsets.UTF_8)))
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            override fun getFormatted(content: String): String {
+                if (!isValid(content)) throw MismatchedFormatException(this, content)
+                val doc = xmlFactory.newDocumentBuilder()
+                    .parse(ByteArrayInputStream(content.toByteArray(Charsets.UTF_8)))
+                val transformer = TransformerFactory.newInstance().newTransformer()
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
+                val writer = StringWriter()
+                transformer.transform(DOMSource(doc), StreamResult(writer))
+                return writer.toString().replace("\r\n", "\n")
+            }
+
+            override fun readFields(content: String, fieldNames: Set<String>): Map<String, String>? {
+                return try {
+                    val doc = xmlFactory.newDocumentBuilder()
+                        .parse(ByteArrayInputStream(content.toByteArray(Charsets.UTF_8)))
+                    doc.documentElement.normalize()
+                    fieldNames.mapNotNull { field ->
+                        val nodes = doc.getElementsByTagName(field)
+                        if (nodes.length > 0) field to nodes.item(0).textContent else null
+                    }.toMap()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+
         init {
             registerFormatter(JSON_FORMATTER)
+            registerFormatter(XML_FORMATTER)
         }
 
 
@@ -74,6 +133,7 @@ open abstract class OutputFormatter (val name: String) {
 
     abstract fun isValid(content: String): Boolean
     abstract fun getFormatted(content: String): String
+    abstract fun readFields(content: String, fieldNames: Set<String>): Map<String, String>?
 
 
 }
