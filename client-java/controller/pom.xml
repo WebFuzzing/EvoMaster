@@ -204,6 +204,12 @@
             <artifactId>lettuce-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Bringing Netty dependency explicitly as it was excluded from spring-boot-starter-data-redis to avoid version conflict -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!--gRPC RPC test-->
         <dependency>

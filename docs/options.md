@@ -138,6 +138,7 @@ There are 3 types of options:
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *DEBUG option*. *Default value*: `impact.csv`.|
 |`instrumentMR_BASE`| __Boolean__. Execute instrumentation for method replace with category BASE. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
+|`instrumentMR_DYNAMODB`| __Boolean__. Execute instrumentation for method replace with category DYNAMODB. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
 |`instrumentMR_EXT_0`| __Boolean__. Execute instrumentation for method replace with category EXT_0. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
 |`instrumentMR_MONGO`| __Boolean__. Execute instrumentation for method replace with category MONGO. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
 |`instrumentMR_SQL`| __Boolean__. Execute instrumentation for method replace with category SQL. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|

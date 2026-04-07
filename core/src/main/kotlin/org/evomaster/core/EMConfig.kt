@@ -1978,6 +1978,11 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_MONGO = true
 
+    @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_DYNAMODB = true
+
 
     @Cfg("Execute instrumentation for method replace with category NET." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
@@ -3161,6 +3166,7 @@ class EMConfig {
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
 
