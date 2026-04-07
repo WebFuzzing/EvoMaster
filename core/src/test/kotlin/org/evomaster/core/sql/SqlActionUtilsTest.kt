@@ -202,5 +202,267 @@ class SqlActionUtilsTest {
         // This SHOULD be false, because the FK points to an insertion in Table0, but the constraint says it should point to Table1
         assertFalse(SqlActionUtils.isValidForeignKeys(actions))
     }
-    
+
+    @Test
+    fun testValidForeignKeyInsidePrimaryKey() {
+        // Table 0 (Target): PK "Id"
+        val idColumnT0 = Column("Id", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+        val table0 = Table("Table0", setOf(idColumnT0), setOf())
+
+        // Table 1 (Source): PK "Id" which is also FK to Table 0 "Id"
+        val idColumnT1 = Column("Id", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+        val foreignKey = ForeignKey(
+            sourceColumns = listOf(idColumnT1),
+            targetTableId = table0.id,
+            targetColumns = listOf(idColumnT0)
+        )
+        val table1 = Table("Table1", setOf(idColumnT1), setOf(foreignKey))
+
+        // Action 0: Insert into Table 0
+        val insertId0 = 1001L
+        val integerGene = IntegerGene("Id", 42, 0, 100)
+        val pkGeneT0 = SqlPrimaryKeyGene("Id", table0.id, integerGene, insertId0)
+        val action0 = SqlAction(table0, setOf(idColumnT0), insertId0, listOf(pkGeneT0))
+
+        // Action 1: Insert into Table 1, where its PK wraps an FK to Table 0
+        val insertId1 = 1002L
+        val fkGene = SqlForeignKeyGene("Id", insertId1, table0.id, "Id", false, insertId0)
+        val pkGeneT1 = SqlPrimaryKeyGene("Id", table1.id, fkGene, insertId1)
+        val action1 = SqlAction(table1, setOf(idColumnT1), insertId1, listOf(pkGeneT1))
+
+        val actions = mutableListOf(action0, action1)
+
+        assertTrue(SqlActionUtils.isValidForeignKeys(actions))
+    }
+
+    @Test
+    fun testValidNullableUnboundForeignKey() {
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val targetTable = Table("Table0", setOf(idColumn), setOf())
+
+        val fkColumn = Column("FkId", ColumnDataType.INTEGER, 10,
+            nullable = true,
+            databaseType = DatabaseType.H2)
+
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = targetTable.id, targetColumns = listOf(idColumn))
+
+        val sourceTable = Table("Table1", setOf(fkColumn), setOf(foreignKey))
+
+        val insertId1 = 1002L
+        // Unbound FK gene (representing NULL)
+        val fkGene = SqlForeignKeyGene("FkId", insertId1, targetTable.id, "Id", true, -1L)
+
+        val action1 = SqlAction(sourceTable, setOf(fkColumn), insertId1, listOf(fkGene))
+
+        val integerGene = IntegerGene("Id", 42, 0, 100)
+        val insertId0 = 1001L
+        val pkGeneTable0 = SqlPrimaryKeyGene("Id", targetTable.id, integerGene, insertId0)
+        val action0 = SqlAction(targetTable, setOf(idColumn), insertId0, listOf(pkGeneTable0))
+
+        val actions = mutableListOf(action0, action1)
+
+        val result = SqlActionUtils.isValidForeignKeys(actions)
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun testValidMissingForeignKeyGene() {
+
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val targetTable = Table("Table0", setOf(idColumn), setOf())
+
+        val integerGene = IntegerGene("Id", 42, 0, 100)
+        val insertId0 = 1001L
+        val pkGeneTable0 = SqlPrimaryKeyGene("Id", targetTable.id, integerGene, insertId0)
+        val action0 = SqlAction(targetTable, setOf(idColumn), insertId0, listOf(pkGeneTable0))
+
+
+        val fkColumn = Column("FkId", ColumnDataType.INTEGER, 10,
+            nullable = true,
+            databaseType = DatabaseType.H2)
+
+        val pkColumn = Column("SourceId", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        // The table HAS a foreign key constraint
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = targetTable.id, targetColumns = listOf(idColumn))
+
+        val sourceTable = Table("Table1", setOf(fkColumn, pkColumn), setOf(foreignKey))
+
+        val insertId1 = 1002L
+        val integerGene1 = IntegerGene("SourceId", 55, 0, 100)
+        val pkGeneTable1 = SqlPrimaryKeyGene("SourceId", sourceTable.id, integerGene1, insertId1)
+
+        // Action 1 does NOT have the gene for FkId, even though the table has a FK constraint on it
+        val action1 = SqlAction(sourceTable, setOf(pkColumn), insertId1, listOf(pkGeneTable1))
+
+
+        val actions = mutableListOf(action0, action1)
+
+        val result = SqlActionUtils.isValidForeignKeys(actions)
+
+        // A nullable missing column in the insertion action is considered a NULL value.
+        // NULL values are valid foreign keys values since they *disable* the foreign key constraint.
+        // Therefore, the FK constraint is valid.
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun testInvalidMissingNonNullableForeignKeyGene() {
+
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val targetTable = Table("Table0", setOf(idColumn), setOf())
+
+        val integerGene = IntegerGene("Id", 42, 0, 100)
+        val insertId0 = 1001L
+        val pkGeneTable0 = SqlPrimaryKeyGene("Id", targetTable.id, integerGene, insertId0)
+        val action0 = SqlAction(targetTable, setOf(idColumn), insertId0, listOf(pkGeneTable0))
+
+
+        val fkColumn = Column("FkId", ColumnDataType.INTEGER, 10,
+            nullable = false,
+            databaseType = DatabaseType.H2)
+
+        val pkColumn = Column("SourceId", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        // The table HAS a foreign key constraint
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = targetTable.id, targetColumns = listOf(idColumn))
+
+        val sourceTable = Table("Table1", setOf(fkColumn, pkColumn), setOf(foreignKey))
+
+        val insertId1 = 1002L
+        val integerGene1 = IntegerGene("SourceId", 55, 0, 100)
+        val pkGeneTable1 = SqlPrimaryKeyGene("SourceId", sourceTable.id, integerGene1, insertId1)
+
+        // Action 1 does NOT have the gene for FkId, even though the table has a FK constraint on it
+        // and FkId is not nullable
+        val action1 = SqlAction(sourceTable, setOf(pkColumn), insertId1, listOf(pkGeneTable1))
+
+
+        val actions = mutableListOf(action0, action1)
+
+        val result = SqlActionUtils.isValidForeignKeys(actions)
+
+        // A non-nullable missing column in the insertion action is invalid.
+        assertFalse(result)
+    }
+
+    @Test
+    fun testValidPartialNullableMultiColumnForeignKey() {
+        val idColumn1 = Column("Id1", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val idColumn2 = Column("Id2", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val targetTable = Table("Table0", setOf(idColumn1, idColumn2), setOf())
+
+        val fkColumn1 = Column("Fk1", ColumnDataType.INTEGER, 10,
+            nullable = true, // One column is nullable
+            databaseType = DatabaseType.H2)
+
+        val fkColumn2 = Column("Fk2", ColumnDataType.INTEGER, 10,
+            nullable = false, // The other column is not nullable
+            databaseType = DatabaseType.H2)
+
+        val foreignKey = ForeignKey(
+            sourceColumns = listOf(fkColumn1, fkColumn2),
+            targetTableId = targetTable.id,
+            targetColumns = listOf(idColumn1, idColumn2)
+        )
+
+        val sourceTable = Table("Table1", setOf(fkColumn1, fkColumn2), setOf(foreignKey))
+
+        val integerGene1 = IntegerGene("Id1", 42, 0, 100)
+        val integerGene2 = IntegerGene("Id2", 84, 0, 100)
+
+        val insertId0 = 1001L
+        val pkGene1Table0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId0)
+        val pkGene2Table0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
+        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
+
+        val insertId1 = 1002L
+        // Fk1 is NULL (unbound), Fk2 is bound to insertId0
+        val fkGene1 = SqlForeignKeyGene("Fk1", insertId1, targetTable.id, "Id1", true, -1L)
+        val fkGene2 = SqlForeignKeyGene("Fk2", insertId1, targetTable.id, "Id2", false, insertId0)
+
+        val action1 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), insertId1, listOf(fkGene1, fkGene2))
+
+        val actions = mutableListOf(action0, action1)
+
+        // In SQL, if any column in a composite foreign key is NULL, the constraint is usually satisfied
+        // (depending on the MATCH type, but default is SIMPLE where one NULL is enough to satisfy it)
+        assertTrue(SqlActionUtils.isValidForeignKeys(actions))
+    }
+
+    @Test
+    fun testValidPartialNullableMultiColumnForeignKeyPointingToAnotherTable() {
+        val idColumn1 = Column("Id1", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val idColumn2 = Column("Id2", ColumnDataType.INTEGER, 10,
+            primaryKey = true,
+            databaseType = DatabaseType.H2)
+
+        val targetTable = Table("Table0", setOf(idColumn1, idColumn2), setOf())
+
+        val fkColumn1 = Column("Fk1", ColumnDataType.INTEGER, 10,
+            nullable = true, // One column is nullable
+            databaseType = DatabaseType.H2)
+
+        val fkColumn2 = Column("Fk2", ColumnDataType.INTEGER, 10,
+            nullable = false, // The other column is not nullable
+            databaseType = DatabaseType.H2)
+
+        val foreignKey = ForeignKey(
+            sourceColumns = listOf(fkColumn1, fkColumn2),
+            targetTableId = targetTable.id,
+            targetColumns = listOf(idColumn1, idColumn2)
+        )
+
+        val sourceTable = Table("Table1", setOf(fkColumn1, fkColumn2), setOf(foreignKey))
+
+
+        val integerGene1 = IntegerGene("Id1", 42, 0, 100)
+        val integerGene2 = IntegerGene("Id2", 84, 0, 100)
+
+        val insertId0 = 1001L
+        val pkGene1Table0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId0)
+        val pkGene2Table0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
+        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
+
+        val insertId1 = 1002L
+        // Fk1 is NULL (unbound)
+        val fkGene1 = SqlForeignKeyGene("Fk1", insertId1, targetTable.id, "Id1", true, -1L)
+        // Fk2 points to Table1.Id2
+        val fkGene2 = SqlForeignKeyGene("Fk2", insertId1, targetTable.id, "Id2", false, 1001L)
+
+        val action1 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), insertId1, listOf(fkGene1, fkGene2))
+
+        val actions = mutableListOf(action0, action1)
+
+        // This SHOULD be valid because Fk1 is nullable which disables the FK constraint
+        val result = SqlActionUtils.isValidForeignKeys(actions)
+
+        assertEquals(true, result)
+    }
 }

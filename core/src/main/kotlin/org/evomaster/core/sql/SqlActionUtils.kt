@@ -214,6 +214,9 @@ object SqlActionUtils {
         val genesInFk = currentFkGenes.filter { sourceColumnNames.contains(it.name) }
 
         if (genesInFk.isEmpty()) {
+            if (fkConstraint.sourceColumns.all { it.nullable }) {
+                return true
+            }
             errors?.add("FK constraint $fkConstraint is not satisfied: no genes found for source columns ${sourceColumnNames.joinToString(",")}")
             return false
         }
