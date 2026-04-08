@@ -22,6 +22,10 @@ import kotlin.collections.contains
 \D	Find a non-digit character
 \s	Find a whitespace character
 \S	Find a non-whitespace character
+\h	Find a horizontal space character
+\H	Find a non-horizontal space character
+\v	Find a vertical space character
+\V	Find a non-vertical space character
 \p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
@@ -71,12 +75,13 @@ class CharacterClassEscapeRxGene(
             "Blank" to stringToListOfCharacterRanges(" \t"),
             "Cntrl" to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
             "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
-            "Space" to spaceSet
+            "Space" to spaceSet,
+            "Pe" to stringToListOfCharacterRanges(")]}")
         ).mapValues { (_, value) -> MultiCharacterRange(false, value) }
     }
 
     var value: String = ""
-    private var multiCharRange: MultiCharacterRange
+    var multiCharRange: MultiCharacterRange
 
     init {
         if (type[0] !in "wWdDsSvVhHp") {
