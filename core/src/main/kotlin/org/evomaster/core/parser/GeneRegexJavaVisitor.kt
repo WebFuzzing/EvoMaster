@@ -1,6 +1,7 @@
 package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.utils.CharacterRange
 
 private const val EOF_TOKEN = "<EOF>"
 /**
@@ -233,7 +234,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
         val gene = CharacterRangeRxGene(negated, ranges)
 
@@ -243,10 +244,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     override fun visitClassRanges(ctx: RegexJavaParser.ClassRangesContext): VisitResult {
 
         val res = VisitResult()
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.nonemptyClassRanges() != null){
-            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -257,11 +258,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRanges(ctx: RegexJavaParser.NonemptyClassRangesContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
             if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
-            val rec = ctx.classAtom()[0].accept(this).data as List<Pair<Char,Char>>
+            val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
         } else {
             val startText = ctx.classAtom()[0].text
@@ -287,16 +288,16 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 end = start
             }
 
-            list.add(Pair(start, end))
+            list.add(CharacterRange(start, end))
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -309,32 +310,32 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRangesNoDash(ctx: RegexJavaParser.NonemptyClassRangesNoDashContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.MINUS() != null){
 
             val start = ctx.classAtomNoDash().text[0]
             val end = ctx.classAtom().text[0]
-            list.add(Pair(start, end))
+            list.add(CharacterRange(start, end))
 
         } else {
 
             if (ctx.classAtom()?.classAtomNoDash()?.classEscape() != null || ctx.classAtomNoDash()?.classEscape() != null){
-                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<Pair<Char,Char>>
+                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<CharacterRange>
                 list.addAll(rec)
             } else {
                 val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
-                list.add(Pair(char, char))
+                list.add(CharacterRange(char, char))
             }
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 

@@ -34,8 +34,19 @@ class Randomness {
         updateSeed(configuration.seed)
     }
 
+    private val digitSet = "0123456789"
     private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-    private val wordSet = "_0123456789$asciiLetterSet"
+    private val norwegianLetterSet = "æøåÆØÅ"
+
+    private val wordSet = "_$digitSet$asciiLetterSet"
+    private val spaceSet = " \t\r\n"
+    private val punctuationSet = "!@#$%^&*()[]{}<>:;|"
+
+    private val allSet = "$wordSet$spaceSet$norwegianLetterSet$punctuationSet"
+
+    private val nonWordSet = allSet.replace(wordSet,"")
+    private val nonDigitSet = allSet.replace(digitSet, "")
+    private val nonSpaceSet = allSet.replace(spaceSet, "")
 
     private val wordChars = wordSet.map { it.toInt() }.sorted()
 
@@ -253,7 +264,10 @@ class Randomness {
     }
 
     fun nextLetter(): Char {
-        val k = nextFromStringSet(asciiLetterSet)
+
+        val characters = asciiLetterSet
+
+        val k = characters[random.nextInt(characters.length)]
         log.trace("nextLetter(): {}", k)
         return k
     }
@@ -267,6 +281,37 @@ class Randomness {
         log.trace("nextWordChar(): {}", k)
         return k
     }
+
+    fun nextNonWordChar() : Char{
+        val k = nextFromStringSet(nonWordSet)
+        log.trace("nextNonWordChar(): {}", k)
+        return k
+    }
+
+    fun nextDigitChar(): Char {
+        val k = nextFromStringSet(digitSet)
+        log.trace("nextDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextNonDigitChar(): Char {
+        val k = nextFromStringSet(nonDigitSet)
+        log.trace("nextNonDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextSpaceChar(): Char {
+        val k = nextFromStringSet(spaceSet)
+        log.trace("nextSpaceChar(): {}", k)
+        return k
+    }
+
+    fun nextNonSpaceChar(): Char {
+        val k = nextFromStringSet(nonSpaceSet)
+        log.trace("nextNonSpaceChar(): {}", k)
+        return k
+    }
+
 
     fun wordCharPool() = wordChars
 

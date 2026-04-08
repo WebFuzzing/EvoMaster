@@ -13,6 +13,14 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* A. Arcuri, A. Poth, O. Rrjolli, P. Garrett, J. P. Galeotti
+  *Fuzzing REST APIs in Industry: Necessary Features and Open Problems*.
+  [[arxiv](https://arxiv.org/abs/2604.01759)]
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*. 
+  [[arxiv](https://arxiv.org/abs/2604.00702)]
+
 * M. Zhang, T. Yue, A. Arcuri.
   *Fuzzing Microservices in Face of Intrinsic Uncertainties*.
   [[arxiv](https://arxiv.org/abs/2603.02551)]

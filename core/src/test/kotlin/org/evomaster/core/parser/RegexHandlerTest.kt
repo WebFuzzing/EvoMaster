@@ -160,6 +160,7 @@ internal class RegexHandlerTest{
         assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("\\x{ffffff}") }
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\0") }
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\09") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("[9-1]") }
     }
 
     @Test
@@ -167,5 +168,6 @@ internal class RegexHandlerTest{
 
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("\\xR") }
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\ugggg") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("[9-1]") }
     }
 }

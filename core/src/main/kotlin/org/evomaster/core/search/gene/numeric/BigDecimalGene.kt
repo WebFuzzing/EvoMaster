@@ -284,7 +284,10 @@ class BigDecimalGene(
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){
-        value = if (precision == null){
+
+        val ensureRoundedValueIsInRange = (getMinimum () < bd && bd < getMaximum())
+
+        val rounded = if (precision == null){
             if (scale == null) bd
             else bd.setScale(scale, getRoundingMode())
         } else{
@@ -292,6 +295,17 @@ class BigDecimalGene(
             bd.round(context).run {
                 if (scale != null) this.setScale(scale, getRoundingMode())
                 else this
+            }
+        }
+
+        value = rounded
+
+        if (ensureRoundedValueIsInRange) {
+            // ensure the rounded value is also within range
+            if (value > getMaximum()) {
+                value = getMaximum()
+            } else if (value < getMinimum()) {
+                value = getMinimum()
             }
         }
     }

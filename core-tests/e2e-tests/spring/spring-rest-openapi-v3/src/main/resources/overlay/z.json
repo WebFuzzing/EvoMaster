@@ -1,0 +1,19 @@
+{
+  "overlay": "1.1.0",
+  "info": {
+    "title": "Add example to non-existing z parameter",
+    "version": "1.0.0"
+  },
+  "actions": [
+    {
+      "target": "$.paths.['/api/overlay'].get.parameters[?(@.name == 'z')]",
+      "update": {
+        "examples": {
+          "foo": {
+            "value": "Some X value like 1234"
+          }
+        }
+      }
+    }
+  ]
+}
