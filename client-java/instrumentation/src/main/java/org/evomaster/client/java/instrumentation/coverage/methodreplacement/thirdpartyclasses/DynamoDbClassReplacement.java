@@ -143,7 +143,6 @@ public class DynamoDbClassReplacement {
                     long executionTime = end - start;
                     DynamoDbCommand info = new DynamoDbCommand(tableNames, operationName, request, successful, executionTime);
                     ExecutionTracer.addDynamoDbInfo(info);
-                    logInterception(id, operationName, isAsync, tableNames, request, successful, executionTime, ex);
                     if (ex != null) {
                         if (ex instanceof RuntimeException) throw (RuntimeException) ex;
                         throw new RuntimeException(ex);
