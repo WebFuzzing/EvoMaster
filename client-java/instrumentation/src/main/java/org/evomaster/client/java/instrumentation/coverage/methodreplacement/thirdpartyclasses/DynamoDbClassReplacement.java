@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -157,7 +156,6 @@ public class DynamoDbClassReplacement {
                 long executionTime = end - start;
                 DynamoDbCommand info = new DynamoDbCommand(tableNames, operationName, request, true, executionTime);
                 ExecutionTracer.addDynamoDbInfo(info);
-                logInterception(id, operationName, isAsync, tableNames, request, true, executionTime, null);
                 return result;
             }
         } catch (IllegalAccessException e) {
@@ -165,31 +163,6 @@ public class DynamoDbClassReplacement {
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e.getCause());
         }
-    }
-
-    // This is temporary until testing all operations on different SUTs
-    private static void logInterception(String id,
-                                        String operationName,
-                                        boolean isAsync,
-                                        List<String> tableNames,
-                                        Object request,
-                                        boolean successful,
-                                        long executionTime,
-                                        Throwable error) {
-        String requestClass = request == null ? "NULL" : request.getClass().getName();
-        String errorType = error == null ? "NONE" : error.getClass().getName();
-        String message = String.format(Locale.ROOT,
-                "DYNAMODB INTERCEPTED OPERATION=%s ID=%s ASYNC=%s TABLE_NAMES=%s SUCCESS=%s EXECUTION_TIME_MS=%d REQUEST_CLASS=%s REQUEST=%s ERROR_TYPE=%s",
-                operationName,
-                id,
-                isAsync,
-                tableNames,
-                successful,
-                executionTime,
-                requestClass,
-                request,
-                errorType);
-        SimpleLogger.debug(message.toUpperCase(Locale.ROOT));
     }
 
     private static List<String> extractTableNames(Object request) {
