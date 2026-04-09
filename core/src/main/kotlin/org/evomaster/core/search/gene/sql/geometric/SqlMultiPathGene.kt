@@ -18,13 +18,16 @@ class SqlMultiPathGene(
     /**
      * The database type of the source column for this gene
      */
-    val databaseType: DatabaseType = DatabaseType.MYSQL,
+    databaseType: DatabaseType = DatabaseType.MYSQL,
     val paths: ArrayGene<SqlPathGene> = ArrayGene(
         name = "points",
         minSize = 1,
         template = SqlPathGene("p", databaseType = databaseType)
     )
 ) : CompositeFixedGene(name, mutableListOf(paths)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiPathGene::class.java)
@@ -92,6 +95,7 @@ class SqlMultiPathGene(
         if (other !is SqlMultiPathGene) {
             return false
         }
+        this.databaseType = other.databaseType
         return this.paths.unsafeCopyValueFrom(other.paths)
     }
 

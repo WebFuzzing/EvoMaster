@@ -17,8 +17,11 @@ class SqlPointGene(
     name: String,
     val x: FloatGene = FloatGene(name = "x"),
     val y: FloatGene = FloatGene(name = "y"),
-    val databaseType: DatabaseType = DatabaseType.POSTGRES
+    databaseType: DatabaseType = DatabaseType.POSTGRES
 ) : CompositeFixedGene(name, mutableListOf(x, y)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)
@@ -71,8 +74,10 @@ class SqlPointGene(
         if (other !is SqlPointGene) {
             return false
         }
-        return this.x.unsafeCopyValueFrom(other.x)
+        this.databaseType = other.databaseType
+        val ok = this.x.unsafeCopyValueFrom(other.x)
                     && this.y.unsafeCopyValueFrom(other.y)
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
