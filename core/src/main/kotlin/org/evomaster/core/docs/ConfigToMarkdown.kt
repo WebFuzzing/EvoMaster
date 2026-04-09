@@ -6,6 +6,8 @@ import java.io.File
 import java.nio.charset.Charset
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
+import org.apache.commons.text.WordUtils
+
 /**
  * Class used to generate Markdown documentation for [EMConfig]
  */
@@ -53,11 +55,10 @@ object ConfigToMarkdown {
                             to modify. These were mainly introduced when experimenting with 
                             different configurations to maximize the performance of _EvoMaster_. 
                             Some of these options are used to collect more info on the search, to help
-                            debugging issues in _EvoMaster_ itself.                                   
+                            debugging issues in _EvoMaster_ itself.
                             
             * __Experimental__: these are work-in-progress options, for features still under development
-                                and testing.        
-                     
+                                and testing.
 
              The list of available options can also be displayed by using `--help`, e.g.:
 
@@ -122,27 +123,12 @@ object ConfigToMarkdown {
     }
 
     private fun printOptionList(buffer: StringBuilder, list: List<KMutableProperty<*>>){
-
-        /*
-            Markdown-style tables have all column widths messed up, see:
-
-            https://stackoverflow.com/questions/36121672/set-table-column-width-via-markdown
-
-            however, if we use HTML, then we need to change all the formattings, eg ** and `` :-(
-         */
-
-        val awfulHackButWhatElseCanWeDo = "" //"<img width=2500/>"
-
-        buffer.append("|Options$awfulHackButWhatElseCanWeDo|Description|\n")
+        buffer.append("|Options|Description|\n")
         buffer.append("|---|---|\n")
-
-//        buffer.append("<table><thead><tr><th>Options</th><th>Description</th></tr></thead><tbody>")
 
         for(opt in list){
             printOption(buffer, opt)
         }
-
-//        buffer.append("</tbody></table>")
     }
 
     private fun printOption(buffer: StringBuilder, opt: KMutableProperty<*>) {
@@ -160,14 +146,7 @@ object ConfigToMarkdown {
 
         val description = EMConfig.getDescription(opt)
 
-//        buffer.append("<tr>")
-
-//        buffer.append("|<nobr>`--${opt.name}` &lt;$typeName&gt;</nobr>| ")
         buffer.append("|`${opt.name}`| ")
-
-//        buffer.append("<td><nobr>`--${opt.name}` &lt;$typeName&gt;</nobr></td>")
-
-//        buffer.append("<td>")
 
         buffer.append("__${typeName}__. ")
 
@@ -181,11 +160,7 @@ object ConfigToMarkdown {
         }
 
         if(description.constraints.isNotBlank()){
-            /*
-                see https://stackoverflow.com/questions/17319940/how-to-escape-a-pipe-char-in-a-code-statement-in-a-markdown-table
-                GitHub supports it, but current IDEA Viewer does not
-             */
-            buffer.append(" *Constraints*: `${description.constraints.replace("|","\\|")}`.")
+            buffer.append(" *Constraints*: ${formatConstraintForMarkdownTable(description.constraints)}.")
         }
 
         if(description.dependsOn.isNotBlank()){
@@ -194,18 +169,47 @@ object ConfigToMarkdown {
 
         if (description.enumValidValues.isNotBlank()) {
             buffer.append(" *Valid values*: `${description.enumValidValues}`.")
-          }
+        }
 
         if (description.enumExperimentalValues.isNotBlank()) {
             buffer.append(" *Experimental values*: `${description.enumExperimentalValues}`.")
         }
 
         buffer.append(" *Default value*: `$default`.")
-
-//        buffer.append("</td></tr>")
         buffer.append("|\n")
     }
 
+    private fun formatConstraintForMarkdownTable(constraint: String): String {
+        /*
+            Markdown table cells break when containing unescaped '|' characters.
+            For long values, wrap at safe boundaries to avoid breaking expressions
+            in the middle while keeping lines around a readable width.
+         */
+        val escaped = constraint.replace("|", "\\|")
+        if (escaped.length <= 80) {
+            return "`$escaped`"
+        }
 
+        val marker = "__EM_WRAP__"
+        // Add a hint to the table cell that the value should be wrapped
+        val withHints = escaped
+            .replace("\\|", "\\|$marker ")
+            .replace(";", ";$marker ")
+            .replace(",", ",$marker ")
+        // Wrap and remove the hints
+        val wrapped = WordUtils.wrap(withHints, 80, "\n", false)
+            .replace("$marker ", "")
+            .replace(marker, "")
 
+        return wrapped.lineSequence()
+            .map { htmlEscape(it.trimEnd()) }
+            .joinToString("<br>")
+    }
+
+    private fun htmlEscape(text: String): String {
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+    }
 }
