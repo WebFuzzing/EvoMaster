@@ -23,7 +23,7 @@ class SqlMultiPolygonGene(
         /**
          * The database type of the source column for this gene
          */
-        val databaseType: DatabaseType = DatabaseType.H2,
+        databaseType: DatabaseType = DatabaseType.H2,
         val polygons: ArrayGene<SqlPolygonGene> = ArrayGene(
                 name = "polygons",
                 minSize = 1,
@@ -31,6 +31,9 @@ class SqlMultiPolygonGene(
                         minLengthOfPolygonRing = 3,
                         databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(polygons)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiPolygonGene::class.java)
@@ -97,6 +100,7 @@ class SqlMultiPolygonGene(
         if (other !is SqlMultiPolygonGene) {
             return false
         }
+        this.databaseType = other.databaseType
         return this.polygons.unsafeCopyValueFrom(other.polygons)
     }
 
@@ -104,7 +108,7 @@ class SqlMultiPolygonGene(
         if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.polygons.containsSameValueAs(other.polygons)
+        return this.databaseType == other.databaseType && this.polygons.containsSameValueAs(other.polygons)
     }
 
     override fun customShouldApplyShallowMutation(
