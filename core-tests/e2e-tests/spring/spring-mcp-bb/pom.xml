@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-e2e-tests-spring</artifactId>
+        <version>5.1.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>evomaster-e2e-tests-spring-mcp-bb</artifactId>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring.ai.version>1.1.0</spring.ai.version>
+        <!--
+            Spring AI 1.x requires Spring Boot 3.3+.
+            springboot3.version in the root pom is 3.1.5 which is too old,
+            so we define a local version for this module.
+        -->
+        <springboot.mcp.version>3.5.7</springboot.mcp.version>
+        <!--
+            Spring Boot 3.3.x requires Logback 1.5.x and SLF4J 2.0.x.
+            The root pom pins logback-classic to 1.2.3 and slf4j-api to 1.7.24,
+            so we override them here.
+        -->
+        <logback.mcp.version>1.5.8</logback.mcp.version>
+        <slf4j.mcp.version>2.0.16</slf4j.mcp.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                The parent pom pins spring-boot to ${springboot.version} (2.5.4).
+                Override all Spring Boot artifacts to 3.3.x needed by Spring AI 1.x.
+            -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot</artifactId>
+                <version>${springboot.mcp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-autoconfigure</artifactId>
+                <version>${springboot.mcp.version}</version>
+            </dependency>
+            <!--
+                The root pom pins logback to 1.2.3 and slf4j to 1.7.24 globally.
+                Spring Boot 3.3.x requires Logback 1.5.x (Configurator interface changed)
+                and SLF4J 2.0.x. Override here to avoid AbstractMethodError at startup.
+            -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.mcp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback.mcp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.mcp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring.ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <version>${springboot.mcp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${springboot.mcp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${springboot.mcp.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-utils</artifactId>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.validation</groupId>
+                    <artifactId>validation-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <configuration>
+                    <jvmTarget>${java.version}</jvmTarget>
+                    <args>
+                        <arg>-java-parameters</arg>
+                    </args>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--  Otherwise tests using mvn will not work  -->
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <SKIP_INSTRUMENTATION>true</SKIP_INSTRUMENTATION>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
