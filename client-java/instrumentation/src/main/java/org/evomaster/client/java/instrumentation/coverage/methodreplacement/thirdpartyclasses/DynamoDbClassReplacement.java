@@ -173,7 +173,7 @@ public class DynamoDbClassReplacement {
                 return Collections.singletonList(tableName);
             }
         } catch (NoSuchMethodException ignored) {
-            // no-op
+            // Ignored in the case we are calling for a batch request, it will be handled below in the next section
         } catch (IllegalAccessException | InvocationTargetException e) {
             return Collections.emptyList();
         }
