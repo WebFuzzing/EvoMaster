@@ -19,13 +19,16 @@ import org.slf4j.LoggerFactory
  */
 class SqlPathGene(
         name: String,
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        databaseType: DatabaseType = DatabaseType.POSTGRES,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
                 template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
@@ -93,7 +96,9 @@ class SqlPathGene(
         if (other !is SqlPathGene) {
             return false
         }
-        return this.points.unsafeCopyValueFrom(other.points)
+        this.databaseType = other.databaseType
+        val ok = this.points.unsafeCopyValueFrom(other.points)
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
