@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.sql.SqlExecutionInfo
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -121,6 +123,39 @@ class FitnessValueTest {
         assertEquals(4, linesInfo.total)
         assertEquals(2, linesInfo.bootTime)
         assertEquals(3, linesInfo.searchTime)
+    }
+
+    @Test
+    fun testAggregatedFailedWhereQueriesExcludesBlankEntries() {
+        val fv = FitnessValue(1.0)
+
+        val execution = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = emptyMap(),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 3,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("SELECT * FROM foo WHERE id = 1", false, 10L),
+                SqlExecutionInfo("", false, 5L),
+                SqlExecutionInfo("   ", false, 5L),
+                SqlExecutionInfo("SELECT * FROM bar WHERE name = 'x'", false, 8L)
+            )
+        )
+        fv.setDatabaseExecution(0, execution)
+        fv.aggregateDatabaseData()
+
+        val allQueries = fv.getViewOfAggregatedFailedWhereQueries()
+        assertEquals(4, allQueries.size)
+
+        // Simulate the filter applied in ApiWsStructureMutator before sending queries to the solver
+        val nonBlankQueries = allQueries.filter { it.isNotBlank() }
+        assertEquals(2, nonBlankQueries.size)
+        assertTrue(nonBlankQueries.none { it.isBlank() })
+        assertTrue(nonBlankQueries.contains("SELECT * FROM foo WHERE id = 1"))
+        assertTrue(nonBlankQueries.contains("SELECT * FROM bar WHERE name = 'x'"))
     }
 
 }
