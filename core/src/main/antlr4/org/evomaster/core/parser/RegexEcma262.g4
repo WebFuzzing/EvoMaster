@@ -86,7 +86,7 @@ bracketQuantifierRange
 atom
  : patternCharacter+
  | DOT
- | AtomEscape
+ | atomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
  //TODO
@@ -96,11 +96,11 @@ atom
 
 
 //TODO
-fragment CharacterEscape
- : ControlEscape
- | 'c' ControlLetter
- | HexEscapeSequence
- | UnicodeEscapeSequence
+CharacterEscape
+ : SLASH ControlEscape
+ | SLASH 'c' ControlLetter
+ | SLASH HexEscapeSequence
+ | SLASH UnicodeEscapeSequence
  //| IdentityEscape
  ;
 
@@ -199,16 +199,16 @@ DecimalDigit
  ;
 
 
-AtomEscape
- : '\\' CharacterClassEscape
+atomEscape
+ : CharacterClassEscape
  //TODO
 // | '\\' DecimalEscape
- | '\\' CharacterEscape
+ | CharacterEscape
  ;
 
-fragment CharacterClassEscape
+CharacterClassEscape
  //one of d D s S w W
- : [dDsSwW]
+ : SLASH [dDsSwW]
  ;
 
 
