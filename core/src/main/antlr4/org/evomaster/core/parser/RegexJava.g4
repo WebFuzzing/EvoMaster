@@ -125,9 +125,19 @@ CharacterEscape
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
  | SLASH OctalEscapeSequence
- | SLASH 'p' BRACE_open PosixCharacterClassLabel BRACE_close // this is only implemented in Java at the moment as on JS this
-                                                             // is allowed only while certain flags are enabled
+ | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
+                                                        // as on JS this is allowed only while certain flags are enabled
+
  //| IdentityEscape
+ ;
+
+fragment PCharacterClassEscapeLabel
+ : PosixCharacterClassLabel
+ | UnicodeCategoriesLabel
+ ;
+
+fragment UnicodeCategoriesLabel
+ : 'Pe'
  ;
 
 // basic US-ASCII only predefined POSIX character classes
@@ -146,7 +156,6 @@ fragment PosixCharacterClassLabel
  | 'Cntrl'
  | 'XDigit'
  | 'Space'
- | 'Pe'
  ;
 
 fragment ControlEscape

@@ -98,10 +98,23 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testUnicodeCategories(){
+        checkSameAsJava("""\p{Pe}""")
+        checkSameAsJava("""Pe""")
+    }
+
+    @Test
     fun testPredefinedCharClassInsideCharClass(){
-        checkSameAsJava("""[\V\p{Lower}\P{Upper}\W\d]""")
+        checkSameAsJava("""[\V\p{Lower}\p{Upper}\W\d]""")
         checkSameAsJava("""[a\p{Pe}]""")
         checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
         checkCanSample("""[a\p{Pe}b]""", ")", 100_000)
+    }
+
+    @Test
+    fun testPEscapesComplements(){
+        checkSameAsJava("""\P{Lower}\P{Upper}\P{ASCII}\P{Alpha}\P{Digit}\P{Alnum}\P{Punct}\P{Graph}
+            |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
+        checkSameAsJava("""\P{Pe}""")
     }
 }
