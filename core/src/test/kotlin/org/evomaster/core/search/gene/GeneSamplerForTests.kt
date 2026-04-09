@@ -28,6 +28,7 @@ import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.CharacterRange
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -460,8 +461,8 @@ object GeneSamplerForTests {
 
     fun sampleCharacterRangeRxGene(rand: Randomness): CharacterRangeRxGene {
         return CharacterRangeRxGene(
-                negated = false, // TODO update once fixed
-                ranges = listOf(Pair('a', 'z'))
+                negated = rand.nextBoolean(),
+                ranges = listOf(CharacterRange('a', 'z'))
         )
     }
 

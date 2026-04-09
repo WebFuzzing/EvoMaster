@@ -97,5 +97,27 @@ class SqlMultiPointGeneTest {
         assertEquals("MULTIPOINT(POINT(0.0, 0.0), POINT(1.0, 1.0))", gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testUnsafeCopyValueFromCopiesDatabaseType() {
+        val geneH2 = SqlMultiPointGene("geneH2", databaseType = DatabaseType.H2)
+        val geneMySQL = SqlMultiPointGene("geneMySQL", databaseType = DatabaseType.MYSQL)
+
+        geneMySQL.unsafeCopyValueFrom(geneH2)
+
+        assertEquals(DatabaseType.H2, geneMySQL.databaseType)
+    }
+
+    @Test
+    fun testContainsSameValueAsChecksDatabaseType() {
+        val geneH2 = SqlMultiPointGene("geneH2", databaseType = DatabaseType.H2)
+        val geneMySQL = SqlMultiPointGene("geneMySQL", databaseType = DatabaseType.MYSQL)
+
+        // They have same points (default empty) but different databaseType
+        assertEquals(false, geneH2.containsSameValueAs(geneMySQL))
+        
+        geneMySQL.unsafeCopyValueFrom(geneH2)
+        assertEquals(true, geneH2.containsSameValueAs(geneMySQL))
+    }
+
 
 }

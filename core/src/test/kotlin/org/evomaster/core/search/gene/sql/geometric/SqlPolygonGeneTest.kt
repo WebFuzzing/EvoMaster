@@ -239,4 +239,30 @@ class SqlPolygonGeneTest {
         )
         assertEquals("\"((0.0, 1.0), (1.0, 1.0), (0.0, 0.0))\"", gene.getValueAsPrintableString())
     }
+
+    @Test
+    fun testUnsafeCopyValueFromModifiesDatabaseType() {
+        val gene1 = SqlPolygonGene(
+            name = "polygon1",
+            databaseType = DatabaseType.POSTGRES
+        )
+        val gene2 = SqlPolygonGene(
+            name = "polygon2",
+            databaseType = DatabaseType.MYSQL
+        )
+        gene2.randomize(rand, false)
+
+        assertNotEquals(gene1.databaseType, gene2.databaseType)
+
+        val ok = gene1.unsafeCopyValueFrom(gene2)
+
+        assertTrue(ok)
+        assertEquals(DatabaseType.MYSQL, gene1.databaseType)
+        assertTrue(gene1.points.getViewOfElements().isNotEmpty())
+        gene1.points.getViewOfElements().forEach {
+            assertEquals(DatabaseType.MYSQL, it.databaseType)
+        }
+    }
+
+
 }

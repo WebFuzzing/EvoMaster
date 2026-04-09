@@ -348,4 +348,14 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         // The following escape sequences behave differently in Java and JavaScript.
         checkCanSample("""\ca\cg\cz""","\u0001\u0007\u001A",10_000)
     }
+
+    @Test
+    fun testNegatedCharClasses(){
+        checkSameAsJava("""[^a-zA-Z0-9_,]""")
+    }
+
+    @Test
+    fun testComplementCompleteness(){
+        checkCanSample("""\D""", listOf("\u0000", "\uffff"), 1_000_000)
+    }
 }
