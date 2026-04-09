@@ -454,4 +454,17 @@ class SqlMultidimensionalArrayGeneTest {
         assertTrue(gene.isLocallyValid())
     }
 
+    @Test
+    fun testCopyValuesFromWithDifferentDatabaseTypes() {
+        val sourceArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3, databaseType = DatabaseType.H2)
+        val targetArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3, databaseType = DatabaseType.POSTGRES)
+
+        assertEquals(DatabaseType.H2, sourceArray.databaseType)
+        assertEquals(DatabaseType.POSTGRES, targetArray.databaseType)
+
+        assertTrue(targetArray.unsafeCopyValueFrom(sourceArray))
+
+        assertEquals(DatabaseType.H2, targetArray.databaseType)
+    }
+
 }

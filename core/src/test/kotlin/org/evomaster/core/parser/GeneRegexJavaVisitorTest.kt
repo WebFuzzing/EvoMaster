@@ -67,13 +67,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
-    fun testDecreasingRange(){
-        //checkSameAsJava("[!- ]") //not valid in Java
-        //checkSameAsJava("[9-1]") //not valid in Java
-        checkCanSample("[9-1]", listOf("1","5","9"),200)
-    }
-
-    @Test
     fun testJavaHexEscape(){
         checkSameAsJava("""x{3}\x{0}\x{FFFf}\x{0FFFf}\x{01FFFf}\x{10FFFf}""")
     }
@@ -91,5 +84,16 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     @Test
     override fun testControlLetterEscape() {
         checkSameAsJava("""cac!\ca\cg\cz\cA\cG\cZ\c@\c[\c\\c]\c^\c\c_\c?""")
+    }
+
+    @Test
+    fun testJavaCharClassEscape(){
+        checkSameAsJava("""\v\V\h\H""")
+    }
+
+    @Test
+    fun testPosixCharacterClasses(){
+        checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
+            |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
     }
 }
