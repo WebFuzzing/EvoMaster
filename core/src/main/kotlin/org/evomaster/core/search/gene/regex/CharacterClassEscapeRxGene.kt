@@ -82,7 +82,7 @@ class CharacterClassEscapeRxGene(
             // Unicode category character classes (\p{X})
             val unicodeCategorySets = mapOf(
                 "Pe" to stringToListOfCharacterRanges(")]}")
-                // more Unicode categories will be added here
+                // more Unicode categories will be added here in the future
             )
 
             // create both normal and negated version for all

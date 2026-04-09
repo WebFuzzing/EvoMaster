@@ -131,11 +131,18 @@ CharacterEscape
  //| IdentityEscape
  ;
 
+// TODO missing \p escapes
 fragment PCharacterClassEscapeLabel
  : PosixCharacterClassLabel
  | UnicodeCategoriesLabel
+// | UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// | UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// | UnicodeBinaryProperiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
+// | javalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
  ;
 
+// TODO missing Unicode categories labels and implementations
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
 fragment UnicodeCategoriesLabel
  : 'Pe'
  ;
