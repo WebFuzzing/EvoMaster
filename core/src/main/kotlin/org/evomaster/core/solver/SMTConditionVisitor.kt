@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
@@ -26,12 +27,18 @@ class SMTConditionVisitor(
     /**
      * Constructs a column reference string for SMT-LIB from a table name and column name.
      *
+     * Both names are converted to ASCII because SMT-LIB unquoted symbols only allow ASCII characters.
+     * Table and column names may come directly from SQL query text (e.g., a WHERE clause), which can
+     * contain non-ASCII characters if the schema uses them. The conversion must happen here because,
+     * unlike schema-derived names that are pre-converted via [SmtTable], query-derived names are
+     * parsed at runtime from raw SQL strings.
+     *
      * @param tableName The name of the table.
      * @param columnName The name of the column.
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${columnName.uppercase()} ${tableName.lowercase()}$rowIndex)"
+        return "(${convertToAscii(columnName).uppercase()} ${convertToAscii(tableName).lowercase()}$rowIndex)"
     }
 
     /**
