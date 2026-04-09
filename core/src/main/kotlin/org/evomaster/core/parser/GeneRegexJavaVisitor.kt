@@ -186,8 +186,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return VisitResult(gene)
         }
 
-        if(ctx.atomEscape() != null)
+        if(ctx.atomEscape() != null) {
             return ctx.atomEscape().accept(this)
+        }
 
         if(ctx.disjunction() != null){
 

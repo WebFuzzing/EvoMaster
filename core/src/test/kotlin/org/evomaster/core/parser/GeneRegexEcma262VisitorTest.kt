@@ -358,4 +358,12 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     fun testComplementCompleteness(){
         checkCanSample("""\D""", listOf("\u0000", "\uffff"), 1_000_000)
     }
+
+    @Test
+    open fun testPredefinedCharClassInsideCharClass(){
+        checkSameAsJava("""[abc\d]""")
+        checkSameAsJava("""[a\w]""")
+        checkSameAsJava("""[\D\d]""")
+        checkSameAsJava("""[\x41\cA\n\u0000]""")
+    }
 }

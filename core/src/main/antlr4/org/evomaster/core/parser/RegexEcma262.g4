@@ -170,20 +170,18 @@ classAtomNoDash
  //SourceCharacter but not one of \ or ] or -
  //TODO
  //: ~[-\]\\]
-// | '\\' ClassEscape
- : BaseChar
+ : classEscape
+ | BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
 
-//TODO
-//ClassEscape
-// : CharacterClassEscape
-//// | DecimalEscape
-//// | 'b'
-// //| CharacterEscape
-// ;
+// TODO
+classEscape
+ : atomEscape
+// | SLASH 'b'
+ ;
 
 decimalDigits
  : DecimalDigit+

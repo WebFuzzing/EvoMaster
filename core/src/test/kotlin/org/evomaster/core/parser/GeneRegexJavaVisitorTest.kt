@@ -104,11 +104,11 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
-    fun testPredefinedCharClassInsideCharClass(){
+    override fun testPredefinedCharClassInsideCharClass(){
         checkSameAsJava("""[\V\p{Lower}\p{Upper}\W\d]""")
         checkSameAsJava("""[a\p{Pe}]""")
         checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
-        checkCanSample("""[a\p{Pe}b]""", ")", 100_000)
+        checkCanSample("""[a\p{Pe}b]""", ")", 100)
     }
 
     @Test
