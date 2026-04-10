@@ -21,7 +21,7 @@ class SqlGeometryCollectionGene(
         /**
          * The database type of the source column for this gene
          */
-        val databaseType: DatabaseType = DatabaseType.H2,
+        var databaseType: DatabaseType = DatabaseType.H2,
         template: Gene,
         val elements: ArrayGene<Gene> = ArrayGene(
                 name = "points",
@@ -85,6 +85,7 @@ class SqlGeometryCollectionGene(
         if (other !is SqlGeometryCollectionGene) {
             return false
         }
+        this.databaseType = other.databaseType
         return this.elements.unsafeCopyValueFrom(other.elements)
     }
 
