@@ -20,7 +20,7 @@ class SuccessReusableDeserializer : JsonDeserializer<SuccessReusable>() {
             SuccessReusable.ReusableObj(reusable)
         } else {
             val action = p0.codec.treeToValue(node, SuccessAction::class.java)
-            SuccessReusable.Inline(action)
+            SuccessReusable.Success(action)
         }
     }
 }

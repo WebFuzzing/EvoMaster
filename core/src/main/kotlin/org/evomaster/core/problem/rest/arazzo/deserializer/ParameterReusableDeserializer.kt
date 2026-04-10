@@ -20,7 +20,7 @@ class ParameterReusableDeserializer : JsonDeserializer<ParameterReusable>() {
             ParameterReusable.ReusableObj(reusable)
         } else {
             val parameter = p0.codec.treeToValue(node, Parameter::class.java)
-            ParameterReusable.Inline(parameter)
+            ParameterReusable.Param(parameter)
         }
     }
 }

@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.arazzo.models.SourceDescription
 import org.evomaster.core.problem.rest.arazzo.models.Step
 import org.evomaster.core.problem.rest.arazzo.models.SuccessAction
 import org.evomaster.core.problem.rest.arazzo.models.Workflow
+import org.evomaster.core.problem.rest.arazzo.resolver.ArazzoReferenceResolver
 import wiremock.com.jayway.jsonpath.JsonPath
 import javax.xml.xpath.XPathFactory
 
@@ -24,9 +25,9 @@ object ArazzoValidator {
     private const val POSSIBLE_CRITERION_VERSION_JSON = "draft-goessner-dispatch-jsonpath-00"
 
     fun validateSourceDescriptions(sourceDescription: SourceDescription) {
-        val patternName = Regex("[A-Za-z0-9_\\-]+")
+        val patterName = Regex("[A-Za-z0-9_\\-]+")
 
-        if (!sourceDescription.name.matches(patternName)) {
+        if (!sourceDescription.name.matches(patterName)) {
             throw IllegalArgumentException("Arazzo Parsing Error: The name should conform to the regular expression [A-Za-z0-9_\\-]+.")
         }
     }
@@ -56,8 +57,12 @@ object ArazzoValidator {
         workflow.steps.forEach { step -> validateStep(step) }
 
         // successActions
+        val successActions = ArazzoReferenceResolver.resolveSuccessActions(workflow.successActions)
+        validateSuccessActions(successActions)
 
         // failureActions
+        val failureActions = ArazzoReferenceResolver.resolveFailureActions(workflow.failureActions)
+        validateFailureActions(failureActions)
 
         // outputs
         val keyOutputRegex = Regex("^[a-zA-Z0-9\\.\\-_]+$")
@@ -71,11 +76,71 @@ object ArazzoValidator {
         }
 
         // parameters
+        val parameters = ArazzoReferenceResolver.resolveParameters(workflow.parameters)
+        validateParameters(parameters)
+    }
 
+    private fun validateSteps(steps: List<Step>) {
+        if (steps.isEmpty()) {
+            throw IllegalArgumentException("Arazzo Parsing Error: The steps must have at least one step.")
+        }
+
+        //A unique successAction is defined by a name
+        val duplicates = steps
+            .groupBy { step -> step.stepId }
+            .filter { it.value.size > 1 }
+            .keys
+
+        if (duplicates.isNotEmpty()) {
+            throw IllegalArgumentException("Arazzo Parsing Error: Steps repeated. $duplicates")
+        }
+
+        steps.forEach { step -> validateStep(step) }
     }
 
     private fun validateStep(step: Step) {
+        val pattern = Regex("[A-Za-z0-9_\\-]+")
 
+        if (!step.stepId.matches(pattern)) {
+            throw IllegalArgumentException("Arazzo Parsing Error: The stepId: ${step.stepId} should conform to the regular expression [A-Za-z0-9_\\-]+.")
+        }
+
+        if (!((step.operationId != null) xor (step.operationPath != null))) {
+            throw IllegalArgumentException("Arazzo Parsing Error: Step: operationId and operationPath are mutually exclusive.")
+        }
+
+        //TODO: Validar operationId y operationPath
+
+        if (!((step.workflowId != null) xor (step.operationId != null))) {
+            throw IllegalArgumentException("Arazzo Parsing Error: Step: workflowId and operationId are mutually exclusive.")
+        }
+
+        if (!((step.workflowId != null) xor (step.operationPath != null))) {
+            throw IllegalArgumentException("Arazzo Parsing Error: Step: workflowId and operationPath are mutually exclusive.")
+        }
+
+        val parameters = ArazzoReferenceResolver.resolveParameters(step.parameters)
+        validateParameters(parameters)
+
+        //TODO: Validar requestBody
+
+        step.successCriteria?.forEach { criterion -> validateCriterion(criterion) }
+
+        val onSuccess = ArazzoReferenceResolver.resolveSuccessActions(step.onSuccess)
+        validateSuccessActions(onSuccess)
+
+        val onFailure = ArazzoReferenceResolver.resolveFailureActions(step.onFailure)
+        validateFailureActions(onFailure)
+
+        val keyOutputRegex = Regex("^[a-zA-Z0-9\\.\\-_]+$")
+        step.outputs?.keys?.forEach { key ->
+            if (!keyOutputRegex.matches(key)) {
+                throw IllegalArgumentException(
+                    "Arazzo Parsing Error: Output name in step: ${step.stepId}: '$key' is invalid. " +
+                            "Only alphanumeric characters, periods (.), hyphens (-) and underscores (_) are allowed."
+                )
+            }
+        }
     }
 
     private fun validateDependsOnWorkflows(workflows: List<Workflow>) {
@@ -197,6 +262,20 @@ object ArazzoValidator {
         }
     }
 
+    private fun validateSuccessActions(successActions: List<SuccessAction>) {
+        //A unique successAction is defined by a name
+        val duplicates = successActions
+            .groupBy { action -> action.name }
+            .filter { it.value.size > 1 }
+            .keys
+
+        if (duplicates.isNotEmpty()) {
+            throw IllegalArgumentException("Arazzo Parsing Error: SuccesActions repeated. $duplicates")
+        }
+
+        successActions.forEach { action -> validateSuccessAction(action) }
+    }
+
     private fun validateSuccessAction(successAction: SuccessAction) {
         if (successAction.type !in possibleTypeSuccessActions) {
             throw IllegalArgumentException("Arazzo Parsing Error: successAction.type must be one of the list: \"end\",\"goto\"")
@@ -211,6 +290,20 @@ object ArazzoValidator {
 
         successAction.criteria?.forEach { criterion -> validateCriterion(criterion) }
 
+    }
+
+    private fun validateFailureActions(failureActions: List<FailureAction>) {
+        //A unique successAction is defined by a name
+        val duplicates = failureActions
+            .groupBy { action -> action.name }
+            .filter { it.value.size > 1 }
+            .keys
+
+        if (duplicates.isNotEmpty()) {
+            throw IllegalArgumentException("Arazzo Parsing Error: FailureActions repeated. $duplicates")
+        }
+
+        failureActions.forEach { action -> validateFailureAction(action) }
     }
 
     private fun validateFailureAction(failureAction: FailureAction) {

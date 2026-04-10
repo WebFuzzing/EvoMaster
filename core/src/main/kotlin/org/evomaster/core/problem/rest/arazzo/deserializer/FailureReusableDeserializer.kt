@@ -20,7 +20,7 @@ class FailureReusableDeserializer : JsonDeserializer<FailureReusable>() {
             FailureReusable.ReusableObj(reusable)
         } else {
             val action = p0.codec.treeToValue(node, FailureAction::class.java)
-            FailureReusable.Inline(action)
+            FailureReusable.Failure(action)
         }
     }
 }
