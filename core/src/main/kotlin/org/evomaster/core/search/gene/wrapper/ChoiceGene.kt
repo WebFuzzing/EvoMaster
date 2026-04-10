@@ -182,6 +182,10 @@ class ChoiceGene<T>(
         return valueNames?.get(activeGeneIndex)
     }
 
+    override fun getAvailableExampleNames() : Set<String> {
+        return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
+    }
+
     /**
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].

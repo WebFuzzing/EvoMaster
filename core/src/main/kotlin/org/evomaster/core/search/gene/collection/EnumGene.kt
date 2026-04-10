@@ -202,6 +202,10 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.get(index)
     }
 
+    override fun getAvailableExampleNames() : Set<String> {
+        return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
+    }
+
     /**
      * [EnumGene] can be used in DTOs when the API spec contains either example values or an enum.
      * Since the [EnumGene] uses generics to hold values, this function returns the type to be used

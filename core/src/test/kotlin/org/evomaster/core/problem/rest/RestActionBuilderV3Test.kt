@@ -2238,18 +2238,21 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Disabled
     @Test
     fun testMultiParamExamples(){
 
-        val map = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_multi_params.yaml", 1, true)
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/examples_multi_params.yaml",
+            1,
+            RestActionBuilderV3.Options(enableConstraintHandling = true, probUseExamples = 0.5)
+        )
 
         val post = map["POST:/v2/api"] as RestCallAction
 
         val examples = post.getNamedExamples()
         assertEquals(3, examples.size)
-        assertEquals(3, examples["Foo"])
-        assertEquals(2, examples["Bar"])
+        assertEquals(2, examples["Foo"])
+        assertEquals(3, examples["Bar"])
         assertEquals(1, examples["Hello"])
 
 

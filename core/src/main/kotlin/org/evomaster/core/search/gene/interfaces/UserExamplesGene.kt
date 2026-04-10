@@ -32,5 +32,6 @@ interface UserExamplesGene {
      */
     fun getValueName(): String?
 
+    fun getAvailableExampleNames() : Set<String>
 }
 

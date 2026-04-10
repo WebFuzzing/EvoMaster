@@ -457,7 +457,8 @@ class RestCallAction(
     fun getNamedExamples() : Map<String, Int> {
         return seeAllGenes()
             .filterIsInstance<UserExamplesGene>()
-            .mapNotNull { it.getValueName() }
+            .filter { it.isUsedForExamples() }
+            .flatMap { it.getAvailableExampleNames() }
             .groupingBy { it }
             .eachCount()
     }
