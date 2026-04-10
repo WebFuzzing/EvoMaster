@@ -117,4 +117,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
             |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
         checkSameAsJava("""\P{Pe}""")
     }
+
+    @Test
+    override fun testJSExclusiveEscapes() {
+        // JS exclusive
+    }
 }

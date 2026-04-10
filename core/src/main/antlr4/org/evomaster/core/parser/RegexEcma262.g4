@@ -94,14 +94,13 @@ atom
  ;
 
 
-
 //TODO
 CharacterEscape
  : SLASH ControlEscape
  | SLASH 'c' ControlLetter
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
- //| IdentityEscape
+ | SLASH OctalEscapeSequence // legacy octal escapes are deprecated, but this also works for null escape (\u0000)
  ;
 
 fragment ControlEscape
@@ -234,6 +233,10 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
+fragment OctalEscapeSequence
+ : OctalDigit OctalDigit? OctalDigit?
+;
+
 fragment UnicodeEscapeSequence
  : 'u' HexDigit HexDigit HexDigit HexDigit
  ;
@@ -244,6 +247,10 @@ fragment HexEscapeSequence
 
 fragment HexDigit:
  [a-fA-F0-9]
+ ;
+
+fragment OctalDigit:
+ [0-7]
  ;
 
 //TODO

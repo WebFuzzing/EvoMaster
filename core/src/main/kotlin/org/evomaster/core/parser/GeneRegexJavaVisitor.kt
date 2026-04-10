@@ -356,7 +356,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 }
 
                 is PatternCharacterBlockGene -> {
-                    if (rec.stringBlock.length > 1) throw IllegalArgumentException("CharClass element cannot be strings")
+                    if (rec.stringBlock.length > 1) {
+                        throw IllegalArgumentException("CharClass element cannot be strings")
+                    }
                     else listOf(CharacterRange(rec.stringBlock[0], rec.stringBlock[0]))
                 }
 

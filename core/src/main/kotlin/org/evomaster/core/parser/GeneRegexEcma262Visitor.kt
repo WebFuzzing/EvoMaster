@@ -362,7 +362,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 }
                 PatternCharacterBlockGene(txt, escape)
             }
-            txt[1] == 'x' || txt[1] == 'u' -> {
+            txt[1] in "xu" -> {
                 val hexValue =
                     txt.substring(2).toInt(16)
                 PatternCharacterBlockGene(
@@ -370,7 +370,13 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     hexValue.toChar().toString()
                 )
             }
-
+            txt[1].isDigit() -> {
+                val octalValue = txt.substring(1).toInt(8)
+                PatternCharacterBlockGene(
+                    txt,
+                    octalValue.toChar().toString()
+                )
+            }
             else -> CharacterClassEscapeRxGene(txt[1].toString())
         })
     }

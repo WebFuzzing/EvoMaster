@@ -366,4 +366,12 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkSameAsJava("""[\D\d]""")
         checkSameAsJava("""[\x41\cA\n\u0000]""")
     }
+
+    @Test
+    open fun testJSExclusiveEscapes(){
+        checkCanSample("""\0""", "\u0000", 100)
+        checkCanSample("""\001\007""", "\u0001\u0007", 100)
+        checkCanSample("""\123""", "\u0053", 100)
+        checkCanSample("""\777""", "\u01ff", 100)
+    }
 }
