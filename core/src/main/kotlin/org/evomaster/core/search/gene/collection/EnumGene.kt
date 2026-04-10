@@ -3,12 +3,11 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
@@ -43,7 +42,7 @@ class EnumGene<T : Comparable<T>>(
      * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
      */
     private val valueNames: List<String?>? = null
-) : SimpleGene(name), NamedExamplesGene {
+) : SimpleGene(name), UserExamplesGene {
 
     companion object {
 

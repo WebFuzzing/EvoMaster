@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.wrapper
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -35,7 +34,7 @@ class ChoiceGene<T>(
      */
     valueNames: List<String?>? = null,
 
-) : CompositeFixedGene(name, geneChoices), NamedExamplesGene, WrapperGene where T : Gene {
+) : CompositeFixedGene(name, geneChoices), UserExamplesGene, WrapperGene where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
