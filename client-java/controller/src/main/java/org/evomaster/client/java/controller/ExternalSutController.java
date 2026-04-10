@@ -525,9 +525,9 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final void setExecutingInitRedis(boolean executingInitRedis) {
         checkInstrumentation();
-        serverController.setExecutingInitMongo(executingInitRedis);
-        // sync executingInitMongo on the local ExecutionTracer
-        ExecutionTracer.setExecutingInitMongo(executingInitRedis);
+        serverController.setExecutingInitRedis(executingInitRedis);
+        // sync executingInitRedis on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitRedis(executingInitRedis);
     }
 
     @Override

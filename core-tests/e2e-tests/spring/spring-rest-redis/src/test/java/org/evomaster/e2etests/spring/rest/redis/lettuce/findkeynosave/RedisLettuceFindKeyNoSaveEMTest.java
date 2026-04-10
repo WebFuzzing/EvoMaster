@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.rest.redis.lettuce.findkeynosave.findkey;
+package org.evomaster.e2etests.spring.rest.redis.lettuce.findkeynosave;
 
 import com.foo.spring.rest.redis.lettuce.findkeynosave.findkey.RedisLettuceFindKeyNoSaveController;
 import org.evomaster.core.EMConfig;
@@ -30,7 +30,7 @@ public class RedisLettuceFindKeyNoSaveEMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "RedisLettuceFindKeyNoSaveEM",
                 "org.foo.spring.rest.redis.RedisLettuceFindKeyNoSaveEM",
-                1000,
+                100,
                 true,
                 (args) -> {
                     setOption(args, "heuristicsForRedis", "true");

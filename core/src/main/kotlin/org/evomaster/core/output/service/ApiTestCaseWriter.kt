@@ -60,7 +60,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         val initializingRedisActions = ind.individual.seeInitializingActions().filterIsInstance<RedisDbAction>()
         val initializingRedisResults = (ind.seeResults(initializingRedisActions))
         if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
-            throw IllegalStateException("the type of results are expected as MongoDbActionResults")
+            throw IllegalStateException("the type of results are expected as RedisDbActionResults")
 
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
@@ -94,7 +94,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }
                     EvaluatedRedisDbAction(initializingRedisActions[it], result)
                 },
-                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                lines,
+                insertionVars = insertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }
 
