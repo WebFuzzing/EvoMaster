@@ -404,7 +404,8 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     octalValue.toChar().toString()
                 )
             }
-            else -> CharacterClassEscapeRxGene(txt[1].toString())
+            txt[1] in "dDsSwW" -> CharacterClassEscapeRxGene(txt[1].toString())
+            else -> PatternCharacterBlockGene(txt, txt[1].toString())
         })
     }
 }

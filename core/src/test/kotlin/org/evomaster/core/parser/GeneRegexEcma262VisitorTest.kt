@@ -366,10 +366,13 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkSameAsJava("""[\D\d]""")
         checkSameAsJava("""[\x41\cA\n\u0000]""")
         checkCanSample("""[\ca\cg\cz]""",listOf("\u0001", "\u0007", "\u001A"),10_000)
+        checkCanSample("""[\p{Pe}]""",listOf("P", "p", "e", "{", "}"),10_000)
     }
 
     @Test
     open fun testJSExclusiveEscapes(){
+        checkCanSample("""\a""", "a", 100)
+        checkCanSample("""\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/""", "^$\\.*+?()[]{}|/", 100)
         checkCanSample("""[\c0]""", "\u0010", 100)
         checkCanSample("""[\cP][\c0]""", "\u0010\u0010", 100)
         checkCanSample("""[\c_]""", "\u001f", 100)

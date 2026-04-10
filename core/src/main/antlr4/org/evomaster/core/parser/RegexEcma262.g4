@@ -100,7 +100,10 @@ CharacterEscape
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
  | SLASH OctalEscapeSequence // legacy octal escapes are deprecated, but this also works for null escape (\u0000)
+ | SLASH IdentityEscape
  ;
+
+//TODO backreferences
 
 ControlLetterExtendedEscape
  // This handles both control letter escapes (\ca, \cZ, etc.) and literal interpretations of \c.
@@ -116,11 +119,12 @@ fragment ControlEscape
  : [fnrtv]
  ;
 
-//TODO
-//fragment IdentityEscape ::
-//SourceCharacter but not IdentifierPart
-//<ZWJ>
-//<ZWNJ>
+fragment IdentityEscape
+ // In JS escape sequences that are not one of the above (excluding backreferences) become identity escapes:
+ // they represent the character that follows the backslash. (e.g.: "\a" becomes "a")
+ // see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_escape#:~:text=identity%20escapes
+ : ~[dDsSwWfnrtvxuc0-9]
+ ;
 
 //TODO
 //DecimalEscape
