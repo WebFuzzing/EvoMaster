@@ -97,21 +97,24 @@ atom
 //TODO
 CharacterEscape
  : SLASH ControlEscape
- | SLASH 'c' ControlLetter
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
  | SLASH OctalEscapeSequence // legacy octal escapes are deprecated, but this also works for null escape (\u0000)
+ ;
+
+ControlLetterExtendedEscape
+ // This handles both control letter escapes (\ca, \cZ, etc.) and literal interpretations of \c.
+ // As in JS: "\c" + [^a-zA-Z]? is taken literally as "\c" + [^a-zA-Z]? outside charclasses
+ // while "\c" + [^a-zA-Z0-9_]? is taken literally as "\c" + [^a-zA-Z0-9_]? within charclasses.
+ // Therefore, as all characters following "\c" (or none) are permitted we accept "\c" + .? here
+ // and handle each case in visitor.
+ : SLASH 'c' .?   // matches \c, \c<anything>
  ;
 
 fragment ControlEscape
  //one of f n r t v
  : [fnrtv]
  ;
-
-fragment ControlLetter
- : [a-zA-Z]
- ;
-
 
 //TODO
 //fragment IdentityEscape ::
@@ -178,7 +181,8 @@ classAtomNoDash
 
 // TODO
 classEscape
- : atomEscape
+ : controlLetterExtendedEscape // this needs to be first so that we can accept things like \c and \c0 within charclasses
+ | atomEscape
 // | SLASH 'b'
  ;
 
@@ -186,7 +190,11 @@ decimalDigits
  : DecimalDigit+
  ;
 
-
+controlLetterExtendedEscape
+ // we need this as a parser rule because differentiating between being inside a charclass or outside is important
+ // as behavior changes in each case
+ : ControlLetterExtendedEscape
+ ;
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
@@ -201,6 +209,7 @@ atomEscape
  //TODO
 // | '\\' DecimalEscape
  | CharacterEscape
+ | controlLetterExtendedEscape
  ;
 
 CharacterClassEscape
