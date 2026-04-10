@@ -235,6 +235,24 @@
         </dependency>
     </dependencies>
 
+    <!--
+        The Cassandra Java driver (java-driver-core) depends on a newer version of Netty than what
+        other test dependencies (e.g. Spring Boot 2.5.x) pull in. When Maven resolves them separately,
+        different Netty modules end up in different versions, causing NoSuchMethodError at runtime.
+        Pinning all Netty modules here forces a consistent version across the test classpath.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.1.94.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>
