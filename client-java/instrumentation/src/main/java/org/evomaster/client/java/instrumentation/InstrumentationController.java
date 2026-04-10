@@ -51,6 +51,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitMongo(executingInitMongo);
     }
 
+    public static void setExecutingInitCassandra(boolean executingInitCassandra){
+        ExecutionTracer.setExecutingInitCassandra(executingInitCassandra);
+    }
+
     public static void setExecutingInitRedis(boolean executingInitRedis){
         ExecutionTracer.setExecutingInitRedis(executingInitRedis);
     }
