@@ -28,8 +28,4 @@ public class RedisFailedCommand {
         this.key = key;
         this.type = type;
     }
-
-    public String getType() {
-        return type;
-    }
 }

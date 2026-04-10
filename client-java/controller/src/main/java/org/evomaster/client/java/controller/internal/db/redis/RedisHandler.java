@@ -107,7 +107,7 @@ public class RedisHandler {
 
     private void registerFailedCommand(RedisCommand redisCommand, double distance) {
         if (distance > 0 &&
-            redisCommand.getType().getLabel().equals("get")) {
+            redisCommand.getType().equals(RedisCommand.RedisCommandType.GET)) {
             //For this first iteration we'll only work on GET commands.
             failedCommands.add(createFailedCommand(redisCommand));
         }
