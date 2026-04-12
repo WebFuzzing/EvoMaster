@@ -1304,7 +1304,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults)) return
+        val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
+        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
 
         val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
 

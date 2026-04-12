@@ -1,8 +1,20 @@
 package org.evomaster.core.problem.rest.oracle
 
+import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -347,4 +359,269 @@ class HttpSemanticsOracleTest {
             bodyParam  = formBodyParam()
         ))
     }
+
+    private fun jsonPutBodyParam(
+        activeFields: Map<String, String>,
+        omittedFields: Set<String> = emptySet()
+    ): BodyParam {
+        val fields = mutableListOf<org.evomaster.core.search.gene.Gene>()
+        activeFields.forEach { (name, value) -> fields.add(StringGene(name, value)) }
+        omittedFields.forEach { name ->
+            fields.add(OptionalGene(name, StringGene(name, ""), isActive = false))
+        }
+        val obj = ObjectGene("body", fields = fields)
+        val typeGene = EnumGene("contentType", listOf("application/json"))
+        typeGene.index = 0
+        return BodyParam(obj, typeGene)
+    }
+
+    private fun runMismatchedPutOracle(
+        path: String,
+        putBody: BodyParam,
+        getResponseBody: String,
+        schema: RestSchema? = null,
+        getResponseStatus: Int = 200,
+        putResponseStatus: Int = 200
+    ): Boolean {
+        val restPath = RestPath(path)
+        val put = RestCallAction(
+            id = "put", verb = HttpVerb.PUT, path = restPath,
+            parameters = mutableListOf(putBody)
+        )
+        val get = RestCallAction(
+            id = "get", verb = HttpVerb.GET, path = restPath,
+            parameters = mutableListOf()
+        )
+
+        put.setLocalId("put-action")
+        get.setLocalId("get-action")
+
+        val individual = RestIndividual(
+            mutableListOf(put, get), SampleType.RANDOM, dbInitialization = mutableListOf()
+        )
+        individual.doInitialize()
+
+        val putResult = RestCallResult(put.getLocalId()).apply {
+            setStatusCode(putResponseStatus)
+            setBody("{}")
+            setBodyType(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
+        }
+        val getResult = RestCallResult(get.getLocalId()).apply {
+            setStatusCode(getResponseStatus)
+            setBody(getResponseBody)
+            setBodyType(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
+        }
+
+        return HttpSemanticsOracle.hasMismatchedPutResponse(
+            individual,
+            listOf(putResult, getResult),
+            schema
+        )
+    }
+
+    private fun buildUsersSchema(
+        putWritable: List<String>,
+        getResponseFields: List<String>
+    ): RestSchema {
+        fun props(names: List<String>) = names.joinToString(",") {
+            "\"$it\":{\"type\":\"string\"}"
+        }
+        val putSchemaJson  = "{\"type\":\"object\",\"properties\":{${props(putWritable)}}}"
+        val getSchemaJson  = "{\"type\":\"object\",\"properties\":{${props(getResponseFields)}}}"
+
+        val json = """
+            {
+              "openapi": "3.0.0",
+              "info": { "title": "test", "version": "1.0" },
+              "paths": {
+                "/users": {
+                  "put": {
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": { "schema": $putSchemaJson }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "ok",
+                        "content": {
+                          "application/json": { "schema": $getSchemaJson }
+                        }
+                      }
+                    }
+                  },
+                  "get": {
+                    "responses": {
+                      "200": {
+                        "description": "ok",
+                        "content": {
+                          "application/json": { "schema": $getSchemaJson }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """.trimIndent()
+
+        return RestSchema(OpenApiAccess.parseOpenApi(json, SchemaLocation.MEMORY))
+    }
+
+    @Test
+    fun testPut_sentFieldsMatch_returnsFalse() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice", "email" to "a@b.c")),
+            getResponseBody = """{"name":"Alice","email":"a@b.c"}"""
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_sentFieldHasDifferentValueInGet_returnsTrue() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice")),
+            getResponseBody = """{"name":"Bob"}"""
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
+    fun testPut_sentFieldMissingInGet_returnsTrue() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice", "email" to "a@b.c")),
+            getResponseBody = """{"name":"Alice"}"""
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
+    fun testPut_extraFieldInGetResponseIgnored_returnsFalse() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice")),
+            getResponseBody = """{"id":42,"name":"Alice","createdAt":"2026-01-01"}"""
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_wipedFieldStillPresentInGet_returnsTrue() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "email", "role"),
+            getResponseFields = listOf("id", "name", "email", "role", "createdAt")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice", "email" to "a@b.c"),
+                omittedFields = setOf("role")
+            ),
+            getResponseBody = """{"id":1,"name":"Alice","email":"a@b.c","role":"admin","createdAt":"2026-01-01"}""",
+            schema = schema
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
+    fun testPut_wipedFieldExplicitlyNullInGet_returnsFalse() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "role"),
+            getResponseFields = listOf("name", "role")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice"),
+                omittedFields = setOf("role")
+            ),
+            getResponseBody = """{"name":"Alice","role":null}""",
+            schema = schema
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_wipedFieldAbsentInGet_returnsFalse() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "role"),
+            getResponseFields = listOf("name", "role")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice"),
+                omittedFields = setOf("role")
+            ),
+            getResponseBody = """{"name":"Alice"}""",
+            schema = schema
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_changedField_returnsTrue() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "role"),
+            getResponseFields = listOf("id", "name", "role")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice", "role" to "admin"),
+            ),
+            getResponseBody = """{"id":"1","name":"Alice","role":"user"}""",
+            schema = schema
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
+    fun testPut_writeOnlyFieldNotInGetSchema_noFalsePositive() {
+        // password is in PUT schema but NOT in GET schema (write-only).
+        // It was not sent. The wiped check must NOT flag this as a bug, even
+        // though there is no "password" field in the GET response.
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "password"),
+            getResponseFields = listOf("name")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice"),
+                omittedFields = setOf("password")
+            ),
+            getResponseBody = """{"name":"Alice"}""",
+            schema = schema
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_putReturnedNon2xx_returnsFalse() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice")),
+            getResponseBody = """{"name":"Bob"}""",
+            putResponseStatus = 400
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_getReturnedNon2xx_returnsFalse() {
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice")),
+            getResponseBody = """{}""",
+            getResponseStatus = 404
+        )
+        assertFalse(mismatch)
+    }
+
+
 }
