@@ -247,7 +247,9 @@ BaseChar
  ;
 
 fragment OctalEscapeSequence
- : OctalDigit OctalDigit? OctalDigit?
+ : OctalDigit
+ | OctalDigit OctalDigit
+ | [0-3] OctalDigit OctalDigit
 ;
 
 fragment UnicodeEscapeSequence

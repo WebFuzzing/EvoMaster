@@ -380,9 +380,8 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkCanSample("""\c""", "\\c", 100)
         checkCanSample("""\c*""", "\\c*", 100)
         checkCanSample("""\c0""", "\\c0", 100)
-        checkCanSample("""\0""", "\u0000", 100)
+        checkCanSample("""\0\000""", "\u0000\u0000", 100)
         checkCanSample("""\001\007""", "\u0001\u0007", 100)
-        checkCanSample("""\123""", "\u0053", 100)
-        checkCanSample("""\777""", "\u01ff", 100)
+        checkCanSample("""\123\377""", "\u0053\u00ff", 100)
     }
 }
