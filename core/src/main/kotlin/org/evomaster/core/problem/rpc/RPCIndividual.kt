@@ -27,9 +27,11 @@ class RPCIndividual(
     mainSize: Int = allActions.size,
     sqlSize: Int = 0,
     mongoSize: Int = 0,
+    redisSize: Int = 0,
     dnsSize: Int = 0,
     scheduleTaskSize : Int = 0,
-    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize, scheduleTaskSize, 0)
+    groups: GroupsOfChildren<StructuralElement> =
+        getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,redisSize,dnsSize, scheduleTaskSize, 0)
 ) : ApiWsIndividual(
     sampleType,
     trackOperator, index, allActions,
@@ -111,6 +113,7 @@ class RPCIndividual(
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
             sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
             mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+            redisSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_REDIS),
             dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS),
             scheduleTaskSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
         )
