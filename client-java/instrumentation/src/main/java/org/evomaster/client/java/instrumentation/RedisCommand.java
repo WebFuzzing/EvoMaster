@@ -94,6 +94,12 @@ public class RedisCommand implements Serializable {
          */
         SADD("sadd", "set", false),
         /**
+         * Select the Redis logical database having the specified zero-based numeric index.
+         * New connections always use the database 0.
+         * <a href="https://redis.io/docs/latest/commands/select/">SELECT Documentation</a>
+         */
+        SELECT("select", "none", false),
+        /**
          * Set key to hold the string value and set key to timeout after a given number of seconds.
          * <a href="https://redis.io/docs/latest/commands/setex/">SETEX Documentation</a>
          */

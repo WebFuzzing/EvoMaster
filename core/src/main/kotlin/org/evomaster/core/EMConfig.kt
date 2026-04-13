@@ -949,6 +949,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun shouldGenerateRedisData() = generateRedisData
+
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
@@ -1832,6 +1834,11 @@ class EMConfig {
     var extractMongoExecutionInfo = true
 
     @Experimental
+    @Cfg("Enable extracting Redis execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractRedisExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
@@ -1843,6 +1850,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateMongoData = true
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateRedisData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)

@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.redis;
 
-import org.evomaster.client.java.utils.SimpleLogger;
-
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,21 +22,26 @@ public class ReflectionBasedRedisClient {
     private static final String HGETALL_METHOD = "hgetall";
     private static final String HSET_METHOD = "hset";
     private static final String KEYS_METHOD = "keys";
+    private static final String SELECT_METHOD = "select";
     private static final String SET_METHOD = "set";
     private static final String SHUTDOWN_METHOD = "shutdown";
     private static final String SMEMBERS_METHOD = "smembers";
     private static final String SYNC_METHOD = "sync";
     private static final String TYPE_METHOD = "type";
 
-    public ReflectionBasedRedisClient(String host, int port) {
+    /**
+     * Creates the Redis connection.
+     * @param host Redis database host.
+     * @param port Redis database port.
+     * @param keyspace Logical database index. Default is 0.
+     */
+    public ReflectionBasedRedisClient(String host, int port, int keyspace) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
             Class<?> redisURIClass = Class.forName("io.lettuce.core.RedisURI");
 
             Method createUri = redisURIClass.getMethod(CREATE_METHOD, String.class);
-            Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
-
-            SimpleLogger.debug("Connecting to Redis with PORT: " + port);
+            Object uri = createUri.invoke(null, "redis://" + host + ":" + port + "/" + keyspace);
 
             Method createClient = redisClientClass.getMethod(CREATE_METHOD, redisURIClass);
             this.lettuceClient = createClient.invoke(null, uri);
@@ -66,6 +69,17 @@ public class ReflectionBasedRedisClient {
                 shutdown.invoke(lettuceClient);
             }
         } catch (Exception ignored) {}
+    }
+
+    /** Selects the logical database for subsequent commands on this connection.
+     * <p>Redis supports multiple logical databases identified by a zero-based integer index,
+     * referred to as a keyspace. All keys are scoped to the selected keyspace, meaning that
+     * the same key can exist independently in different keyspaces. The default keyspace is 0.
+     *
+     * @param keyspace the zero-based index of the logical database to select
+     */
+    public void select(int keyspace) {
+        invoke(SELECT_METHOD, keyspace);
     }
 
     /** Equivalent to SET key value */

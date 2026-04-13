@@ -257,7 +257,7 @@ public class RedisHeuristicsCalculator {
         int numberOfCommandKeys = commandArgs.size();
 
         if (numberOfCommandKeys == 0) {
-            return MAX_REDIS_DISTANCE;
+            throw new IllegalArgumentException("Set command encountered without arguments.");
         }
 
         double sum = MIN_REDIS_DISTANCE;
@@ -287,7 +287,7 @@ public class RedisHeuristicsCalculator {
         int numberOfMembersInCommandArgsSets = membersInCommandArgsSets.size();
 
         if (numberOfMembersInCommandArgsSets == 0) {
-            return MAX_REDIS_DISTANCE;
+            throw new IllegalArgumentException("Set command encountered without arguments.");
         }
 
         double total = MIN_REDIS_DISTANCE;
