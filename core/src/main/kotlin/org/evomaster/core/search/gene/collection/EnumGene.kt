@@ -206,6 +206,17 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
     }
 
+    override fun selectExampleByName(name: String) {
+        if(!isUsedForExamples()){
+            throw IllegalStateException("Selected enum does not contain example values")
+        }
+        if(valueNames == null || ! valueNames.contains(name)){
+            throw IllegalArgumentException("Selected example value enum does not contain $name")
+        }
+
+        index = valueNames.indexOf(name)
+    }
+
     /**
      * [EnumGene] can be used in DTOs when the API spec contains either example values or an enum.
      * Since the [EnumGene] uses generics to hold values, this function returns the type to be used

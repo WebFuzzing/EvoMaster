@@ -454,12 +454,4 @@ class RestCallAction(
         return copy
     }
 
-    fun getNamedExamples() : Map<String, Int> {
-        return seeAllGenes()
-            .filterIsInstance<UserExamplesGene>()
-            .filter { it.isUsedForExamples() }
-            .flatMap { it.getAvailableExampleNames() }
-            .groupingBy { it }
-            .eachCount()
-    }
 }

@@ -15,6 +15,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
+import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.interfaces.WrapperGene
@@ -1253,10 +1254,40 @@ abstract class Gene(
         return p.staticCheckIfImpactPhenotype()
     }
 
-    open fun isChildUsed(child: Gene): Boolean {
+    /**
+     * Try to make sure the gene will impact the phenotype
+     */
+    fun awakeGene(){
+
+        if (parent == null || parent !is Gene) {
+            //top genes are always impacting, as used directly
+            return
+        }
+
+        val p = parent as Gene
+
+        if(p is PhenotypeDormantGene && ! p.isChildActive(this)){
+            val activated = p.tryToActivateGene(this)
+            if(!activated) {
+                //if we cannot activate it, there is nothing we can do,
+                //and we can just stop the recursion
+                return
+            }
+        }
+
+        p.awakeGene()
+    }
+
+    fun isChildUsed(child: Gene): Boolean {
         verifyChild(child)
+
         //in most cases, it would be true.
         //only for few special genes this function would be overridden
+
+        if(this is PhenotypeDormantGene){
+            return isChildActive(child)
+        }
+
         return true
     }
 

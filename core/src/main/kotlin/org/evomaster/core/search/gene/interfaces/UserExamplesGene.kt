@@ -33,5 +33,7 @@ interface UserExamplesGene {
     fun getValueName(): String?
 
     fun getAvailableExampleNames() : Set<String>
+
+    fun selectExampleByName(name: String)
 }
 
