@@ -8,7 +8,6 @@
         <version>5.1.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.evomaster</groupId>
     <artifactId>evomaster-client-java</artifactId>
     <packaging>pom</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
