@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -25,8 +26,8 @@ open class NamedExampleApplication {
     }
 
 
-    @GetMapping
-    open fun get(
+    @PostMapping
+    open fun post(
         @QueryParam("q0") q0: String?,
         @QueryParam("q1") q1: String?,
         @QueryParam("q2") q2: String?,

@@ -70,8 +70,17 @@ class EnumGene<T : Comparable<T>>(
             log.warn("Enum Gene (name: $name) has empty list of values")
             values = listOf()
         }else{
-            val list = data
-                .toSet() // we want no duplicate
+
+            val elements = if(valueNames == null){
+                // we want no duplicate
+                data.toSet()
+            } else {
+                //if we have named value, then we must not use a set, as there might be duplicates, and
+                //we would need to know which names map to which duplicated value
+                data
+            }
+
+            val list = elements
                 .toList() // need ordering to specify index of selection, so Set would not do
                 .sorted() // sort, to make meaningful list comparisons
                 .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
