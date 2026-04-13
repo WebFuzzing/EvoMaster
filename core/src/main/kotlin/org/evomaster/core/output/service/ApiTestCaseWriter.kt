@@ -328,7 +328,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
                 format.isPlaywright() -> "expect(($field)${if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("[")) fieldPath else ".$fieldPath"}).toBe(null);"
-                format.isJavaScript() -> "expect(($field)$fieldPath).toBe(null);"
+                format.isJavaScript() -> "expect($field$fieldPath).toBe(null);" // ($field$)fieldPath
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -386,7 +386,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     val assertionContent = if (format.isPython()) {
                         "assert $responseVariableName.json()$fieldPath == $toPrint"
                     }else { // javascript
-                        "expect(($field)$fieldPath).toBe($toPrint);"
+                        "expect($field$fieldPath).toBe($toPrint);" // ($field$)fieldPath
                     }
 
                     if (flakyValue == null || flakyValue == value){
@@ -578,7 +578,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 if (format.isPlaywright()) {
                     "expect(await $responseVariableName.json()).toHaveLength($expectedSize);"
                 } else {
-                    "expect(($field)$fieldPath.length).toBe($expectedSize);"
+                    "expect($field$fieldPath.length).toBe($expectedSize);" // ($field$)fieldPath
                 }
             }
             format.isCsharp() ->

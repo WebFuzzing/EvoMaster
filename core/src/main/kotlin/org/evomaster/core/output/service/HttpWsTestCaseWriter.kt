@@ -104,7 +104,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
-                format.isJavaScript() && format.isPlaywright()-> lines.append("const $resVarName = ")
+                format.isPlaywright() -> lines.append("const $resVarName = ")
+                format.isJavaScript() -> lines.append("const $resVarName = ")
                 format.isPython() -> lines.append("$resVarName = ")
                 format.isCsharp() -> lines.append("var $resVarName = ")
             }
@@ -113,7 +114,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isPlaywright() -> lines.append("await request")
-            format.isJavaScript() && !format.isPlaywright() -> lines.append("await superagent")
+            format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
         }
@@ -333,7 +334,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
                 lines.addEmpty()
                 lines.add("const body = await $responseVariableName.json();")
-                lines.add("$responseVariableName.body = body;")
+                lines.add("  = body;")
                 lines.addEmpty()
             }
 
