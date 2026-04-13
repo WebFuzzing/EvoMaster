@@ -152,6 +152,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
         val candidates = action.getNamedExamples()
             //we skip named examples that are used only once
             .filter { it.value >= 2 }
+        if(candidates.isEmpty()){
+            return
+        }
 
         if (inUse.any { it.value == candidates[it.key] }) {
             //one example is already fully covered
@@ -160,6 +163,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         //we look at something already selected, with more than 1 occurrence, and not fully used yet
         val options = inUse.filter { candidates.contains(it.key) }
+        assert(options.isNotEmpty())
 
         val choice = randomness.choose(options.keys)
 
