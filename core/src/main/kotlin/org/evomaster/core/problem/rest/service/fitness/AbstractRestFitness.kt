@@ -503,7 +503,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
 
         /*
-            explicit targets for examples
+            explicit targets for single example entries
          */
         val examples = call.seeAllGenes()
             .filter { it is UserExamplesGene && it.isUsedForExamples() }
@@ -522,6 +522,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             val target = "EXAMPLE_${call.id}_${name}_$label"
+            fv.coverTarget(idMapper.handleLocalTarget(target))
+        }
+
+        /*
+            explicit targets for named examples, but only when fully used
+         */
+        val allExampleNames = call.getNamedExamples()
+        val exampleNamesInUse = call.getNamedExamplesInUse()
+
+        for(e in exampleNamesInUse){
+            /*
+                TODO this would not consider possible special cases (eg when have anyOf constraints) in which
+                same example name could appear in different subtrees of same ChoiceGene...
+                bit tricky to handle... not sure if really a good ROI in trying to handle it now...
+             */
+            if(e.value != allExampleNames[e.key]){
+                continue
+            }
+
+            val target = "NAMED_EXAMPLE_${call.id}_${e.key}"
             fv.coverTarget(idMapper.handleLocalTarget(target))
         }
     }
