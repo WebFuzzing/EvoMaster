@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.delete
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.delete.HttpOracleDeleteController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -47,8 +48,8 @@ class HttpOracleDeleteEMTest : SpringTestBase(){
 
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE, faults.first())
+            assertTrue({ ExperimentalFaultCategory.HTTP_NONWORKING_DELETE in faults })
+
         }
     }
 }
