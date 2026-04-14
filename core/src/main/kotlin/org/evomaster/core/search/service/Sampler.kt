@@ -163,7 +163,11 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         //we look at something already selected, with more than 1 occurrence, and not fully used yet
         val options = inUse.filter { candidates.contains(it.key) }
-        assert(options.isNotEmpty())
+        if(options.isEmpty()){
+            //this can happen when there is a selected named example with a single occurrence in the schema.
+            //so, nothing to do
+            return
+        }
 
         val choice = randomness.choose(options.keys)
 

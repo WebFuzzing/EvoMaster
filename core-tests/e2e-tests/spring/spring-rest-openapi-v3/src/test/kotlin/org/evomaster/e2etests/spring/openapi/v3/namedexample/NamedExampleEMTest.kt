@@ -1,7 +1,9 @@
 package org.evomaster.e2etests.spring.openapi.v3.namedexample
 
 import com.foo.rest.examples.spring.openapi.v3.namedexample.NamedExampleController
+import junit.framework.TestCase.assertTrue
 import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
@@ -24,12 +26,16 @@ class NamedExampleEMTest : SpringTestBase(){
             200,
         ) { args: MutableList<String> ->
 
-            val solution = initAndRun(args)
+            val (injector, solution) = initAndDebug(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/object", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/namedexample", "OK")
 
-            TODO add checks on named example target
+            val fv = solution.overall
+
+            val idMapper = injector.getInstance(IdMapper::class.java)
+            val covered = fv.coveredTargets().any{ IdMapper.isNamedExample(idMapper.getDescriptiveId(it))}
+            Assertions.assertTrue(covered)
         }
     }
 

@@ -541,7 +541,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 continue
             }
 
-            val target = "NAMED_EXAMPLE_${call.id}_${e.key}"
+            val target = idMapper.getNamedExampleId(call.id, e.key, status ?: 0)
             fv.coverTarget(idMapper.handleLocalTarget(target))
         }
     }

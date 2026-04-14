@@ -260,7 +260,8 @@ class EnumGene<T : Comparable<T>>(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is EnumGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false // FIXME
+            //throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         //FIXME what if compared to another enum with different values???
         return this.index == other.index

@@ -38,6 +38,6 @@ open class NamedExampleApplication {
 
         //on purpose do nothing with input... should still be selected in test suites due to BB coverage
 
-        return ResponseEntity.ok("Hello World!!!")
+        return ResponseEntity.ok("OK")
     }
 }
