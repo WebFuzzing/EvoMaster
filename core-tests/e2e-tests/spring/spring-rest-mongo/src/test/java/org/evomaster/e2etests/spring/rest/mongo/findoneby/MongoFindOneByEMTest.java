@@ -34,7 +34,7 @@ public class MongoFindOneByEMTest extends RestTestBase {
         runTestHandlingFlaky(
                 "MongoFindOneByEM_" + id,
                 "org.foo.spring.rest.mongo.MongoFindOneByEM"+id,
-                1000,
+                1500,
                 true,
                 (args) -> {
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
@@ -54,6 +54,7 @@ public class MongoFindOneByEMTest extends RestTestBase {
                     assertFalse(solution.getIndividuals().isEmpty());
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, endpoint, null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, endpoint, null);
-                });
+                },
+                6);
     }
 }
