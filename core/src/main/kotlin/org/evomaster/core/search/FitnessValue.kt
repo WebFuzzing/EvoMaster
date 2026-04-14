@@ -4,6 +4,7 @@ import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
@@ -11,6 +12,7 @@ import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.redis.RedisExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.sql.schema.TableId
@@ -80,6 +82,8 @@ class FitnessValue(
 
     val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
 
+    val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
+
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular, the tables and columns in them involved
@@ -97,6 +101,12 @@ class FitnessValue(
      * to false), in particular, the collection and fields in them involved
      */
     private val aggregatedFailedFind: MutableList<MongoFailedQuery> = mutableListOf()
+
+    /**
+     * When SUT executes REDIS commands that retrieve data, keep track of when those "fails", in particular,
+     * the type of commands that failed.
+     */
+    private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -129,8 +139,10 @@ class FitnessValue(
         copy.extraToMinimize.putAll(this.extraToMinimize)
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.mongoExecutions.putAll(this.mongoExecutions)
+        copy.redisExecutions.putAll(this.redisExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
+        copy.aggregateRedisDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -155,9 +167,15 @@ class FitnessValue(
             databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
         )
     }
+
     fun aggregateMongoDatabaseData(){
         aggregatedFailedFind.clear()
         mongoExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedFind.addAll(it1) } }
+    }
+
+    fun aggregateRedisDatabaseData(){
+        aggregatedFailedRedisCommands.clear()
+        redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
     fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
@@ -172,6 +190,10 @@ class FitnessValue(
         mongoExecutions[actionIndex] = mongoExecution
     }
 
+    fun setRedisExecution(actionIndex: Int, redisExecution: RedisExecution){
+        redisExecutions[actionIndex] = redisExecution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -183,6 +205,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedWhereQueries() = aggregatedFailedWhereQueries
 
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
+
+    fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.score == MAX_VALUE

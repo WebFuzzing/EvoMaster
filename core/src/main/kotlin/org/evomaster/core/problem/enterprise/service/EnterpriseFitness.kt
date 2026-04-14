@@ -10,6 +10,10 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.redis.RedisDbActionResult
+import org.evomaster.core.redis.RedisDbActionTransformer
+import org.evomaster.core.redis.RedisExecution
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
@@ -204,6 +208,33 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return true
     }
 
+    /** Transforms and executes a list of Redis [RedisDbAction] as insertion commands
+     * against the remote Redis database via the SUT controller.
+     *
+     * @param allRedisActions Redis actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Redis action will be appended, preserving the same order as [allRedisActions].
+     * @return whether [allRedisActions] execute successfully.
+     */
+    fun doRedisDbCalls(
+        allRedisActions: List<RedisDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allRedisActions.isEmpty()) return true
+
+        val redisResults = allRedisActions.map { RedisDbActionResult(it.getLocalId()) }
+        actionResults.addAll(redisResults)
+
+        val dto = RedisDbActionTransformer.transform(allRedisActions)
+
+        val results = rc.executeRedisDatabaseInsertions(dto)
+        results?.executionResults?.forEachIndexed { index, b ->
+            redisResults[index].setInsertExecutionResult(b)
+        }
+
+        return true
+    }
+
     protected fun registerNewAction(action: Action, index: Int){
         rc.registerNewAction(getActionDto(action, index))
     }
@@ -332,6 +363,14 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
         if (configuration.heuristicsForRedis) {
             handleRedisHeuristics(dto, fv)
+        }
+
+        if (configuration.extractRedisExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
+            }
+            fv.aggregateRedisDatabaseData()
         }
     }
 
