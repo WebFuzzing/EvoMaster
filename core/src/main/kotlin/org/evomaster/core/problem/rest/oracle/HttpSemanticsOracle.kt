@@ -278,25 +278,11 @@ object HttpSemanticsOracle {
         schema: RestSchema? = null
     ): Boolean {
 
-        if (individual.size() < 2) return false
-
-        val actions = individual.seeMainExecutableActions()
-        val put = actions[actions.size - 2]
-        val get = actions[actions.size - 1]
-
-        if (put.verb != HttpVerb.PUT) return false
-        if (get.verb != HttpVerb.GET) return false
-
-        if (!put.usingSameResolvedPath(get)) return false
-
-        if (put.auth.isDifferentFrom(get.auth)) return false
-
-        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
-            ?: return false
-        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
-            ?: return false
+        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return false
 
         if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
+        // if put returned 2xx but entity does not exist afterwards
+        if (resGet.getStatusCode() == 404) return true
         if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
 
         val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
@@ -307,33 +293,75 @@ object HttpSemanticsOracle {
         val putBody = extractRequestBody(put)
         val getBody = resGet.getBody()
 
-        if (putBody.isNullOrEmpty() && !getBody.isNullOrEmpty()) return true
-
-        // if putBody is not empty but getBody is.
+        // PUT sent content but GET body is empty -> sent fields definitely missing
         if (!putBody.isNullOrEmpty() && getBody.isNullOrEmpty()) return true
-
-        if (putBody.isNullOrEmpty() || getBody.isNullOrEmpty()) return false
+        if (getBody.isNullOrEmpty()) return false
 
         val sentFields = extractSentFieldNames(put)
-        val allPutSchemaFields = extractModifiedFieldNames(put)
-        if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) return false
-
-        // Wiped = in PUT schema but not sent. PUT semantics say the server must
-        // clear these. We only check wiped fields the GET schema actually exposes,
-        // otherwise write-only fields (e.g. passwords) would cause false positives.
-        val wipedCandidates = allPutSchemaFields - sentFields
-        val wipedFields = if (schema != null && wipedCandidates.isNotEmpty()) {
-            val getSchemaFields = extractGetResponseSchemaFields(schema, get)
-            if (getSchemaFields.isEmpty()) emptySet() else wipedCandidates intersect getSchemaFields
-        } else {
-            emptySet()
+        val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
+            schema?.let { extractPutRequestSchemaFields(it, put) } ?: emptySet()
+        }
+        if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
+            // no information to verify against; flag only when PUT sent nothing either
+            return putBody.isNullOrEmpty()
         }
 
-        return hasMismatchedPutFields(putBody, getBody, sentFields, wipedFields, bodyParam)
+        val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
+
+        return hasMismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+    }
+
+    private data class PutGetPair(
+        val put: RestCallAction,
+        val get: RestCallAction,
+        val resPut: RestCallResult,
+        val resGet: RestCallResult
+    )
+
+    /**
+     * Validates and extracts the trailing PUT/GET pair from the individual.
+     * Returns null if any structural or authorization precondition fails.
+     */
+    private fun findPutGetPair(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): PutGetPair? {
+        if (individual.size() < 2) return null
+
+        val actions = individual.seeMainExecutableActions()
+        val put = actions[actions.size - 2]
+        val get = actions[actions.size - 1]
+
+        if (put.verb != HttpVerb.PUT) return null
+        if (get.verb != HttpVerb.GET) return null
+        if (!put.usingSameResolvedPath(get)) return null
+        if (put.auth.isDifferentFrom(get.auth)) return null
+
+        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return null
+        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
+            ?: return null
+
+        return PutGetPair(put, get, resPut, resGet)
     }
 
     /**
-     * Dispatches the field-level checks based on the request body content type.
+     * Wiped candidates are restricted to fields the GET schema actually exposes, otherwise
+     * write-only fields (e.g. passwords) would cause false positives.
+     */
+    private fun computeWipedFields(
+        candidates: Set<String>,
+        schema: RestSchema?,
+        get: RestCallAction
+    ): Set<String> {
+        if (candidates.isEmpty() || schema == null) return emptySet()
+        val getSchemaFields = extractGetResponseSchemaFields(schema, get)
+        if (getSchemaFields.isEmpty()) return emptySet()
+        return candidates intersect getSchemaFields
+    }
+
+    /**
+     * Unified field-level comparison for JSON, XML and form-encoded PUT bodies.
      *
      * @param sentFields  fields whose values must match between PUT and GET
      * @param wipedFields fields that must be absent (or null) in the GET response
@@ -345,32 +373,14 @@ object HttpSemanticsOracle {
         wipedFields: Set<String>,
         bodyParam: BodyParam? = null
     ): Boolean {
-        return when {
-            bodyParam == null || bodyParam.isJson() ->
-                hasMismatchedPutFieldsStructured(OutputFormatter.JSON_FORMATTER, putBody, getBody, sentFields, wipedFields)
-            bodyParam.isXml() ->
-                hasMismatchedPutFieldsStructured(OutputFormatter.XML_FORMATTER, putBody, getBody, sentFields, wipedFields)
-            bodyParam.isForm() ->
-                hasMismatchedPutFieldsForm(putBody, getBody, sentFields, wipedFields)
-            else -> false
-        }
-    }
-
-    private fun hasMismatchedPutFieldsStructured(
-        formatter: OutputFormatter,
-        putBody: String,
-        getBody: String,
-        sentFields: Set<String>,
-        wipedFields: Set<String>
-    ): Boolean {
 
         // sent fields: PUT value must equal GET value
         if (sentFields.isNotEmpty()) {
-            val fieldsPut = formatter.readFields(putBody, sentFields) ?: return false
+            val fieldsPut = readPutFields(putBody, bodyParam, sentFields) ?: return false
             if (fieldsPut.isNotEmpty()) {
-                val fieldsGet = formatter.readFields(getBody, fieldsPut.keys.toSet()) ?: return false
+                val fieldsGet = readGetFields(getBody, fieldsPut.keys) ?: return true
                 for ((field, valuePut) in fieldsPut) {
-                    val valueGet = fieldsGet[field] ?: return true  // sent but missing in GET
+                    val valueGet = fieldsGet[field] ?: return true
                     if (valuePut != valueGet) return true
                 }
             }
@@ -378,7 +388,7 @@ object HttpSemanticsOracle {
 
         // wiped fields: must be absent or null in GET
         if (wipedFields.isNotEmpty()) {
-            val getWiped = formatter.readFields(getBody, wipedFields) ?: return false
+            val getWiped = readGetFields(getBody, wipedFields) ?: return false
             for (field in wipedFields) {
                 if (isWipedFieldStillPresent(getWiped[field])) return true
             }
@@ -388,39 +398,36 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Handles the case where the PUT request body is form-encoded.
-     * The GET response format is auto-detected by trying JSON then XML.
+     * Extracts field values from a PUT request body according to its content type.
+     * Returns null if the body cannot be parsed by the chosen reader.
      */
-    private fun hasMismatchedPutFieldsForm(
+    private fun readPutFields(
         putBody: String,
-        getBody: String,
-        sentFields: Set<String>,
-        wipedFields: Set<String>
-    ): Boolean {
-        val formFields = parseFormBody(putBody)
-        if (formFields.isEmpty() && sentFields.isNotEmpty()) return false
-
-        for (formatter in listOf(OutputFormatter.JSON_FORMATTER, OutputFormatter.XML_FORMATTER)) {
-            val fieldsGetSent = if (sentFields.isEmpty()) emptyMap()
-                                else formatter.readFields(getBody, sentFields) ?: continue
-
-            // sent fields
-            for (field in sentFields) {
-                val valuePut = formFields[field] ?: continue
-                val valueGet = fieldsGetSent[field] ?: return true
-                if (valuePut != valueGet) return true
-            }
-
-            // wiped fields
-            if (wipedFields.isNotEmpty()) {
-                val getWiped = formatter.readFields(getBody, wipedFields) ?: return false
-                for (field in wipedFields) {
-                    if (isWipedFieldStillPresent(getWiped[field])) return true
-                }
-            }
-            return false
+        bodyParam: BodyParam?,
+        fieldNames: Set<String>
+    ): Map<String, String>? = when {
+        bodyParam == null || bodyParam.isJson() ->
+            OutputFormatter.JSON_FORMATTER.readFields(putBody, fieldNames)
+        bodyParam.isXml() ->
+            OutputFormatter.XML_FORMATTER.readFields(putBody, fieldNames)
+        bodyParam.isForm() -> {
+            val parsed = parseFormBody(putBody)
+            if (parsed.isEmpty()) null
+            else fieldNames.mapNotNull { f -> parsed[f]?.let { f to it } }.toMap()
         }
-        return false
+        else -> null
+    }
+
+    /**
+     * Extracts field values from a GET response body, auto-detecting JSON or XML.
+     * Returns null if neither formatter can parse the body.
+     */
+    private fun readGetFields(
+        getBody: String,
+        fieldNames: Set<String>
+    ): Map<String, String>? {
+        return OutputFormatter.JSON_FORMATTER.readFields(getBody, fieldNames)
+            ?: OutputFormatter.XML_FORMATTER.readFields(getBody, fieldNames)
     }
 
     /**
@@ -560,6 +567,28 @@ object HttpSemanticsOracle {
             return false
         }
         return false
+    }
+
+    /**
+     * Returns the property names from the PUT request body schema in the OpenAPI spec.
+     * Used as a fallback to determine writable fields when no BodyParam is present on the action.
+     */
+    internal fun extractPutRequestSchemaFields(
+        schema: RestSchema,
+        put: RestCallAction
+    ): Set<String> {
+
+        val openAPI = schema.main.schemaParsed
+        val pathItem = openAPI.paths?.get(put.path.toString()) ?: return emptySet()
+        val op = pathItem.put ?: return emptySet()
+        val requestBody = op.requestBody ?: return emptySet()
+        val mediaType = requestBody.content?.values?.firstOrNull() ?: return emptySet()
+        val rawSchema = mediaType.schema ?: return emptySet()
+        val resolved = rawSchema.`$ref`?.let {
+            SchemaUtils.getReferenceSchema(schema, schema.main, it, mutableListOf())
+        } ?: rawSchema
+
+        return resolved.properties?.keys?.toSet() ?: emptySet()
     }
 
     /**
