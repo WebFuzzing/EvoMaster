@@ -59,7 +59,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger

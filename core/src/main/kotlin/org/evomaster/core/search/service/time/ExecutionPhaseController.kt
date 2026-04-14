@@ -1,7 +1,8 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.time
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.search.service.time.SearchTimeController
 import javax.inject.Inject
 
 class ExecutionPhaseController {

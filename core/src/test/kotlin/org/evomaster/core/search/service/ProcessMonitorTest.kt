@@ -18,6 +18,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.monitor.SearchOverall
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat

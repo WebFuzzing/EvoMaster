@@ -11,6 +11,8 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.webfrontend.service.BrowserController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 
 /**
  * Global state used in the search.

@@ -6,6 +6,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchStatusUpdater
+import org.evomaster.core.search.service.time.SearchTimeController
 
 
 abstract class SearchAlgorithm<T> where T : Individual {

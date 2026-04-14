@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.time.SearchStatusUpdater
 import org.evomaster.core.sql.SqlAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

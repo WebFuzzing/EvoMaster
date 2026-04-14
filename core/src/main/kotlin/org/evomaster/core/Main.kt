@@ -43,6 +43,8 @@ import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 import java.lang.reflect.InvocationTargetException
 import java.util.Locale
 import kotlin.system.exitProcess

@@ -9,6 +9,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

@@ -9,7 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.algorithms.constant.ConstantModule
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

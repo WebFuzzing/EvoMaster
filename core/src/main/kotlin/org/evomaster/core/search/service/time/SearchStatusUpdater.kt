@@ -1,15 +1,14 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.time
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.SearchListener
+import java.io.PrintStream
 import java.nio.charset.Charset
 import javax.annotation.PostConstruct
-import java.io.PrintStream
 
-
-
-
-class SearchStatusUpdater : SearchListener{
+class SearchStatusUpdater : SearchListener {
 
     @Inject
     private lateinit var time: SearchTimeController
