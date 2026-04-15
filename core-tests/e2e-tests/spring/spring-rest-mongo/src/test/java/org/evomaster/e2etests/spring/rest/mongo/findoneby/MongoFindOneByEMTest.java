@@ -54,6 +54,7 @@ public class MongoFindOneByEMTest extends RestTestBase {
                     assertFalse(solution.getIndividuals().isEmpty());
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, endpoint, null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, endpoint, null);
-                });
+                },
+                6);
     }
 }

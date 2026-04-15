@@ -21,7 +21,7 @@ class MapListIntJacksonEMTest : SpringTestBase() {
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
             "MapListIntJacksonEM",
-            2000
+            3000
         ) { args: List<String> ->
 
             setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true")
