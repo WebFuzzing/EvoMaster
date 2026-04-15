@@ -61,8 +61,6 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val a = individual.seeMainExecutableActions().count()
 
-//        val calculatedBefore = individual.copy()
-
         if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
             val computation = time.averageOverheadMsBetweenTests.addElapsedTime()
             executionInfoReporter.addLatestComputationOverhead(computation, time.evaluatedIndividuals)

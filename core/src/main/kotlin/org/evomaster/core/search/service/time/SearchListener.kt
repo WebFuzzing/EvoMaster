@@ -2,5 +2,5 @@ package org.evomaster.core.search.service.time
 
 interface SearchListener {
 
-    fun newActionEvaluated()
+    fun newActionsEvaluated(n: Int)
 }

@@ -202,9 +202,13 @@ class SearchTimeController {
     }
 
     fun newActionEvaluation(n: Int = 1) {
-        if(!recording) return
+
+        listeners.forEach{it.newActionsEvaluated(n)}
+
+        if(!recording){
+            return
+        }
         evaluatedActions += n
-        listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){

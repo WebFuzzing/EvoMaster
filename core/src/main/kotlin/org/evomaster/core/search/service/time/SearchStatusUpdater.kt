@@ -70,11 +70,12 @@ class SearchStatusUpdater : SearchListener {
         }
     }
 
-    override fun newActionEvaluated() {
+    override fun newActionsEvaluated(n: Int) {
 
         when {
             epc.isInSearch() -> printForSearch()
-            //TODO else
+            //TODO else for other phases
+            //TODO could save n in epc, and show progress bar with its value
         }
     }
 

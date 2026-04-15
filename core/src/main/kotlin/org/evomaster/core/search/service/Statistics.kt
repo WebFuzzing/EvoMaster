@@ -234,7 +234,7 @@ class Statistics : SearchListener {
 
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
 
-    override fun newActionEvaluated() {
+    override fun newActionsEvaluated(n: Int) {
 
         if(!epc.isInSearch()){
             //we are only taking snapshots during the search
