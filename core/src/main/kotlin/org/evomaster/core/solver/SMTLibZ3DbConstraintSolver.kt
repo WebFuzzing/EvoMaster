@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
@@ -152,18 +153,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            for (columnName in columns.fields) {
-                var gene: Gene = IntegerGene(columnName, 0)
-                when (val columnValue = columns.getField(columnName)) {
+            // smtColumn is the Ascii version from SmtLib; resolve back to original DB column name
+            for (smtColumn in columns.fields) {
+                val dbColumn = table.columns.firstOrNull {
+                    convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
+                }
+                val dbColumnName = dbColumn?.name ?: smtColumn
+
+                var gene: Gene = IntegerGene(dbColumnName, 0)
+                when (val columnValue = columns.getField(smtColumn)) {
                     is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, columnName, "BOOLEAN")) {
-                            BooleanGene(columnName, toBoolean(columnValue.value))
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "BOOLEAN")) {
+                            BooleanGene(dbColumnName, toBoolean(columnValue.value))
                         } else {
-                            StringGene(columnName, columnValue.value)
+                            StringGene(dbColumnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, columnName, "TIMESTAMP")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "TIMESTAMP")) {
                             val epochSeconds = columnValue.value.toLong()
                             val localDateTime = LocalDateTime.ofInstant(
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
@@ -171,18 +178,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                             val formatted = localDateTime.format(
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                             )
-                            ImmutableDataHolderGene(columnName, formatted, inQuotes = true)
+                            ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                         } else {
-                            IntegerGene(columnName, columnValue.value.toInt())
+                            IntegerGene(dbColumnName, columnValue.value.toInt())
                         }
                     }
                     is RealValue -> {
-                        gene = DoubleGene(columnName, columnValue.value)
+                        gene = DoubleGene(dbColumnName, columnValue.value)
                     }
                 }
-                val currentColumn = table.columns.firstOrNull(){ it.name.equals(columnName, ignoreCase = true) }
-                if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, actionId)
+                if (dbColumn != null && dbColumn.primaryKey) {
+                    gene = SqlPrimaryKeyGene(dbColumnName, table.id, gene, actionId)
                 }
                 gene.markAllAsInitialized()
                 genes.add(gene)

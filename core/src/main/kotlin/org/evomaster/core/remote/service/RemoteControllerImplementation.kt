@@ -7,7 +7,6 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.EMConfig
@@ -526,6 +525,10 @@ class RemoteControllerImplementation() : RemoteController{
         return executeMongoDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<MongoInsertionResultsDto>>() {})
     }
 
+    override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
+        return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
@@ -558,6 +561,24 @@ class RemoteControllerImplementation() : RemoteController{
         return dto?.data
     }
 
+    /**
+     * execute [dto] through [ControllerConstants.REDIS_INSERTION] endpoints of EMController,
+     * @return execution response
+     */
+    private fun <T> executeRedisDatabaseCommandAndGetResults(dto: RedisDatabaseCommandsDto,
+                                                             type: GenericType<WrappedResponseDto<T>>): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.REDIS_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        return dto?.data
+    }
 
     private fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
