@@ -8,18 +8,23 @@ import javax.inject.Inject
 /**
  * Service used to keep track of which phase of the fuzzing we are currently in,
  * and how long we have spent in them.
+ *
+ * The actual starting/stopping of these phases is done elsewhere (as it depends
+ * on the problem type)
  */
 class ExecutionPhaseController {
 
-    enum class Phase{
-        NOT_STARTED,
-        SEARCH,
-        MINIMIZATION,
-        SECURITY,
-        ADDITIONAL_ORACLES,
-        FLAKINESS,
-        WRITE_OUTPUT,
-        FINISHED
+    enum class Phase(
+        val timeBoxed: Boolean
+    ){
+        NOT_STARTED(false),
+        SEARCH(false),
+        MINIMIZATION(true),
+        SECURITY(true),
+        ADDITIONAL_ORACLES(true),
+        FLAKINESS(true),
+        WRITE_OUTPUT(false),
+        FINISHED(false)
     }
 
     @Inject
@@ -31,8 +36,39 @@ class ExecutionPhaseController {
 
     private val durationInSeconds : MutableMap<Phase, Long> = mutableMapOf()
 
+    private val hasTimedOut : MutableSet<Phase> = mutableSetOf()
+
     fun getCurrentPhase() : Phase{
         return phase
+    }
+
+    fun hasPhaseTimedOut(target: Phase) : Boolean {
+
+        if(!target.timeBoxed){
+            throw IllegalArgumentException("Cannot query timeout for a non time-boxed phase: $target")
+        }
+
+        if(target != phase){
+            return  hasTimedOut.contains(target)
+        }
+
+        when(target){
+            Phase.MINIMIZATION -> {
+                if(config.minimizeTimeout < 0){
+                    return false
+                }
+                if(config.minimizeTimeout == 0){
+                    return true
+                }
+                //dealing with minutes
+                val passed = elapsedSeconds() / 60.0
+                return passed >= config.minimizeTimeout
+            }
+            else -> {
+                //TODO other cases
+                return false
+            }
+        }
     }
 
     fun getPhaseDurationInSeconds(target: Phase) : Long {
@@ -91,12 +127,27 @@ class ExecutionPhaseController {
         return phase != Phase.NOT_STARTED && phase != Phase.FINISHED
     }
 
+    private fun elapsedSeconds() : Long {
+
+        if(phase == Phase.NOT_STARTED){
+            throw IllegalStateException("Fuzzing session has not started yet")
+        }
+
+        val elapsed = System.currentTimeMillis() - lastPhaseStartMs
+        val seconds = elapsed / 1000
+
+        return seconds
+    }
+
     private fun startPhase(newPhase: Phase){
+
+        if(newPhase == Phase.NOT_STARTED){
+            throw IllegalStateException("Cannot start a 'not-started' phase")
+        }
 
         if(phase != Phase.NOT_STARTED){
             //starting a new phase will end the current one
-            val elapsed = System.currentTimeMillis() - lastPhaseStartMs
-            val seconds = elapsed / 1000
+            val seconds = elapsedSeconds()
             durationInSeconds[phase] = seconds
 
             if(!config.avoidNonDeterministicLogs) {
@@ -104,6 +155,8 @@ class ExecutionPhaseController {
                 LoggingUtil.getInfoLogger().info("Phase $phase lasted: $time")
             }
         }
+
+        LoggingUtil.getInfoLogger().info("Starting phase $newPhase")
 
         phase = newPhase
         lastPhaseStartMs = System.currentTimeMillis()

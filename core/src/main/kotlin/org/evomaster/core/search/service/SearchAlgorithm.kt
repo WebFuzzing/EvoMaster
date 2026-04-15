@@ -105,13 +105,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         if(config.minimize){
             epc.markStartingMinimization()
-
-            minimizer.doStartTheTimer()
-            minimizer.minimizeMainActionsPerCoveredTargetInArchive()
-            minimizer.pruneNonNeededDatabaseActions()
-            minimizer.simplifyActions()
-            val seconds = minimizer.passedTimeInSecond()
-            LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
+            minimizer.applyPhase()
         }
 
         if(config.addPreDefinedTests) {
