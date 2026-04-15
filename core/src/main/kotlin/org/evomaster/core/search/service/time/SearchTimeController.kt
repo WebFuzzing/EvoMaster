@@ -3,7 +3,7 @@ package org.evomaster.core.search.service.time
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.search.service.SearchListener
+import org.evomaster.core.search.service.time.SearchListener
 import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.LoggerFactory
 import java.util.ArrayDeque

@@ -1,5 +1,4 @@
-package org.evomaster.core.search.service
-
+package org.evomaster.core.search.service.time
 
 interface SearchListener {
 
