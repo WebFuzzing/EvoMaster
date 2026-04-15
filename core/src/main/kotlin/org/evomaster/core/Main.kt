@@ -271,7 +271,7 @@ class Main {
             solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseFlaky(injector, config, epc, solution)
 
-            epc.startWriteOutput()
+            epc.markStartingWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
@@ -300,7 +300,7 @@ class Main {
 
             solution.statistics = data.toMutableList()
 
-            epc.finishSession()
+            epc.markFinishedSession()
 
             return solution
         }
@@ -425,7 +425,7 @@ class Main {
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
-                    epc.startFlakiness()
+                    epc.markStartingFlakiness()
 
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
                     flakinessDetector.reexecuteToDetectFlakiness()
@@ -452,7 +452,7 @@ class Main {
             }
             //apply security testing phase
             LoggingUtil.getInfoLogger().info("Starting to apply security testing")
-            epc.startSecurity()
+            epc.markStartingSecurity()
 
             //TODO might need to reset stc, and print some updated info again
 
@@ -479,7 +479,7 @@ class Main {
 
             return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
                 LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
-                epc.startHttpOracles()
+                epc.markStartingAdditionalOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
@@ -832,7 +832,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)

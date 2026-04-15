@@ -44,9 +44,9 @@ class MonotonicGeneticAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
             val solution = monoGA.search()
-            epc.finishSession()
+            epc.markFinishedSession()
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
@@ -232,9 +232,9 @@ class MonotonicGeneticAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
             val solution = monoGA.search()
-            epc.finishSession()
+            epc.markFinishedSession()
             // Check monotonicity across recorded generations: best score (selection metric) is non-decreasing
             val bestScores = rec.bestFitnessPerGeneration
             for (k in 1 until bestScores.size) {

@@ -37,7 +37,7 @@ class MioAlgorithmOnOneMaxTest {
         config.maxEvaluations = 30000
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
-        epc.startSearch()
+        epc.markStartingSearch()
 
         val n = 20
         sampler.n = n

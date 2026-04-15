@@ -104,7 +104,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
         time.doStopRecording()
 
         if(config.minimize){
-            epc.startMinimization()
+            epc.markStartingMinimization()
 
             minimizer.doStartTheTimer()
             minimizer.minimizeMainActionsPerCoveredTargetInArchive()

@@ -42,9 +42,9 @@ class LIPSAlgorithmTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
-        epc.startSearch()
+        epc.markStartingSearch()
         val solution = lips.search()
-        epc.finishSession()
+        epc.markFinishedSession()
 
         assertTrue(solution.individuals.size == 1)
         assertEquals(

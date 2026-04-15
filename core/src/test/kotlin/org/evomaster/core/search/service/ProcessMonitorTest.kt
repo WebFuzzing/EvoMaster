@@ -250,7 +250,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
-        epc.startSearch()
+        epc.markStartingSearch()
         mio.search()
 
 

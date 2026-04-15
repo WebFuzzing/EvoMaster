@@ -12,9 +12,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.time.ExecutionPhaseController
-import org.evomaster.core.search.service.time.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 
@@ -43,7 +41,7 @@ class RandomWalkSearchTest {
             sampler.n = n
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
 
             val solution = rw.search()
 

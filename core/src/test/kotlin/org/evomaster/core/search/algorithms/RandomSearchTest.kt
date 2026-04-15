@@ -33,7 +33,7 @@ class RandomSearchTest {
             config.maxEvaluations = 3000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
 
             val solution = rs.search()
 

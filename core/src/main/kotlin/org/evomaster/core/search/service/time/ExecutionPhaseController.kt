@@ -5,6 +5,10 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.TimeUtils
 import javax.inject.Inject
 
+/**
+ * Service used to keep track of which phase of the fuzzing we are currently in,
+ * and how long we have spent in them.
+ */
 class ExecutionPhaseController {
 
     enum class Phase{
@@ -12,7 +16,7 @@ class ExecutionPhaseController {
         SEARCH,
         MINIMIZATION,
         SECURITY,
-        HTTP_ORACLES,
+        ADDITIONAL_ORACLES,
         FLAKINESS,
         WRITE_OUTPUT,
         FINISHED
@@ -37,46 +41,46 @@ class ExecutionPhaseController {
 
     fun isInSearch() = phase == Phase.SEARCH
 
-    fun startSearch() {
+    fun markStartingSearch() {
         if(isRunning()){
             throw IllegalStateException("Illegal state to start new search: $phase")
         }
         startPhase(Phase.SEARCH)
     }
 
-    fun finishSession() {
+    fun markFinishedSession() {
         startPhase(Phase.FINISHED)
     }
 
-    fun startMinimization() {
+    fun markStartingMinimization() {
         if(!isRunning()) {
             throw IllegalStateException("Illegal state to start minimization: $phase")
         }
         startPhase(Phase.MINIMIZATION)
     }
 
-    fun startSecurity(){
+    fun markStartingSecurity(){
         if(!isRunning()) {
             throw IllegalStateException("Illegal state to start security: $phase")
         }
         startPhase(Phase.SECURITY)
     }
 
-    fun startFlakiness() {
+    fun markStartingFlakiness() {
         if (!isRunning()) {
             throw IllegalStateException("Illegal state to start flakiness detection: $phase")
         }
         startPhase(Phase.FLAKINESS)
     }
 
-    fun startHttpOracles(){
+    fun markStartingAdditionalOracles(){
         if(!isRunning()) {
-            throw IllegalStateException("Illegal state to start http oracles: $phase")
+            throw IllegalStateException("Illegal state to start additional oracles: $phase")
         }
-        startPhase(Phase.HTTP_ORACLES)
+        startPhase(Phase.ADDITIONAL_ORACLES)
     }
 
-    fun startWriteOutput (){
+    fun markStartingWriteOutput (){
         if(!isRunning()) {
             throw IllegalStateException("Illegal state to start write output: $phase")
         }
