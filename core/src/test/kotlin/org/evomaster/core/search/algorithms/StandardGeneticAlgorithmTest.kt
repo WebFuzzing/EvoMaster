@@ -47,7 +47,7 @@ class StandardGeneticAlgorithmTest {
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
             epc.startSearch()
             val solution = standardGeneticAlgorithm.search()
-            epc.finishSearch()
+            epc.finishSession()
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
@@ -118,7 +118,7 @@ class StandardGeneticAlgorithmTest {
             assertEquals(2, rec.mutated.size)
             assertTrue(rec.mutated.any { it === o1 })
             assertTrue(rec.mutated.any { it === o2 })
-    
+
         }
     }
 
@@ -165,7 +165,7 @@ class StandardGeneticAlgorithmTest {
                 assertEquals(0, rec.xoCalls.size)
                 // mutation still applied twice
                 assertEquals(2, rec.mutated.size)
-            
+
         }
     }
 
@@ -210,7 +210,7 @@ class StandardGeneticAlgorithmTest {
                 // crossover forced
                 assertEquals(1, rec.xoCalls.size)
                 // mutation disabled
-                assertEquals(0, rec.mutated.size)  
+                assertEquals(0, rec.mutated.size)
         }
     }
 }

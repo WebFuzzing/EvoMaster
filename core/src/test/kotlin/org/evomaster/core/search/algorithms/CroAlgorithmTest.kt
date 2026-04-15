@@ -58,7 +58,7 @@ class CroAlgorithmTest {
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
             epc.startSearch()
             val solution = cro.search()
-            epc.finishSearch()
+            epc.finishSession()
 
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
@@ -102,7 +102,7 @@ class CroAlgorithmTest {
         }
     }
 
-    
+
 
     @Test
     fun testUniMolecular_DecompositionPath_rejected_NoReplacementAndParentCollisionsIncrement() {

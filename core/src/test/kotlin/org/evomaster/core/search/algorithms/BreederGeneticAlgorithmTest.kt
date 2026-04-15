@@ -46,7 +46,7 @@ class BreederGeneticAlgorithmTest {
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
             epc.startSearch()
             val solution = breederGA.search()
-            epc.finishSearch()
+            epc.finishSession()
 
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
@@ -167,7 +167,7 @@ class BreederGeneticAlgorithmTest {
             val nextPop = breederGA.getViewOfPopulation()
             assertEquals(config.populationSize, nextPop.size)
 
-            // crossovers happen once per iteration (mutation probability = 1) 
+            // crossovers happen once per iteration (mutation probability = 1)
             assertEquals(config.populationSize, rec.xoCalls.size)
 
             // mutations disabled
@@ -175,5 +175,5 @@ class BreederGeneticAlgorithmTest {
         }
     }
 
-    
+
 }

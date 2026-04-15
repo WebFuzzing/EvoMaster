@@ -44,7 +44,7 @@ class OnePlusLambdaLambdaGeneticAlgorithmTest {
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
             epc.startSearch()
             val solution = ga.search()
-            epc.finishSearch()
+            epc.finishSession()
 
             assertEquals(1, solution.individuals.size)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
@@ -166,7 +166,7 @@ class OnePlusLambdaLambdaGeneticAlgorithmTest {
             } else {
                 assertTrue(p1 === parent0)
             }
-            
+
         }
     }
 

@@ -32,7 +32,7 @@ class LIPSAlgorithmTest {
     // Verifies that the LIPS algorithm can find the optimal solution for the OneMax problem
     @Test
     fun testLipsFindsOptimumOnOneMax() {
-        
+
         val lips = injector.getInstance(
             Key.get(object : TypeLiteral<LIPSAlgorithm<OneMaxIndividual>>() {})
         )
@@ -44,7 +44,7 @@ class LIPSAlgorithmTest {
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
         epc.startSearch()
         val solution = lips.search()
-        epc.finishSearch()
+        epc.finishSession()
 
         assertTrue(solution.individuals.size == 1)
         assertEquals(
@@ -53,7 +53,7 @@ class LIPSAlgorithmTest {
             0.001
         )
     }
-    
+
     // Edge Case: CrossoverProbability=0 on LIPS
     @Test
     fun testNoCrossoverWhenProbabilityZero_LIPS() {
@@ -169,7 +169,7 @@ class LIPSAlgorithmTest {
             assertEquals(neededFromOffspring, rec.mutated.size)
         }
     }
-    
+
 }
 
 

@@ -300,7 +300,7 @@ class Main {
 
             solution.statistics = data.toMutableList()
 
-            epc.finishSearch()
+            epc.finishSession()
 
             return solution
         }
