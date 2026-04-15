@@ -14,12 +14,14 @@ class SearchStatusUpdater : SearchListener {
     private lateinit var time: SearchTimeController
 
     @Inject
+    private lateinit var epc: ExecutionPhaseController
+
+    @Inject
     private lateinit var config: EMConfig
 
     @Inject
     private lateinit var archive: Archive<*>
 
-    var enabled = true
 
     companion object{
         fun eraseLine(){
@@ -70,17 +72,20 @@ class SearchStatusUpdater : SearchListener {
 
     override fun newActionEvaluated() {
 
-        if(!enabled){
-            return
+        when {
+            epc.isInSearch() -> printForSearch()
+            //TODO else
         }
+    }
 
+    private fun printForSearch() {
         val percentageInt = (time.percentageUsedBudget() * 100).toInt()
         val current = String.format("%.3f", time.percentageUsedBudget() * 100)
 
-        if(first){
+        if (first) {
             println()
             println()
-            if(config.e_u1f984){
+            if (config.e_u1f984) {
                 println()
             }
             first = false
@@ -89,35 +94,36 @@ class SearchStatusUpdater : SearchListener {
         val delta = System.currentTimeMillis() - lastUpdateMS
 
         //writing on console is I/O, which is expensive. So, can't do it too often
-        if(current != passed && delta > 500){
+        if (current != passed && delta > 500) {
             lastUpdateMS += delta
             passed = current
 
-            if(percentageInt - lastCoverageComputation > 0){
+            if (percentageInt - lastCoverageComputation > 0) {
                 lastCoverageComputation = percentageInt
                 //this is not too expensive, but still computation. so we do it only at each 1%
                 coverage = archive.numberOfCoveredTargets()
             }
 
-            if(config.e_u1f984){
+            if (config.e_u1f984) {
                 upLineAndErase()
             }
 
             val avgTimeAndSize = time.computeExecutedIndividualTimeStatistics()
             val avgTime = String.format("%.1f", avgTimeAndSize.first)
-            val avgSize = String.format("%.1f",avgTimeAndSize.second)
+            val avgSize = String.format("%.1f", avgTimeAndSize.second)
 
             val sinceLast = time.getSecondsSinceLastImprovement()
 
             upLineAndErase()
             upLineAndErase()
             println("* Consumed search budget: $passed%")
-            println("* Covered targets: $coverage;" +
-                    " time per test: ${avgTime}ms ($avgSize actions);" +
-                    " since last improvement: ${sinceLast}s"
+            println(
+                "* Covered targets: $coverage;" +
+                        " time per test: ${avgTime}ms ($avgSize actions);" +
+                        " since last improvement: ${sinceLast}s"
             )
 
-            if(config.e_u1f984){
+            if (config.e_u1f984) {
                 updateExtra()
                 out.println(extra)
             }

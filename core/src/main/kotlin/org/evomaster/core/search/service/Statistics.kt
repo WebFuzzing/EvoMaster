@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
@@ -20,9 +19,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.javaType
-import kotlin.reflect.typeOf
+
 
 
 class Statistics : SearchListener {
@@ -63,9 +60,6 @@ class Statistics : SearchListener {
 
     @Inject(optional = true)
     private var remoteController: RemoteController? = null
-
-    @Inject
-    private lateinit var oracles: PartialOracles
 
     @Inject(optional = true)
     private lateinit var aiResponseClassifier: AIResponseClassifier
@@ -241,6 +235,12 @@ class Statistics : SearchListener {
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
 
     override fun newActionEvaluated() {
+
+        if(!epc.isInSearch()){
+            //we are only taking snapshots during the search
+            return
+        }
+
         if (snapshotThreshold <= 0) {
             //not collecting snapshot data
             return
@@ -248,7 +248,7 @@ class Statistics : SearchListener {
 
         val elapsed = 100 * time.percentageUsedBudget()
 
-        if (elapsed > snapshotThreshold) {
+        if (elapsed >= snapshotThreshold) {
             takeSnapshot()
         }
     }

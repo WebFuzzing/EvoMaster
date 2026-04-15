@@ -28,6 +28,9 @@ class ExecutionPhaseController {
 
     private val durationInSeconds : MutableMap<Phase, Long> = mutableMapOf()
 
+    fun getCurrentPhase() : Phase{
+        return phase
+    }
 
     fun getPhaseDurationInSeconds(target: Phase) : Long {
         return durationInSeconds.getOrDefault(target, -1L)

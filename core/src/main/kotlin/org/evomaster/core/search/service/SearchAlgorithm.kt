@@ -103,8 +103,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         time.doStopRecording()
 
-        ssu.enabled = false
-
         if(config.minimize){
             epc.startMinimization()
 
