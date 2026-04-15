@@ -152,7 +152,15 @@ class FitnessValue(
 
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
-            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+            databaseExecutions.values
+                // Only executions that actually had failing WHERE clauses are relevant;
+                // collecting from all executions would include unrelated INSERT/UPDATE/DELETE/etc.
+                .filter { it.failedWhere.isNotEmpty() }
+                .flatMap { it.executionInfo }
+                .map { it.sqlCommand }
+                // JSQLParser >= 4.9 may produce empty-string SQL commands (it used to throw, now
+                // parses "" to null). Guard here at the source rather than at every call site.
+                .filter { it.isNotBlank() }
         )
     }
     fun aggregateMongoDatabaseData(){
