@@ -3,8 +3,8 @@ package org.evomaster.core.search.service.time
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.search.service.time.SearchListener
 import org.evomaster.core.utils.IncrementalAverage
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.LoggerFactory
 import java.util.ArrayDeque
 import java.util.Queue
@@ -23,36 +23,7 @@ class SearchTimeController {
     companion object{
         private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
 
-        /**
-         * Invoke the [function] lambda, which will return some result of generic type [T].
-         * Once this is completed, the [loggingFunction] will be automatically called with,
-         * as input, the execution time expressed in milliseconds, as well as the [function]'s result
-         * of type [T].
-         *
-         * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
-         */
-        inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
-                                         function: () -> T): T {
 
-            val startTime = System.currentTimeMillis()
-            val result: T = function.invoke()
-            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-            return result
-        }
-
-        fun getElapsedTime(totalInSeconds: Long) : String{
-
-            val seconds = totalInSeconds
-            val minutes = seconds / 60.0
-            val hours = minutes / 60.0
-
-            val ps = "%d".format(seconds % 60)
-            val pm = "%d".format(minutes.toInt() % 60)
-            val ph = "%d".format(hours.toInt())
-
-            return "${ph}h ${pm}m ${ps}s"
-        }
     }
 
 
@@ -258,7 +229,7 @@ class SearchTimeController {
     }
 
     fun getElapsedTime() : String{
-        return getElapsedTime(getElapsedSeconds().toLong())
+        return TimeUtils.getElapsedTime(getElapsedSeconds().toLong())
     }
 
     fun shouldContinueSearch(): Boolean{

@@ -3,6 +3,7 @@ package org.evomaster.core.search.service.time
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.time.SearchTimeController
+import org.evomaster.core.utils.TimeUtils
 import javax.inject.Inject
 
 class ExecutionPhaseController {
@@ -93,7 +94,7 @@ class ExecutionPhaseController {
             durationInSeconds[phase] = seconds
 
             if(!config.avoidNonDeterministicLogs) {
-                val time = SearchTimeController.getElapsedTime(seconds)
+                val time = TimeUtils.getElapsedTime(seconds)
                 LoggingUtil.getInfoLogger().info("Phase $phase lasted: $time")
             }
         }

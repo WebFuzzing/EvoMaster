@@ -1,7 +1,6 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
@@ -11,6 +10,7 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.SearchTimeController
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -149,12 +149,20 @@ abstract class FitnessFunction<T>  where T : Individual {
         // By default, we optimize for performance in collecting coverage values, but for special cases, we want to collect full info
         val allTargetsWithDescriptive = config.processFormat == EMConfig.ProcessDataFormat.TARGET_HEURISTIC
 
-        val ei = SearchTimeController.measureTimeMillis(
-                { t, ind ->
-                    time.reportExecutedIndividualTime(t, actionsSize)
-                    ind?.executionTimeMs = t
-                },
-                {doCalculateCoverage(individual, targets, allTargets = allTargetsWithDescriptive, fullyCovered = false, descriptiveIds = allTargetsWithDescriptive)}
+        val ei = TimeUtils.measureTimeMillis(
+            { t, ind ->
+                time.reportExecutedIndividualTime(t, actionsSize)
+                ind?.executionTimeMs = t
+            },
+            {
+                doCalculateCoverage(
+                    individual,
+                    targets,
+                    allTargets = allTargetsWithDescriptive,
+                    fullyCovered = false,
+                    descriptiveIds = allTargetsWithDescriptive
+                )
+            }
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)

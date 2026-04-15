@@ -7,14 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.service.time.SearchTimeController
-import org.glassfish.jersey.client.ClientConfig
-import org.glassfish.jersey.client.ClientProperties
-import org.glassfish.jersey.client.HttpUrlConnectorProvider
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.LoggerFactory
-import javax.net.ssl.SSLContext
 import javax.ws.rs.client.Client
-import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -58,8 +53,8 @@ class IntrospectiveQuery {
                 """.trimIndent(), MediaType.APPLICATION_JSON_TYPE)
 
         //TODO check if TCP problems
-        val response = SearchTimeController.measureTimeMillis({ ms, res ->
-                LoggingUtil.getInfoLogger().info("Fetched GraphQL schema in ${ms}ms")
+        val response = TimeUtils.measureTimeMillis({ ms, res ->
+            LoggingUtil.getInfoLogger().info("Fetched GraphQL schema in ${ms}ms")
         }, {
             try {
                 var request = client.target(graphQlEndpoint)
@@ -72,8 +67,10 @@ class IntrospectiveQuery {
                     .invoke()
             } catch (e: Exception) {
                 log.error("Failed query to '$graphQlEndpoint' :  $query")
-                throw SutProblemException("Failed introspection query to '$graphQlEndpoint'." +
-                        " Please check connection and URL format. Error: ${e.message}")
+                throw SutProblemException(
+                    "Failed introspection query to '$graphQlEndpoint'." +
+                            " Please check connection and URL format. Error: ${e.message}"
+                )
             }
         })
 
