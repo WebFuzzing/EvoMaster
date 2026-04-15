@@ -85,7 +85,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
         processMonitor.record(added, true, eval)
@@ -110,7 +110,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
 
@@ -139,7 +139,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(individual, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
 
@@ -187,7 +187,7 @@ class ProcessMonitorTest{
         a.setValue(0, 1.0)
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
         assert(addedA)
@@ -199,7 +199,7 @@ class ProcessMonitorTest{
         b.setValue(1, 1.0)
         val evalB = ff.calculateCoverage(b, modifiedSpec = null)!!
         processMonitor.eval = evalB
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedB = archive.addIfNeeded(evalB)
 
@@ -277,7 +277,7 @@ class ProcessMonitorTest{
 
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
 
@@ -311,7 +311,7 @@ class ProcessMonitorTest{
 
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
 
