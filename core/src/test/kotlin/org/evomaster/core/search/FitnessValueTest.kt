@@ -70,7 +70,7 @@ class FitnessValueTest {
         fv.coverTarget(4) //line
         fv.coverTarget(-12)
 
-        assertEquals(6, fv.coveredTargets())
+        assertEquals(6, fv.numberOfCoveredTargets())
 
         var linesInfo = fv.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, null)
         assertEquals(3, linesInfo.total)

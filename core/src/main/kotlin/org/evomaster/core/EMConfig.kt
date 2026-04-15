@@ -949,6 +949,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun shouldGenerateRedisData() = generateRedisData
+
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
@@ -1832,6 +1834,11 @@ class EMConfig {
     var extractMongoExecutionInfo = true
 
     @Experimental
+    @Cfg("Enable extracting Redis execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractRedisExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
@@ -1843,6 +1850,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateMongoData = true
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateRedisData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -2823,6 +2835,11 @@ class EMConfig {
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
     var probRestExamples = 0.20
+
+    @Cfg("If any action contains any named example, make sure, with a given probability, that ALL fields for that example" +
+            " are using the provided values by the user")
+    @Probability(false)
+    var probNamedExamples = 0.50
 
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +

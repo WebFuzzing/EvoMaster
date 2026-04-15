@@ -17,6 +17,7 @@ import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
@@ -452,4 +453,5 @@ class RestCallAction(
         this.weakReference = wr
         return copy
     }
+
 }

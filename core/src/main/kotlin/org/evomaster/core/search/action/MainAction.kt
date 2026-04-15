@@ -2,6 +2,8 @@ package org.evomaster.core.search.action
 
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 
 abstract class MainAction(
     /**
@@ -73,5 +75,41 @@ abstract class MainAction(
             }
             return all.subList(index+1,all.size)
         }
+    }
+
+
+    /**
+     * Return the name of all possible users examples in the chromosome, reporting their occurrences
+     */
+    fun getNamedExamples() : Map<String, Int> {
+        return seeAllGenes()
+            .filterIsInstance<UserExamplesGene>()
+            .filter { it.isUsedForExamples() }
+            .flatMap { it.getAvailableExampleNames() }
+            .groupingBy { it }
+            .eachCount()
+    }
+
+    fun getNamedExamplesInUse() : Map<String, Int>{
+        return seeAllGenes()
+            .filter{ it.staticCheckIfImpactPhenotype()}
+            .filterIsInstance<UserExamplesGene>()
+            .filter { it.isUsedForExamples()}
+            .mapNotNull { it.getValueName() }
+            .groupingBy { it }
+            .eachCount()
+    }
+
+    fun enforceNamedExample(name : String){
+
+        seeAllGenes()
+            .filterIsInstance<UserExamplesGene>()
+            .filter { it.isUsedForExamples() }
+            .filter { it.getAvailableExampleNames().contains(name) }
+            .forEach {
+                it.selectExampleByName(name)
+                (it as Gene).awakeGene()
+            }
+
     }
 }

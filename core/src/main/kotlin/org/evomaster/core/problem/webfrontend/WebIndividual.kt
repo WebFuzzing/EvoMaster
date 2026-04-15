@@ -1,7 +1,5 @@
 package org.evomaster.core.problem.webfrontend
 
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.gui.GuiIndividual
@@ -9,7 +7,6 @@ import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.gene.Gene
 
 class WebIndividual(
     sampleType: SampleType,
@@ -17,8 +14,10 @@ class WebIndividual(
     mainSize : Int = children.size,
     sqlSize: Int = 0,
     mongoSize: Int = 0,
+    redisSize: Int = 0,
     dnsSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> =
+        getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,redisSize,dnsSize, 0, 0)
 ) : GuiIndividual(
     sampleType = sampleType,
     children = children,
@@ -33,6 +32,7 @@ class WebIndividual(
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
             sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
             mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+            redisSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_REDIS),
             dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }

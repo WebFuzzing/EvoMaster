@@ -105,7 +105,7 @@ class OneMaxMutator {
         m.close()
 
         val tp = reportFP(config.mutatedGeneFile, improve)
-        val covered = solution.overall.coveredTargets() * 1.0 /n
+        val covered = solution.overall.numberOfCoveredTargets() * 1.0 /n
 
         val result = Pair(tp, covered)
         map.getOrPut(expId){ mutableListOf()}.add(result)

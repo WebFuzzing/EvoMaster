@@ -179,10 +179,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return toMutate
     }
 
-    private fun mutationPostProcessing(individual: T) {
-        sampler
-    }
-
 
     private fun mutationPreProcessing(individual: T) {
 
@@ -190,7 +186,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         TaintAnalysis.evolveIndividual(individual,applyEvolve,applyEvolve)
 
         for(a in individual.seeAllActions()){
-            val update =if(a is ApiWsAction) {
+            val update = if(a is ApiWsAction) {
                 a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
             }else if (a is RPCExternalServiceAction){
                 a.responses.find { it is UpdateForParam } as? UpdateForParam
@@ -304,28 +300,42 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         targets: Set<Int>,
         mutatedGenes: MutatedGeneSpecification?
     ): T {
-        preActionBeforeMutatoin(individual)
+
+        preHandlingBeforeMutation(individual)
 
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
-        postActionAfterMutation(mutatedIndividual, mutatedGenes)
-
-//        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+        postHandlingAfterMutation(mutatedIndividual, mutatedGenes)
 
         return mutatedIndividual
     }
 
-    override fun postActionAfterMutation(mutatedIndividual: T, mutated: MutatedGeneSpecification?) {
+    /**
+     * Here we do actual mutations done on purpose...
+     * this is different from [postHandlingAfterMutation], where modifications
+     * are done to maintain and satisfy validity
+     */
+    private fun mutationPostProcessing(individual: T) {
+
+        //right now, we do nothing here...
+        //originally, though to handle probNamedExamples here, but that would be wrong,
+        //as after few mutations on same individual will be guaranteed to use only examples...
+        //so we do that at Sampling Time only
+    }
+
+
+
+    override fun postHandlingAfterMutation(individual: T, mutated: MutatedGeneSpecification?) {
 
         Lazy.assert {
             SqlActionUtils.isValidForeignKeys(
-                mutatedIndividual.seeInitializingActions().filterIsInstance<SqlAction>()
+                individual.seeInitializingActions().filterIsInstance<SqlAction>()
             )
         }
 
         Lazy.assert {
-            mutatedIndividual.seeAllActions()
+            individual.seeAllActions()
                 .flatMap { it.seeTopGenes() }
                 .all {
                     GeneUtils.verifyRootInvariant(it) &&
@@ -334,30 +344,30 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         // repair the initialization actions (if needed)
-        mutatedIndividual.repairInitializationActions(randomness)
+        individual.repairInitializationActions(randomness)
 
         //Check that the repair was successful
-        Lazy.assert { mutatedIndividual.isValidInitializationActions() }
+        Lazy.assert { individual.isValidInitializationActions() }
 
         /*
             In GraphQL, each boolean selection in Objects MUST have at least one filed selected
          */
-        if (mutatedIndividual is GraphQLIndividual) {
-            GraphQLUtils.repairIndividual(mutatedIndividual)
+        if (individual is GraphQLIndividual) {
+            GraphQLUtils.repairIndividual(individual)
         }
 
-        if (!mutatedIndividual.verifyBindingGenes()) {
-            mutatedIndividual.cleanBrokenBindingReference()
-            Lazy.assert { mutatedIndividual.verifyBindingGenes() }
+        if (!individual.verifyBindingGenes()) {
+            individual.cleanBrokenBindingReference()
+            Lazy.assert { individual.verifyBindingGenes() }
         }
 
-        if (mutatedIndividual is RestIndividual) {
-            mutatedIndividual.repairDbActionsInCalls()
-            mutatedIndividual.fixResourceForwardLinks()
+        if (individual is RestIndividual) {
+            individual.repairDbActionsInCalls()
+            individual.fixResourceForwardLinks()
         }
 
         // update MutatedGeneSpecification after the post-handling
-        if(mutated?.repairInitAndDbSpecification(mutatedIndividual) == true){
+        if(mutated?.repairInitAndDbSpecification(individual) == true){
             LoggingUtil.uniqueWarn(log, "DbActions which contain mutated gene are removed that might need a further check")
         }
 
