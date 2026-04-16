@@ -164,8 +164,7 @@ class FitnessValue(
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
             databaseExecutions.values
-                // Only executions that actually had failing WHERE clauses are relevant;
-                // collecting from all executions would include unrelated INSERT/UPDATE/DELETE/etc.
+                // Only the commands whose WHERE clause actually failed are relevant.
                 .filter { it.failedWhere.isNotEmpty() }
                 .flatMap { it.executionInfo }
                 .map { it.sqlCommand }
