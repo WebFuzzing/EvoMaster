@@ -19,12 +19,12 @@ public class JsonEMTest extends SpringTestBase {
     }
 
     @Test
-    public void testRunEM() throws Throwable {
+    public void JsonEMTest_testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "JsonEMTest",
-                5_000,
-                5,
+                10_000,
+                6,
                 (args) -> {
 
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");

@@ -1,7 +1,6 @@
 package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
@@ -224,11 +223,18 @@ class FitnessValue(
         return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.score }.sum()
     }
 
-    fun coveredTargets(): Int {
+    fun coveredTargets() : Set<Int> {
+        return targets.entries
+            .filter { it.value.score == MAX_VALUE }
+            .map { it.key }
+            .toSet()
+    }
+
+    fun numberOfCoveredTargets(): Int {
         return targets.values.count { t -> t.score == MAX_VALUE }
     }
 
-    fun coveredTargets(prefix: String, idMapper: IdMapper) : Int{
+    fun numberOfCoveredTargets(prefix: String, idMapper: IdMapper) : Int{
 
         return targets.entries
                 .filter { it.value.score == MAX_VALUE }
@@ -277,7 +283,7 @@ class FitnessValue(
      */
     fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run {
+            return (if (prefix == null) numberOfCoveredTargets() else numberOfCoveredTargets(prefix, idMapper)).run {
                 TargetStatistic(
                     bootTime = BOOT_TIME_INFO_UNAVAILABLE,
                     searchTime = this - coveredTargetsDuringSeeding(),

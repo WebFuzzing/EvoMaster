@@ -19,7 +19,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -49,6 +48,7 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
@@ -503,12 +503,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
 
         /*
-            explicit targets for examples
+            explicit targets for single example entries
          */
-        val examples = call.seeTopGenes()
-            .flatMap { it.flatView() }
+        val examples = call.seeAllGenes()
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
             .filter { it.staticCheckIfImpactPhenotype() }
-            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
 
         examples.forEach {
             val name = (it.parent as Gene).name
@@ -523,6 +522,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             val target = "EXAMPLE_${call.id}_${name}_$label"
+            fv.coverTarget(idMapper.handleLocalTarget(target))
+        }
+
+        /*
+            explicit targets for named examples, but only when fully used
+         */
+        val allExampleNames = call.getNamedExamples()
+        val exampleNamesInUse = call.getNamedExamplesInUse()
+
+        for(e in exampleNamesInUse){
+            /*
+                TODO this would not consider possible special cases (eg when have anyOf constraints) in which
+                same example name could appear in different subtrees of same ChoiceGene...
+                bit tricky to handle... not sure if really a good ROI in trying to handle it now...
+             */
+            if(e.value != allExampleNames[e.key]){
+                continue
+            }
+
+            val target = idMapper.getNamedExampleId(call.id, e.key, status ?: 0)
             fv.coverTarget(idMapper.handleLocalTarget(target))
         }
     }

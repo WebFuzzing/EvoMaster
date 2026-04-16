@@ -93,7 +93,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     /**
      * a set of actions/handling which are required to be executed before mutations
      */
-    fun preActionBeforeMutatoin(evaluatedIndividual: EvaluatedIndividual<T>){
+    fun preHandlingBeforeMutation(evaluatedIndividual: EvaluatedIndividual<T>){
         /*
             tracking might be null if the current is never mutated
             then need to handle it before mutation
@@ -101,7 +101,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         preHandlingTrackedIndividual(evaluatedIndividual)
     }
 
-    open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
+    open fun postHandlingAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 
@@ -128,7 +128,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         var current = individual
 
         // we run pre-actions before upToNTimes mutations
-        preActionBeforeMutatoin(current)
+        // TODO is this still needed? done inside mutation anyway
+        preHandlingBeforeMutation(current)
 
         val targets = archive.notCoveredTargets().toMutableSet()
 

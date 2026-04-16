@@ -339,7 +339,7 @@ class TestSuiteWriter {
 
         lines.addBlockCommentLine(" The generated test suite contains ${solution.individuals.size} tests")
         classDescriptionEmptyLine(lines)
-        lines.addBlockCommentLine(" Covered targets: ${solution.overall.coveredTargets()}")
+        lines.addBlockCommentLine(" Covered targets: ${solution.overall.numberOfCoveredTargets()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" Used time: ${searchTimeController.getElapsedTime()}")
         classDescriptionEmptyLine(lines)

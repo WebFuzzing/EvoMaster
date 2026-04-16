@@ -191,7 +191,7 @@ class SortingHelper {
      * The purpose is to give an example of sorting based on fitness information.
      */
     private val coveredTargets: Comparator<EvaluatedIndividual<*>> = compareBy {
-        it.fitness.coveredTargets()
+        it.fitness.numberOfCoveredTargets()
     }
 
     /**

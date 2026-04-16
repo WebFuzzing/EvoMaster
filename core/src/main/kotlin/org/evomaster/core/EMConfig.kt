@@ -2836,6 +2836,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
+    @Cfg("If any action contains any named example, make sure, with a given probability, that ALL fields for that example" +
+            " are using the provided values by the user")
+    @Probability(false)
+    var probNamedExamples = 0.50
+
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
