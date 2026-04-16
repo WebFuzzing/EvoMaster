@@ -79,7 +79,6 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
     private fun minimizeMainActionsPerCoveredTargetInArchive() {
 
         if(hasPhaseTimedOut()){
-           LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
            return
         }
 
@@ -110,7 +109,6 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
         current.forEach{
 
             if(hasPhaseTimedOut()){
-                LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
                 return
             }
 

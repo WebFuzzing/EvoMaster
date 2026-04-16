@@ -48,27 +48,29 @@ class ExecutionPhaseController {
             throw IllegalArgumentException("Cannot query timeout for a non time-boxed phase: $target")
         }
 
-        if(target != phase){
-            return  hasTimedOut.contains(target)
+        if(config.stoppingCriterion != EMConfig.StoppingCriterion.TIME){
+            //timeouts are defined only when we run base search on time, which is the default
+            return false
         }
 
-        when(target){
-            Phase.MINIMIZATION -> {
-                if(config.minimizeTimeout < 0){
-                    return false
-                }
-                if(config.minimizeTimeout == 0){
-                    return true
-                }
-                //dealing with minutes
-                val passed = elapsedSeconds() / 60.0
-                return passed >= config.minimizeTimeout
-            }
-            else -> {
-                //TODO other cases
-                return false
-            }
+        if(hasTimedOut.contains(target)){
+            return true
         }
+
+        val budget = (config.timeLimitInSeconds() * config.extraPhaseBudgetPercentage).toLong()
+
+        val passed = elapsedSeconds()
+        val timeout = passed > budget
+
+        if(timeout){
+            LoggingUtil.getInfoLogger().warn("Phase '${phase.name}' has timed out after $budget seconds." +
+                    " If you can run the fuzzing for longer, next time you might want to either increase " +
+                    "'maxTime' (${config.maxTime})" +
+                    "or 'extraPhaseBudgetPercentage' (${config.extraPhaseBudgetPercentage})")
+            hasTimedOut.add(phase)
+        }
+
+        return timeout
     }
 
     fun getPhaseDurationInSeconds(target: Phase) : Long {
