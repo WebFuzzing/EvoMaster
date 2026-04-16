@@ -9,6 +9,7 @@ import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.Solution
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
 import org.jsoup.Jsoup
@@ -59,11 +60,13 @@ class WFCReportWriter {
         val iconSvg = readResource("$prefix/assets/icon.svg")
 
         val reportJsonPath = Paths.get(config.outputFolder, "report.json").toAbsolutePath()
-        val reportJson = if (Files.exists(reportJsonPath)) {
-            reportJsonPath.toFile().readText(Charsets.UTF_8)
-        } else {
-            "{}"
+        if (!Files.exists(reportJsonPath)) {
+            LoggingUtil.uniqueUserWarn(
+                "Cannot generate low-code-index.html: report.json not found at $reportJsonPath"
+            )
+            return
         }
+        val reportJson = reportJsonPath.toFile().readText(Charsets.UTF_8)
 
         val testFiles = readTestSourceFiles(lastTestFilePaths)
 
