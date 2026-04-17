@@ -193,6 +193,14 @@ classEscape
  | LowerCaseBEscape
  ;
 
+atomEscape
+ : CharacterClassEscape
+ //TODO
+// | '\\' DecimalEscape
+ | CharacterEscape
+ | controlLetterExtendedEscape
+ ;
+
 decimalDigits
  : DecimalDigit+
  ;
@@ -208,15 +216,6 @@ controlLetterExtendedEscape
 
 DecimalDigit
  : [0-9]
- ;
-
-
-atomEscape
- : CharacterClassEscape
- //TODO
-// | '\\' DecimalEscape
- | CharacterEscape
- | controlLetterExtendedEscape
  ;
 
 CharacterClassEscape
