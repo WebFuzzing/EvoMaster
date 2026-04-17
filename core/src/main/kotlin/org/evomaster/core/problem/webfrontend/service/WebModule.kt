@@ -70,11 +70,6 @@ class WebModule: EnterpriseModule() {
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
-        bind(object : TypeLiteral<Minimizer<WebIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
 
 
         bind(RemoteController::class.java)
