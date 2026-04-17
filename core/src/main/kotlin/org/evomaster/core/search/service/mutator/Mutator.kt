@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator

@@ -6,6 +6,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchStatusUpdater
+import org.evomaster.core.search.service.time.SearchTimeController
 
 
 abstract class SearchAlgorithm<T> where T : Individual {
@@ -100,17 +103,9 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         time.doStopRecording()
 
-        ssu.enabled = false
-
         if(config.minimize){
-            epc.startMinimization()
-
-            minimizer.doStartTheTimer()
-            minimizer.minimizeMainActionsPerCoveredTargetInArchive()
-            minimizer.pruneNonNeededDatabaseActions()
-            minimizer.simplifyActions()
-            val seconds = minimizer.passedTimeInSecond()
-            LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
+            epc.markStartingMinimization()
+            minimizer.applyPhase()
         }
 
         if(config.addPreDefinedTests) {

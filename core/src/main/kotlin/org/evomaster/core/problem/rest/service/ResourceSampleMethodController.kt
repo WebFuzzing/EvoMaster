@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.problem.rest.service.ResourceSamplingMethod.*
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
