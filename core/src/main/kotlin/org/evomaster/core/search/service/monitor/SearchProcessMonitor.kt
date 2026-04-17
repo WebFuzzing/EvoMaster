@@ -124,6 +124,7 @@ class SearchProcessMonitor: SearchListener {
         }
     }
 
+
     override fun newActionsEvaluated(n: Int) {
         if(config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL){
             step = StepOfSearchProcess(archive, time.evaluatedIndividuals, eval!!.individual, eval!!, System.currentTimeMillis(),isMutated)

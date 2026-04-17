@@ -17,14 +17,15 @@ import kotlin.math.ceil
  */
 class SearchTimeController {
 
+    companion object{
+        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+    }
+
     @Inject
     private lateinit var configuration: EMConfig
 
-    companion object{
-        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
-
-
-    }
+    @Inject
+    private lateinit var ssu: SearchStatusUpdater
 
 
     var evaluatedIndividuals = 0
@@ -96,6 +97,7 @@ class SearchTimeController {
 
     fun doStopRecording(){
         recording = false
+        ssu.finished()
     }
 
     /**

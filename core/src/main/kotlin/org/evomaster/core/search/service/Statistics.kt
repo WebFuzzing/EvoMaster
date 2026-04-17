@@ -114,6 +114,7 @@ class Statistics : SearchListener {
         time.addListener(this)
     }
 
+
     fun getHeadersAndElementsCSVLines(solution: Solution<*>): kotlin.Pair<String,String>{
         val data = getData(solution)
         val headers = data.joinToString(",") { it.header }
