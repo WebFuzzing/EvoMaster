@@ -8,6 +8,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.MainAction
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
