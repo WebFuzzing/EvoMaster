@@ -28,7 +28,7 @@ class JsonColumnEMTest : SpringRestPostgresTestBase(){
             runTestHandlingFlakyAndCompilation(
                     "JsonColumnEM",
                     "org.bar.JsonColumnEM",
-                    10
+                    100
             ) { args ->
                 val solution = initAndRun(args)
 

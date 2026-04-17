@@ -10,7 +10,6 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -24,14 +23,11 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import java.util.*
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -555,10 +551,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
-            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
             .filter { it.staticCheckIfImpactPhenotype() }
             .map {
-                val name = if(it is NamedExamplesGene){
+                val name = if(it is UserExamplesGene){
+                    //always true
                     "(${it.getValueName()?: "-"}) "
                 } else {
                     ""

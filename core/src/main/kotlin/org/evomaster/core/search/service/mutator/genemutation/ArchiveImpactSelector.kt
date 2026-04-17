@@ -10,7 +10,7 @@ import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import java.nio.file.Files
 import java.nio.file.Paths
