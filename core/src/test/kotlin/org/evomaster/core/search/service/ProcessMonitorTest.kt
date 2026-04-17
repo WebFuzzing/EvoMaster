@@ -157,7 +157,7 @@ class ProcessMonitorTest{
                 thus, currently, the serialized process data could only contain fitness info and impact info
              */
 //            assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
-            assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
+            assertEquals(evalIndividual.fitness.numberOfCoveredTargets(), evalIndividual.fitness.numberOfCoveredTargets())
             evalIndividual.fitness.getViewOfData().forEach { (t, u) ->
                 assertEquals(evalIndividual.fitness.getHeuristic(t) , u.score)
             }
