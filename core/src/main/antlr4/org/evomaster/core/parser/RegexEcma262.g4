@@ -104,6 +104,10 @@ CharacterEscape
  ;
 
 //TODO backreferences
+// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
+// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
+// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
+// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
 ControlLetterExtendedEscape
  // This handles both control letter escapes (\ca, \cZ, etc.) and literal interpretations of \c.
