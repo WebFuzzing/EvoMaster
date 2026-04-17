@@ -364,7 +364,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 else -> throw IllegalArgumentException("Unexpected CharClass content")
             }
         } else {
-            throw IllegalArgumentException("Not implemented yet")
+            listOf(CharacterRange(8, 8)) // backspace char
         }
         return res
     }

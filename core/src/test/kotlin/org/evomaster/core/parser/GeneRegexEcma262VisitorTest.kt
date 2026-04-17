@@ -383,5 +383,6 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkCanSample("""\0\000""", "\u0000\u0000", 100)
         checkCanSample("""\001\007""", "\u0001\u0007", 100)
         checkCanSample("""\123\377""", "\u0053\u00ff", 100)
+        checkCanSample("""a[\bc]d""", "a\bd", 100)
     }
 }

@@ -127,7 +127,7 @@ fragment IdentityEscape
  // In JS escape sequences that are not one of the above (excluding backreferences) become identity escapes:
  // they represent the character that follows the backslash. (e.g.: "\a" becomes "a")
  // see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_escape#:~:text=identity%20escapes
- : ~[dDsSwWfnrtvxuc0-9]
+ : ~[dDsSwWfnrtvxuc0-9bB]
  ;
 
 //TODO
@@ -187,11 +187,10 @@ classAtomNoDash
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
 
-// TODO
 classEscape
  : controlLetterExtendedEscape // this needs to be first so that we can accept things like \c and \c0 within charclasses
  | atomEscape
-// | SLASH 'b'
+ | LowerCaseBEscape
  ;
 
 decimalDigits
@@ -225,7 +224,10 @@ CharacterClassEscape
  : SLASH [dDsSwW]
  ;
 
-
+LowerCaseBEscape
+ // In JS, within charclass this is interpreted as backspace, outside it is a word boundary assert
+ : SLASH 'b'
+ ;
 
 CARET                      : '^';
 DOLLAR                     : '$';
