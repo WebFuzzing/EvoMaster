@@ -18,6 +18,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -25,7 +27,7 @@ import javax.annotation.PostConstruct
 /**
  * Service class used to verify HTTP semantics properties.
  */
-class HttpSemanticsService {
+class HttpSemanticsService : TimeBoxedPhase{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpSemanticsService::class.java)
@@ -52,6 +54,9 @@ class HttpSemanticsService {
     @Inject
     private lateinit var builder: RestIndividualBuilder
 
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -72,7 +77,13 @@ class HttpSemanticsService {
 
     }
 
+    override fun applyPhase() {
+        applyHttpSemanticsPhase()
+    }
 
+    override fun hasPhaseTimedOut(): Boolean {
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.ADDITIONAL_ORACLES)
+    }
 
     fun applyHttpSemanticsPhase(): Solution<RestIndividual>{
 
@@ -92,12 +103,15 @@ class HttpSemanticsService {
 //        – JSON-Merge-Patch: partial update should not impact other fields. Can have GET, PATCH, and GET to verify it
 
 
+        if(hasPhaseTimedOut()) return
         // – 2xx GET on K : follow by success 2xx DELETE, should then give 404 on GET k (adding up to 2 calls)
         deleteShouldDelete()
 
+        if(hasPhaseTimedOut()) return
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
 
+        if(hasPhaseTimedOut()) return
         sideEffectsOfFailedModification()
     }
 
@@ -113,6 +127,8 @@ class HttpSemanticsService {
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
         putOperations.forEach { put ->
+
+            if(hasPhaseTimedOut()) return
 
             val creates = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -159,6 +175,8 @@ class HttpSemanticsService {
         val deleteOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.DELETE)
 
         deleteOperations.forEach { del ->
+
+            if(hasPhaseTimedOut()) return
 
             val successDelete = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -226,6 +244,8 @@ class HttpSemanticsService {
             val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
 
             modifyOperations.forEach { modOp ->
+
+                if(hasPhaseTimedOut()) return
 
                 val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
                     ?: return@forEach

@@ -253,24 +253,28 @@ class Main {
             val idMapper = injector.getInstance(IdMapper::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
 
-            var solution = run(injector, controllerInfo)
+            run(injector, controllerInfo)
 
             //save data regarding the search phase
             writeOverallProcessData(injector)
             writeDependencies(injector)
-            writeImpacts(injector, solution)
+            writeImpacts(injector)
             writeExecuteInfo(injector)
-
             logTimeSearchInfo(injector, config)
 
+
+            //-----------------------------------------------------------
             //apply new phases
-            solution = phaseMinimizer(injector, config, epc, solution)
+            phaseMinimizer(injector, config, epc)
             // 403 are usually not found during search, but created on purpose during security phase by
             // mixing different users in the same test. as some http oracles might depend on 403s,
             // we make sure to run security phase first
-            solution = phaseSecurity(injector, config, epc, solution)
-            solution = phaseHttpOracle(injector, config, epc, solution)
-            solution = phaseFlaky(injector, config, epc, solution)
+            phaseSecurity(injector, config, epc)
+            phaseHttpOracle(injector, config, epc)
+            phaseFlaky(injector, config, epc)
+            //-----------------------------------------------------------
+
+            val solution = extractSolution(injector)
 
             epc.markStartingWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
@@ -279,7 +283,6 @@ class Main {
             writeCoveredTargets(injector, solution)
             //NOTE: the WRITE_OUTPUT phase here would be not computed, as it is not finished yet...
             writeStatistics(injector, solution)
-            //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
             // Stop the WM before test execution
@@ -413,36 +416,35 @@ class Main {
             }
         }
 
+        private fun extractSolution(injector: Injector): Solution<*> {
+            val archive = injector.getInstance(Archive::class.java)
+            return archive.extractSolution()
+        }
+
         private fun phaseMinimizer(
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*>{
+        ){
             if(!config.minimize){
-                return solution
+                return
             }
             epc.markStartingMinimization()
 
             val minimizer = injector.getInstance(Minimizer::class.java)
             minimizer.applyPhase()
-
-            //FIXME need refactoring
-            val archive = injector.getInstance(Archive::class.java)
-            return archive.extractSolution()
         }
 
         private fun phaseFlaky(
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+        ) {
             if (!config.handleFlakiness){
-                return solution
+                return
             }
 
-            return when (config.problemType) {
+            when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
                     epc.markStartingFlakiness()
@@ -452,12 +454,8 @@ class Main {
                 } else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
-                    solution
                 }
             }
-
-
-
         }
 
 
@@ -465,10 +463,9 @@ class Main {
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+        ) {
             if (!config.security) {
-                return solution
+                return
             }
             //apply security testing phase
             LoggingUtil.getInfoLogger().info("Starting to apply security testing")
@@ -476,7 +473,7 @@ class Main {
 
             //TODO might need to reset stc, and print some updated info again
 
-            return when (config.problemType) {
+            when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(RestSecurityBuilder::class.java)
                     securityRest.applySecurityPhase()
@@ -485,7 +482,6 @@ class Main {
                 else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Security phase currently not handled for problem type: ${config.problemType}")
-                    solution
                 }
             }
         }
@@ -493,18 +489,15 @@ class Main {
         private fun phaseHttpOracle(
             injector: Injector,
             config: EMConfig,
-            epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+            epc: ExecutionPhaseController
+        ) {
 
-            return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
-                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+            if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP oracle detection")
                 epc.markStartingAdditionalOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
-            } else {
-                solution
             }
         }
 
@@ -1076,13 +1069,15 @@ class Main {
          * save derived impacts of genes of actions.
          * info is designed for experiment analysis
          */
-        private fun writeImpacts(injector: Injector, solution: Solution<*>) {
+        private fun writeImpacts(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.exportImpacts) {
                 return
             }
+
+            val solution = extractSolution(injector)
 
             val am = injector.getInstance(ArchiveImpactSelector::class.java)
             am.exportImpacts(solution)

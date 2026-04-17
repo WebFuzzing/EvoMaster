@@ -158,7 +158,11 @@ class ExecutionPhaseController {
             }
         }
 
-        LoggingUtil.getInfoLogger().info("Starting phase $newPhase")
+        if(newPhase == Phase.FINISHED){
+            LoggingUtil.getInfoLogger().info("Fuzzing session has finished")
+        } else {
+            LoggingUtil.getInfoLogger().info("Starting phase $newPhase")
+        }
 
         phase = newPhase
         lastPhaseStartMs = System.currentTimeMillis()
