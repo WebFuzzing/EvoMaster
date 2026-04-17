@@ -235,7 +235,7 @@ classAtomNoDash
  : classEscape
  | BaseChar
  | DecimalDigit
- | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
+ | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
  | ESCAPED_DOT | ESCAPED_PLUS;
 
