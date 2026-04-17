@@ -264,6 +264,7 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
+            solution = phaseMinimizer(injector, config, epc, solution)
             // 403 are usually not found during search, but created on purpose during security phase by
             // mixing different users in the same test. as some http oracles might depend on 403s,
             // we make sure to run security phase first
@@ -410,6 +411,25 @@ class Main {
                     LoggingUtil.getInfoLogger().warn("Failed to retrieve SUT info")
                 }
             }
+        }
+
+        private fun phaseMinimizer(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+            solution: Solution<*>
+        ): Solution<*>{
+            if(!config.minimize){
+                return solution
+            }
+            epc.markStartingMinimization()
+
+            val minimizer = injector.getInstance(Minimizer::class.java)
+            minimizer.applyPhase()
+
+            //FIXME need refactoring
+            val archive = injector.getInstance(Archive::class.java)
+            return archive.extractSolution()
         }
 
         private fun phaseFlaky(
