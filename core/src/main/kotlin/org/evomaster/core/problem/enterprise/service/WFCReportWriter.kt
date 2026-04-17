@@ -46,7 +46,7 @@ class WFCReportWriter {
         exportResource(prefix, "/webreport.py")
         exportResource(prefix, "/webreport.command", true)
         exportResource(prefix, "/webreport.bat", true)
-        exportResource(prefix, "/assets/icon.svg")
+        exportResource(prefix, "/assets/icon.svg", sourcePath = "/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
 
@@ -57,7 +57,7 @@ class WFCReportWriter {
         val indexHtml = readResource("$prefix/index.html")
         val reportJs = readResource("$prefix/assets/report.js")
         val reportCss = readResource("$prefix/assets/report.css")
-        val iconSvg = readResource("$prefix/assets/icon.svg")
+        val iconSvg = readResource("/icon.svg")
 
         val reportJsonPath = Paths.get(config.outputFolder, "report.json").toAbsolutePath()
         if (!Files.exists(reportJsonPath)) {
@@ -100,9 +100,9 @@ class WFCReportWriter {
         return result
     }
 
-    private fun exportResource(prefix: String, resource: String, executable: Boolean = false) {
+    private fun exportResource(prefix: String, resource: String, executable: Boolean = false, sourcePath: String? = null) {
 
-        val text = readResource(prefix+resource)
+        val text = readResource(sourcePath ?: (prefix + resource))
 
         val path = Paths.get(config.outputFolder, resource).toAbsolutePath()
 
@@ -278,10 +278,11 @@ class WFCReportWriter {
             val doc = Jsoup.parse(indexHtml)
             doc.outputSettings().prettyPrint(false)
 
+            val iconDataUri = "data:image/svg+xml;base64,${Base64.getEncoder().encodeToString(iconSvg.toByteArray(Charsets.UTF_8))}"
+
             // Inline the favicon as a data URI so it does not hit the filesystem.
             doc.select("link[rel=icon]").forEach {
-                val base64 = Base64.getEncoder().encodeToString(iconSvg.toByteArray(Charsets.UTF_8))
-                it.attr("href", "data:image/svg+xml;base64,$base64")
+                it.attr("href", iconDataUri)
             }
 
             // Drop the external bundle references; we will inline them below.
@@ -325,7 +326,11 @@ class WFCReportWriter {
 
             // Same escape for the bundle itself — \/ is a valid JS escape inside string
             // and regex literals, so decoded semantics are preserved.
-            val safeJs = reportJs.replace("</script", "<\\/script", ignoreCase = true)
+            // Also rewrite the /assets/icon.svg literal to the inline data URI so
+            // <img> tags (which bypass the fetch shim) render under file://.
+            val safeJs = reportJs
+                .replace("/assets/icon.svg", iconDataUri)
+                .replace("</script", "<\\/script", ignoreCase = true)
             val scriptEl = doc.body().appendElement("script")
             scriptEl.attr("type", "module")
             scriptEl.appendChild(DataNode(safeJs))
