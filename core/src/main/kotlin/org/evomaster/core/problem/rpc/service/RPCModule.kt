@@ -45,6 +45,7 @@ class RPCModule : EnterpriseModule(){
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})

@@ -46,6 +46,7 @@ class WebModule: EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<WebIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<WebIndividual>>(){})

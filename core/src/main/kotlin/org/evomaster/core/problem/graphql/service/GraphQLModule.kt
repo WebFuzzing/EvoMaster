@@ -55,6 +55,7 @@ class GraphQLModule : EnterpriseModule() {
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+                .to(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})

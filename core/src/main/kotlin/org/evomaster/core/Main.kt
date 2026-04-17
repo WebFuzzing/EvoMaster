@@ -431,7 +431,7 @@ class Main {
             }
             epc.markStartingMinimization()
 
-            val minimizer = injector.getInstance(Minimizer::class.java)
+            val minimizer = injector.getInstance(Key.get(object : TypeLiteral<Minimizer<*>>() {}))
             minimizer.applyPhase()
         }
 
@@ -468,7 +468,6 @@ class Main {
                 return
             }
             //apply security testing phase
-            LoggingUtil.getInfoLogger().info("Starting to apply security testing")
             epc.markStartingSecurity()
 
             //TODO might need to reset stc, and print some updated info again
