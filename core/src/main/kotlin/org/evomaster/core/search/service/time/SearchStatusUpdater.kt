@@ -79,7 +79,9 @@ class SearchStatusUpdater : SearchListener {
     }
 
     fun finished() {
-        lastPrintingForSearch()
+        if(config.showProgress) {
+            lastPrintingForSearch()
+        }
     }
 
 
