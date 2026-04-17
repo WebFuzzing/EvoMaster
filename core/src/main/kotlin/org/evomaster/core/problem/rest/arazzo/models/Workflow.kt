@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.arazzo.models
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.swagger.v3.oas.models.media.Schema
 import org.evomaster.core.problem.rest.arazzo.deserializer.FailureReusableDeserializer
 import org.evomaster.core.problem.rest.arazzo.deserializer.ParameterReusableDeserializer
 import org.evomaster.core.problem.rest.arazzo.deserializer.RuntimeExpressionDeserializer
@@ -11,7 +11,7 @@ class Workflow(
     val workflowId: String,
     val summary: String?,
     val description: String?,
-    val inputs: JsonNode?,
+    val inputs: Schema<*>?,
     val dependsOn: List<String>?,
     val steps: List<Step>,
     @JsonDeserialize(contentUsing = SuccessReusableDeserializer::class)

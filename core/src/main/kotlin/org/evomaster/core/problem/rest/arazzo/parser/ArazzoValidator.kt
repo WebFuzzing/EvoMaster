@@ -10,11 +10,14 @@ import org.evomaster.core.problem.rest.arazzo.models.SourceDescription
 import org.evomaster.core.problem.rest.arazzo.models.Step
 import org.evomaster.core.problem.rest.arazzo.models.SuccessAction
 import org.evomaster.core.problem.rest.arazzo.models.Workflow
+import org.evomaster.core.problem.rest.arazzo.parser.ArazzoValidator.resolver
 import org.evomaster.core.problem.rest.arazzo.resolver.ArazzoReferenceResolver
 import wiremock.com.jayway.jsonpath.JsonPath
 import javax.xml.xpath.XPathFactory
 
 object ArazzoValidator {
+
+    var resolver: ArazzoReferenceResolver = ArazzoReferenceResolver(null, null, null)
 
     private val possibleParameters = listOf("path","query","header","cookie")
     private val possibleTypeSuccessActions = listOf("end","goto")
@@ -23,6 +26,10 @@ object ArazzoValidator {
     private val possibleCriterionVersionXpath = listOf("xpath-30","xpath-20","xpath-10")
 
     private const val POSSIBLE_CRITERION_VERSION_JSON = "draft-goessner-dispatch-jsonpath-00"
+
+    fun configResolver(resolver: ArazzoReferenceResolver) {
+        ArazzoValidator.resolver = resolver
+    }
 
     fun validateSourceDescriptions(sourceDescription: SourceDescription) {
         val patterName = Regex("[A-Za-z0-9_\\-]+")
@@ -57,11 +64,11 @@ object ArazzoValidator {
         workflow.steps.forEach { step -> validateStep(step) }
 
         // successActions
-        val successActions = ArazzoReferenceResolver.resolveSuccessActions(workflow.successActions)
+        val successActions = resolver.resolveSuccessActions(workflow.successActions)
         validateSuccessActions(successActions)
 
         // failureActions
-        val failureActions = ArazzoReferenceResolver.resolveFailureActions(workflow.failureActions)
+        val failureActions = resolver.resolveFailureActions(workflow.failureActions)
         validateFailureActions(failureActions)
 
         // outputs
@@ -76,7 +83,7 @@ object ArazzoValidator {
         }
 
         // parameters
-        val parameters = ArazzoReferenceResolver.resolveParameters(workflow.parameters)
+        val parameters = resolver.resolveParameters(workflow.parameters)
         validateParameters(parameters)
     }
 
@@ -119,17 +126,17 @@ object ArazzoValidator {
             throw IllegalArgumentException("Arazzo Parsing Error: Step: workflowId and operationPath are mutually exclusive.")
         }
 
-        val parameters = ArazzoReferenceResolver.resolveParameters(step.parameters)
+        val parameters = resolver.resolveParameters(step.parameters)
         validateParameters(parameters)
 
         //TODO: Validar requestBody
 
         step.successCriteria?.forEach { criterion -> validateCriterion(criterion) }
 
-        val onSuccess = ArazzoReferenceResolver.resolveSuccessActions(step.onSuccess)
+        val onSuccess = resolver.resolveSuccessActions(step.onSuccess)
         validateSuccessActions(onSuccess)
 
-        val onFailure = ArazzoReferenceResolver.resolveFailureActions(step.onFailure)
+        val onFailure = resolver.resolveFailureActions(step.onFailure)
         validateFailureActions(onFailure)
 
         val keyOutputRegex = Regex("^[a-zA-Z0-9\\.\\-_]+$")
@@ -215,7 +222,6 @@ object ArazzoValidator {
         validateMapKeys(components.successActions, "successActions")
         validateMapKeys(components.failureActions, "failureActions")
 
-        //TODO: Validar Json Schema. inputs
         components.parameters?.let { paremeters -> validateParameters(paremeters) }
         components.successActions?.forEach { successAction -> validateSuccessAction(successAction.value) }
         components.failureActions?.forEach { failureActions -> validateFailureAction(failureActions.value) }

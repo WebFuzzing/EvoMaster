@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.arazzo.models
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import org.evomaster.core.problem.rest.arazzo.deserializer.FailureReusableDeserializer
 import org.evomaster.core.problem.rest.arazzo.deserializer.ParameterReusableDeserializer

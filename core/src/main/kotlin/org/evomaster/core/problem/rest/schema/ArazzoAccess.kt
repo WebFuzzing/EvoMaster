@@ -17,7 +17,7 @@ object ArazzoAccess {
     fun parseArazzo(schemaText: String, sourceLocation: SchemaLocation): SchemaArazzo {
 
         val schemaParsed = ArazzoParser.parseSchemaText(schemaText)
-        return SchemaArazzo(schemaText, schemaParsed, sourceLocation)
+        return SchemaArazzo(schemaText, schemaParsed.first, schemaParsed.second, sourceLocation)
 
     }
 

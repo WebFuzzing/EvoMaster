@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.rest.arazzo.models
 
-import com.fasterxml.jackson.databind.JsonNode
+import io.swagger.v3.oas.models.media.Schema
 
 class Components(
-    val inputs: Map<String, JsonNode>?,
+    val inputs: Map<String, Schema<*>>?,
     val parameters: Map<String, Parameter>?,
     val successActions: Map<String, SuccessAction>?,
     val failureActions: Map<String, FailureAction>?
