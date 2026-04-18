@@ -4,12 +4,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class will contain all necessary information from Redis to perform the distance calculation for a given command.
- * Hence, RedisHeuristicCalculator will be decoupled from Redis.
- * There'll be no need to call Redis to calculate distances.
+ * This class will hold the data associated to the value for a given key in Redis.
  *
- * Since this structure will be used within a Map in which the keys are the same keys as in Redis, we only need to store
- * the fields for a given hash key or the members for a given set.
+ *  Fields or members will be set depending on the type of key.
+ *  String keys may have a String value in the future, but currently it is not needed to store that information.
+ *  Set keys will have the set members. Hash keys will have the fields.
  */
 public class RedisValueData {
     private Map<String, String> fields;

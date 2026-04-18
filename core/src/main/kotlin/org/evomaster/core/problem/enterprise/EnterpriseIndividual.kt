@@ -7,6 +7,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
@@ -51,7 +52,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0),
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0, 0),
 ) : Individual(
     trackOperator,
     index,
@@ -71,20 +72,24 @@ abstract class EnterpriseIndividual(
             sizeMain: Int,
             sizeSQL: Int,
             sizeMongo: Int,
+            sizeRedis: Int,
             sizeDNS: Int,
             sizeScheduleTasks: Int,
             sizeCleanUp: Int,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
+            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
             }
             if(sizeMongo < 0){
                 throw IllegalArgumentException("Negative size for sizeMongo: $sizeMain")
+            }
+            if(sizeRedis < 0){
+                throw IllegalArgumentException("Negative size for sizeRedis: $sizeMain")
             }
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
@@ -117,6 +122,12 @@ abstract class EnterpriseIndividual(
                 if(sizeMongo==0) -1 else startIndexMongo , if(sizeMongo==0) -1 else endIndexMongo
             )
 
+            val startIndexRedis = children.indexOfFirst { a -> a is RedisDbAction }
+            val endIndexRedis = children.indexOfLast { a -> a is RedisDbAction }
+            val redisdb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_REDIS,{e -> e is ActionComponent && e.flatten().all { a -> a is RedisDbAction }},
+                if(sizeRedis==0) -1 else startIndexRedis , if(sizeRedis==0) -1 else endIndexRedis
+            )
+
             val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
             val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
             val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
@@ -129,7 +140,7 @@ abstract class EnterpriseIndividual(
                 if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeDNS+sizeScheduleTasks
+            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDNS+sizeScheduleTasks
             val startIndexMain = initSize
             val endIndexMain =  initSize + sizeMain - 1
 
@@ -139,7 +150,7 @@ abstract class EnterpriseIndividual(
             val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
                 if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main, cleanup))
+            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dns, schedule, main, cleanup))
         }
     }
 
@@ -237,15 +248,17 @@ abstract class EnterpriseIndividual(
                 groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_REDIS).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()} + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
+            ActionFilter.ONLY_REDIS -> seeAllActions().filterIsInstance<RedisDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
-            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction }
-            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction }
+            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction }
+            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
@@ -311,6 +324,8 @@ abstract class EnterpriseIndividual(
     fun seeSqlDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
 
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
+
+    fun seeRedisDbActions() : List<RedisDbAction> = seeActions(ActionFilter.ONLY_REDIS) as List<RedisDbAction>
 
     fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
 
@@ -378,6 +393,9 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
+    private fun getLastIndexOfRedisDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
+
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
@@ -389,6 +407,9 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
+    private fun getFirstIndexOfRedisDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
@@ -406,7 +427,7 @@ abstract class EnterpriseIndividual(
      */
     fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
-        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
             throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
@@ -416,6 +437,7 @@ abstract class EnterpriseIndividual(
 
         skipped += addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
+        addInitializingRedisDbActions(actions = actions.filterIsInstance<RedisDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
         //we don't need duplicates in hostname actions
@@ -487,6 +509,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfMongoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_MONGO)
         } else{
             addChildrenToGroup(getFirstIndexOfMongoDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_MONGO)
+        }
+    }
+
+    fun addInitializingRedisDbActions(relativePosition: Int=-1, actions: List<Action>){
+        if (relativePosition < 0)  {
+            addChildrenToGroup(getLastIndexOfRedisDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_REDIS)
+        } else{
+            addChildrenToGroup(getFirstIndexOfRedisDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_REDIS)
         }
     }
 

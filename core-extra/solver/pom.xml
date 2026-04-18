@@ -9,7 +9,6 @@
         <version>5.1.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.evomaster</groupId>
     <artifactId>solver</artifactId>
 
     <dependencies>
@@ -21,10 +20,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

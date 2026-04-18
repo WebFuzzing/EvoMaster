@@ -1,7 +1,7 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 
 /**
  * Encapsulates per-target budget accounting for LIPS.

@@ -24,7 +24,7 @@ public class GenomeNexusExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "GenomeNexusExampleGeneratedEMTest",
                 "org.bar.GenomeNexusExampleGeneratedEMTest",
-                500,
+                2000,
                 true,
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);

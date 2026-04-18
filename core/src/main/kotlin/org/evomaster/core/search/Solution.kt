@@ -8,6 +8,7 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.redis.RedisDbAction
 
 
 class Solution<T>(
@@ -80,6 +81,10 @@ where T : Individual {
 
     fun hasAnyMongoAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is MongoDbAction}}
+    }
+
+    fun hasAnyRedisAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is RedisDbAction}}
     }
 
     /**

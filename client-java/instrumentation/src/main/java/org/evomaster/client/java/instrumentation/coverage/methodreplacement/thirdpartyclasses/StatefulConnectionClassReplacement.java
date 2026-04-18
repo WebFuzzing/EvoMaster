@@ -11,7 +11,6 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 /**
  * This replacement captures Redis dispatch operations containing Redis Commands.

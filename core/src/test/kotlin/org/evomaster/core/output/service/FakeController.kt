@@ -1,10 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.client.java.controller.SutHandler
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.sql.DbSpecification
 
 
@@ -24,6 +21,10 @@ class FakeController : SutHandler {
     }
 
     override fun execInsertionsIntoMongoDatabase(insertions: MutableList<MongoInsertionDto>?): MongoInsertionResultsDto? {
+        return null
+    }
+
+    override fun execInsertionsIntoRedisDatabase(insertions: MutableList<RedisInsertionDto>?): RedisInsertionResultsDto? {
         return null
     }
 

@@ -2236,4 +2236,57 @@ class RestActionBuilderV3Test{
         }
         assertNotNull(x.getWrappedGene(NullableGene::class.java))
     }
+
+
+    @Test
+    fun testMultiParamExamples(){
+
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/examples_multi_params.yaml",
+            1,
+            RestActionBuilderV3.Options(enableConstraintHandling = true, probUseExamples = 0.5)
+        )
+
+        val post = map["POST:/v2/api"] as RestCallAction
+
+        val examples = post.getNamedExamples()
+        assertEquals(3, examples.size)
+        assertEquals(2, examples["Foo"])
+        assertEquals(3, examples["Bar"])
+        assertEquals(1, examples["Hello"])
+
+        post.enforceNamedExample("Foo")
+        val withFoo = post.parameters.joinToString("\n"){it.name + ": " +it.primaryGene().getValueAsRawString()}
+        assertTrue(withFoo.contains("123"), withFoo)
+        assertTrue(withFoo.contains("nameF"), withFoo)
+        assertTrue(withFoo.contains("77"), withFoo)
+        assertTrue(withFoo.contains("xfoo"), withFoo)
+
+        post.enforceNamedExample("Bar")
+        val withBar = post.parameters.joinToString("\n"){it.name + ": " +it.primaryGene().getValueAsRawString()}
+        assertTrue(withBar.contains("42"), withBar)
+        assertTrue(withBar.contains("nameB"), withBar)
+        assertTrue(withBar.contains("xbar"), withBar)
+        assertTrue(withBar.contains("ybar"), withBar)
+        // "extra" for Foo should still be there unchanged.
+        // actually, that is not true... that only apply to distinct trees...
+        // all object examples for the same field would be separate branches in a ChoiceGene
+        //assertTrue(withBar.contains("77"), withBar)
+
+        post.enforceNamedExample("Hello")
+        val withHello = post.parameters.joinToString("\n"){it.name + ": " +it.primaryGene().getValueAsRawString()}
+        //only "id" should be modified
+        assertTrue(withHello.contains("667"), withHello)
+        //rest should stay in other fields, but not the body object
+//        assertTrue(withHello.contains("nameB"), withHello)
+//        assertTrue(withHello.contains("77"), withHello)
+        assertTrue(withHello.contains("xbar"), withHello)
+        assertTrue(withHello.contains("ybar"), withHello)
+
+        post.enforceNamedExample("Foo")
+        val withFooAgain = post.parameters.joinToString("\n"){it.name + ": " +it.primaryGene().getValueAsRawString()}
+        // "x" modified, but not "y"
+        assertTrue(withFooAgain.contains("xfoo"), withFooAgain)
+        assertTrue(withFooAgain.contains("ybar"), withFooAgain)
+    }
 }

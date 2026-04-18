@@ -949,6 +949,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun shouldGenerateRedisData() = generateRedisData
+
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
@@ -1832,6 +1834,11 @@ class EMConfig {
     var extractMongoExecutionInfo = true
 
     @Experimental
+    @Cfg("Enable extracting Redis execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractRedisExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
@@ -1843,6 +1850,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateMongoData = true
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateRedisData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -2604,6 +2616,17 @@ class EMConfig {
     var minimize: Boolean = true
 
 
+    @Cfg("When the main fuzzing session is over, there are several following phases in which test cases can be created" +
+            " and evaluated (e.g., for minimization, flakiness and security checks)." +
+            " Each of these follow up phases takes some time, which is not included in 'maxTime'." +
+            " All those phases are time-bounded, based on the main search budget." +
+            " For example, with a default of 10% and main budget of 1 hour, then each phase will take" +
+            " at most 6 minutes each after the 1 hour search." +
+            " Phases will be preemptively stopped if they reach their timeouts.")
+    @PercentageAsProbability
+    var extraPhaseBudgetPercentage: Double = 0.10
+
+    @Deprecated("No longer in use, replaced by 'extraPhaseBudgetPercentage'")
     @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
             " A negative number mean no timeout is considered." +
             " A value of 0 means minimization will be skipped, even if minimize=true.")
@@ -2823,6 +2846,11 @@ class EMConfig {
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
     var probRestExamples = 0.20
+
+    @Cfg("If any action contains any named example, make sure, with a given probability, that ALL fields for that example" +
+            " are using the provided values by the user")
+    @Probability(false)
+    var probNamedExamples = 0.50
 
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +

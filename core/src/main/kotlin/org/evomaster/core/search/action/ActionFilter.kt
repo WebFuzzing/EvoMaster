@@ -32,6 +32,11 @@ enum class ActionFilter {
     ONLY_MONGO,
 
     /**
+     * actions which are REDIS-related actions
+     */
+    ONLY_REDIS,
+
+    /**
      * actions which are not SQL-related actions
      */
     NO_SQL,
