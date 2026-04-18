@@ -70,7 +70,8 @@ class WebModule: EnterpriseModule() {
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
-
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
         bind(RemoteController::class.java)
             .to(RemoteControllerImplementation::class.java)

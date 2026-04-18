@@ -69,6 +69,9 @@ class RPCModule : EnterpriseModule(){
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
+
         bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
