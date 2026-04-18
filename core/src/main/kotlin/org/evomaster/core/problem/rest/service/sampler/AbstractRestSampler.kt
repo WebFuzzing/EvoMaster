@@ -121,8 +121,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         schemaHolder.validate()
 
         val arazzoURL = problem.arazzoURL
-        val arazzo = ArazzoAccess.getArazzoFromLocation(arazzoURL)
-        ArazzoParser.validateSchema(arazzo, transformed)
+        val arazzo = ArazzoAccess.getArazzoFromLocation(arazzoURL, swagger)
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()

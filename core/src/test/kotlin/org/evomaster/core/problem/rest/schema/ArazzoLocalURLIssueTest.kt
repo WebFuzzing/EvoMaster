@@ -69,6 +69,18 @@ class ArazzoLocalURLIssueTest {
     fun testExistingFileValidURL() {
         // get the current directory, in Mac or Linux, it starts with file://
         // but in Windows, it has to have just one file:/
+        val urlToTest = if (hostOs.contains("win")) {
+            "file:/${swaggerTestDirectory}/openapi_pet.json"
+        }
+        else {
+            "file://${swaggerTestDirectory}/openapi_pet.json"
+        }
+
+        // create swagger from URL
+        swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
+
+        // get the current directory, in Mac or Linux, it starts with file://
+        // but in Windows, it has to have just one file:/
         val urlArazzoToTest = if (hostOs.contains("win")) {
             "file:/$arazzoTestDirectory/arazzo_pet.yaml"
         } else {
@@ -76,7 +88,7 @@ class ArazzoLocalURLIssueTest {
         }
 
         // create arazzo from URL
-        val arazzo = ArazzoAccess.getArazzoFromLocation(urlArazzoToTest)
+        arazzo = ArazzoAccess.getArazzoFromLocation(urlArazzoToTest, swagger)
 
         // a valid arazzo is created with 3 workflows
         Assertions.assertTrue(arazzo.schemaParsed.workflows.size == 3)

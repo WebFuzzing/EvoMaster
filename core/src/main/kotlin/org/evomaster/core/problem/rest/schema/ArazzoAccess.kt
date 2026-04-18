@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.schema
 
 import org.evomaster.core.problem.rest.arazzo.parser.ArazzoParser
+import org.evomaster.core.problem.rest.arazzo.resolver.ArazzoReferenceResolver
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -14,15 +15,13 @@ object ArazzoAccess {
 
     private val log = LoggerFactory.getLogger(ArazzoAccess::class.java)
 
-    fun parseArazzo(schemaText: String, sourceLocation: SchemaLocation): SchemaArazzo {
-
-        val schemaParsed = ArazzoParser.parseSchemaText(schemaText)
-        return SchemaArazzo(schemaText, schemaParsed.first, schemaParsed.second, sourceLocation)
-
+    fun parseArazzo(schemaText: String, sourceLocation: SchemaLocation, schemaOpenAPI: SchemaOpenAPI): SchemaArazzo {
+        return SchemaArazzo(schemaText, ArazzoParser.parse(schemaText, schemaOpenAPI), sourceLocation)
     }
 
     fun getArazzoFromLocation(
-        arazzoLocation: String
+        arazzoLocation: String,
+        schemaOpenAPI: SchemaOpenAPI
     ): SchemaArazzo {
 
         //could be either JSON or YAML
@@ -32,7 +31,7 @@ object ArazzoAccess {
         data = readFromDisk(arazzoLocation);
         location = SchemaLocation(arazzoLocation, SchemaLocationType.LOCAL)
 
-        return parseArazzo(data, location);
+        return parseArazzo(data, location, schemaOpenAPI);
     }
 
     private fun readFromDisk(arazzoLocation: String) : String {

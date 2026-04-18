@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.schema
 
+import com.webfuzzing.overlayjvm.OverlayJVM
 import io.swagger.v3.oas.models.OpenAPI
 import org.slf4j.LoggerFactory
 

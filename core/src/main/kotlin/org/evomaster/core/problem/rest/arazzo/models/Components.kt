@@ -7,5 +7,4 @@ class Components(
     val parameters: Map<String, Parameter>?,
     val successActions: Map<String, SuccessAction>?,
     val failureActions: Map<String, FailureAction>?
-) {
-}
+)

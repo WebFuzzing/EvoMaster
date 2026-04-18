@@ -4,5 +4,4 @@ class SourceDescription(
     val name: String,
     val url: String,
     val type: String?
-) {
-}
+)

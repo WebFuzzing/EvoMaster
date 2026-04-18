@@ -14,10 +14,6 @@ class SchemaArazzo(
      */
     val schemaParsed: ArazzoSpecifications,
     /**
-     * A parsed schema
-     */
-    val schemaJsonNode: JsonNode,
-    /**
      * information about the location the schema was retrieved from, e.g.,
      * from file, URL or in memory in our tests.
      */

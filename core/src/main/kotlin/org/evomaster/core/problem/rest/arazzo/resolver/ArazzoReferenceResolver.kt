@@ -1,19 +1,10 @@
 package org.evomaster.core.problem.rest.arazzo.resolver
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import io.swagger.v3.core.util.Json
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
-import org.evomaster.core.problem.rest.arazzo.models.Components
-import org.evomaster.core.problem.rest.arazzo.models.FailureAction
-import org.evomaster.core.problem.rest.arazzo.models.FailureReusable
-import org.evomaster.core.problem.rest.arazzo.models.Parameter
-import org.evomaster.core.problem.rest.arazzo.models.ParameterReusable
-import org.evomaster.core.problem.rest.arazzo.models.Reusable
-import org.evomaster.core.problem.rest.arazzo.models.RuntimeExpression
-import org.evomaster.core.problem.rest.arazzo.models.SuccessAction
-import org.evomaster.core.problem.rest.arazzo.models.SuccessReusable
+import org.evomaster.core.problem.rest.arazzo.models.*
 
 class ArazzoReferenceResolver(
     val components: Components?,
@@ -21,8 +12,8 @@ class ArazzoReferenceResolver(
     val openApi: OpenAPI?
 ) {
 
-    fun resolveSuccessActions(items: List<SuccessReusable>?): List<SuccessAction> {
-        if (items == null) return emptyList()
+    fun resolveSuccessReusable(items: List<SuccessReusable>?): List<SuccessAction>? {
+        if (items == null) return null
 
         return items.map { item ->
             when (item) {
@@ -32,8 +23,8 @@ class ArazzoReferenceResolver(
         }
     }
 
-    fun resolveFailureActions(items: List<FailureReusable>?): List<FailureAction> {
-        if (items == null) return emptyList()
+    fun resolveFailureReusable(items: List<FailureReusable>?): List<FailureAction>? {
+        if (items == null) return null
 
         return items.map { item ->
             when (item) {
@@ -43,8 +34,8 @@ class ArazzoReferenceResolver(
         }
     }
 
-    fun resolveParameters(items: List<ParameterReusable>?): List<Parameter> {
-        if (items == null) return emptyList()
+    fun resolveParametersReusable(items: List<ParameterReusable>?): List<Parameter>? {
+        if (items == null) return null
 
         return items.map { item ->
             when (item) {

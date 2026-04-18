@@ -10,7 +10,6 @@ import org.evomaster.core.problem.rest.arazzo.models.SourceDescription
 import org.evomaster.core.problem.rest.arazzo.models.Step
 import org.evomaster.core.problem.rest.arazzo.models.SuccessAction
 import org.evomaster.core.problem.rest.arazzo.models.Workflow
-import org.evomaster.core.problem.rest.arazzo.parser.ArazzoValidator.resolver
 import org.evomaster.core.problem.rest.arazzo.resolver.ArazzoReferenceResolver
 import wiremock.com.jayway.jsonpath.JsonPath
 import javax.xml.xpath.XPathFactory
@@ -64,12 +63,12 @@ object ArazzoValidator {
         workflow.steps.forEach { step -> validateStep(step) }
 
         // successActions
-        val successActions = resolver.resolveSuccessActions(workflow.successActions)
-        validateSuccessActions(successActions)
+        //val successActions = resolver.resolveSuccessReusable(workflow.successActions)
+        //validateSuccessActions(successActions)
 
         // failureActions
-        val failureActions = resolver.resolveFailureActions(workflow.failureActions)
-        validateFailureActions(failureActions)
+        //val failureActions = resolver.resolveFailureReusable(workflow.failureActions)
+        //validateFailureActions(failureActions)
 
         // outputs
         val keyOutputRegex = Regex("^[a-zA-Z0-9\\.\\-_]+$")
@@ -83,8 +82,8 @@ object ArazzoValidator {
         }
 
         // parameters
-        val parameters = resolver.resolveParameters(workflow.parameters)
-        validateParameters(parameters)
+        //val parameters = resolver.resolveParametersReusable(workflow.parameters)
+        //validateParameters(parameters)
     }
 
     private fun validateSteps(steps: List<Step>) {
@@ -126,18 +125,18 @@ object ArazzoValidator {
             throw IllegalArgumentException("Arazzo Parsing Error: Step: workflowId and operationPath are mutually exclusive.")
         }
 
-        val parameters = resolver.resolveParameters(step.parameters)
-        validateParameters(parameters)
+        //val parameters = resolver.resolveParametersReusable(step.parameters)
+        //validateParameters(parameters)
 
         //TODO: Validar requestBody
 
         step.successCriteria?.forEach { criterion -> validateCriterion(criterion) }
 
-        val onSuccess = resolver.resolveSuccessActions(step.onSuccess)
-        validateSuccessActions(onSuccess)
+        //val onSuccess = resolver.resolveSuccessReusable(step.onSuccess)
+        //validateSuccessActions(onSuccess)
 
-        val onFailure = resolver.resolveFailureActions(step.onFailure)
-        validateFailureActions(onFailure)
+        //val onFailure = resolver.resolveFailureReusable(step.onFailure)
+        //validateFailureActions(onFailure)
 
         val keyOutputRegex = Regex("^[a-zA-Z0-9\\.\\-_]+$")
         step.outputs?.keys?.forEach { key ->
