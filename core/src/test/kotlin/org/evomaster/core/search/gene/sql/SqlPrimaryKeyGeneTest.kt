@@ -118,7 +118,7 @@ class SqlPrimaryKeyGeneTest {
         sampleTypeField = SampleType.RANDOM,
         children = children,
         childTypeVerifier = EnterpriseChildTypeVerifier(SqlAction::class.java),
-        groups = getEnterpriseTopGroups(children, 0, children.size, 0, 0, 0, 0)
+        groups = getEnterpriseTopGroups(children, 0, children.size, 0, 0, 0, 0, 0)
     )
 
     @Test
