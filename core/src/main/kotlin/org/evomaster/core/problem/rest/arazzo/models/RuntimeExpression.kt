@@ -14,5 +14,4 @@ sealed class RuntimeExpression {
     data class Workflows(val name: String) : RuntimeExpression()
     data class SourceDescriptions(val name: String) : RuntimeExpression()
     data class Components(val name: String) : RuntimeExpression()
-    data class ComponentParameters(val parameterName: String) : RuntimeExpression()
 }

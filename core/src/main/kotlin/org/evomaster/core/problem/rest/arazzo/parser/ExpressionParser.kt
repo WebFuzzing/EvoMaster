@@ -43,8 +43,6 @@ object ExpressionParser {
             input.startsWith("\$steps.") -> RuntimeExpression.Steps(validateName(input.removePrefix("\$steps.")))
             input.startsWith("\$workflows.") -> RuntimeExpression.Workflows(validateName(input.removePrefix("\$workflows.")))
             input.startsWith("\$sourceDescriptions.") -> RuntimeExpression.SourceDescriptions(validateName(input.removePrefix("\$sourceDescriptions.")))
-
-            input.startsWith("\$components.parameters.") -> RuntimeExpression.ComponentParameters(validateName(input.removePrefix("\$components.parameters.")))
             input.startsWith("\$components.") -> RuntimeExpression.Components(validateName(input.removePrefix("\$components.")))
 
             else -> throw IllegalArgumentException("Arazzo Parsing Error: Expression '$input' is not recognize for Arazzo.")

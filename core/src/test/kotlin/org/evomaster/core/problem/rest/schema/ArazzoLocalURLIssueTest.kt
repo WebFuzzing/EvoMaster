@@ -88,10 +88,11 @@ class ArazzoLocalURLIssueTest {
         }
 
         // create arazzo from URL
-        arazzo = ArazzoAccess.getArazzoFromLocation(urlArazzoToTest, swagger)
+        val arazzo = ArazzoAccess.getArazzoFromLocation(urlArazzoToTest, swagger)
 
         // a valid arazzo is created with 3 workflows
         Assertions.assertTrue(arazzo.schemaParsed.workflows.size == 3)
+        Assertions.assertEquals("Petstore - Apply Coupons", arazzo.schemaParsed.info.title)
     }
 
     @Test

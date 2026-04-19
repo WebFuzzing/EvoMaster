@@ -64,7 +64,7 @@ class ArazzoReferenceResolver(
             )
         }
 
-        val actionName = reference.name.removePrefix(prefixExpected)
+        val actionName = reference.name.removePrefix(prefixExpected + ".")
         val resolve = when(prefixExpected) {
             "successActions" -> components.successActions?.get(actionName)
             "failureActions" -> components.failureActions?.get(actionName)
