@@ -7,7 +7,6 @@ interface WorkflowCommon {
     val workflowId: String
     val summary: String?
     val description: String?
-    val inputs: Schema<*>?
     val dependsOn: List<String>?
     val outputs: Map<String, RuntimeExpression>?
 }

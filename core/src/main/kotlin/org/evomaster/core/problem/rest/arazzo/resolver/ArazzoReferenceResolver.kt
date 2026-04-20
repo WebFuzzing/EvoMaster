@@ -81,7 +81,7 @@ class ArazzoReferenceResolver(
         return resolve
     }
 
-    private fun resolveJsonPointer(reference: String) : Schema<*>? {
+    fun resolveJsonPointer(reference: String) : Schema<*>? {
         if (reference.startsWith("#/")) {
             return resolveJsonPointerLocal(reference)
         }

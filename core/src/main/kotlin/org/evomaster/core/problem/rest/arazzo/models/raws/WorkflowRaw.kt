@@ -17,8 +17,8 @@ class WorkflowRaw(
     override val workflowId: String,
     override val summary: String?,
     override val description: String?,
-    override val inputs: Schema<*>?,
     override val dependsOn: List<String>?,
+    val inputs: Schema<*>?,
     val steps: List<StepRaw>,
 
     @JsonDeserialize(contentUsing = SuccessReusableDeserializer::class)
