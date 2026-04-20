@@ -14,14 +14,16 @@ import java.lang.reflect.Method;
 public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass {
     private static final CqlSessionClassReplacement singleton = new CqlSessionClassReplacement();
 
+    public static final String CASSANDRA_FIND_STRING_SYNC = "cassandraExecuteStringSync";
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "com.datastax.oss.driver.api.core.CqlSession";
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findSyncString", usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = "com.datastax.oss.driver.api.core.cql.ResultSet")
+    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_FIND_STRING_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = "com.datastax.oss.driver.api.core.cql.ResultSet")
     public static Object execute(Object cqlSession, String query) {
-        return handleCqlExecute("findSyncString", cqlSession, query);
+        return handleCqlExecute(CASSANDRA_FIND_STRING_SYNC, cqlSession, query);
     }
 
     private static Object handleCqlExecute(String id, Object cqlSession, String query) {
