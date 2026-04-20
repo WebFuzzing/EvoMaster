@@ -103,7 +103,7 @@
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.2.0</wfc.version>
+        <wfc.version>0.3.0</wfc.version>
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
