@@ -7,15 +7,8 @@ import org.junit.jupiter.api.Test
 import java.util.*
 
 /*
-Testing the local URL issue with OpenAPI, 4 test cases:
-1. A local file which exists and the provided URL is valid. (FALTA)
-2. A local file does not exist but the provided URL is valid. (FALTA)
-3. A local file exists but the provided URL is not valid. (FALTA)
-4. A local file does not exist and the provided URL is not valid. (FALTA)
-5. A local file which exists but the relative file path is provided. (FALTA)
-6. Two different exceptions in Windows and others (e.g., "URI Path Component is empty" is tested here).
-7. The swagger is an existing valid json file, but it is not a valid swagger. (FALTA)
-8: The swagger is an invalid json file. (FALTA)
+Testing the local URL issue with Arazzo:
+1. A local file which exists and the provided URL is valid.
  */
 class ArazzoLocalURLIssueTest {
 
@@ -23,7 +16,7 @@ class ArazzoLocalURLIssueTest {
     companion object {
 
         // execution path, it can be different from one machine to another
-        private var executionPath :String = System.getProperty("user.dir")
+        private var executionPath: String = System.getProperty("user.dir")
 
         // swagger object
         private lateinit var swagger: SchemaOpenAPI
@@ -71,8 +64,7 @@ class ArazzoLocalURLIssueTest {
         // but in Windows, it has to have just one file:/
         val urlToTest = if (hostOs.contains("win")) {
             "file:/${swaggerTestDirectory}/openapi_pet.json"
-        }
-        else {
+        } else {
             "file://${swaggerTestDirectory}/openapi_pet.json"
         }
 
@@ -95,37 +87,4 @@ class ArazzoLocalURLIssueTest {
         Assertions.assertEquals("Petstore - Apply Coupons", arazzo.schemaParsed.info.title)
     }
 
-    @Test
-    fun testNonExistingFileValidURL() {
-
-    }
-
-    @Test
-    fun testExistingFileInvalidURL() {
-
-    }
-
-    @Test
-    fun testNonExistingFileInvalidURL() {
-
-    }
-
-
-    @Test
-    fun testRelativeFilePathExistingFile() {
-
-    }
-
-    @Test
-    fun testFileNameOnlyNonExistingFile() {
-
-    }
-
-    @Test
-    fun testInvalidSwagger() {
-    }
-
-    @Test
-    fun testInvalidJSON() {
-    }
 }

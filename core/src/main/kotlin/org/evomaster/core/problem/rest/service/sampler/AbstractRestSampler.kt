@@ -120,9 +120,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         schemaHolder = RestSchema(transformed)
         schemaHolder.validate()
 
-        val arazzoURL = problem.arazzoURL
-        val arazzo = ArazzoAccess.getArazzoFromLocation(arazzoURL, swagger)
-
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
         val skip = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
