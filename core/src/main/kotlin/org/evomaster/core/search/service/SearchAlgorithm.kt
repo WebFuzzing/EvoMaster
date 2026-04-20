@@ -103,11 +103,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         time.doStopRecording()
 
-        if(config.minimize){
-            epc.markStartingMinimization()
-            minimizer.applyPhase()
-        }
-
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
                 ff.calculateCoverage(ind, modifiedSpec = null)?.run {
