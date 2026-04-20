@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.stacktrace
 
 import com.foo.rest.examples.spring.openapi.v3.security.stacktrace.StackTraceJSONController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -41,15 +42,15 @@ class StackTraceJSONEMTest : SpringTestBase(){
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertTrue(ExperimentalFaultCategory.LEAKED_STACK_TRACES in faultsCategories)
+            assertTrue(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES in faultsCategories)
 
             assertTrue(faults.any {
-                it.category == ExperimentalFaultCategory.LEAKED_STACK_TRACES
+                it.category == DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES
                         && it.operationId == "GET:/api/resources/null-pointer-json"
             })
 
             assertTrue(faults.any {
-                it.category == ExperimentalFaultCategory.LEAKED_STACK_TRACES
+                it.category == DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES
                         && it.operationId == "GET:/api/resources/null-pointer-json-not-list"
             })
 
