@@ -94,7 +94,7 @@ runs:
         fi
 
     - name: Upload current metrics artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ inputs.artifact-name }}
         path: build-metrics.env
