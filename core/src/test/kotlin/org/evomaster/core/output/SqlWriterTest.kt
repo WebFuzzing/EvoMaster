@@ -38,9 +38,9 @@ class SqlWriterTest {
 
         val fkUniqueId = 2L
         val fkGene1 = SqlForeignKeyGene("fk1", fkUniqueId, targetTableId, "pk1", false,
-            otherSourceColumnsInCompositeFK = listOf("fk2"), uniqueIdOfPrimaryKey = pkUniqueId)
+            otherSourceColumnsInCompositeFK = setOf("fk2"), uniqueIdOfPrimaryKey = pkUniqueId)
         val fkGene2 = SqlForeignKeyGene("fk2", fkUniqueId, targetTableId, "pk2", false,
-            otherSourceColumnsInCompositeFK = listOf("fk1"), uniqueIdOfPrimaryKey = pkUniqueId)
+            otherSourceColumnsInCompositeFK = setOf("fk1"), uniqueIdOfPrimaryKey = pkUniqueId)
         val sourceAction = SqlAction(sourceTable, setOf(fkCol1, fkCol2), 101L, listOf(fkGene1, fkGene2))
         sourceAction.setLocalId("1")
 

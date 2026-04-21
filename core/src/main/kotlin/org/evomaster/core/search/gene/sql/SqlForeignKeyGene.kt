@@ -53,10 +53,11 @@ class SqlForeignKeyGene(
          */
         var uniqueIdOfPrimaryKey: Long = -1,
         /**
-         * names of columns that form a composite foreign key
+         * Names of columns that form a composite foreign key
          * together with this one.
+         * This set does not include the sourceColumn.
          */
-        val otherSourceColumnsInCompositeFK: List<String> = emptyList()
+        val otherSourceColumnsInCompositeFK: Set<String> = emptySet()
 
 ) : SqlWrapperGene, SimpleGene(sourceColumn) {
 

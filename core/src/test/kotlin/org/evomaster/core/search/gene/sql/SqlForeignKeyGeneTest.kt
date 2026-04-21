@@ -36,7 +36,7 @@ class SqlForeignKeyGeneTest {
         val foreignKey = ForeignKey(listOf(fkColumn), targetTableId, listOf(pkColumn))
         val sourceTable = Table(sourceTableId, setOf(fkColumn), setOf(foreignKey))
         val uniqueId2 = 3L
-        val fkGene = SqlForeignKeyGene("col_fk", uniqueId2, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
+        val fkGene = SqlForeignKeyGene("col_fk", uniqueId2, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptySet())
         val action3 = SqlAction(sourceTable, setOf(fkColumn), uniqueId2, listOf(fkGene))
 
         RestIndividual(
@@ -83,8 +83,8 @@ class SqlForeignKeyGeneTest {
 
         // First row in source table
         val uniqueId2 = 3L
-        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
-        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk1"))
         val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2, listOf(fkGene1, fkGene2))
 
         RestIndividual(
@@ -132,14 +132,14 @@ class SqlForeignKeyGeneTest {
 
         // First row in source table
         val uniqueId2_multi = 3L
-        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2_multi, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
-        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2_multi, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2_multi, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2_multi, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk1"))
         val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2_multi, listOf(fkGene1, fkGene2))
 
         // Second row in source table
         val uniqueId3_multi = 4L
-        val fkGene3 = SqlForeignKeyGene("col_fk1", uniqueId3_multi, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
-        val fkGene4 = SqlForeignKeyGene("col_fk2", uniqueId3_multi, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val fkGene3 = SqlForeignKeyGene("col_fk1", uniqueId3_multi, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk2"))
+        val fkGene4 = SqlForeignKeyGene("col_fk2", uniqueId3_multi, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk1"))
         val action4 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId3_multi, listOf(fkGene3, fkGene4))
 
         RestIndividual(
@@ -191,10 +191,10 @@ class SqlForeignKeyGeneTest {
 
         // A single row in source table that points to TWO different rows in target table
         val uniqueIdSource = 3L
-        val fkGene1_1 = SqlForeignKeyGene("fk1_1", uniqueIdSource, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("fk1_2"))
-        val fkGene1_2 = SqlForeignKeyGene("fk1_2", uniqueIdSource, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("fk1_1"))
-        val fkGene2_1 = SqlForeignKeyGene("fk2_1", uniqueIdSource, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("fk2_2"))
-        val fkGene2_2 = SqlForeignKeyGene("fk2_2", uniqueIdSource, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("fk2_1"))
+        val fkGene1_1 = SqlForeignKeyGene("fk1_1", uniqueIdSource, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("fk1_2"))
+        val fkGene1_2 = SqlForeignKeyGene("fk1_2", uniqueIdSource, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("fk1_1"))
+        val fkGene2_1 = SqlForeignKeyGene("fk2_1", uniqueIdSource, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("fk2_2"))
+        val fkGene2_2 = SqlForeignKeyGene("fk2_2", uniqueIdSource, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("fk2_1"))
 
         val actionSource = SqlAction(sourceTable, setOf(fk1_1, fk1_2, fk2_1, fk2_2), uniqueIdSource,
             listOf(fkGene1_1, fkGene1_2, fkGene2_1, fkGene2_2))
@@ -254,8 +254,8 @@ class SqlForeignKeyGeneTest {
         val sourceTable = Table(sourceTableId, setOf(fk1, fk2), setOf(foreignKey1, foreignKey2))
 
         val uniqueIdSource = 3L
-        val fkGene1 = SqlForeignKeyGene("fk1", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
-        val fkGene2 = SqlForeignKeyGene("fk2", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptyList())
+        val fkGene1 = SqlForeignKeyGene("fk1", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptySet())
+        val fkGene2 = SqlForeignKeyGene("fk2", uniqueIdSource, targetTableId, "col_pk", nullable = false, otherSourceColumnsInCompositeFK = emptySet())
 
         val actionSource = SqlAction(sourceTable, setOf(fk1, fk2), uniqueIdSource, listOf(fkGene1, fkGene2))
 
@@ -315,8 +315,8 @@ class SqlForeignKeyGeneTest {
 
         // First row in source table
         val uniqueId2 = 3L
-        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
-        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk1"))
         val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2, listOf(fkGene1, fkGene2))
 
         val previousGenes = listOf(pkGene1_1, pkGene1_2, fkGene1, fkGene2)
@@ -359,8 +359,8 @@ class SqlForeignKeyGeneTest {
 
         // First row in source table
         val uniqueId2 = 3L
-        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk2"))
-        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = listOf("col_fk1"))
+        val fkGene1 = SqlForeignKeyGene("col_fk1", uniqueId2, targetTableId, "col_pk1", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk2"))
+        val fkGene2 = SqlForeignKeyGene("col_fk2", uniqueId2, targetTableId, "col_pk2", nullable = false, otherSourceColumnsInCompositeFK = setOf("col_fk1"))
         val action3 = SqlAction(sourceTable, setOf(fkColumn1, fkColumn2), uniqueId2, listOf(fkGene1, fkGene2))
 
         val ind = RestIndividual(

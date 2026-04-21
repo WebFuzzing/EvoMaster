@@ -416,7 +416,7 @@ class SqlActionGeneBuilder {
             throw IllegalArgumentException("Column $column is not part of foreign key $fk")
         }
         val targetColumn = fk.targetColumns[indexOfSourceColumn]
-        val otherSourceColumnsInCompositeFK = fk.sourceColumns.filter { it != column }.map { it.name }
+        val otherSourceColumnsInCompositeFK = fk.sourceColumns.filter { it != column }.map { it.name }.toSet()
         return SqlForeignKeyGene(
             sourceColumn = column.name,
             uniqueId = id,
