@@ -8,6 +8,8 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.evomaster.core.utils.FlakinessInferenceUtil.derive
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory
  * it is used to detect flaky tests by checking responses or return value
  * currently, such a detection is performed during post-handling of fuzzing
  */
-class FlakinessDetector<T: Individual> {
+class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FlakinessDetector::class.java)
@@ -31,6 +33,17 @@ class FlakinessDetector<T: Individual> {
     @Inject
     private lateinit var fitness : FitnessFunction<T>
 
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
+    override fun applyPhase() {
+        reexecuteToDetectFlakiness()
+    }
+
+    override fun hasPhaseTimedOut(): Boolean {
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.SECURITY)
+    }
+
     /**
      * re-execute individuals in archive for identifying flakiness
      */
@@ -42,13 +55,15 @@ class FlakinessDetector<T: Individual> {
 
         LoggingUtil.getInfoLogger().info("Reexecuting all individual ${currentIndividuals.size} for identifying flakiness.")
 
-        currentIndividuals.forEach {
+        for(ci in currentIndividuals){
 
-            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it.individual)
+            if(hasPhaseTimedOut()) break
+
+            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
             if(ei == null){
                 log.warn("Failed to re-evaluate individual during flakiness analysis.")
             }else{
-                checkAndMarkConsistency(ei, it)
+                checkAndMarkConsistency(ei, ci)
             }
         }
 

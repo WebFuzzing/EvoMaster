@@ -22,6 +22,10 @@ import kotlin.collections.contains
 \D	Find a non-digit character
 \s	Find a whitespace character
 \S	Find a non-whitespace character
+\h	Find a horizontal space character
+\H	Find a non-horizontal space character
+\v	Find a vertical space character
+\V	Find a non-vertical space character
 \p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
@@ -57,29 +61,45 @@ class CharacterClassEscapeRxGene(
         private val nonHorizontalSpaceMultiCharRange = MultiCharacterRange(true, horizontalSpaceSet)
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
-        // US-ASCII POSIX character classes (\p{X})
-        private val posixMultiCharRanges = mapOf(
-            "Lower" to listOf(CharacterRange('a', 'z')),
-            "Upper" to listOf(CharacterRange('A', 'Z')),
-            "ASCII" to listOf(CharacterRange(0, 0x7f)),
-            "Alpha" to asciiLetterSet,
-            "Digit" to digitSet,
-            "Alnum" to digitSet + asciiLetterSet,
-            "Punct" to punctuationSet,
-            "Graph" to digitSet + asciiLetterSet + punctuationSet,
-            "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
-            "Blank" to stringToListOfCharacterRanges(" \t"),
-            "Cntrl" to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
-            "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
-            "Space" to spaceSet
-        ).mapValues { (_, value) -> MultiCharacterRange(false, value) }
+        private val pEscapesMultiCharRanges: Map<String, MultiCharacterRange> = run {
+            // US-ASCII POSIX character classes (\p{X})
+            val posixAsciiSets = mapOf(
+                "Lower"  to listOf(CharacterRange('a', 'z')),
+                "Upper"  to listOf(CharacterRange('A', 'Z')),
+                "ASCII"  to listOf(CharacterRange(0, 0x7f)),
+                "Alpha"  to asciiLetterSet,
+                "Digit"  to digitSet,
+                "Alnum"  to digitSet + asciiLetterSet,
+                "Punct"  to punctuationSet,
+                "Graph"  to digitSet + asciiLetterSet + punctuationSet,
+                "Print"  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
+                "Blank"  to stringToListOfCharacterRanges(" \t"),
+                "Cntrl"  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
+                "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
+                "Space"  to spaceSet,
+            )
+
+            // Unicode category character classes (\p{X})
+            val unicodeCategorySets = mapOf(
+                "Pe" to stringToListOfCharacterRanges(")]}")
+                // more Unicode categories will be added here in the future
+            )
+
+            // create both normal and negated version for all
+            (posixAsciiSets + unicodeCategorySets).flatMap { (key, value) ->
+                listOf(
+                    key     to MultiCharacterRange(false, value),
+                    "^$key" to MultiCharacterRange(true,  value)
+                )
+            }.toMap()
+        }
     }
 
     var value: String = ""
-    private var multiCharRange: MultiCharacterRange
+    var multiCharRange: MultiCharacterRange
 
     init {
-        if (type[0] !in "wWdDsSvVhHp") {
+        if (type[0] !in "wWdDsSvVhHpP") {
             throw IllegalArgumentException("Invalid type: $type")
         }
 
@@ -94,12 +114,16 @@ class CharacterClassEscapeRxGene(
             'V' -> nonVerticalSpaceMultiCharRange
             'h' -> horizontalSpaceMultiCharRange
             'H' -> nonHorizontalSpaceMultiCharRange
-            'p' ->
-                if (type.substring(2, type.length - 1) !in posixMultiCharRanges){
-                    throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
+            'p', 'P' -> {
+                val pLabel = type.substring(2, type.length - 1)
+                val negated = type[0].isUpperCase()
+                val lookupKey = if (negated) "^$pLabel" else pLabel
+                if (lookupKey !in pEscapesMultiCharRanges) {
+                    throw IllegalArgumentException("$type invalid/unsupported \\p escape character class")
                 } else {
-                    posixMultiCharRanges[type.substring(2, type.length - 1)]!!
+                    pEscapesMultiCharRanges[lookupKey]!!
                 }
+            }
             else -> //this should never happen due to check in init
                 throw IllegalStateException("Type '\\$type' not supported yet")
         }
