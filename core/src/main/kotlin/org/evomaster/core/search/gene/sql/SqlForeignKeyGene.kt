@@ -30,8 +30,8 @@ class SqlForeignKeyGene(
          */
         sourceColumn: String,
         /**
-         * The position in the list of SQL insertion actions
-         * where the FK is being inserted.
+         * Unique id of the SQL insertion action this foreign key belongs to.
+         * It must be equal to the insertionId of the parent SqlAction.
          */
         uniqueId: Long,
         /**
