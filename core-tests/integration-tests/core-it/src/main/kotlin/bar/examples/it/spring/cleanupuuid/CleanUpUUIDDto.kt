@@ -4,5 +4,7 @@ import java.util.UUID
 
 open class CleanUpUUIDDto(
 
-    var id : UUID? = null
+    var id : UUID? = null,
+
+    var size: Int? = null
 )

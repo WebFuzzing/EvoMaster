@@ -33,17 +33,23 @@ open class CleanUpUUIDApplication {
     open fun post(): ResponseEntity<CleanUpUUIDDto> {
         val id = UUID.randomUUID()
         data[id] = "Data for $id"
-        return ResponseEntity.status(201).body(CleanUpUUIDDto(id))
+        return ResponseEntity.status(201).body(CleanUpUUIDDto(id,data.size))
     }
 
 
     @PutMapping(path = ["/{id}"])
     open fun put(
         @PathVariable("id") id: UUID
-    ): ResponseEntity<Any> {
+    ): ResponseEntity<CleanUpUUIDDto> {
+
+        val status = if(data.containsKey(id)){
+            200
+        } else {
+            201
+        }
 
         data[id] = "Data for $id"
-        return ResponseEntity.status(200).build()
+        return ResponseEntity.status(status).body(CleanUpUUIDDto(id,data.size))
     }
 
     @DeleteMapping(path = ["/{id}"])
