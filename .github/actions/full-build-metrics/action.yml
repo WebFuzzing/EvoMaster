@@ -1,0 +1,102 @@
+name: Full Build Metrics
+description: Count Maven warnings/errors, compare against latest successful baseline, and persist current metrics artifact
+
+inputs:
+  log-file:
+    description: Path to the captured build log
+    required: false
+    default: full-build-base.log
+  artifact-name:
+    description: Artifact name used to store metrics
+    required: false
+    default: full-build-base-metrics
+  baseline-branch:
+    description: Branch to fetch the latest successful baseline metrics from
+    required: false
+    default: master
+  workflow-file:
+    description: Workflow filename to query for baseline artifacts
+    required: false
+    default: ci.yml
+  retention-days:
+    description: Artifact retention period in days
+    required: false
+    default: "90"
+
+runs:
+  using: composite
+  steps:
+    - name: Download previous metrics artifact
+      uses: dawidd6/action-download-artifact@v9
+      with:
+        workflow: ${{ inputs.workflow-file }}
+        workflow_conclusion: success
+        branch: ${{ inputs.baseline-branch }}
+        name: ${{ inputs.artifact-name }}
+        path: previous-metrics
+        if_no_artifact_found: warn
+
+    - name: Count warnings/errors and compare
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.log-file }}" ]; then
+          warnings_count=$(grep -c "^\[WARNING\]" "${{ inputs.log-file }}" || true)
+          errors_count=$(grep -c "^\[ERROR\]" "${{ inputs.log-file }}" || true)
+        else
+          warnings_count=9999999
+          errors_count=9999999
+        fi
+
+        previous_warnings=""
+        previous_errors=""
+        if [ -f previous-metrics/build-metrics.env ]; then
+          # shellcheck disable=SC1091
+          . previous-metrics/build-metrics.env
+          previous_warnings="${WARNINGS:-}"
+          previous_errors="${ERRORS:-}"
+        fi
+
+        echo "full-build-base warnings: ${warnings_count}"
+        echo "full-build-base errors: ${errors_count}"
+
+        regression=false
+        if [ -n "${previous_warnings}" ] && [ -n "${previous_errors}" ]; then
+          warnings_delta=$((warnings_count - previous_warnings))
+          errors_delta=$((errors_count - previous_errors))
+          echo "delta warnings vs last successful ${{ inputs.baseline-branch }} run: ${warnings_delta}"
+          echo "delta errors vs last successful ${{ inputs.baseline-branch }} run: ${errors_delta}"
+          if [ "${warnings_count}" -le "${previous_warnings}" ] && [ "${errors_count}" -le "${previous_errors}" ]; then
+            echo "Result: green (no increase in warnings or errors)."
+          else
+            echo "Result: yellow (warnings or errors increased)."
+            regression=true
+          fi
+        else
+          echo "No previous metrics artifact found on ${{ inputs.baseline-branch }} for comparison."
+          echo "Result: green (no baseline available)."
+        fi
+
+        printf "WARNINGS=%s\nERRORS=%s\n" "${warnings_count}" "${errors_count}" > build-metrics.env
+
+        {
+          echo "full-build-base warnings: ${warnings_count}"
+          echo "full-build-base errors: ${errors_count}"
+          if [ -n "${previous_warnings}" ] && [ -n "${previous_errors}" ]; then
+            echo "delta warnings vs last successful ${{ inputs.baseline-branch }} run: ${warnings_delta}"
+            echo "delta errors vs last successful ${{ inputs.baseline-branch }} run: ${errors_delta}"
+          else
+            echo "No previous metrics artifact found on ${{ inputs.baseline-branch }} for comparison."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "${regression}" = "true" ]; then
+          exit 1
+        fi
+
+    - name: Upload current metrics artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: build-metrics.env
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: error

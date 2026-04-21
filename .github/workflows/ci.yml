@@ -109,9 +109,23 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: mvn clean verify --fae
+        # the set command makes the build fail if mvn command fails (no change in behavior)
+        run: |
+          set -o pipefail
+          mvn clean verify --fae 2>&1 | tee full-build-base.log
         env:
           CI_env: GithubAction
+      - name: Analyze and persist full-build-base metrics
+        if: success()
+        continue-on-error: true
+        uses: ./.github/actions/full-build-metrics
+        with:
+          log-file: full-build-base.log
+          artifact-name: full-build-base-metrics
+          baseline-branch: master
+          workflow-file: ci.yml
+          #These are metrics occupy very little space, increasing the retention so they are not lost if nothing is merged to master in a while
+          retention-days: 90
       - name: Upload evomaster.jar
         uses: actions/upload-artifact@v4
         with:
