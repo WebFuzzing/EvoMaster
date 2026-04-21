@@ -48,8 +48,8 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
 
             for ((start, end) in internalRanges.sortedBy { it.start }) {
                 when {
-                    end < currentStart - 1 -> newInternalRanges += CharacterRange(start, end)
-                    start > currentEnd + 1 -> {
+                    end.code < currentStart.code - 1 -> newInternalRanges += CharacterRange(start, end)
+                    start.code > currentEnd.code + 1 -> {
                         if (!merged) {
                             newInternalRanges += CharacterRange(currentStart, currentEnd)
                             merged = true
