@@ -3,12 +3,11 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
@@ -43,7 +42,7 @@ class EnumGene<T : Comparable<T>>(
      * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
      */
     private val valueNames: List<String?>? = null
-) : SimpleGene(name), NamedExamplesGene {
+) : SimpleGene(name), UserExamplesGene {
 
     companion object {
 
@@ -71,8 +70,17 @@ class EnumGene<T : Comparable<T>>(
             log.warn("Enum Gene (name: $name) has empty list of values")
             values = listOf()
         }else{
-            val list = data
-                .toSet() // we want no duplicate
+
+            val elements = if(valueNames == null){
+                // we want no duplicate
+                data.toSet()
+            } else {
+                //if we have named value, then we must not use a set, as there might be duplicates, and
+                //we would need to know which names map to which duplicated value
+                data
+            }
+
+            val list = elements
                 .toList() // need ordering to specify index of selection, so Set would not do
                 .sorted() // sort, to make meaningful list comparisons
                 .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
@@ -203,6 +211,21 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.get(index)
     }
 
+    override fun getAvailableExampleNames() : Set<String> {
+        return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
+    }
+
+    override fun selectExampleByName(name: String) {
+        if(!isUsedForExamples()){
+            throw IllegalStateException("Selected enum does not contain example values")
+        }
+        if(valueNames == null || ! valueNames.contains(name)){
+            throw IllegalArgumentException("Selected example value enum does not contain $name")
+        }
+
+        index = valueNames.indexOf(name)
+    }
+
     /**
      * [EnumGene] can be used in DTOs when the API spec contains either example values or an enum.
      * Since the [EnumGene] uses generics to hold values, this function returns the type to be used
@@ -237,7 +260,8 @@ class EnumGene<T : Comparable<T>>(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is EnumGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false // FIXME
+            //throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         //FIXME what if compared to another enum with different values???
         return this.index == other.index

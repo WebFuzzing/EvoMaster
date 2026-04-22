@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(path = ["/api/arithmetic"])
 class ACArithmeticRest {
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: Int?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Double?,
@@ -34,7 +34,7 @@ class ACArithmeticRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACArithmeticDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACArithmeticDto) : ResponseEntity<String> {
 
         val x = body.c!!
         val y = body.e!!

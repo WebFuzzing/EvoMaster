@@ -3,6 +3,7 @@ package org.evomaster.core.output.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -22,7 +23,7 @@ import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
@@ -338,7 +339,7 @@ class TestSuiteWriter {
 
         lines.addBlockCommentLine(" The generated test suite contains ${solution.individuals.size} tests")
         classDescriptionEmptyLine(lines)
-        lines.addBlockCommentLine(" Covered targets: ${solution.overall.coveredTargets()}")
+        lines.addBlockCommentLine(" Covered targets: ${solution.overall.numberOfCoveredTargets()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" Used time: ${searchTimeController.getElapsedTime()}")
         classDescriptionEmptyLine(lines)
@@ -496,6 +497,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.mongo.dsl.MongoDsl.mongo", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto", lines)
                 addImport(MongoInsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if (solution.hasAnyRedisAction()) {
+                addImport("org.evomaster.client.java.controller.redis.dsl.RedisDsl.redis", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionResultsDto", lines)
+                addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
             if (config.enableBasicAssertions) {

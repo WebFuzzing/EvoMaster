@@ -208,6 +208,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_MONGO, executingInitMongo);
     }
 
+    public boolean setExecutingInitRedis(boolean executingInitRedis) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_REDIS, executingInitRedis);
+    }
+
     public boolean setExecutingAction(boolean executingAction){
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }

@@ -27,6 +27,8 @@ class  GroupsOfChildren<T>(
 
         const val INITIALIZATION_MONGO = "INITIALIZATION_MONGO"
 
+        const val INITIALIZATION_REDIS = "INITIALIZATION_REDIS"
+
         const val INITIALIZATION_DNS = "INITIALIZATION_DNS"
 
         const val EXTERNAL_SERVICES = "EXTERNAL_SERVICES"

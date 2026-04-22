@@ -11,15 +11,14 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
 import net.sf.jsqlparser.JSQLParserException
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
-import java.util.*
 
 /**
  * Generates SMT-LIB constraints from SQL queries and schema definitions.
@@ -30,6 +29,9 @@ import java.util.*
 class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
 
     private var parser = JSqlConditionParser()
+
+    private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
+    private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
 
     /**
      * Main method to generate SMT-LIB representation from SQL query.
@@ -57,17 +59,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smt The SMT-LIB object to which table definitions are added.
      */
     private fun appendTableDefinitions(smt: SMTLib) {
-        for (table in schema.tables) {
-            val dataTypeName = "${StringUtils.capitalization(table.id.name)}Row"
-
+        for (smtTable in smtTables) {
             // Declare datatype for the table
             smt.addNode(
-                DeclareDatatypeSMTNode(dataTypeName, getConstructors(table))
+                DeclareDatatypeSMTNode(smtTable.dataTypeName, getConstructors(smtTable))
             )
 
             // Declare constants for each row
             for (i in 1..numberOfRows) {
-                smt.addNode(DeclareConstSMTNode("${table.id.name.lowercase()}$i", dataTypeName))
+                smt.addNode(DeclareConstSMTNode("${smtTable.smtName}$i", smtTable.dataTypeName))
             }
         }
     }
@@ -78,9 +78,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smt The SMT-LIB object to which table constraints are added.
      */
     private fun appendTableConstraints(smt: SMTLib) {
-        for (table in schema.tables) {
-            appendUniqueConstraints(smt, table)
-            appendCheckConstraints(smt, table)
+        for (smtTable in smtTables) {
+            appendUniqueConstraints(smt, smtTable)
+            appendCheckConstraints(smt, smtTable)
         }
     }
 
@@ -88,13 +88,12 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * Appends unique constraints for each table to the SMT-LIB.
      *
      * @param smt The SMT-LIB object to which unique constraints are added.
-     * @param table The table for which unique constraints are added.
+     * @param smtTable The table for which unique constraints are added.
      */
-    private fun appendUniqueConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = table.id.name.lowercase()
-        for (column in table.columns) {
+    private fun appendUniqueConstraints(smt: SMTLib, smtTable: SmtTable) {
+        for (column in smtTable.dto.columns) {
             if (column.unique) {
-                val nodes = assertForDistinctField(column.name, tableName)
+                val nodes = assertForDistinctField(smtTable.smtColumnName(column.name), smtTable.smtName)
                 smt.addNodes(nodes)
             }
         }
@@ -104,14 +103,14 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * Appends check constraints for each table to the SMT-LIB.
      *
      * @param smt The SMT-LIB object to which check constraints are added.
-     * @param table The table for which check constraints are added.
+     * @param smtTable The table for which check constraints are added.
      */
-    private fun appendCheckConstraints(smt: SMTLib, table: TableDto) {
-        for (check in table.tableCheckExpressions) {
+    private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
+        for (check in smtTable.dto.tableCheckExpressions) {
             try {
                 val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
                 for (i in 1..numberOfRows) {
-                    val constraint: SMTNode = parseCheckExpression(table, condition, i)
+                    val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
                     smt.addNode(constraint)
                 }
             } catch (e: SqlConditionParserException) {
@@ -125,13 +124,13 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     /**
      * Parses a check expression and returns the corresponding SMT node.
      *
-     * @param table The table containing the check expression.
+     * @param smtTable The table containing the check expression.
      * @param condition The SQL condition to be parsed.
      * @param index The index of the row.
      * @return The corresponding SMT node.
      */
-    private fun parseCheckExpression(table: TableDto, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(table.id.name.lowercase(), emptyMap(), schema.tables, index)
+    private fun parseCheckExpression(smtTable: SmtTable, condition: SqlCondition, index: Int): SMTNode {
+        val visitor = SMTConditionVisitor(smtTable.smtName, emptyMap(), schema.tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -159,29 +158,28 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smt The SMT-LIB object to which key constraints are added.
      */
     private fun appendKeyConstraints(smt: SMTLib) {
-        for (table in schema.tables) {
-            appendPrimaryKeyConstraints(smt, table)
-            appendForeignKeyConstraints(smt, table)
+        for (smtTable in smtTables) {
+            appendPrimaryKeyConstraints(smt, smtTable)
+            appendForeignKeyConstraints(smt, smtTable)
         }
     }
 
     private fun appendBooleanConstraints(smt: SMTLib) {
-        for (table in schema.tables) {
-            val tableName = table.id.name.lowercase()
-            for (column in table.columns) {
+        for (smtTable in smtTables) {
+            for (column in smtTable.dto.columns) {
                 if (column.type.equals("BOOLEAN", ignoreCase = true)) {
-                    val columnName = column.name.uppercase()
+                    val columnName = smtTable.smtColumnName(column.name).uppercase()
                     for (i in 1..numberOfRows) {
                         smt.addNode(
                             AssertSMTNode(
                                 OrAssertion(
                                     listOf(
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"true\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"True\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"TRUE\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"false\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"False\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"FALSE\""))
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"true\"")),
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"True\"")),
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"TRUE\"")),
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"false\"")),
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"False\"")),
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"FALSE\""))
                                     )
                                 )
                             )
@@ -193,11 +191,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     }
 
     private fun appendTimestampConstraints(smt: SMTLib) {
-        for (table in schema.tables) {
-            val tableName = table.id.name.lowercase()
-            for (column in table.columns) {
+        for (smtTable in smtTables) {
+            for (column in smtTable.dto.columns) {
                 if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
-                    val columnName = column.name.uppercase()
+                    val columnName = smtTable.smtColumnName(column.name).uppercase()
                     val lowerBound = 0 // Example for Unix epoch start
                     val upperBound = 32503680000 // Example for year 3000 in seconds
 
@@ -205,7 +202,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 GreaterThanOrEqualsAssertion(
-                                    "($columnName $tableName$i)",
+                                    "($columnName ${smtTable.smtName}$i)",
                                     lowerBound.toString()
                                 )
                             )
@@ -213,7 +210,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 LessThanOrEqualsAssertion(
-                                    "($columnName $tableName$i)",
+                                    "($columnName ${smtTable.smtName}$i)",
                                     upperBound.toString()
                                 )
                             )
@@ -229,14 +226,13 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * Appends primary key constraints for each table to the SMT-LIB.
      *
      * @param smt The SMT-LIB object to which primary key constraints are added.
-     * @param table The table for which primary key constraints are added.
+     * @param smtTable The table for which primary key constraints are added.
      */
-    private fun appendPrimaryKeyConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = table.id.name.lowercase()
-        val primaryKeys = table.columns.filter { it.primaryKey }
+    private fun appendPrimaryKeyConstraints(smt: SMTLib, smtTable: SmtTable) {
+        val primaryKeys = smtTable.dto.columns.filter { it.primaryKey }
 
         for (primaryKey in primaryKeys) {
-            val nodes = assertForDistinctField(primaryKey.name, tableName)
+            val nodes = assertForDistinctField(smtTable.smtColumnName(primaryKey.name), smtTable.smtName)
             smt.addNodes(nodes)
         }
     }
@@ -271,20 +267,19 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * Appends foreign key constraints for each table to the SMT-LIB.
      *
      * @param smt The SMT-LIB object to which foreign key constraints are added.
-     * @param table The table for which foreign key constraints are added.
+     * @param smtTable The table for which foreign key constraints are added.
      */
-    private fun appendForeignKeyConstraints(smt: SMTLib, table: TableDto) {
-        val sourceTableName = table.id.name.lowercase()
-
-        for (foreignKey in table.foreignKeys) {
-            val referencedTable = findReferencedTable(foreignKey)
-            val referencedTableName = referencedTable.id.name.lowercase()
-            val referencedColumnSelector = findReferencedPKSelector(table, referencedTable, foreignKey)
+    private fun appendForeignKeyConstraints(smt: SMTLib, smtTable: SmtTable) {
+        for (foreignKey in smtTable.dto.foreignKeys) {
+            val referencedSmtTable = findReferencedSmtTable(foreignKey)
+            val referencedColumnSelector = referencedSmtTable.smtColumnName(
+                findReferencedPKSelector(smtTable.dto, referencedSmtTable.dto, foreignKey)
+            )
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
-                    sourceColumn, sourceTableName,
-                    referencedColumnSelector, referencedTableName
+                    smtTable.smtColumnName(sourceColumn), smtTable.smtName,
+                    referencedColumnSelector, referencedSmtTable.smtName
                 )
                 smt.addNodes(nodes)
             }
@@ -352,13 +347,13 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     }
 
     /**
-     * Finds the referenced table based on the foreign key.
+     * Finds the [SmtTable] for the table referenced by the given foreign key.
      *
      * @param foreignKey The foreign key constraint.
-     * @return The referenced table.
+     * @return The referenced [SmtTable].
      */
-    private fun findReferencedTable(foreignKey: ForeignKeyDto): TableDto {
-        return schema.tables.firstOrNull { it.id.name.equals(foreignKey.targetTable, ignoreCase = true) }
+    private fun findReferencedSmtTable(foreignKey: ForeignKeyDto): SmtTable {
+        return smtTableByOriginalName[foreignKey.targetTable.lowercase()]
             ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
     }
 
@@ -434,7 +429,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The corresponding SMT node.
      */
     private fun parseQueryCondition(tableAliases: Map<String, String>, defaultTableName: String, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(defaultTableName, tableAliases, schema.tables, index)
+        val smtDefaultTableName = smtTableByOriginalName[defaultTableName.lowercase()]?.smtName
+            ?: convertToAscii(defaultTableName)
+        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, schema.tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -517,11 +514,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         }
 
         // Only add GetValueSMTNode for the mentioned tables
-        for (table in schema.tables) {
-            val tableNameLower = table.id.name.lowercase()
-            if (tablesMentioned.contains(tableNameLower)) {
+        for (smtTable in smtTables) {
+            if (tablesMentioned.contains(smtTable.originalName)) {
                 for (i in 1..numberOfRows) {
-                    smt.addNode(GetValueSMTNode("$tableNameLower$i"))
+                    smt.addNode(GetValueSMTNode("${smtTable.smtName}$i"))
                 }
             }
         }
@@ -530,29 +526,34 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     /**
      * Gets the constructors for a table's columns to be used in SMT-LIB.
      *
-     * @param table The table for which constructors are generated.
+     * @param smtTable The table for which constructors are generated.
      * @return A list of SMT nodes for column constructors.
      */
-    private fun getConstructors(table: TableDto): List<DeclareConstSMTNode> {
-        return table.columns.map { c ->
+    private fun getConstructors(smtTable: SmtTable): List<DeclareConstSMTNode> {
+        return smtTable.dto.columns.map { c ->
             val smtType = TYPE_MAP[c.type.uppercase()]
                 ?: throw RuntimeException("Unsupported column type: ${c.type}")
-            DeclareConstSMTNode(c.name, smtType)
+            DeclareConstSMTNode(smtTable.smtColumnName(c.name), smtType)
         }
     }
 
     companion object {
+
         // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "BIT" to "Int",
             "INTEGER" to "Int",
+            "INT" to "Int",
             "INT2" to "Int",
             "INT4" to "Int",
             "INT8" to "Int",
             "TINYINT" to "Int",
             "SMALLINT" to "Int",
             "NUMERIC" to "Int",
+            "SERIAL" to "Int",
+            "SMALLSERIAL" to "Int",
+            "BIGSERIAL" to "Int",
             "TIMESTAMP" to "Int",
             "DATE" to "Int",
             "FLOAT" to "Real",
