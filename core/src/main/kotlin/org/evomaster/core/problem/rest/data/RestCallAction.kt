@@ -158,7 +158,7 @@ class RestCallAction(
         return "$verb:$path"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 

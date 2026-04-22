@@ -13,7 +13,7 @@ class MinimizeRest {
 
 
     @GetMapping(path = ["/{x}"])
-    open fun get( @PathVariable("x") x: Int) : ResponseEntity<String> {
+    fun get( @PathVariable("x") x: Int) : ResponseEntity<String> {
 
         if(x < 0) return ResponseEntity.ok("a")
         if(x < 100) return ResponseEntity.ok("b")

@@ -12,7 +12,7 @@ class LoginTokenRest {
     private val SECRET = "a complex secret..."
 
     @PostMapping(path = ["/login"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun login(@RequestBody login : LoginDto) : ResponseEntity<AuthDto>{
+    fun login(@RequestBody login : LoginDto) : ResponseEntity<AuthDto>{
 
         if(login.userId == "foo" && login.password == "123"){
             return ResponseEntity.ok(AuthDto("foo", TokenDto(SECRET)))
@@ -22,7 +22,7 @@ class LoginTokenRest {
     }
 
     @GetMapping(path = ["/check"])
-    open fun check(@RequestHeader("Authorization") authorization: String?) : ResponseEntity<String>{
+    fun check(@RequestHeader("Authorization") authorization: String?) : ResponseEntity<String>{
 
         if(authorization == "Bearer $SECRET"){
             return ResponseEntity.ok("OK")
