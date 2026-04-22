@@ -40,6 +40,7 @@ env:
   # https://github.com/WebFuzzing/EvoMaster/issues/447
   release-jdk: 21
   build-jdk: 17
+  java-distribution: temurin
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
   debugTestName: "GeneRandomizedTest" # replace with test to debug
@@ -74,14 +75,15 @@ jobs:
     needs: setup
     if: needs.setup.outputs.debug == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
           distribution: 'temurin'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -97,25 +99,37 @@ jobs:
     if: needs.setup.outputs.debug == 'false'
     steps:
       # Checkout code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       # Build/test for JDK
       - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
           distribution: 'temurin'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: mvn clean verify --fae
+        # the set command makes the build fail if mvn command fails (no change in behavior)
+        run: |
+          set -o pipefail
+          mvn clean verify --fae 2>&1 | tee full-build-base.log
         env:
           CI_env: GithubAction
+      - name: Upload full-build-base log for metrics job
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: full-build-base-log-current
+          path: full-build-base.log
+          retention-days: 1
+          if-no-files-found: error
       - name: Upload evomaster.jar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
@@ -140,21 +154,42 @@ jobs:
         name: Uploading coverage to CodeCov is done only on 'master' branch builds
         run: echo Skipping upload to CodeCov
 
-
+  full-build-metrics:
+    runs-on: ubuntu-latest
+    needs: full-build-base
+    if: needs.full-build-base.result == 'success'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download full-build-base log
+        uses: actions/download-artifact@v8
+        with:
+          name: full-build-base-log-current
+          path: .
+      - name: Analyze and persist full-build-base metrics
+        continue-on-error: true
+        uses: ./.github/actions/full-build-metrics
+        with:
+          log-file: full-build-base.log
+          artifact-name: full-build-base-metrics
+          baseline-branch: master
+          workflow-file: ci.yml
+          #These metrics occupy very little space, increasing the retention so they are not lost if nothing is merged to master in a while
+          retention-days: 90
 
   base-build-mac:
     runs-on: macos-latest
     needs: setup
     if: needs.setup.outputs.debug == 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
           distribution: 'temurin'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -169,14 +204,15 @@ jobs:
     needs: setup
     if: needs.setup.outputs.debug == 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
           distribution: 'temurin'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -225,14 +261,15 @@ jobs:
     needs: full-build-base
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
           distribution: 'temurin'
       - name: Download fat jar
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: evomaster.jar
           path: core/target
@@ -240,7 +277,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh WINDOWS
       - name: Upload installation file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
@@ -251,14 +288,15 @@ jobs:
     needs: full-build-base
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
           distribution: 'temurin'
       - name: Download fat jar
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: evomaster.jar
           path: core/target
@@ -266,7 +304,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh OSX
       - name: Upload installation file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
@@ -277,14 +315,15 @@ jobs:
     needs: full-build-base
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
           distribution: 'temurin'
       - name: Download fat jar
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: evomaster.jar
           path: core/target
@@ -295,7 +334,7 @@ jobs:
         shell: bash
         run: ls -l release
       - name: Upload installation file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evomaster.deb
 #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
@@ -308,11 +347,11 @@ jobs:
   test-utils-js:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
       - run: npm ci
         working-directory: ./test-utils/test-utils-js
       - run: npm test
@@ -322,9 +361,9 @@ jobs:
   test-utils-py:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - name: Install dependencies
@@ -345,14 +384,15 @@ jobs:
     needs: setup
     if: needs.setup.outputs.debug == 'false'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v5
         with:
+          distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
           distribution: 'temurin'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
