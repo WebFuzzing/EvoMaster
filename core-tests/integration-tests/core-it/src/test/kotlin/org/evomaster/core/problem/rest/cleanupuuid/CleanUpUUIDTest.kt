@@ -152,9 +152,111 @@ class CleanUpUUIDTest: IntegrationTestRestBase() {
         assertEquals(0, CleanUpUUIDApplication.numberExistingData())
     }
 
-    //TODO multi distinct POST
-    //TODO mixed POST PUT
-    //TODO mixed multi POST PUT repeated
+    @Test
+    fun testMultiPostDelete() {
+
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+
+        val pirTest = getPirToRest()
+
+        val post0 = pirTest.fromVerbPath("post", "/api/resources")!!
+        val post1 = pirTest.fromVerbPath("post", "/api/resources")!!
+        val post2 = pirTest.fromVerbPath("post", "/api/resources")!!
+
+        val x = createIndividual(listOf(post0,post1,post2), SampleType.RANDOM)
+        val resDel0 = x.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(201, resDel0.getStatusCode())
+        assertEquals(1, getReturnedSize(resDel0))
+        val resDel1 = x.evaluatedMainActions()[1].result as RestCallResult
+        assertEquals(201, resDel1.getStatusCode())
+        assertEquals(2, getReturnedSize(resDel1))
+        val resDel2 = x.evaluatedMainActions()[2].result as RestCallResult
+        assertEquals(201, resDel2.getStatusCode())
+        assertEquals(3, getReturnedSize(resDel2))
+
+
+        assertEquals(3, x.evaluatedMainActions().size)
+        assertEquals(3, x.individual.seeMainExecutableActions().size)
+        assertEquals(3, x.individual.seeCleanUpActions().size)
+
+        //delete should had been automatically added
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+    }
+
+    @Test
+    fun testPostPutDelete() {
+
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+
+        val pirTest = getPirToRest()
+
+        val id = UUID.randomUUID().toString()
+        val put = pirTest.fromVerbPath("put", "/api/resources/$id")!!
+        val post = pirTest.fromVerbPath("post", "/api/resources")!!
+
+        val x = createIndividual(listOf(put,post), SampleType.RANDOM)
+        val resDel = x.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(201, resDel.getStatusCode())
+        assertEquals(1, getReturnedSize(resDel))
+        val resDel1 = x.evaluatedMainActions()[1].result as RestCallResult
+        assertEquals(201, resDel1.getStatusCode())
+        assertEquals(2, getReturnedSize(resDel1))
+
+
+        assertEquals(2, x.evaluatedMainActions().size)
+        assertEquals(2, x.individual.seeMainExecutableActions().size)
+        assertEquals(2, x.individual.seeCleanUpActions().size)
+
+        //delete should had been automatically added
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+    }
+
+
+    @Test
+    fun testMultipleRepeatedPostPutDelete() {
+
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+
+        val pirTest = getPirToRest()
+
+        val id0 = UUID.randomUUID().toString()
+        val put0 = pirTest.fromVerbPath("put", "/api/resources/$id0")!!
+        val id1 = UUID.randomUUID().toString()
+        val put1 = pirTest.fromVerbPath("put", "/api/resources/$id1")!!
+        //this is using same id as first call, so replace, does not create new resource
+        val put2 = pirTest.fromVerbPath("put", "/api/resources/$id0")!!
+
+        val post0 = pirTest.fromVerbPath("post", "/api/resources")!!
+        val post1 = pirTest.fromVerbPath("post", "/api/resources")!!
+
+
+        val x = createIndividual(listOf(post0,put0,put1,put2,post1), SampleType.RANDOM)
+
+        val resDel0 = x.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(201, resDel0.getStatusCode())
+        assertEquals(1, getReturnedSize(resDel0))
+        val resDel1 = x.evaluatedMainActions()[1].result as RestCallResult
+        assertEquals(201, resDel1.getStatusCode())
+        assertEquals(2, getReturnedSize(resDel1))
+        val resDel2 = x.evaluatedMainActions()[2].result as RestCallResult
+        assertEquals(201, resDel2.getStatusCode())
+        assertEquals(3, getReturnedSize(resDel2))
+        val resDel3 = x.evaluatedMainActions()[3].result as RestCallResult
+        assertEquals(200, resDel3.getStatusCode())
+        assertEquals(3, getReturnedSize(resDel3))
+        val resDel4 = x.evaluatedMainActions()[4].result as RestCallResult
+        assertEquals(201, resDel4.getStatusCode())
+        assertEquals(4, getReturnedSize(resDel4))
+
+
+        assertEquals(5, x.evaluatedMainActions().size)
+        assertEquals(5, x.individual.seeMainExecutableActions().size)
+        assertEquals(4, x.individual.seeCleanUpActions().size)
+
+        //delete should had been automatically added
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+    }
+
+
     //TODO merge (various combinations)
-    //TODO mutation remove POST/PUT (should remove delete)
 }
