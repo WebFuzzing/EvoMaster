@@ -175,13 +175,11 @@ object SqlActionUtils {
 
             // Collect all unique Ids and their associated table IDs
             val previousSqlActions = actions.subList(0, i)
-            val previousPkMap = mutableMapOf<Long, TableId>()
-            previousSqlActions.forEach { action ->
-                action.seeTopGenes()
-                    .flatMap { it.flatView() }
-                    .filterIsInstance<SqlPrimaryKeyGene>()
-                    .forEach { previousPkMap[it.uniqueId] = it.tableName }
-            }
+            val previousPkMap = previousSqlActions
+                .flatMap { it.seeAllGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .associateBy ( { it.uniqueId} ,{ it.tableName })
+
 
             // Check each foreign key constraint defined in the table
             for (fkConstraint in currentAction.table.foreignKeys) {
