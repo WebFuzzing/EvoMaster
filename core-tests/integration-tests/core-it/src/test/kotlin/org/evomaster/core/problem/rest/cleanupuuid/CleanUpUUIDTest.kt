@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -258,5 +259,36 @@ class CleanUpUUIDTest: IntegrationTestRestBase() {
     }
 
 
-    //TODO merge (various combinations)
+    @Test
+    fun testMergePost() {
+
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+
+        val pirTest = getPirToRest()
+
+        val postx = pirTest.fromVerbPath("post", "/api/resources")!!
+        val x = createIndividual(listOf(postx), SampleType.RANDOM)
+        val resx = x.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(201, resx.getStatusCode())
+        assertEquals(1, getReturnedSize(resx))
+
+        val posty = pirTest.fromVerbPath("post", "/api/resources")!!
+        val y = createIndividual(listOf(posty), SampleType.RANDOM)
+        val resy = y.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(201, resy.getStatusCode())
+        assertEquals(1, getReturnedSize(resy))
+
+        val m = getBuilder().merge(x.individual,y.individual)
+        assertEquals(2, m.size())
+
+        val z = getFitnessFunction().calculateCoverage(m)!!
+
+        assertEquals(2, z.evaluatedMainActions().size)
+        assertEquals(2, z.individual.seeMainExecutableActions().size)
+        assertEquals(2, z.individual.seeCleanUpActions().size)
+
+        //delete should had been automatically added
+        assertEquals(0, CleanUpUUIDApplication.numberExistingData())
+    }
+
 }
