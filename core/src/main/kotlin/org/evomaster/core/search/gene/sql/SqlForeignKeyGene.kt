@@ -128,14 +128,18 @@ class SqlForeignKeyGene(
 
         // For composite FKs, we need to make sure all the genes point to the same PK.
         // We find other FK genes in the same action that point to the same target table AND are part of the same composite FK.
-        val otherFksInSameAction = allGenes.asSequence()
+        val otherFksInSqlAction = allGenes.asSequence()
                 .flatMap { it.flatView().asSequence() }
                 .filterIsInstance<SqlForeignKeyGene>()
-                .filter { it.uniqueId == uniqueId && it !== this && it.targetTable == targetTable }
-                .filter { otherSourceColumnsInCompositeFK.contains(it.name) }
-                .toList()
+                .filter { it.uniqueId == uniqueId }.toSet()
 
-        val alreadyBoundId = otherFksInSameAction.find { it.isBound() }?.uniqueIdOfPrimaryKey
+        val otherFKsInCompositeForeignKey = otherFksInSqlAction
+                .filter {  it.targetTable == targetTable }
+                .filter { otherSourceColumnsInCompositeFK.contains(it.name) }
+                .toSet()
+
+
+        val alreadyBoundId = otherFKsInCompositeForeignKey.find { it.isBound() }?.uniqueIdOfPrimaryKey
 
         if (alreadyBoundId != null) {
             uniqueIdOfPrimaryKey = alreadyBoundId
