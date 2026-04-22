@@ -23,13 +23,13 @@ class FlakinessDetectRest {
         private val START_UP_OBJECT_TAG = arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString()
     }
     @GetMapping(path = ["/objectFlag"])
-    open fun getEmptyFlag()  : ResponseEntity<String> {
+    fun getEmptyFlag()  : ResponseEntity<String> {
 
         return ResponseEntity.ok(START_UP_OBJECT_TAG)
     }
 
     @GetMapping(path = ["/stringuuid"])
-    open fun getStringuuid() : ResponseEntity<String>{
+    fun getStringuuid() : ResponseEntity<String>{
 
         return ResponseEntity.ok( UUID.randomUUID().toString())
     }
