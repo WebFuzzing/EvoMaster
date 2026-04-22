@@ -8,7 +8,8 @@ package org.evomaster.core.sql.schema
 data class ForeignKey(
 
         /**
-         * The columns in the source table that are referenced by this foreign key
+         * The columns in this (source) table that form the foreign key,
+         * referencing [targetColumns] in [targetTableId].
          */
         val sourceColumns: List<Column>,
 
