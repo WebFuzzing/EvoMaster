@@ -79,6 +79,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -102,6 +103,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -150,6 +152,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -171,6 +174,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -199,6 +203,7 @@ jobs:
 #        uses: actions/setup-java@v5
 #        with:
 #          java-version: ${{env.latest-jdk}}
+#          distribution: 'temurin'
 #      - name: Cache Maven packages
 #        uses: actions/cache@v3
 #        with:
@@ -225,6 +230,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
+          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
@@ -250,6 +256,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
+          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
@@ -275,6 +282,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
+          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
@@ -342,6 +350,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
