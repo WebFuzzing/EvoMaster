@@ -81,7 +81,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
-          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
@@ -106,7 +105,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
-          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
@@ -187,7 +185,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
-          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
@@ -210,7 +207,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
-          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
@@ -267,7 +263,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
-          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v8
         with:
@@ -294,7 +289,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
-          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v8
         with:
@@ -321,7 +315,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.release-jdk}}
-          distribution: 'temurin'
       - name: Download fat jar
         uses: actions/download-artifact@v8
         with:
@@ -390,7 +383,6 @@ jobs:
         with:
           distribution: ${{env.java-distribution}}
           java-version: ${{env.build-jdk}}
-          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
