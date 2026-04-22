@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest
 class ExtraQueryRest {
 
     @GetMapping("servlet")
-    open fun servlet(hr: HttpServletRequest): String {
+    fun servlet(hr: HttpServletRequest): String {
 
         val a = hr.parameterMap["a"]!![0]
 
@@ -22,7 +22,7 @@ class ExtraQueryRest {
     }
 
     @GetMapping("proxyprint")
-    open fun proxyprint(hr: HttpServletRequest): String {
+    fun proxyprint(hr: HttpServletRequest): String {
 
         val map = hr.parameterMap
         val payerEmail= map["payer_email"]!![0]
@@ -36,7 +36,7 @@ class ExtraQueryRest {
 
 
     @GetMapping("languagetool")
-    open fun languagetool(hr: HttpServletRequest): String {
+    fun languagetool(hr: HttpServletRequest): String {
 
         val query = hr.queryString
         val params = getParameterMap(query)
@@ -49,7 +49,7 @@ class ExtraQueryRest {
     }
 
     @PostMapping
-    open fun post(){
+    fun post(){
         //nothing needed to do, just make sure hidden filter is used
     }
 

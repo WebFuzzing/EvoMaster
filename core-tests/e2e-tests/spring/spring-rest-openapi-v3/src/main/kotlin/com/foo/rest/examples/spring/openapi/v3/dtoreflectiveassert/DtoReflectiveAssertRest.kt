@@ -10,62 +10,62 @@ import org.springframework.web.bind.annotation.RestController
 class DtoReflectiveAssertRest {
 
     @PostMapping(path = ["/allof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun allof(@RequestBody body: AllOfDto) : ResponseEntity<String>{
+    fun allof(@RequestBody body: AllOfDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/anyof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun anyof(@RequestBody body: AnyOfDto) : ResponseEntity<String>{
+    fun anyof(@RequestBody body: AnyOfDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/oneof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun oneof(@RequestBody body: OneOfDto) : ResponseEntity<String>{
+    fun oneof(@RequestBody body: OneOfDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/primitiveTypes"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun primitiveTypes(@RequestBody body: PrimitiveTypesDto) : ResponseEntity<String>{
+    fun primitiveTypes(@RequestBody body: PrimitiveTypesDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/parent"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun parent(@RequestBody body: ParentSchemaDto) : ResponseEntity<String>{
+    fun parent(@RequestBody body: ParentSchemaDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/items-inline"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun itemsInline(@RequestBody body: List<ItemsInlineDto>) : ResponseEntity<String>{
+    fun itemsInline(@RequestBody body: List<ItemsInlineDto>) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/items-components"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun itemsComponents(@RequestBody body: List<ParentSchemaDto>) : ResponseEntity<String>{
+    fun itemsComponents(@RequestBody body: List<ParentSchemaDto>) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/enum-examples"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun enumExamples(@RequestBody body: EnumExamplesDto) : ResponseEntity<String>{
+    fun enumExamples(@RequestBody body: EnumExamplesDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/enum-type"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun enumType(@RequestBody body: EnumTypeDto) : ResponseEntity<String>{
+    fun enumType(@RequestBody body: EnumTypeDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/additional-properties-inline"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun additionalPropertiesInline(@RequestBody body: AdditionalPropsInlineDto) : ResponseEntity<String>{
+    fun additionalPropertiesInline(@RequestBody body: AdditionalPropsInlineDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/additional-properties-ref"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun additionalPropertiesRef(@RequestBody body: AdditionalPropsRefDto) : ResponseEntity<String>{
+    fun additionalPropertiesRef(@RequestBody body: AdditionalPropsRefDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
     @PostMapping(path = ["/additional-properties-no-root"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun additionalPropertiesNoRoot(@RequestBody body: AdditionalPropsNoRootDto) : ResponseEntity<String>{
+    fun additionalPropertiesNoRoot(@RequestBody body: AdditionalPropsNoRootDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 

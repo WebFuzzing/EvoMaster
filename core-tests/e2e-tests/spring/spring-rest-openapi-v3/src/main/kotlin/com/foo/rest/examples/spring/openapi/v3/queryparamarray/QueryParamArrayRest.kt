@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class QueryParamArrayRest {
 
     @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-    open fun getInt(
+    fun getInt(
         @RequestParam("x", required = true) x : List<Int>
     ) : ResponseEntity<String> {
 

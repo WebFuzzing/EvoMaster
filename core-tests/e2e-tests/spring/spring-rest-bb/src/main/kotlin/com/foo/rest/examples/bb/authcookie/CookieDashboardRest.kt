@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse
 @RequestMapping(path = ["/"])
 class CookieDashboardRest {
     @GetMapping(path = ["/dashboard"])
-    open fun check() : ResponseEntity<String>{
+    fun check() : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 }

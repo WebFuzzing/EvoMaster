@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACZeroOrOneRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -34,7 +34,7 @@ class ACZeroOrOneRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACZeroOrOneDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACZeroOrOneDto) : ResponseEntity<String> {
 
         val pd = body.d == ACZeroOrOneEnum.HELLO
         val pf = body.f == ACZeroOrOneEnum.X
