@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - name: Download previous metrics artifact
-      uses: dawidd6/action-download-artifact@v9
+      uses: dawidd6/action-download-artifact@v20
       with:
         workflow: ${{ inputs.workflow-file }}
         workflow_conclusion: success
@@ -90,13 +90,20 @@ runs:
         } >> "$GITHUB_STEP_SUMMARY"
 
         if [ "${regression}" = "true" ]; then
-          exit 1
+          echo "METRICS_REGRESSION=true" >> "$GITHUB_ENV"
+        else
+          echo "METRICS_REGRESSION=false" >> "$GITHUB_ENV"
         fi
 
     - name: Upload current metrics artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
         path: build-metrics.env
         retention-days: ${{ inputs.retention-days }}
         if-no-files-found: error
+
+    - name: Mark metrics regression
+      if: ${{ env.METRICS_REGRESSION == 'true' }}
+      shell: bash
+      run: exit 1
