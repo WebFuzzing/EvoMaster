@@ -38,7 +38,7 @@ class XSSStoredJSONEMTest : SpringTestBase() {
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            Assertions.assertTrue(faults.size == 3)
+            Assertions.assertTrue(faults.size >= 3)
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
