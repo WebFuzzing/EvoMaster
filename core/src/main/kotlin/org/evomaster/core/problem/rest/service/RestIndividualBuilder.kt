@@ -98,12 +98,17 @@ class RestIndividualBuilder {
      */
     fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
 
-        val before = first.seeAllActions().size + second.seeAllActions().size
+        val before = first.seeAllActions().size + second.seeAllActions().size -
+            //cleanup actions are going to be removed, as anyway automatically added
+            //when evaluating fitness... and check for duplicates is done there
+             first.seeCleanUpActions().size - second.seeCleanUpActions().size
 
         val base = first.copy() as RestIndividual
         base.ensureFlattenedStructure()
+        base.removeAllCleanUp()
         val other = second.copy() as RestIndividual
         other.ensureFlattenedStructure()
+        other.removeAllCleanUp()
 
         /*
             we need to reset local ids in other, to avoid clashes with ids in base.

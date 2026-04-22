@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/checkout@v4
       # Build/test for JDK
       - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
@@ -147,7 +147,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
       - name: Cache Maven packages
@@ -168,7 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
       - name: Cache Maven packages
@@ -196,7 +196,7 @@ jobs:
 #    steps:
 #      - uses: actions/checkout@v4
 #      - name: Setup JDK ${{env.latest-jdk}}
-#        uses: actions/setup-java@v1
+#        uses: actions/setup-java@v5
 #        with:
 #          java-version: ${{env.latest-jdk}}
 #      - name: Cache Maven packages
@@ -222,7 +222,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
@@ -247,7 +247,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup JDK ${{env.release-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
@@ -272,7 +272,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
@@ -339,7 +339,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
