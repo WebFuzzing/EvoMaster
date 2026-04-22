@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACMixedRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: Int?,
         @RequestParam("y") y: Int?,
         @RequestParam("a" )a: Boolean?,

@@ -15,6 +15,7 @@ import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
@@ -98,17 +99,26 @@ class BlackBoxRestFitness : RestFitness() {
         individual.removeAllCleanUp()
         assert(individual.size() == size) // no side effects on main actions
 
-        val toHandle = RestIndividualSelectorUtils.findActionsInIndividual(
+        val createWithPost = RestIndividualSelectorUtils.findActionsInIndividual(
             individual,
             actionResults,
             verb = HttpVerb.POST,
             statusGroup = StatusGroup.G_2xx
-        ).plus(RestIndividualSelectorUtils.findActionsInIndividual(
+        )
+
+        val createWithPut = RestIndividualSelectorUtils.findActionsInIndividual(
             individual,
             actionResults,
             verb = HttpVerb.PUT,
             statusGroup = StatusGroup.G_2xx
-        ))
+        )
+
+        val toHandle = createWithPost.plus(
+            CollectionUtils.deDuplicate(createWithPut){x,y ->
+                //if more than 1 PUT resolve to same location, just need to handle it once
+                CreateResourceUtils.doesResolveToSamePath(x.action as RestCallAction, y.action as RestCallAction)
+            }
+        )
 
         if(toHandle.isEmpty()){
             return

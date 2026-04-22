@@ -13,7 +13,7 @@ class DoubleRest {
 
 
     @GetMapping(path = ["/{x}"])
-    open fun get( @PathVariable("x") x: Double) : ResponseEntity<String> {
+    fun get( @PathVariable("x") x: Double) : ResponseEntity<String> {
 
         if(x > 701.63 && x < 701.69){
             return ResponseEntity.ok("OK")
