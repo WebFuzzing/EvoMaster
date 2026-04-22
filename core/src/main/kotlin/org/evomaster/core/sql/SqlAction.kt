@@ -134,12 +134,12 @@ class SqlAction(
         return "SQL_Insert$c$s${t}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return genes
     }
 
 
-    fun seeGenesForInsertion(excludeColumn: List<String>) : List<out Gene>{
+    fun seeGenesForInsertion(excludeColumn: List<String>) : List<Gene>{
 
         if (representExistingData){
             throw IllegalStateException("This action is representExistingData, and seeGenesForInsertion is not applicable")

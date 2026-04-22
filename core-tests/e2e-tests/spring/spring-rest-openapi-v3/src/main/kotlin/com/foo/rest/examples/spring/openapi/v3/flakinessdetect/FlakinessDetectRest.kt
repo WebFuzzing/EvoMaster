@@ -22,19 +22,19 @@ class FlakinessDetectRest {
     }
 
     @GetMapping(path = ["/stringfirst/{n}"])
-    open fun getFirst( @PathVariable("n") n: Int) : ResponseEntity<String> {
+    fun getFirst( @PathVariable("n") n: Int) : ResponseEntity<String> {
 
         return ResponseEntity.ok(getPartialDate(n))
     }
 
     @GetMapping(path = ["/next/{n}"])
-    open fun getNext( @PathVariable("n") n: Int) : ResponseEntity<FlakinessDetectData> {
+    fun getNext( @PathVariable("n") n: Int) : ResponseEntity<FlakinessDetectData> {
 
         return ResponseEntity.ok(FlakinessDetectData(getPartialDate(n), randomInt(n)))
     }
 
     @GetMapping(path = ["/multiplelines/{num}"])
-    open fun getMultipleLines( @PathVariable("num") num: Int) : ResponseEntity<FlakinessDetectData> {
+    fun getMultipleLines( @PathVariable("num") num: Int) : ResponseEntity<FlakinessDetectData> {
 
         val num = max(2, randomInt(min(30 + abs(num), 100)))
         val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it:${randomInt(max(1000, num))}" }
