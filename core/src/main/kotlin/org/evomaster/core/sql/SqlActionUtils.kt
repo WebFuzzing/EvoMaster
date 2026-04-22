@@ -155,8 +155,7 @@ object SqlActionUtils {
 
         for (i in 0 until actions.size) {
             val currentAction = actions[i]
-            val currentFkGenes = currentAction.seeTopGenes()
-                .flatMap { it.flatView() }
+            val currentFkGenes = currentAction.seeAllGenes()
                 .filterIsInstance<SqlForeignKeyGene>()
 
             currentFkGenes.find { !it.nullable && !it.isBound() }
