@@ -146,6 +146,9 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         assertEquals(1, foreignKey.sourceColumns.size());
         assertTrue(foreignKey.sourceColumns.stream().anyMatch(c -> c.equalsIgnoreCase("barId")));
         assertTrue(foreignKey.targetTable.equalsIgnoreCase("Bar"));
+
+        assertEquals(1, foreignKey.targetColumns.size());
+        assertTrue(foreignKey.targetColumns.stream().anyMatch(c -> c.equalsIgnoreCase("id")));
     }
 
     @Test
