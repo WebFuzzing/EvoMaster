@@ -9,13 +9,22 @@ import java.util.*;
 
 import static org.evomaster.client.java.controller.dynamodb.DynamoDbReflectionHelper.invokeNoArg;
 
+/**
+ * Parser for DynamoDB {@code BatchGetItem} requests.
+ */
 public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public DynamoDbOperationNames apiMethodName() {
         return DynamoDbOperationNames.BATCH_GET_ITEM;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, QueryOperation> parseRequest(Object request) {
@@ -55,6 +64,12 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
         return result;
     }
 
+    /**
+     * Combines key conditions with OR semantics.
+     *
+     * @param conditions per-key conditions
+     * @return combined operation
+     */
     private QueryOperation combineWithOr(List<QueryOperation> conditions) {
         return combine(conditions, OrOperation::new);
     }

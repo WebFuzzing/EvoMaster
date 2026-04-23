@@ -171,6 +171,9 @@ public class DynamoDbExpressionParser {
         return new OrOperation(Arrays.asList(left, right));
     }
 
+    /**
+     * Visitor that converts grammar value nodes into Java values.
+     */
     private class ValueVisitor extends DynamoDbConditionExpressionBaseVisitor<Object> {
 
         /** {@inheritDoc} */
@@ -211,6 +214,9 @@ public class DynamoDbExpressionParser {
         }
     }
 
+    /**
+     * Visitor that converts grammar predicate nodes into query operations.
+     */
     private class OperationVisitor extends DynamoDbConditionExpressionBaseVisitor<QueryOperation> {
 
         /** {@inheritDoc} */

@@ -10,7 +10,18 @@ import java.util.Map;
  */
 public interface DynamoDbApiMethodParser {
 
+    /**
+     * Returns the DynamoDB API method handled by this parser.
+     *
+     * @return API method identifier
+     */
     DynamoDbOperationNames apiMethodName();
 
+    /**
+     * Parses one request object into table-specific query operations.
+     *
+     * @param request DynamoDB request object
+     * @return a map of parsed operations by table name
+     */
     Map<String, QueryOperation> parseRequest(Object request);
 }

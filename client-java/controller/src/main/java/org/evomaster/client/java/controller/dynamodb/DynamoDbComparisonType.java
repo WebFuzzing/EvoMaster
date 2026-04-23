@@ -13,6 +13,12 @@ public enum DynamoDbComparisonType {
     LESS_THAN,
     LESS_THAN_EQUALS;
 
+    /**
+     * Maps a DynamoDB comparator token to a normalized comparison type.
+     *
+     * @param token comparator token from parsed expression
+     * @return normalized comparison type
+     */
     public static DynamoDbComparisonType fromToken(String token) {
         if ("=".equals(token)) {
             return EQUALS;
@@ -35,6 +41,13 @@ public enum DynamoDbComparisonType {
         throw new IllegalArgumentException("Unsupported comparator token: " + token);
     }
 
+    /**
+     * Creates a comparison operation instance for this comparison type.
+     *
+     * @param fieldName compared field name/path
+     * @param value comparison value
+     * @return concrete comparison operation
+     */
     public ComparisonOperation<?> toOperation(String fieldName, Object value) {
         switch (this) {
             case EQUALS:

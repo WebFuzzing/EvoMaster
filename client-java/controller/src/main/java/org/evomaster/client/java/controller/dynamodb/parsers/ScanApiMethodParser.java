@@ -6,13 +6,22 @@ import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Parser for DynamoDB {@code Scan} requests.
+ */
 public class ScanApiMethodParser extends DynamoDbBaseApiMethodParser {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public DynamoDbOperationNames apiMethodName() {
         return DynamoDbOperationNames.SCAN;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, QueryOperation> parseRequest(Object request) {
         String tableName = readValidTableName(request);

@@ -15,6 +15,9 @@ public class DynamoDbRequestParser {
 
     private final Map<DynamoDbOperationNames, DynamoDbApiMethodParser> parsersByApiMethod;
 
+    /**
+     * Creates a request parser and registers supported DynamoDB API method parsers.
+     */
     public DynamoDbRequestParser() {
         Map<DynamoDbOperationNames, DynamoDbApiMethodParser> map = new LinkedHashMap<>();
         registerParser(map, new QueryApiMethodParser());
@@ -28,7 +31,7 @@ public class DynamoDbRequestParser {
     }
 
     /**
-     * Entry-point parser used by the handler.
+     * Entry-point parser used by a future handler.
      * It routes a DynamoDB SDK request to the API-method parser and returns
      * one parsed condition tree per table name.
      * Unsupported operations intentionally yield an empty map.
@@ -47,6 +50,12 @@ public class DynamoDbRequestParser {
         return parsed == null ? Collections.emptyMap() : parsed;
     }
 
+    /**
+     * Registers one API-method parser and rejects duplicates.
+     *
+     * @param parsersByApiMethod parser registry by API method name
+     * @param parser parser instance to register
+     */
     private static void registerParser(Map<DynamoDbOperationNames, DynamoDbApiMethodParser> parsersByApiMethod,
                                        DynamoDbApiMethodParser parser) {
         DynamoDbOperationNames apiMethodName = parser.apiMethodName();

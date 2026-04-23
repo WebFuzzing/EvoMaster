@@ -33,9 +33,18 @@ public final class DynamoDbAttributeValueHelper {
     private static final String SCIENTIFIC_NOTATION_E_LOWER = "e";
     private static final String SCIENTIFIC_NOTATION_E_UPPER = "E";
 
+    /**
+     * Utility class, no instances.
+     */
     private DynamoDbAttributeValueHelper() {
     }
 
+    /**
+     * Converts a map of DynamoDB attribute values into plain Java values.
+     *
+     * @param source input object expected to be a map
+     * @return normalized map or empty map when input is not a map
+     */
     public static Map<String, Object> toPlainMap(Object source) {
         if (!(source instanceof Map<?, ?>)) {
             return Collections.emptyMap();
@@ -50,6 +59,12 @@ public final class DynamoDbAttributeValueHelper {
         return result;
     }
 
+    /**
+     * Converts one DynamoDB attribute value object into a plain Java value.
+     *
+     * @param value attribute value object
+     * @return normalized Java value
+     */
     @SuppressWarnings("unchecked")
     public static Object toPlainValue(Object value) {
         if (value == null) {
@@ -119,6 +134,12 @@ public final class DynamoDbAttributeValueHelper {
         return value;
     }
 
+    /**
+     * Converts binary payloads into plain byte arrays when backed by ByteBuffer.
+     *
+     * @param value binary payload object
+     * @return byte array or original value when conversion is not needed
+     */
     private static Object toPlainBinary(Object value) {
         if (value instanceof ByteBuffer) {
             ByteBuffer bb = ((ByteBuffer) value).asReadOnlyBuffer();
@@ -130,6 +151,14 @@ public final class DynamoDbAttributeValueHelper {
         return value;
     }
 
+    /**
+     * Reads a reflected value only when its corresponding {@code hasX} accessor is true.
+     *
+     * @param target target object
+     * @param hasMethod presence-check method name
+     * @param valueMethod value accessor method name
+     * @return reflected value or {@code null}
+     */
     private static Object readIfPresent(Object target, String hasMethod, String valueMethod) {
         if (Boolean.TRUE.equals(DynamoDbReflectionHelper.invokeBooleanNoArg(target, hasMethod))) {
             return DynamoDbReflectionHelper.invokeNoArg(target, valueMethod);
@@ -137,6 +166,12 @@ public final class DynamoDbAttributeValueHelper {
         return null;
     }
 
+    /**
+     * Converts a collection of attribute values into plain Java values.
+     *
+     * @param source source collection
+     * @return normalized list
+     */
     private static List<Object> toPlainList(Collection<Object> source) {
         List<Object> converted = new ArrayList<>(source.size());
         for (Object element : source) {
@@ -145,6 +180,12 @@ public final class DynamoDbAttributeValueHelper {
         return converted;
     }
 
+    /**
+     * Converts a collection of numeric tokens into parsed numeric values.
+     *
+     * @param source source numeric collection
+     * @return normalized number set
+     */
     private static Set<Object> toNumberSet(Collection<?> source) {
         LinkedHashSet<Object> numbers = new LinkedHashSet<>();
         for (Object number : source) {
@@ -155,6 +196,12 @@ public final class DynamoDbAttributeValueHelper {
         return numbers;
     }
 
+    /**
+     * Converts a collection of binary payloads into plain binary values.
+     *
+     * @param source source binary collection
+     * @return normalized binary set
+     */
     private static Set<Object> toBinarySet(Collection<?> source) {
         LinkedHashSet<Object> binaries = new LinkedHashSet<>();
         for (Object binary : source) {
@@ -163,6 +210,12 @@ public final class DynamoDbAttributeValueHelper {
         return binaries;
     }
 
+    /**
+     * Parses a numeric token into {@link Long} or {@link Double}.
+     *
+     * @param text numeric token
+     * @return parsed number or {@link Double#NaN} when parsing fails
+     */
     private static Object parseNumber(String text) {
         try {
             if (text.contains(DECIMAL_SEPARATOR)
