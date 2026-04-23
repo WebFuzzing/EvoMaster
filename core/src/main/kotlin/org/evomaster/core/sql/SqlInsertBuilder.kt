@@ -1,6 +1,5 @@
 package org.evomaster.core.sql
 
-import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
@@ -179,32 +178,61 @@ class SqlInsertBuilder(
         tableToColumns: MutableMap<TableId, MutableSet<Column>>
     ): MutableSet<ForeignKey> {
         val fks = mutableSetOf<ForeignKey>()
-
+        val tableId = TableId.fromDto(databaseType, tableDto.id)
         for (fk in tableDto.foreignKeys) {
 
-            val tableKey = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
+            val targetTableId = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
 
-            if(tableKey == null || tableToColumns[tableKey] == null) {
+            if(targetTableId == null || tableToColumns[targetTableId] == null) {
                 throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
             }
-            val sourceColumns = mutableSetOf<Column>()
-
-            for (cname in fk.sourceColumns) {
-                // TODO: wrong check, as should be based on targetColumns, when we ll introduce them
-                // val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
-                //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
-
-                val id = TableId.fromDto(databaseType, tableDto.id)
-
-                val c = tableToColumns[id]!!.find { it.name.equals(cname, ignoreCase = true) }
-                    ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.id.name} does not have a column called $cname")
-
-                sourceColumns.add(c)
+            val sourceColumns = getSourceColumnsOfForeignKey(fk, tableToColumns, tableId)
+            val targetColumns = getTargetColumnsOfForeignKey(fk, tableToColumns, targetTableId)
+            if (sourceColumns.size!=targetColumns.size) {
+                throw IllegalArgumentException("Foreign key for table ${fk.targetTable} has ${sourceColumns.size} source columns but ${targetColumns.size} target columns")
             }
-
-            fks.add(ForeignKey(sourceColumns, tableKey))
+            val foreignKey = ForeignKey(sourceColumns, targetTableId, targetColumns)
+            fks.add(foreignKey)
         }
         return fks
+    }
+
+    private fun getSourceColumnsOfForeignKey(
+        fk: ForeignKeyDto,
+        tableToColumns: MutableMap<TableId, MutableSet<Column>>,
+        tableId: TableId
+    ): MutableList<Column> {
+        val sourceColumns = mutableListOf<Column>()
+        for (sourceColumnName in fk.sourceColumns) {
+
+            val c = tableToColumns[tableId]!!.find { it.name.equals(sourceColumnName, ignoreCase = true) }
+                ?: throw IllegalArgumentException("Issue in foreign key: table ${tableId.name} does not have a column called $sourceColumnName")
+
+            sourceColumns.add(c)
+        }
+        return sourceColumns
+    }
+
+    private fun getTargetColumnsOfForeignKey(
+        foreignKeyDto: ForeignKeyDto,
+        tableToColumns: MutableMap<TableId, MutableSet<Column>>,
+        targetTableId: TableId,
+    ): MutableList<Column> {
+        val targetColumns = mutableListOf<Column>()
+        if (foreignKeyDto.targetColumns.isEmpty()) {
+            val targetTablePrimaryKeys = tableToColumns[targetTableId]!!.filter { it.primaryKey }
+            if (targetTablePrimaryKeys.isEmpty()) {
+                throw IllegalArgumentException("Foreign key for table ${foreignKeyDto.targetTable} has no specified target columns and no primary key found")
+            }
+            targetColumns.addAll(targetTablePrimaryKeys)
+        } else {
+            for (targetColumnName in foreignKeyDto.targetColumns) {
+                val targetColumn = tableToColumns[targetTableId]!!.find { it.name.equals(targetColumnName, ignoreCase = true) }
+                    ?: throw IllegalArgumentException("Issue in foreign key: table ${foreignKeyDto.targetTable} does not have a column called $targetColumnName")
+                targetColumns.add(targetColumn)
+            }
+        }
+        return targetColumns
     }
 
     private fun generateColumnsFrom(
