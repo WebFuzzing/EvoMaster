@@ -159,6 +159,7 @@
         <org.springframework.data.version>2.6.6</org.springframework.data.version>
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
+        <software.amazon.awssdk.dynamodb.version>2.25.10</software.amazon.awssdk.dynamodb.version>
     </properties>
 
 
@@ -604,6 +605,13 @@
                 <groupId>io.lettuce</groupId>
                 <artifactId>lettuce-core</artifactId>
                 <version>${io.lettuce.core.version}</version>
+            <!-- Need to exclude Netty from this package to avoid a clash of versions with AWS SDK -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Redis/Jedis -->
@@ -624,6 +632,20 @@
                 <groupId>org.opensearch</groupId>
                 <artifactId>opensearch-testcontainers</artifactId>
                 <version>${org.opensearch.testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--   DynamoDB  -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>dynamodb</artifactId>
+                <version>${software.amazon.awssdk.dynamodb.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>netty-nio-client</artifactId>
+                <version>${software.amazon.awssdk.dynamodb.version}</version>
                 <scope>test</scope>
             </dependency>
 

@@ -36,6 +36,8 @@ public class ReplacementList {
                     new DateFormatClassReplacement(),
                     new DocumentClassReplacement(),
                     new DoubleClassReplacement(),
+                    new DynamoDbClassReplacement.Sync(),
+                    new DynamoDbClassReplacement.Async(),
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
                     new GsonClassReplacement(),
