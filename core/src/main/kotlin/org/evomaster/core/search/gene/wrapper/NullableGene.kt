@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.wrapper
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
 import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.sql.NullableImpact
@@ -17,7 +18,7 @@ class NullableGene(name: String,
                     gene: Gene,
                     isActive: Boolean = true,
                    var nullLabel: String = "null"
-) : SelectableWrapperGene(name, gene, isActive), WrapperGene {
+) : SelectableWrapperGene(name, gene, isActive), WrapperGene, PhenotypeDormantGene {
 
 
 
@@ -126,12 +127,4 @@ class NullableGene(name: String,
                 && this.nullLabel == other.nullLabel
     }
 
-
-
-
-
-    override fun isChildUsed(child: Gene) : Boolean {
-        verifyChild(child)
-        return isActive
-    }
 }

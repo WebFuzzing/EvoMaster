@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACBasicRest {
 
     @GetMapping
-    open fun getData(
+    fun getData(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?

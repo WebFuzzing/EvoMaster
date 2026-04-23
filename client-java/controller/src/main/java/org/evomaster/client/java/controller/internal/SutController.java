@@ -17,10 +17,7 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
@@ -30,6 +27,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
@@ -299,6 +297,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    @Override
+    public RedisInsertionResultsDto execInsertionsIntoRedisDatabase(
+            List<RedisInsertionDto> insertions) {
+
+        ReflectionBasedRedisClient connection = getRedisConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to Redis");
+        }
+        return RedisCommandExecutor.executeInsert(connection, insertions);
+    }
+
     public int getActionIndex(){
         return actionIndex;
     }
@@ -379,6 +388,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void resetExtraHeuristics() {
         sqlHandler.reset();
         mongoHandler.reset();
+        redisHandler.reset();
     }
 
     /**
@@ -548,7 +558,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeRedisHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
-        if(redisHandler.isCalculateHeuristics()){
+        if (redisHandler.isCalculateHeuristics()) {
             if(!additionalInfoList.isEmpty()) {
                 AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
                 last.getRedisCommandData().forEach(it -> {
@@ -572,6 +582,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     false
                          ))
                     .forEach(h -> dto.heuristics.add(h));
+        }
+
+        if (redisHandler.isExtractRedisExecution()) {
+            dto.redisExecutionsDto = redisHandler.getExecutionDto();
         }
     }
 
@@ -1608,6 +1622,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitSql(boolean executingInitSql);
 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
+
+    public abstract void setExecutingInitRedis(boolean executingInitRedis);
 
     public abstract void setExecutingAction(boolean executingAction);
 

@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest
 class GsonRest {
 
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun post(request: HttpServletRequest) : ResponseEntity<String> {
+    fun post(request: HttpServletRequest) : ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
 

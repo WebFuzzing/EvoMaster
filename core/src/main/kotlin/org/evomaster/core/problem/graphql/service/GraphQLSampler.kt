@@ -23,7 +23,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
 
     @PostConstruct
-    open fun initialize() {
+    fun initialize() {
 
         log.debug("Initializing {}", GraphQLSampler::class.simpleName)
 

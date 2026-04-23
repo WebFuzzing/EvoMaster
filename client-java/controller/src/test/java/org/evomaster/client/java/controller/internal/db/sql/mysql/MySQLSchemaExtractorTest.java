@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.sql.mysql;
 
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.SqlScriptRunner;

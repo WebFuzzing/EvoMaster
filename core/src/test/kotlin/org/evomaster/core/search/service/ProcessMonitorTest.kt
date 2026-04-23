@@ -18,6 +18,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.monitor.SearchOverall
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
@@ -84,7 +85,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
         processMonitor.record(added, true, eval)
@@ -109,7 +110,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
 
@@ -138,7 +139,7 @@ class ProcessMonitorTest{
 
         val eval = ff.calculateCoverage(individual, modifiedSpec = null)!!
         processMonitor.eval = eval
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val added = archive.addIfNeeded(eval)
 
@@ -157,7 +158,7 @@ class ProcessMonitorTest{
                 thus, currently, the serialized process data could only contain fitness info and impact info
              */
 //            assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
-            assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
+            assertEquals(evalIndividual.fitness.numberOfCoveredTargets(), evalIndividual.fitness.numberOfCoveredTargets())
             evalIndividual.fitness.getViewOfData().forEach { (t, u) ->
                 assertEquals(evalIndividual.fitness.getHeuristic(t) , u.score)
             }
@@ -186,7 +187,7 @@ class ProcessMonitorTest{
         a.setValue(0, 1.0)
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
         assert(addedA)
@@ -198,7 +199,7 @@ class ProcessMonitorTest{
         b.setValue(1, 1.0)
         val evalB = ff.calculateCoverage(b, modifiedSpec = null)!!
         processMonitor.eval = evalB
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedB = archive.addIfNeeded(evalB)
 
@@ -249,7 +250,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
-        epc.startSearch()
+        epc.markStartingSearch()
         mio.search()
 
 
@@ -276,7 +277,7 @@ class ProcessMonitorTest{
 
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
 
@@ -310,7 +311,7 @@ class ProcessMonitorTest{
 
         val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
-        processMonitor.newActionEvaluated()
+        processMonitor.newActionsEvaluated(1)
 
         val addedA = archive.addIfNeeded(evalA)
 

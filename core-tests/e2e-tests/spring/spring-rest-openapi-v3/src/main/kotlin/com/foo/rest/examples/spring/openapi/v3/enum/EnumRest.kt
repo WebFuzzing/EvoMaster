@@ -10,7 +10,7 @@ class EnumRest {
 
 
     @GetMapping
-    open fun get(@RequestParam x: String?, @RequestParam y: Int?) : ResponseEntity<String> {
+    fun get(@RequestParam x: String?, @RequestParam y: Int?) : ResponseEntity<String> {
 
         if(x == "foo" && y == 1234567){
             return ResponseEntity.ok("OK")
@@ -20,7 +20,7 @@ class EnumRest {
     }
 
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun post(@RequestBody dto: EnumDto) : ResponseEntity<String>{
+    fun post(@RequestBody dto: EnumDto) : ResponseEntity<String>{
 
         if(dto.values[0] == "foo"){
             return ResponseEntity.ok("OK")

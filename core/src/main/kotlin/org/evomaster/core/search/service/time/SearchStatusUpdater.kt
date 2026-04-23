@@ -1,18 +1,20 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.time
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.time.SearchListener
+import java.io.PrintStream
 import java.nio.charset.Charset
 import javax.annotation.PostConstruct
-import java.io.PrintStream
 
-
-
-
-class SearchStatusUpdater : SearchListener{
+class SearchStatusUpdater : SearchListener {
 
     @Inject
     private lateinit var time: SearchTimeController
+
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
 
     @Inject
     private lateinit var config: EMConfig
@@ -20,7 +22,6 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var archive: Archive<*>
 
-    var enabled = true
 
     companion object{
         fun eraseLine(){
@@ -55,7 +56,6 @@ class SearchStatusUpdater : SearchListener{
 
     private val r = String(byteArrayOf(0xF0.toByte(), 0x9F.toByte(), 0x8C.toByte(), 0x88.toByte()), utf8)
 
-    private var first = true
 
     /*
        Make sure that, when we print, we are using UTF-8 and not the default encoding
@@ -69,59 +69,81 @@ class SearchStatusUpdater : SearchListener{
         }
     }
 
-    override fun newActionEvaluated() {
+    override fun newActionsEvaluated(n: Int) {
 
-        if(!enabled){
-            return
+        when {
+            epc.isInSearch() -> printForSearch()
+            //TODO else for other phases
+            //TODO could save n in epc, and show progress bar with its value
         }
+    }
 
+    fun finished() {
+        if(config.showProgress) {
+            lastPrintingForSearch()
+        }
+    }
+
+
+    private fun printForSearch() {
         val percentageInt = (time.percentageUsedBudget() * 100).toInt()
         val current = String.format("%.3f", time.percentageUsedBudget() * 100)
-
-        if(first){
-            println()
-            println()
-            if(config.e_u1f984){
-                println()
-            }
-            first = false
-        }
 
         val delta = System.currentTimeMillis() - lastUpdateMS
 
         //writing on console is I/O, which is expensive. So, can't do it too often
-        if(current != passed && delta > 500){
-            lastUpdateMS += delta
-            passed = current
+        if (current == passed || delta <= 500) {
+            return
+        }
 
-            if(percentageInt - lastCoverageComputation > 0){
-                lastCoverageComputation = percentageInt
-                //this is not too expensive, but still computation. so we do it only at each 1%
-                coverage = archive.numberOfCoveredTargets()
-            }
+        lastUpdateMS += delta
+        passed = current
 
-            if(config.e_u1f984){
-                upLineAndErase()
-            }
+        if (percentageInt - lastCoverageComputation > 0) {
+            lastCoverageComputation = percentageInt
+            //this is not too expensive, but still computation. so we do it only at each 1%
+            coverage = archive.numberOfCoveredTargets()
+        }
 
-            val avgTimeAndSize = time.computeExecutedIndividualTimeStatistics()
-            val avgTime = String.format("%.1f", avgTimeAndSize.first)
-            val avgSize = String.format("%.1f",avgTimeAndSize.second)
+        doActualPrintingForSearch()
 
-            val sinceLast = time.getSecondsSinceLastImprovement()
+        if (config.e_u1f984) {
+            moveUp()
+        }
+        //this is based on how many line we write
+        moveUp()
+        moveUp()
+        moveUp()
+        moveUp()
+    }
 
-            upLineAndErase()
-            upLineAndErase()
-            println("* Consumed search budget: $passed%")
-            println("* Covered targets: $coverage;" +
-                    " time per test: ${avgTime}ms ($avgSize actions);" +
-                    " since last improvement: ${sinceLast}s"
-            )
+    private fun lastPrintingForSearch() {
+        coverage = archive.numberOfCoveredTargets()
+        doActualPrintingForSearch()
+    }
 
-            if(config.e_u1f984){
-                updateExtra()
-                out.println(extra)
-            }
+    private fun doActualPrintingForSearch() {
+        val avgTimeAndSize = time.computeExecutedIndividualTimeStatistics()
+        val avgTime = String.format("%.1f", avgTimeAndSize.first)
+        val avgSize = String.format("%.1f", avgTimeAndSize.second)
+
+        val sinceLast = time.getSecondsSinceLastImprovement()
+
+        //Lines here should be "short"... otherwise risks that shorter overwrites will not fully replace them.
+        //If something gets too long, better to split in new line.
+        eraseLine()
+        println("* Consumed search budget: $passed%")
+        eraseLine()
+        println("* Covered targets: $coverage")
+        eraseLine()
+        println("* Time per test: ${avgTime}ms ($avgSize actions)")
+        eraseLine()
+        println("* Time since last improvement: ${sinceLast}s")
+
+        if (config.e_u1f984) {
+            updateExtra()
+            eraseLine()
+            out.println(extra)
         }
     }
 

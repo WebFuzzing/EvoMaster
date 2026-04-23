@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACAllOrNoneRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -32,7 +32,7 @@ class ACAllOrNoneRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACAllOrNoneDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACAllOrNoneDto) : ResponseEntity<String> {
 
         val pa = body.a == false
         val pd = body.d == ACAllOrNoneEnum.HELLO

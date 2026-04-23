@@ -41,6 +41,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -69,11 +70,6 @@ import kotlin.math.max
 object RestActionBuilderV3 {
 
     private val log: Logger = LoggerFactory.getLogger(RestActionBuilderV3::class.java)
-
-    /**
-     * Name given to enum genes representing data examples coming from OpenAPI schema
-     */
-    const val EXAMPLES_NAME = "SCHEMA_EXAMPLES"
 
     private val refCache = mutableMapOf<String, Gene>()
 
@@ -1563,7 +1559,7 @@ object RestActionBuilderV3 {
         val n = examples.map{it.second} // names
 
         val exampleGene = if(examples.isNotEmpty()){
-            ChoiceGene(EXAMPLES_NAME, v, valueNames = n)
+            ChoiceGene(UserExamplesGene.EXAMPLES_NAME, v, valueNames = n)
         } else null
         val defaultGene = if(defaultValue != null){
             duplicateObjectWithExampleFields("default", mainGene, defaultValue)
@@ -1769,12 +1765,12 @@ object RestActionBuilderV3 {
         val exampleGene = if(examples.isNotEmpty()){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                    -> EnumGene(EXAMPLES_NAME, v,0,true, n)
+                    -> EnumGene(UserExamplesGene.EXAMPLES_NAME, v,0,true, n)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                    -> EnumGene<String>(EXAMPLES_NAME, v,0,false, n)
+                    -> EnumGene<String>(UserExamplesGene.EXAMPLES_NAME, v,0,false, n)
 
                 //TODO Arrays
                 else -> {

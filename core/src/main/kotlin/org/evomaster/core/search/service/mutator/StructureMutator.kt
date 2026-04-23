@@ -7,7 +7,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.TrackOperator
 
 /**

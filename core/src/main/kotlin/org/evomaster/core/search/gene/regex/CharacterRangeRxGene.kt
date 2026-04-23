@@ -10,55 +10,35 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.MultiCharacterRange
 import org.slf4j.LoggerFactory
-import kotlin.math.max
-import kotlin.math.min
 
-
-class CharacterRangeRxGene(
-        val negated: Boolean,
-        ranges: List<Pair<Char,Char>>
+class CharacterRangeRxGene private constructor(
+    /**
+     * this represents the valid ranges for a character class, removing overlaps and applying negation
+     */
+    val validRanges: MultiCharacterRange
 ) : RxAtom, SimpleGene("."){
+
+    constructor(negated: Boolean, ranges: List<CharacterRange>) : this(MultiCharacterRange(negated, ranges))
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    init {
-        //TODO this will need to be supported
-        if(negated){
-            throw IllegalArgumentException("Negated ranges are not supported yet")
-        }
-
-        if(ranges.isEmpty()){
-            throw IllegalArgumentException("No defined ranges")
-        }
-
-        ranges.forEach {
-            if(it.first.code > it.second.code){
-                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.first}' is greater than '${it.second}'")
-            }
-        }
-    }
-
-    var value : Char = ranges[0].first
-
-    /**
-     * As inputs might be unsorted, we make sure first <= second
-     */
-    val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
+    var value : Char = validRanges[0].start
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        //TODO negated
-        return ranges.any { value.code >= it.first.code && value.code <= it.second.code }
+        return validRanges.any { value in it }
     }
 
     override fun isMutable(): Boolean {
-        return ranges.size > 1 || ranges[0].let { it.first != it.second }
+        return validRanges.size > 1 || validRanges[0].size > 1
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterRangeRxGene(negated, ranges)
+        val copy = CharacterRangeRxGene(validRanges)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
         return copy
@@ -73,21 +53,20 @@ class CharacterRangeRxGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        /*
-            TODO current is very simple, biased implementation.
-            Should rather have uniform sampling among all valid chars
-         */
-        val range = randomness.choose(ranges)
+        val previous = value
 
-        value = randomness.nextChar(range.first, range.second)
+        value = validRanges.sample(randomness)
+
+        if(tryToForceNewValue && previous == value){
+            randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-
         var t = 0
-        for(i in 0 until ranges.size){
-            val p = ranges[i]
-            if(value >= p.first && value <= p.second){
+        for(i in 0 until validRanges.size){
+            val p = validRanges[i]
+            if(value in p){
                 t = i
                 break
             }
@@ -95,18 +74,18 @@ class CharacterRangeRxGene(
 
         val delta = randomness.choose(listOf(1,-1))
 
-        if(value + delta > ranges[t].second){
+        if(value + delta > validRanges[t].end){
             /*
                 going over current max range. check next range
                 and take its minimum
              */
-            val next = (t+1) % ranges.size
-            value = ranges[next].first
+            val next = (t+1) % validRanges.size
+            value = validRanges[next].start
 
-        } else if(value + delta < ranges[t].first){
+        } else if(value + delta < validRanges[t].start){
 
-            val previous = (t - 1 + ranges.size) % ranges.size
-            value = ranges[previous].second
+            val previous = (t - 1 + validRanges.size) % validRanges.size
+            value = validRanges[previous].end
 
         } else {
             value += delta

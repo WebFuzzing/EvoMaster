@@ -27,7 +27,7 @@ class RedisHandlerIntegrationTest {
 
         port = redisContainer.getMappedPort(REDIS_PORT);
 
-        client = new ReflectionBasedRedisClient("localhost", port);
+        client = new ReflectionBasedRedisClient("localhost", port, 0);
     }
 
     @BeforeEach

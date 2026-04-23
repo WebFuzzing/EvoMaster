@@ -18,6 +18,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
+import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -81,9 +82,15 @@ class RestResourceCalls(
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<SqlAction>()
         }
+
     private val mongoDbActions: List<MongoDbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<MongoDbAction>()
+        }
+
+    private val redisDbActions: List<RedisDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<RedisDbAction>()
         }
 
     private val dnsActions: List<HostnameResolutionAction>
@@ -187,18 +194,19 @@ class RestResourceCalls(
     /**
      * @return actions with specified action [filter]
      */
-    fun seeActions(filter: ActionFilter): List<out Action> {
+    fun seeActions(filter: ActionFilter): List<Action> {
         return when (filter) {
             ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
-            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(dnsActions)
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dnsActions)
             ActionFilter.ONLY_SQL -> sqlActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL, ActionFilter.NO_DB -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
             ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
             ActionFilter.NO_EXTERNAL_SERVICE -> sqlActions.plus(mainActions)
             ActionFilter.ONLY_MONGO -> mongoDbActions
+            ActionFilter.ONLY_REDIS -> redisDbActions
             ActionFilter.ONLY_DNS -> dnsActions
-            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions).plus(redisDbActions)
             ActionFilter.ONLY_SCHEDULE_TASK -> throw IllegalStateException("schedule task is not support in resource-based solution for REST Problem")
         }
     }
@@ -246,7 +254,7 @@ class RestResourceCalls(
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
-    private fun seeMutableSQLGenes(): List<out Gene> = getResourceNode()
+    private fun seeMutableSQLGenes(): List<Gene> = getResourceNode()
         .getMutableSQLGenes(sqlActions, getRestTemplate(), is2POST)
 
 

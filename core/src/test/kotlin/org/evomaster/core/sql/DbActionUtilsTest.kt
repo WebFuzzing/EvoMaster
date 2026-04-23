@@ -416,7 +416,7 @@ class DbActionUtilsTest {
                 unique = false,
                 databaseType = DatabaseType.H2)
 
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = table0.id)
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = table0.id, targetColumns = listOf(idColumn))
 
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
@@ -428,7 +428,7 @@ class DbActionUtilsTest {
         val action0 = SqlAction(table0, setOf(idColumn), insertId0, listOf(pkGeneTable0))
 
         val insertId1 = 1002L
-        val fkGene = SqlForeignKeyGene("Id", insertId1, TableId("Table0"), false, insertId0)
+        val fkGene = SqlForeignKeyGene("Id", insertId1, TableId("Table0"), "Id", false, insertId0)
         val pkGeneTable1 = SqlPrimaryKeyGene("Id", "Table1", fkGene, insertId1)
 
         val action1 = SqlAction(table1, setOf(fkColumn), insertId1, listOf(pkGeneTable1))
@@ -460,7 +460,7 @@ class DbActionUtilsTest {
                 unique = false,
                 databaseType = DatabaseType.H2)
 
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = table0.id)
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = table0.id, targetColumns = listOf(idColumn))
 
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
@@ -471,7 +471,7 @@ class DbActionUtilsTest {
         val action0 = SqlAction(table0, setOf(idColumn), insertId0, listOf(pkGeneTable0))
 
         val insertId1 = 1002L
-        val fkGene = SqlForeignKeyGene("Id", insertId1, TableId("Table0"), false, insertId0)
+        val fkGene = SqlForeignKeyGene("Id", insertId1, TableId("Table0"), "Id", false, insertId0)
         val pkGeneTable1 = SqlPrimaryKeyGene("Id", "Table1", fkGene, insertId1)
 
         val action1 = SqlAction(table1, setOf(fkColumn), insertId1, listOf(pkGeneTable1))
@@ -502,7 +502,7 @@ class DbActionUtilsTest {
                 unique = false,
                 databaseType = DatabaseType.H2)
 
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = table0.id)
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = table0.id, targetColumns = listOf(idColumn))
 
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
@@ -521,14 +521,14 @@ class DbActionUtilsTest {
 
         //PK on table1, with FK to table0 first PK
         val insertId2 = 1002L
-        val fkGene0 = SqlForeignKeyGene("Id", insertId2, TableId("Table0"), false, insertId0)
+        val fkGene0 = SqlForeignKeyGene("Id", insertId2, TableId("Table0"), "Id", false, insertId0)
         val pkGene2 = SqlPrimaryKeyGene("Id", "Table1", fkGene0, insertId2)
         val action2 = SqlAction(table1, setOf(fkColumn), insertId2, listOf(pkGene2))
 
         //another PK on table1, with FK to same first PK in table0
         //but this is technically invalid, as same column for FK is used as PK, so we have a duplicated PK in table1
         val insertId3 = 1003L
-        val fkGene1 = SqlForeignKeyGene("Id", insertId3, TableId("Table0"), false, insertId0)
+        val fkGene1 = SqlForeignKeyGene("Id", insertId3, TableId("Table0"), "Id", false, insertId0)
         val pkGene3 = SqlPrimaryKeyGene("Id", "Table1", fkGene1, insertId3)
         val action3 = SqlAction(table1, setOf(fkColumn), insertId3, listOf(pkGene3))
 
@@ -562,7 +562,7 @@ class DbActionUtilsTest {
             autoIncrement = false,
             unique = false,
             databaseType = DatabaseType.H2)
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = table0.id)
+        val foreignKey = ForeignKey(sourceColumns = listOf(fkColumn), targetTableId = table0.id, targetColumns = listOf(idColumn))
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
         val set = listOf(table0, table0, table1)
