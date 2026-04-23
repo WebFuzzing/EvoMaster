@@ -333,9 +333,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.addSingleCommentLine(statusAssert)
                 }
                 lines.addEmpty()
-                lines.add("const body = await $responseVariableName.json();")
-                lines.add("  = body;")
-                lines.addEmpty()
             }
 
             format.isJavaScript() && !format.isPlaywright() -> {
@@ -551,18 +548,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.indent(2)
                 if (format.isPlaywright()) {
                     handleVerbEndpoint(baseUrlOfSut, call, lines)
+                    lines.replaceInCurrent(Regex("\\)$"), "")
                     lines.append(", {")
                     lines.addEmpty()
                     lines.indented {
                         lines.add("headers: {")
                         lines.indented {
-                            lines.add("${openAcceptHeader()}${getAcceptHeader(call, res)}")
+                            lines.add(getAcceptHeader(call, res))
                             handleHeaders(call, lines)
                         }
                         lines.add("},")
                         handleBody(call, lines, dtoVar)
                     }
-                    lines.add("}")
+                    lines.add("})")
                 } else {
                     //in SuperAgent, verb must be first
                     handleVerbEndpoint(baseUrlOfSut, call, lines)

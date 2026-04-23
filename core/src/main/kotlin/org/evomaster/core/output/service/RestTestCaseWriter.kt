@@ -221,16 +221,18 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val call = _call as RestCallAction
         val verb = call.verb.name.lowercase()
 
-        if (format.isCsharp()) {
-            lines.append(".${StringUtils.capitalization(verb)}Async(")
-        } else if (format.isPlaywright()) {
-            lines.add("request.$verb(")
-        } else {
-            if (verb == "trace" && format.isJavaOrKotlin()) {
-                //currently, RestAssured does not have a trace() method
-                lines.add(".request(io.restassured.http.Method.TRACE, ")
-            } else {
-                lines.add(".$verb(")
+        when {
+            format.isPlaywright() -> {
+                lines.add("request.$verb(")
+            }
+            format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
+            else -> {
+                if (verb == "trace" && format.isJavaOrKotlin()) {
+                    //currently, RestAssured does not have a trace() method
+                    lines.add(".request(io.restassured.http.Method.TRACE, ")
+                } else {
+                    lines.add(".$verb(")
+                }
             }
         }
 

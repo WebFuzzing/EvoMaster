@@ -787,7 +787,7 @@ class TestSuiteWriter {
                 lines.add("fun initClass()")
             }
             format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll( async () =>")
-            format.isJavaScript() && format.isPlaywright() -> lines.add("test.beforeAll(async ({ request }) =>")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("(async ({ request }) =>")
         }
 
         lines.block {
