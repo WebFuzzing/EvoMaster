@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Info related to DynamoDB command execution.
@@ -18,7 +19,7 @@ public class DynamoDbCommand implements Serializable {
     /**
      * Name of the operation that was executed
      */
-    private final String operationName;
+    private final DynamoDbOperationNames operationName;
     /**
      * Actual executed operation
      */
@@ -32,11 +33,11 @@ public class DynamoDbCommand implements Serializable {
      */
     private final long executionTime;
 
-    public DynamoDbCommand(List<String> tableNames, String operationName, Object request, boolean successfullyExecuted, long executionTime) {
+    public DynamoDbCommand(List<String> tableNames, DynamoDbOperationNames operationName, Object request, boolean successfullyExecuted, long executionTime) {
         this.tableNames = tableNames == null
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(tableNames));
-        this.operationName = operationName;
+        this.operationName = Objects.requireNonNull(operationName, "operationName cannot be null");
         this.request = request;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
@@ -46,7 +47,7 @@ public class DynamoDbCommand implements Serializable {
         return tableNames;
     }
 
-    public String getOperationName() {
+    public DynamoDbOperationNames getOperationName() {
         return operationName;
     }
 

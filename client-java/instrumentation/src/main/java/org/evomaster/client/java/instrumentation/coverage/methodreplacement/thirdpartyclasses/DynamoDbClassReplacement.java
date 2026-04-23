@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
@@ -26,14 +27,6 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
  */
 public class DynamoDbClassReplacement {
 
-    //DynamoDB API method names do not change them.
-    public static final String METHOD_GET_ITEM = "GetItem";
-    public static final String METHOD_BATCH_GET_ITEM = "BatchGetItem";
-    public static final String METHOD_PUT_ITEM = "PutItem";
-    public static final String METHOD_UPDATE_ITEM = "UpdateItem";
-    public static final String METHOD_DELETE_ITEM = "DeleteItem";
-    public static final String METHOD_QUERY = "Query";
-    public static final String METHOD_SCAN = "Scan";
     public static final String METHOD_TABLE_NAME = "tableName";
     public static final String METHOD_REQUEST_ITEMS = "requestItems";
 
@@ -54,37 +47,37 @@ public class DynamoDbClassReplacement {
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_GET_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.GetItemResponse")
         public static Object getItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.GetItemRequest") Object request) {
-            return handle(client, DDB_GET_ITEM, request, METHOD_GET_ITEM);
+            return handle(client, DDB_GET_ITEM, request, DynamoDbOperationNames.GET_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_BATCH_GET_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse")
         public static Object batchGetItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest") Object request) {
-            return handle(client, DDB_BATCH_GET_ITEM, request, METHOD_BATCH_GET_ITEM);
+            return handle(client, DDB_BATCH_GET_ITEM, request, DynamoDbOperationNames.BATCH_GET_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_PUT_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.PutItemResponse")
         public static Object putItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.PutItemRequest") Object request) {
-            return handle(client, DDB_PUT_ITEM, request, METHOD_PUT_ITEM);
+            return handle(client, DDB_PUT_ITEM, request, DynamoDbOperationNames.PUT_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_UPDATE_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse")
         public static Object updateItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest") Object request) {
-            return handle(client, DDB_UPDATE_ITEM, request, METHOD_UPDATE_ITEM);
+            return handle(client, DDB_UPDATE_ITEM, request, DynamoDbOperationNames.UPDATE_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_DELETE_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.DeleteItemResponse")
         public static Object deleteItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest") Object request) {
-            return handle(client, DDB_DELETE_ITEM, request, METHOD_DELETE_ITEM);
+            return handle(client, DDB_DELETE_ITEM, request, DynamoDbOperationNames.DELETE_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_QUERY, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.QueryResponse")
         public static Object query(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.QueryRequest") Object request) {
-            return handle(client, DDB_QUERY, request, METHOD_QUERY);
+            return handle(client, DDB_QUERY, request, DynamoDbOperationNames.QUERY);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_SCAN, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "software.amazon.awssdk.services.dynamodb.model.ScanResponse")
         public static Object scan(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.ScanRequest") Object request) {
-            return handle(client, DDB_SCAN, request, METHOD_SCAN);
+            return handle(client, DDB_SCAN, request, DynamoDbOperationNames.SCAN);
         }
     }
 
@@ -105,44 +98,44 @@ public class DynamoDbClassReplacement {
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_GET_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object getItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.GetItemRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_GET_ITEM, request, METHOD_GET_ITEM);
+            return handleAsync(client, DDB_ASYNC_GET_ITEM, request, DynamoDbOperationNames.GET_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_BATCH_GET_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object batchGetItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest") Object request) {
-            return handleAsync( client, DDB_ASYNC_BATCH_GET_ITEM, request, METHOD_BATCH_GET_ITEM);
+            return handleAsync(client, DDB_ASYNC_BATCH_GET_ITEM, request, DynamoDbOperationNames.BATCH_GET_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_PUT_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object putItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.PutItemRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_PUT_ITEM, request, METHOD_PUT_ITEM);
+            return handleAsync(client, DDB_ASYNC_PUT_ITEM, request, DynamoDbOperationNames.PUT_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_UPDATE_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object updateItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_UPDATE_ITEM, request, METHOD_UPDATE_ITEM);
+            return handleAsync(client, DDB_ASYNC_UPDATE_ITEM, request, DynamoDbOperationNames.UPDATE_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_DELETE_ITEM, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object deleteItem(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_DELETE_ITEM, request, METHOD_DELETE_ITEM);
+            return handleAsync(client, DDB_ASYNC_DELETE_ITEM, request, DynamoDbOperationNames.DELETE_ITEM);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_QUERY, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object query(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.QueryRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_QUERY, request, METHOD_QUERY);
+            return handleAsync(client, DDB_ASYNC_QUERY, request, DynamoDbOperationNames.QUERY);
         }
 
         @Replacement(type = ReplacementType.TRACKER, id = DDB_ASYNC_SCAN, usageFilter = UsageFilter.ANY, category = ReplacementCategory.DYNAMODB, castTo = "java.util.concurrent.CompletableFuture")
         public static Object scan(Object client, @ThirdPartyCast(actualType = "software.amazon.awssdk.services.dynamodb.model.ScanRequest") Object request) {
-            return handleAsync(client, DDB_ASYNC_SCAN, request, METHOD_SCAN);
+            return handleAsync(client, DDB_ASYNC_SCAN, request, DynamoDbOperationNames.SCAN);
         }
     }
 
     /**
      * Invoke the original synchronous client method and trace the command execution.
      */
-    protected static Object handle(Object client, String id, Object request, String operationName) {
+    protected static Object handle(Object client, String id, Object request, DynamoDbOperationNames operationName) {
         long start = System.currentTimeMillis();
         try {
             Method method = getOriginal(Sync.singleton, id, client);
@@ -165,7 +158,7 @@ public class DynamoDbClassReplacement {
     /**
      * Invoke the original asynchronous client method and trace completion status.
      */
-    protected static Object handleAsync(Object client, String id, Object request, String operationName) {
+    protected static Object handleAsync(Object client, String id, Object request, DynamoDbOperationNames operationName) {
         long start = System.currentTimeMillis();
         try {
             Method method = getOriginal(Async.singleton, id, client);

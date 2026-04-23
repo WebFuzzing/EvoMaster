@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -118,7 +119,7 @@ public class DynamoDbClassReplacementTest {
         GetItemResponse result = (GetItemResponse) DynamoDbClassReplacement.Sync.getItem(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "GetItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.GET_ITEM, request);
     }
 
     @Test
@@ -131,7 +132,7 @@ public class DynamoDbClassReplacementTest {
         PutItemResponse result = (PutItemResponse) DynamoDbClassReplacement.Sync.putItem(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "PutItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.PUT_ITEM, request);
     }
 
     @Test
@@ -147,7 +148,7 @@ public class DynamoDbClassReplacementTest {
         UpdateItemResponse result = (UpdateItemResponse) DynamoDbClassReplacement.Sync.updateItem(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "UpdateItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.UPDATE_ITEM, request);
     }
 
     @Test
@@ -160,7 +161,7 @@ public class DynamoDbClassReplacementTest {
         DeleteItemResponse result = (DeleteItemResponse) DynamoDbClassReplacement.Sync.deleteItem(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "DeleteItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.DELETE_ITEM, request);
     }
 
     @Test
@@ -174,7 +175,7 @@ public class DynamoDbClassReplacementTest {
         QueryResponse result = (QueryResponse) DynamoDbClassReplacement.Sync.query(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "Query", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.QUERY, request);
     }
 
     @Test
@@ -186,7 +187,7 @@ public class DynamoDbClassReplacementTest {
         ScanResponse result = (ScanResponse) DynamoDbClassReplacement.Sync.scan(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Collections.singletonList(TABLE_NAME), "Scan", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.SCAN, request);
     }
 
     @Test
@@ -205,7 +206,7 @@ public class DynamoDbClassReplacementTest {
         BatchGetItemResponse result = (BatchGetItemResponse) DynamoDbClassReplacement.Sync.batchGetItem(syncClient, request);
 
         assertNotNull(result);
-        verifyInterception(Arrays.asList(TABLE_NAME, TABLE_NAME_SECOND), "BatchGetItem", request);
+        verifyInterception(Arrays.asList(TABLE_NAME, TABLE_NAME_SECOND), DynamoDbOperationNames.BATCH_GET_ITEM, request);
     }
 
     // --- Async Tests ---
@@ -225,7 +226,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "GetItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.GET_ITEM, request);
     }
 
     @Test
@@ -243,7 +244,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "PutItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.PUT_ITEM, request);
     }
 
     @Test
@@ -264,7 +265,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "UpdateItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.UPDATE_ITEM, request);
     }
 
     @Test
@@ -282,7 +283,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "DeleteItem", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.DELETE_ITEM, request);
     }
 
     @Test
@@ -301,7 +302,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "Query", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.QUERY, request);
     }
 
     @Test
@@ -318,7 +319,7 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Collections.singletonList(TABLE_NAME), "Scan", request);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.SCAN, request);
     }
 
     @Test
@@ -341,10 +342,10 @@ public class DynamoDbClassReplacementTest {
         } catch (Exception e) {
             // ignore
         }
-        verifyInterception(Arrays.asList(TABLE_NAME, TABLE_NAME_SECOND), "BatchGetItem", request);
+        verifyInterception(Arrays.asList(TABLE_NAME, TABLE_NAME_SECOND), DynamoDbOperationNames.BATCH_GET_ITEM, request);
     }
 
-    private void verifyInterception(List<String> expectedTableNames, String expectedOperationName, Object expectedRequest) {
+    private void verifyInterception(List<String> expectedTableNames, DynamoDbOperationNames expectedOperationName, Object expectedRequest) {
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
         assertEquals(1, additionalInfoList.size());
         Set<DynamoDbCommand> dynamoDbCommands = additionalInfoList.get(0).getDynamoDbInfoData();
