@@ -285,6 +285,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)
   * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
+  * [Notes for MSc/BSc students doing their theses/projects with EvoMaster](docs/for_msc_bsc_students.md)
 * Troubleshooting
   * [Windows and networking](docs/troubleshooting/windows.md)
   * [java.lang.OutOfMemoryError](docs/troubleshooting/outofmemory.md)
