@@ -236,19 +236,6 @@ class BigDecimalGene(
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is BigDecimalGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        // since bigdecimal is immutable, just refer to the value of other gene
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is BigDecimalGene)
@@ -257,10 +244,12 @@ class BigDecimalGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         val bd = when(gene){
-            is SeededGene<*> -> return this.setValueBasedOn(gene.getPhenotype() as Gene)
-            is NumericStringGene -> return this.setValueBasedOn(gene.number)
+            is NumericStringGene -> return this.unsafeCopyValueFrom(gene.number)
             is LongGene -> BigDecimal(gene.value)
             is FloatGene -> BigDecimal(gene.value.toDouble())
             is IntegerGene -> BigDecimal(gene.value)
@@ -295,7 +284,10 @@ class BigDecimalGene(
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){
-        value = if (precision == null){
+
+        val ensureRoundedValueIsInRange = (getMinimum () < bd && bd < getMaximum())
+
+        val rounded = if (precision == null){
             if (scale == null) bd
             else bd.setScale(scale, getRoundingMode())
         } else{
@@ -303,6 +295,17 @@ class BigDecimalGene(
             bd.round(context).run {
                 if (scale != null) this.setScale(scale, getRoundingMode())
                 else this
+            }
+        }
+
+        value = rounded
+
+        if (ensureRoundedValueIsInRange) {
+            // ensure the rounded value is also within range
+            if (value > getMaximum()) {
+                value = getMaximum()
+            } else if (value < getMinimum()) {
+                value = getMinimum()
             }
         }
     }

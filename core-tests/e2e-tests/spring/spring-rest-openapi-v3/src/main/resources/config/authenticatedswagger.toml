@@ -1,0 +1,15 @@
+[[auth]]
+name="logintoken"
+[auth.loginEndpointAuth]
+endpoint="/api/logintoken/login"
+payloadRaw= """
+{"userId": "userName1", "password":"password1234"}
+"""
+verb="POST"
+contentType="application/json"
+[auth.loginEndpointAuth.token]
+sendTemplate = "Bearer {token}"
+extractFrom = "body"
+extractSelector = "/token/authToken"
+sendName="Authorization"
+sendIn="header"

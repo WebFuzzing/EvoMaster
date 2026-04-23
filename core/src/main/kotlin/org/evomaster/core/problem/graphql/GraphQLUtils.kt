@@ -262,24 +262,24 @@ object GraphQLUtils {
     ): MutableMap<String, GraphInfo> {
 
         for (element in state.tables) {
-            val kOTFT = element.kindOfFieldType.toString().toLowerCase()
+            val kOTFT = element.kindOfFieldType.toString().lowercase()
 
-            if (element.typeName?.toLowerCase() != typeName.toLowerCase()) {
+            if (element.typeName?.lowercase() != typeName.lowercase()) {
                 continue
             }
             if (isRoot(typeName)) {//First entry point
                 if (kOTFT == GqlConst.OBJECT) {
                     history.add(element.fieldType)
-                    addEdge(element.typeName!!.toLowerCase(), element.fieldType, element.fieldName, graph)
+                    addEdge(element.typeName!!.lowercase(), element.fieldType, element.fieldName, graph)
                     getObjectNode(history, element, objectFieldsHistory, state, graph)
                 }
                 if (isScalarOrEnum(element)) //Primitive type: create a field and add it
-                    graph[element.typeName!!.toLowerCase()]?.fields?.add(element.fieldName)
+                    graph[element.typeName!!.lowercase()]?.fields?.add(element.fieldName)
 
                 if (kOTFT == GqlConst.INTERFACE) {
                     history.add(element.fieldType)// add interface type object to the history
                     addEdge(
-                        element.typeName!!.toLowerCase(),
+                        element.typeName!!.lowercase(),
                         element.fieldType,
                         element.fieldName,
                         graph
@@ -289,7 +289,7 @@ object GraphQLUtils {
                 if (kOTFT == GqlConst.UNION) {
                     history.add(element.fieldType)// add union type object to the history
                     addEdge(
-                        element.typeName!!.toLowerCase(),
+                        element.typeName!!.lowercase(),
                         element.fieldType,
                         element.fieldName,
                         graph
@@ -333,7 +333,7 @@ object GraphQLUtils {
 
     private fun isScalarOrEnum(element: Table) =
         element.kindOfFieldType.toString()
-            .toLowerCase() == GqlConst.SCALAR || element.kindOfFieldType.toString().toLowerCase() == GqlConst.ENUM
+            .lowercase() == GqlConst.SCALAR || element.kindOfFieldType.toString().lowercase() == GqlConst.ENUM
 
     private fun getInterfaceNodes(
         history: MutableList<String>,
@@ -459,7 +459,7 @@ object GraphQLUtils {
     fun getNumberOfQueriesOrMutations(queriesMutationsEntryPoint: String, graph: Map<String, GraphInfo>): Int? {
         if (queriesMutationsEntryPoint !in graph.keys)
             throw IllegalArgumentException(" Query/Mutation entry points are not in the graph ")
-        else return graph[queriesMutationsEntryPoint.toLowerCase()]?.fields?.size
+        else return graph[queriesMutationsEntryPoint.lowercase()]?.fields?.size
     }
 
     /**
@@ -489,7 +489,7 @@ object GraphQLUtils {
     fun checkNodeExists(node: String, graph: Map<String, GraphInfo>): Boolean {
 
         graph.keys.forEach {
-            if (it.toLowerCase() == node) return true
+            if (it.lowercase() == node) return true
         }
         return false
     }
@@ -675,6 +675,6 @@ object GraphQLUtils {
     private fun isRoot(entry: Map.Entry<String, GraphInfo>) = isRoot(entry.key)
 
     private fun isRoot(entryPoint: String) =
-        entryPoint.toLowerCase() == GqlConst.QUERY || entryPoint.toLowerCase() == GqlConst.QUERY_TYPE || entryPoint.toLowerCase() == GqlConst.ROOT || entryPoint.toLowerCase() == GqlConst.MUTATION
+        entryPoint.lowercase() == GqlConst.QUERY || entryPoint.lowercase() == GqlConst.QUERY_TYPE || entryPoint.lowercase() == GqlConst.ROOT || entryPoint.lowercase() == GqlConst.MUTATION
 
 }

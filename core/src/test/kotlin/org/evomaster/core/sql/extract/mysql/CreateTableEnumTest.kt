@@ -30,7 +30,7 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
             assertEquals("ENUM", size!!.type)
         }
 
-        assertEquals("size enum('x-small','small','medium','large','x-large')",tableDto.tableCheckExpressions[0].sqlCheckExpression.toLowerCase())
+        assertEquals("size enum('x-small','small','medium','large','x-large')",tableDto.tableCheckExpressions[0].sqlCheckExpression.lowercase())
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction(TableId("shirts", openGroupName = MYSQL_DB_NAME), setOf("name", "size"))

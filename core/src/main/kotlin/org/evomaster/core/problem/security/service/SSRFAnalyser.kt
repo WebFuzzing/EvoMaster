@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -91,8 +92,10 @@ class SSRFAnalyser {
 //        }
 //    }
 
-    fun apply(): Solution<RestIndividual> {
-        LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
+    /**
+     * newly created individual will be in the archive
+     */
+    fun apply(){
 
         val individualsWith2XX = getIndividualsWithStatus2XX()
 
@@ -101,10 +104,10 @@ class SSRFAnalyser {
         //  selecting individuals with HTTP 400 and 422 status codes.
         val individualsWith4XX = getIndividualsWithStatus4XX()
 
-        individualsInSolution = individualsWith2XX + individualsWith4XX
+        individualsInSolution =  individualsWith2XX + individualsWith4XX
 
         if (individualsInSolution.isEmpty()) {
-            return archive.extractSolution()
+            return
         }
 
         log.debug("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
@@ -121,10 +124,8 @@ class SSRFAnalyser {
         // Classify endpoints with potential vulnerability classes
         classify()
 
-        // execute
-        analyse()
-
-        return archive.extractSolution()
+        // evaluate
+        evaluate()
     }
 
     fun anyCallsMadeToHTTPVerifier(
@@ -203,7 +204,7 @@ class SSRFAnalyser {
      * A private method to identify parameter is a potentially holds URL value
      * using a Regex based approach.
      */
-    private fun manualClassifier(name: String, description: String? = null): Boolean {
+    fun manualClassifier(name: String, description: String? = null): Boolean {
         if (potentialUrlParamNames.contains(name.lowercase())) {
             return true
         }
@@ -264,22 +265,24 @@ class SSRFAnalyser {
     /**
      * Run the determined vulnerability class (from the classification) analysers.
      */
-    private fun analyse() {
-        if (config.problemType == EMConfig.ProblemType.REST) {
+    private fun evaluate() {
+        if (config.problemType != EMConfig.ProblemType.REST) {
 
-            individualsInSolution.forEach { evaluatedIndividual ->
-                evaluatedIndividual.evaluatedMainActions().forEach { a ->
-                    val action = a.action
-                    if (action is RestCallAction) {
-                        if (actionVulnerabilityMapping.containsKey(action.getName())
-                            && actionVulnerabilityMapping.getValue(action.getName()).isVulnerable
-                            && evaluatedIndividual.individual is RestIndividual
-                        ) {
-                            val mapping = actionVulnerabilityMapping[action.getName()]
+            return
+        }
 
-                            if (mapping != null) {
-                                handleVulnerableAction(evaluatedIndividual, action)
-                            }
+        individualsInSolution.forEach { evaluatedIndividual ->
+            evaluatedIndividual.evaluatedMainActions().forEach { a ->
+                val action = a.action
+                if (action is RestCallAction) {
+                    if (actionVulnerabilityMapping.containsKey(action.getName())
+                        && actionVulnerabilityMapping.getValue(action.getName()).isVulnerable
+                        && evaluatedIndividual.individual is RestIndividual
+                    ) {
+                        val mapping = actionVulnerabilityMapping[action.getName()]
+
+                        if (mapping != null) {
+                            handleVulnerableAction(evaluatedIndividual, action)
                         }
                     }
                 }
@@ -292,6 +295,8 @@ class SSRFAnalyser {
         action: RestCallAction
     ) {
         val copy = evaluatedIndividual.individual.copy() as RestIndividual
+        copy.modifySampleType(SampleType.SECURITY)
+
         // TODO: Need individual callback URL for each param?
         val callbackURL = httpCallbackVerifier.generateCallbackLink(
             action.getName()
@@ -346,7 +351,7 @@ class SSRFAnalyser {
     private fun getIndividualsWithStatus4XX(): List<EvaluatedIndividual<RestIndividual>> {
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(400, 422)
+            statusCodes = listOf(422)
         )
     }
 }

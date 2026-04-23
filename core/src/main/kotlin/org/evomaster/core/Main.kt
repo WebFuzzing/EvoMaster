@@ -4,13 +4,14 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
+import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
+import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
@@ -31,7 +32,6 @@ import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
-import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -43,6 +43,8 @@ import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 import java.lang.reflect.InvocationTargetException
 import java.util.Locale
 import kotlin.system.exitProcess
@@ -55,13 +57,25 @@ class Main {
     companion object {
 
         /**
+         * Anything that impact whole JVM, needs to be done here, and called as first step in the main.
+         * Note: this is done as a function because tests will usually not call Main, and might rely
+         * on those settings for their behavior
+         */
+        @JvmStatic
+        fun applyGlobalJVMSettings(){
+            Locale.setDefault(Locale.ENGLISH)
+            //otherwise parser will crash on large OpenAPI schemas
+            System.setProperty("maxYamlCodePoints", "" + (50 * 1024 * 1024))
+        }
+
+        /**
          * Main entry point of the EvoMaster application
          */
         @JvmStatic
         fun main(args: Array<String>) {
 
             try {
-                Locale.setDefault(Locale.ENGLISH)
+                applyGlobalJVMSettings()
 
                 printLogo()
                 printVersion()
@@ -106,7 +120,7 @@ class Main {
                                         " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
                                         " check the documentation at:"
                             ) +
-                                    " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}"
+                                    " ${inBlue(EM_DOCKER_LINK)}"
                         )
                     } else {
                         LoggingUtil.getInfoLogger().warn(
@@ -166,7 +180,7 @@ class Main {
                                         "EvoMaster process terminated abruptly." +
                                                 " This is likely a bug in EvoMaster." +
                                                 " Please copy&paste the following stacktrace, and create a new issue on" +
-                                                " " + inBlue("https://github.com/WebFuzzing/EvoMaster/issues")
+                                                " " + inBlue(EM_ISSUES_LINK)
                                     ), e
                         )
                 }
@@ -231,7 +245,7 @@ class Main {
 
         private fun runAndPostProcess(injector: Injector): Solution<*> {
 
-            checkExperimentalSettings(injector)
+            checkActivatedExperimentalSettings(injector)
 
             val controllerInfo = checkState(injector)
 
@@ -239,26 +253,36 @@ class Main {
             val idMapper = injector.getInstance(IdMapper::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
 
-            var solution = run(injector, controllerInfo)
+            run(injector, controllerInfo)
 
             //save data regarding the search phase
             writeOverallProcessData(injector)
             writeDependencies(injector)
-            writeImpacts(injector, solution)
+            writeImpacts(injector)
             writeExecuteInfo(injector)
-
             logTimeSearchInfo(injector, config)
 
-            //apply new phases
-            solution = phaseHttpOracle(injector, config, solution)
-            solution = phaseSecurity(injector, config, epc, solution)
 
+            //-----------------------------------------------------------
+            //apply new phases
+            phaseMinimizer(injector, config, epc)
+            // 403 are usually not found during search, but created on purpose during security phase by
+            // mixing different users in the same test. as some http oracles might depend on 403s,
+            // we make sure to run security phase first
+            phaseSecurity(injector, config, epc)
+            phaseHttpOracle(injector, config, epc)
+            phaseFlaky(injector, config, epc)
+            //-----------------------------------------------------------
+
+            val solution = extractSolution(injector)
+
+            epc.markStartingWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
             writeCoveredTargets(injector, solution)
+            //NOTE: the WRITE_OUTPUT phase here would be not computed, as it is not finished yet...
             writeStatistics(injector, solution)
-            //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
             // Stop the WM before test execution
@@ -280,7 +304,7 @@ class Main {
 
             solution.statistics = data.toMutableList()
 
-            epc.finishSearch()
+            epc.markFinishedSession()
 
             return solution
         }
@@ -313,15 +337,7 @@ class Main {
             when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                    val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
-                        /*
-                            FIXME this is a temporary hack...
-                            right now we might have 1 call to Schema that messes up this statistics
-                         */
-                        n + 1
-                    } else {
-                        n
-                    }
+                    val t = n
                     assert(k <= t)
                     val p = String.format("%.0f", (k.toDouble() / t) * 100)
                     LoggingUtil.getInfoLogger()
@@ -400,45 +416,71 @@ class Main {
             }
         }
 
+        private fun extractSolution(injector: Injector): Solution<*> {
+            val archive = injector.getInstance(Archive::class.java)
+            return archive.extractSolution()
+        }
+
+        private fun phaseMinimizer(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+        ){
+            if(!config.minimize){
+                return
+            }
+            epc.markStartingMinimization()
+
+            val minimizer = injector.getInstance(Key.get(object : TypeLiteral<Minimizer<*>>() {}))
+            minimizer.applyPhase()
+        }
+
+        private fun phaseFlaky(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+        ) {
+            if (!config.handleFlakiness){
+                return
+            }
+
+            when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
+                    epc.markStartingFlakiness()
+
+                    val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
+                    flakinessDetector.reexecuteToDetectFlakiness()
+                } else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
+                }
+            }
+        }
+
+
         private fun phaseSecurity(
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+        ) {
             if (!config.security) {
-                return solution
+                return
             }
             //apply security testing phase
-            LoggingUtil.getInfoLogger().info("Starting to apply security testing")
-            epc.startSecurity()
+            epc.markStartingSecurity()
 
             //TODO might need to reset stc, and print some updated info again
 
-            return when (config.problemType) {
+            when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    val securityRest = injector.getInstance(SecurityRest::class.java)
-                    val solution = securityRest.applySecurityPhase()
-
-                    if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
-                        LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
-
-                        val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
-                        ssrfAnalyser.apply()
-                    } else {
-                        if(DefinedFaultCategory.SSRF in config.getDisabledOracleCodesList())
-                        {
-                            LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
-                        }
-
-                        return solution
-                    }
+                    val securityRest = injector.getInstance(RestSecurityBuilder::class.java)
+                    securityRest.applySecurityPhase()
                 }
 
                 else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Security phase currently not handled for problem type: ${config.problemType}")
-                    solution
                 }
             }
         }
@@ -446,16 +488,15 @@ class Main {
         private fun phaseHttpOracle(
             injector: Injector,
             config: EMConfig,
-            solution: Solution<*>
-        ): Solution<*> {
+            epc: ExecutionPhaseController
+        ) {
 
-            return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
-                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+            if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP oracle detection")
+                epc.markStartingAdditionalOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
-            } else {
-                solution
             }
         }
 
@@ -646,6 +687,22 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -671,6 +728,22 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -695,6 +768,22 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -728,6 +817,24 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.CRO ->
+                    Key.get(object : TypeLiteral<CroAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -737,7 +844,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)
@@ -771,11 +878,11 @@ class Main {
         /**
          * Log a warning if any experimental setting is used
          */
-        private fun checkExperimentalSettings(injector: Injector) {
+        private fun checkActivatedExperimentalSettings(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            val experimental = config.experimentalFeatures()
+            val experimental = config.activatedExperimentalFeatures()
 
             if (experimental.isEmpty()) {
                 return
@@ -784,10 +891,10 @@ class Main {
             val options = "[" + experimental.joinToString(", ") + "]"
 
             logWarn(
-                "Using experimental settings." +
+                "Some experimental settings have been activated." +
                         " Those might not work as expected, or simply straight out crash." +
                         " Furthermore, they might simply be incomplete features still under development." +
-                        " Used experimental settings: $options"
+                        " Activated experimental settings: $options"
             )
         }
 
@@ -864,9 +971,8 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            // TODO: support Kotlin for DTOs
-            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJavaOrKotlin()) {
-                writer.writeDtos(solution.getFileName().name)
+            if (config.dtoSupportedForPayload()) {
+                writer.writeDtos(solution)
             }
 
             val splitResult = TestSuiteSplitter.split(solution, config)
@@ -962,13 +1068,15 @@ class Main {
          * save derived impacts of genes of actions.
          * info is designed for experiment analysis
          */
-        private fun writeImpacts(injector: Injector, solution: Solution<*>) {
+        private fun writeImpacts(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.exportImpacts) {
                 return
             }
+
+            val solution = extractSolution(injector)
 
             val am = injector.getInstance(ArchiveImpactSelector::class.java)
             am.exportImpacts(solution)

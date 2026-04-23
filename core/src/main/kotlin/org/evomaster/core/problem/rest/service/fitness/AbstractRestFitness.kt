@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service.fitness
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -12,17 +11,14 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -52,16 +48,22 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.ExecutionStats
 import org.evomaster.core.taint.TaintAnalysis
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 import javax.ws.rs.ProcessingException
@@ -95,12 +97,24 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var callGraphService: CallGraphService
 
+    @Inject
+    protected lateinit var executionStats: ExecutionStats
 
+    @Inject
+    protected lateinit var securityOracle: RestSecurityOracle
+
+    //TODO refactor
     private lateinit var schemaOracle: RestSchemaOracle
+
+    /**
+     * All actions that can be defined from the OpenAPI schema
+     */
+    private lateinit var actionDefinitions: List<RestCallAction>
 
     @PostConstruct
     fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
     }
 
 
@@ -489,12 +503,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
 
         /*
-            explicit targets for examples
+            explicit targets for single example entries
          */
-        val examples = call.seeTopGenes()
-            .flatMap { it.flatView() }
+        val examples = call.seeAllGenes()
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
             .filter { it.staticCheckIfImpactPhenotype() }
-            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
 
         examples.forEach {
             val name = (it.parent as Gene).name
@@ -509,6 +522,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             val target = "EXAMPLE_${call.id}_${name}_$label"
+            fv.coverTarget(idMapper.handleLocalTarget(target))
+        }
+
+        /*
+            explicit targets for named examples, but only when fully used
+         */
+        val allExampleNames = call.getNamedExamples()
+        val exampleNamesInUse = call.getNamedExamplesInUse()
+
+        for(e in exampleNamesInUse){
+            /*
+                TODO this would not consider possible special cases (eg when have anyOf constraints) in which
+                same example name could appear in different subtrees of same ChoiceGene...
+                bit tricky to handle... not sure if really a good ROI in trying to handle it now...
+             */
+            if(e.value != allExampleNames[e.key]){
+                continue
+            }
+
+            val target = idMapper.getNamedExampleId(call.id, e.key, status ?: 0)
             fv.coverTarget(idMapper.handleLocalTarget(target))
         }
     }
@@ -544,7 +577,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (status == 500){
-            if( DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            if( config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_STATUS_500)) {
                 /*
                     500 codes "might" be bugs. To distinguish between different bugs
                     that crash the same endpoint, we need to know what was the last
@@ -590,7 +623,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
-            createInvocation(a, chainState, cookies, tokens).invoke()
+            val call = createInvocation(a, chainState, cookies, tokens)
+
+            TimeUtils.measureTimeMillis(
+                { t, res ->
+                    rcr.setResponseTimeMs(t)
+                    executionStats.record(a.id, t)
+                },
+                {
+                    call.invoke()
+                }
+            )
+
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
@@ -640,7 +684,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
                     /*
                         This should not really happen... but it does :( at least on Windows...
                      */
@@ -681,6 +725,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(response.status)
         rcr.setLocation(response.location?.toString())
+        rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
@@ -733,7 +778,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){
             handleSchemaOracles(a, rcr, fv)
         } else {
             LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
@@ -745,7 +790,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -759,7 +804,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         fv: FitnessValue
     ) {
-        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+        if (!config.schemaOracles
+            || !schemaOracle.canValidate()
+            || a.id == CALL_TO_SWAGGER_ID
+            || !callGraphService.isDeclared(a.verb,a.path)
+            ) {
             return
         }
 
@@ -862,8 +911,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -875,23 +934,41 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     it is or not a valid char.
                     Furthermore, likely needed to be done in resolveLocation,
                     or at least check how RestAssured would behave
+                    TODO update RestPathTest, check TODO there, once fixed
                  */
                 //it.replace("\"", "")
+                //FIXME outputFormat shouldn't really be used here
+                //FIXME in resolveLocation
                 GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
             }
 
+        Lazy.assert { URI.create(fullUri).isAbsolute }
 
-        val builder = if (a.produces.isEmpty()) {
-            log.debug("No 'produces' type defined for {}", path)
-            client.target(fullUri).request("*/*")
+        val builder = try {
+            if (a.produces.isEmpty()) {
+                log.debug("No 'produces' type defined for {}", path)
+                client.target(fullUri).request("*/*")
 
-        } else {
-            /*
+            } else {
+                /*
                 TODO: This only considers the first in the list of produced responses
                 This is fine for endpoints that only produce one type of response.
                 Could be a problem in future
             */
-            client.target(fullUri).request(a.produces.first())
+                client.target(fullUri).request(a.produces.first())
+            }
+        } catch (e: Exception) {
+            /*
+                FIXME we need to solve this issue somehow, as location values might be invalid...
+                but i guess that should be done in resolveLocation
+             */
+            throw RuntimeException("""
+                Failed to build HTTP invocation. 
+                Resolved path: $path
+                Location header: $locationHeader
+                Resolved location: $fullUri
+                Error: ${e.message}
+            """.trimIndent(), e)
         }
 
         handleHeaders(a, builder, cookies, tokens)
@@ -901,14 +978,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -927,10 +1004,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -941,21 +1019,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
+        if(bodyEntity != null) {
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
+        }
+
         val invocation = when (a.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
             /*
                 As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
                 https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
              */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.GET -> builder.build("GET", bodyEntity)
             HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
@@ -1002,8 +1085,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val id = rcr.getResourceId()
 
                 if (id != null) {
-                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+
+                    //FIXME tmp fix. need to be handled properly, also in generated tests with test-utils-*
+                    val escapedId = URLEncoder.encode(id.value, StandardCharsets.UTF_8)
+                        .replace("+", "%20");
+
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,escapedId)
                     if(location != null) {
+                        /*
+                            FIXME this case seems ignored in RestTestCaseWriter.handleLocationHeader.
+                            Need proper handling + E2E for all these cases
+                         */
                         rcr.setHeuristicsForChainedLocation(true)
                     }
                 }
@@ -1121,11 +1213,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
-            analyzeSecurityProperties(individual,actionResults,fv)
-        }
-
-        if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
-            handleSsrfFaults(individual, actionResults, fv)
+            securityOracle.analyzeSecurityProperties(individual,actionResults,fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1136,9 +1224,44 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+            handleDeleteShouldDelete(individual, actionResults, fv)
+        }
 
-        handleDeleteShouldDelete(individual, actionResults, fv)
-        handleRepeatedCreatePut(individual, actionResults, fv)
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+            handleRepeatedCreatePut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
+            handleFailedModification(individual, actionResults, fv)
+        }
+    }
+
+    private fun handleFailedModification(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        // covers normal / 401 / 403 cases: GET 2xx → PUT|PATCH 4xx → GET 2xx (fields unchanged)
+        val hasSideEffect = HttpSemanticsOracle.hasSideEffectFailedModification(individual, actionResults)
+        // covers the 404 special case: GET 404 → PUT|PATCH 404 → GET (must still be 404)
+        val hasSideEffect404 = HttpSemanticsOracle.hasSideEffectIn404Modification(individual, actionResults)
+
+        if (!hasSideEffect && !hasSideEffect404) {
+            return
+        }
+
+        val putOrPatch = individual.seeMainExecutableActions().filter {
+            it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH
+        }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == putOrPatch.getLocalId() } as RestCallResult?
+            ?: return
+        ar.addFault(DetectedFault(category, putOrPatch.getName(), null))
     }
 
     private fun handleRepeatedCreatePut(
@@ -1191,159 +1314,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
-    private fun analyzeSecurityProperties(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ){
-        //TODO the other cases
-
-        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleExistenceLeakage(individual,actionResults,fv)
-        handleNotRecognizedAuthenticated(individual, actionResults, fv)
-        handleForgottenAuthentication(individual, actionResults, fv)
-    }
-
-    private fun handleSsrfFaults(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        individual.seeMainExecutableActions().forEach {
-            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
-            if (ar != null) {
-                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
-                    val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
-                    )
-                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
-                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
-                }
-            }
-        }
-    }
-
-    private fun handleNotRecognizedAuthenticated(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-
-        val notRecognized = individual.seeMainExecutableActions()
-            .filter {
-                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
-                if(ar == null){
-                    // this can be happened in the POST/DELETE template
-                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
-                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
-                    }
-                    if (prematureStoppedAction.isNotEmpty()){
-                        log.debug("Premature stopping of HTTP call sequence")
-                        return
-                    }
-                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
-                }
-                it.auth !is NoAuth && ar.getStatusCode() == 401
-            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
-
-        if(notRecognized.isEmpty()){
-            return
-        }
-
-        notRecognized.forEach {
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
-        }
-    }
-
-    private fun handleExistenceLeakage(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        val getPaths = individual.seeMainExecutableActions()
-            .filter { it.verb == HttpVerb.GET }
-            .map { it.path }
-            .toSet()
-
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
-        if(faultyPaths.isEmpty()){
-            return
-        }
-
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
-
-            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
-            }
-        }
-    }
-
-    private fun handleForgottenAuthentication(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        val endpoints = individual.seeMainExecutableActions()
-            .map { it.getName() }
-            .toSet()
-
-        val faultyEndpoints = endpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
-
-        if(faultyEndpoints.isEmpty()){
-            return
-        }
-
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
-
-            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName(), null))
-            }
-        }
-    }
-
-    private fun handleForbiddenOperation(
-        verb: HttpVerb,
-        faultCategory: FaultCategory,
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
-           val actionIndex = individual.size() - 1
-            val action = individual.seeMainExecutableActions()[actionIndex]
-            val result = actionResults
-                .filterIsInstance<RestCallResult>()
-                .find { it.sourceLocalId == action.getLocalId() }
-                ?: return
-
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory, action.getName(), null))
-        }
-    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

@@ -133,32 +133,15 @@ class ArrayGene<T>(
         return copy
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ArrayGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (this.template::class.simpleName != other.template::class.simpleName) return false
-
-        return updateValueOnlyIfValid(
-            {
-                killAllChildren()
-                // check maxSize
-                val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
-                    other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
-                // build parents for [element]
-                addChildren(elements)
-                true
-            },
-            false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (this.template::class.simpleName != other.template::class.simpleName) return false
+
+        if(this.elements.size != other.elements.size) return false
 
         return this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
@@ -242,7 +225,14 @@ class ArrayGene<T>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return openingTag +
+
+        val(open,close,sep) = if (mode == GeneUtils.EscapeMode.XML){
+            Triple("","","") //In XML mode we avoid printing brackets, since XML objects must be represented only through tags.
+        }else{
+            Triple(openingTag,closingTag, separatorTag)
+        }
+
+        return open +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
                         if ((g.getWrappedGene(EnumGene::class.java)!=null))
@@ -253,8 +243,8 @@ class ArrayGene<T>(
                     } else {
                         g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                     }
-                }.joinToString(separatorTag) +
-                closingTag
+                }.joinToString(sep) +
+                close
     }
 
 
@@ -271,28 +261,31 @@ class ArrayGene<T>(
 
         TODO might bind based on value instead of replacing them
      */
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        if(other is ArrayGene<*> && other.template::class.java.simpleName == template::class.java.simpleName){
+
             killAllChildren()
-            val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            val elements = other.elements.mapNotNull { it.copy() as? T}.toMutableList()
             elements.forEach { it.resetLocalIdRecursively() }
-            if (!uniqueElements || gene.uniqueElements || !isElementApplicableToUniqueCheck(ParamUtil.getValueGene(template)))
+
+            if (!uniqueElements
+                || other.uniqueElements
+                || !isElementApplicableToUniqueCheck(template.getLeafGene())) {
+
                 addChildren(elements)
-            else{
+
+            } else{
                 val unique = elements.filterIndexed { index, t ->
                     index == elements.indexOfLast { l-> ParamUtil.getValueGene(l).containsSameValueAs(ParamUtil.getValueGene(t)) }
                 }
-                Lazy.assert {
-                    unique.isNotEmpty()
-                }
+                Lazy.assert { unique.isNotEmpty() }
                 addChildren(unique)
             }
             return true
         }
-        LoggingUtil.uniqueWarn(
-            log,
-            "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
-        )
+        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${other::class.java.simpleName}")
         return false
     }
 
@@ -302,7 +295,7 @@ class ArrayGene<T>(
      * Use [template] to create child [Gene].
      * Use comma (,) separated elements with a space in front of the values as String.
      */
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         val elements = value
             .trim()
             .removePrefix(openingTag)
@@ -383,7 +376,10 @@ class ArrayGene<T>(
      */
     fun doesExist(gene: T): Boolean{
         if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
-        return elements.any { ParamUtil.getValueGene(it).containsSameValueAs(ParamUtil.getValueGene(gene)) }
+        return elements.any {
+            it.getLeafGene().javaClass == gene.getLeafGene().javaClass &&
+            it.getLeafGene().containsSameValueAs(gene.getLeafGene())
+        }
     }
 
     /**

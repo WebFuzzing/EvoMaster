@@ -29,9 +29,12 @@ class SqlBinaryStringGene(
 
     private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
 
-    val databaseType: DatabaseType = DatabaseType.POSTGRES
+    databaseType: DatabaseType = DatabaseType.POSTGRES
 
 ) :  CompositeFixedGene(name, mutableListOf( binaryArrayGene)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -68,31 +71,23 @@ class SqlBinaryStringGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {binaryArrayGene.copyValueFrom(other.binaryArrayGene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return binaryArrayGene.containsSameValueAs(other.binaryArrayGene)
     }
 
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlBinaryStringGene) {
-            return binaryArrayGene.setValueBasedOn(gene.binaryArrayGene)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlBinaryStringGene) {
+            return false
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
-        return false
+        this.databaseType = other.databaseType
+        val ok = binaryArrayGene.unsafeCopyValueFrom(other.binaryArrayGene)
+        return ok
     }
+
 
     override fun copyContent() = SqlBinaryStringGene(name,
             minSize = minSize,

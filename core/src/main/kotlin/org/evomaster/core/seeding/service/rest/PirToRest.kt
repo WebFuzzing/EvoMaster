@@ -71,6 +71,7 @@ class PirToRest: PirToIndividual(){
 
         val x = candidates[0].copy() as RestCallAction
         x.doInitialize(randomness)
+        x.forceNewTaints()
 
         /*
          * looking at all existing parameters in the candidate template.

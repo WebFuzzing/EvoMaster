@@ -1,20 +1,30 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.search.action.EvaluatedDbAction
+import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.redis.RedisDbActionResult
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
+import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
+import java.math.BigDecimal
+import java.math.BigInteger
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
+
+    companion object{
+        private val mapper = ObjectMapper()
+    }
 
     protected fun createUniqueResponseVariableName(): String {
         val name = "res_$counter"
@@ -47,6 +57,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
+        val initializingRedisActions = ind.individual.seeInitializingActions().filterIsInstance<RedisDbAction>()
+        val initializingRedisResults = (ind.seeResults(initializingRedisActions))
+        if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as RedisDbActionResults")
+
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()
@@ -69,6 +84,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
+        if (initializingRedisActions.isNotEmpty()) {
+            RedisWriter.handleRedisDbInitialization(
+                format,
+                initializingRedisActions.indices.map {
+                    val result = initializingRedisResults[it]
+                    require(result is RedisDbActionResult) {
+                        "Expected RedisDbActionResult but got ${result::class.simpleName} at index $it"
+                    }
+                    EvaluatedRedisDbAction(initializingRedisActions[it], result)
+                },
+                lines,
+                insertionVars = insertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
+            // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
         if (initializingHostnameResolutionActions.isNotEmpty()) {
             handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
         }
@@ -77,42 +108,71 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     /**
      * handle assertion with text plain
      */
-    fun handleTextPlainTextAssertion(bodyString: String?, lines: Lines, bodyVarName: String?) {
+    fun handleTextPlainTextAssertion(bodyString: String?, flakyBodyString: String?, lines: Lines, bodyVarName: String?) {
 
-        if (bodyString.isNullOrBlank()) {
-            lines.add(emptyBodyCheck(bodyVarName))
+        val assertion = if (bodyString.isNullOrBlank()) {
+            emptyBodyCheck(bodyVarName)
         } else {
             //TODO in the call above BODY was used... what's difference from TEXT?
-            lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName))
+            bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName)
+        }
+        if (flakyBodyString == null || flakyBodyString == bodyString) {
+            lines.add(assertion)
+        }else{
+            lines.addSingleCommentLine(flakyInfo("response in plain text", bodyString?:"null", flakyBodyString))
+            lines.addSingleCommentLine(assertion)
         }
     }
 
     /**
      * handle assertion with json body string
      */
-    fun handleJsonStringAssertion(bodyString: String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
+    fun handleJsonStringAssertion(bodyString: String?, flakyBodyString : String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
         when (bodyString?.trim()?.first()) {
             //TODO this should be handled recursively, and not ad-hoc here...
             '[' -> {
                 try{
                 // This would be run if the JSON contains an array of objects.
-                val list = Gson().fromJson(bodyString, List::class.java)
-                handleAssertionsOnList(list, lines, "", bodyVarName)
-                } catch (e: JsonSyntaxException) {
+                val list = mapper.readValue(
+                    bodyString,
+                    object : TypeReference<List<*>>() {}
+                )
+                val flakyList = flakyBodyString?.let {  mapper.readValue(
+                    it,
+                    object : TypeReference<List<*>>() {}
+                )}
+
+                handleAssertionsOnList(list, flakyList, lines, "", bodyVarName)
+                } catch (e: JsonProcessingException) {
                     lines.addSingleCommentLine("Failed to parse JSON response")
                 }
             }
             '{' -> {
                 // JSON contains an object
                 try {
-                    val resContents = Gson().fromJson(bodyString, Map::class.java)
-                    handleAssertionsOnObject(resContents as Map<String, *>, lines, "", bodyVarName)
-                } catch (e: JsonSyntaxException) {
+                    val resContents: Map<String, *> = mapper.readValue(
+                        bodyString,
+                        object : TypeReference<Map<String, *>>() {}
+                    )
+
+                    val flakyMap: Map<String, *>? = flakyBodyString?.let {
+                        mapper.readValue(it, object : TypeReference<Map<String, *>>() {})
+                    }
+
+                    handleAssertionsOnObject(resContents as Map<String, *>, flakyMap, lines, "", bodyVarName)
+                } catch (e: JsonProcessingException) {
                     lines.addSingleCommentLine("Failed to parse JSON response")
                 }
             }
             '"' -> {
-                lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName))
+                val isString = bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName)
+                if (flakyBodyString == null || flakyBodyString == bodyString) {
+                    lines.add(isString)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Body", bodyString, flakyBodyString))
+                    lines.addSingleCommentLine(isString)
+                }
+
             }
             else -> {
                 /*
@@ -127,14 +187,14 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
                     bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(bodyVarName))
 
-                    else -> handlePrimitive(lines, bodyString, "", bodyVarName)
+                    else -> handlePrimitive(lines, bodyString, flakyBodyString,"", bodyVarName)
                 }
             }
         }
     }
 
 
-    private fun handlePrimitive(lines: Lines, bodyString: String, fieldPath: String, responseVariableName: String?) {
+    private fun handlePrimitive(lines: Lines, bodyString: String, flakyBodyString: String?, fieldPath: String, responseVariableName: String?) {
 
         /*
             If we arrive here, it means we have free text.
@@ -150,24 +210,36 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> {
+
                 /*
                     Unfortunately, a limitation of RestAssured is that for JSON it only handles
                     object and array.
                     The rest is either ignored or leads to crash
                  */
-                lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
+                val value = bodyIsString(s,GeneUtils.EscapeMode.BODY, responseVariableName)
+
+                val fs = flakyBodyString?.trim()
+                if (fs == null || fs == s) {
+                    lines.add(value)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Body", s, fs))
+                    lines.addSingleCommentLine(value)
+                }
+
             }
             format.isJavaScript() || format.isCsharp() || format.isPython() -> {
                 try {
                     val number = s.toDouble()
-                    handleAssertionsOnField(number, lines, fieldPath, responseVariableName)
+                    // TODO only support flaky for JVM
+                    handleAssertionsOnField(number, null, lines, fieldPath, responseVariableName)
                     return
                 } catch (e: NumberFormatException) {
                 }
 
                 if (s.equals("true", true) || s.equals("false", true)) {
                     val tf = bodyString.toBoolean()
-                    handleAssertionsOnField(tf, lines, fieldPath, responseVariableName)
+                    // TODO flaky
+                    handleAssertionsOnField(tf, null, lines, fieldPath, responseVariableName)
                     return
                 }
 
@@ -175,13 +247,18 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     Note: for JS, this will not work, as call would crash due to invalid JSON
                     payload (Java and Python don't seem to have such issue)
                  */
+                // TODO flaky
                 lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
             }
             else -> throw IllegalStateException("Format not supported yet: $format")
         }
     }
 
-    protected fun handleAssertionsOnObject(resContents: Map<String, *>, lines: Lines, fieldPath: String, responseVariableName: String?) {
+    protected fun handleAssertionsOnObject(resContents: Map<String, *>, flakyMap: Map<String, *>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+        if (flakyMap != null && flakyMap.size != resContents.size) {
+            lines.addSingleCommentLine(flakyInfo("mismatched size of fields for Object $fieldPath", resContents.size.toString(), flakyMap.size.toString()))
+        }
+
         if (resContents.isEmpty()) {
 
             val k = when {
@@ -206,7 +283,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
-            lines.add(instruction)
+            if (flakyMap.isNullOrEmpty()) {
+                lines.add(instruction)
+            }else{
+                lines.addSingleCommentLine(instruction)
+            }
         }
 
         resContents.entries
@@ -244,7 +325,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                         "${fieldPath}${fieldName}"
                     }
 
-                    handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
+                    if (flakyMap == null || flakyMap.containsKey(it.key)) {
+                        handleAssertionsOnField(it.value, flakyMap?.get(it.key), lines, extendedPath, responseVariableName)
+                    }else{
+                        lines.addSingleCommentLine(flakyInfo("mismatched field name", fieldName, "NONE"))
+                    }
                 }
     }
     /*
@@ -255,7 +340,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return text.replace("\$", "\\\$")
     }
 
-    private fun handleAssertionsOnField(value: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+    private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (value == null) {
             val instruction = when {
@@ -265,17 +350,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
-            lines.add(instruction)
+            if (flakyValue != null){
+                lines.addSingleCommentLine(flakyInfo("value of field $fieldPath","null", flakyValue!!.toString()))
+                lines.addSingleCommentLine(instruction)
+            }else{
+                lines.add(instruction)
+            }
             return
         }
 
         when (value) {
             is Map<*, *> -> {
-                handleAssertionsOnObject(value as Map<String, *>, lines, fieldPath, responseVariableName)
+                handleAssertionsOnObject(value as Map<String, *>, flakyValue as? Map<String, *>,lines, fieldPath, responseVariableName)
                 return
             }
             is List<*> -> {
-                handleAssertionsOnList(value, lines, fieldPath, responseVariableName)
+                handleAssertionsOnList(value, flakyValue as? List<*>, lines, fieldPath, responseVariableName)
                 return
             }
         }
@@ -283,32 +373,41 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (format.isJavaOrKotlin()) {
             val left = when (value) {
                 is Boolean -> "equalTo($value)"
-                is Number -> "numberMatches($value)"
+                is Number -> "numberMatches(${handleNumberInJavaOrKotlinTest(value)})"
                 is String -> "containsString(" +
                         "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
                         "\")"
                 else -> throw IllegalStateException("Unsupported type: ${value::class}")
             }
             if (isSuitableToPrint(left)) {
-                lines.add(".body(\"$fieldPath\", $left)")
+                if (flakyValue == null || flakyValue == value)
+                    lines.add(".body(\"$fieldPath\", $left)")
+                else{
+                    lines.addSingleCommentLine(flakyInfo("value of field \"$fieldPath\"", value.toString(), flakyValue.toString()))
+                    lines.addSingleCommentLine(".body(\"$fieldPath\", $left)")
+                }
             }
             return
         }
 
         if (format.isJavaScript() || format.isCsharp() || format.isPython()) {
-            val toPrint = if (value is String) {
-                "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
-            } else if(value is Boolean && format.isPython()) {
-                StringUtils.capitalization(value.toString())
-            } else {
-                value.toString()
-            }
+            val toPrint = valueToPrint(value, format)
 
             if (isSuitableToPrint(toPrint)) {
-                if (format.isJavaScript()) {
-                    lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
-                } else if (format.isPython()){
-                    lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                if (format.isJavaScript() || format.isPython()) {
+                    val assertionContent = if (format.isPython()) {
+                        "assert $responseVariableName.json()$fieldPath == $toPrint"
+                    }else { // javascript
+                        "expect($responseVariableName.body$fieldPath).toBe($toPrint);"
+                    }
+
+                    if (flakyValue == null || flakyValue == value){
+                        lines.add(assertionContent)
+                    }else{
+                        val flakyToPrint = valueToPrint(flakyValue, format)
+                        lines.addSingleCommentLine(flakyInfo("value of field $fieldPath", toPrint, flakyToPrint))
+                        lines.addSingleCommentLine(assertionContent)
+                    }
                 } else {
                     assert(format.isCsharp())
                     if (fieldPath != ".traceId" || !lines.toString().contains("status == 400"))
@@ -321,10 +420,64 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         throw IllegalStateException("Not supported format $format")
     }
 
+    private fun handleNumberInJavaOrKotlinTest(value: Any): String {
+        return when (value) {
+            is Byte, is Short, is Int -> value.toString()
 
-    protected fun handleAssertionsOnList(list: List<*>, lines: Lines, fieldPath: String, responseVariableName: String?) {
+            is Long -> {
+                if (value > Int.MAX_VALUE || value < Int.MIN_VALUE) {
+                    "${value}L"
+                } else {
+                    value.toString()
+                }
+            }
 
-        lines.add(collectionSizeCheck(responseVariableName, fieldPath, list.size))
+            is Float -> {
+                if (value.isNaN()) "Float.NaN"
+                else if (value == Float.POSITIVE_INFINITY) "Float.POSITIVE_INFINITY"
+                else if (value == Float.NEGATIVE_INFINITY) "Float.NEGATIVE_INFINITY"
+                else "${value}f"
+            }
+
+            is Double -> {
+                if (value.isNaN()) "Double.NaN"
+                else if (value == Double.POSITIVE_INFINITY) "Double.POSITIVE_INFINITY"
+                else if (value == Double.NEGATIVE_INFINITY) "Double.NEGATIVE_INFINITY"
+                else value.toString()
+            }
+
+            is BigInteger -> "BigInteger(\"$value\")"
+
+            is BigDecimal -> "BigDecimal(\"$value\")"
+
+            is Number -> value.toString()
+
+            else -> value.toString()
+        }
+    }
+
+    private fun valueToPrint(value: Any?, format: OutputFormat) : String{
+        assert(format.isJavaScript() || format.isCsharp() || format.isPython())
+        val toPrint = if (value is String) {
+            "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
+        } else if(value is Boolean && format.isPython()) {
+            StringUtils.capitalization(value.toString())
+        } else {
+            value.toString()
+        }
+        return toPrint
+    }
+
+    protected fun handleAssertionsOnList(list: List<*>, flakyList: List<*>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+
+        val checkSize = collectionSizeCheck(responseVariableName, fieldPath, list.size)
+        if (flakyList == null || flakyList.size == list.size) {
+            lines.add(checkSize)
+        }else{
+            lines.addSingleCommentLine(flakyInfo("size of $fieldPath", list.size.toString(), flakyList.size.toString()))
+            lines.addSingleCommentLine(checkSize)
+        }
+
 
         //assertions on contents
         if (list.isEmpty()) {
@@ -335,11 +488,26 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
              TODO could do the same for numbers
          */
         if (format.isJavaOrKotlin() && list.all { it is String } && list.isNotEmpty()) {
-            lines.add(".body(\"$fieldPath\", hasItems(${
-                (list as List<String>).joinToString {
+            val items = (list as List<String>).joinToString {
+                "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
+            }
+
+            if (flakyList != null && (!flakyList.containsAll(list) || flakyList.size != list.size)) {
+
+                val flakyItems = (flakyList as List<String>).joinToString {
                     "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
                 }
-            }))")
+
+                lines.addSingleCommentLine(flakyInfo("Body", items, flakyItems))
+                lines.addSingleCommentLine(".body(\"$fieldPath\", hasItems(${
+                    items
+                }))")
+
+            }else{
+                lines.add(".body(\"$fieldPath\", hasItems(${
+                    items
+                }))")
+            }
             return
         }
 
@@ -356,7 +524,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             if (i == limit) {
                 break
             }
-            handleAssertionsOnField(list[i], lines, "$fieldPath[$i]", responseVariableName)
+            if (flakyList != null && flakyList.size < i){
+                break
+            }
+            val flakyItem = if (flakyList != null) flakyList[i] else null
+
+            handleAssertionsOnField(list[i], flakyItem, lines, "$fieldPath[$i]", responseVariableName)
         }
         if (skipped > 0) {
             lines.addSingleCommentLine("Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")
@@ -459,7 +632,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     "id",
                     "timestamp", //needed since timestamps will change between runs
                     "self" //TODO: temporary hack. Needed since ports might change between runs.
-            ).contains(fieldName.toLowerCase())
+            ).contains(fieldName.lowercase())
 
     /**
      * Some content may be lead to problems in the resultant test case.

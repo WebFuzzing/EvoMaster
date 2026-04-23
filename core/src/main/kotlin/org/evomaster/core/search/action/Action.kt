@@ -3,9 +3,11 @@ package org.evomaster.core.search.action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.collections.flatMap
 
 /**
  * A variable-length individual will be composed by 1 or more "actions".
@@ -37,7 +39,9 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * However, these intermediate structures should only impact the phenotype, and not
      * the genotype
      */
-    abstract fun seeTopGenes(): List<out Gene>
+    abstract fun seeTopGenes(): List<Gene>
+
+    fun seeAllGenes(): List<Gene> = seeTopGenes().flatMap {g ->  g.flatView() }
 
     final override fun copy(): Action {
         val copy = super.copy()
@@ -74,6 +78,12 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
     open fun doInitialize(randomness: Randomness? = null) {
         seeTopGenes().forEach { it.doInitialize(randomness) }
         postRandomizedChecks(randomness)
+    }
+
+    fun forceNewTaints(){
+        seeTopGenes().forEach { g ->
+            g.forceNewTaints()
+        }
     }
 
     fun isInitialized(): Boolean {

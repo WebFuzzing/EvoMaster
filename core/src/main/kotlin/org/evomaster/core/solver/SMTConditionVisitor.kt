@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
@@ -26,12 +27,18 @@ class SMTConditionVisitor(
     /**
      * Constructs a column reference string for SMT-LIB from a table name and column name.
      *
+     * Both names are converted to ASCII because SMT-LIB unquoted symbols only allow ASCII characters.
+     * Table and column names may come directly from SQL query text (e.g., a WHERE clause), which can
+     * contain non-ASCII characters if the schema uses them. The conversion must happen here because,
+     * unlike schema-derived names that are pre-converted via [SmtTable], query-derived names are
+     * parsed at runtime from raw SQL strings.
+     *
      * @param tableName The name of the table.
      * @param columnName The name of the column.
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${columnName.uppercase()} ${tableName.lowercase()}$rowIndex)"
+        return "(${convertToAscii(columnName).uppercase()} ${convertToAscii(tableName).lowercase()}$rowIndex)"
     }
 
     /**
@@ -42,9 +49,12 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlAndCondition, parameter: Void?): SMTNode {
-        val left = condition.leftExpr.accept(this, parameter) as AssertSMTNode
-        val right = condition.rightExpr.accept(this, parameter) as AssertSMTNode
-        return AssertSMTNode(AndAssertion(listOf(left.assertion, right.assertion)))
+        val left = condition.leftExpr.accept(this, parameter)
+        val right = condition.rightExpr.accept(this, parameter)
+        if (left is EmptySMTNode && right is EmptySMTNode) return EmptySMTNode()
+        if (left is EmptySMTNode) return right
+        if (right is EmptySMTNode) return left
+        return AssertSMTNode(AndAssertion(listOf((left as AssertSMTNode).assertion, (right as AssertSMTNode).assertion)))
     }
 
     /**
@@ -55,8 +65,11 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlOrCondition, parameter: Void?): SMTNode {
-        val conditions = condition.orConditions.map { it.accept(this, parameter) as AssertSMTNode }
-        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        val conditions = condition.orConditions.map { it.accept(this, parameter) }
+        val nonEmpty = conditions.filterIsInstance<AssertSMTNode>()
+        if (nonEmpty.isEmpty()) return EmptySMTNode()
+        if (nonEmpty.size == 1) return nonEmpty[0]
+        return AssertSMTNode(OrAssertion(nonEmpty.map { it.assertion }))
     }
 
     /**
@@ -67,8 +80,11 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
-        val left = getVariableAndLiteral(condition.leftOperand.toString())
-        val right = getVariableAndLiteral(condition.rightOperand.toString())
+        if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
+            return EmptySMTNode() // TODO: Change this when we add support for nullable columns in the db schema
+        }
+        val left = getVariableAndLiteral(condition.leftOperand)
+        val right = getVariableAndLiteral(condition.rightOperand)
 
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
@@ -84,30 +100,47 @@ class SMTConditionVisitor(
     /**
      * Converts an operand to its corresponding SMT-LIB representation.
      *
-     * @param operand The SQL operand as a string.
+     * @param sqlCondition The SqlCondition
      * @return The SMT-LIB representation of the operand.
      */
-    private fun getVariableAndLiteral(operand: String): String {
-        return when {
-            operand.contains(".") -> { // Handle column references with aliases
-                val parts = operand.split(".")
-                if (tableAliases.containsKey(parts[0])) {
-                    val tableName = tableAliases[parts[0]] ?: defaultTableName
-                    val columnName = parts[parts.lastIndex]
-                    getColumnReference(tableName, columnName)
+    private fun getVariableAndLiteral(sqlCondition: SqlCondition): String {
+        return when (sqlCondition) {
+
+            is SqlColumn -> {
+                val tableName = sqlCondition.tableName?.let {
+                    tableAliases[it] ?: it
+                } ?: defaultTableName
+
+                getColumnReference(tableName, sqlCondition.columnName)
+            }
+
+            is SqlStringLiteralValue -> {
+                var text = sqlCondition.toSql()
+                if (text.startsWith("\'\"")) {
+                    text = text.replace("\'\"", "")
+                    text = text.replace("\"\'", "")
+                } else if (text.startsWith("\'")) {
+                    text = text.replace("\'", "")
+                }
+                "\"${text}\""
+            }
+
+            is SqlBigIntegerLiteralValue,
+            is SqlBigDecimalLiteralValue -> {
+                sqlCondition.toSql()
+            }
+
+            is SqlBooleanLiteralValue -> {
+                if (sqlCondition.toString().equals("TRUE", ignoreCase = true) ) {
+                    "\"True\""
                 } else {
-                    operand
+                    "\"False\""
                 }
             }
-            isAColumn(operand) -> { // Handle direct column references
-                getColumnReference(defaultTableName, operand)
+
+            else -> {
+                sqlCondition.toString()
             }
-            operand.startsWith("'") && operand.endsWith("'") -> { // Handle string literals
-                operand.replace("'", "\"")
-            }
-            operand.equals("TRUE", ignoreCase = true) -> "\"True\""
-            operand.equals("FALSE", ignoreCase = true) -> "\"False\""
-            else -> operand // Return as is for other cases
         }
     }
 
@@ -143,8 +176,7 @@ class SMTConditionVisitor(
     }
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
-        val b = condition.sqlColumn.toString();
-        val left = getVariableAndLiteral(b)
+        val left = getVariableAndLiteral(condition.sqlColumn)
         val conditions = condition.literalList.sqlConditionExpressions
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))

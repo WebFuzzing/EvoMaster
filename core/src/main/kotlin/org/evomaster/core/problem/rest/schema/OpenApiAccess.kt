@@ -31,19 +31,29 @@ object OpenApiAccess {
 
         var parseResults: SwaggerParseResult? = null
 
+        val messages = mutableSetOf<String>()
+
         for (extension in OpenAPIV3Parser.getExtensions()) {
             parseResults = try {
                 extension.readContents(schemaText, null, null)
             } catch (e: Exception) {
                 throw SutProblemException("Failed to parse OpenApi schema: ${e.message}")
             }
-            if (parseResults != null && parseResults.openAPI != null) {
-                break
+            if (parseResults != null){
+                if(parseResults.openAPI != null) {
+                    //all good
+                    break
+                } else {
+                   //we might try another parser... but still shouldn't lose info of attempted parsers
+                    messages.addAll(parseResults.messages.map {
+                        extension.javaClass.simpleName + " -> " + it + "\n"
+                    })
+                }
             }
         }
 
         val schema =  parseResults!!.openAPI
-                ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
+                ?: throw SutProblemException("Failed to parse OpenApi schema:\n" + messages.joinToString(""))
 
         if(parseResults.messages.isNotEmpty()){
             LoggingUtil.getInfoLogger().warn(

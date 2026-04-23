@@ -128,6 +128,7 @@ class RestSampler : AbstractRestSampler(){
             val copy = x.copy() as RestCallAction
             copy.doInitialize(randomness)
             copy.auth = rca.auth
+            copy.forceNewTaints()
             /*
                 This is bit tricky... the id does NOT uniquely identify the action inside an
                 individual, but rather its type.
@@ -273,7 +274,7 @@ class RestSampler : AbstractRestSampler(){
         if (created && !get.path.isLastElementAParameter()) {
 
             val lastPost = test[test.size - 2]
-            Lazy.assert{lastPost.verb == HttpVerb.POST}
+            Lazy.assert{lastPost.verb == HttpVerb.POST || lastPost.verb == HttpVerb.PUT}
 
             val available = getMaxTestSizeDuringSampler() - test.size
 
@@ -338,6 +339,7 @@ class RestSampler : AbstractRestSampler(){
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     copy.doInitialize(randomness)
+                    copy.forceNewTaints()
                     val ind = createIndividual(SampleType.SMART, mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }

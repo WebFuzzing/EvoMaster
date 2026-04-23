@@ -24,7 +24,7 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
  * - This implementation assumes that crossover and mutation are implemented by the superclass.
  * - The actual fitness evaluation is managed externally via the [WtsEvalIndividual] wrapper.
  */
-open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.StandardGA
@@ -42,12 +42,16 @@ open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T :
      * Terminates early if the time budget is exceeded.
      */
     override fun searchOnce() {
+        beginGeneration()
+        // Freeze objectives for this generation
+        frozenTargets = archive.notCoveredTargets()
         val n = config.populationSize
 
         // Generate the base of the next population (e.g., elitism or re-selection of fit individuals)
         val nextPop = formTheNextPopulation(population)
 
         while (nextPop.size < n) {
+            beginStep()
             val sizeBefore = nextPop.size
 
             // Select two parents
@@ -76,12 +80,15 @@ open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T :
 
             // Stop early if time budget is exhausted
             if (!time.shouldContinueSearch()) {
+                endStep()
                 break
             }
+            endStep()
         }
 
         // Replace current population with the new one
         population.clear()
         population.addAll(nextPop)
+        endGeneration()
     }
 }

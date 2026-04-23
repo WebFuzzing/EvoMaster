@@ -67,14 +67,7 @@ class SqlXMLGene(name: String,
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlXMLGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return  updateValueOnlyIfValid(
-            {this.objectGene.copyValueFrom(other.objectGene)}, false
-        )
-    }
+
 
     /**
      * Genes might contain a value that is also stored
@@ -82,7 +75,18 @@ class SqlXMLGene(name: String,
      */
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlXMLGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
+        }
+        /*
+         * Edge case: when displayed as XML, the "name" is part of the output.
+         * so we should check it. but this is currently passed as parameter to
+         * the display function.
+         * This is done because, for same body payload, can have same ObjectGene
+         * to represent different types (eg JSON and XML)
+         * TODO: would need to find a more robust solution to handle this
+         */
+        if(this.name != other.name) {
+            return false
         }
         return this.objectGene.containsSameValueAs(other.objectGene)
     }
@@ -95,11 +99,16 @@ class SqlXMLGene(name: String,
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun getPhenotype(): Gene {
+        return objectGene
+    }
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         return when(gene){
-            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is ObjectGene -> objectGene.setValueBasedOn(gene)
+            is ObjectGene -> objectGene.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlXMLGene with ${gene::class.java.simpleName}")
                 false

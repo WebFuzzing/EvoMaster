@@ -7,6 +7,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
@@ -17,7 +18,6 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 
 /**
@@ -52,7 +52,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0),
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0, 0),
 ) : Individual(
     trackOperator,
     index,
@@ -72,20 +72,24 @@ abstract class EnterpriseIndividual(
             sizeMain: Int,
             sizeSQL: Int,
             sizeMongo: Int,
+            sizeRedis: Int,
             sizeDNS: Int,
             sizeScheduleTasks: Int,
             sizeCleanUp: Int,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
+            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
             }
             if(sizeMongo < 0){
                 throw IllegalArgumentException("Negative size for sizeMongo: $sizeMain")
+            }
+            if(sizeRedis < 0){
+                throw IllegalArgumentException("Negative size for sizeRedis: $sizeMain")
             }
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
@@ -118,6 +122,12 @@ abstract class EnterpriseIndividual(
                 if(sizeMongo==0) -1 else startIndexMongo , if(sizeMongo==0) -1 else endIndexMongo
             )
 
+            val startIndexRedis = children.indexOfFirst { a -> a is RedisDbAction }
+            val endIndexRedis = children.indexOfLast { a -> a is RedisDbAction }
+            val redisdb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_REDIS,{e -> e is ActionComponent && e.flatten().all { a -> a is RedisDbAction }},
+                if(sizeRedis==0) -1 else startIndexRedis , if(sizeRedis==0) -1 else endIndexRedis
+            )
+
             val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
             val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
             val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
@@ -130,7 +140,7 @@ abstract class EnterpriseIndividual(
                 if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeDNS+sizeScheduleTasks
+            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDNS+sizeScheduleTasks
             val startIndexMain = initSize
             val endIndexMain =  initSize + sizeMain - 1
 
@@ -140,7 +150,7 @@ abstract class EnterpriseIndividual(
             val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
                 if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main, cleanup))
+            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dns, schedule, main, cleanup))
         }
     }
 
@@ -180,6 +190,9 @@ abstract class EnterpriseIndividual(
      */
     fun ensureFlattenedStructure() : Boolean{
 
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
+
         val before = seeAllActions().size
 
         val issues = doFlattenStructure()
@@ -189,16 +202,29 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
-        /*
-            FIXME There is some major bugs in Gene regarding
-            copyValueFrom() and setFromDifferentGene()
-            until fixed, this check will fail.
-            but the fix will require some major refactoring and testing... it will take time
-            TODO put back once fixed
-         */
-        //verifyValidity()
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
 
         return issues
+    }
+
+    override fun verifyValidity(checkForTaints: Boolean){
+
+        super.verifyValidity(checkForTaints)
+
+        val errors = mutableListOf<String>()
+        val ok = isValidInitializationActions(errors)
+        if(!ok){
+            throw IllegalStateException("Invalid initialization actions:\n${errors.joinToString("\n")}")
+        }
+    }
+
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
+        return SqlActionUtils.isValidActions(
+            seeInitializingActions().filterIsInstance<SqlAction>(),
+            isFlattenedStructure(),
+            errors
+        )
     }
 
     protected open fun doFlattenStructure() : Boolean{
@@ -207,7 +233,7 @@ abstract class EnterpriseIndividual(
         return false
     }
 
-    private fun isFlattenedStructure() : Boolean{
+    protected fun isFlattenedStructure() : Boolean{
         return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
     }
 
@@ -222,15 +248,17 @@ abstract class EnterpriseIndividual(
                 groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_REDIS).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()} + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
+            ActionFilter.ONLY_REDIS -> seeAllActions().filterIsInstance<RedisDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
-            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction }
-            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction }
+            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction }
+            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
@@ -297,6 +325,8 @@ abstract class EnterpriseIndividual(
 
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
+    fun seeRedisDbActions() : List<RedisDbAction> = seeActions(ActionFilter.ONLY_REDIS) as List<RedisDbAction>
+
     fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
 
     fun seeHostnameActions() : List<HostnameResolutionAction> = seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
@@ -307,9 +337,7 @@ abstract class EnterpriseIndividual(
      */
     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
-    override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
-    }
+
 
     override fun repairInitializationActions(randomness: Randomness) {
 
@@ -331,14 +359,25 @@ abstract class EnterpriseIndividual(
          * Note: this is only for DB Actions in the initialization phase, and NOT if there is any
          * afterwards (eg in resource-based handling).
          */
-        if (!verifyInitializationActions()) {
-            if (log.isTraceEnabled)
-                log.trace("invoke GeneUtils.repairBrokenDbActionsList")
+        if (!isValidInitializationActions()) {
+            if (log.isTraceEnabled){
+                log.trace("invoke SqlActionUtils.repairBrokenDbActionsList")
+            }
             val previous = sqlInitialization.toMutableList()
-            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
-            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
+            val relatedActionInMain = seeFixedMainActions()
+                .flatMap { it.flatten() }
+                .filterIsInstance<SqlAction>()
+
+            //first try to repair considering all actions... but side effects on removal will be ignored
+            SqlActionUtils.repairBrokenDbActionsList(
+                previous.plus(relatedActionInMain).toMutableList(),
+                randomness
+            )
+            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            //needed if actions were removed in the list "previous"
             resetInitializingActions(previous)
-            Lazy.assert{verifyInitializationActions()}
+
+            Lazy.assert{isValidInitializationActions()}
         }
     }
 
@@ -354,6 +393,9 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
+    private fun getLastIndexOfRedisDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
+
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
@@ -365,6 +407,9 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
+    private fun getFirstIndexOfRedisDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
@@ -382,14 +427,17 @@ abstract class EnterpriseIndividual(
      */
     fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
-        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
             throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
         }
 
-        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        var skipped = 0
+
+        skipped += addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
+        addInitializingRedisDbActions(actions = actions.filterIsInstance<RedisDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
         //we don't need duplicates in hostname actions
@@ -400,7 +448,9 @@ abstract class EnterpriseIndividual(
 
         addInitializingHostnameResolutionActions(actions = uniqueHostnames)
 
-        return  hostnameActions.size - uniqueHostnames.size
+        skipped += hostnameActions.size - uniqueHostnames.size
+
+        return skipped
     }
 
 
@@ -408,12 +458,42 @@ abstract class EnterpriseIndividual(
      * add [actions] at [relativePosition]
      * if [relativePosition] = -1, append the [actions] at the end
      */
-    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
-        if (relativePosition < 0)  {
-            addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
-        } else{
-            addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>) : Int{
+
+        var skipped = 0
+
+        /*
+            SQL actions representing existing data must ALWAYS be at the beginning.
+            Recall those are only used for FKs.
+         */
+        val (existing, others) = actions.filterIsInstance<SqlAction>()
+                                        .partition { it.representExistingData }
+
+        if(existing.isNotEmpty()){
+
+            val already = this.sqlInitialization.filter { it.representExistingData }
+
+            val (toAdd, duplicates) = existing.partition {x ->
+                already.none { it.insertionId == x.insertionId }
+            }
+
+            if(toAdd.isNotEmpty()) {
+                addChildrenToGroup(getFirstIndexOfDbActionToAdd(), toAdd, GroupsOfChildren.INITIALIZATION_SQL)
+            }
+
+            skipped += duplicates.size
         }
+
+        if(others.isNotEmpty()) {
+            val pos = if (relativePosition < 0) {
+                getLastIndexOfDbActionToAdd()
+            } else {
+                getFirstIndexOfDbActionToAdd() + relativePosition
+            }
+            addChildrenToGroup(pos, others, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+
+        return skipped
     }
 
     fun addInitializingScheduleTaskActions(relativePosition: Int=-1, actions: List<Action>){
@@ -429,6 +509,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfMongoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_MONGO)
         } else{
             addChildrenToGroup(getFirstIndexOfMongoDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_MONGO)
+        }
+    }
+
+    fun addInitializingRedisDbActions(relativePosition: Int=-1, actions: List<Action>){
+        if (relativePosition < 0)  {
+            addChildrenToGroup(getLastIndexOfRedisDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_REDIS)
+        } else{
+            addChildrenToGroup(getFirstIndexOfRedisDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_REDIS)
         }
     }
 

@@ -8,11 +8,37 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
+
+    @Disabled("Needs to hande lookahead in regex")
+    @Test
+    fun testLanguageTool(){
+        val s = "^((?iu)@.+)$"
+        RegexHandler.createGeneForJVM(s)
+    }
+
+
+    @Test
+    fun testFixedValue(){
+
+        val regex = "[a-z]"
+        val gene = RegexHandler.createGeneForJVM(regex)
+
+        val foo = "foo"
+
+        val modified = gene.setFromStringValue(foo)
+        assertTrue(modified)
+        assertEquals(foo, gene.getValueAsRawString())
+
+        val invalidChange = gene.setFromStringValue("42")
+        assertFalse(invalidChange)
+        assertEquals(foo, gene.getValueAsRawString())
+    }
 
 
     @Test
@@ -33,8 +59,8 @@ internal class RegexHandlerTest{
     fun testInd1Issue(){
         val s = "^1[3-9]\\d{9}"
         val regex = RegexHandler.createGeneForJVM(s)
-        assertEquals("${RegexGene.JAVA_REGEX_PREFIX}$s", regex.sourceRegex)
-        assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
+        assertEquals(s, regex.sourceRegex)
+        RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))
         RegexHandler.createGeneForJVM(RegexSharedUtils.forceFullMatch(s))
 
         val rand = Randomness()
@@ -125,11 +151,23 @@ internal class RegexHandlerTest{
     fun testCreateGeneForJVMInvalidRegex() {
 
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\xR") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\ugggg") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\x{}") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\x{") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\x}") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\x[h}") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("\\x{110000}") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("\\x{ffffff}") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\0") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\09") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("[9-1]") }
     }
 
     @Test
     fun testCreateGeneForEcma262InvalidRegex() {
 
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("\\xR") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\ugggg") }
+        assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("[9-1]") }
     }
 }

@@ -2,6 +2,7 @@ package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -13,6 +14,8 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.redis.RedisInsertBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -161,6 +164,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     ) {
         addInitializingSqlActions(individual, mutatedGenes, sampler)
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
+        addInitializingRedisDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
         // TODO if we handle schedule actions with structure mutator
     }
@@ -196,6 +200,40 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 oldMongoDbActions,
                 addedMongoDbInsertions,
                 ImpactsOfIndividual.MONGODB_ACTION_KEY,
+                config
+            )
+        }
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingRedisDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateRedisData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val failedRedisCommands = individual.fitness.getViewOfAggregatedFailedRedisCommands()
+
+        if (failedRedisCommands.isEmpty()) {
+            return
+        }
+
+        val oldRedisDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+
+        val addedRedisDbInsertions = handleFailedRedisCommands(ind, failedRedisCommands)
+            .let { if (it.isEmpty()) emptyList() else listOf(it) }
+
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldRedisDbActions,
+                addedRedisDbInsertions,
+                ImpactsOfIndividual.REDISDB_ACTION_KEY,
                 config
             )
         }
@@ -399,7 +437,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     }
 
     private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
-        /* TODO: DSE should be plugged in here */
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
 
@@ -428,6 +465,32 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         return addedMongoDbInsertions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedRedisCommands(
+        ind: T,
+        failedCommands: List<RedisFailedCommand>
+    ): List<EnvironmentAction> {
+
+        val existingKeys = ind.seeInitializingActions()
+            .filterIsInstance<RedisDbAction>()
+            .map { it.key }
+            .toSet()
+
+        val addedActions = RedisInsertBuilder.buildInsertActions(
+            failedCommands,
+            existingKeys,
+            randomness
+        )
+
+        if (addedActions.isNotEmpty()) {
+            ind.addInitializingActions(actions = addedActions)
+            addedActions.forEach { action ->
+                action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
+            }
+        }
+
+        return addedActions
     }
 
     private fun findMissing(

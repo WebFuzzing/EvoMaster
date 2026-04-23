@@ -34,10 +34,10 @@ import kotlin.math.ln
   */
 class Gaussian400EndpointModel (
     endpoint: Endpoint,
-    warmup: Int = 10,
+    warmup: Int,
     dimension: Int? = null,
-    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(
     endpoint, warmup, dimension, encoderType, metricType, randomness) {

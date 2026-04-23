@@ -99,6 +99,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
             action.setNoAuth()
         }else
             rpcHandler.actionWithRandomAuth(action)
+        action.forceNewTaints()
 
         rpcHandler.actionWithRandomSeeded(action, noSeedProbability)
 
@@ -114,6 +115,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
             throw IllegalStateException("cannot sample schedule action with empty cluster")
         val action = randomness.choose(scheduleActionCluster).copy() as ScheduleTaskAction
         action.doInitialize(randomness)
+        action.forceNewTaints()
         rpcHandler.scheduleActionWithRandomSeeded(action, noSeedProbability)
         return action
     }
@@ -183,6 +185,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                 .forEach { a ->
                     val copy = a.value.copy() as RPCCallAction
                     copy.doInitialize(randomness)
+                    copy.forceNewTaints()
                     rpcHandler.actionWithAllAuth(copy).forEach { actionWithAuth->
                         rpcHandler.actionWithAllCandidates(actionWithAuth)
                             .forEach { actionWithSeeded->

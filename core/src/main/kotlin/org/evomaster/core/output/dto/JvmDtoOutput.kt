@@ -15,11 +15,16 @@ abstract class JvmDtoOutput: DtoOutput {
     }
 
     protected fun addImports(lines: Lines) {
+        lines.addStatement("import java.util.HashMap")
         lines.addStatement("import java.util.List")
+        lines.addStatement("import java.util.Map")
         lines.addStatement("import java.util.Optional")
         lines.addEmpty()
+        lines.addStatement("import com.fasterxml.jackson.annotation.JsonAnyGetter")
+        lines.addStatement("import com.fasterxml.jackson.annotation.JsonAnySetter")
+        lines.addStatement("import com.fasterxml.jackson.annotation.JsonIgnore")
         lines.addStatement("import com.fasterxml.jackson.annotation.JsonInclude")
-        lines.addStatement("import shaded.com.fasterxml.jackson.annotation.JsonProperty")
+        lines.addStatement("import com.fasterxml.jackson.annotation.JsonProperty")
         lines.addEmpty()
     }
 

@@ -88,7 +88,7 @@ atom
  : quote
  | patternCharacter+
  | DOT
- | AtomEscape
+ | atomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
  // These two rules are added to handle the . and + symbols in emails
@@ -120,23 +120,65 @@ quoteChar
 
 //TODO
 CharacterEscape
-// : ControlEscape
-// | 'c' ControlLetter
- : HexEscapeSequence
- | UnicodeEscapeSequence
+ : SLASH ControlEscape
+ | SLASH 'c' ControlLetter
+ | SLASH HexEscapeSequence
+ | SLASH UnicodeEscapeSequence
+ | SLASH OctalEscapeSequence
+ | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
+                                                        // as on JS this is allowed only while certain flags are enabled
+
  //| IdentityEscape
  ;
 
-//TODO
-//ControlEscape
-// //one of f n r t v
-// : [fnrtv]
-// ;
+//TODO backreferences
+// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
+// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
+// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
+// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+// TODO missing \p escapes
+fragment PCharacterClassEscapeLabel
+ : PosixCharacterClassLabel
+ | UnicodeCategoriesLabel
+// | UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// | UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// | UnicodeBinaryProperiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
+// | javalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+ ;
+
+// TODO missing Unicode categories labels and implementations
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
+fragment UnicodeCategoriesLabel
+ : 'Pe'
+ ;
+
+// basic US-ASCII only predefined POSIX character classes
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#:~:text=character%3A%20%5B%5E%5Cw%5D-,POSIX,-character%20classes%20(US
+fragment PosixCharacterClassLabel
+ : 'Lower'
+ | 'Upper'
+ | 'ASCII'
+ | 'Alpha'
+ | 'Digit'
+ | 'Alnum'
+ | 'Punct'
+ | 'Graph'
+ | 'Print'
+ | 'Blank'
+ | 'Cntrl'
+ | 'XDigit'
+ | 'Space'
+ ;
+
+fragment ControlEscape
+ //one of f n r t v
+ : [aefnrt]
+ ;
+
+fragment ControlLetter
+ : [?-_a-z]
+ ;
 
 
 //TODO
@@ -196,27 +238,28 @@ classAtomNoDash
  //SourceCharacter but not one of \ or ] or -
  //TODO
  //: ~[-\]\\]
-// | '\\' ClassEscape
- : BaseChar
+ : classEscape
+ | BaseChar
  | DecimalDigit
- | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
+ | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
  | ESCAPED_DOT | ESCAPED_PLUS;
-
-
-//TODO
-//ClassEscape
-// : CharacterClassEscape
-//// | DecimalEscape
-//// | 'b'
-// //| CharacterEscape
-// ;
 
 decimalDigits
  : DecimalDigit+
  ;
 
+classEscape
+ : atomEscape
+// | SLASH 'b'
+ ;
 
+atomEscape
+ : CharacterClassEscape
+ | CharacterEscape
+// TODO
+// | '\\' DecimalEscape
+ ;
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
@@ -225,17 +268,11 @@ DecimalDigit
  : [0-9]
  ;
 
-
-AtomEscape
- : '\\' CharacterClassEscape
- //TODO
-// | '\\' DecimalEscape
- | '\\' CharacterEscape
- ;
-
-fragment CharacterClassEscape
- //one of d D s S w W
- : [dDsSwW]
+CharacterClassEscape
+ //one of d D s S w W v V h H
+  // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
+  // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
+  : SLASH [dDsSwWvVhH]
  ;
 
 
@@ -267,16 +304,27 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-UnicodeEscapeSequence:
+fragment OctalEscapeSequence
+ : '0' OctalDigit
+ | '0' OctalDigit OctalDigit
+ | '0' [0-3] OctalDigit OctalDigit
+;
+
+fragment UnicodeEscapeSequence:
  'u' HexDigit HexDigit HexDigit HexDigit
 ;
 
-HexEscapeSequence
+fragment HexEscapeSequence
  : 'x' HexDigit HexDigit
+ | 'x' BRACE_open HexDigit+ BRACE_close
  ;
 
 fragment HexDigit:
  [a-fA-F0-9]
+ ;
+
+fragment OctalDigit:
+ [0-7]
  ;
 
 //TODO

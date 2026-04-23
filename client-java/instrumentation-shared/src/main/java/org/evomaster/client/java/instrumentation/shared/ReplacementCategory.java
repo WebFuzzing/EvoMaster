@@ -45,6 +45,16 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle REDIS command interceptions
      */
-    REDIS
+    REDIS,
+
+    /**
+     * Replacements to handle NEO4J command interceptions
+     */
+    NEO4J,
+
+    /**
+     * Replacements to handle DYNAMODB command interceptions
+     */
+    DYNAMODB
 }
 

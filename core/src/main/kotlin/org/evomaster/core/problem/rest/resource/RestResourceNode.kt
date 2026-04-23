@@ -17,6 +17,7 @@ import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.Gene
@@ -165,7 +166,7 @@ open class RestResourceNode(
     /**
      * @return mutable genes in [dbactions] and they do not bind with rest actions.
      */
-    fun getMutableSQLGenes(dbactions: List<SqlAction>, template: String, is2POST : Boolean) : List<out Gene>{
+    fun getMutableSQLGenes(dbactions: List<SqlAction>, template: String, is2POST : Boolean) : List<Gene>{
 
         val related = getPossiblyBoundParams(template, is2POST, null).map {
             resourceToTable.paramToTable[it.key]
@@ -181,7 +182,7 @@ open class RestResourceNode(
      * @return mutable genes in [actions] which perform action on current [this] resource node
      *          with [callsTemplate] template, e.g., POST-GET
      */
-    private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<out Gene>{
+    private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<Gene>{
 
         if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeTopGenes).filter(Gene::isMutable)
 
@@ -408,6 +409,7 @@ open class RestResourceNode(
         } else {
             copy.doInitialize(randomness)
         }
+        copy.forceNewTaints()
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
@@ -523,7 +525,7 @@ open class RestResourceNode(
 
         //append extra patch
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
-            val second =  results.last().copy() as RestCallAction
+            val second =  results.last().copyKeepingSameWeakRef()
             if (lastPost != null)
                 CreateResourceUtils.linkDynamicCreateResource(lastPost, second)
             results.add(second)
@@ -558,6 +560,7 @@ open class RestResourceNode(
             action.randomize(randomness, false)
         else
             action.doInitialize(randomness)
+        action.forceNewTaints()
         return action
     }
 
@@ -565,7 +568,7 @@ open class RestResourceNode(
     private fun templateSelected(callsTemplate: CallsTemplate){
         templates.getValue(callsTemplate.template).times += 1
     }
-    
+
     private fun selectTemplate(predicate: (CallsTemplate) -> Boolean, randomness: Randomness, chosen : Map<String, CallsTemplate>?=null, chooseLessVisit : Boolean = false) : CallsTemplate?{
         val ts = if(chosen == null) templates.filter { predicate(it.value) } else chosen.filter { predicate(it.value) }
         if(ts.isEmpty())
@@ -648,8 +651,27 @@ open class RestResourceNode(
      *  this method is to update [actions] in this node based on the updated [action]
      */
     open fun updateActionsWithAdditionalParams(action: RestCallAction){
+
         val org = actions.find {  it.verb == action.verb }
-        org?:throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
+
+        if(org == null){
+            if(!action.isMounted()) {
+                throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
+            }
+            val sgs = (action.getRoot() as Individual).searchGlobalState
+                ?: return
+            if(sgs.epc.isInSearch()){
+                throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
+            } else {
+                /*
+                    in other phases like Security, we might build actions that are not defined in the schema.
+                    so should not crash.
+                    but this shouldn't happen during the search
+                 */
+                return
+            }
+        }
+
         if (action.parameters.size > org.parameters.size){
             originalActions.add(org)
             actions.remove(org)
@@ -799,8 +821,26 @@ open class RestResourceNode(
      * @return whether there exists any additional parameters by comparing with [action]?
      */
     fun updateAdditionalParams(action: RestCallAction) : Map<String, ParamInfo>?{
-        (actions.find { it.getName() == action.getName() }
-                ?: throw IllegalArgumentException("cannot find the action ${action.getName()} in the resource ${getName()}")) as RestCallAction
+
+        val found = (actions.find { it.getName() == action.getName() })
+
+        if(found == null){
+            if(!action.isMounted()) {
+                throw IllegalStateException("cannot find the action (${action.getName()}) in the resource ${getName()}")
+            }
+            val sgs = (action.getRoot() as Individual).searchGlobalState
+                ?: return null
+            if(sgs.epc.isInSearch()){
+                throw IllegalStateException("cannot find the action (${action.getName()}) in the resource ${getName()}")
+            } else {
+                /*
+                    in other phases like Security, we might build actions that are not defined in the schema.
+                    so should not crash.
+                    but this shouldn't happen during the search
+                 */
+                return null
+            }
+        }
 
         val additionParams = action.parameters.filter { p-> paramsInfo[getParamId(action.parameters, p)] == null}
         if(additionParams.isEmpty()) return null
@@ -873,7 +913,7 @@ open class RestResourceNode(
                 return paramsInfo.values.filter { it.requiredReferToOthers() || randomness?.nextBoolean(it.probOfReferringToOther) == true }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
-                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}
+                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.lowercase().contains("id"))}
             }
             HttpVerb.GET, HttpVerb.DELETE->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) }

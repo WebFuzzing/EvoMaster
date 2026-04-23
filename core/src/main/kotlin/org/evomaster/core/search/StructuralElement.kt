@@ -294,7 +294,7 @@ abstract class StructuralElement (
         }
     }
 
-    open fun killChildren(toKill: List<out StructuralElement>){
+    open fun killChildren(toKill: List<StructuralElement>){
         for(child in toKill){
             killChild(child)
         }
@@ -474,5 +474,22 @@ abstract class StructuralElement (
      */
     fun <T:StructuralElement> getFirstParent(klass: Class<T>) : T? {
         return getFirstParent { klass.isAssignableFrom(it.javaClass) } as T?
+    }
+
+    /**
+     * Check if there is any ancestor-descendant relationship between
+     * [this] and [other], or vice-versa
+     */
+    fun areAncestorDescendantRelated(other: StructuralElement) : Boolean{
+        if(this == other){
+            return false
+        }
+        if(this.existAnyParent { it == other }){
+            return true
+        }
+        if(other.existAnyParent { it == this }){
+            return true
+        }
+        return false
     }
 }

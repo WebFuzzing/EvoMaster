@@ -59,7 +59,7 @@ object ParserUtil {
         return pattern_verb!!
     }
 
-    private fun formatKey(source : String) : String = source.toLowerCase()
+    private fun formatKey(source : String) : String = source.lowercase()
 
     fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>, withParser : Boolean){
         if (withParser)
@@ -173,7 +173,7 @@ object ParserUtil {
     }
 
     private fun findRToken(key : String, map: MutableMap<String, out RToken>) : RToken?{
-        map[key.toLowerCase()]?.let { return it }
+        map[key.lowercase()]?.let { return it }
         return map.values.find { it.isKey(key) }
 
     }

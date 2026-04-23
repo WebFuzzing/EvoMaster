@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.wrapper
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
@@ -51,8 +52,8 @@ class CustomMutationRateGene<out T>(
     }
 
 
-    override fun setValueBasedOn(value: String) : Boolean{
-        return gene.setValueBasedOn(value)
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+        return gene.unsafeSetFromStringValue(value)
     }
 
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
@@ -147,22 +148,7 @@ class CustomMutationRateGene<out T>(
 
     override fun isPrintable() = gene.isPrintable()
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is CustomMutationRateGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = this.gene.copyValueFrom(other.gene)
-                if (ok){
-                    this.probability = other.probability
-                    this.searchPercentageActive = other.searchPercentageActive
-                }
-                ok
-            }, false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is CustomMutationRateGene<*>) {
@@ -191,7 +177,16 @@ class CustomMutationRateGene<out T>(
         return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is CustomMutationRateGene<*>) {
+            return false
+        }
+
+        val ok = this.gene.unsafeCopyValueFrom(other.gene)
+        if (ok){
+            this.probability = other.probability
+            this.searchPercentageActive = other.searchPercentageActive
+        }
+        return ok
     }
 }

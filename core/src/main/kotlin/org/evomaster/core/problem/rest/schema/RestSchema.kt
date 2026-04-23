@@ -3,7 +3,9 @@ package org.evomaster.core.problem.rest.schema
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder
 import org.evomaster.core.remote.SutProblemException
+import org.yaml.snakeyaml.LoaderOptions
 
 
 /**
@@ -17,6 +19,8 @@ class RestSchema(
 
     companion object{
         private val log = org.slf4j.LoggerFactory.getLogger(RestSchema::class.java)
+
+        const val TAG_NO_ACTIONS = "No actions"
 
         fun fromLocation(location: String) = RestSchema(OpenApiAccess.getOpenAPIFromLocation(location))
 
@@ -60,7 +64,16 @@ class RestSchema(
 
         //https://swagger.io/docs/specification/v3_0/using-ref/
 
-        val mapper = ObjectMapper(YAMLFactory())
+        // snakeyaml has default limits on size, which are very low
+        val yaml = YAMLFactoryBuilder(YAMLFactory())
+            .loaderOptions(LoaderOptions().apply {
+                codePointLimit = 50 * 1024 * 1024 // 50MB
+                maxAliasesForCollections = 1000
+                nestingDepthLimit = 100
+            })
+            .build()
+
+        val mapper = ObjectMapper(yaml)
         val tree = mapper.readTree(schema.schemaRaw)
         val refs = findAllSRef(tree)
 
@@ -123,12 +136,12 @@ class RestSchema(
 
     fun validate(){
         if (main.schemaParsed.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
+            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file", TAG_NO_ACTIONS)
         }
         // give the error message if there is nothing to test
-        if (main.schemaParsed.paths.size == 0){
+        if (main.schemaParsed.paths.isEmpty()){
             throw SutProblemException("The OpenAPI file from ${main.sourceLocation} " +
-                    "is either invalid or it does not define endpoints")
+                    "is either invalid or it does not define endpoints", TAG_NO_ACTIONS)
         }
     }
 }

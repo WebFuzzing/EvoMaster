@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
@@ -18,6 +19,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -26,6 +28,8 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
@@ -53,13 +57,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     protected lateinit var configuration: EMConfig
 
     @Inject
-    protected lateinit var partialOracles: PartialOracles
-
-    @Inject
     protected lateinit var builder: RestIndividualBuilder
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -68,9 +73,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private lateinit var infoDto: SutInfoDto
 
-    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
-    @Inject
-    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+    lateinit var skippedEndpoints : List<Endpoint>
+        private set
+
 
     @PostConstruct
     open fun initialize() {
@@ -99,7 +104,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val openApiSchema = problem.openApiSchema
 
         // set up authentications moved up since we are going to get authentication info from HttpWsSampler
-        setupAuthentication(infoDto)
+        setupAuthenticationForWhiteBox(infoDto)
 
         val swagger = if(!config.overrideOpenAPIUrl.isNullOrBlank()){
             OpenApiAccess.getOpenAPIFromLocation(config.overrideOpenAPIUrl,authentications)
@@ -110,13 +115,15 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
-        schemaHolder = RestSchema(swagger)
+        val transformed = applyOverlays(swagger)
+
+        schemaHolder = RestSchema(transformed)
         schemaHolder.validate()
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
-        val skip = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skip, RestActionBuilderV3.Options(config))
+        skippedEndpoints = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skippedEndpoints, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         if(config.extraQueryParam){
@@ -281,30 +288,49 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
 
+    private fun retrieveOverlays() : List<String>? {
+        val overlays = SchemaUtils.readOverlayFiles(config.overlay, config.overlayFileSuffixes)
+
+        if(overlays!=null && overlays.isEmpty()){
+            throw ConfigProblemException("Could not find any Overlay file in '${config.overlay}' given the suffixes '${config.overlayFileSuffixes}'")
+        }
+
+        return overlays
+    }
+
+    private fun applyOverlays(openApi: SchemaOpenAPI) : SchemaOpenAPI{
+
+        val overlays = retrieveOverlays()
+
+        val transformed = try{
+            openApi.withOverlays(overlays, config.overlayLenient)
+        }catch (e: Exception){
+            throw ConfigProblemException(e.message ?: "Failed to apply overlays")
+        }
+        return transformed
+    }
 
     private fun initForBlackBox() {
 
-        // adding authentication from config should be moved here.
-        addAuthFromConfig()
+        setupAuthenticationForBlackBox()
 
         // retrieve the swagger
         val swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
+        val transformed = applyOverlays(swagger)
 
-        schemaHolder = RestSchema(swagger)
+        schemaHolder = RestSchema(transformed)
         schemaHolder.validate()
 
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        skippedEndpoints = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skippedEndpoints, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         initAdHocInitialIndividuals()
-        if (config.seedTestCases)
+        if (config.seedTestCases) {
             initSeededTests()
-
-
-        //partialOracles.setupForRest(swagger, config)
+        }
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }

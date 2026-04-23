@@ -11,7 +11,6 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 /**
  * This replacement captures Redis dispatch operations containing Redis Commands.
@@ -70,13 +69,6 @@ public class StatefulConnectionClassReplacement extends ThirdPartyMethodReplacem
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String stripKey(String token) {
-        if (token != null && token.startsWith("key<") && token.endsWith(">")) {
-            return token.substring(4, token.length() - 1);
-        }
-        return token;
     }
 
     private static void addRedisCommand(RedisCommand.RedisCommandType type, String[] args, long executionTime) {

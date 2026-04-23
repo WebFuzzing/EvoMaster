@@ -1,5 +1,13 @@
 # Seminars/Presentations
 
+* 2025: *Fuzz Testing Web APIs: Overview of Existing Tools*.
+  Presentation given at TestCon 2025.
+  [[PDF](slides/2025_testcon.pdf)]
+
+* 2025: *Fuzz Testing Web APIs: Overview of Existing Tools*.
+  Presentation given at Nordic APIs Platform Summit 2025.
+  [[PDF](slides/2025_nordicapis.pdf)]
+
 * 2024: *AI for Fuzz Testing Web APIs*.
   Presentation given at Beihang University.
   [[PDF](slides/2024_beihang.pdf)]

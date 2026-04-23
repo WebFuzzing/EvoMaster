@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
@@ -179,11 +180,9 @@ abstract class Individual(
      * All invariants should always be satisfied after any modification of the individual.
      * If not, this is a bug.
      */
-    fun verifyValidity(){
+    open fun verifyValidity(checkForTaints: Boolean = false){
 
         groupsView()?.verifyGroups()
-
-        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
             if(!a.isGloballyValid()){
@@ -196,9 +195,25 @@ abstract class Individual(
             }
         }
 
-        if(!areAllValidLocalIds()){
-            throw IllegalStateException("There are invalid local ids")
+        val localIdErrors = verifyAllLocalIds()
+        if(localIdErrors.isNotEmpty()){
+            throw IllegalStateException("There are invalid local ids:\n" + localIdErrors.joinToString("\n"))
         }
+
+        /*
+            We cannot really verify it all the time.
+            Duplicates might exist due to bounded genes.
+            But flattening (done at minimization, for example) removes the binding, leading
+            this check to fail.
+            further problem, many phases (eg security) are done _after_ minimization...
+         */
+        //TODO put back after fix
+//        if(checkForTaints) {
+//            val taintIdErrors = verifyTaintIds()
+//            if (taintIdErrors.isNotEmpty()) {
+//                throw IllegalStateException("There are invalid taint ids:\n" + taintIdErrors.joinToString("\n"))
+//            }
+//        }
     }
 
     override fun copyContent(): Individual {
@@ -323,8 +338,9 @@ abstract class Individual(
     /**
      * Returns true if the initialization actions
      * are correct (i.e. all constraints are satisfied)
+     * If [errors] is provided, then error messages will be added to it (if any)
      */
-    abstract fun verifyInitializationActions(): Boolean
+    abstract fun isValidInitializationActions(errors: MutableList<String>? = null): Boolean
 
     /**
      * Attempts to repair the initialization actions.
@@ -496,15 +512,53 @@ abstract class Individual(
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
-    fun areAllValidLocalIds() : Boolean{
+
+    fun verifyTaintIds(): List<String>{
+
+        val all = flatViewAllStructuralElements()
+
+        val taintableGenes = all.filterIsInstance<TaintableGene>()
+            .filter { TaintInputName.isTaintInput(it.getPossiblyTaintedValue()) }
+            .filter { !it.isDependentTaint() }
+
+        val duplicates = CollectionUtils.duplicates(taintableGenes.map { it.getPossiblyTaintedValue() })
+
+        if(duplicates.isEmpty()){
+            return listOf()
+        }
+
+        val errors = mutableListOf<String>()
+
+        duplicates.entries.forEach { d ->
+           val same = taintableGenes.filter { it.getPossiblyTaintedValue() == d.key }.map { it as Gene }
+           if(same.any{ x ->
+               same.any { y ->
+                      y !=x && !y.hasAnyBindingRelationship(x)
+               }
+           }){
+               errors.add("Taint id ${d.key} has duplicate genes that are not related")
+           }
+        }
+        return errors
+    }
+
+    /**
+     * Return error messages in case of problems.
+     * If all valid, returned list is empty
+     */
+    fun verifyAllLocalIds() : List<String>{
+        val errors = mutableListOf<String>()
         val all = flatViewAllStructuralElements()
         val ids = all.map { it.getLocalId() }
         if(ids.contains(NONE_LOCAL_ID)){
-            return false
+            errors.add("Containing NONE_LOCAL_ID")
         }
         val duplicates = CollectionUtils.duplicates(ids)
         //check for duplicates
-        return duplicates.isEmpty()
+        if(duplicates.isNotEmpty()){
+            duplicates.entries.forEach { errors.add("Id ${it.key} is repeated ${it.value} times") }
+        }
+        return errors
     }
 
 

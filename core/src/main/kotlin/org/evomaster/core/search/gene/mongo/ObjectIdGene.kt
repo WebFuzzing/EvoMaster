@@ -54,15 +54,6 @@ class ObjectIdGene(
         return if (mode == GeneUtils.EscapeMode.EJSON) "{\"\$oid\":$hexString}" else hexString
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ObjectIdGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            { id.copyValueFrom(other.id) }, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ObjectIdGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -71,13 +62,14 @@ class ObjectIdGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectIdGene) {
-            return id.setValueBasedOn(gene.id)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is ObjectIdGene) {
+            return false
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
-        return false
+
+        return  id.unsafeCopyValueFrom(other.id)
     }
+
 
     override fun copyContent() = ObjectIdGene(
         name,

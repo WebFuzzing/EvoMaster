@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -52,6 +53,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
+    @Inject
+    protected lateinit var sampler : Sampler<T>
+
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
@@ -89,7 +93,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     /**
      * a set of actions/handling which are required to be executed before mutations
      */
-    fun preActionBeforeMutatoin(evaluatedIndividual: EvaluatedIndividual<T>){
+    fun preHandlingBeforeMutation(evaluatedIndividual: EvaluatedIndividual<T>){
         /*
             tracking might be null if the current is never mutated
             then need to handle it before mutation
@@ -97,7 +101,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         preHandlingTrackedIndividual(evaluatedIndividual)
     }
 
-    open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
+    open fun postHandlingAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 
@@ -124,7 +128,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         var current = individual
 
         // we run pre-actions before upToNTimes mutations
-        preActionBeforeMutatoin(current)
+        // TODO is this still needed? done inside mutation anyway
+        preHandlingBeforeMutation(current)
 
         val targets = archive.notCoveredTargets().toMutableSet()
 
@@ -156,7 +161,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{current.individual.verifyValidity(); true}
+            Lazy.assert{current.individual.verifyValidity(true); true}
 
             // skip to mutate the individual if any new harvested external actions are added
             val mutatedInd = if (!anyHarvestedExternalServiceActions)
@@ -166,7 +171,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{mutatedInd.verifyValidity(); true}
+            sampler.applyDerivedParamModifications(mutatedInd)
+
+            Lazy.assert{mutatedInd.verifyValidity(true); true}
 
             //FIXME: why setOf()??? are we skipping coverage collection here???
             // or always added non-covered from archive? if so, name "targets" is confusing

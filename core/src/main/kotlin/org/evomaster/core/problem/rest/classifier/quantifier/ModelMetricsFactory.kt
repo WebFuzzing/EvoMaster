@@ -10,7 +10,7 @@ import org.evomaster.core.EMConfig
  */
 fun createModelMetrics(
     metricType: EMConfig.AIClassificationMetrics,
-    windowSize: Int = 100
+    windowSize: Int = 500 // Window size below 500 may lead to noisy and unstable metrics
 ): ModelMetrics =
     when (metricType) {
         EMConfig.AIClassificationMetrics.TIME_WINDOW -> ModelMetricsWithTimeWindow(windowSize)

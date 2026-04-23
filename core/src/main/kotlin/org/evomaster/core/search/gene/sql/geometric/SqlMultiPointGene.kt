@@ -23,13 +23,16 @@ class SqlMultiPointGene(
     /**
      * The database type of the source column for this gene
      */
-    val databaseType: DatabaseType = DatabaseType.H2,
+    databaseType: DatabaseType = DatabaseType.H2,
     val points: ArrayGene<SqlPointGene> = ArrayGene(
         name = "points",
         minSize = 1, //looks like insertion fails if 0, due to "bad" syntax
         template = SqlPointGene("p", databaseType = databaseType)
     )
 ) : CompositeFixedGene(name, mutableListOf(points)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     init {
         if (databaseType!=DatabaseType.H2 && databaseType!=DatabaseType.MYSQL) {
@@ -92,32 +95,19 @@ class SqlMultiPointGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPointGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid({this.points.copyValueFrom(other.points)}, false)
+        this.databaseType = other.databaseType
+        return this.points.unsafeCopyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlMultiPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.points.containsSameValueAs(other.points)
-    }
-
-
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiPointGene -> {
-                points.setValueBasedOn(gene.points)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
+        return this.databaseType == other.databaseType && this.points.containsSameValueAs(other.points)
     }
 
     override fun customShouldApplyShallowMutation(

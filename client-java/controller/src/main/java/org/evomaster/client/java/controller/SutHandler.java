@@ -1,10 +1,8 @@
 package org.evomaster.client.java.controller;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationResultDto;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.DbSpecification;
 
@@ -89,6 +87,8 @@ public interface SutHandler {
     InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
 
     MongoInsertionResultsDto execInsertionsIntoMongoDatabase(List<MongoInsertionDto> insertions);
+
+    RedisInsertionResultsDto execInsertionsIntoRedisDatabase(List<RedisInsertionDto> insertions);
 
     /**
      * <p>
@@ -180,6 +180,8 @@ public interface SutHandler {
     default Object getMongoConnection() {return null;}
 
     default Object getOpenSearchConnection() {return null;}
+
+    default ReflectionBasedRedisClient getRedisConnection() {return null;}
 
     /**
      * <p>

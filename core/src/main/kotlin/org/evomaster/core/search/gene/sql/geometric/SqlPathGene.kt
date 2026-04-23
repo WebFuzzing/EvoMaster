@@ -19,13 +19,16 @@ import org.slf4j.LoggerFactory
  */
 class SqlPathGene(
         name: String,
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        databaseType: DatabaseType = DatabaseType.POSTGRES,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
                 template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
@@ -89,13 +92,13 @@ class SqlPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.points.copyValueFrom(other.points)}, false
-        )
+        this.databaseType = other.databaseType
+        val ok = this.points.unsafeCopyValueFrom(other.points)
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -105,18 +108,6 @@ class SqlPathGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlPathGene -> {
-                points.setValueBasedOn(gene.points)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

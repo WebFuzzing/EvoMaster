@@ -1,8 +1,10 @@
 package org.evomaster.core.search.gene.wrapper
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -26,9 +28,14 @@ class ChoiceGene<T>(
     /**
      * Potentially, associate different probabilities for the different choices
      */
-    probabilities: List<Double>? = null
+    probabilities: List<Double>? = null,
+    /**
+     * Optional list of name values for each of choices.
+     * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
+     */
+    valueNames: List<String?>? = null,
 
-) : CompositeFixedGene(name, geneChoices), WrapperGene where T : Gene {
+) : CompositeFixedGene(name, geneChoices), UserExamplesGene, PhenotypeDormantGene, WrapperGene where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
@@ -38,6 +45,8 @@ class ChoiceGene<T>(
         private set
 
     private val probabilities = probabilities?.toList() //make a copy
+
+    private val valueNames = valueNames?.toList()
 
     init {
         if (geneChoices.isEmpty()) {
@@ -49,6 +58,9 @@ class ChoiceGene<T>(
         }
         if(probabilities != null && probabilities.size != geneChoices.size){
             throw IllegalArgumentException("If probabilities are defined, then they must be same number as the genes")
+        }
+        if(valueNames != null && valueNames.size != geneChoices.size) {
+            throw IllegalArgumentException("If value names are defined, then they must be same number as the genes")
         }
     }
 
@@ -167,11 +179,30 @@ class ChoiceGene<T>(
             .getValueAsRawString()
     }
 
+    override fun getValueName(): String?{
+        return valueNames?.get(activeGeneIndex)
+    }
+
+    override fun getAvailableExampleNames() : Set<String> {
+        return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
+    }
+
+    override fun selectExampleByName(name: String) {
+        if(!isUsedForExamples()){
+            throw IllegalStateException("Selected choice does not contain example values")
+        }
+        if(valueNames == null || ! valueNames.contains(name)){
+            throw IllegalArgumentException("Selected example value choice does not contain $name")
+        }
+
+        selectActiveGene(valueNames.indexOf(name))
+    }
+
     /**
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].
      */
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
         val x = if(other is ChoiceGene<*>){
             other.activeGene()
@@ -179,19 +210,37 @@ class ChoiceGene<T>(
             other
         }
 
+        /*
+            TODO this is bit limited... what about if there are wrapper genes involved?
+        */
+
+        //first check if can find gene of same type
         for(i in geneChoices.indices){
             val g = geneChoices[i]
+
+            if(g.javaClass == x.javaClass) {
+                val updated = g.copyValueFrom(x)
+                if (updated) {
+                    this.activeGeneIndex = i
+                    return true
+                }
+            }
+        }
+
+        //if none found, check at any other possibly compatible types
+        for(i in geneChoices.indices){
+            val g = geneChoices[i]
+
             /*
-                TODO this is bit limited... what about if there are wrapper genes involved?
+                tricky... usually in "unsafe" we would not check for validity.
+                but here there are many options, and we do NOT know beforehand if any
+                of them would be fine. also if one works, we should not break validity of the other
+                options even if not selected
              */
-            if(g.javaClass == x.javaClass){
-                val updated = updateValueOnlyIfValid(
-                    {
-                        this.activeGeneIndex = i
-                        g.copyValueFrom(x)
-                    }, true
-                )
-                if(updated){
+            if(g.javaClass != x.javaClass) {
+                val updated = g.copyValueFrom(x)
+                if (updated) {
+                    this.activeGeneIndex = i
                     return true
                 }
             }
@@ -200,10 +249,10 @@ class ChoiceGene<T>(
         return false
     }
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         for(i in geneChoices.indices){
             val g = geneChoices[i]
-            val updated = g.setValueBasedOn(value)
+            val updated = g.unsafeSetFromStringValue(value)
             if(updated){
                 activeGeneIndex = i
                 return true
@@ -221,35 +270,17 @@ class ChoiceGene<T>(
         if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        if (this.activeGeneIndex != other.activeGeneIndex) {
+
+        if(this.activeGene().javaClass != other.activeGene().javaClass){
             return false
         }
 
-        return this.geneChoices[activeGeneIndex]
-            .containsSameValueAs(other.geneChoices[activeGeneIndex])
-    }
-
-    /**
-     * Binds this gene to another [ChoiceGene<T>] with the same number of
-     * gene choices, one gene choice to the corresponding gene choice in
-     * the other gene.
-     */
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is ChoiceGene<*> && gene.geneChoices.size == geneChoices.size) {
-            var result = true
-            geneChoices.indices.forEach { i ->
-                val r = geneChoices[i].setValueBasedOn(gene.geneChoices[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${geneChoices[i].name}) at index $i")
-                result = result && r
-            }
-
-            activeGeneIndex = gene.activeGeneIndex
-            return result
+        //TODO 'try' would not be needed if we refactor semantic of this method
+        return try{
+            this.activeGene().containsSameValueAs(other.activeGene())
+        } catch (e: IllegalArgumentException){
+            return false
         }
-
-        LoggingUtil.uniqueWarn(log, "cannot bind ChoiceGene with ${gene::class.java.simpleName}")
-        return false
     }
 
     /**
@@ -260,7 +291,8 @@ class ChoiceGene<T>(
         name,
         activeChoice = this.activeGeneIndex,
         geneChoices = this.geneChoices.map { it.copy() }.toList(),
-        probabilities = probabilities // immutable
+        probabilities = probabilities, // immutable
+        valueNames = valueNames // immutable
     )
 
     /**
@@ -270,8 +302,16 @@ class ChoiceGene<T>(
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 
-    override fun isChildUsed(child: Gene) : Boolean{
+    override fun isChildActive(child: Gene) : Boolean{
         verifyChild(child)
         return child == geneChoices[activeGeneIndex]
+    }
+
+    override fun tryToActivateGene(child: Gene): Boolean {
+        verifyChild(child)
+
+        activeGeneIndex = geneChoices.indexOf(child)
+
+        return true
     }
 }

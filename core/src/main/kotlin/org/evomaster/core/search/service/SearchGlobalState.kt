@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.webfrontend.service.BrowserController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 
 /**
  * Global state used in the search.
@@ -37,12 +39,15 @@ class SearchGlobalState {
 
     @Inject
     lateinit var spa: StringSpecializationArchive
+        private set
 
     @Inject(optional = true)
     lateinit var browser: BrowserController
+        private set
 
     @Inject
     lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+        private set
 
     @Inject
     lateinit var dataPool: DataPool
@@ -50,5 +55,9 @@ class SearchGlobalState {
 
     @Inject
     lateinit var idMapper: IdMapper
+        private set
+
+    @Inject
+    lateinit var epc: ExecutionPhaseController
         private set
 }

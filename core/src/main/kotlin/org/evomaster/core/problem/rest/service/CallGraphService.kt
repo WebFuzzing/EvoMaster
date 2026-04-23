@@ -24,12 +24,15 @@ class CallGraphService {
      */
     private val deleteDependencies = mutableMapOf<Endpoint, RestCallAction>()
 
+    private lateinit var endpointsInUse: Set<Endpoint>
 
     @PostConstruct
     private fun init() {
 
         val calls = sampler.seeAvailableActions()
             .filterIsInstance<RestCallAction>()
+
+        endpointsInUse = calls.map{it.endpoint}.toSet()
 
         val deletes = calls.filter { it.verb == HttpVerb.DELETE }
         val creates = calls.filter { it.verb == HttpVerb.POST || it.verb == HttpVerb.PUT }
@@ -62,10 +65,41 @@ class CallGraphService {
         }
     }
 
+    fun endpointsForPath(path: RestPath): List<Endpoint> {
+        return endpointsInUse
+            .filter { it.path == path }
+    }
+
+    /**
+     * Check if the given endpoint(verb,path) is declared in the schema.
+     * This is regardless of whether some endpoints were marked as ignored/to-skip
+     * during the fuzzing
+     */
+    fun isDeclared(verb: HttpVerb, path: RestPath): Boolean {
+        return isInUse(verb, path) || sampler.skippedEndpoints.contains(Endpoint(verb, path))
+    }
+
+    /**
+     * When fuzzing an API with N endpoint, we might select a subset K of endpoints in use.
+     * Check if input endpoint is among those.
+     */
+    fun isInUse(verb: HttpVerb, path: RestPath): Boolean {
+        return endpointsInUse.any { it.path == path && it.verb == verb }
+    }
+
+    fun findStrictTopGETResourceAncestor(path: RestPath) : RestCallAction?{
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.verb == HttpVerb.GET }
+            .filter { it.path.isStrictlyAncestorOf(path)}
+            .filter { it.path.isLastElementAParameter() }
+            .minByOrNull { it.path.levels() }
+    }
+
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
      */
-    fun hasParameterChild(a: RestCallAction): Boolean {
+    fun isThereChildActionWithParameter(a: RestCallAction): Boolean {
         return sampler.seeAvailableActions()
             .filterIsInstance<RestCallAction>()
             .map { it.path }
@@ -81,9 +115,9 @@ class CallGraphService {
 
     fun resolveLocationForParentOfChildOperationUsingCreatedResource(create: RestCallAction): String? {
 
-        if(hasParameterChild(create)) {
+        if(isThereChildActionWithParameter(create)) {
             //simple case
-            return create.resolvedPath()
+            return create.resolvedOnlyPath()
         }
 
         /*

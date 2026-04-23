@@ -11,6 +11,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
@@ -45,6 +46,14 @@ class WebModule: EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<WebIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<WebIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .to(object : TypeLiteral<FlakinessDetector<WebIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<WebIndividual>>() {})
@@ -61,12 +70,8 @@ class WebModule: EnterpriseModule() {
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
-        bind(object : TypeLiteral<Minimizer<WebIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
-
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
         bind(RemoteController::class.java)
             .to(RemoteControllerImplementation::class.java)

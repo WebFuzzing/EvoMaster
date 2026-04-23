@@ -18,13 +18,16 @@ class SqlMultiPathGene(
     /**
      * The database type of the source column for this gene
      */
-    val databaseType: DatabaseType = DatabaseType.MYSQL,
+    databaseType: DatabaseType = DatabaseType.MYSQL,
     val paths: ArrayGene<SqlPathGene> = ArrayGene(
         name = "points",
         minSize = 1,
         template = SqlPathGene("p", databaseType = databaseType)
     )
 ) : CompositeFixedGene(name, mutableListOf(paths)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiPathGene::class.java)
@@ -88,13 +91,12 @@ class SqlMultiPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.paths.copyValueFrom(other.paths)}, false
-        )
+        this.databaseType = other.databaseType
+        return this.paths.unsafeCopyValueFrom(other.paths)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -102,19 +104,6 @@ class SqlMultiPathGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.paths.containsSameValueAs(other.paths)
-    }
-
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiPathGene -> {
-                paths.setValueBasedOn(gene.paths)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

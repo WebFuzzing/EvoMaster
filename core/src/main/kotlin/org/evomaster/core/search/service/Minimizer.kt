@@ -11,6 +11,9 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchStatusUpdater
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.evomaster.core.sql.SqlAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,7 +23,7 @@ import org.slf4j.LoggerFactory
  *
  * WARN: currently minimization loses all history info from EvaluatedIndividual, eg impact of genes
  */
-class Minimizer<T: Individual> {
+class Minimizer<T: Individual> : TimeBoxedPhase {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(Minimizer::class.java)
@@ -38,43 +41,30 @@ class Minimizer<T: Individual> {
     @Inject
     private lateinit var idMapper: IdMapper
 
-    private var startTimer : Long = -1
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
 
 
-    fun doStartTheTimer(){
-        startTimer = System.currentTimeMillis()
+    override fun applyPhase() {
+        minimizeMainActionsPerCoveredTargetInArchive()
+        pruneNonNeededDatabaseActions()
+        simplifyActions()
+
+        //TODO there could be more to do here
     }
 
-    fun passedTimeInSecond() : Int {
-        if(startTimer < 0){
-            throw IllegalStateException("Timer was not started")
-        }
-        return ((System.currentTimeMillis() - startTimer) / 1000).toInt()
+    override fun hasPhaseTimedOut() : Boolean{
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.MINIMIZATION)
     }
 
-    private fun checkHasTimedout() : Boolean{
-        if(startTimer < 0){
-            throw IllegalStateException("Timer was not started")
-        }
-        if(config.minimizeTimeout < 0){
-            return false
-        }
-        if(config.minimizeTimeout == 0){
-            return true
-        }
-        val current = System.currentTimeMillis()
-        val passed = (current - startTimer) / (1000 * 60.0)
-        return passed > config.minimizeTimeout
-    }
-
-    fun pruneNonNeededDatabaseActions(){
+    private fun pruneNonNeededDatabaseActions(){
         //TODO
     }
 
     /**
      * eg, removed un-needed optional parameters
      */
-    fun simplifyActions(){
+    private fun simplifyActions(){
         //TODO
     }
 
@@ -86,14 +76,11 @@ class Minimizer<T: Individual> {
      *
      * "EvoSuite: On The Challenges of Test Case Generation in the Real World"
      */
-    fun minimizeMainActionsPerCoveredTargetInArchive() {
+    private fun minimizeMainActionsPerCoveredTargetInArchive() {
 
-        if(checkHasTimedout()){
-           LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
+        if(hasPhaseTimedOut()){
            return
         }
-
-        LoggingUtil.getInfoLogger().info("Starting to apply minimization phase")
 
         recomputeArchiveWithFullCoverageInfo()
 
@@ -119,8 +106,7 @@ class Minimizer<T: Individual> {
 
         current.forEach{
 
-            if(checkHasTimedout()){
-                LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
+            if(hasPhaseTimedOut()){
                 return
             }
 

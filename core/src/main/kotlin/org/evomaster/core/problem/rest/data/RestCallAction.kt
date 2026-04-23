@@ -17,6 +17,7 @@ import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
@@ -138,7 +139,9 @@ class RestCallAction(
     override fun copyContent(): Action {
 
         if(weakReference != null) {
-            throw IllegalStateException("'weakReference' must handled before trying to make a copy")
+            throw IllegalStateException("'weakReference' must handled before trying to make a copy." +
+                    " If needed, should rather use copyKeepingSameWeakRef(), but that can only be done in" +
+                    " very special cases.")
         }
 
         val p = parameters.asSequence().map(Param::copy).toMutableList()
@@ -155,7 +158,7 @@ class RestCallAction(
         return "$verb:$path"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 
@@ -191,13 +194,31 @@ class RestCallAction(
                     For example, they could be a ChoiceGene when dealing with "examples" or Regex when having patterns
                     only defined on some endpoints
                  */
-                parameters[i].primaryGene().copyValueFrom(k.primaryGene())
+                val g = parameters[i].primaryGene()
+                g.copyValueFrom(k.primaryGene())
+                g.forceNewTaints()
             }
         }
     }
 
     fun usingSameResolvedPath(other: RestCallAction) =
+        //FIXME this does not consider dynamic fields?
         this.resolvedOnlyPath() == other.resolvedOnlyPath()
+
+    /**
+     * When the URL path of this endpoint is resolved, would it be a (strict) parent from the other action
+     */
+    fun isResolvedParentPath(other: RestCallAction): Boolean {
+
+        val parent = this.resolvedOnlyPath() // TODO deal with dynamic info
+        val child = other.resolvedOnlyPath()
+
+        if(parent.length >= child.length) {
+            return false
+        }
+        return child.startsWith(parent)
+    }
+
 
     /**
     Note: in swagger the "consume" type might be missing.
@@ -432,4 +453,5 @@ class RestCallAction(
         this.weakReference = wr
         return copy
     }
+
 }

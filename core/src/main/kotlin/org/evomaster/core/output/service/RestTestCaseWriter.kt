@@ -6,25 +6,28 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import java.util.*
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -100,16 +103,23 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     //actions
                     c.second.forEach { a ->
                         val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, false)
                     }
                 }
             }else{
+                val isSQLi = hasSQLi(ind)
                 ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
-                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                  handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, addTimeMeasurement = isSQLi)
                 }
             }
 
         }
+    }
+
+    private fun hasSQLi(ind: EvaluatedIndividual<*>): Boolean {
+        return ind.evaluatedMainActions().any { evaluatedAction ->
+                (evaluatedAction.result as HttpWsCallResult).getVulnerableForSQLI()
+            }
     }
 
     protected fun locationVar(id: String): String {
@@ -429,6 +439,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"$path\""
                 }
 
+                //FIXME this should be same algorithm as in AbstractRestFitness
                 val idPointer = res.getResourceId()?.pointer ?: "/id"
 
                 val extract = extractValueFromJsonResponse(resVarName, idPointer)
@@ -540,8 +551,28 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
-            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
             .filter { it.staticCheckIfImpactPhenotype() }
-            .map { it.getValueAsRawString() }
+            .map {
+                val name = if(it is UserExamplesGene){
+                    //always true
+                    "(${it.getValueName()?: "-"}) "
+                } else {
+                    ""
+                }
+
+                val param = it.getFirstParent { p -> p is Param }
+                val pName = when(param) {
+                    is QueryParam -> "QUERY: ${param.name}"
+                    is HeaderParam -> "HEADER: ${param.name}"
+                    is PathParam -> "PATH: ${param.name}"
+                    is BodyParam -> "BODY"
+                    else -> ""
+                }
+
+                val value = it.getValueAsRawString()
+
+                "$name$pName -> $value"
+            }
     }
 }

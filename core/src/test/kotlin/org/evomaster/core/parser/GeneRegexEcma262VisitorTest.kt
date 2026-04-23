@@ -329,11 +329,60 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
     @Test
     fun testHexEscape(){
-        checkSameAsJava("""\x00\x0a\xba\xFF""")
+        checkSameAsJava("""x00\x00\x0a\xba\xFF""")
     }
 
     @Test
     fun testUnicodeEscape(){
-        checkSameAsJava("""\u0000\u0a0b\uffff""")
+        checkSameAsJava("""u0000\u0000\u0a0b\uffff""")
+    }
+
+    @Test
+    open fun testControlEscape(){
+        checkSameAsJava("""ftnrv\f\t\n\r\v""")
+    }
+
+    @Test
+    open fun testControlLetterEscape(){
+        checkSameAsJava("""cac!\cA\cG\cZ""")
+        // The following escape sequences behave differently in Java and JavaScript.
+        checkCanSample("""\ca\cg\cz""","\u0001\u0007\u001A",10_000)
+    }
+
+    @Test
+    fun testNegatedCharClasses(){
+        checkSameAsJava("""[^a-zA-Z0-9_,]""")
+    }
+
+    @Test
+    fun testComplementCompleteness(){
+        checkCanSample("""\D""", listOf("\u0000", "\uffff"), 1_000_000)
+    }
+
+    @Test
+    open fun testPredefinedCharClassInsideCharClass(){
+        checkSameAsJava("""[abc\d0]""")
+        checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\u0002¹²³]""")
+        checkSameAsJava("""[\D\d]""")
+        checkSameAsJava("""[\x41\cA\n\u0000]""")
+        checkCanSample("""[\ca\cg\cz]""",listOf("\u0001", "\u0007", "\u001A"),10_000)
+        checkCanSample("""[\p{Pe}]""",listOf("P", "p", "e", "{", "}"),10_000)
+    }
+
+    @Test
+    open fun testJSExclusiveEscapes(){
+        checkCanSample("""\a""", "a", 100)
+        checkCanSample("""\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/""", "^$\\.*+?()[]{}|/", 100)
+        checkCanSample("""[\c0]""", "\u0010", 100)
+        checkCanSample("""[\cP][\c0]""", "\u0010\u0010", 100)
+        checkCanSample("""[\c_]""", "\u001f", 100)
+        checkCanSample("""[\c*]""", listOf("\\", "c", "*"), 100)
+        checkCanSample("""\c""", "\\c", 100)
+        checkCanSample("""\c*""", "\\c*", 100)
+        checkCanSample("""\c0""", "\\c0", 100)
+        checkCanSample("""\0\000""", "\u0000\u0000", 100)
+        checkCanSample("""\001\007""", "\u0001\u0007", 100)
+        checkCanSample("""\123\377""", "\u0053\u00ff", 100)
+        checkCanSample("""a[\bc]d""", "a\bd", 100)
     }
 }

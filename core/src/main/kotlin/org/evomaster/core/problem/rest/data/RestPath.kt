@@ -243,6 +243,14 @@ class RestPath(path: String) {
         return other.isSameOrAncestorOf(this)
     }
 
+    fun isStrictlyAncestorOf(other: RestPath): Boolean {
+        if(this.elements.size == other.elements.size && (this.endsWithSlash || !other.endsWithSlash)){
+            //if same size, then only possibility of being ancestor if other ends with slash, but not this
+            return false
+        }
+        return isSameOrAncestorOf(other)
+    }
+
 
     /**
      * Prefix or same as "other"
@@ -329,7 +337,7 @@ class RestPath(path: String) {
                     gene.getViewOfElements()
                         .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
                 } else {
-                    val value = encode(gene!!.getValueAsRawString())
+                    val value = encode(gene.getValueAsRawString())
                     "$name=$value"
                 }
             }
@@ -390,6 +398,12 @@ class RestPath(path: String) {
                     val variable = variables.entries.find {
                         it.value.name == t.name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.PATH)
                     }?.key
+
+                    /*
+                        TODO are these correct??? are we properly escaping?
+                        also, URI does not comply with RFC 3968... :(
+                        need more testing
+                     */
 
                     if(variable != null){
                         /*
@@ -584,6 +598,20 @@ class RestPath(path: String) {
     }
 
     fun isRoot() = levels() == 0
+
+    /**
+     * Checks if this path has an ancestor (parent path).
+     * Returns true if the path has more than one level AND ends with a parameter.
+     *
+     * Examples:
+     * - /{id}/child/{cid} returns true (has ancestor and ends with parameter)
+     * - /{id} returns false (single level, no ancestor)
+     * - /{id}/child returns false (does not end with parameter)
+     * - /{id}/child/ returns false (does not end with parameter)
+     * - /users/{id} returns true (has ancestor and ends with parameter)
+     * - /users returns false (single level, no ancestor)
+     */
+    fun hasAncestorAndLastElementParameter(): Boolean = levels() > 1 && isLastElementAParameter()
 
     fun parentPath() : RestPath {
         if(isRoot()){

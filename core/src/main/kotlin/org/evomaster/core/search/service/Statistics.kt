@@ -4,16 +4,22 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchListener
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
+
 
 
 class Statistics : SearchListener {
@@ -34,6 +40,7 @@ class Statistics : SearchListener {
         const val TOTAL_BRANCHES = "numberOfBranches"
         const val COVERED_LINES = "coveredLines"
         const val COVERED_BRANCHES = "coveredBranches"
+        const val ELAPSED_SECONDS = "elapsedSeconds"
     }
 
     @Inject
@@ -54,8 +61,14 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private var remoteController: RemoteController? = null
 
+    @Inject(optional = true)
+    private lateinit var aiResponseClassifier: AIResponseClassifier
+
     @Inject
-    private lateinit var oracles: PartialOracles
+    private lateinit var epc : ExecutionPhaseController
+
+    @Inject(optional = true)
+    private lateinit var callGraphService: CallGraphService
 
     /**
      * How often test executions did timeout
@@ -78,6 +91,11 @@ class Statistics : SearchListener {
     private var mongoHeuristicEvaluationFailureCount = 0
     private val mongoDocumentsAverageCalculator = IncrementalAverage()
 
+    // redis heuristic evaluation statistic
+    private var redisHeuristicEvaluationSuccessCount = 0
+    private var redisHeuristicEvaluationFailureCount = 0
+    private val redisDocumentsAverageCalculator = IncrementalAverage()
+
    class Pair(val header: String, val element: String)
 
 
@@ -96,11 +114,17 @@ class Statistics : SearchListener {
         time.addListener(this)
     }
 
+
+    fun getHeadersAndElementsCSVLines(solution: Solution<*>): kotlin.Pair<String,String>{
+        val data = getData(solution)
+        val headers = data.joinToString(",") { it.header }
+        val elements = data.joinToString(",") { it.element }
+        return kotlin.Pair(headers, elements)
+    }
+
     fun writeStatistics(solution: Solution<*>) {
 
-        val data = getData(solution)
-        val headers = data.map { it.header }.joinToString(",")
-        val elements = data.map { it.element }.joinToString(",")
+        val (headers,elements) = getHeadersAndElementsCSVLines(solution)
 
         val path = Paths.get(config.statisticsFile).toAbsolutePath()
 
@@ -126,25 +150,24 @@ class Statistics : SearchListener {
             }
         }
 
-        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
+        // All headers, including AI-related ones
+        val headers = "interval," + snapshots.values.first().joinToString(",") { it.header }
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
-
         Files.createDirectories(path.parent)
 
-        if (!Files.exists(path) or !config.appendToStatisticsFile) {
+        if (!Files.exists(path) || !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
-
             path.toFile().appendText("$headers\n")
         }
 
         snapshots.entries.stream()
-                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
-                .forEach {
-                    val elements = it.value.map { it.element }.joinToString(",")
-                    path.toFile().appendText("${it.key},$elements\n")
-                }
+            .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+            .forEach { (key, pairs) ->
+                val elements = pairs.joinToString(",") { it.element }
+                path.toFile().appendText("$key,$elements\n")
+            }
     }
 
 
@@ -163,6 +186,10 @@ class Statistics : SearchListener {
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
         mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
         mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+    }
+
+    fun reportNumberOfEvaluatedDocumentsForRedisHeuristic(numberOfEvaluatedDocuments: Int) {
+        redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
@@ -188,6 +215,14 @@ class Statistics : SearchListener {
         mongoHeuristicEvaluationFailureCount++
     }
 
+    fun reportRedisHeuristicEvaluationSuccess() {
+        redisHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportRedisHeuristicEvaluationFailure() {
+        redisHeuristicEvaluationFailureCount++
+    }
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -196,7 +231,17 @@ class Statistics : SearchListener {
 
     fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.mean
 
-    override fun newActionEvaluated() {
+    fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
+
+    override fun newActionsEvaluated(n: Int) {
+
+        if(!epc.isInSearch()){
+            //we are only taking snapshots during the search
+            return
+        }
+
         if (snapshotThreshold <= 0) {
             //not collecting snapshot data
             return
@@ -204,7 +249,7 @@ class Statistics : SearchListener {
 
         val elapsed = 100 * time.percentageUsedBudget()
 
-        if (elapsed > snapshotThreshold) {
+        if (elapsed >= snapshotThreshold) {
             takeSnapshot()
         }
     }
@@ -246,7 +291,7 @@ class Statistics : SearchListener {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
             add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
             add(Pair(EVALUATED_ACTIONS, "" + time.evaluatedActions))
-            add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
+            add(Pair(ELAPSED_SECONDS, "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + targetsInfo.total))
@@ -336,11 +381,148 @@ class Statistics : SearchListener {
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
+            for(phase in ExecutionPhaseController.Phase.entries){
+                add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
+            }
         }
         addConfig(list)
 
+        // Adding AI data
+        list.addAll(getAIData())
+
         return list
     }
+
+    // For building AI metric pairs
+    fun aiMetricsAsPairs(
+        enabled: Boolean,
+        type: String,
+        accuracy: Double,
+        precision: Double,
+        sensitivity: Double,
+        specificity: Double,
+        npv: Double,
+        f1: Double,
+        mcc: Double,
+        updateTimeNs: Long,
+        updateCount: Long,
+        classifyTimeNs: Long,
+        classifyCount: Long,
+        repairTimeNs: Long,
+        repairCount: Long,
+        observed2xxByAIModel: Long,
+        observed4xxByAIModel: Long,
+        observed3xxByAIModel: Long,
+        observed5xxByAIModel: Long,
+        observed400ByAIModel: Long,
+        maxAccuracy : Double,
+        maxPrecision : Double,
+        maxSensitivity : Double,
+        maxSpecificity : Double,
+        maxNpv : Double,
+        maxF1Score : Double,
+        maxMcc : Double,
+    ): List<Pair> = listOf(
+        Pair("ai_model_enabled", enabled.toString()),
+        Pair("ai_model_type", type),
+        Pair("ai_accuracy", "%.4f".format(accuracy)),
+        Pair("ai_precision", "%.4f".format(precision)),
+        Pair("ai_sensitivity", "%.4f".format(sensitivity)),
+        Pair("ai_specificity", "%.4f".format(specificity)),
+        Pair("ai_npv", "%.4f".format(npv)),
+        Pair("ai_f1Score400", "%.4f".format(f1)),
+        Pair("ai_mcc400", "%.4f".format(mcc)),
+        // Max metrics among all endpoints
+        Pair("ai_max_Accuracy", "%.4f".format(maxAccuracy)),
+        Pair("ai_max_Precision", "%.4f".format(maxPrecision)),
+        Pair("ai_max_Sensitivity", "%.4f".format(maxSensitivity)),
+        Pair("ai_max_Specificity", "%.4f".format(maxSpecificity)),
+        Pair("ai_max_Npv", "%.4f".format(maxNpv)),
+        Pair("ai_max_F1Score", "%.4f".format(maxF1Score)),
+        Pair("ai_max_Mcc", "%.4f".format(maxMcc)),
+        // timing in milliseconds
+        Pair("ai_update_time_ms", "%.4f".format(updateTimeNs / 1_000_000.0)),
+        Pair("ai_update_count", updateCount.toString()),
+        Pair("ai_classify_time_ms", "%.4f".format(classifyTimeNs / 1_000_000.0)),
+        Pair("ai_classify_count", classifyCount.toString()),
+        Pair("ai_repair_time_ms", "%.4f".format(repairTimeNs / 1_000_000.0)),
+        Pair("ai_repair_count", repairCount.toString()),
+        Pair("observed_2xx_by_ai_model", observed2xxByAIModel.toString()),
+        Pair("observed_3xx_by_ai_model", observed3xxByAIModel.toString()),
+        Pair("observed_4xx_by_ai_model", observed4xxByAIModel.toString()),
+        Pair("observed_5xx_by_ai_model", observed5xxByAIModel.toString()),
+        Pair("observed_400_by_ai_model", observed400ByAIModel.toString()),
+        )
+
+    fun getAIData(): List<Pair> {
+        // AI model is unable
+        if (!config.isEnabledAIModelForResponseClassification()) {
+            return aiMetricsAsPairs(
+                enabled = false,
+                type = "NONE",
+                accuracy = 0.0,
+                precision = 0.0,
+                sensitivity = 0.0,
+                specificity = 0.0,
+                npv = 0.0,
+                f1 = 0.0,
+                mcc = 0.0,
+                updateTimeNs = 0,
+                updateCount = 0,
+                classifyTimeNs = 0,
+                classifyCount = 0,
+                repairTimeNs = 0,
+                repairCount = 0,
+                observed2xxByAIModel = 0,
+                observed3xxByAIModel = 0,
+                observed4xxByAIModel = 0,
+                observed5xxByAIModel = 0,
+                observed400ByAIModel = 0,
+                maxAccuracy = 0.0,
+                maxPrecision = 0.0,
+                maxSensitivity = 0.0,
+                maxSpecificity = 0.0,
+                maxNpv = 0.0,
+                maxF1Score = 0.0,
+                maxMcc = 0.0,
+            )
+        }
+
+        // Compute metrics
+        val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
+        val aiStats = aiResponseClassifier.getStats()
+
+        return aiMetricsAsPairs(
+            enabled = true,
+            type = config.aiModelForResponseClassification.name,
+            accuracy = metrics.accuracy,
+            precision = metrics.precision400,
+            sensitivity = metrics.sensitivity400,
+            specificity = metrics.specificity,
+            npv = metrics.npv,
+            f1 = metrics.f1Score400,
+            mcc = metrics.mcc,
+            updateTimeNs = aiStats.updateTimeNs,
+            updateCount = aiStats.updateCount,
+            classifyTimeNs = aiStats.classifyTimeNs,
+            classifyCount = aiStats.classifyCount,
+            repairTimeNs = aiStats.repairTimeNs,
+            repairCount = aiStats.repairCount,
+            observed2xxByAIModel = aiStats.observed2xxCount,
+            observed3xxByAIModel = aiStats.observed3xxCount,
+            observed4xxByAIModel = aiStats.observed4xxCount,
+            observed5xxByAIModel = aiStats.observed5xxCount,
+            observed400ByAIModel = aiStats.observed400Count,
+            maxAccuracy = aiStats.maxAccuracy,
+            maxPrecision = aiStats.maxPrecision,
+            maxSensitivity = aiStats.maxSensitivity,
+            maxSpecificity = aiStats.maxSpecificity,
+            maxNpv = aiStats.maxNpv,
+            maxF1Score = aiStats.maxF1Score,
+            maxMcc = aiStats.maxMcc,
+        )
+    }
+
 
     private fun distinctActions() : Int {
         if(sampler == null){
@@ -354,7 +536,13 @@ class Statistics : SearchListener {
 
         val properties = EMConfig.getConfigurationProperties()
         properties.forEach { p ->
-            list.add(Pair(p.name, p.getter.call(config).toString()))
+            var entry = p.getter.call(config).toString()
+            // should check for "," regardless of type
+            //p.getter.returnType.isSubtypeOf(typeOf<String>())
+            if(entry.contains(",")){
+                entry = "\"$entry\""
+            }
+            list.add(Pair(p.name, entry))
         }
     }
 
@@ -371,22 +559,6 @@ class Statistics : SearchListener {
                 .count()
     }
 
-//    private fun failedOracle(solution: Solution<*>): Int {
-//
-//        //count the distinct number of API paths for which we have a failed oracle
-//        // NOTE: calls with an error code (5xx) are excluded from this count.
-//        return solution.individuals
-//                .flatMap { it.evaluatedMainActions() }
-//                .filter {
-//                    it.result is HttpWsCallResult
-//                            && it.action is RestCallAction
-//                            && !(it.result as HttpWsCallResult).hasErrorCode()
-//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-//                }
-//                .map { it.action.getName() }
-//                .distinct()
-//                .count()
-//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 
@@ -394,8 +566,11 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedMainActions() }
                 .filter {
-                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult &&
+                            (it.result).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
+                // in phases like Security we might create calls that do not exist in schema
+                .filter{ it.action is RestCallAction && callGraphService.isInUse(it.action.verb,it.action.path)}
                 .map { it.action.getName() }
                 .distinct()
                 .count()

@@ -1,6 +1,7 @@
 package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.utils.CharacterRange
 
 private const val EOF_TOKEN = "<EOF>"
 /**
@@ -18,7 +19,12 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0,text.length - EOF_TOKEN.length)}")
+        val gene = RegexGene(
+            "regex",
+            disjList,
+            text.substring(0,text.length - EOF_TOKEN.length),
+            RegexType.ECMA_262
+        )
 
         return VisitResult(gene)
     }
@@ -168,22 +174,8 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             return VisitResult(gene)
         }
 
-        if(ctx.AtomEscape() != null) {
-            val txt = ctx.AtomEscape().text
-            when {
-                txt[1] == 'x' || txt[1] == 'u' -> {
-                    val hexValue =
-                        txt.subSequence(2, txt.length).toString().toInt(16)
-                    return VisitResult(
-                        PatternCharacterBlockGene(
-                            txt,
-                            hexValue.toChar().toString()
-                        )
-                    )
-                }
-
-                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
-            }
+        if(ctx.atomEscape() != null) {
+            return ctx.atomEscape().accept(this)
         }
 
         if(ctx.disjunction() != null){
@@ -219,7 +211,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
         val gene = CharacterRangeRxGene(negated, ranges)
 
@@ -229,10 +221,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitClassRanges(ctx: RegexEcma262Parser.ClassRangesContext): VisitResult {
 
         val res = VisitResult()
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.nonemptyClassRanges() != null){
-            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -243,28 +235,46 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRanges(ctx: RegexEcma262Parser.NonemptyClassRangesContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
-        val startText = ctx.classAtom()[0].text
-        assert(startText.length == 1) // single chars
-        val start : Char = startText[0]
-
-        val end = if(ctx.classAtom().size == 2){
-            ctx.classAtom()[1].text[0]
+        if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
+            if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
+            val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
+            list.addAll(rec)
         } else {
-            //single char, not an actual range
-            start
+            val startText = ctx.classAtom()[0].text
+            assert(startText.length == 1 || startText.length == 2) // single chars or \+ and \. escaped chars
+
+            val start: Char
+            val end: Char
+
+            if (startText.length == 1) {
+                start = startText[0]
+                end = if (ctx.classAtom().size == 2) {
+                    ctx.classAtom()[1].text[0]
+                } else {
+                    //single char, not an actual range
+                    start
+                }
+            } else {
+                // This case handles the \. and \+ cases
+                // wheren . and + should be treated as
+                // regular chars
+                assert(startText == "\\+" || startText == "\\.")
+                start = startText[1]
+                end = start
+            }
+
+            list.add(CharacterRange(start, end))
         }
 
-        list.add(Pair(start, end))
-
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -277,27 +287,32 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRangesNoDash(ctx: RegexEcma262Parser.NonemptyClassRangesNoDashContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.MINUS() != null){
 
             val start = ctx.classAtomNoDash().text[0]
             val end = ctx.classAtom().text[0]
-            list.add(Pair(start, end))
+            list.add(CharacterRange(start, end))
 
         } else {
 
-            val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
-            list.add(Pair(char, char))
+            if (ctx.classAtom()?.classAtomNoDash()?.classEscape() != null || ctx.classAtomNoDash()?.classEscape() != null){
+                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<CharacterRange>
+                list.addAll(rec)
+            } else {
+                val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
+                list.add(CharacterRange(char, char))
+            }
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -307,4 +322,90 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return res
     }
 
+    /**
+     * Interprets a \c<x> token text according to JS semantics.
+     * [inCharClass] controls whether digits/underscore are valid control letters.
+     * Returns either a single control char, or the literal chars.
+     */
+    private fun interpretControlEscapeLetterSequence(txt: String, inCharClass: Boolean): List<Char> {
+        // txt is one of: "\c", "\cX" for some X
+        if (txt.length == 2) {
+            // bare \c: always a literal backslash + c
+            return listOf('\\', 'c')
+        }
+        val x = txt[2]
+        val isValidControlLetter = x in 'A'..'Z' || x in 'a'..'z'   // [A-Za-z]: valid everywhere
+                || (inCharClass && (x in '0'..'9' || x == '_'))          // [0-9_]: valid only within char class
+        return if (isValidControlLetter) {
+            listOf((x.code % 32).toChar())                               // control char
+        } else {
+            // \c_ outside class, \c! anywhere, etc.: literal \, c, x
+            listOf('\\', 'c', x)
+        }
+    }
+
+    override fun visitClassEscape(ctx: RegexEcma262Parser.ClassEscapeContext): VisitResult {
+
+        val res = VisitResult()
+        res.data = if (ctx.controlLetterExtendedEscape() != null) {
+            // need to handle this first, otherwise control letters are interpreted as atomEscapes and are treated
+            // as if they were outside a character class, which is not the case here
+            val chars = interpretControlEscapeLetterSequence(ctx.text, inCharClass = true)
+            chars.map { CharacterRange(it, it) }
+        } else if (ctx.atomEscape() != null) {
+            when (val rec = ctx.atomEscape().accept(this).genes[0]) {
+                is CharacterClassEscapeRxGene -> rec.multiCharRange.ranges
+                is PatternCharacterBlockGene  -> {
+                    if (rec.stringBlock.length > 1) {
+                        throw IllegalArgumentException("CharClass element cannot be strings")
+                    }
+                    listOf(CharacterRange(rec.stringBlock[0], rec.stringBlock[0]))
+                }
+                else -> throw IllegalArgumentException("Unexpected CharClass content")
+            }
+        } else {
+            listOf(CharacterRange(8, 8)) // backspace char
+        }
+        return res
+    }
+
+    override fun visitAtomEscape(ctx: RegexEcma262Parser.AtomEscapeContext): VisitResult {
+        val txt = ctx.text
+
+        return VisitResult( when {
+            // \c cases
+            ctx.controlLetterExtendedEscape() != null -> {
+                val chars = interpretControlEscapeLetterSequence(txt, inCharClass = false)
+                if (chars.size == 1) PatternCharacterBlockGene(txt, chars[0].toString())
+                else PatternCharacterBlockGene(txt, chars.joinToString("")) // multi-char literal
+            }
+            txt[1] in "fnrtv" -> {
+                val escape = when {
+                    txt[1] == 'n' -> "\u000A"
+                    txt[1] == 'v' -> "\u000B"
+                    txt[1] == 'f' -> "\u000C"
+                    txt[1] == 'r' -> "\u000D"
+                    else -> "\u0009"
+                }
+                PatternCharacterBlockGene(txt, escape)
+            }
+            txt[1] in "xu" -> {
+                val hexValue =
+                    txt.substring(2).toInt(16)
+                PatternCharacterBlockGene(
+                    txt,
+                    hexValue.toChar().toString()
+                )
+            }
+            txt[1].isDigit() -> {
+                val octalValue = txt.substring(1).toInt(8)
+                PatternCharacterBlockGene(
+                    txt,
+                    octalValue.toChar().toString()
+                )
+            }
+            txt[1] in "dDsSwW" -> CharacterClassEscapeRxGene(txt[1].toString())
+            else -> PatternCharacterBlockGene(txt, txt[1].toString())
+        })
+    }
 }

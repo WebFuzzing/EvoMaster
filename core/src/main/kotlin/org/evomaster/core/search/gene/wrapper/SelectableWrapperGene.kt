@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -16,7 +18,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 abstract class SelectableWrapperGene(name: String,
                                      val gene: Gene,
                                      var isActive: Boolean = true
-): CompositeFixedGene(name, gene), WrapperGene {
+): CompositeFixedGene(name, gene), WrapperGene, PhenotypeDormantGene {
 
 
     /**
@@ -110,5 +112,27 @@ abstract class SelectableWrapperGene(name: String,
             as in the former case the values are 'undefined'
          */
         return !isActive || gene.isPrintable()
+    }
+
+    override fun isChildActive(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
+    }
+
+    override fun tryToActivateGene(child: Gene): Boolean {
+        verifyChild(child)
+
+        if(isActive){
+            //nothing to do
+            return true
+        }
+
+        if(!selectable){
+            //can't activate it
+            return false
+        } else {
+            isActive = true
+            return true
+        }
     }
 }

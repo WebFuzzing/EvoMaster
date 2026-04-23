@@ -3,11 +3,12 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
+import org.evomaster.core.utils.StringUtils.capitalizeFirstChar
 import java.nio.file.Path
 
 class KotlinDtoOutput: JvmDtoOutput() {
 
-    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
@@ -21,7 +22,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
     }
 
     override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
-        return "$dtoVarName.${attributeName} = $value"
+        return "$dtoVarName.set${capitalizeFirstChar(attributeName)}($value)"
     }
 
     override fun getNewListStatement(listType: String, listVarName: String): String {
@@ -32,18 +33,71 @@ class KotlinDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value)"
     }
 
+    override fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String {
+        return "$additionalPropertiesVarName.addAdditionalProperty($key, $value)"
+    }
+
     private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
-        lines.add("data class $dtoFilename(")
+        lines.add("class $dtoFilename {")
         addVariables(lines, dtoClass)
-        lines.add(")")
+        addGettersAndSetters(lines, dtoClass)
+        lines.add("}")
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${it.name}\")")
-                lines.add("var ${it.name}: ${it.type}? = null,")
+                lines.add("@JsonProperty(\"${it.key}\")")
+                lines.add("private var ${it.key}: Optional<${it.value.type}>? = null")
+            }
+            lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties()) {
+            lines.indented {
+                /*
+                 * We ignore additionalProperties map since otherwise Jackson will attempt to serialize it as
+                 * { ..., "additionalProperties": { ... } }
+                 * Where actually what we need is the inner object with the different key-values.
+                 */
+                lines.add("@JsonIgnore")
+                lines.add("private val additionalProperties: MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> = mutableMapOf()")
+                lines.addEmpty()
+
+                // Ensures that entries stored in additionalProperties are flattened into the JSON object serialization.
+                lines.add("@JsonAnyGetter")
+                lines.add("fun getAdditionalProperties(): MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> {")
+                lines.indented {
+                    lines.add("return additionalProperties")
+                }
+                lines.add("}")
+                lines.addEmpty()
+
+                // Allows the DTO to accept JSON properties that are not declared as explicit fields.
+                lines.add("@JsonAnySetter")
+                lines.add("fun addAdditionalProperty(name: String, value: ${dtoClass.additionalPropertiesDtoName}) {")
+                lines.indented {
+                    lines.add("additionalProperties[name] = value")
+                }
+                lines.add("}")
+                lines.addEmpty()
+            }
+        }
+    }
+
+    private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
+        dtoClass.fieldsMap.forEach {
+            val varName = it.key
+            val varType = it.value.type
+            val capitalizedVarName = capitalizeFirstChar(varName)
+            lines.indented {
+                lines.add("fun get${capitalizedVarName}(): Optional<${varType}>? = $varName")
+                lines.addEmpty()
+                lines.add("fun set${capitalizedVarName}(${varName}: ${varType}?) {")
+                lines.indented {
+                    lines.add("this.${varName} = Optional.ofNullable(${varName})")
+                }
+                lines.add("}")
             }
             lines.addEmpty()
         }

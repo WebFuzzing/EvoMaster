@@ -6,7 +6,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.MainAction
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -99,7 +101,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         samplePostProcessing(ind)
 
-        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(true); true }
         return ind
     }
 
@@ -132,9 +134,45 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                     .filter { it.selectable }
                     .forEach { it.isActive = on }
             }
+
+            if(a is MainAction && randomness.nextBoolean(config.probNamedExamples)){
+                applyNamedExamples(a)
+            }
         }
 
         applyDerivedParamModifications(ind)
+    }
+
+    private fun applyNamedExamples(action: MainAction) {
+
+        val inUse = action.getNamedExamplesInUse()
+        if (inUse.isEmpty()) {
+            return
+        }
+
+        val candidates = action.getNamedExamples()
+            //we skip named examples that are used only once
+            .filter { it.value >= 2 }
+        if(candidates.isEmpty()){
+            return
+        }
+
+        if (inUse.any { it.value == candidates[it.key] }) {
+            //one example is already fully covered
+            return
+        }
+
+        //we look at something already selected, with more than 1 occurrence, and not fully used yet
+        val options = inUse.filter { candidates.contains(it.key) }
+        if(options.isEmpty()){
+            //this can happen when there is a selected named example with a single occurrence in the schema.
+            //so, nothing to do
+            return
+        }
+
+        val choice = randomness.choose(options.keys)
+
+        action.enforceNamedExample(choice)
     }
 
     open fun applyDerivedParamModifications(ind: T){

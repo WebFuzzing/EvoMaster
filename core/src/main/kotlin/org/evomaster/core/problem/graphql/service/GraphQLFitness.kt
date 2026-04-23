@@ -9,6 +9,7 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -223,7 +224,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         }
 
         if (status == 500) {
-            if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            if (config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_STATUS_500)) {
                 Lazy.assert { location5xx != null || config.blackBox }
                 /*
                     500 codes "might" be bugs. To distinguish between different bugs
@@ -308,7 +309,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                         And while we are at it, let's release any hanging network resource
                      */
                     client.close() //make sure to release any resource
-                    client = ClientBuilder.newClient()
+                    client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
                     TcpUtils.handleEphemeralPortIssue()
 
@@ -354,7 +355,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         } catch (e: Exception) {
 
-            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
+            if (e is ProcessingException && (TcpUtils.isTimeout(e))) {
                 gqlcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false

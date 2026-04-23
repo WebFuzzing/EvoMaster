@@ -52,7 +52,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     @Test
     fun testIssueWithControlCharactersInIgnoreCase(){
         val s = "a[](){}\\\"^$.b"
-        checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.toUpperCase(), s.toLowerCase()), 200)
+        checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.uppercase(), s.lowercase()), 200)
     }
 
     @Test
@@ -67,9 +67,59 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
-    fun testDecreasingRange(){
-        //checkSameAsJava("[!- ]") //not valid in Java
-        //checkSameAsJava("[9-1]") //not valid in Java
-        checkCanSample("[9-1]", listOf("1","5","9"),200)
+    fun testJavaHexEscape(){
+        checkSameAsJava("""x{3}\x{0}\x{FFFf}\x{0FFFf}\x{01FFFf}\x{10FFFf}""")
+    }
+
+    @Test
+    fun testJavaOctalEscape(){
+        checkSameAsJava("""00\00\07\077\0377\0378\0400""")
+    }
+
+    @Test
+    override fun testControlEscape(){
+        checkSameAsJava("""aefnrt\a\e\f\n\r\t""")
+    }
+
+    @Test
+    override fun testControlLetterEscape() {
+        checkSameAsJava("""cac!\ca\cg\cz\cA\cG\cZ\c@\c[\c\\c]\c^\c\c_\c?""")
+    }
+
+    @Test
+    fun testJavaCharClassEscape(){
+        checkSameAsJava("""\v\V\h\H""")
+    }
+
+    @Test
+    fun testPosixCharacterClasses(){
+        checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
+            |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
+    }
+
+    @Test
+    fun testUnicodeCategories(){
+        checkSameAsJava("""\p{Pe}""")
+        checkSameAsJava("""Pe""")
+    }
+
+    @Test
+    override fun testPredefinedCharClassInsideCharClass(){
+        checkSameAsJava("""[\V\p{Lower}\p{Upper}\W\d]""")
+        checkSameAsJava("""[a\p{Pe}]""")
+        checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
+        checkCanSample("""[a\p{Pe}b]""", ")", 100)
+    }
+
+    @Test
+    fun testPEscapesComplements(){
+        checkSameAsJava("""\P{Lower}\P{Upper}\P{ASCII}\P{Alpha}\P{Digit}\P{Alnum}\P{Punct}\P{Graph}
+            |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
+        checkSameAsJava("""\P{Pe}""")
+    }
+
+    @Test
+    override fun testJSExclusiveEscapes() {
+        // JS exclusive
     }
 }

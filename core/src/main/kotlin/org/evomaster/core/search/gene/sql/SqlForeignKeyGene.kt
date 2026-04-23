@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.root.SimpleGene
@@ -9,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.TableId
 
 /**
@@ -24,7 +26,7 @@ import org.evomaster.core.sql.schema.TableId
  */
 class SqlForeignKeyGene(
         sourceColumn: String,
-        val uniqueId: Long,
+        uniqueId: Long,
         /**
          * The id of the table this FK points to
          */
@@ -49,6 +51,17 @@ class SqlForeignKeyGene(
         }
     }
 
+    var uniqueId: Long = uniqueId
+        private set
+
+    fun shiftIdBy(delta: Long){
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+        uniqueId += delta
+    }
+
+
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //FIXME: update once this gene is refactored
         //eg. can have multi-column FK, and values are not necessarily numeric
@@ -66,6 +79,16 @@ class SqlForeignKeyGene(
     }
 
     override fun checkForGloballyValid(): Boolean {
+
+        val action = getFirstParent{it is SqlAction} as SqlAction?
+            //this would mean is not mounted
+            ?: return false
+
+        if(action.insertionId != uniqueId){
+            //the two must always be the same
+            return false
+        }
+
         return nullable || isBound()
     }
 
@@ -142,6 +165,11 @@ class SqlForeignKeyGene(
         return true
     }
 
+    override fun isPrintable(): Boolean {
+        //TODO what about pk? anyway, likely PK/FK will need a major overhaul...
+        return isBound() || nullable
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isBound()) {
@@ -187,20 +215,7 @@ class SqlForeignKeyGene(
 
     fun isBound() = uniqueIdOfPrimaryKey >= 0
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlForeignKeyGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.uniqueIdOfPrimaryKey
-        this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
 
-        if (!isLocallyValid()){
-            this.uniqueIdOfPrimaryKey = current
-            return false
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlForeignKeyGene) {
@@ -230,8 +245,12 @@ class SqlForeignKeyGene(
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // do nothing
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlForeignKeyGene) {
+            return false
+        }
+        this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
+
         return true
     }
 }

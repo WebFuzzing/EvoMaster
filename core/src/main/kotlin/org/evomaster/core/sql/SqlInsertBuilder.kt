@@ -1029,9 +1029,9 @@ class SqlInsertBuilder(
      */
     fun extractFkTable(tables: Set<TableId>, all: MutableSet<TableId> = mutableSetOf()): Set<TableId> {
         tables.forEach { t ->
-            if (!all.contains(t))
+            if (!all.contains(t) && all.none { it.isEquivalentIgnoringCase(t) })
                 all.add(t)
-            val fk = extractFkTable(t).filterNot { all.contains(it) }.toSet()
+            val fk = extractFkTable(t).filter { !all.contains(it) && all.none { a -> a.isEquivalentIgnoringCase(it)}}.toSet()
             if (fk.isNotEmpty()) {
                 extractFkTable(fk, all)
             }

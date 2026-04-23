@@ -1,9 +1,9 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -19,13 +19,11 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
-import org.evomaster.core.search.service.SearchTimeController
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
@@ -65,6 +63,11 @@ class TestSuiteWriter {
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
+        private var containsDtos = false
+
+        private const val EXTRACT_JDK_PATH_ENV_VAR_METHOD = "extractJDKPathWithEnvVarName"
+        private const val EXTRACT_SUT_PATH_ENV_VAR_METHOD = "extractSutJarNameWithEnvVarName"
+
     }
 
     @Inject
@@ -211,12 +214,13 @@ class TestSuiteWriter {
         )
     }
 
-    // TODO: take DTO extraction and writing to a different class
-    fun writeDtos(solutionFilename: String) {
+    fun writeDtos(solution: Solution<*>) {
+        val solutionFilename = solution.getFileName().name
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
-        val restSampler = sampler as AbstractRestSampler
-        DtoWriter(config.outputFormat).write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+        val dtoWriter = DtoWriter(config.outputFormat)
+        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
+        containsDtos = dtoWriter.containsDtos()
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -335,15 +339,25 @@ class TestSuiteWriter {
 
         lines.addBlockCommentLine(" The generated test suite contains ${solution.individuals.size} tests")
         classDescriptionEmptyLine(lines)
-        lines.addBlockCommentLine(" Covered targets: ${solution.overall.coveredTargets()}")
+        lines.addBlockCommentLine(" Covered targets: ${solution.overall.numberOfCoveredTargets()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" Used time: ${searchTimeController.getElapsedTime()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" Needed budget for current results: ${searchTimeController.neededBudget()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" ${solution.termination.comment}")
-        lines.endCommentBlock()
+        classDescriptionEmptyLine(lines)
 
+        if(config.couldSupportDtoForPayload() && !config.dtoForRequestPayload){
+            lines.addBlockCommentLine(" ******************************** IMPORTANT ********************************")
+            lines.addBlockCommentLine(" * If you are planning to modify these test cases manually, you might")
+            lines.addBlockCommentLine(" * want to consider using the '--dtoForRequestPayload true' option to")
+            lines.addBlockCommentLine(" * generate statically typed DTOs instead of payloads defined with strings.")
+            lines.addBlockCommentLine(" ***************************************************************************")
+            classDescriptionEmptyLine(lines)
+        }
+
+        lines.endCommentBlock()
     }
 
     /**
@@ -436,7 +450,7 @@ class TestSuiteWriter {
 
         if (format.isJavaOrKotlin()) {
 
-            if (config.dtoForRequestPayload) {
+            if (config.dtoSupportedForPayload() && containsDtos) {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
@@ -445,6 +459,10 @@ class TestSuiteWriter {
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
+
+            // BigInteger and BigDecimal
+            addImport("java.math.BigDecimal", lines)
+            addImport("java.math.BigInteger", lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
@@ -456,6 +474,7 @@ class TestSuiteWriter {
                 || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.common.Metadata", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
                     "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
@@ -478,6 +497,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.mongo.dsl.MongoDsl.mongo", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto", lines)
                 addImport(MongoInsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if (solution.hasAnyRedisAction()) {
+                addImport("org.evomaster.client.java.controller.redis.dsl.RedisDsl.redis", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionResultsDto", lines)
+                addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
             if (config.enableBasicAssertions) {
@@ -537,6 +562,11 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+
+            if(config.sqli){
+                lines.add("import time")
+            }
+
             if (config.testTimeout > 0) {
                 //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
                 lines.add("import os")
@@ -604,6 +634,10 @@ class TestSuiteWriter {
     }
 
     private fun getJavaCommand(): String {
+        if (config.useEnvVarsForPathInTests){
+            return ".setJavaCommand($EXTRACT_JDK_PATH_ENV_VAR_METHOD(\"${config.jdkEnvVarName}\"))"
+        }
+
         if (config.javaCommand != "java") {
             val java = config.javaCommand.replace("\\", "\\\\")
             return ".setJavaCommand(\"$java\")"
@@ -620,8 +654,12 @@ class TestSuiteWriter {
 
         val wireMockServers = getActiveWireMockServers()
 
-        val executable = if (controllerInput.isNullOrBlank()) ""
-        else "\"$controllerInput\"".replace("\\", "\\\\")
+        val executable = if (config.useEnvVarsForPathInTests){
+            "$EXTRACT_SUT_PATH_ENV_VAR_METHOD(\"${config.sutDistEnvVarName}\", \"${config.sutJarEnvVarName}\")"
+        }else{
+            if (controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\", "\\\\")
+        }
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
@@ -643,6 +681,7 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
+                    addStatement("private static final String SSRF_METADATA_TAG = \"SSRF\"", lines)
                 }
             }
 
@@ -674,7 +713,9 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
+                    addStatement("private const val SSRF_METADATA_TAG: String = \"SSRF\" ", lines)
                 }
+                assertionUtilFunctionForSSRF(lines, config.outputFormat)
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -1036,6 +1077,10 @@ class TestSuiteWriter {
 
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
+
+        if (config.ssrf && solution.hasSsrfFaults() && config.outputFormat.isJavaOrKotlin()) {
+            assertionUtilFunctionForSSRF(lines, config.outputFormat)
+        }
     }
 
 
@@ -1142,6 +1187,39 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
+        lines.addEmpty(1)
+
+        val methodComment = "Method to verify whether the HttpCallbackVerifier has received any requests."
+        when {
+            format.isKotlin() -> {
+                lines.addSingleCommentLine(methodComment)
+                lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
+            }
+            format.isJava() -> {
+                lines.startCommentBlock()
+                lines.addBlockCommentLine(methodComment)
+                lines.endCommentBlock()
+                lines.add("public static boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
+            }
+        }
+        lines.block {
+            lines.add("return verifier")
+            lines.indented {
+                if (format.isKotlin()) {
+                    lines.add(".allServeEvents")
+                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                    lines.add(".any { it.stubMapping.metadata.getString(SSRF_METADATA_TAG) == actionName }")
+                }
+                if (format.isJava()) {
+                    lines.add(".getAllServeEvents()")
+                    lines.add(".stream().filter( r -> r.getWasMatched() && r.getStubMapping().getMetadata() != null)")
+                    lines.add(".anyMatch( r -> r.getStubMapping().getMetadata().getString(SSRF_METADATA_TAG).equals(actionName));")
+                }
+            }
+        }
     }
 
 }

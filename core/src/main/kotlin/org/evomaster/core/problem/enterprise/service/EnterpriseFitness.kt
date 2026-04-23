@@ -10,19 +10,22 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.redis.RedisDbActionResult
+import org.evomaster.core.redis.RedisDbActionTransformer
+import org.evomaster.core.redis.RedisExecution
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.TargetInfo
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -97,7 +100,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
 
         val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
-        if(!SqlActionUtils.verifyExistingDataFirst(allSqlActions)){
+        if(!SqlActionUtils.isValidExistingDataFirst(allSqlActions, true)){
             throw IllegalArgumentException("SQLAction representing existing data are not in order")
         }
 
@@ -200,6 +203,33 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
         executedResults?.forEachIndexed { index, b ->
             mongoDbResults[index].setInsertExecutionResult(b)
+        }
+
+        return true
+    }
+
+    /** Transforms and executes a list of Redis [RedisDbAction] as insertion commands
+     * against the remote Redis database via the SUT controller.
+     *
+     * @param allRedisActions Redis actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Redis action will be appended, preserving the same order as [allRedisActions].
+     * @return whether [allRedisActions] execute successfully.
+     */
+    fun doRedisDbCalls(
+        allRedisActions: List<RedisDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allRedisActions.isEmpty()) return true
+
+        val redisResults = allRedisActions.map { RedisDbActionResult(it.getLocalId()) }
+        actionResults.addAll(redisResults)
+
+        val dto = RedisDbActionTransformer.transform(allRedisActions)
+
+        val results = rc.executeRedisDatabaseInsertions(dto)
+        results?.executionResults?.forEachIndexed { index, b ->
+            redisResults[index].setInsertExecutionResult(b)
         }
 
         return true
@@ -330,6 +360,18 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             }
             fv.aggregateMongoDatabaseData()
         }
+
+        if (configuration.heuristicsForRedis) {
+            handleRedisHeuristics(dto, fv)
+        }
+
+        if (configuration.extractRedisExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
+            }
+            fv.aggregateRedisDatabaseData()
+        }
     }
 
     private fun handleSqlHeuristics(
@@ -400,6 +442,39 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportMongoHeuristicEvaluationFailure()
                         } else {
                             statistics.reportMongoHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun handleRedisHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.REDIS
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.REDIS) {
+                        statistics.reportNumberOfEvaluatedDocumentsForRedisHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportRedisHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportRedisHeuristicEvaluationSuccess()
                         }
                     }
                 }
