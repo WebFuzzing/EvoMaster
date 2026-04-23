@@ -36,7 +36,7 @@ class ObjectWithAttributesGene(
      * The special name `"#text"` is reserved for element content and therefore cannot be an
      * attribute — an [IllegalArgumentException] is also thrown if it is present.
      */
-    val attributeNames: Set<String> = emptySet()
+    var attributeNames: Set<String> = emptySet()
 ) : ObjectGene(name, fixedFields, refType, isFixed, template, additionalFields) {
 
     init {
@@ -71,6 +71,19 @@ class ObjectWithAttributesGene(
             copiedAdditional,
             attributeNames
         )
+    }
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        val ok = super.unsafeCopyValueFrom(other)
+        if (!ok) return false
+
+        attributeNames = if (other is ObjectWithAttributesGene) {
+            other.attributeNames
+        } else {
+            emptySet()
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
