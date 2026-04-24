@@ -8,7 +8,6 @@ import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
