@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.oracledisable
 
 import com.foo.rest.examples.spring.openapi.v3.security.forgottenauthentication.ForgottenAuthenticationController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -31,14 +32,14 @@ class ForgottenAuthenticationDisableEMTest : SpringTestBase(){
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
             setOption(args, "useExperimentalOracles", "true")
-            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.IGNORE_ANONYMOUS.code.toString())
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS.code.toString())
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertFalse(ExperimentalFaultCategory.IGNORE_ANONYMOUS in faults)
+            assertFalse(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS in faults)
 
         }
     }
