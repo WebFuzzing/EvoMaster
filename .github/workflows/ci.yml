@@ -164,7 +164,7 @@ jobs:
           name: full-build-base-log-current
           path: .
       - name: Analyze and persist full-build-base metrics
-        continue-on-error: true
+        id: metrics
         uses: ./.github/actions/full-build-metrics
         with:
           log-file: full-build-base.log
@@ -173,6 +173,12 @@ jobs:
           workflow-file: ci.yml
           #These metrics occupy very little space, increasing the retention so they are not lost if nothing is merged to master in a while
           retention-days: 90
+      - name: Mark metrics regression
+        if: steps.metrics.outputs.regression == 'true'
+        continue-on-error: true
+        run: |
+          echo "::warning::Warnings/errors increased versus baseline."
+          exit 1
 
   base-build-mac:
     runs-on: macos-latest

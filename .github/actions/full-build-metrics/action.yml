@@ -23,6 +23,11 @@ inputs:
     required: false
     default: "90"
 
+outputs:
+  regression:
+    description: Whether warnings/errors increased versus baseline
+    value: ${{ steps.count.outputs.regression }}
+
 runs:
   using: composite
   steps:
@@ -37,6 +42,7 @@ runs:
         if_no_artifact_found: warn
 
     - name: Count warnings/errors and compare
+      id: count
       shell: bash
       run: |
         if [ -f "${{ inputs.log-file }}" ]; then
@@ -89,11 +95,7 @@ runs:
           fi
         } >> "$GITHUB_STEP_SUMMARY"
 
-        if [ "${regression}" = "true" ]; then
-          echo "METRICS_REGRESSION=true" >> "$GITHUB_ENV"
-        else
-          echo "METRICS_REGRESSION=false" >> "$GITHUB_ENV"
-        fi
+        echo "regression=${regression}" >> "$GITHUB_OUTPUT"
 
     - name: Upload current metrics artifact
       uses: actions/upload-artifact@v7
@@ -103,9 +105,3 @@ runs:
         retention-days: ${{ inputs.retention-days }}
         if-no-files-found: error
 
-    - name: Mark metrics regression
-      shell: bash
-      run: |
-        if [ "${METRICS_REGRESSION:-false}" = "true" ]; then
-          exit 1
-        fi
