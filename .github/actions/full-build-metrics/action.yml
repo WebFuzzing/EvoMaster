@@ -104,6 +104,8 @@ runs:
         if-no-files-found: error
 
     - name: Mark metrics regression
-      if: ${{ env.METRICS_REGRESSION == 'true' }}
       shell: bash
-      run: exit 1
+      run: |
+        if [ "${METRICS_REGRESSION:-false}" = "true" ]; then
+          exit 1
+        fi
