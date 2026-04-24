@@ -29,7 +29,7 @@ class SqlMultidimensionalArrayGene<T>(
          * The database type of the column where the gene is inserted.
          * By default, the database type is POSTGRES
          */
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        databaseType: DatabaseType = DatabaseType.POSTGRES,
         /**
          * The type for this array. Every time we create a new element to add, it has to be based
          * on this template
@@ -45,6 +45,9 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private val maxDimensionSize: Int = ArrayGene.MAX_SIZE
 ) : CompositeGene(name, mutableListOf()) where T : Gene {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     /**
      * Stores what is the size of each dimension.
@@ -335,6 +338,7 @@ class SqlMultidimensionalArrayGene<T>(
         val elements = gene.getViewOfChildren().mapNotNull { it.copy() as? T }.toMutableList()
         addChildren(elements)
         this.dimensionSizes = gene.dimensionSizes
+        this.databaseType = gene.databaseType
         return true
     }
 

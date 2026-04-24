@@ -13,6 +13,7 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.IdMapper.Companion.LOCAL_OBJECTIVE_KEY
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.slf4j.LoggerFactory
 

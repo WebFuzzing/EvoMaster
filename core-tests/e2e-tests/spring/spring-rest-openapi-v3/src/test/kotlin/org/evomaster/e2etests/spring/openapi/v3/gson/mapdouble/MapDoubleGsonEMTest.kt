@@ -21,7 +21,7 @@ class MapDoubleGsonEMTest : SpringTestBase() {
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
             "MapDoubleGsonEMTestGenerated",
-            1_000
+            2_000
         ) { args: List<String> ->
 
             setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true")

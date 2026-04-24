@@ -66,7 +66,7 @@ object FlakinessInferenceUtil {
     /**
      * Match JVM object toString like com.foo.Bar@1a2b3c.
      */
-    private val OBJECT_AT_REGEX = Regex("[A-Za-z0-9_.$]+@[0-9a-fA-F]+")
+    private val OBJECT_AT_REGEX = Regex("""[\[A-Za-z0-9_.$;]+@[0-9a-fA-F]+""")
 
     /**
      * Match hex pointers like 0x1a2b3c.

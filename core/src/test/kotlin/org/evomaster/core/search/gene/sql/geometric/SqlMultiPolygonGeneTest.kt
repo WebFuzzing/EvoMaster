@@ -126,4 +126,14 @@ class SqlMultiPolygonGeneTest {
         assertEquals("MULTIPOLYGON(POLYGON(LINESTRING(POINT(0.0, 1.0), POINT(1.0, 1.0), POINT(0.0, 0.0), POINT(0.0, 1.0))), POLYGON(LINESTRING(POINT(0.0, 0.0), POINT(1.0, 1.0), POINT(1.0, 0.0), POINT(0.0, 0.0))))", gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testUnsafeCopyValueFromCopiesDatabaseType() {
+        val gene1 = SqlMultiPolygonGene("gene1", databaseType = DatabaseType.H2)
+        val gene2 = SqlMultiPolygonGene("gene2", databaseType = DatabaseType.MYSQL)
+
+        gene1.unsafeCopyValueFrom(gene2)
+
+        assertEquals(DatabaseType.MYSQL, gene1.databaseType)
+    }
+
 }

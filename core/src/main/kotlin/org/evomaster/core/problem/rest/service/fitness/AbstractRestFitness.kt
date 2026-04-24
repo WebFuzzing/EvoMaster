@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service.fitness
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -12,17 +11,14 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -52,6 +48,7 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
@@ -59,9 +56,8 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
-import org.evomaster.core.utils.StackTraceUtils
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -507,12 +503,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
 
         /*
-            explicit targets for examples
+            explicit targets for single example entries
          */
-        val examples = call.seeTopGenes()
-            .flatMap { it.flatView() }
+        val examples = call.seeAllGenes()
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
             .filter { it.staticCheckIfImpactPhenotype() }
-            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
 
         examples.forEach {
             val name = (it.parent as Gene).name
@@ -527,6 +522,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             val target = "EXAMPLE_${call.id}_${name}_$label"
+            fv.coverTarget(idMapper.handleLocalTarget(target))
+        }
+
+        /*
+            explicit targets for named examples, but only when fully used
+         */
+        val allExampleNames = call.getNamedExamples()
+        val exampleNamesInUse = call.getNamedExamplesInUse()
+
+        for(e in exampleNamesInUse){
+            /*
+                TODO this would not consider possible special cases (eg when have anyOf constraints) in which
+                same example name could appear in different subtrees of same ChoiceGene...
+                bit tricky to handle... not sure if really a good ROI in trying to handle it now...
+             */
+            if(e.value != allExampleNames[e.key]){
+                continue
+            }
+
+            val target = idMapper.getNamedExampleId(call.id, e.key, status ?: 0)
             fv.coverTarget(idMapper.handleLocalTarget(target))
         }
     }
@@ -610,7 +625,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val response = try {
             val call = createInvocation(a, chainState, cookies, tokens)
 
-            SearchTimeController.measureTimeMillis(
+            TimeUtils.measureTimeMillis(
                 { t, res ->
                     rcr.setResponseTimeMs(t)
                     executionStats.record(a.id, t)
@@ -789,7 +804,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         fv: FitnessValue
     ) {
-        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+        if (!config.schemaOracles
+            || !schemaOracle.canValidate()
+            || a.id == CALL_TO_SWAGGER_ID
+            || !callGraphService.isDeclared(a.verb,a.path)
+            ) {
             return
         }
 

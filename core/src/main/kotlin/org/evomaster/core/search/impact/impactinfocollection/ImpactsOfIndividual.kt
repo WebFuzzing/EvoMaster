@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue
@@ -80,8 +81,9 @@ open class ImpactsOfIndividual(
 
         val SQL_ACTION_KEY = SqlAction::class.java.name
 
-
         val MONGODB_ACTION_KEY = MongoDbAction::class.java.name
+
+        val REDISDB_ACTION_KEY = RedisDbAction::class.java.name
 
         val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
     }

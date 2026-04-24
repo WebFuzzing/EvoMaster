@@ -50,7 +50,7 @@ class DbAsExternalServiceAction (
         return getDbAsExternalServiceAction(commandName, requestRuleIdentifier, (response as ClassResponseParam).className)
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return response.genes
     }
 
