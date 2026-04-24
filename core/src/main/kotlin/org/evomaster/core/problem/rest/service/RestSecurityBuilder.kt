@@ -1370,7 +1370,6 @@ class RestSecurityBuilder : TimeBoxedPhase {
         )
 
         val getAction = second.seeMainExecutableActions().last() as RestCallAction
-        getAction.resetLocalIdRecursively()
 
         val genes = GeneUtils.getAllStringFields(getAction.parameters)
             .filter { it.staticCheckIfImpactPhenotype() }
