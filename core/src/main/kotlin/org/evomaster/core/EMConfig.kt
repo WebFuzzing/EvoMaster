@@ -1598,7 +1598,7 @@ class EMConfig {
     @PercentageAsProbability(false)
     @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
             " All classifications with probability equal or above such threshold value will be accepted.")
-    var classificationRepairThreshold = 0.8
+    var classificationRepairThreshold = 0.5
 
     @Experimental
     @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
@@ -1637,7 +1637,7 @@ class EMConfig {
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
             "whether to send a request as-is or attempt a repair.")
-    var aIResponseClassifierWeaknessThreshold = 0.4
+    var aIResponseClassifierWeaknessThreshold = 0.8
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")

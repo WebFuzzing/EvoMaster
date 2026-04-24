@@ -253,7 +253,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `FULL_HISTORY`.|
-|`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.4`.|
+|`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.8`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
 |`aiEncoderType`| __Enum__. The encoding strategy applied to transform raw data to the encoded version. *Valid values*: `RAW, NORMAL, UNIT_NORMAL`. *Default value*: `RAW`.|
@@ -267,7 +267,7 @@ There are 3 types of options:
 |`breederTruncationFraction`| __Double__. Breeder GA: fraction of top individuals to keep in parents pool (truncation). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`callbackURLHostname`| __String__. HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname. *Default value*: `localhost`.|
 |`cgaNeighborhoodModel`| __Enum__. Cellular GA: neighborhood model (RING, L5, C9, C13). *Valid values*: `RING, L5, C9, C13`. *Default value*: `RING`.|
-|`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
