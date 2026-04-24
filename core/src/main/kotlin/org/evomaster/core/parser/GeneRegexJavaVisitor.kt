@@ -235,7 +235,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+        val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>();
 
         val gene = CharacterRangeRxGene(negated, ranges)
 
@@ -248,7 +248,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val list = mutableListOf<CharacterRange>()
 
         if(ctx.nonemptyClassRanges() != null){
-            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
@@ -263,7 +263,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
             if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
-            val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
+            val rec = ctx.classAtom()[0].accept(this).requireDataList<CharacterRange>()
             list.addAll(rec)
         } else {
             val startText = ctx.classAtom()[0].text
@@ -293,12 +293,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
@@ -322,7 +322,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         } else {
 
             if (ctx.classAtom()?.classAtomNoDash()?.classEscape() != null || ctx.classAtomNoDash()?.classEscape() != null){
-                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<CharacterRange>
+                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).requireDataList<CharacterRange>()
                 list.addAll(rec)
             } else {
                 val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
@@ -331,12 +331,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
