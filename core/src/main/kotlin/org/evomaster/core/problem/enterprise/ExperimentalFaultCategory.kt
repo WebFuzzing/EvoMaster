@@ -75,7 +75,7 @@ enum class ExperimentalFaultCategory(
         "TODO"),
 
     //5xx: Web Frontend
-    WEB_BROKEN_LINK(950, "Broken Link", "returnsBrokenLink",
+    WEB_BROKEN_LINK(960, "Broken Link", "returnsBrokenLink",
         "TODO"),
     //6xx: mobile
 
