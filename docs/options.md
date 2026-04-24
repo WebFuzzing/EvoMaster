@@ -328,6 +328,7 @@ There are 3 types of options:
 |`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Depends on*: `sqli=true`. *Default value*: `2000`.|
 |`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Depends on*: `sqli=true`. *Default value*: `5000`.|
 |`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
+|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|

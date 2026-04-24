@@ -41,6 +41,18 @@ enum class ExperimentalFaultCategory(
         "TODO"),
 
 
+    HTTP_STATUS_NO_NON_STANDARD_CODES(950, "no-non-standard-codes", "invalidStatusCode", "TODO"),
+    HTTP_STATUS_NO_201_IF_DELETE(951, "no-201-if-delete", "201OnDelete",  "TODO"),
+    HTTP_STATUS_NO_201_IF_GET(952, "no-201-if-get", "201OnGet",  "TODO"),
+    HTTP_STATUS_NO_201_IF_PATCH(953, "no-201-if-patch", "201OnPatch",  "TODO"),
+    HTTP_STATUS_NO_204_IF_CONTENT(954, "no-204-if-content", "204WhenContent",  "TODO"),
+    HTTP_STATUS_NO_413_IF_NO_PAYLOAD(955, "no-413-if-no-payload", "413WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_415_IF_NO_PAYLOAD(956, "no-415-if-no-payload", "415WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_401_IF_NO_AUTH(957, "no-401-if-no-auth", "401WhenNoAuth",  "TODO"),
+    HTTP_STATUS_NO_403_IF_NO_401(958, "no-403-if-no-401", "403WhenNo401",  "TODO"),
+    HTTP_STATUS_HAS_406_IF_ACCEPT(959, "has-406-if-accept", "406WhenValid",  "TODO"),
+
+
     //3xx: GraphQL
     GQL_ERROR_FIELD(920, "Error Field", "returnedErrors",
         "TODO"),

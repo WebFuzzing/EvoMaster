@@ -25,6 +25,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.HttpStatusOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -386,10 +387,28 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(statusId, 1.0, it)
 
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
+                handleHttpStatusOracles(fv, actions[it], result, it)
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
+            }
+    }
+
+    private fun handleHttpStatusOracles(fv: FitnessValue, call: RestCallAction, result: RestCallResult, index: Int) {
+        if(!config.statusOracles){
+            return
+        }
+
+        val name = call.getName()
+
+        //TODO schema input
+        HttpStatusOracle.checkOracles(call, result)
+            .filter { config.isEnabledFaultCategory(it) }
+            .forEach {
+                val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(it, name))
+                fv.updateTarget(scenarioId, 1.0, index)
+                result.addFault(DetectedFault(it, name, null))
             }
     }
 
