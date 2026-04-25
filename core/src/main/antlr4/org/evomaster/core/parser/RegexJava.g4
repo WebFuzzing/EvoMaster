@@ -140,17 +140,53 @@ CharacterEscape
 // TODO missing \p escapes
 fragment PCharacterClassEscapeLabel
  : PosixCharacterClassLabel
- | UnicodeCategoriesLabel
-// | UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
-// | UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
-// | UnicodeBinaryProperiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
-// | javalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+ | ('Is' | 'gc=' | 'general_category=')? UnicodeCategoriesLabel
+// | ('Is' | 'sc=' | 'script=') UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// | ('In' | 'blk=' | 'block=') UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// | 'Is' UnicodeBinaryPropertiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
+// | 'java' JavalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
  ;
 
-// TODO missing Unicode categories labels and implementations
 // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
 fragment UnicodeCategoriesLabel
- : 'Pe'
+ : 'C'
+ | 'Cc'
+ | 'Cf'
+ | 'Cn'
+ | 'Co'
+ | 'Cs'
+ | 'L'
+ | 'LC'
+ | 'Ll'
+ | 'Lm'
+ | 'Lo'
+ | 'Lt'
+ | 'Lu'
+ | 'M'
+ | 'Mc'
+ | 'Me'
+ | 'Mn'
+ | 'N'
+ | 'Nd'
+ | 'Nl'
+ | 'No'
+ | 'P'
+ | 'Pc'
+ | 'Pd'
+ | 'Pe'
+ | 'Pf'
+ | 'Pi'
+ | 'Po'
+ | 'Ps'
+ | 'S'
+ | 'Sc'
+ | 'Sk'
+ | 'Sm'
+ | 'So'
+ | 'Z'
+ | 'Zl'
+ | 'Zp'
+ | 'Zs'
  ;
 
 // basic US-ASCII only predefined POSIX character classes

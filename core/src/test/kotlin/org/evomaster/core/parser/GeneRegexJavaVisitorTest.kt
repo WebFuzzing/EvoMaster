@@ -99,7 +99,26 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnicodeCategories(){
-        checkSameAsJava("""\p{Pe}""")
+        val unicodeCategories = listOf(
+            // Letters
+            "Lu", "Ll", "Lt", "Lm", "Lo", "L",
+            // Marks
+            "Mn", "Mc", "Me", "M",
+            // Numbers
+            "Nd", "Nl", "No", "N",
+            // Punctuation
+            "Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po", "P",
+            // Symbols
+            "Sm", "Sc", "Sk", "So", "S",
+            // Separators
+            "Zs", "Zl", "Zp", "Z",
+            // Other
+            "Cc", "Cf", "Cs", "Co", "Cn", "C"
+        )
+        for (label in unicodeCategories) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
         checkSameAsJava("""Pe""")
     }
 
@@ -108,7 +127,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""[\V\p{Lower}\p{Upper}\W\d]""")
         checkSameAsJava("""[a\p{Pe}]""")
         checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
-        checkCanSample("""[a\p{Pe}b]""", ")", 100)
+        checkCanSample("""[a\p{Pe}b]""", ")", 1000)
     }
 
     @Test

@@ -3,7 +3,7 @@ package org.evomaster.core.utils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.LoggerFactory
 
-class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) {
+class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
 
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
