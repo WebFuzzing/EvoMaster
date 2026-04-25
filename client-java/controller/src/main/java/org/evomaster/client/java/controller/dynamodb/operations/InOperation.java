@@ -15,7 +15,7 @@ public class InOperation<V> extends QueryOperation {
     /**
      * Creates an IN operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param values candidate values
      */
     public InOperation(String fieldName, List<V> values) {
@@ -23,10 +23,16 @@ public class InOperation<V> extends QueryOperation {
         this.values = values;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return candidate values
+     */
     public List<V> getValues() {
         return values;
     }

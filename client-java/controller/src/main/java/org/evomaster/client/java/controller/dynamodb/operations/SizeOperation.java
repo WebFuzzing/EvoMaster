@@ -14,7 +14,7 @@ public class SizeOperation extends QueryOperation {
     /**
      * Creates a size operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param comparator comparison operator
      * @param expectedValue expected value
      */
@@ -24,14 +24,23 @@ public class SizeOperation extends QueryOperation {
         this.expectedValue = expectedValue;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return comparison operator
+     */
     public DynamoDbComparisonType getComparator() {
         return comparator;
     }
 
+    /**
+     * @return expected value
+     */
     public Object getExpectedValue() {
         return expectedValue;
     }

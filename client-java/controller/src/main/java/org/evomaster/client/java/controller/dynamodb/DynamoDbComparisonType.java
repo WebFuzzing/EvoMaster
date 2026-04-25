@@ -44,7 +44,7 @@ public enum DynamoDbComparisonType {
     /**
      * Creates a comparison operation instance for this comparison type.
      *
-     * @param fieldName compared field name/path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param value comparison value
      * @return concrete comparison operation
      */

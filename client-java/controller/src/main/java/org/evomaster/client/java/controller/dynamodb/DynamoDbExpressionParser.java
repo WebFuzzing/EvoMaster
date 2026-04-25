@@ -77,20 +77,10 @@ public class DynamoDbExpressionParser {
     }
 
     /**
-     * Parses and resolves a field path from Parser context.
+     * Resolves expression-attribute-name aliases in a dotted field name.
      *
-     * @param pathContext the parsed path context
-     * @return resolved field path with attribute-name aliases expanded
-     */
-    private String parsePath(DynamoDbConditionExpressionParser.PathContext pathContext) {
-        return parseFieldName(pathContext.getText());
-    }
-
-    /**
-     * Resolves expression-attribute-name aliases in a dotted field path.
-     *
-     * @param token raw field token from the expression
-     * @return resolved field path
+     * @param token raw field token coming from DynamoDB expression/condition
+     * @return resolved field name coming from DynamoDB expression/condition
      */
     private String parseFieldName(String token) {
         String[] chunks = token.split("\\.");
@@ -274,38 +264,38 @@ public class DynamoDbExpressionParser {
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitAttributeExistsPredicate(DynamoDbConditionExpressionParser.AttributeExistsPredicateContext ctx) {
-            return new ExistsOperation(parsePath(ctx.path()), true);
+            return new ExistsOperation(parseFieldName(ctx.path().getText()), true);
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitAttributeNotExistsPredicate(DynamoDbConditionExpressionParser.AttributeNotExistsPredicateContext ctx) {
-            return new ExistsOperation(parsePath(ctx.path()), false);
+            return new ExistsOperation(parseFieldName(ctx.path().getText()), false);
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitAttributeTypePredicate(DynamoDbConditionExpressionParser.AttributeTypePredicateContext ctx) {
             Object expectedType = parseValue(ctx.value());
-            return new TypeOperation(parsePath(ctx.path()), expectedType == null ? null : String.valueOf(expectedType));
+            return new TypeOperation(parseFieldName(ctx.path().getText()), expectedType == null ? null : String.valueOf(expectedType));
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitBeginsWithPredicate(DynamoDbConditionExpressionParser.BeginsWithPredicateContext ctx) {
-            return new BeginsWithOperation(parsePath(ctx.path()), parseValue(ctx.value()));
+            return new BeginsWithOperation(parseFieldName(ctx.path().getText()), parseValue(ctx.value()));
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitContainsPredicate(DynamoDbConditionExpressionParser.ContainsPredicateContext ctx) {
-            return new ContainsOperation(parsePath(ctx.path()), parseValue(ctx.value()));
+            return new ContainsOperation(parseFieldName(ctx.path().getText()), parseValue(ctx.value()));
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitSizePredicate(DynamoDbConditionExpressionParser.SizePredicateContext ctx) {
-            String field = parsePath(ctx.path());
+            String field = parseFieldName(ctx.path().getText());
             DynamoDbComparisonType comparator = DynamoDbComparisonType.fromToken(ctx.comparator().getText());
             Object expectedValue = parseValue(ctx.value());
             return new SizeOperation(field, comparator, expectedValue);
@@ -314,7 +304,7 @@ public class DynamoDbExpressionParser {
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitBetweenPredicate(DynamoDbConditionExpressionParser.BetweenPredicateContext ctx) {
-            String field = parsePath(ctx.path());
+            String field = parseFieldName(ctx.path().getText());
             Object lower = parseValue(ctx.value(0));
             Object upper = parseValue(ctx.value(1));
             return new BetweenOperation(field, lower, upper);
@@ -327,13 +317,13 @@ public class DynamoDbExpressionParser {
             for (DynamoDbConditionExpressionParser.ValueContext valueContext : ctx.value()) {
                 values.add(parseValue(valueContext));
             }
-            return new InOperation<>(parsePath(ctx.path()), values);
+            return new InOperation<>(parseFieldName(ctx.path().getText()), values);
         }
 
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitComparisonPredicate(DynamoDbConditionExpressionParser.ComparisonPredicateContext ctx) {
-            String field = parsePath(ctx.path());
+            String field = parseFieldName(ctx.path().getText());
             DynamoDbComparisonType comparator = DynamoDbComparisonType.fromToken(ctx.comparator().getText());
             Object value = parseValue(ctx.value());
             return comparator.toOperation(field, value);

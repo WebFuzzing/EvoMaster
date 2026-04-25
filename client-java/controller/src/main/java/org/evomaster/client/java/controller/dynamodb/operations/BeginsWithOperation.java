@@ -11,7 +11,7 @@ public class BeginsWithOperation extends QueryOperation {
     /**
      * Creates a begins-with operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param prefix expected prefix
      */
     public BeginsWithOperation(String fieldName, Object prefix) {
@@ -19,10 +19,16 @@ public class BeginsWithOperation extends QueryOperation {
         this.prefix = prefix;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return expected prefix
+     */
     public Object getPrefix() {
         return prefix;
     }

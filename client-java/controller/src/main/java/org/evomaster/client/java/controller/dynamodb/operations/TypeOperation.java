@@ -11,7 +11,7 @@ public class TypeOperation extends QueryOperation {
     /**
      * Creates a type operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param expectedType expected DynamoDB type token
      */
     public TypeOperation(String fieldName, String expectedType) {
@@ -19,10 +19,16 @@ public class TypeOperation extends QueryOperation {
         this.expectedType = expectedType;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return expected DynamoDB type token
+     */
     public String getExpectedType() {
         return expectedType;
     }

@@ -11,7 +11,7 @@ public class ContainsOperation extends QueryOperation {
     /**
      * Creates a contains operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param expectedValue expected contained value
      */
     public ContainsOperation(String fieldName, Object expectedValue) {
@@ -19,10 +19,16 @@ public class ContainsOperation extends QueryOperation {
         this.expectedValue = expectedValue;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return expected contained value
+     */
     public Object getExpectedValue() {
         return expectedValue;
     }

@@ -10,7 +10,7 @@ public class EqualsOperation<V> extends ComparisonOperation<V> {
     /**
      * Creates an equality comparison operation.
      *
-     * @param fieldName field name or path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param value comparison value
      */
     public EqualsOperation(String fieldName, V value) {

@@ -12,7 +12,7 @@ public class BetweenOperation extends QueryOperation {
     /**
      * Creates a BETWEEN operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param lowerBound lower bound value
      * @param upperBound upper bound value
      */
@@ -22,14 +22,23 @@ public class BetweenOperation extends QueryOperation {
         this.upperBound = upperBound;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return lower bound value
+     */
     public Object getLowerBound() {
         return lowerBound;
     }
 
+    /**
+     * @return upper bound value
+     */
     public Object getUpperBound() {
         return upperBound;
     }

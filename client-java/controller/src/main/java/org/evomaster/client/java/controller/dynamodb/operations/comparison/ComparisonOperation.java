@@ -15,7 +15,7 @@ public abstract class ComparisonOperation<V> extends QueryOperation {
     /**
      * Creates a comparison operation.
      *
-     * @param fieldName field name or path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param value comparison value
      */
     ComparisonOperation(String fieldName, V value) {
@@ -23,10 +23,16 @@ public abstract class ComparisonOperation<V> extends QueryOperation {
         this.value = value;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return comparison value
+     */
     public V getValue() {
         return value;
     }

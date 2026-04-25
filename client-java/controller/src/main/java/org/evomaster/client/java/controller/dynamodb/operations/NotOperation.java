@@ -16,6 +16,9 @@ public class NotOperation extends QueryOperation {
         this.condition = condition;
     }
 
+    /**
+     * @return negated condition
+     */
     public QueryOperation getCondition() {
         return condition;
     }

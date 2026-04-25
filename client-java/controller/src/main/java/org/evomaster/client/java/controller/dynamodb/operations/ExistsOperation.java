@@ -13,7 +13,7 @@ public class ExistsOperation extends QueryOperation {
     /**
      * Creates an existence operation.
      *
-     * @param fieldName attribute path
+     * @param fieldName field name coming from DynamoDB expression/condition
      * @param exists {@code true} for exists, {@code false} for not-exists
      */
     public ExistsOperation(String fieldName, boolean exists) {
@@ -21,10 +21,16 @@ public class ExistsOperation extends QueryOperation {
         this.exists = exists;
     }
 
+    /**
+     * @return field name coming from DynamoDB expression/condition
+     */
     public String getFieldName() {
         return fieldName;
     }
 
+    /**
+     * @return {@code true} when existence is required, {@code false} otherwise
+     */
     public boolean isExists() {
         return exists;
     }
