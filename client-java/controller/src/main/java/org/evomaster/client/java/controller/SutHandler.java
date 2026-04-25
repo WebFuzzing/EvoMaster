@@ -196,7 +196,8 @@ public interface SutHandler {
      * reset database if the smart db cleaning is employed
      * </p>
      * @param tablesToClean represents a list of table which will be reset based on specified DbSpecification.
-     *                      note that null tablesToClean means all table will be reset.
+     *                      note that `null` tablesToClean means all table will be reset,
+     *                      empty tablesToClean indicates that none of tables will be reset.
      */
     default void resetDatabase(List<String> tablesToClean){}
 
