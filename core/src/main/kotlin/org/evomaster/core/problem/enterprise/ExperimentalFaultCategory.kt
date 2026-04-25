@@ -15,15 +15,6 @@ enum class ExperimentalFaultCategory(
     //Likely this one is not really viable
     //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
     //  "TODO")
-    IGNORE_ANONYMOUS(900, "A Protected Resource Is Accessible Without Providing Any Authentication",
-        "ignoreAnonymous",
-        "TODO"),
-    ANONYMOUS_MODIFICATIONS(901, "Anonymous Modifications",
-        "anonymousModifications",
-        "TODO"),
-    LEAKED_STACK_TRACES(902, "Leaked Stack Trace",
-        "leakedStackTrace",
-        "TODO"),
     HIDDEN_ACCESSIBLE_ENDPOINT(903, "Hidden Accessible Endpoint",
         "hiddenAccessible",
         "TODO"),

@@ -331,14 +331,14 @@ class RestSecurityBuilder : TimeBoxedPhase {
             handleExistenceLeakage()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES)) {
             log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
             handleStackTraceCheck()
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT)){
             if(hasPhaseTimedOut()) return
             handleHiddenAccessibleEndpoint()
         }
@@ -368,14 +368,14 @@ class RestSecurityBuilder : TimeBoxedPhase {
             handleNotRecognizedAuthenticated()
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS)) {
             log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
@@ -734,7 +734,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories){
+            if(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS in faultsCategories){
                 val added = archive.addIfNeeded(evaluatedIndividual)
                 assert(added)
                 continue@mainloop
@@ -1370,7 +1370,6 @@ class RestSecurityBuilder : TimeBoxedPhase {
         )
 
         val getAction = second.seeMainExecutableActions().last() as RestCallAction
-        getAction.resetLocalIdRecursively()
 
         val genes = GeneUtils.getAllStringFields(getAction.parameters)
             .filter { it.staticCheckIfImpactPhenotype() }
