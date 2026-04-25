@@ -286,6 +286,8 @@ object HttpSemanticsOracle {
         if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
 
         val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
+
+        //for now we only deal with JSON/XML/FORM
         if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
             return false
         }
@@ -294,8 +296,10 @@ object HttpSemanticsOracle {
         val getBody = resGet.getBody()
 
         // PUT sent content but GET body is empty -> sent fields definitely missing
-        if (!putBody.isNullOrEmpty() && getBody.isNullOrEmpty()) return true
-        if (getBody.isNullOrEmpty()) return false
+        if (getBody.isNullOrEmpty()) {
+            return !putBody.isNullOrEmpty()
+        }
+
 
         val sentFields = extractSentFieldNames(put)
         val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
@@ -390,7 +394,7 @@ object HttpSemanticsOracle {
         if (wipedFields.isNotEmpty()) {
             val getWiped = readGetFields(getBody, wipedFields) ?: return false
             for (field in wipedFields) {
-                if (isWipedFieldStillPresent(getWiped[field])) return true
+                if (!getWiped[field].isNullOrEmpty()) return true
             }
         }
 
@@ -431,16 +435,6 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * A wiped field is present only if the GET response returns a non-null, non-empty value.
-     */
-    private fun isWipedFieldStillPresent(value: String?): Boolean {
-        if (value == null) return false
-        if (value.isEmpty()) return false
-        if (value == "null") return false
-        return true
-    }
-
-    /**
      * Extract field names from the PUT/PATCH request body.
      * These are the fields that the client attempted to modify.
      */
@@ -451,7 +445,9 @@ object HttpSemanticsOracle {
         return objectGene.fields.map { it.name }.toSet()
     }
 
-    // Extract only the field names that were actually sent in the request body.
+    /**
+    *  Extract only the field names that were actually sent in the request body.
+    */
     private fun extractSentFieldNames(modify: RestCallAction): Set<String> {
 
         val objectGene = extractBodyObjectGene(modify) ?: return emptySet()

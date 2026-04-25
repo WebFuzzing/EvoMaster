@@ -581,6 +581,40 @@ class HttpSemanticsOracleTest {
     }
 
     @Test
+    fun testPut_changedField_StringNull_returnsFalse() {
+        // PUT and GET both carry the literal 4-char string "null" for "name".
+        // Sent-fields path: values are equal, so no mismatch is reported.
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "null")),
+            getResponseBody = """{"name":"null"}"""
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_wipedField_StringNullInGet_returnsTrue() {
+        // PUT omits "role" (full replacement should wipe it).
+        // GET returns the literal 4-char string "null" - the field still holds
+        // a real value, distinct from JSON null.
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "role"),
+            getResponseFields = listOf("name", "role")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(
+                activeFields = mapOf("name" to "Alice"),
+                omittedFields = setOf("role")
+            ),
+            getResponseBody = """{"name":"Alice","role":"null"}""",
+            schema = schema
+        )
+        assertTrue(mismatch)
+    }
+
+
+    @Test
     fun testPut_writeOnlyFieldNotInGetSchema_noFalsePositive() {
         // password is in PUT schema but NOT in GET schema (write-only).
         // It was not sent. The wiped check must NOT flag this as a bug, even
@@ -622,6 +656,7 @@ class HttpSemanticsOracleTest {
         )
         assertTrue(mismatch)
     }
+
 
     @Test
     fun testPut_allFieldsOmitted_getReturnsOnlyReadOnlySchemaFields_returnsFalse() {
