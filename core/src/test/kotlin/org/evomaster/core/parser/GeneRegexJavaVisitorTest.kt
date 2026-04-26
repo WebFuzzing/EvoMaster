@@ -101,7 +101,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testUnicodeCategories(){
         val unicodeCategories = listOf(
             // Letters
-            "Lu", "Ll", "Lt", "Lm", "Lo", "L",
+            "Lu", "Ll", "GC=Lt", "general_category=Lm", "gc=Lo", "IsL",
             // Marks
             "Mn", "Mc", "Me", "M",
             // Numbers
@@ -140,14 +140,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     @Test
     fun testUnicodeScripts(){
         val scriptLabels = listOf(
-            "Arabic",
-            "Balinese",
-            "Latin",
-            "Greek",
-            "Yi",
-        ).map { scriptName ->
-            "sc=${scriptName}"
-        }
+            "script=Arabic",
+            "sc=Balinese",
+            "IsLatin",
+            "sc=greek",
+            "SCRIPT=Yi",
+        )
         for (label in scriptLabels) {
             checkSameAsJava("\\p{$label}")
             checkSameAsJava("\\P{$label}")
@@ -157,14 +155,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     @Test
     fun testUnicodeBlocks(){
         val blockLabels = listOf(
-            "Oriya",
-            "Cyrillic",
-            "Arabic",
-            "Lao",
-            "Bengali",
-        ).map { blockName ->
-            "blk=${blockName}"
-        }
+            "block=Oriya",
+            "blk=Cyrillic",
+            "InArabic",
+            "blk=lao",
+            "BLOCK=Bengali",
+        )
         for (label in blockLabels) {
             checkSameAsJava("\\p{$label}")
             checkSameAsJava("\\P{$label}")
@@ -187,6 +183,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
             "Ishex_digit",
             "Isjoin_control",
             "Isnoncharacter_code_point",
+            "IsNoncharacterCodePoint",
             "Isassigned",
         )
         for (label in binaryProperyLabels) {
