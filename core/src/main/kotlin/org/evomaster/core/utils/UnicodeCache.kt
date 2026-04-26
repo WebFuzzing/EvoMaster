@@ -1,7 +1,25 @@
 package org.evomaster.core.utils
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
+ * Cache for Unicode character ranges used in `\p{}` and `\P{}` regex escape sequences.
  *
+ * Supported property types, with their accepted syntax:
+ * - **Script**           : `IsArabic`, `sc=Latin`, `script=Latin`
+ * - **Block**            : `InBasicLatin`, `blk=Greek`, `block=Greek`
+ * - **General Category** : `Lu`, `gc=P`, `general_category=P`, `IsLu`
+ * - **Binary Property**  : `IsAlphabetic`, `Ishex_digit`
+ * - **Java method**      : `javaAlphabetic`, `javaWhitespace`
+ *
+ * Property name matching follows these rules:
+ * - Keywords (`gc=`, `sc=`, `blk=`, etc.) are case-insensitive
+ * - Prefixes (`Is`, `In`, `java`) are case-sensitive
+ * - Script, block and binary property names are case-insensitive and allow single underscores as word separators
+ * - General category and java method names are case-sensitive
+ *
+ * Results are computed lazily on first access and cached statically for the lifetime of the JVM.
+ * The cache is shared across all instances of this class.
  */
 class UnicodeCache {
     companion object {
@@ -9,7 +27,7 @@ class UnicodeCache {
          * WARNING: mutable static state. But as it is just a cache, it is not a problem.
          * Furthermore, although the hashmap is mutable, the values inside are not
          */
-        private val cache = HashMap<String, MultiCharacterRange>()
+        private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
     }
 
     // UNICODE GENERAL CATEGORIES, keywords (gc, general_category) are case-insensitive,
@@ -164,57 +182,74 @@ class UnicodeCache {
         "javaUpperCase" to { cp -> Character.isUpperCase(cp) },
     )
 
-    private fun normalizeKey(name: String): String {
+    /*
+       We need to normalize keys so that "gc=L" and "L" point to the same thing to avoid unnecessary re-computation.
+       Keywords are always case-insensitive, prefixes are always case-sensitive. Most properties need either a keyword
+       or a prefix (except for general categories)
+     */
+    private fun normalizeKey(pEscapeLabel: String): String {
 
-        val scriptKey = name
-            .replace(Regex("^(script=|sc=)", RegexOption.IGNORE_CASE), "")
-            .removePrefix("Is")
-            .lowercase()
-            .replace(Regex("(?<=[^_])_(?=[^_])"), "")
+        // Scripts: keywords or "Is" prefix, actual scripts name are case-insensitive and optionally in snake case.
+        val scriptKey = if (pEscapeLabel.startsWith("Is")) {
+            pEscapeLabel.removePrefix("Is")
+        } else {
+            pEscapeLabel.replace(Regex("^(script=|sc=)", RegexOption.IGNORE_CASE), "")
+        }
+            .lowercase() // scripts name are case-insensitive
+            .replace(Regex("(?<=[^_])_(?=[^_])"), "") // handle snake case
         if ("sc=$scriptKey" in scriptPredicates) {
             return "sc=$scriptKey"
         }
 
-        val blockKey = name
-            .replace(Regex("^(block=|blk=)", RegexOption.IGNORE_CASE), "")
-            .removePrefix("In")
-            .lowercase()
-            .replace(Regex("(?<=[^_])_(?=[^_])"), "")
+        // Blocks: keywords or "In" prefix, actual blocks name are case-insensitive and optionally in snake case.
+        val blockKey = if (pEscapeLabel.startsWith("In")) {
+            pEscapeLabel.removePrefix("In")
+        } else {
+            pEscapeLabel.replace(Regex("^(block=|blk=)", RegexOption.IGNORE_CASE), "")
+        }
+            .lowercase() // blocks name are case-insensitive
+            .replace(Regex("(?<=[^_])_(?=[^_])"), "") // handle snake case
         if ("blk=$blockKey" in blockPredicates) {
             return "blk=$blockKey"
         }
 
-        val gcKey = name
-            .replace(Regex("^(general_category=|gc=)", RegexOption.IGNORE_CASE), "")
-            .removePrefix("Is")
+        // General categories: keywords, "Is", names are case-sensitive.
+        val gcKey = if (pEscapeLabel.startsWith("Is")) {
+            pEscapeLabel.removePrefix("Is")
+        } else {
+            pEscapeLabel.replace(Regex("^(general_category=|gc=)", RegexOption.IGNORE_CASE), "")
+        }
         if ("gc=$gcKey" in generalCategoryPredicates) {
             return "gc=$gcKey"
         }
 
-        val binaryKey = name
+        // Binary properties: "Is" prefix, actual properties name are case-insensitive and optionally in snake case.
+        val binaryKey = pEscapeLabel
             .removePrefix("Is")
-            .lowercase()
-            .replace(Regex("(?<=[^_])_(?=[^_])"), "")
+            .lowercase() // binary properties name are case-insensitive
+            .replace(Regex("(?<=[^_])_(?=[^_])"), "") // handle snake case
         if ("Is$binaryKey" in binaryPropertiesPredicates) {
             return "Is$binaryKey"
         }
 
-        if (name in javaCharacterMethodPredicates) {
-            return name
+        // Java character methods: java prefix, exact match, case-sensitive
+        if (pEscapeLabel in javaCharacterMethodPredicates) {
+            return pEscapeLabel
         }
 
         // no match found
         throw IllegalArgumentException("Unsupported/illegal category, binary property or java method")
     }
 
-    private val minCharCode = 0
-    private val maxCharCode = 0xffff
-
-    private fun computeAndCache(key: String, predicate: (Int) -> Boolean){
+    /*
+    Filters characters by predicate, constructing a list in a way that skips the MultiCharacterRange construction logic.
+     */
+    private fun computeRanges(key: String, predicate: (Int) -> Boolean): MultiCharacterRange {
         val list = mutableListOf<CharacterRange>()
-        var start = minCharCode
+        var start = Character.MIN_VALUE.code
+        val end = Character.MAX_VALUE.code
         var prevPredicateResult = predicate(start)
-        for (codePoint in minCharCode..maxCharCode) {
+        for (codePoint in 0..end) {
             val predicateResult = predicate(codePoint)
             if ( prevPredicateResult != predicateResult ) {
                 if (prevPredicateResult) {
@@ -225,40 +260,58 @@ class UnicodeCache {
             }
         }
         if (prevPredicateResult) {
-            list.add(CharacterRange(start, maxCharCode))
+            list.add(CharacterRange(start, end))
         }
 
-        if(list.isEmpty()) {
-            throw IllegalArgumentException("Can not create empty character class for $key")
-        }
-        cache[key] = MultiCharacterRange(list.toList())
+        return MultiCharacterRange(list.toList())
     }
 
-    fun getRanges(name: String, negated: Boolean): MultiCharacterRange {
-        val key = normalizeKey(name)
+    /**
+     * Returns a [MultiCharacterRange] representing the set of Unicode code points matched by
+     * a `\p{`[pEscapeLabel]`}` (or `\P{`[pEscapeLabel]`}` if [negated]) regex escape sequence.
+     *
+     * The result is computed lazily on first access and cached for subsequent calls.
+     * [pEscapeLabel] is normalized before lookup, so e.g. `"hex_digit"` and `"hexdigit"` resolve to the same entry.
+     *
+     * The following Unicode property types are supported:
+     * - Script (e.g. `IsArabic`, `sc=Latin`)
+     * - Block (e.g. `InBasicLatin`, `blk=Greek`)
+     * - General Category (e.g. `Lu`, `gc=P`)
+     * - Binary Property (e.g. `IsAlphabetic`, `Ishex_digit`)
+     * - Java character method (e.g. `javaAlphabetic`)
+     *
+     * @param pEscapeLabel the property name, including keywords or prefixes (e.g. `"gc="`, `"sc="`, `"Is"`, `"In"`)
+     * @param negated if `true`, returns the complement of the matched set (equivalent to `\P{`[pEscapeLabel]`}`)
+     * @throws NullPointerException if [pEscapeLabel] does not resolve to any known property
+     */
+    fun getRanges(pEscapeLabel: String, negated: Boolean): MultiCharacterRange {
+        val key = normalizeKey(pEscapeLabel)
         val fullKey = if (negated) {
             "^$key"
         } else {
             key
         }
-        return if (fullKey in cache) {
-            cache[fullKey]!!
-        } else {
-            val predicate = when (key) {
-                in scriptPredicates -> scriptPredicates[key]
-                in blockPredicates -> blockPredicates[key]
-                in generalCategoryPredicates -> generalCategoryPredicates[key]
-                in binaryPropertiesPredicates -> binaryPropertiesPredicates[key]
-                in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]
-                else -> null
-            }
-            if (key !in cache) {
-                computeAndCache(key, predicate!!)
-            }
-            if (negated) {
-                cache[fullKey] = MultiCharacterRange(true, cache[key]!!.ranges)
-            }
-            cache[fullKey]!!
+
+        val predicate = when (key) {
+            in scriptPredicates -> scriptPredicates[key]
+            in blockPredicates -> blockPredicates[key]
+            in generalCategoryPredicates -> generalCategoryPredicates[key]
+            in binaryPropertiesPredicates -> binaryPropertiesPredicates[key]
+            in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]
+            else -> null
+        }
+
+        // first we compute and cache the base key (non-negated)
+        cache.computeIfAbsent(key) {
+            computeRanges(key, predicate!!)
+        }
+
+        // if the base kay was requested just return
+        if (!negated) return cache[key]!!
+
+        // else compute and cache full key (negated) from base key (non-negated)
+        return cache.computeIfAbsent(fullKey) {
+            MultiCharacterRange(true, cache[key]!!.ranges)
         }
     }
 }

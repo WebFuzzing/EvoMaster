@@ -5,6 +5,10 @@ import org.slf4j.LoggerFactory
 
 class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
 
+    init {
+        require(ranges.isNotEmpty()) { "MultiCharacterRange cannot be created with an empty list" }
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
 
@@ -24,10 +28,6 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
                 } else {
                     add(internalRanges, CharacterRange(range.start, range.end))
                 }
-            }
-
-            if (internalRanges.isEmpty()) {
-                throw IllegalArgumentException("No defined ranges")
             }
 
             return MultiCharacterRange(internalRanges)
