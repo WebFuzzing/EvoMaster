@@ -375,6 +375,18 @@ class HttpSemanticsOracleTest {
         return BodyParam(obj, typeGene)
     }
 
+    private fun jsonPutBodyParamOptionalInactive(
+        activeFields: Map<String, String>
+    ): BodyParam {
+        val fields = mutableListOf<org.evomaster.core.search.gene.Gene>()
+        activeFields.forEach { (name, value) -> fields.add(StringGene(name, value)) }
+        val obj = ObjectGene("body", fields = fields)
+        val optional = OptionalGene("body", obj, isActive = false)
+        val typeGene = EnumGene("contentType", listOf("application/json"))
+        typeGene.index = 0
+        return BodyParam(optional, typeGene)
+    }
+
     private fun runMismatchedPutOracle(
         path: String,
         putBody: BodyParam?,
@@ -715,6 +727,21 @@ class HttpSemanticsOracleTest {
     }
 
     @Test
+    fun testPut_bodyOptionalGeneInactive_getHasContent_returnsTrue() {
+        // Outer OptionalGene wrapping the body is inactive — nothing was sent.
+        // The inner ObjectGene's fields must NOT be treated as sent fields.
+        // Equivalent to "no body": GET returning content is flagged.
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParamOptionalInactive(
+                activeFields = mapOf("name" to "Bob")
+            ),
+            getResponseBody = """{"name":"Bob"}"""
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
     fun testPut_nonEmptyPutBody_getEmptyString_returnsTrue() {
         val mismatch = runMismatchedPutOracle(
             path = "/users",
@@ -782,5 +809,14 @@ class HttpSemanticsOracleTest {
             schema = schema
         )
         assertFalse(mismatch)
+    }
+
+    @Test
+    fun test_extractBodyObject(){
+        val put = RestCallAction(
+            id = "put", verb = HttpVerb.PUT, path = RestPath("/users"),
+            parameters = mutableListOf()
+        )
+
     }
 }

@@ -264,6 +264,79 @@ object SchemaUtils {
         return response
     }
 
+    /**
+     * Recursively collect property names from a schema, resolving `$ref` at every level
+     * and merging the union of properties across `allOf` parts.
+     *
+     * `oneOf` / `anyOf` are intentionally ignored: their semantics are alternatives, not
+     * a stable set of writable fields, so including them would produce false positives
+     * in callers that compare PUT-sent fields to GET-returned ones.
+     *
+     * Cycle protection: a `$ref` already on the resolution stack is skipped, which is
+     * safe for property-name collection (the names are union-merged into a Set).
+     *
+     * Looks at the original schema (not at the parsed [RestCallAction] gene tree) because
+     * taint analysis can rewrite the action's gene tree, while the spec is the source of truth.
+     */
+    fun collectPropertyNames(
+        schema: RestSchema,
+        raw: Schema<*>?,
+        visitedRefs: MutableSet<String> = mutableSetOf()
+    ): Set<String> {
+        if (raw == null) return emptySet()
+
+        val ref = raw.`$ref`
+        val resolved: Schema<*>? = if (ref != null) {
+            if (!visitedRefs.add(ref)) return emptySet()
+            getReferenceSchema(schema, schema.main, ref, mutableListOf())
+        } else raw
+
+        if (resolved == null) return emptySet()
+
+        val result = mutableSetOf<String>()
+        resolved.properties?.keys?.let { result.addAll(it) }
+        resolved.allOf?.forEach { result.addAll(collectPropertyNames(schema, it, visitedRefs)) }
+        return result
+    }
+
+    /**
+     * Returns the property names from the PUT request body schema in the OpenAPI spec.
+     * Used as a fallback to determine writable fields when no BodyParam is present on the action.
+     */
+    fun extractPutRequestSchemaFields(
+        schema: RestSchema,
+        pathString: String
+    ): Set<String> {
+        val openAPI = schema.main.schemaParsed
+        val pathItem = openAPI.paths?.get(pathString) ?: return emptySet()
+        val op = pathItem.put ?: return emptySet()
+        val requestBody = op.requestBody ?: return emptySet()
+        val mediaType = requestBody.content?.values?.firstOrNull() ?: return emptySet()
+        return collectPropertyNames(schema, mediaType.schema)
+    }
+
+    /**
+     * Returns the property names from the GET 2xx response schema in the OpenAPI spec.
+     * Empty set if unresolvable, which makes callers skip wiped-field checks.
+     */
+    fun extractGetResponseSchemaFields(
+        schema: RestSchema,
+        pathString: String
+    ): Set<String> {
+        val openAPI = schema.main.schemaParsed
+        val pathItem = openAPI.paths?.get(pathString) ?: return emptySet()
+        val op = pathItem.get ?: return emptySet()
+
+        // pick the first 2xx response, falling back to "default"
+        val response = op.responses?.entries
+            ?.firstOrNull { it.key.length == 3 && it.key.startsWith("2") }?.value
+            ?: op.responses?.get("default")
+            ?: return emptySet()
+
+        val mediaType = response.content?.values?.firstOrNull() ?: return emptySet()
+        return collectPropertyNames(schema, mediaType.schema)
+    }
+
 
     /**
      * depending on whether path is a file or folder, return a list with 1 or more Overlays.

@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.oracle
 
-import io.swagger.v3.oas.models.media.Schema
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -303,7 +302,7 @@ object HttpSemanticsOracle {
 
         val sentFields = extractSentFieldNames(put)
         val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
-            schema?.let { extractPutRequestSchemaFields(it, put) } ?: emptySet()
+            schema?.let { SchemaUtils.extractPutRequestSchemaFields(it, put.path.toString()) } ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
             // no information to verify against; flag only when PUT sent nothing either
@@ -359,7 +358,7 @@ object HttpSemanticsOracle {
         get: RestCallAction
     ): Set<String> {
         if (candidates.isEmpty() || schema == null) return emptySet()
-        val getSchemaFields = extractGetResponseSchemaFields(schema, get)
+        val getSchemaFields = SchemaUtils.extractGetResponseSchemaFields(schema, get.path.toString())
         if (getSchemaFields.isEmpty()) return emptySet()
         return candidates intersect getSchemaFields
     }
@@ -463,6 +462,10 @@ object HttpSemanticsOracle {
             ?: return null
 
         val gene = bodyParam.primaryGene()
+        // an optional body that is not active means nothing is sent, so there
+        // are no fields to extract regardless of the underlying ObjectGene.
+        if (gene is OptionalGene && !gene.isActive) return null
+
         return gene.getWrappedGene(ObjectGene::class.java) as ObjectGene?
             ?: if (gene is ObjectGene) gene else null
     }
@@ -563,56 +566,6 @@ object HttpSemanticsOracle {
             return false
         }
         return false
-    }
-
-    /**
-     * Returns the property names from the PUT request body schema in the OpenAPI spec.
-     * Used as a fallback to determine writable fields when no BodyParam is present on the action.
-     */
-    internal fun extractPutRequestSchemaFields(
-        schema: RestSchema,
-        put: RestCallAction
-    ): Set<String> {
-
-        val openAPI = schema.main.schemaParsed
-        val pathItem = openAPI.paths?.get(put.path.toString()) ?: return emptySet()
-        val op = pathItem.put ?: return emptySet()
-        val requestBody = op.requestBody ?: return emptySet()
-        val mediaType = requestBody.content?.values?.firstOrNull() ?: return emptySet()
-        val rawSchema = mediaType.schema ?: return emptySet()
-        val resolved = rawSchema.`$ref`?.let {
-            SchemaUtils.getReferenceSchema(schema, schema.main, it, mutableListOf())
-        } ?: rawSchema
-
-        return resolved.properties?.keys?.toSet() ?: emptySet()
-    }
-
-    /**
-     * Returns the property names from the GET 2xx response schema in the OpenAPI spec.
-     * Empty set if unresolvable, which makes callers skip wiped-field checks.
-     */
-    internal fun extractGetResponseSchemaFields(
-        schema: RestSchema,
-        get: RestCallAction
-    ): Set<String> {
-
-        val openAPI = schema.main.schemaParsed
-        val pathItem = openAPI.paths?.get(get.path.toString()) ?: return emptySet()
-        val op = pathItem.get ?: return emptySet()
-
-        // pick the first 2xx response, falling back to "default"
-        val response = op.responses?.entries
-            ?.firstOrNull { it.key.length == 3 && it.key.startsWith("2") }?.value
-            ?: op.responses?.get("default")
-            ?: return emptySet()
-
-        val mediaType = response.content?.values?.firstOrNull() ?: return emptySet()
-        val rawSchema = mediaType.schema ?: return emptySet()
-        val resolved = rawSchema.`$ref`?.let {
-            SchemaUtils.getReferenceSchema(schema, schema.main, it, mutableListOf())
-        } ?: rawSchema
-
-        return resolved.properties?.keys?.toSet() ?: emptySet()
     }
 
     private fun parseFormBody(body: String): Map<String, String> {
