@@ -176,6 +176,15 @@ class TableConstraintEvaluator(val previousActions: List<SqlAction> = listOf())
                 continue
             }
             val tuple = getTuple(constraint.uniqueColumnNames, previousAction.seeTopGenes())
+            if (tuple.values.any { it == null }) {
+                /**
+                 * In SQL, NULL represents an unknown value, and comparisons involving NULL do not
+                 * evaluate to true (even NULL = NULL is not true). Because of this,
+                 * UNIQUE constraints typically treat rows containing NULL values as not equal to each
+                 * other, allowing multiple rows with NULL in the constrained column(s).
+                 */
+                continue
+            }
             if (tuple in tuples) {
                 // if the tuple was already observed, return false
                 return false
@@ -197,6 +206,8 @@ class TableConstraintEvaluator(val previousActions: List<SqlAction> = listOf())
                 // if the column is not listed then we have to assume the default value
                 // for that column. Momentarly we will use NULL as default value for all
                 // columns not listed.
+                tuple[uniqueColumnName] = null
+            } else if (gene is NullableGene && !gene.isActive) {
                 tuple[uniqueColumnName] = null
             } else {
                 val rawString = gene.getValueAsRawString()

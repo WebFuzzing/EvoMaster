@@ -18,12 +18,12 @@ public class CrossFkEMTest extends SpringTestBase {
         SpringTestBase.initClass(new CrossFkController());
     }
     @Test
-    public void testEnableTaintSampleEM() throws Throwable {
+    public void testEnableTaintSampleEM_CrossFk() throws Throwable {
         forceSqlAllColumnInsertion(true);
     }
 
     @Test
-    public void testDisableTaintSampleEM() throws Throwable {
+    public void testDisableTaintSampleEM_CrossFk() throws Throwable {
         forceSqlAllColumnInsertion(false);
     }
 

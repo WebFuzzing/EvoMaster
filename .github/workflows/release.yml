@@ -11,6 +11,7 @@ env:
   evomaster-version: 5.1.1
   jdk-jar: 17
   jdk-jpackage: 21
+  java-distribution: temurin
   retention-days: 1
 ## Doesn't work, ie, use env in env
 #  installer-windows: evomaster-${evomaster-version}.msi
@@ -24,9 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.jdk-jar}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.jdk-jar}}
+          distribution: ${{env.java-distribution}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -74,9 +76,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.jdk-jpackage}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.jdk-jpackage}}
+          distribution: ${{env.java-distribution}}
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
@@ -99,9 +102,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.jdk-jpackage}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.jdk-jpackage}}
+          distribution: ${{env.java-distribution}}
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
@@ -124,9 +128,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.jdk-jpackage}}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v5
         with:
           java-version: ${{env.jdk-jpackage}}
+          distribution: ${{env.java-distribution}}
       - name: Download fat jar
         uses: actions/download-artifact@v4
         with:
