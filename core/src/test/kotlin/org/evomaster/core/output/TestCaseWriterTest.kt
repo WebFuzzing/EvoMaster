@@ -328,7 +328,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -354,6 +354,84 @@ class TestCaseWriterTest : WriterTestBase(){
             indent()
             add(".d(\"Id\", \"42\")")
             add(".d(\"fkId\", \"42\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+    @Test
+    fun testMultipleForeignKeyColumns() {
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
+        val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
+        val table1 = Table("Table1", setOf(idColumn), HashSet<ForeignKey>())
+
+        val fk0Column = Column("fkId0", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val fk1Column = Column("fkId1", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val table2 = Table("Table2", setOf(idColumn, fk0Column, fk1Column), HashSet<ForeignKey>())
+
+
+        val pk0UniqueId = 12345L
+        val pk1UniqueId = 54321L
+
+        val integerGene0 = IntegerGene(idColumn.name, 42, 0, 100)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, TableId("Table0"), integerGene0, pk0UniqueId)
+
+        val integerGene1 = IntegerGene(idColumn.name, 84, 0, 100)
+        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, TableId("Table1"), integerGene1, pk1UniqueId)
+
+        val integerGene2 = IntegerGene(idColumn.name, 10, 0, 100)
+        val primaryKeyTable2Gene = SqlPrimaryKeyGene(idColumn.name, TableId("Table2"), integerGene2, 20)
+
+
+        val firstInsertionId = 1001L
+        val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
+
+        val secondInsertionId = 1002L
+        val insertIntoTable1 = SqlAction(table1, setOf(idColumn), secondInsertionId, listOf(primaryKeyTable1Gene))
+
+        val thirdInsertionId = 1003L
+        val foreignKey0Gene = SqlForeignKeyGene(fk0Column.name, thirdInsertionId, TableId("Table0"), idColumn.name, false, uniqueIdOfPrimaryKey = pk0UniqueId)
+        val foreignKey1Gene = SqlForeignKeyGene(fk1Column.name, thirdInsertionId, TableId("Table1"), idColumn.name, false, uniqueIdOfPrimaryKey = pk1UniqueId)
+
+        val insertIntoTable2 = SqlAction(table2, setOf(idColumn, fk0Column, fk1Column), thirdInsertionId, listOf(primaryKeyTable2Gene, foreignKey0Gene, foreignKey1Gene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(
+                insertIntoTable0.copy() as SqlAction,
+                insertIntoTable1.copy() as SqlAction,
+                insertIntoTable2.copy() as SqlAction))
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+
+        val expectedLines = Lines(format).apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L)")
+            indent()
+            indent()
+            add(".d(\"Id\", \"42\")")
+            deindent()
+            add(".and().insertInto(\"Table1\", 1002L)")
+            indent()
+            add(".d(\"Id\", \"84\")")
+            deindent()
+            add(".and().insertInto(\"Table2\", 1003L)")
+            indent()
+            add(".d(\"Id\", \"10\")")
+            add(".d(\"fkId0\", \"42\")")
+            add(".d(\"fkId1\", \"84\")")
             deindent()
             add(".dtos();")
             deindent()
@@ -427,7 +505,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", true, -1L)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, true, -1L)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -585,7 +663,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val firstInsertionId = 1001L
         val insertIntoTable0 = SqlAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, TableId("Table0"), idColumn.name, false, pkGeneUniqueId)
 
         val insertIntoTable1 = SqlAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -640,13 +718,13 @@ class TestCaseWriterTest : WriterTestBase(){
 
 
         val insertId1 = 1002L
-        val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, "Table0", false, insertId0)
+        val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, TableId("Table0"), table0_Id.name, false, insertId0)
         val pkGene1 = SqlPrimaryKeyGene(table1_Id.name, "Table1", fkGene0, insertId1)
         val insert1 = SqlAction(table1, setOf(table1_Id), insertId1, listOf(pkGene1))
 
 
         val insertId2 = 1003L
-        val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, "Table1", false, insertId1)
+        val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, TableId("Table1"), table1_Id.name, false, insertId1)
         val pkGene2 = SqlPrimaryKeyGene(table2_Id.name, "Table2", fkGene1, insertId2)
         val insert2 = SqlAction(table2, setOf(table2_Id), insertId2, listOf(pkGene2))
 
@@ -1027,7 +1105,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val fooInsertionId = 1001L
         val fooInsertion = SqlAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, TableId("Foo"), fooId.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
@@ -1099,7 +1177,7 @@ public void test() throws Exception {
         val fooInsertionId = 1001L
         val fooInsertion = SqlAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, TableId("Foo"), fooId.name, false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
