@@ -145,6 +145,8 @@ fragment PCharacterClassEscapeLabel
 // | ('In' | 'blk=' | 'block=') UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
 // | 'Is' UnicodeBinaryPropertiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
 // | 'java' JavalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+ | 'Is' UnicodeBinaryPropertiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
+ | 'java' JavalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
  ;
 
 // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
@@ -187,6 +189,58 @@ fragment UnicodeCategoriesLabel
  | 'Zl'
  | 'Zp'
  | 'Zs'
+ ;
+
+//fragment UnicodeScriptsLabel
+// :
+// ;
+
+//fragment UnicodeBlocksLabel
+// :
+// ;
+
+fragment UnicodeBinaryPropertiesLabel
+ : 'alphabetic'
+ | 'ideographic'
+ | 'letter'
+ | 'lowercase'
+ | 'uppercase'
+ | 'titlecase'
+ | 'punctuation'
+ | 'control'
+ | 'white_space'
+ | 'digit'
+ | 'hex_digit'
+ | 'join_control'
+ | 'noncharacter_code_point'
+ | 'assigned'
+ ;
+
+fragment JavalangCharacterClassesLabel
+ : 'Alphabetic'
+ | 'BmpCodePoint'
+ | 'Defined'
+ | 'Digit'
+ | 'HighSurrogate'
+ | 'IdentifierIgnorable'
+ | 'Ideographic'
+ | 'ISOControl'
+ | 'JavaIdentifierPart'
+ | 'JavaIdentifierStart'
+ | 'Letter'
+ | 'LetterOrDigit'
+ | 'LowerCase'
+ | 'LowSurrogate'
+ | 'Mirrored'
+ | 'SpaceChar'
+ | 'SupplementaryCodePoint'
+ | 'Surrogate'
+ | 'TitleCase'
+ | 'UnicodeIdentifierPart'
+ | 'UnicodeIdentifierStart'
+ | 'UpperCase'
+ | 'ValidCodePoint'
+ | 'Whitespace'
  ;
 
 // basic US-ASCII only predefined POSIX character classes

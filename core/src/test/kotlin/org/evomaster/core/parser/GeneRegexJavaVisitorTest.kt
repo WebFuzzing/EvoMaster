@@ -138,6 +138,58 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testUnicodeBinaryProperties(){
+        val binaryProperyLabels = listOf(
+            "Isalphabetic",
+            "Isdigit",
+            "Isideographic",
+            "Isletter",
+            "Islowercase",
+            "Istitlecase",
+            "Isuppercase",
+            "Iswhite_space",
+            "Ispunctuation",
+            "Iscontrol",
+            "Ishex_digit",
+            "Isjoin_control",
+            "Isnoncharacter_code_point",
+            "Isassigned",
+        )
+        for (label in binaryProperyLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
+    fun testJavaCharacterMethods(){
+        val javaCharacterMethodLabels = listOf(
+            "javaDefined",
+            "javaIdentifierIgnorable",
+            "javaISOControl",
+            "javaJavaIdentifierPart",
+            "javaJavaIdentifierStart",
+            "javaLetterOrDigit",
+            "javaMirrored",
+            "javaSpaceChar",
+            "javaUnicodeIdentifierPart",
+            "javaUnicodeIdentifierStart",
+            "javaWhitespace",
+            "javaAlphabetic",
+            "javaDigit",
+            "javaIdeographic",
+            "javaLetter",
+            "javaLowerCase",
+            "javaTitleCase",
+            "javaUpperCase",
+        )
+        for (label in javaCharacterMethodLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
