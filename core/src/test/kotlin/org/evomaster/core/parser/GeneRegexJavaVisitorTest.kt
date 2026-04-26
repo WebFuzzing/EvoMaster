@@ -138,6 +138,40 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testUnicodeScripts(){
+        val scriptLabels = listOf(
+            "Arabic",
+            "Balinese",
+            "Latin",
+            "Greek",
+            "Yi",
+        ).map { scriptName ->
+            "sc=${scriptName}"
+        }
+        for (label in scriptLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
+    fun testUnicodeBlocks(){
+        val blockLabels = listOf(
+            "Oriya",
+            "Cyrillic",
+            "Arabic",
+            "Lao",
+            "Bengali",
+        ).map { blockName ->
+            "blk=${blockName}"
+        }
+        for (label in blockLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
     fun testUnicodeBinaryProperties(){
         val binaryProperyLabels = listOf(
             "Isalphabetic",

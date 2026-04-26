@@ -43,6 +43,22 @@ class UnicodeCache {
             "gc=$group" to { cp: Int -> Character.getType(cp) in types }
         }
 
+    // UNICODE BLOCKS, names and keywords (blk, block) are case-insensitive, prefix is case-sensitive (In)
+    private val blockPredicates: Map<String, (Int) -> Boolean> = Character.UnicodeBlock::class.java.fields
+        .filter { it.type == Character.UnicodeBlock::class.java }
+        .associate { field ->
+            "blk=${field.name.lowercase()}" to { cp: Int ->
+                Character.UnicodeBlock.of(cp) == field.get(null)
+            }
+        }
+
+    // UNICODE SCRIPTS, names and keywords (sc, script) are case-insensitive, prefix is case-sensitive (Is)
+    private val scriptPredicates: Map<String, (Int) -> Boolean> = Character.UnicodeScript.entries.associate { script ->
+        "sc=${script.toString().lowercase()}" to { cp: Int ->
+            Character.UnicodeScript.of(cp) == script
+        }
+    }
+
     // UNICODE BINARY PROPERTIES, case-insensitive (except for "Is" prefix)
     private val binaryPropertiesPredicates: Map<String, (Int) -> Boolean> = mapOf(
 
@@ -150,6 +166,24 @@ class UnicodeCache {
 
     private fun normalizeKey(name: String): String {
 
+        val scriptKey = name
+            .replace(Regex("^(script=|sc=)", RegexOption.IGNORE_CASE), "")
+            .removePrefix("Is")
+            .lowercase()
+            .replace(Regex("(?<=[^_])_(?=[^_])"), "")
+        if ("sc=$scriptKey" in scriptPredicates) {
+            return "sc=$scriptKey"
+        }
+
+        val blockKey = name
+            .replace(Regex("^(block=|blk=)", RegexOption.IGNORE_CASE), "")
+            .removePrefix("In")
+            .lowercase()
+            .replace(Regex("(?<=[^_])_(?=[^_])"), "")
+        if ("blk=$blockKey" in blockPredicates) {
+            return "blk=$blockKey"
+        }
+
         val gcKey = name
             .replace(Regex("^(general_category=|gc=)", RegexOption.IGNORE_CASE), "")
             .removePrefix("Is")
@@ -211,6 +245,8 @@ class UnicodeCache {
             cache[fullKey]!!
         } else {
             val predicate = when (key) {
+                in scriptPredicates -> scriptPredicates[key]
+                in blockPredicates -> blockPredicates[key]
                 in generalCategoryPredicates -> generalCategoryPredicates[key]
                 in binaryPropertiesPredicates -> binaryPropertiesPredicates[key]
                 in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]

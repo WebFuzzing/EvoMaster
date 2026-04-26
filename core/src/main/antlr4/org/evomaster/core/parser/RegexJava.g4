@@ -137,128 +137,17 @@ CharacterEscape
 // which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
 // Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
-// TODO missing \p escapes
+// Instead of listing all unicode scripts, blocks, etc. the parser allows anything
+// then we filter by checking if the label is valid when it is used.
 fragment PCharacterClassEscapeLabel
- : PosixCharacterClassLabel
- | ('Is' | 'gc=' | 'general_category=')? UnicodeCategoriesLabel
-// | ('Is' | 'sc=' | 'script=') UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
-// | ('In' | 'blk=' | 'block=') UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
-// | 'Is' UnicodeBinaryPropertiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
-// | 'java' JavalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
- | 'Is' UnicodeBinaryPropertiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
- | 'java' JavalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
- ;
-
-// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
-fragment UnicodeCategoriesLabel
- : 'C'
- | 'Cc'
- | 'Cf'
- | 'Cn'
- | 'Co'
- | 'Cs'
- | 'L'
- | 'LC'
- | 'Ll'
- | 'Lm'
- | 'Lo'
- | 'Lt'
- | 'Lu'
- | 'M'
- | 'Mc'
- | 'Me'
- | 'Mn'
- | 'N'
- | 'Nd'
- | 'Nl'
- | 'No'
- | 'P'
- | 'Pc'
- | 'Pd'
- | 'Pe'
- | 'Pf'
- | 'Pi'
- | 'Po'
- | 'Ps'
- | 'S'
- | 'Sc'
- | 'Sk'
- | 'Sm'
- | 'So'
- | 'Z'
- | 'Zl'
- | 'Zp'
- | 'Zs'
- ;
-
-//fragment UnicodeScriptsLabel
-// :
-// ;
-
-//fragment UnicodeBlocksLabel
-// :
-// ;
-
-fragment UnicodeBinaryPropertiesLabel
- : 'alphabetic'
- | 'ideographic'
- | 'letter'
- | 'lowercase'
- | 'uppercase'
- | 'titlecase'
- | 'punctuation'
- | 'control'
- | 'white_space'
- | 'digit'
- | 'hex_digit'
- | 'join_control'
- | 'noncharacter_code_point'
- | 'assigned'
- ;
-
-fragment JavalangCharacterClassesLabel
- : 'Alphabetic'
- | 'BmpCodePoint'
- | 'Defined'
- | 'Digit'
- | 'HighSurrogate'
- | 'IdentifierIgnorable'
- | 'Ideographic'
- | 'ISOControl'
- | 'JavaIdentifierPart'
- | 'JavaIdentifierStart'
- | 'Letter'
- | 'LetterOrDigit'
- | 'LowerCase'
- | 'LowSurrogate'
- | 'Mirrored'
- | 'SpaceChar'
- | 'SupplementaryCodePoint'
- | 'Surrogate'
- | 'TitleCase'
- | 'UnicodeIdentifierPart'
- | 'UnicodeIdentifierStart'
- | 'UpperCase'
- | 'ValidCodePoint'
- | 'Whitespace'
- ;
-
-// basic US-ASCII only predefined POSIX character classes
+ : [0-9a-zA-Z_=]+
+// posix character classes, java.lang.Character methods and Unicode scripts, blocks, categories and binary properties.
 // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#:~:text=character%3A%20%5B%5E%5Cw%5D-,POSIX,-character%20classes%20(US
-fragment PosixCharacterClassLabel
- : 'Lower'
- | 'Upper'
- | 'ASCII'
- | 'Alpha'
- | 'Digit'
- | 'Alnum'
- | 'Punct'
- | 'Graph'
- | 'Print'
- | 'Blank'
- | 'Cntrl'
- | 'XDigit'
- | 'Space'
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
  ;
 
 fragment ControlEscape
