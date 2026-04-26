@@ -194,7 +194,7 @@ class RestResourceCalls(
     /**
      * @return actions with specified action [filter]
      */
-    fun seeActions(filter: ActionFilter): List<out Action> {
+    fun seeActions(filter: ActionFilter): List<Action> {
         return when (filter) {
             ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
             ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dnsActions)
@@ -254,7 +254,7 @@ class RestResourceCalls(
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
-    private fun seeMutableSQLGenes(): List<out Gene> = getResourceNode()
+    private fun seeMutableSQLGenes(): List<Gene> = getResourceNode()
         .getMutableSQLGenes(sqlActions, getRestTemplate(), is2POST)
 
 

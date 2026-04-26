@@ -39,7 +39,7 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * However, these intermediate structures should only impact the phenotype, and not
      * the genotype
      */
-    abstract fun seeTopGenes(): List<out Gene>
+    abstract fun seeTopGenes(): List<Gene>
 
     fun seeAllGenes(): List<Gene> = seeTopGenes().flatMap {g ->  g.flatView() }
 

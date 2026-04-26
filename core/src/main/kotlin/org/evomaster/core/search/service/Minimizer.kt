@@ -82,8 +82,6 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
            return
         }
 
-        LoggingUtil.getInfoLogger().info("Starting to apply minimization phase")
-
         recomputeArchiveWithFullCoverageInfo()
 
         val current = archive.getCopyOfUniqueCoveringIndividuals()

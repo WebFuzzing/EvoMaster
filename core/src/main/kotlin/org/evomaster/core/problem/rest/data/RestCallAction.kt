@@ -114,18 +114,8 @@ class RestCallAction(
         if(!isPotentialActionForCreation()){
             throw IllegalStateException("Location Ids are meaningful only for POST operations")
         }
-        //return  path.lastElement()
-        /*
-            previous was problematic, as ids were not unique. it wasn't an issue for chains, but it
-            became major issue for cleanups.
-            but, using local ids has its own issues (only defined once mounted into an individual).
-            TODO will need to check for side-effects, might require some more refactoring
-         */
-        if(weakReference != null){
-            throw IllegalStateException("'weakReference' has not been handled yet   ")
-        }
         if(!hasLocalId()){
-            throw IllegalStateException("Location ID must be present when computing a creationLocationId")
+            throw IllegalStateException("Local ID must be present when computing a creationLocationId")
         }
         val k = getLocalId()
         // TODO could skip k if non-ambiguous. otherwise, counter could start from 0 (ie need a map for k values)
@@ -158,7 +148,7 @@ class RestCallAction(
         return "$verb:$path"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 

@@ -17,7 +17,7 @@ import javax.xml.transform.stream.StreamResult
  * @description: this class can be extended for supporting different styles of outputs (i.e., test cases),
  *                 currently only json is supported with string input
  */
-open abstract class OutputFormatter (val name: String) {
+abstract class OutputFormatter (val name: String) {
 
     companion object {
         private var formatters = mutableMapOf<String, OutputFormatter>()
@@ -137,3 +137,4 @@ open abstract class OutputFormatter (val name: String) {
 
 
 }
+

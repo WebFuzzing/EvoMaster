@@ -294,7 +294,7 @@ abstract class StructuralElement (
         }
     }
 
-    open fun killChildren(toKill: List<out StructuralElement>){
+    open fun killChildren(toKill: List<StructuralElement>){
         for(child in toKill){
             killChild(child)
         }
