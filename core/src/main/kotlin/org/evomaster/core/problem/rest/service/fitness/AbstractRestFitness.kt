@@ -1231,9 +1231,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
-
+    
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
+        }
+        
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+            handlePartialUpdatePut(individual, actionResults, fv)
         }
     }
 
@@ -1314,6 +1318,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handlePartialUpdatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
+        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+
+        val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

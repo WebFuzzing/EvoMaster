@@ -30,6 +30,8 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(915, "A failed PUT or PATCH must not change the resource", "sideEffectsFailedModification",
         "TODO"),
+    HTTP_PARTIAL_UPDATE_PUT(916, "The verb PUT makes a full replacement", "partialUpdatePut",
+        "TODO"),
 
 
     //3xx: GraphQL
