@@ -106,10 +106,4 @@ public class Z3SolverController extends SpringController {
         return Collections.singletonList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
 
-    @Override
-    public void resetDatabase(List<String> tablesToClean) {
-        // If tablesToClean is null, it means that all tables should be cleaned.
-        // In this case, force all tables to be cleaned.
-        super.resetDatabase(null);
-    }
 }
