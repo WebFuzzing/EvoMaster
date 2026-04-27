@@ -638,35 +638,46 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else if (bodyParam.isTextPlain()) {
 
                 val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                if (body != "\"\"") {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-                        format.isPython() -> {
-                            if (body.trim().isNullOrBlank()) {
-                                lines.add("body = \"\"")
-                            } else {
-                                lines.add("body = $body")
+                // handle body only if it is not black
+                if (body.isNotBlank()) {
+                    if (body != "\"\"") {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                            }
+
+                            format.isPython() -> {
+                                if (body.trim().isNullOrBlank()) {
+                                    lines.add("body = \"\"")
+                                } else {
+                                    lines.add("body = $body")
+                                }
+                            }
+
+                            format.isJavaScript() && format.isPlaywright() -> {
+                                lines.add("data: $body,")
+                            }
+
+                            else -> {
+                                lines.add(".$send($body)")
                             }
                         }
-                        format.isJavaScript() && format.isPlaywright() -> {
-                            lines.add("data: $body,")
+                    } else {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                            }
+
+                            format.isPython() -> {
+                                lines.add("body = \"\"")
+                            }
+
+                            format.isJavaScript() && format.isPlaywright() -> {
+                                lines.add("data: \"${"""\"\""""}\",")
+                            }
+
+                            else -> lines.add(".$send(\"${"""\"\""""}\")")
                         }
-                        else -> lines.add(".$send($body)")
-                    }
-                } else {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-                        format.isPython() -> {
-                            lines.add("body = \"\"")
-                        }
-                        format.isJavaScript() && format.isPlaywright() -> {
-                            lines.add("data: \"${"""\"\""""}\",")
-                        }
-                        else -> lines.add(".$send(\"${"""\"\""""}\")")
                     }
                 }
 
