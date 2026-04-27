@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.schema
 
 
+import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.examples.Example
 import io.swagger.v3.oas.models.links.Link
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.data.HttpVerb
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
@@ -300,42 +303,77 @@ object SchemaUtils {
     }
 
     /**
-     * Returns the property names from the PUT request body schema in the OpenAPI spec.
+     * Returns the operation associated with [verb] in the given [pathItem], or null if absent.
+     */
+    private fun pathItemOperation(pathItem: PathItem, verb: HttpVerb): Operation? = when (verb) {
+        HttpVerb.GET     -> pathItem.get
+        HttpVerb.POST    -> pathItem.post
+        HttpVerb.PUT     -> pathItem.put
+        HttpVerb.DELETE  -> pathItem.delete
+        HttpVerb.OPTIONS -> pathItem.options
+        HttpVerb.PATCH   -> pathItem.patch
+        HttpVerb.HEAD    -> pathItem.head
+        HttpVerb.TRACE   -> pathItem.trace
+    }
+
+    /**
+     * Status-key matchers for use with [extractResponseSchemaFields].
+     * Each takes the raw OpenAPI response key (e.g. "200", "2XX", "default") and decides match.
+     */
+    fun statusGroupMatcher(group: StatusGroup): (String) -> Boolean = { key ->
+        key.toIntOrNull()?.let(group::isInGroup) == true
+    }
+
+    fun statusCodeMatcher(code: Int): (String) -> Boolean = { it == code.toString() }
+
+    fun statusCodesMatcher(vararg codes: Int): (String) -> Boolean {
+        val set = codes.map(Int::toString).toSet()
+        return { key -> key in set }
+    }
+
+    /**
+     * Returns the property names from the request body schema for the given path + verb.
      * Used as a fallback to determine writable fields when no BodyParam is present on the action.
      */
-    fun extractPutRequestSchemaFields(
+    fun extractRequestBodySchemaFields(
         schema: RestSchema,
-        pathString: String
+        pathString: String,
+        verb: HttpVerb
     ): Set<String> {
         val openAPI = schema.main.schemaParsed
         val pathItem = openAPI.paths?.get(pathString) ?: return emptySet()
-        val op = pathItem.put ?: return emptySet()
+        val op = pathItemOperation(pathItem, verb) ?: return emptySet()
         val requestBody = op.requestBody ?: return emptySet()
         val mediaType = requestBody.content?.values?.firstOrNull() ?: return emptySet()
         return collectPropertyNames(schema, mediaType.schema)
     }
 
     /**
-     * Returns the property names from the GET 2xx response schema in the OpenAPI spec.
-     * Empty set if unresolvable, which makes callers skip wiped-field checks.
+     * Returns the property names from a response schema for the given path + verb.
+     * The response is selected by [statusMatcher] (defaults to first 2xx); if no response
+     * matches and [fallbackToDefault] is true, "default" is used.
+     *
+     * Convenience matchers: [statusGroupMatcher], [statusCodeMatcher], [statusCodesMatcher].
      */
-    fun extractGetResponseSchemaFields(
+    fun extractResponseSchemaFields(
         schema: RestSchema,
-        pathString: String
+        pathString: String,
+        verb: HttpVerb,
+        statusMatcher: (String) -> Boolean = statusGroupMatcher(StatusGroup.G_2xx),
+        fallbackToDefault: Boolean = true
     ): Set<String> {
         val openAPI = schema.main.schemaParsed
         val pathItem = openAPI.paths?.get(pathString) ?: return emptySet()
-        val op = pathItem.get ?: return emptySet()
+        val op = pathItemOperation(pathItem, verb) ?: return emptySet()
 
-        // pick the first 2xx response, falling back to "default"
-        val response = op.responses?.entries
-            ?.firstOrNull { it.key.length == 3 && it.key.startsWith("2") }?.value
-            ?: op.responses?.get("default")
+        val response = op.responses?.entries?.firstOrNull { statusMatcher(it.key) }?.value
+            ?: (if (fallbackToDefault) op.responses?.get("default") else null)
             ?: return emptySet()
 
         val mediaType = response.content?.values?.firstOrNull() ?: return emptySet()
         return collectPropertyNames(schema, mediaType.schema)
     }
+
 
 
     /**

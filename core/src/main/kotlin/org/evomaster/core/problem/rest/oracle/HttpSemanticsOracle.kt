@@ -302,7 +302,7 @@ object HttpSemanticsOracle {
 
         val sentFields = extractSentFieldNames(put)
         val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
-            schema?.let { SchemaUtils.extractPutRequestSchemaFields(it, put.path.toString()) } ?: emptySet()
+            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) } ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
             // no information to verify against; flag only when PUT sent nothing either
@@ -358,7 +358,10 @@ object HttpSemanticsOracle {
         get: RestCallAction
     ): Set<String> {
         if (candidates.isEmpty() || schema == null) return emptySet()
-        val getSchemaFields = SchemaUtils.extractGetResponseSchemaFields(schema, get.path.toString())
+        val getSchemaFields = SchemaUtils.extractResponseSchemaFields(
+            schema, get.path.toString(), HttpVerb.GET,
+            statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx)
+        )
         if (getSchemaFields.isEmpty()) return emptySet()
         return candidates intersect getSchemaFields
     }

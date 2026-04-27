@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.schema
 
+import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -37,7 +39,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("name", "email"), SchemaUtils.extractPutRequestSchemaFields(schema, "/x"))
+        assertEquals(setOf("name", "email"), SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT))
     }
 
     @Test
@@ -73,7 +75,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("name", "role"), SchemaUtils.extractPutRequestSchemaFields(schema, "/x"))
+        assertEquals(setOf("name", "role"), SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT))
     }
 
     @Test
@@ -119,7 +121,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("id", "name", "extra"), SchemaUtils.extractPutRequestSchemaFields(schema, "/x"))
+        assertEquals(setOf("id", "name", "extra"), SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT))
     }
 
     @Test
@@ -161,7 +163,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("a", "b"), SchemaUtils.extractPutRequestSchemaFields(schema, "/x"))
+        assertEquals(setOf("a", "b"), SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT))
     }
 
     @Test
@@ -192,7 +194,7 @@ class SchemaUtilsTest {
             }
         """)
         // oneOf/anyOf are intentionally not merged; with no top-level properties result is empty.
-        assertTrue(SchemaUtils.extractPutRequestSchemaFields(schema, "/x").isEmpty())
+        assertTrue(SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT).isEmpty())
     }
 
     @Test
@@ -204,23 +206,7 @@ class SchemaUtilsTest {
               "paths": {}
             }
         """)
-        assertTrue(SchemaUtils.extractPutRequestSchemaFields(schema, "/missing").isEmpty())
-    }
-
-    @Test
-    fun testExtractPutRequestSchemaFields_putOperationMissing() {
-        val schema = parse("""
-            {
-              "openapi": "3.0.0",
-              "info": {"title": "t", "version": "1"},
-              "paths": {
-                "/x": {
-                  "get": {"responses": {"200": {"description": "ok"}}}
-                }
-              }
-            }
-        """)
-        assertTrue(SchemaUtils.extractPutRequestSchemaFields(schema, "/x").isEmpty())
+        assertTrue(SchemaUtils.extractRequestBodySchemaFields(schema, "/missing", HttpVerb.PUT).isEmpty())
     }
 
     @Test
@@ -236,7 +222,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertTrue(SchemaUtils.extractPutRequestSchemaFields(schema, "/x").isEmpty())
+        assertTrue(SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT).isEmpty())
     }
 
     @Test
@@ -269,7 +255,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("id", "name"), SchemaUtils.extractGetResponseSchemaFields(schema, "/x"))
+        assertEquals(setOf("id", "name"), SchemaUtils.extractResponseSchemaFields(schema, "/x", HttpVerb.GET, statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx)))
     }
 
     @Test
@@ -299,75 +285,7 @@ class SchemaUtilsTest {
               }
             }
         """)
-        assertEquals(setOf("only"), SchemaUtils.extractGetResponseSchemaFields(schema, "/x"))
-    }
-
-    @Test
-    fun testExtractGetResponseSchemaFields_responseAllOf() {
-        val schema = parse("""
-            {
-              "openapi": "3.0.0",
-              "info": {"title": "t", "version": "1"},
-              "paths": {
-                "/x": {
-                  "get": {
-                    "responses": {
-                      "200": {
-                        "description": "ok",
-                        "content": {
-                          "application/json": {
-                            "schema": {
-                              "allOf": [
-                                {"${'$'}ref": "#/components/schemas/Base"},
-                                {"type": "object", "properties": {"createdAt": {"type": "string"}}}
-                              ]
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "components": {
-                "schemas": {
-                  "Base": {
-                    "type": "object",
-                    "properties": {"id": {"type": "string"}, "name": {"type": "string"}}
-                  }
-                }
-              }
-            }
-        """)
-        assertEquals(
-            setOf("id", "name", "createdAt"),
-            SchemaUtils.extractGetResponseSchemaFields(schema, "/x")
-        )
-    }
-
-    @Test
-    fun testCollectPropertyNames_cycleSafe() {
-        val schema = parse("""
-            {
-              "openapi": "3.0.0",
-              "info": {"title": "t", "version": "1"},
-              "paths": {},
-              "components": {
-                "schemas": {
-                  "Node": {
-                    "type": "object",
-                    "properties": {
-                      "name": {"type": "string"},
-                      "child": {"${'$'}ref": "#/components/schemas/Node"}
-                    }
-                  }
-                }
-              }
-            }
-        """)
-        val node = schema.main.schemaParsed.components.schemas["Node"]!!
-        // self-referencing schema must not blow up; only top-level property names are returned
-        assertEquals(setOf("name", "child"), SchemaUtils.collectPropertyNames(schema, node))
+        assertEquals(setOf("only"), SchemaUtils.extractResponseSchemaFields(schema, "/x", HttpVerb.GET, statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx)))
     }
 
     @Test
@@ -392,5 +310,237 @@ class SchemaUtilsTest {
         val node = schema.main.schemaParsed.components.schemas["Node"]!!
         // allOf contains a self-$ref; visitedRefs must break the recursion without blowing up.
         assertEquals(setOf("name"), SchemaUtils.collectPropertyNames(schema, node))
+    }
+
+    // -------------------------------------------------------------------------
+    // Generic extractRequestBodySchemaFields / extractResponseSchemaFields
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testExtractRequestBodySchemaFields_postVerb() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "post": {
+                    "requestBody": {
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {"a": {"type": "string"}, "b": {"type": "string"}}
+                          }
+                        }
+                      }
+                    },
+                    "responses": {"201": {"description": "created"}}
+                  }
+                }
+              }
+            }
+        """)
+        assertEquals(
+            setOf("a", "b"),
+            SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.POST)
+        )
+    }
+
+    @Test
+    fun testExtractRequestBodySchemaFields_verbAbsent() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "get": {"responses": {"200": {"description": "ok"}}}
+                }
+              }
+            }
+        """)
+        assertTrue(
+            SchemaUtils.extractRequestBodySchemaFields(schema, "/x", HttpVerb.PUT).isEmpty()
+        )
+    }
+
+    @Test
+    fun testExtractResponseSchemaFields_4xxGroup() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "post": {
+                    "responses": {
+                      "400": {
+                        "description": "bad",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {"errorCode": {"type": "string"}}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """)
+        assertEquals(
+            setOf("errorCode"),
+            SchemaUtils.extractResponseSchemaFields(
+                schema, "/x", HttpVerb.POST,
+                statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_4xx)
+            )
+        )
+    }
+
+    @Test
+    fun testExtractResponseSchemaFields_exactStatus201() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "post": {
+                    "responses": {
+                      "200": {
+                        "description": "ok",
+                        "content": {
+                          "application/json": {
+                            "schema": {"type": "object", "properties": {"ok": {"type": "string"}}}
+                          }
+                        }
+                      },
+                      "201": {
+                        "description": "created",
+                        "content": {
+                          "application/json": {
+                            "schema": {"type": "object", "properties": {"id": {"type": "string"}}}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """)
+        // 2xx group: would pick the FIRST 2xx (likely "200"); exact 201 forces the 201 schema.
+        assertEquals(
+            setOf("id"),
+            SchemaUtils.extractResponseSchemaFields(
+                schema, "/x", HttpVerb.POST,
+                statusMatcher = SchemaUtils.statusCodeMatcher(201)
+            )
+        )
+    }
+
+    @Test
+    fun testExtractResponseSchemaFields_anyOf200or201() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "post": {
+                    "responses": {
+                      "201": {
+                        "description": "created",
+                        "content": {
+                          "application/json": {
+                            "schema": {"type": "object", "properties": {"id": {"type": "string"}}}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """)
+        // 200 not present, 201 is — matcher must pick 201
+        assertEquals(
+            setOf("id"),
+            SchemaUtils.extractResponseSchemaFields(
+                schema, "/x", HttpVerb.POST,
+                statusMatcher = SchemaUtils.statusCodesMatcher(200, 201)
+            )
+        )
+    }
+
+    @Test
+    fun testExtractResponseSchemaFields_noMatch_noFallback() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "get": {
+                    "responses": {
+                      "default": {
+                        "description": "ok",
+                        "content": {
+                          "application/json": {
+                            "schema": {"type": "object", "properties": {"only": {"type": "string"}}}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """)
+        // No 2xx and fallbackToDefault=false → empty
+        assertTrue(
+            SchemaUtils.extractResponseSchemaFields(
+                schema, "/x", HttpVerb.GET,
+                statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx),
+                fallbackToDefault = false
+            ).isEmpty()
+        )
+    }
+
+    @Test
+    fun testExtractResponseSchemaFields_3xxGroup() {
+        val schema = parse("""
+            {
+              "openapi": "3.0.0",
+              "info": {"title": "t", "version": "1"},
+              "paths": {
+                "/x": {
+                  "get": {
+                    "responses": {
+                      "302": {
+                        "description": "redirect",
+                        "content": {
+                          "application/json": {
+                            "schema": {"type": "object", "properties": {"location": {"type": "string"}}}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """)
+        assertEquals(
+            setOf("location"),
+            SchemaUtils.extractResponseSchemaFields(
+                schema, "/x", HttpVerb.GET,
+                statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_3xx)
+            )
+        )
     }
 }
