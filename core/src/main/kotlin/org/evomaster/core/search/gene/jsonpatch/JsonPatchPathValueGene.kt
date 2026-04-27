@@ -34,7 +34,6 @@ class JsonPatchPathValueGene(
         return "{\"op\":\"$operationName\",\"path\":$path,\"value\":$value}"
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun copyContent(): Gene =
         JsonPatchPathValueGene(
             operationName,
@@ -44,11 +43,13 @@ class JsonPatchPathValueGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is JsonPatchPathValueGene) throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return pathValueChoice.containsSameValueAs(other.pathValueChoice)
+        return operationName == other.operationName &&
+                pathValueChoice.containsSameValueAs(other.pathValueChoice)
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is JsonPatchPathValueGene) return false
+        if (operationName != other.operationName) return false
         return pathValueChoice.unsafeCopyValueFrom(other.pathValueChoice)
     }
 }

@@ -37,11 +37,14 @@ class JsonPatchFromPathGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is JsonPatchFromPathGene) throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return fromGene.containsSameValueAs(other.fromGene) && pathGene.containsSameValueAs(other.pathGene)
+        return operationName == other.operationName &&
+                fromGene.containsSameValueAs(other.fromGene) &&
+                pathGene.containsSameValueAs(other.pathGene)
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is JsonPatchFromPathGene) return false
+        if (operationName != other.operationName) return false
         return fromGene.unsafeCopyValueFrom(other.fromGene) && pathGene.unsafeCopyValueFrom(other.pathGene)
     }
 }

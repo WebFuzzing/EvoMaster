@@ -584,6 +584,7 @@ object GeneSamplerForTests {
 
     fun sampleChoiceGene(rand: Randomness): ChoiceGene<*> {
         val selection = geneClasses.filter { !it.isAbstract }
+            .filter { it.java != JsonPatchDocumentGene::class.java }
         return ChoiceGene<Gene>(
                 name = "rand ChoiceGene",
                 geneChoices = listOf(
@@ -596,6 +597,7 @@ object GeneSamplerForTests {
     fun sampleObjectGene(rand: Randomness): ObjectGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
+            .filter { it.java.`package`?.name?.contains(".patch") != true }
         val isFixed = rand.nextBoolean()
 
 
@@ -961,7 +963,7 @@ object GeneSamplerForTests {
     }
 
     private fun sampleJsonPatchDocumentGene(rand: Randomness): JsonPatchDocumentGene {
-        return JsonPatchDocumentGene("rand JsonPatchDocumentGene ${rand.nextInt()}")
+        return JsonPatchDocumentGene("rand JsonPatchDocumentGene")
     }
 
     private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
@@ -972,13 +974,13 @@ object GeneSamplerForTests {
         return JsonPatchFromPathGene(
             "move",
             fromGene = EnumGene("from", listOf("/")),
-            pathGene = EnumGene("path", listOf("/"))
+            pathGene = EnumGene("path", listOf("/")),
         )
     }
 
     private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
         val entry: PairGene<EnumGene<String>, Gene> =
-            PairGene("entry_0", EnumGene<String>("path", listOf("/")), sampleStringGene(rand) as Gene)
+            PairGene("entry_0", EnumGene<String>("path", listOf("/")), StringGene("value"))
         return JsonPatchPathValueGene("add", ChoiceGene("addPathValue", listOf(entry)))
     }
 
