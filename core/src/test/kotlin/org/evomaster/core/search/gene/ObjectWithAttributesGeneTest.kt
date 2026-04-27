@@ -467,6 +467,74 @@ class ObjectWithAttributesGeneTest {
         assertFalse(withAttrs.containsSameValueAs(plain))
     }
 
+    // --- unsafeCopyValueFrom tests ---
+
+    @Test
+    fun testUnsafeCopyValueFrom_copiesAttributeNames() {
+        val gene1 = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(StringGene("id", "1"), StringGene("name", "Alice")),
+            isFixed = true,
+            attributeNames = setOf("id")
+        )
+
+        val gene2 = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(StringGene("id", "2"), StringGene("name", "Bob")),
+            isFixed = true,
+            attributeNames = setOf("name")
+        )
+
+        // Before copy, they have different attribute names
+        assertFalse(gene1.containsSameValueAs(gene2))
+
+        val result = gene1.unsafeCopyValueFrom(gene2)
+
+        assertTrue(result)
+        // Now gene1 should have the same attribute names as gene2 (and same values)
+        assertTrue(gene1.containsSameValueAs(gene2))
+    }
+
+    @Test
+    fun testUnsafeCopyValueFrom_fromPlainObjectGeneClearsAttributes() {
+        val gene1 = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(StringGene("id", "1"), StringGene("name", "Alice")),
+            isFixed = true,
+            attributeNames = setOf("id")
+        )
+
+        val plain = ObjectGene("node", listOf(StringGene("id", "3"), StringGene("name", "Charlie")))
+
+        val result = gene1.unsafeCopyValueFrom(plain)
+
+        assertTrue(result)
+        // gene1 should now have empty attributeNames and match plain ObjectGene
+        assertTrue(gene1.containsSameValueAs(plain))
+    }
+
+    @Test
+    fun testUnsafeCopyValueFrom_sameAttributesPreserved() {
+        val gene1 = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(StringGene("id", "1"), StringGene("name", "Alice")),
+            isFixed = true,
+            attributeNames = setOf("id")
+        )
+
+        val gene2 = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(StringGene("id", "2"), StringGene("name", "Bob")),
+            isFixed = true,
+            attributeNames = setOf("id")
+        )
+
+        val result = gene1.unsafeCopyValueFrom(gene2)
+
+        assertTrue(result)
+        assertTrue(gene1.containsSameValueAs(gene2))
+    }
+
     @Test
     fun testContainsSameValueAs_emptyAttributesVsPlainObjectGene() {
         // When attributeNames is empty, ObjectWithAttributesGene produces the same XML as a 

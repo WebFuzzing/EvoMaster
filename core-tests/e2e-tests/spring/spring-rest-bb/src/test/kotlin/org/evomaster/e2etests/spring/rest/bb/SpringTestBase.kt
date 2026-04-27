@@ -84,6 +84,22 @@ abstract class SpringTestBase : RestTestBase() {
         setOption(args, "bbExperiments", "false")
     }
 
+
+    fun executeAndEvaluateBBTest(
+        outputFormat: OutputFormat,
+        outputFolderName: String,
+        iterations: Int,
+        timeoutMinutes: Int,
+        handleFlakyWithTests : Boolean,
+        targetLabel: String,
+        lambda: Consumer<MutableList<String>>
+    ){
+        executeAndEvaluateBBTest(outputFormat, outputFolderName, iterations, timeoutMinutes,
+            handleFlakyWithTests,
+            listOf(targetLabel),
+            lambda)
+    }
+
     fun executeAndEvaluateBBTest(
         outputFormat: OutputFormat,
         outputFolderName: String,
@@ -93,6 +109,7 @@ abstract class SpringTestBase : RestTestBase() {
         lambda: Consumer<MutableList<String>>
     ){
         executeAndEvaluateBBTest(outputFormat, outputFolderName, iterations, timeoutMinutes,
+            false,
             listOf(targetLabel),
             lambda)
     }
@@ -105,15 +122,32 @@ abstract class SpringTestBase : RestTestBase() {
         targetLabels: Collection<String>,
         lambda: Consumer<MutableList<String>>
     ){
+        executeAndEvaluateBBTest(outputFormat, outputFolderName, iterations, timeoutMinutes,
+            false,
+            targetLabels,
+            lambda)
+    }
+
+    fun executeAndEvaluateBBTest(
+        outputFormat: OutputFormat,
+        outputFolderName: String,
+        iterations: Int,
+        timeoutMinutes: Int,
+        handleFlakyWithTests : Boolean,
+        targetLabels: Collection<String>,
+        lambda: Consumer<MutableList<String>>
+    ){
         assumeTrue(outputFormat != OutputFormat.DEFAULT)
 
         assertFalse(CoveredTargets.areCovered(targetLabels))
-        runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, lambda)
+        runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, handleFlakyWithTests, lambda)
         BlackBoxUtils.checkCoveredTargets(targetLabels)
 
-        CoveredTargets.reset()
-        runGeneratedTests(outputFormat, outputFolderName)
-        BlackBoxUtils.checkCoveredTargets(targetLabels)
+        if (!handleFlakyWithTests){
+            CoveredTargets.reset()
+            runGeneratedTests(outputFormat, outputFolderName)
+            BlackBoxUtils.checkCoveredTargets(targetLabels)
+        }
     }
 
 
@@ -122,6 +156,7 @@ abstract class SpringTestBase : RestTestBase() {
         outputFolderName: String,
         iterations: Int,
         timeoutMinutes: Int,
+        handleFlakyWithTests : Boolean,
         lambda: Consumer<MutableList<String>>
     ){
         val baseLocation = when {
@@ -131,7 +166,7 @@ abstract class SpringTestBase : RestTestBase() {
             outputFormat.isKotlin() -> BlackBoxUtils.baseLocationForKotlin
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
-        runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
+        runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, handleFlakyWithTests, lambda)
     }
 
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
@@ -152,6 +187,7 @@ abstract class SpringTestBase : RestTestBase() {
         outputFolderName: String,
         iterations: Int,
         timeoutMinutes: Int,
+        handleFlakyWithTests : Boolean,
         lambda: Consumer<MutableList<String>>
     ) {
         val folder = if(outputFormat.isJavaOrKotlin()){
@@ -185,6 +221,11 @@ abstract class SpringTestBase : RestTestBase() {
 
                 defaultSeed++
                 lambda.accept(ArrayList(args))
+
+                if (handleFlakyWithTests){
+                    CoveredTargets.reset()
+                    runGeneratedTests(outputFormat, outputFolderName)
+                }
             }
         }
     }
