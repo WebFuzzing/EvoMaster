@@ -633,6 +633,12 @@ class EMConfig {
         if (!blackBox && bbTargetUrl.isNotBlank()) {
             throw ConfigProblemException("'bbTargetUrl' should be set only in black-box mode")
         }
+        if (!blackBox && bbAsyncApiUrl.isNotBlank()) {
+            throw ConfigProblemException("'bbAsyncApiUrl' should be set only in black-box mode")
+        }
+        if (!blackBox && bbBrokerUrl.isNotBlank()) {
+            throw ConfigProblemException("'bbBrokerUrl' should be set only in black-box mode")
+        }
 
         if (!endpointFocus.isNullOrBlank() && !endpointPrefix.isNullOrBlank()) {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
@@ -645,6 +651,14 @@ class EMConfig {
             }
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
+            }
+            if (problemType == ProblemType.ASYNCAPI) {
+                if (bbAsyncApiUrl.isNullOrBlank()) {
+                    throw ConfigProblemException("In black-box mode for AsyncAPI, you must set the bbAsyncApiUrl option")
+                }
+                if (bbBrokerUrl.isNullOrBlank()) {
+                    throw ConfigProblemException("In black-box mode for AsyncAPI, you must set the bbBrokerUrl option")
+                }
             }
         }
 
@@ -664,6 +678,10 @@ class EMConfig {
 
         if (!blackBox && outputFormat == OutputFormat.PYTHON_UNITTEST) {
             throw ConfigProblemException("Python output is used only for black-box testing")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && outputFormat == OutputFormat.PYTHON_UNITTEST) {
+            throw ConfigProblemException("Python output is not supported for AsyncAPI yet; use JAVA_JUNIT_5 or KOTLIN_JUNIT_5.")
         }
 
         when (stoppingCriterion) {
@@ -1236,6 +1254,20 @@ class EMConfig {
             " http://localhost:8080/graphql .")
     var bbTargetUrl: String = ""
 
+    @Experimental
+    @Important(3.6)
+    @Cfg("When in black-box mode for AsyncAPI, specify the URL of where the AsyncAPI 3.0 schema" +
+            " can be downloaded from. As with bbSwaggerUrl, you can use a 'file://' URL or a plain" +
+            " local file path.")
+    var bbAsyncApiUrl: String = ""
+
+    @Experimental
+    @Important(3.7)
+    @Cfg("When in black-box mode for AsyncAPI, specify the broker bootstrap URL EvoMaster will use" +
+            " to publish requests and observe replies. For Kafka this is the bootstrap-servers value," +
+            " e.g. 'localhost:9092'.")
+    var bbBrokerUrl: String = ""
+
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
@@ -1367,7 +1399,8 @@ class EMConfig {
         REST(experimental = false),
         GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEBFRONTEND(experimental = true);
+        WEBFRONTEND(experimental = true),
+        ASYNCAPI(experimental = true);
 
         override fun isExperimental() = experimental
     }

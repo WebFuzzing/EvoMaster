@@ -1,0 +1,119 @@
+asyncapi: 3.0.0
+info:
+  title: rest-kafka-ncs
+  version: 0.0.1
+  description: |
+    Artificial Kafka request/reply SUT exercising NCS numerical routines.
+    Each request on `requests.ncs` triggers exactly one reply on `responses.ncs`,
+    correlated via the `evm-correlation-id` header.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+defaultContentType: application/json
+
+servers:
+  kafka:
+    host: 'localhost:9092'
+    protocol: kafka
+
+channels:
+  requestsNcs:
+    address: requests.ncs
+    description: Inbound request channel.
+    messages:
+      RequestMessage:
+        $ref: '#/components/messages/RequestMessage'
+  responsesNcs:
+    address: responses.ncs
+    description: Outbound reply channel (success or error variant).
+    messages:
+      ReplyMessage:
+        $ref: '#/components/messages/ReplyMessage'
+
+operations:
+  sendNcsRequest:
+    action: send
+    channel:
+      $ref: '#/channels/requestsNcs'
+    messages:
+      - $ref: '#/channels/requestsNcs/messages/RequestMessage'
+    reply:
+      channel:
+        $ref: '#/channels/responsesNcs'
+      messages:
+        - $ref: '#/channels/responsesNcs/messages/ReplyMessage'
+
+components:
+  messages:
+    RequestMessage:
+      name: RequestMessage
+      title: NCS request
+      summary: Asks the SUT to evaluate one of the NCS numerical operations.
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/evm-correlation-id'
+      payload:
+        $ref: '#/components/schemas/RequestPayload'
+    ReplyMessage:
+      name: ReplyMessage
+      title: NCS reply
+      summary: One reply per request, success or error.
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/evm-correlation-id'
+      payload:
+        $ref: '#/components/schemas/ReplyPayload'
+
+  schemas:
+    RequestPayload:
+      type: object
+      required:
+        - operation
+        - args
+      properties:
+        operation:
+          type: string
+          enum:
+            - triangle
+            - bessj
+            - expint
+            - gammq
+            - remainder
+        args:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: integer
+              - type: number
+              - type: string
+
+    ReplyPayload:
+      oneOf:
+        - $ref: '#/components/schemas/SuccessReply'
+        - $ref: '#/components/schemas/ErrorReply'
+
+    SuccessReply:
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          type: string
+          enum: [success]
+        resultAsInt:
+          type: integer
+        resultAsDouble:
+          type: number
+
+    ErrorReply:
+      type: object
+      required:
+        - kind
+        - error
+      properties:
+        kind:
+          type: string
+          enum: [error]
+        error:
+          type: string

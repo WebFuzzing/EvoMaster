@@ -159,6 +159,7 @@
         <org.springframework.data.version>2.6.6</org.springframework.data.version>
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
+        <kafka.clients.version>3.7.1</kafka.clients.version>
     </properties>
 
 
@@ -611,6 +612,13 @@
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>${redis.clients.jedis.version}</version>
+            </dependency>
+
+            <!-- Kafka client (used by the AsyncAPI black-box broker bridge) -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.clients.version}</version>
             </dependency>
 
             <!-- OpenSearch -->

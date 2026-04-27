@@ -156,6 +156,12 @@
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
         </dependency>
+
+        <dependency>
+            <!-- AsyncAPI black-box broker bridge -->
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.atlassian.oai</groupId>
             <artifactId>swagger-request-validator-core</artifactId>
