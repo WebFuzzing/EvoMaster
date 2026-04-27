@@ -712,6 +712,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     return false
                 }
 
+                TcpUtils.isInvalidHttpResponse(e) -> {
+                    // this can happen if API sends back an invalid status code.
+                    rcr.setInvalidHTTP(true)
+                    return false
+                }
+
                 config.blackBox && TcpUtils.isRefusedConnection(e) -> {
                     /*
                         This might happen if we have wrong info of API location, eg host/servers in
