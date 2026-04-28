@@ -171,9 +171,13 @@ patternCharacter
  // SourceCharacter but not one of ^ $ \ . * + ? ( ) [ ] { } |
  //: ~[^$\\.*+?()[\]{}|]
  : BaseChar
+ | COMMA
  | MINUS
  | DecimalDigit
  | E | Q
+ // These are also allowed as literals when no matching pair exists
+ | BRACE_close
+ | BRACKET_close
  ;
 
 

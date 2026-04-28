@@ -361,6 +361,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
     @Test
     fun testSyntaxEscapes(){
+        checkSameAsJava("""}],-:=<>!""")
         checkSameAsJava("""\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/\-\,\:\<\>\=\!""")
         checkSameAsJava("""[\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/\-\,\:\<\>\=\!]""")
     }
