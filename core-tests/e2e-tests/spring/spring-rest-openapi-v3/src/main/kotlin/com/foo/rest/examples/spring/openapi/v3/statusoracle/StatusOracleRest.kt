@@ -70,4 +70,14 @@ private class StatisticsRest {
         return ResponseEntity.status(406).build()
     }
 
+    @GetMapping(path = ["/no-401-if-no-auth"])
+    fun no401IfNoAuth(): ResponseEntity<String>{
+        return ResponseEntity.status(401).build()
+    }
+
+    @GetMapping(path = ["/no-403-if-no-401"])
+    fun no403IfNo401(): ResponseEntity<String>{
+        return ResponseEntity.status(403).build()
+    }
+
 }

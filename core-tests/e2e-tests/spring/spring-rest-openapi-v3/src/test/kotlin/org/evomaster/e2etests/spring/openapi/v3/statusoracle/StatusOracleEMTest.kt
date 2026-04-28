@@ -57,8 +57,13 @@ class StatusOracleEMTest : SpringTestBase(){
             //assertHasAtLeastOne(solution, HttpVerb.GET, 204, "/api/statusoracle/no-204-if-content", "Hello")
             //assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT })
 
+            //401 and 403
+            assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/statusoracle/no-401-if-no-auth", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/statusoracle/no-403-if-no-401", null)
+            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH })
+            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401 })
+
             //406
-            //has-406-if-accept
             assertHasAtLeastOne(solution, HttpVerb.POST, 406, "/api/statusoracle/has-406-if-accept", null)
             assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT })
 
@@ -67,9 +72,6 @@ class StatusOracleEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.POST, 415, "/api/statusoracle/no-415-if-no-payload", null)
             assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD })
             assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD })
-
-
-            //TODO
         }
     }
 }

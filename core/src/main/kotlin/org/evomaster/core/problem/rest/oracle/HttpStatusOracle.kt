@@ -6,6 +6,8 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 
 /**
  * Series of oracles that can be evaluated directly on the HTTP responses based on the actual retrieved status code.
@@ -36,7 +38,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 object HttpStatusOracle {
 
 
-    fun checkOracles(call: RestCallAction, result: RestCallResult) : List<FaultCategory>{
+    fun checkOracles(call: RestCallAction, result: RestCallResult, schema: RestSchema) : List<FaultCategory>{
 
         val faults = mutableListOf<FaultCategory>()
 
@@ -79,12 +81,12 @@ object HttpStatusOracle {
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT)
         }
 
-        if(status == 401){
-            //TODO
+        if(status == 401 && !SchemaUtils.hasAuthDefinition(schema)){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH)
         }
 
-        if(status == 403){
-            //TODO
+        if(status == 403 && !SchemaUtils.getDeclaredStatusInResponse(call.endpoint, schema).contains(401)){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401)
         }
 
         return faults

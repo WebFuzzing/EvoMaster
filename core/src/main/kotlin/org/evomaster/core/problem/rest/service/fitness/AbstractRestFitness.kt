@@ -402,8 +402,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val name = call.getName()
 
-        //TODO schema input
-        HttpStatusOracle.checkOracles(call, result)
+        HttpStatusOracle.checkOracles(call, result, (sampler as AbstractRestSampler).schemaHolder)
             .filter { config.isEnabledFaultCategory(it) }
             .forEach {
                 val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(it, name))
