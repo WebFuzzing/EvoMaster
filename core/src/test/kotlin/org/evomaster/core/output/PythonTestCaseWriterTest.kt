@@ -4,7 +4,6 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
@@ -27,7 +26,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -79,7 +78,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -157,7 +156,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -231,7 +230,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -290,7 +289,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -389,7 +388,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         assertEquals(5, getNumberOfFlakyComment(config,lines.toString()))

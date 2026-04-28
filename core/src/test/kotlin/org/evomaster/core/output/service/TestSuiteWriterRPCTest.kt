@@ -27,10 +27,7 @@ class TestSuiteWriterRPCTest{
             bind(TestCaseWriter::class.java)
                     .to(RPCTestCaseWriter::class.java)
                     .asEagerSingleton()
-
-            bind(PartialOracles::class.java)
-                    .asEagerSingleton()
-        }
+         }
     }
 
 

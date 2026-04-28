@@ -11,7 +11,6 @@ import org.evomaster.core.sql.schema.ColumnDataType.*
 import org.evomaster.core.sql.schema.ForeignKey
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
@@ -48,7 +47,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -80,7 +79,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -147,7 +146,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -194,7 +193,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -238,7 +237,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -284,7 +283,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -337,7 +336,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -410,7 +409,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -464,7 +463,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -514,7 +513,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -565,7 +564,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -613,7 +612,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -672,7 +671,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -733,7 +732,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -779,7 +778,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -822,7 +821,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -865,7 +864,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -909,7 +908,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -951,7 +950,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -993,7 +992,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -1036,7 +1035,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -1126,7 +1125,7 @@ class TestCaseWriterTest : WriterTestBase(){
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1205,7 +1204,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1255,7 +1254,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1324,7 +1323,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1397,7 +1396,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1455,7 +1454,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
@@ -1556,7 +1555,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         assertEquals(6, getNumberOfFlakyComment(config,lines.toString()))
@@ -1598,7 +1597,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         assertEquals(3, getNumberOfFlakyComment(config,lines.toString()))
@@ -1632,7 +1631,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
         lines.toString().apply {
             assertTrue(contains("numberMatches(3000000000L)"))
@@ -1672,7 +1671,7 @@ public void test() throws Exception {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
