@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.patch
+package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.service.Randomness

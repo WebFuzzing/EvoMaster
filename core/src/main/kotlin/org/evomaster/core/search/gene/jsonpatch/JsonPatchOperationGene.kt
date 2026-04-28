@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.patch
+package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
