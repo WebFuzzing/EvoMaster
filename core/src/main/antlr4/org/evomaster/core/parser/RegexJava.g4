@@ -137,38 +137,17 @@ CharacterEscape
 // which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
 // Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
-// TODO missing \p escapes
+// Instead of listing all unicode scripts, blocks, etc. the parser allows anything
+// then we filter by checking if the label is valid when it is used.
 fragment PCharacterClassEscapeLabel
- : PosixCharacterClassLabel
- | UnicodeCategoriesLabel
-// | UnicodeScriptsLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
-// | UnicodeBlocksLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
-// | UnicodeBinaryProperiesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
-// | javalangCharacterClassesLabel // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
- ;
-
-// TODO missing Unicode categories labels and implementations
-// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
-fragment UnicodeCategoriesLabel
- : 'Pe'
- ;
-
-// basic US-ASCII only predefined POSIX character classes
+ : [0-9a-zA-Z_=]+
+// posix character classes, java.lang.Character methods and Unicode scripts, blocks, categories and binary properties.
 // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#:~:text=character%3A%20%5B%5E%5Cw%5D-,POSIX,-character%20classes%20(US
-fragment PosixCharacterClassLabel
- : 'Lower'
- | 'Upper'
- | 'ASCII'
- | 'Alpha'
- | 'Digit'
- | 'Alnum'
- | 'Punct'
- | 'Graph'
- | 'Print'
- | 'Blank'
- | 'Cntrl'
- | 'XDigit'
- | 'Space'
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
  ;
 
 fragment ControlEscape

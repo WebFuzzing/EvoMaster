@@ -2872,27 +2872,22 @@ class EMConfig {
     var security = true
 
 
-    @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var ssrf = false
+    var ssrf = true
 
-    @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var xss = false
+    var xss = true
 
-    @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var sqli = false
+    var sqli = true
 
-    @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
     @DependsOnTrueFor("sqli")
     var sqliInjectedSleepDurationMs = 5000
 
-    @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
     @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000

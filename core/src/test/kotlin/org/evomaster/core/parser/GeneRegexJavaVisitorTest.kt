@@ -99,7 +99,26 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnicodeCategories(){
-        checkSameAsJava("""\p{Pe}""")
+        val unicodeCategories = listOf(
+            // Letters
+            "Lu", "Ll", "GC=Lt", "general_category=Lm", "gc=Lo", "IsL",
+            // Marks
+            "Mn", "Mc", "Me", "M",
+            // Numbers
+            "Nd", "Nl", "No", "N",
+            // Punctuation
+            "Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po", "P",
+            // Symbols
+            "Sm", "Sc", "Sk", "So", "S",
+            // Separators
+            "Zs", "Zl", "Zp", "Z",
+            // Other
+            "Cc", "Cf", "Cs", "Co", "Cn", "C"
+        )
+        for (label in unicodeCategories) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
         checkSameAsJava("""Pe""")
     }
 
@@ -108,7 +127,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""[\V\p{Lower}\p{Upper}\W\d]""")
         checkSameAsJava("""[a\p{Pe}]""")
         checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
-        checkCanSample("""[a\p{Pe}b]""", ")", 100)
+        checkCanSample("""[a\p{Pe}b]""", ")", 1000)
     }
 
     @Test
@@ -116,6 +135,89 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""\P{Lower}\P{Upper}\P{ASCII}\P{Alpha}\P{Digit}\P{Alnum}\P{Punct}\P{Graph}
             |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
         checkSameAsJava("""\P{Pe}""")
+    }
+
+    @Test
+    fun testUnicodeScripts(){
+        val scriptLabels = listOf(
+            "script=Arabic",
+            "sc=Balinese",
+            "IsLatin",
+            "sc=greek",
+            "SCRIPT=Yi",
+        )
+        for (label in scriptLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
+    fun testUnicodeBlocks(){
+        val blockLabels = listOf(
+            "block=Oriya",
+            "blk=Cyrillic",
+            "InArabic",
+            "blk=lao",
+            "BLOCK=Bengali",
+        )
+        for (label in blockLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
+    fun testUnicodeBinaryProperties(){
+        val binaryProperyLabels = listOf(
+            "Isalphabetic",
+            "Isdigit",
+            "Isideographic",
+            "Isletter",
+            "Islowercase",
+            "Istitlecase",
+            "Isuppercase",
+            "Iswhite_space",
+            "Ispunctuation",
+            "Iscontrol",
+            "Ishex_digit",
+            "Isjoin_control",
+            "Isnoncharacter_code_point",
+            "IsNoncharacterCodePoint",
+            "Isassigned",
+        )
+        for (label in binaryProperyLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
+    }
+
+    @Test
+    fun testJavaCharacterMethods(){
+        val javaCharacterMethodLabels = listOf(
+            "javaDefined",
+            "javaIdentifierIgnorable",
+            "javaISOControl",
+            "javaJavaIdentifierPart",
+            "javaJavaIdentifierStart",
+            "javaLetterOrDigit",
+            "javaMirrored",
+            "javaSpaceChar",
+            "javaUnicodeIdentifierPart",
+            "javaUnicodeIdentifierStart",
+            "javaWhitespace",
+            "javaAlphabetic",
+            "javaDigit",
+            "javaIdeographic",
+            "javaLetter",
+            "javaLowerCase",
+            "javaTitleCase",
+            "javaUpperCase",
+        )
+        for (label in javaCharacterMethodLabels) {
+            checkSameAsJava("\\p{$label}")
+            checkSameAsJava("\\P{$label}")
+        }
     }
 
     @Test
