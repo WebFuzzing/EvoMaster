@@ -52,8 +52,10 @@ class StatusOracleEMTest : SpringTestBase(){
             assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_PATCH })
 
             //204
-            assertHasAtLeastOne(solution, HttpVerb.GET, 201, "/api/statusoracle/no-204-if-content", "Hello")
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT })
+            //Unfortunately, we cannot test this, at least in SpringBoot, as HTTP server will automatically
+            // strip the body if status is 204. it seems this cannot be configured
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 204, "/api/statusoracle/no-204-if-content", "Hello")
+            //assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT })
 
             //406
             //has-406-if-accept
