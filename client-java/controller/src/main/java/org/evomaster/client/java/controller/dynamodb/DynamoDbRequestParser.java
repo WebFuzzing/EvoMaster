@@ -32,8 +32,10 @@ public class DynamoDbRequestParser {
 
     /**
      * Entry-point parser used by a future handler.
-     * It routes a DynamoDB SDK request to the API-method parser and returns
-     * one parsed condition tree per table name.
+     * @param request DynamoDB SDK request object
+     * @param apiMethodName DynamoDB API method name from enum type
+     *
+     * @return a map of parsed QueryOperations by table name.
      * Unsupported operations intentionally yield an empty map.
      */
     public Map<String, QueryOperation> parseByTable(Object request, DynamoDbOperationNames apiMethodName) {
