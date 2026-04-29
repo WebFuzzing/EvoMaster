@@ -12,6 +12,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains
 
@@ -61,9 +62,7 @@ class CharacterClassEscapeRxGene(
         private val nonHorizontalSpaceMultiCharRange = MultiCharacterRange(true, horizontalSpaceSet)
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
-        private val pEscapesMultiCharRanges: Map<String, MultiCharacterRange> = run {
-            // US-ASCII POSIX character classes (\p{X})
-            val posixAsciiSets = mapOf(
+        private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
                 "Lower"  to listOf(CharacterRange('a', 'z')),
                 "Upper"  to listOf(CharacterRange('A', 'Z')),
                 "ASCII"  to listOf(CharacterRange(0, 0x7f)),
@@ -78,21 +77,15 @@ class CharacterClassEscapeRxGene(
                 "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
                 "Space"  to spaceSet,
             )
-
-            // Unicode category character classes (\p{X})
-            val unicodeCategorySets = mapOf(
-                "Pe" to stringToListOfCharacterRanges(")]}")
-                // more Unicode categories will be added here in the future
-            )
-
             // create both normal and negated version for all
-            (posixAsciiSets + unicodeCategorySets).flatMap { (key, value) ->
+            .flatMap { (key, value) ->
                 listOf(
-                    key     to MultiCharacterRange(false, value),
+                    key     to MultiCharacterRange(value),
                     "^$key" to MultiCharacterRange(true,  value)
                 )
             }.toMap()
-        }
+
+        private val unicodeCache = UnicodeCache()
     }
 
     var value: String = ""
@@ -118,10 +111,10 @@ class CharacterClassEscapeRxGene(
                 val pLabel = type.substring(2, type.length - 1)
                 val negated = type[0].isUpperCase()
                 val lookupKey = if (negated) "^$pLabel" else pLabel
-                if (lookupKey !in pEscapesMultiCharRanges) {
-                    throw IllegalArgumentException("$type invalid/unsupported \\p escape character class")
+                if (lookupKey !in posixAsciiMultiCharRange) {
+                    unicodeCache.getRanges(pLabel, negated)
                 } else {
-                    pEscapesMultiCharRanges[lookupKey]!!
+                    posixAsciiMultiCharRange[lookupKey]!!
                 }
             }
             else -> //this should never happen due to check in init
