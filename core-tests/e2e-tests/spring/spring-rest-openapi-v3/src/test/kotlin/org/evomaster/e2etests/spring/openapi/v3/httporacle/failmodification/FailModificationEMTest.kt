@@ -39,8 +39,9 @@ class FailModificationEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertEquals(2, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
+            val found = faults.filter { it.category ==  ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION}
+
+            assertEquals(2, found.size)
         }
     }
 }

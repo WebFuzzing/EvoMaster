@@ -15,15 +15,6 @@ enum class ExperimentalFaultCategory(
     //Likely this one is not really viable
     //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
     //  "TODO")
-    IGNORE_ANONYMOUS(900, "A Protected Resource Is Accessible Without Providing Any Authentication",
-        "ignoreAnonymous",
-        "TODO"),
-    ANONYMOUS_MODIFICATIONS(901, "Anonymous Modifications",
-        "anonymousModifications",
-        "TODO"),
-    LEAKED_STACK_TRACES(902, "Leaked Stack Trace",
-        "leakedStackTrace",
-        "TODO"),
     HIDDEN_ACCESSIBLE_ENDPOINT(903, "Hidden Accessible Endpoint",
         "hiddenAccessible",
         "TODO"),
@@ -39,6 +30,18 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(915, "A failed PUT or PATCH must not change the resource", "sideEffectsFailedModification",
         "TODO"),
+
+
+    HTTP_STATUS_NO_NON_STANDARD_CODES(950, "no-non-standard-codes", "invalidStatusCode", "TODO"),
+    HTTP_STATUS_NO_201_IF_DELETE(951, "no-201-if-delete", "201OnDelete",  "TODO"),
+    HTTP_STATUS_NO_201_IF_GET(952, "no-201-if-get", "201OnGet",  "TODO"),
+    HTTP_STATUS_NO_201_IF_PATCH(953, "no-201-if-patch", "201OnPatch",  "TODO"),
+    HTTP_STATUS_NO_204_IF_CONTENT(954, "no-204-if-content", "204WhenContent",  "TODO"),
+    HTTP_STATUS_NO_413_IF_NO_PAYLOAD(955, "no-413-if-no-payload", "413WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_415_IF_NO_PAYLOAD(956, "no-415-if-no-payload", "415WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_401_IF_NO_AUTH(957, "no-401-if-no-auth", "401WhenNoAuth",  "TODO"),
+    HTTP_STATUS_NO_403_IF_NO_401(958, "no-403-if-no-401", "403WhenNo401",  "TODO"),
+    HTTP_STATUS_HAS_406_IF_ACCEPT(959, "has-406-if-accept", "406WhenValid",  "TODO"),
 
 
     //3xx: GraphQL
@@ -63,7 +66,7 @@ enum class ExperimentalFaultCategory(
         "TODO"),
 
     //5xx: Web Frontend
-    WEB_BROKEN_LINK(950, "Broken Link", "returnsBrokenLink",
+    WEB_BROKEN_LINK(960, "Broken Link", "returnsBrokenLink",
         "TODO"),
     //6xx: mobile
 

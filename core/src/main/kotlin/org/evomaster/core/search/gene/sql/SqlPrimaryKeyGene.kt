@@ -25,8 +25,10 @@ class SqlPrimaryKeyGene(name: String,
                         val tableName: TableId,
                         val gene: Gene,
                         /**
-                         * Important for the Foreign Keys referencing it.
-                         * Cannot be negative
+                         * Unique id of the SQL insertion action this primary key belongs to.
+                         * It must be equal to the insertionId of the parent SqlAction.
+                         * This id is used by Foreign Keys to reference the specific
+                         * value of this column.
                          */
                         uniqueId: Long
 ) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {

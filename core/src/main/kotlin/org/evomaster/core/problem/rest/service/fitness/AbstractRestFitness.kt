@@ -25,6 +25,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.HttpStatusOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -386,10 +387,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(statusId, 1.0, it)
 
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
+                handleHttpStatusOracles(fv, actions[it], result, it)
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
+            }
+    }
+
+    private fun handleHttpStatusOracles(fv: FitnessValue, call: RestCallAction, result: RestCallResult, index: Int) {
+        if(!config.statusOracles){
+            return
+        }
+
+        val name = call.getName()
+
+        HttpStatusOracle.checkOracles(call, result, (sampler as AbstractRestSampler).schemaHolder)
+            .filter { config.isEnabledFaultCategory(it) }
+            .forEach {
+                val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(it, name))
+                fv.updateTarget(scenarioId, 1.0, index)
+                result.addFault(DetectedFault(it, name, null))
             }
     }
 
@@ -693,6 +711,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     return false
                 }
 
+                TcpUtils.isInvalidHttpResponse(e) -> {
+                    // this can happen if API sends back an invalid status code.
+                    rcr.setInvalidHTTP(true)
+                    return false
+                }
+
                 config.blackBox && TcpUtils.isRefusedConnection(e) -> {
                     /*
                         This might happen if we have wrong info of API location, eg host/servers in
@@ -804,7 +828,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         fv: FitnessValue
     ) {
-        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+        if (!config.schemaOracles
+            || !schemaOracle.canValidate()
+            || a.id == CALL_TO_SWAGGER_ID
+            || !callGraphService.isDeclared(a.verb,a.path)
+            ) {
             return
         }
 

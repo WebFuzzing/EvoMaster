@@ -2,6 +2,14 @@
 
 Under development in `master` branch.
 
+# Version 5.2.0
+
+### New Features
+
+- Several new security oracles have been added, and executed automatically after the main fuzzing session is completed.
+- Each new "phase" (e.g., minimization and security testing) after the search process has now a time-budget which is proportional to the search budget (default 10 percent).
+- Upgraded to WFC 0.4.0, which includes improvements to the Web Report (e.g., "low-code" view), and generation of self-contained index.html file (for whom cannot run a Python HTTP server on their machines, e.g., managers in industry with limited permissions on their corporate laptop).
+
 ### Miscellaneous
 
 - Introduced a mascot for EvoMaster: a red-sorcerer black cat with an arrowhead tail. 
@@ -9,6 +17,7 @@ Under development in `master` branch.
 ### Fixed Bugs
 
 - Fixed issue in generated `statistics.csv`, where entries containing `,` commas are now quoted. 
+- Fixed issue in which progress bar was overriding warning messages. 
 
 # Version 5.1.0
 

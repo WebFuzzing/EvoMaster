@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -376,7 +377,8 @@ object GeneSamplerForTests {
     private fun sampleSqlForeignKeyGene(rand: Randomness): SqlForeignKeyGene {
         return SqlForeignKeyGene(sourceColumn = "rand source column",
                 uniqueId = rand.nextLong(min = 0L, max = Long.MAX_VALUE),
-                targetTable = "rand target table",
+                targetTable = TableId("rand target table"),
+                targetColumn = "rand target column",
                 nullable = rand.nextBoolean(),
                 uniqueIdOfPrimaryKey = rand.nextLong())
     }

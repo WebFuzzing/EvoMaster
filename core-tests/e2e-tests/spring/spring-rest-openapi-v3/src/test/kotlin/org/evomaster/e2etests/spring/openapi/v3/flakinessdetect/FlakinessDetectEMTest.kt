@@ -31,7 +31,8 @@ class FlakinessDetectEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             outputFolder,
             outputClass,
-            100
+            100,
+            true
         ) { args: MutableList<String> ->
 
             setOption(args, "minimize", "true")

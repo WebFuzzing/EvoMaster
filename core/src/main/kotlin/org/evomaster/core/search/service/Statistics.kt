@@ -114,6 +114,7 @@ class Statistics : SearchListener {
         time.addListener(this)
     }
 
+
     fun getHeadersAndElementsCSVLines(solution: Solution<*>): kotlin.Pair<String,String>{
         val data = getData(solution)
         val headers = data.joinToString(",") { it.header }
@@ -565,10 +566,11 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedMainActions() }
                 .filter {
-                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult &&
+                            (it.result).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 // in phases like Security we might create calls that do not exist in schema
-                .filter{ it.action is RestCallAction && callGraphService.isDeclared(it.action.verb,it.action.path)}
+                .filter{ it.action is RestCallAction && callGraphService.isInUse(it.action.verb,it.action.path)}
                 .map { it.action.getName() }
                 .distinct()
                 .count()

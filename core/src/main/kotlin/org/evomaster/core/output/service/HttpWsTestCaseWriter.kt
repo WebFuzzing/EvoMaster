@@ -99,7 +99,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         handlePreCallSetup(call, lines, res)
 
-        if (needsResponseVariable(call, res) && !res.failedCall()) {
+        if (needsResponseVariable(call, res) && !res.invalidCall()) {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
@@ -293,7 +293,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (format.isJavaOrKotlin() //assertions handled in the call
                 || !needsResponseVariable(call, res)
-                || res.failedCall()
+                || res.invalidCall()
         ) {
             return
         }
@@ -392,7 +392,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             timeStartName = handleExecutionTimePrologue(lines);
         }
 
-        if (res.failedCall()) {
+        if (res.invalidCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
@@ -726,7 +726,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
      * This is done mainly for RestAssured
      */
     protected fun handleResponseDirectlyInTheCall(call: HttpWsAction, res: HttpWsCallResult, lines: Lines) {
-        if (!res.failedCall()) {
+        if (!res.invalidCall()) {
 
             val code = res.getStatusCode()
 

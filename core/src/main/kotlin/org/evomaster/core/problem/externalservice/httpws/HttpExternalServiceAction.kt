@@ -75,7 +75,7 @@ class HttpExternalServiceAction(
             (response.responseBody.gene as StringGene).forceTaintedValue()
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return response.genes
     }
 

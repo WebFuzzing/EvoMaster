@@ -10,7 +10,7 @@ class TimeRest {
 
 
     @GetMapping
-    open fun get(@RequestParam x: String) : ResponseEntity<String> {
+    fun get(@RequestParam x: String) : ResponseEntity<String> {
 
         try{
             ITU.parseDateTime(x)

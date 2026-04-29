@@ -445,6 +445,44 @@ class TableConstraintEvaluatorTest {
     }
 
     @Test
+    fun testUniqueConstraintMultiColumn() {
+        val column0 = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
+        val column1 = Column("column1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
+        val constraint = UniqueConstraint("table0", listOf("column0", "column1"))
+        val table = Table("table0", setOf(column0, column1), setOf(), setOf(constraint))
+
+        val action0 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 0L)
+        (action0.seeTopGenes()[0] as IntegerGene).value = 10
+        (action0.seeTopGenes()[1] as IntegerGene).value = 1
+
+        val evaluator = TableConstraintEvaluator(listOf(action0))
+
+        // Same values for both columns -> False
+        val action1 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 1L)
+        (action1.seeTopGenes()[0] as IntegerGene).value = 10
+        (action1.seeTopGenes()[1] as IntegerGene).value = 1
+        assertFalse(constraint.accept(evaluator, action1))
+
+        // Different value for column0 -> True
+        val action2 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 2L)
+        (action2.seeTopGenes()[0] as IntegerGene).value = 20
+        (action2.seeTopGenes()[1] as IntegerGene).value = 1
+        assertTrue(constraint.accept(evaluator, action2))
+
+        // Different value for column1 -> True
+        val action3 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 3L)
+        (action3.seeTopGenes()[0] as IntegerGene).value = 10
+        (action3.seeTopGenes()[1] as IntegerGene).value = 2
+        assertTrue(constraint.accept(evaluator, action3))
+
+        // Different values for both columns -> True
+        val action4 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 4L)
+        (action4.seeTopGenes()[0] as IntegerGene).value = 20
+        (action4.seeTopGenes()[1] as IntegerGene).value = 2
+        assertTrue(constraint.accept(evaluator, action4))
+    }
+
+    @Test
     fun testLikeConstraint() {
         val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES, nullable=false, size=10)
         val table = Table("table0", setOf(column), setOf(), setOf())
@@ -498,6 +536,48 @@ class TableConstraintEvaluatorTest {
         val evaluator = TableConstraintEvaluator()
         val constraintValue = constraint.accept(evaluator, action)
         assertFalse(constraintValue)
+    }
+
+    @Test
+    fun testUniqueConstraintWithNull() {
+        val column0 = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable = true)
+        val constraint = UniqueConstraint("table0", listOf("column0", "column1"))
+        val table = Table("table0", setOf(column0), setOf(), setOf(constraint))
+
+        val action0 = SqlAction(table = table, selectedColumns = setOf(column0), insertionId = 0L)
+        (action0.seeTopGenes()[0] as NullableGene).isActive = false
+
+        val evaluator = TableConstraintEvaluator(listOf(action0))
+
+        val action1 = SqlAction(table = table, selectedColumns = setOf(column0), insertionId = 1L)
+        (action1.seeTopGenes()[0] as NullableGene).isActive = false
+
+        assertTrue(constraint.accept(evaluator, action1))
+    }
+
+
+    @Test
+    fun testUniqueConstraintMultiColumnWithNulls() {
+        val column0 = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable = true)
+        val column1 = Column("column1", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable = true)
+        val constraint = UniqueConstraint("table0", listOf("column0", "column1"))
+        val table = Table("table0", setOf(column0, column1), setOf(), setOf(constraint))
+
+        val action0 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 0L)
+        (action0.seeTopGenes()[0] as NullableGene).isActive = true
+        ((action0.seeTopGenes()[0] as NullableGene).gene as IntegerGene).value = 10
+        (action0.seeTopGenes()[1] as NullableGene).isActive = false // NULL
+
+        val evaluator = TableConstraintEvaluator(listOf(action0))
+
+        // Same values (10, NULL) -> True
+        // This happens since SQL disables the unique constraints when NULL values
+        // are present.
+        val action1 = SqlAction(table = table, selectedColumns = setOf(column0, column1), insertionId = 1L)
+        (action1.seeTopGenes()[0] as NullableGene).isActive = true
+        ((action1.seeTopGenes()[0] as NullableGene).gene as IntegerGene).value = 10
+        (action1.seeTopGenes()[1] as NullableGene).isActive = false // NULL
+        assertTrue(constraint.accept(evaluator, action1))
     }
 
     @Test
