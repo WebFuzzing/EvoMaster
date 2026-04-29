@@ -36,7 +36,7 @@
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
-                        <groupId>org.hibernate</groupId>
+                        <groupId>org.hibernate.validator</groupId>
                         <artifactId>hibernate-validator</artifactId>
                     </exclusion>
                     <exclusion>
