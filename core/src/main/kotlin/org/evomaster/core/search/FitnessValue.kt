@@ -163,7 +163,14 @@ class FitnessValue(
 
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
-            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+            databaseExecutions.values
+                // Only the commands whose WHERE clause actually failed are relevant.
+                .filter { it.failedWhere.isNotEmpty() }
+                .flatMap { it.executionInfo }
+                .map { it.sqlCommand }
+                // JSQLParser >= 4.9 may produce empty-string SQL commands (it used to throw, now
+                // parses "" to null). Guard here at the source rather than at every call site.
+                .filter { it.isNotBlank() }
         )
     }
 
