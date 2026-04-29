@@ -354,6 +354,6 @@ public class DynamoDbClassReplacementTest {
         DynamoDbCommand command = dynamoDbCommands.iterator().next();
         assertEquals(expectedTableNames, command.getTableNames());
         assertEquals(expectedOperationName, command.getOperationName());
-        assertEquals(expectedRequest, command.getRequest());
+        assertEquals(expectedRequest, command.getDdbRequest());
     }
 }

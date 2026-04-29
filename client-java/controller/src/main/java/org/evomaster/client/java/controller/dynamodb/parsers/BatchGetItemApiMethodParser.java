@@ -27,8 +27,8 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public Map<String, QueryOperation> parseRequest(Object request) {
-        Object requestItemsObj = invokeNoArg(request, METHOD_REQUEST_ITEMS);
+    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+        Object requestItemsObj = invokeNoArg(ddbRequest, METHOD_REQUEST_ITEMS);
         if (!(requestItemsObj instanceof Map<?, ?>)) {
             return Collections.emptyMap();
         }

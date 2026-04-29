@@ -13,6 +13,10 @@ import static org.evomaster.client.java.controller.dynamodb.DynamoDbReflectionHe
 
 /**
  * Base class for DynamoDB SDK requests parser. Contains shared utilities.
+ * DynamoDB requests are kept and parsed as the original SDK request objects because the typed request
+ * already preserves operation-specific fields and {@code AttributeValue} types, including binary data.
+ * Parsing that object directly avoids a lossy intermediate representation (like a string query) while
+ * still extracting only the table names and predicates needed by EvoMaster. @aschenzle
  */
 abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
 
@@ -43,13 +47,13 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Parses key equality conditions from request key fields.
+     * Parses key equality conditions from DynamoDB request key fields.
      *
-     * @param request request object
+     * @param ddbRequest DynamoDB request object
      * @return parsed key condition operation
      */
-    protected QueryOperation parseKeyCondition(Object request) {
-        Object keyObj = invokeNoArg(request, METHOD_KEY);
+    protected QueryOperation parseKeyCondition(Object ddbRequest) {
+        Object keyObj = invokeNoArg(ddbRequest, METHOD_KEY);
         return buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(keyObj));
     }
 
@@ -115,13 +119,13 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Reads and normalizes expression attribute names from request object.
+     * Reads and normalizes expression attribute names from DynamoDB request object.
      *
-     * @param request request object
+     * @param ddbRequest DynamoDB request object
      * @return normalized name map
      */
-    protected Map<String, String> readNameMap(Object request) {
-        Object raw = invokeNoArg(request, METHOD_EXPRESSION_ATTRIBUTE_NAMES);
+    protected Map<String, String> readNameMap(Object ddbRequest) {
+        Object raw = invokeNoArg(ddbRequest, METHOD_EXPRESSION_ATTRIBUTE_NAMES);
         if (!(raw instanceof Map<?, ?>)) {
             return Collections.emptyMap();
         }
@@ -136,36 +140,36 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Reads and converts expression attribute values from request object.
+     * Reads and converts expression attribute values from DynamoDB request object.
      *
-     * @param request request object
+     * @param ddbRequest DynamoDB request object
      * @return normalized value map
      */
-    protected Map<String, Object> readValueMap(Object request) {
-        Object raw = invokeNoArg(request, METHOD_EXPRESSION_ATTRIBUTE_VALUES);
+    protected Map<String, Object> readValueMap(Object ddbRequest) {
+        Object raw = invokeNoArg(ddbRequest, METHOD_EXPRESSION_ATTRIBUTE_VALUES);
         return DynamoDbAttributeValueHelper.toPlainMap(raw);
     }
 
     /**
-     * Reads a string-like value from request object via reflection.
+     * Reads a string-like value from a DDB request object via reflection.
      *
-     * @param target target object
+     * @param ddbRequest DynamoDB request object
      * @param methodName accessor method name
      * @return string value, or {@code null}
      */
-    protected String readString(Object target, String methodName) {
-        Object value = invokeNoArg(target, methodName);
+    protected String readString(Object ddbRequest, String methodName) {
+        Object value = invokeNoArg(ddbRequest, methodName);
         return value == null ? null : String.valueOf(value);
     }
 
     /**
      * Reads and validates the table name from the request.
      *
-     * @param request request object
+     * @param ddbRequest DynamoDB request object
      * @return table name, or {@code null} if blank/absent
      */
-    protected String readValidTableName(Object request) {
-        String tableName = readString(request, METHOD_TABLE_NAME);
+    protected String readValidTableName(Object ddbRequest) {
+        String tableName = readString(ddbRequest, METHOD_TABLE_NAME);
         if (tableName == null || tableName.trim().isEmpty()) {
             return null;
         }

@@ -21,17 +21,17 @@ abstract class WriteMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public final Map<String, QueryOperation> parseRequest(Object request) {
-        String tableName = readValidTableName(request);
+    public final Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+        String tableName = readValidTableName(ddbRequest);
         if (tableName == null) {
             return Collections.emptyMap();
         }
 
-        QueryOperation keyCondition = requiresKeyCondition() ? parseKeyCondition(request) : null;
+        QueryOperation keyCondition = requiresKeyCondition() ? parseKeyCondition(ddbRequest) : null;
         QueryOperation conditionExpression = parseExpression(
-                readString(request, METHOD_CONDITION_EXPRESSION),
-                readNameMap(request),
-                readValueMap(request)
+                readString(ddbRequest, METHOD_CONDITION_EXPRESSION),
+                readNameMap(ddbRequest),
+                readValueMap(ddbRequest)
         );
 
         return singleTableResult(tableName, combineWithAnd(keyCondition, conditionExpression));

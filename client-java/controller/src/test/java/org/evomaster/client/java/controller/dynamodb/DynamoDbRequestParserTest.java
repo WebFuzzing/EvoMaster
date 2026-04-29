@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.dynamodb.operations.*;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.*;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.SdkBytes;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -219,6 +220,33 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         assertEquals("age", between.getFieldName());
         assertEquals(38L, between.getLowerBound());
         assertEquals(41L, between.getUpperBound());
+    }
+
+    @Test
+    public void testUpdateItemParsesBetweenWithBinaryBounds() {
+        SdkBytes lowerBound = SdkBytes.fromByteArray(new byte[]{1, 10, 20});
+        SdkBytes upperBound = SdkBytes.fromByteArray(new byte[]{1, 10, 90});
+
+        UpdateItemRequest request = UpdateItemRequest.builder()
+                .tableName("players")
+                .key(attributeValues("id", stringValue("messi-10")))
+                .conditionExpression("#photo BETWEEN :lower AND :upper")
+                .expressionAttributeNames(names("#photo", "profilePhoto"))
+                .expressionAttributeValues(attributeValues(
+                        ":lower", AttributeValue.builder().b(lowerBound).build(),
+                        ":upper", AttributeValue.builder().b(upperBound).build()
+                ))
+                .build();
+
+        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.UPDATE_ITEM).get("players");
+        AndOperation and = castAs(operation, AndOperation.class);
+        assertEquals(2, and.getConditions().size());
+
+        assertComparison(and.getConditions().get(0), EqualsOperation.class, "id", "messi-10");
+        BetweenOperation between = castAs(and.getConditions().get(1), BetweenOperation.class);
+        assertEquals("profilePhoto", between.getFieldName());
+        assertArrayEquals(lowerBound.asByteArray(), ((SdkBytes) between.getLowerBound()).asByteArray());
+        assertArrayEquals(upperBound.asByteArray(), ((SdkBytes) between.getUpperBound()).asByteArray());
     }
 
     @Test

@@ -20,8 +20,8 @@ public interface DynamoDbApiMethodParser {
     /**
      * Parses one request object into table-specific query operations.
      *
-     * @param request DynamoDB request object
+     * @param ddbRequest DynamoDB request object
      * @return a map of parsed operations by table name
      */
-    Map<String, QueryOperation> parseRequest(Object request);
+    Map<String, QueryOperation> parseRequest(Object ddbRequest);
 }

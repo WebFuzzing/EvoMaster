@@ -23,22 +23,22 @@ public class QueryApiMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, QueryOperation> parseRequest(Object request) {
-        String tableName = readValidTableName(request);
+    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+        String tableName = readValidTableName(ddbRequest);
         if (tableName == null) {
             return Collections.emptyMap();
         }
 
-        Map<String, String> names = readNameMap(request);
-        Map<String, Object> values = readValueMap(request);
+        Map<String, String> names = readNameMap(ddbRequest);
+        Map<String, Object> values = readValueMap(ddbRequest);
 
         QueryOperation keyCondition = parseExpression(
-                readString(request, METHOD_KEY_CONDITION_EXPRESSION),
+                readString(ddbRequest, METHOD_KEY_CONDITION_EXPRESSION),
                 names,
                 values
         );
         QueryOperation filterCondition = parseExpression(
-                readString(request, METHOD_FILTER_EXPRESSION),
+                readString(ddbRequest, METHOD_FILTER_EXPRESSION),
                 names,
                 values
         );

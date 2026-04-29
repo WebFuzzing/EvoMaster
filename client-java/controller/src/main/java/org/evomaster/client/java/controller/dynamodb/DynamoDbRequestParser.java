@@ -32,14 +32,14 @@ public class DynamoDbRequestParser {
 
     /**
      * Entry-point parser used by a future handler.
-     * @param request DynamoDB SDK request object
+     * @param ddbRequest DynamoDB SDK ddbRequest object (see comment on DynamoDbBaseApiMethodParser)
      * @param apiMethodName DynamoDB API method name from enum type
      *
      * @return a map of parsed QueryOperations by table name.
      * Unsupported operations intentionally yield an empty map.
      */
-    public Map<String, QueryOperation> parseByTable(Object request, DynamoDbOperationNames apiMethodName) {
-        if (request == null || apiMethodName == null) {
+    public Map<String, QueryOperation> parseByTable(Object ddbRequest, DynamoDbOperationNames apiMethodName) {
+        if (ddbRequest == null || apiMethodName == null) {
             return Collections.emptyMap();
         }
 
@@ -48,7 +48,7 @@ public class DynamoDbRequestParser {
             return Collections.emptyMap();
         }
 
-        Map<String, QueryOperation> parsed = parser.parseRequest(request);
+        Map<String, QueryOperation> parsed = parser.parseRequest(ddbRequest);
         return parsed == null ? Collections.emptyMap() : parsed;
     }
 

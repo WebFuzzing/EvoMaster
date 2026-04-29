@@ -22,9 +22,9 @@ public class GetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, QueryOperation> parseRequest(Object request) {
-        String tableName = readValidTableName(request);
-        QueryOperation keyCondition = parseKeyCondition(request);
+    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+        String tableName = readValidTableName(ddbRequest);
+        QueryOperation keyCondition = parseKeyCondition(ddbRequest);
         return singleTableResult(tableName, keyCondition);
     }
 }
