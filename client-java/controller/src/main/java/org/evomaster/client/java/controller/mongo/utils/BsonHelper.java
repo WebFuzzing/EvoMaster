@@ -31,15 +31,6 @@ public class BsonHelper {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static Set<String> keySet(Object document) {
-        try {
-            return (Set<String>) document.getClass().getMethod("keySet").invoke(document);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static Boolean documentContainsField(Object document, String field) {
         try {
             return (Boolean) document.getClass().getMethod("containsKey", Object.class).invoke(document, field);
@@ -48,7 +39,6 @@ public class BsonHelper {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static Set<String> documentKeys(Object document) {
         try {
             return (Set<String>) document.getClass().getMethod("keySet").invoke(document);
