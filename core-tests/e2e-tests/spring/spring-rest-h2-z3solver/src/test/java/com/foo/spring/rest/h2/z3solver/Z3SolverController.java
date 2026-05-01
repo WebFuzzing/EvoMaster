@@ -105,4 +105,5 @@ public class Z3SolverController extends SpringController {
     public List<DbSpecification> getDbSpecifications() {
         return Collections.singletonList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
+
 }
