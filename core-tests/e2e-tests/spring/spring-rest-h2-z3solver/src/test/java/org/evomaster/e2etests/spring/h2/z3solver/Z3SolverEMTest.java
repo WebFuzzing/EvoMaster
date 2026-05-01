@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 
-@Disabled("Currently disabled due to bug in reset of database")
 public class Z3SolverEMTest extends SpringTestBase {
 
     @BeforeAll
