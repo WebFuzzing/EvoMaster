@@ -9,8 +9,11 @@ import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.Solution
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
+import org.jsoup.Jsoup
+import org.jsoup.nodes.DataNode
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.OffsetDateTime
@@ -29,6 +32,8 @@ class WFCReportWriter {
     @Inject
     private lateinit var sampler: Sampler<*>
 
+    private var lastTestFilePaths: Set<String> = emptySet()
+
     private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
         suite.testSuitePath + "#" + test.name
 
@@ -41,14 +46,63 @@ class WFCReportWriter {
         exportResource(prefix, "/webreport.py")
         exportResource(prefix, "/webreport.command", true)
         exportResource(prefix, "/webreport.bat", true)
-        exportResource(prefix, "/assets/icon.svg")
+        exportResource(prefix, "/assets/icon.svg", sourcePath = "/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
+
+        writeLowCodeIndex(prefix)
     }
 
-    private fun exportResource(prefix: String, resource: String, executable: Boolean = false) {
+    private fun writeLowCodeIndex(prefix: String) {
+        val indexHtml = readResource("$prefix/index.html")
+        val reportJs = readResource("$prefix/assets/report.js")
+        val reportCss = readResource("$prefix/assets/report.css")
+        val iconSvg = readResource("/icon.svg")
 
-        val text = readResource(prefix+resource)
+        val reportJsonPath = Paths.get(config.outputFolder, "report.json").toAbsolutePath()
+        if (!Files.exists(reportJsonPath)) {
+            LoggingUtil.uniqueUserWarn(
+                "Cannot generate low-code-index.html: report.json not found at $reportJsonPath"
+            )
+            return
+        }
+        val reportJson = reportJsonPath.toFile().readText(Charsets.UTF_8)
+
+        val testFiles = readTestSourceFiles(lastTestFilePaths)
+
+        val html = buildLowCodeHtml(indexHtml, reportJs, reportCss, iconSvg, reportJson, testFiles)
+
+        val outPath = Paths.get(config.outputFolder, "low-code-index.html").toAbsolutePath()
+        Files.createDirectories(outPath.parent)
+        Files.deleteIfExists(outPath)
+        Files.createFile(outPath)
+        outPath.toFile().appendText(html)
+    }
+
+    private fun readTestSourceFiles(paths: Set<String>): Map<String, String> {
+        val result = linkedMapOf<String, String>()
+        // testSuitePath values in the WFC report are typically relative paths like
+        // "org/bar/FooEM.kt" that the running web app resolves against the HTML base
+        // (= the output folder). For the self-contained build we resolve the same way:
+        // absolute paths stay as-is, relative paths are resolved under config.outputFolder.
+        val base = Paths.get(config.outputFolder).toAbsolutePath()
+        for (p in paths) {
+            try {
+                val candidate = Paths.get(p)
+                val resolved = if (candidate.isAbsolute) candidate else base.resolve(p)
+                if (Files.exists(resolved)) {
+                    result[p] = resolved.toFile().readText(Charsets.UTF_8)
+                }
+            } catch (_: Exception) {
+                // best-effort: the UI already tolerates missing test file content
+            }
+        }
+        return result
+    }
+
+    private fun exportResource(prefix: String, resource: String, executable: Boolean = false, sourcePath: String? = null) {
+
+        val text = readResource(sourcePath ?: (prefix + resource))
 
         val path = Paths.get(config.outputFolder, resource).toAbsolutePath()
 
@@ -94,6 +148,7 @@ class WFCReportWriter {
         report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         report.totalTests = solution.individuals.size
         report.testFilePaths = suites.map { it.testSuitePath }.toSet()
+        lastTestFilePaths = report.testFilePaths
         report.executionTimeInSeconds = getElement(data, Statistics.ELAPSED_SECONDS).toInt()
 
         val faults = Faults()
@@ -194,5 +249,93 @@ class WFCReportWriter {
 
     private fun getElement(data:  List<Statistics.Pair>, headerName: String):  String{
         return data.first{ it.header == headerName }.element
+    }
+
+    companion object {
+
+        /**
+         * Pure function: takes the raw index.html and the bundled webreport assets,
+         * and produces a single self-contained "low-code" HTML document. The output:
+         *   - drops the external /assets/report.js and /assets/report.css references
+         *   - inlines them as <style> and <script type="module"> elements
+         *   - inlines the SVG favicon as a data URI
+         *   - prepends a bootstrap <script> that sets window.__WFC_LOW_CODE__ = true
+         *     and installs a window.fetch shim returning embedded report.json / test
+         *     sources, so the page works via file:// without an HTTP server.
+         */
+        internal fun buildLowCodeHtml(
+            indexHtml: String,
+            reportJs: String,
+            reportCss: String,
+            iconSvg: String,
+            reportJson: String,
+            testFiles: Map<String, String>
+        ): String {
+            require(!reportCss.contains("</style", ignoreCase = true)) {
+                "report.css contains </style> which cannot be safely inlined into a <style> element"
+            }
+
+            val doc = Jsoup.parse(indexHtml)
+            doc.outputSettings().prettyPrint(false)
+
+            val iconDataUri = "data:image/svg+xml;base64,${Base64.getEncoder().encodeToString(iconSvg.toByteArray(Charsets.UTF_8))}"
+
+            // Inline the favicon as a data URI so it does not hit the filesystem.
+            doc.select("link[rel=icon]").forEach {
+                it.attr("href", iconDataUri)
+            }
+
+            // Drop the external bundle references; we will inline them below.
+            doc.select("script[src*=report.js]").remove()
+            doc.select("link[href*=report.css]").remove()
+
+            val embedded = linkedMapOf<String, String>()
+            embedded["./report.json"] = reportJson
+            testFiles.forEach { (k, v) -> embedded[k] = v }
+
+            // JSON is valid JS literal. Escape </script and </style occurrences so the
+            // embedded payload cannot prematurely close the host <script> element
+            // (\/ is a valid JSON escape for /, decoded back to the original string).
+            val embeddedJson = ObjectMapper().writeValueAsString(embedded)
+                .replace("</script", "<\\/script", ignoreCase = true)
+                .replace("</style", "<\\/style", ignoreCase = true)
+
+            val bootstrap = """
+                window.__WFC_LOW_CODE__ = true;
+                window.__WFC_EMBEDDED__ = $embeddedJson;
+                (function(origFetch){
+                  window.fetch = function(url){
+                    var key = typeof url === 'string' ? url : (url && url.url);
+                    if (window.__WFC_EMBEDDED__ && Object.prototype.hasOwnProperty.call(window.__WFC_EMBEDDED__, key)) {
+                      var body = window.__WFC_EMBEDDED__[key];
+                      var headers = { 'Content-Type': key.indexOf('.json') >= 0 ? 'application/json' : 'text/plain' };
+                      return Promise.resolve(new Response(body, { status: 200, headers: headers }));
+                    }
+                    return origFetch.apply(this, arguments);
+                  };
+                })(window.fetch);
+            """.trimIndent()
+
+            val head = doc.head()
+
+            val bootstrapEl = head.appendElement("script")
+            bootstrapEl.appendChild(DataNode(bootstrap))
+
+            val styleEl = head.appendElement("style")
+            styleEl.appendChild(DataNode(reportCss))
+
+            // Same escape for the bundle itself — \/ is a valid JS escape inside string
+            // and regex literals, so decoded semantics are preserved.
+            // Also rewrite the /assets/icon.svg literal to the inline data URI so
+            // <img> tags (which bypass the fetch shim) render under file://.
+            val safeJs = reportJs
+                .replace("/assets/icon.svg", iconDataUri)
+                .replace("</script", "<\\/script", ignoreCase = true)
+            val scriptEl = doc.body().appendElement("script")
+            scriptEl.attr("type", "module")
+            scriptEl.appendChild(DataNode(safeJs))
+
+            return doc.outerHtml()
+        }
     }
 }

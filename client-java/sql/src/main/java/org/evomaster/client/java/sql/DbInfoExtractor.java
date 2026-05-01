@@ -654,14 +654,22 @@ public class DbInfoExtractor {
 
 
         ResultSet fks = md.getImportedKeys(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name);
+        Map<String, ForeignKeyDto> foreignKeysByName = new HashMap<>();
         while (fks.next()) {
-            //TODO need to see how to handle case of multi-columns
+            String fkName = fks.getString("FK_NAME");
+            String sourceColumn = fks.getString("FKCOLUMN_NAME");
+            String targetTable = fks.getString("PKTABLE_NAME");
+            String targetColumn = fks.getString("PKCOLUMN_NAME");
 
-            ForeignKeyDto fkDto = new ForeignKeyDto();
-            fkDto.sourceColumns.add(fks.getString("FKCOLUMN_NAME"));
-            fkDto.targetTable = fks.getString("PKTABLE_NAME");
-
-            tableDto.foreignKeys.add(fkDto);
+            ForeignKeyDto fkDto = foreignKeysByName.get(fkName);
+            if (fkDto == null) {
+                fkDto = new ForeignKeyDto();
+                fkDto.targetTable = targetTable;
+                foreignKeysByName.put(fkName, fkDto);
+                tableDto.foreignKeys.add(fkDto);
+            }
+            fkDto.sourceColumns.add(sourceColumn);
+            fkDto.targetColumns.add(targetColumn);
         }
         fks.close();
     }

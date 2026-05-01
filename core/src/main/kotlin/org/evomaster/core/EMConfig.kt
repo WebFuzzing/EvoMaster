@@ -949,6 +949,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun shouldGenerateRedisData() = generateRedisData
+
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
@@ -1832,6 +1834,11 @@ class EMConfig {
     var extractMongoExecutionInfo = true
 
     @Experimental
+    @Cfg("Enable extracting Redis execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractRedisExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
@@ -1843,6 +1850,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateMongoData = true
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateRedisData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -1977,6 +1989,12 @@ class EMConfig {
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
     var instrumentMR_MONGO = true
+
+    @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_DYNAMODB = false
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
@@ -2604,6 +2622,17 @@ class EMConfig {
     var minimize: Boolean = true
 
 
+    @Cfg("When the main fuzzing session is over, there are several following phases in which test cases can be created" +
+            " and evaluated (e.g., for minimization, flakiness and security checks)." +
+            " Each of these follow up phases takes some time, which is not included in 'maxTime'." +
+            " All those phases are time-bounded, based on the main search budget." +
+            " For example, with a default of 10% and main budget of 1 hour, then each phase will take" +
+            " at most 6 minutes each after the 1 hour search." +
+            " Phases will be preemptively stopped if they reach their timeouts.")
+    @PercentageAsProbability
+    var extraPhaseBudgetPercentage: Double = 0.10
+
+    @Deprecated("No longer in use, replaced by 'extraPhaseBudgetPercentage'")
     @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
             " A negative number mean no timeout is considered." +
             " A value of 0 means minimization will be skipped, even if minimize=true.")
@@ -2824,6 +2853,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
+    @Cfg("If any action contains any named example, make sure, with a given probability, that ALL fields for that example" +
+            " are using the provided values by the user")
+    @Probability(false)
+    var probNamedExamples = 0.50
+
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
@@ -2838,27 +2872,22 @@ class EMConfig {
     var security = true
 
 
-    @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var ssrf = false
+    var ssrf = true
 
-    @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var xss = false
+    var xss = true
 
-    @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var sqli = false
+    var sqli = true
 
-    @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
     @DependsOnTrueFor("sqli")
     var sqliInjectedSleepDurationMs = 5000
 
-    @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
     @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
@@ -2922,6 +2951,10 @@ class EMConfig {
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
+
+    @Experimental
+    @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
+    var statusOracles = false
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3161,6 +3194,7 @@ class EMConfig {
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
 

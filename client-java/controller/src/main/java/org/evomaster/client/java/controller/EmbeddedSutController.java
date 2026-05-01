@@ -115,6 +115,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitRedis(boolean executingInitRedis) {
+        ExecutionTracer.setExecutingInitRedis(executingInitRedis);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }

@@ -76,4 +76,17 @@ class SqlPathGeneTest {
         assertEquals("\"((0.0, 1.0), (1.0, 1.0), (0.0, 0.0))\"",gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testUnsafeCopyValueFromModifiesDatabaseType() {
+        val gene1 = SqlPathGene(name = "path1", databaseType = DatabaseType.POSTGRES)
+        val gene2 = SqlPathGene(name = "path2", databaseType = DatabaseType.MYSQL)
+
+        assertNotEquals(gene1.databaseType, gene2.databaseType)
+
+        val ok = gene1.unsafeCopyValueFrom(gene2)
+
+        assertTrue(ok)
+        assertEquals(DatabaseType.MYSQL, gene1.databaseType)
+    }
+
 }

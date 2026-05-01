@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -28,6 +29,7 @@ import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.CharacterRange
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -375,7 +377,8 @@ object GeneSamplerForTests {
     private fun sampleSqlForeignKeyGene(rand: Randomness): SqlForeignKeyGene {
         return SqlForeignKeyGene(sourceColumn = "rand source column",
                 uniqueId = rand.nextLong(min = 0L, max = Long.MAX_VALUE),
-                targetTable = "rand target table",
+                targetTable = TableId("rand target table"),
+                targetColumn = "rand target column",
                 nullable = rand.nextBoolean(),
                 uniqueIdOfPrimaryKey = rand.nextLong())
     }
@@ -460,8 +463,8 @@ object GeneSamplerForTests {
 
     fun sampleCharacterRangeRxGene(rand: Randomness): CharacterRangeRxGene {
         return CharacterRangeRxGene(
-                negated = false, // TODO update once fixed
-                ranges = listOf(Pair('a', 'z'))
+                negated = rand.nextBoolean(),
+                ranges = listOf(CharacterRange('a', 'z'))
         )
     }
 

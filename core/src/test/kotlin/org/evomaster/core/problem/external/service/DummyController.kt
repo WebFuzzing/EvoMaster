@@ -83,6 +83,10 @@ class DummyController: RemoteController {
         TODO("Not yet implemented")
     }
 
+    override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
     override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
         TODO("Not yet implemented")
     }

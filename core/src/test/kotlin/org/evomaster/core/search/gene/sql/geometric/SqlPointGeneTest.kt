@@ -41,4 +41,17 @@ class SqlPointGeneTest {
         assertEquals("\"(0.0, 0.0)\"", gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testUnsafeCopyValueFromModifiesDatabaseType() {
+        val gene1 = SqlPointGene("p1", databaseType = DatabaseType.POSTGRES)
+        val gene2 = SqlPointGene("p2", databaseType = DatabaseType.MYSQL)
+
+        assertEquals(DatabaseType.POSTGRES, gene1.databaseType)
+        assertEquals(DatabaseType.MYSQL, gene2.databaseType)
+
+        gene1.unsafeCopyValueFrom(gene2)
+
+        assertEquals(DatabaseType.MYSQL, gene1.databaseType)
+    }
+
 }

@@ -327,7 +327,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES)) {
             return
         }
 
@@ -339,10 +339,10 @@ class RestSecurityOracle {
 
             if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName(), null))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES, a.getName(), null))
             }
         }
     }
@@ -352,7 +352,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ){
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT)){
             return
         }
 
@@ -385,10 +385,10 @@ class RestSecurityOracle {
                 // we also consider 403, in case API just give it by default for security reasons
 
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT, target.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index+1)
-                data.addFault(DetectedFault(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName(), null))
+                data.addFault(DetectedFault(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT, target.getName(), null))
             }
         }
     }
@@ -439,7 +439,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS)){
             return
         }
 
@@ -470,10 +470,10 @@ class RestSecurityOracle {
                 }
 
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName(), null))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS, a.getName(), null))
             }
         }
     }
@@ -484,7 +484,7 @@ class RestSecurityOracle {
         fv: FitnessValue
     ) {
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS)) {
             return
         }
 
@@ -504,10 +504,10 @@ class RestSecurityOracle {
 
             if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName(), null))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS, a.getName(), null))
             }
         }
     }

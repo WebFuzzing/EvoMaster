@@ -39,6 +39,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitNeo4J = false;
 
+    private static boolean executingInitDynamoDB = false;
+
     /**
      * indicate whether now it is to execute action during the search
      */
@@ -140,6 +142,7 @@ public class ExecutionTracer {
             sleepingThreads.clear();
             lastCallerClass = null;
             skippedExternalServices = new ArrayList<>();
+            executingInitDynamoDB = false;
         }
     }
 
@@ -205,6 +208,10 @@ public class ExecutionTracer {
 
     public static void setExecutingInitNeo4J(boolean executingInitNeo4J) {
         ExecutionTracer.executingInitNeo4J = executingInitNeo4J;
+    }
+
+    public static void setExecutingInitDynamoDB(boolean executingInitDynamoDB) {
+        ExecutionTracer.executingInitDynamoDB = executingInitDynamoDB;
     }
 
     public static boolean isExecutingAction() {
@@ -447,6 +454,11 @@ public class ExecutionTracer {
     public static void addRedisCommand(RedisCommand info){
         if (!executingInitRedis)
             getCurrentAdditionalInfo().addRedisCommand(info);
+    }
+
+    public static void addDynamoDbInfo(DynamoDbCommand info) {
+        if (!executingInitDynamoDB)
+            getCurrentAdditionalInfo().addDynamoDbInfo(info);
     }
 
     public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){

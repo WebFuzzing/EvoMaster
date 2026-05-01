@@ -1,0 +1,47 @@
+package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
+
+import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationController
+import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationXMLController
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+
+class XMLFailModificationEMTest : SpringTestBase(){
+
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        fun init() {
+            initClass(FailModificationXMLController())
+        }
+    }
+
+
+    @Test
+    fun testRunEM() {
+
+        runTestHandlingFlakyAndCompilation(
+                "XMLFailedModificationEM",
+                2000
+        ) { args: MutableList<String> ->
+
+            setOption(args, "schemaOracles", "false")
+            setOption(args, "httpOracles", "true")
+            setOption(args, "useExperimentalOracles", "true")
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+
+            val faults = DetectedFaultUtils.getDetectedFaults(solution)
+
+            assertEquals(2, faults.size)
+            assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
+        }
+    }
+}

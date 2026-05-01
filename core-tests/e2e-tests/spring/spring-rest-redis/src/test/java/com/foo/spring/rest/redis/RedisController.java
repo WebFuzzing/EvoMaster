@@ -113,6 +113,6 @@ public abstract class RedisController extends EmbeddedSutController {
 
     @Override
     public ReflectionBasedRedisClient getRedisConnection() {
-        return new ReflectionBasedRedisClient(this.host, this.port);
+        return new ReflectionBasedRedisClient(this.host, this.port, 0);
     }
 }

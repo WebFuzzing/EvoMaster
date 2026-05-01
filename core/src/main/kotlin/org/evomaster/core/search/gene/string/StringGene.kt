@@ -1104,6 +1104,11 @@ class StringGene(
 
     override fun unsafeSetFromStringValue(value: String): Boolean {
 
+        /*
+            TODO most likely this will need to be refactored, to require either "" or '' quotes.
+            See NullableGene
+         */
+
         this.value = value
         selectedSpecialization = -1
 

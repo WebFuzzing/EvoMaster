@@ -13,7 +13,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.algorithms.observer.GARecorder
 import org.evomaster.core.search.algorithms.strategy.FixedSelectionStrategy
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -44,9 +44,9 @@ class SteadyStateGeneticAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
             val solution = steadyStateAlgorithm.search()
-            epc.finishSearch()
+            epc.markFinishedSession()
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }

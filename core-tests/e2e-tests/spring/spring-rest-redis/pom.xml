@@ -6,7 +6,7 @@
     <parent>
         <artifactId>evomaster-e2e-tests-spring</artifactId>
         <groupId>org.evomaster</groupId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring-rest-redis</artifactId>
@@ -54,6 +54,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- Bringing Netty dependency explicitly as it was excluded from spring-boot-starter-data-redis to avoid version conflict -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
         </dependency>
         <dependency>
             <groupId>redis.clients</groupId>

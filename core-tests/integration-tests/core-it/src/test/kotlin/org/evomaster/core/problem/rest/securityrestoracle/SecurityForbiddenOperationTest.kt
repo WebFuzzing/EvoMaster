@@ -37,6 +37,12 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         SecurityForbiddenOperationApplication.reset()
     }
 
+    private fun makeSureCanRunSecurityPhase(){
+        val epc = getExecutionPhaseController()
+        epc.markStartingSearch()
+        epc.markStartingSecurity()
+    }
+
     @Test
     fun testDeletePatch(){
 
@@ -107,6 +113,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val security = getSecurityRest()
         val config = getEMConfig()
 
+
         config.security = true
         config.schemaOracles = false
 
@@ -129,6 +136,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val added = archive.addIfNeeded(ind)
         assertTrue(added)
 
+        makeSureCanRunSecurityPhase()
         val solution = security.applySecurityPhase()
 
         val target = solution.individuals.find { it.hasAnyPotentialFault() }!!
@@ -186,7 +194,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val otherAdded = archive.addIfNeeded(other)
         assertTrue(otherAdded)
 
-
+        makeSureCanRunSecurityPhase()
         val solution = security.applySecurityPhase()
 
         val target = solution.individuals.find { it.hasAnyPotentialFault() }!!
@@ -233,6 +241,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val added = archive.addIfNeeded(ind)
         assertTrue(added)
 
+        makeSureCanRunSecurityPhase()
         val solution = security.applySecurityPhase()
 
         val target = solution.individuals.find { it.hasAnyPotentialFault() }!!

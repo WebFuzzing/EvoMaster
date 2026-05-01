@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring</artifactId>
@@ -31,6 +31,7 @@
         <module>spring-rest-rsa</module>
         <module>spring-rpc-grpc</module>
         <module>spring-rpc-thrift</module>
+        <module>spring-mcp-bb</module>
     </modules>
 
     <dependencyManagement>

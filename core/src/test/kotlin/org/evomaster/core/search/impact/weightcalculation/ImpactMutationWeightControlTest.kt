@@ -9,7 +9,7 @@ import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelecti
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.junit.jupiter.api.BeforeEach

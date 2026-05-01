@@ -94,6 +94,10 @@ public class AgentController {
                         handleExecutingInitMongo();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_REDIS:
+                        handleExecutingInitRedis();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
@@ -177,6 +181,16 @@ public class AgentController {
             InstrumentationController.setExecutingInitMongo(executingInitMongo);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-mongo: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitRedis() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitRedis = (Boolean) msg;
+            InstrumentationController.setExecutingInitRedis(executingInitRedis);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-redis: "+e.getMessage());
         }
     }
 

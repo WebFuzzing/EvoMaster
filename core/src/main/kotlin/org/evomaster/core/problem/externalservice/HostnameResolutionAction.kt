@@ -50,7 +50,7 @@ class HostnameResolutionAction(
         return "Hostname_${hostname}_${localIPAddress}"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return listOf()
     }
 

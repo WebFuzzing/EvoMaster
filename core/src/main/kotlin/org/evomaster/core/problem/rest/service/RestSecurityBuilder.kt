@@ -34,6 +34,8 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -46,7 +48,7 @@ import org.slf4j.LoggerFactory
  * But, the actual check if a test indeed finds a fault is in [org.evomaster.core.problem.rest.oracle.RestSecurityOracle]
  * called in the fitness function, and not directly here.
  */
-class RestSecurityBuilder {
+class RestSecurityBuilder : TimeBoxedPhase {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestSecurityBuilder::class.java)
@@ -85,6 +87,9 @@ class RestSecurityBuilder {
     @Inject
     protected lateinit var searchGlobalState: SearchGlobalState
 
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -111,6 +116,14 @@ class RestSecurityBuilder {
         authSettings = sampler.authentications
     }
 
+    override fun applyPhase() {
+        applySecurityPhase()
+    }
+
+    override fun hasPhaseTimedOut(): Boolean {
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.SECURITY)
+    }
+
     /**
      * Apply a set rule of generating new test cases, which will be added to the current archive.
      * Extract a new test suite(s) from the archive.
@@ -124,17 +137,22 @@ class RestSecurityBuilder {
         //recompute due to possible new tests we might need
         individualsInSolution = this.archive.extractSolution().individuals
 
-
         // we can see what is available from the schema, and then check if already existing a test for it in archive
         // newly generated tests will be added back to archive
-        addForAccessControl()
+        if(!hasPhaseTimedOut()) {
+            addForAccessControl()
+        }
 
         //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
         //SQLi, XSS, SSRF, etc.
-        addForInjections()
+        if(!hasPhaseTimedOut()) {
+            addForInjections()
+        }
 
         //eg leaked stack traces
-        addForInfoLeakage()
+        if(!hasPhaseTimedOut()) {
+            addForInfoLeakage()
+        }
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -149,6 +167,8 @@ class RestSecurityBuilder {
     private fun expandWithForbidden() {
 
         actionDefinitions.forEach { op ->
+
+            if(hasPhaseTimedOut()) return
 
             val forbidden = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
@@ -280,6 +300,7 @@ class RestSecurityBuilder {
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
             log.debug("Skipping security test for XSS as disabled in configuration")
         } else {
+            if(hasPhaseTimedOut()) return
             handleXSSCheck()
         }
 
@@ -289,11 +310,13 @@ class RestSecurityBuilder {
             if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
                 // in white-box testing, if no that the SUT is not using any SQL database, then no point
                 // in trying any kind of SQLi attack
+                if(hasPhaseTimedOut()) return
                 handleSqlICheck()
             }
         }
 
         if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            if(hasPhaseTimedOut()) return
             ssrfAnalyser.apply()
         }
     }
@@ -304,16 +327,19 @@ class RestSecurityBuilder {
             log.debug("Skipping security test for existence leakage as disabled in configuration")
         } else {
             // getting 404 instead of 403
+            if(hasPhaseTimedOut()) return
             handleExistenceLeakage()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES)) {
             log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
+            if(hasPhaseTimedOut()) return
             handleStackTraceCheck()
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT)){
+            if(hasPhaseTimedOut()) return
             handleHiddenAccessibleEndpoint()
         }
     }
@@ -326,8 +352,11 @@ class RestSecurityBuilder {
             log.debug("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
+            if(hasPhaseTimedOut()) return
             handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
+            if(hasPhaseTimedOut()) return
             handleForbiddenOperationButOKOthers(HttpVerb.PUT)
+            if(hasPhaseTimedOut()) return
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
@@ -335,18 +364,21 @@ class RestSecurityBuilder {
             log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
+            if(hasPhaseTimedOut()) return
             handleNotRecognizedAuthenticated()
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_IGNORE_ANONYMOUS)) {
             log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
+            if(hasPhaseTimedOut()) return
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
+            if(hasPhaseTimedOut()) return
             handleAnonymousWriteCheck()
         }
 
@@ -358,6 +390,8 @@ class RestSecurityBuilder {
         val K = config.sqliBaselineMaxResponseTimeMs
 
         mainloop@ for(action in actionDefinitions){
+
+            if(hasPhaseTimedOut()) return
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -478,6 +512,8 @@ class RestSecurityBuilder {
 
         mainloop@for (a in actions){
 
+            if(hasPhaseTimedOut()) return
+
             /*
                 first build an action to make a OPTION call on each different path
              */
@@ -571,6 +607,8 @@ class RestSecurityBuilder {
 
         mainloop@ for(action in actionDefinitions){
 
+            if(hasPhaseTimedOut()) return
+
             val suspicious = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 action.verb,
@@ -632,9 +670,12 @@ class RestSecurityBuilder {
      */
     private fun handleAnonymousWriteCheck(){
         mainloop@ for(action in actionDefinitions){
+
             if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.DELETE){
                 continue
             }
+
+            if(hasPhaseTimedOut()) return
 
             val suspicious = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
@@ -693,7 +734,7 @@ class RestSecurityBuilder {
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories){
+            if(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS in faultsCategories){
                 val added = archive.addIfNeeded(evaluatedIndividual)
                 assert(added)
                 continue@mainloop
@@ -712,6 +753,8 @@ class RestSecurityBuilder {
     private fun handleNotRecognizedAuthenticated() {
 
         mainloop@ for(action in actionDefinitions){
+
+            if(hasPhaseTimedOut()) return
 
             val suspicious = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
@@ -807,6 +850,8 @@ class RestSecurityBuilder {
         val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
 
         getOperations.forEach { get ->
+
+            if(hasPhaseTimedOut()) return
 
             val inds403 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -1050,6 +1095,9 @@ class RestSecurityBuilder {
      */
     private fun handleForgottenAuthentication() {
         actionDefinitions.forEach { op ->
+
+            if(hasPhaseTimedOut()) return
+
             val ind403or401 = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 op.verb,
@@ -1212,6 +1260,8 @@ class RestSecurityBuilder {
 
         mainloop@ for(action in actionDefinitions){
 
+            if(hasPhaseTimedOut()) return
+
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -1320,7 +1370,6 @@ class RestSecurityBuilder {
         )
 
         val getAction = second.seeMainExecutableActions().last() as RestCallAction
-        getAction.resetLocalIdRecursively()
 
         val genes = GeneUtils.getAllStringFields(getAction.parameters)
             .filter { it.staticCheckIfImpactPhenotype() }

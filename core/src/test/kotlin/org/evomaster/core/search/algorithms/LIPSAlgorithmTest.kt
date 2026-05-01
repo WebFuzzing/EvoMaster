@@ -11,7 +11,7 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.algorithms.observer.GARecorder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -32,7 +32,7 @@ class LIPSAlgorithmTest {
     // Verifies that the LIPS algorithm can find the optimal solution for the OneMax problem
     @Test
     fun testLipsFindsOptimumOnOneMax() {
-        
+
         val lips = injector.getInstance(
             Key.get(object : TypeLiteral<LIPSAlgorithm<OneMaxIndividual>>() {})
         )
@@ -42,9 +42,9 @@ class LIPSAlgorithmTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
-        epc.startSearch()
+        epc.markStartingSearch()
         val solution = lips.search()
-        epc.finishSearch()
+        epc.markFinishedSession()
 
         assertTrue(solution.individuals.size == 1)
         assertEquals(
@@ -53,7 +53,7 @@ class LIPSAlgorithmTest {
             0.001
         )
     }
-    
+
     // Edge Case: CrossoverProbability=0 on LIPS
     @Test
     fun testNoCrossoverWhenProbabilityZero_LIPS() {
@@ -169,7 +169,7 @@ class LIPSAlgorithmTest {
             assertEquals(neededFromOffspring, rec.mutated.size)
         }
     }
-    
+
 }
 
 

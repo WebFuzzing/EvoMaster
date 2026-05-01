@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -29,14 +30,14 @@ class SqlForeignKeyGeneStructureTest : GeneStructuralElementBaseTest() {
 
     override fun throwExceptionInRandomnessTest(): Boolean = false
 
-    override fun getCopyFromTemplate(): Gene = SqlForeignKeyGene("id",1L, "table", false, 1L)
+    override fun getCopyFromTemplate(): Gene = SqlForeignKeyGene("id",1L, TableId("table"), "id", false, 1L)
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is SqlForeignKeyGene)
         assertEquals(1L, (base as SqlForeignKeyGene).uniqueIdOfPrimaryKey)
     }
 
-    override fun getStructuralElement(): SqlForeignKeyGene = SqlForeignKeyGene("id",1L, "table", false, 0L)
+    override fun getStructuralElement(): SqlForeignKeyGene = SqlForeignKeyGene("id",1L, TableId("table"), "id", false, 0L)
 
     override fun getExpectedChildrenSize(): Int  = 0
 }

@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse
 class CookieLoginRest {
 
     @PostMapping(path = ["/login"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun login(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<String>{
+    fun login(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<String>{
 
 
         if(login.username == "foo" && login.password == "123"){
@@ -31,7 +31,7 @@ class CookieLoginRest {
     }
 
     @GetMapping(path = ["/check"])
-    open fun check(@CookieValue("username") authorization: String?) : ResponseEntity<String>{
+    fun check(@CookieValue("username") authorization: String?) : ResponseEntity<String>{
 
         if(authorization.isNullOrEmpty()){
             return ResponseEntity.status(401).build()

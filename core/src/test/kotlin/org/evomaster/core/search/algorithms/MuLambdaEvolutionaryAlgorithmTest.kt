@@ -12,7 +12,7 @@ import org.evomaster.core.search.algorithms.observer.GARecorder
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,9 +43,9 @@ class MuLambdaEvolutionaryAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
             val solution = ea.search()
-            epc.finishSearch()
+            epc.markFinishedSession()
 
             assertEquals(1, solution.individuals.size)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)

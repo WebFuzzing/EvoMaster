@@ -141,5 +141,15 @@ class SqlMultiPathGeneTest {
         assertEquals("MULTILINESTRING(LINESTRING(POINT(0.0, 1.0), POINT(1.0, 1.0), POINT(0.0, 0.0)), LINESTRING(POINT(1.0, 1.0), POINT(0.0, 1.0), POINT(1.0, 0.0)))",gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testUnsafeCopyValueFrom() {
+        val gene1 = SqlMultiPathGene(name = "multilinestring", databaseType = DatabaseType.H2)
+        val gene2 = SqlMultiPathGene(name = "multilinestring", databaseType = DatabaseType.MYSQL)
+
+        gene1.unsafeCopyValueFrom(gene2)
+
+        assertEquals(DatabaseType.MYSQL, gene1.databaseType)
+    }
+
 
 }

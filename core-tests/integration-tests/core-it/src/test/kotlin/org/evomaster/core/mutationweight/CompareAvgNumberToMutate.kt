@@ -11,7 +11,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 
 /**

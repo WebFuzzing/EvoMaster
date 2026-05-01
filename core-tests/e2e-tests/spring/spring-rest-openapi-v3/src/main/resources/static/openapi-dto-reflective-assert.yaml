@@ -97,6 +97,7 @@ paths:
                 - aDouble
                 - aFloat
                 - aBoolean
+                - aNullableString
       responses:
         '200':
           description: OK

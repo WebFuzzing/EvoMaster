@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACImplyRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -34,7 +34,7 @@ class ACImplyRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACImplyDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACImplyDto) : ResponseEntity<String> {
 
         if(body.a == true){
             if(! (body.d == ACImplyEnum.HELLO || body.f == ACImplyEnum.HELLO)){

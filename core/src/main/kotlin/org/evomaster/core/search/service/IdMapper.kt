@@ -20,10 +20,15 @@ class IdMapper {
 
         private const val FAULT_OBJECTIVE_PREFIX = "PotentialFault"
 
+        private const val NAMED_EXAMPLE = "NamedExample"
+
         /**
          * local objective prefix might depend on problems, eg, HTTP_SUCCESS and HTTP_FAULT for REST
          * it can be identified with its numeric id, ie, less than 0
          * however we need this key to specify whether to consider such objectives in impact collections
+         *
+         * TODO is this verified anywhere? eg, i think we created many new local targets not using this...
+         * TODO if this is still relevant, should be enforced in an invariant somewhere
          */
         const val LOCAL_OBJECTIVE_KEY = "Local"
 
@@ -42,6 +47,8 @@ class IdMapper {
 
         private const val GQL_NO_ERRORS = "GQL_NO_ERRORS"
 
+
+        fun isNamedExample(descriptiveId: String) = descriptiveId.startsWith(NAMED_EXAMPLE)
 
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_OBJECTIVE_PREFIX)
 
@@ -99,6 +106,10 @@ class IdMapper {
 
     fun getFaultDescriptiveId(category: FaultCategory, postfix: String): String{
         return "$FAULT_OBJECTIVE_PREFIX ${category.label} $postfix"
+    }
+
+    fun getNamedExampleId(actionId: String, exampleName: String, statusCode: Int) : String {
+        return "$NAMED_EXAMPLE $actionId - $exampleName - $statusCode"
     }
 
     fun getGQLNoErrors(method: String) = "$GQL_NO_ERRORS:$method"

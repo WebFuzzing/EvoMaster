@@ -19,6 +19,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -56,13 +57,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     protected lateinit var configuration: EMConfig
 
     @Inject
-    protected lateinit var partialOracles: PartialOracles
-
-    @Inject
     protected lateinit var builder: RestIndividualBuilder
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -71,9 +73,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private lateinit var infoDto: SutInfoDto
 
-    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
-    @Inject
-    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+    lateinit var skippedEndpoints : List<Endpoint>
+        private set
+
 
     @PostConstruct
     open fun initialize() {
@@ -120,8 +122,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
-        val skip = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skip, RestActionBuilderV3.Options(config))
+        skippedEndpoints = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skippedEndpoints, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         if(config.extraQueryParam){
@@ -321,16 +323,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        skippedEndpoints = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skippedEndpoints, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         initAdHocInitialIndividuals()
-        if (config.seedTestCases)
+        if (config.seedTestCases) {
             initSeededTests()
-
-
-        //partialOracles.setupForRest(swagger, config)
+        }
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }

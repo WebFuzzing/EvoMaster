@@ -109,4 +109,40 @@ paths:
       responses:
         "200":
           description: "ok"
-
+  "/vw/users":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/vw/users/login":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/vw/users/user/{id}":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+    "put":
+      responses:
+        "200":
+          description: "ok"
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/vw/users/vw-user-and-api-key/{vwUser}/{apiKey}":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+  "/vw/users/vw-user/{vwUser}":
+    "get":
+      responses:
+        "200":
+          description: "ok"

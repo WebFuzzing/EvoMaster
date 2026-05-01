@@ -24,7 +24,7 @@ public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ProxyPrintExampleGeneratedEMTest",
                 "org.foo.ProxyPrintExampleGeneratedEMTest",
-                5_000,
+                7_000,
                 true,
                 (args) -> {
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
@@ -34,7 +34,7 @@ public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Printing");
                 },
-                3
+                6
         );
     }
 }

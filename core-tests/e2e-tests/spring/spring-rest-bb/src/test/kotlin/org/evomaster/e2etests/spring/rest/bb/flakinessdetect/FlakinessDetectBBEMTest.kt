@@ -32,6 +32,7 @@ class FlakinessDetectBBEMTest : SpringTestBase() {
             "flakinessdetect",
             100,
             3,
+            true,
             listOf("TimeAgo", "estimate","MultipleLines","Next","First")
         ){ args: MutableList<String> ->
 

@@ -5,10 +5,9 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.evomaster</groupId>
     <artifactId>evomaster-client-java</artifactId>
     <packaging>pom</packaging>
     <name>${project.groupId}:${project.artifactId}</name>

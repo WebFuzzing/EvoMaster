@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.data.Endpoint
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
@@ -27,6 +28,34 @@ object SchemaUtils {
 
     private val log = org.slf4j.LoggerFactory.getLogger(SchemaUtils::class.java)
 
+    fun hasAuthDefinition(schema: RestSchema) : Boolean{
+
+        //TODO should handle $ref
+
+        val securitySchemes = schema.main.schemaParsed.components.securitySchemes
+        if(securitySchemes == null || securitySchemes.isEmpty()){
+            return false
+        }
+
+        return  true
+    }
+
+    fun getDeclaredStatusInResponse(endpoint: Endpoint, schema: RestSchema) : Set<Int>{
+
+        //TODO should handle $ref
+
+        val pathObject = schema.main.schemaParsed.paths.get(endpoint.path.toString())
+            ?: return setOf() //TODO should rather throw exception when handling $ref
+
+        val operations = pathObject.readOperationsMap()
+        val verb = PathItem.HttpMethod.valueOf(endpoint.verb.toString())
+        val operation = operations[verb]
+            ?: return setOf() //TODO should rather throw exception when handling $ref
+
+        return operation.responses.keys
+            .mapNotNull { try{it.toInt()} catch (e: Exception){null} }
+            .toSet()
+    }
 
     /*
         For handling of $ref
@@ -301,4 +330,6 @@ object SchemaUtils {
             }
             .toList()
     }
+
+
 }

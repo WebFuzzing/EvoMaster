@@ -29,9 +29,12 @@ class SqlBinaryStringGene(
 
     private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
 
-    val databaseType: DatabaseType = DatabaseType.POSTGRES
+    databaseType: DatabaseType = DatabaseType.POSTGRES
 
 ) :  CompositeFixedGene(name, mutableListOf( binaryArrayGene)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -80,7 +83,9 @@ class SqlBinaryStringGene(
         if (other !is SqlBinaryStringGene) {
             return false
         }
-        return binaryArrayGene.unsafeCopyValueFrom(other.binaryArrayGene)
+        this.databaseType = other.databaseType
+        val ok = binaryArrayGene.unsafeCopyValueFrom(other.binaryArrayGene)
+        return ok
     }
 
 

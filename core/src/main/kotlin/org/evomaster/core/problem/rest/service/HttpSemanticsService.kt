@@ -2,11 +2,15 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.service.fitness.RestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
@@ -14,6 +18,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -21,7 +27,7 @@ import javax.annotation.PostConstruct
 /**
  * Service class used to verify HTTP semantics properties.
  */
-class HttpSemanticsService {
+class HttpSemanticsService : TimeBoxedPhase{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpSemanticsService::class.java)
@@ -45,6 +51,12 @@ class HttpSemanticsService {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
+
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -65,7 +77,13 @@ class HttpSemanticsService {
 
     }
 
+    override fun applyPhase() {
+        applyHttpSemanticsPhase()
+    }
 
+    override fun hasPhaseTimedOut(): Boolean {
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.ADDITIONAL_ORACLES)
+    }
 
     fun applyHttpSemanticsPhase(): Solution<RestIndividual>{
 
@@ -85,11 +103,16 @@ class HttpSemanticsService {
 //        – JSON-Merge-Patch: partial update should not impact other fields. Can have GET, PATCH, and GET to verify it
 
 
+        if(hasPhaseTimedOut()) return
         // – 2xx GET on K : follow by success 2xx DELETE, should then give 404 on GET k (adding up to 2 calls)
         deleteShouldDelete()
 
+        if(hasPhaseTimedOut()) return
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
+
+        if(hasPhaseTimedOut()) return
+        sideEffectsOfFailedModification()
     }
 
     /**
@@ -104,6 +127,8 @@ class HttpSemanticsService {
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
         putOperations.forEach { put ->
+
+            if(hasPhaseTimedOut()) return
 
             val creates = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -151,6 +176,8 @@ class HttpSemanticsService {
 
         deleteOperations.forEach { del ->
 
+            if(hasPhaseTimedOut()) return
+
             val successDelete = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.DELETE,
@@ -197,5 +224,173 @@ class HttpSemanticsService {
             prepareEvaluateAndSave(okDelete)
         }
     }
+
+
+    /**
+     * A failed PUT/PATCH (4xx) must not mutate the resource state.
+     * For each path with PUT/PATCH and GET, and for each distinct K in 4xx:
+     * - find T (smallest individual ending with GET 2xx on same path), slice after it
+     * - append a PUT/PATCH targeting K, then a final GET to check state is unchanged
+     * - K==401: use a 2xx PUT/PATCH with no auth; K==403: different auth than the GET
+     * - K==404: special - no T, prepend GET->(PUT/PATCH 404)->GET, all expecting 404
+     * - otherwise (400, 409, ...): copy a 4xx action with same auth as the GET
+     */
+    private fun sideEffectsOfFailedModification() {
+
+        val verbs = listOf(HttpVerb.PUT, HttpVerb.PATCH)
+
+        for (verb in verbs) {
+
+            val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
+
+            modifyOperations.forEach { modOp ->
+
+                if(hasPhaseTimedOut()) return
+
+                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
+                    ?: return@forEach
+
+                val failedModifyEvals = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    verb,
+                    modOp.path,
+                    statusGroup = StatusGroup.G_4xx
+                )
+                if (failedModifyEvals.isEmpty()) return@forEach
+
+                // gather distinct 4xx status codes observed on this verb+path
+                val distinctCodes = failedModifyEvals.flatMap { ei ->
+                    ei.evaluatedMainActions().mapNotNull { ea ->
+                        val a = ea.action as? RestCallAction ?: return@mapNotNull null
+                        val r = ea.result as? RestCallResult ?: return@mapNotNull null
+                        if (a.verb == verb && a.path.isEquivalent(modOp.path)
+                            && StatusGroup.G_4xx.isInGroup(r.getStatusCode())
+                        ) r.getStatusCode() else null
+                    }
+                }.distinct()
+
+                for (k in distinctCodes) {
+                    when (k) {
+                        404  -> handle404SideEffect(verb, modOp.path, getDef)
+                        else -> handleSideEffectOfFailedModification(verb, k, modOp.path, getDef)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles K==404: the resource did not exist before the call, PUT/PATCH also returned 404,
+     * and the final GET must still return 404 — anything else is a side effect.
+     *
+     *   GET       /path  → 404  (resource absent)
+     *   PUT|PATCH /path  → 404
+     *   GET       /path  → ???  (oracle: must still be 404)
+     */
+    private fun handle404SideEffect(verb: HttpVerb, path: RestPath, getDef: RestCallAction) {
+
+        val kEval = RestIndividualSelectorUtils.findIndividuals(individualsInSolution, verb, path, status = 404)
+            .minByOrNull { it.individual.size() } ?: return
+
+        val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(kEval, verb, path, status = 404)
+
+        val actions = ind.seeMainExecutableActions()
+        val last = actions.last() // the PUT/PATCH [404]
+
+        val getBefore = builder.createBoundActionFor(getDef, last)
+        ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
+
+        val getAfter = builder.createBoundActionFor(getDef, last)
+        ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+        prepareEvaluateAndSave(ind)
+    }
+
+    /**
+     * Handles all non-404 4xx cases (K==400, K==401, K==403, K==409, …).
+     * Starts from T (smallest clean GET 2xx individual), appends the K-returning PUT/PATCH
+     * bound to that GET's resolved path, then appends a final GET to verify state is unchanged.
+     *
+     * Action template:
+     * - K==401/403 : prefer a 2xx PUT/PATCH (valid body, wrong auth); fall back to the K action
+     * - otherwise  : use the K-returning action directly (correct auth, body that causes K)
+     *
+     * Auth override:
+     * - K==401     → NoAuth
+     * - K==403     → a different authenticated user
+     * - otherwise  → same auth as the GET (failure is due to body content, not access rights)
+     */
+    private fun handleSideEffectOfFailedModification(verb: HttpVerb, k: Int, path: RestPath, getDef: RestCallAction) {
+
+        // T: smallest individual ending with GET 2xx on the same path
+        val T = RestIndividualSelectorUtils.findAndSlice(
+            individualsInSolution, HttpVerb.GET, path, statusGroup = StatusGroup.G_2xx
+        ).minByOrNull { it.size() } ?: return
+
+        val actionTemplate = when {
+            k == 401 || k == 403 ->
+                // prefer a 2xx action (valid body); fall back to the K action if no 2xx exists
+                RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution, verb, path, statusGroup = StatusGroup.G_2xx
+                ).flatMap { ei ->
+                    ei.evaluatedMainActions().mapNotNull { ea ->
+                        val a = ea.action as? RestCallAction ?: return@mapNotNull null
+                        val r = ea.result as? RestCallResult ?: return@mapNotNull null
+                        if (a.verb == verb && a.path.isEquivalent(path) && StatusGroup.G_2xx.isInGroup(r.getStatusCode()))
+                            a else null
+                    }
+                }.firstOrNull()
+                    ?: RestIndividualSelectorUtils.findIndividuals(
+                        individualsInSolution, verb, path, status = k
+                    ).flatMap { ei ->
+                        ei.evaluatedMainActions().mapNotNull { ea ->
+                            (ea.action as? RestCallAction)
+                                ?.takeIf { it.verb == verb && it.path.isEquivalent(path) }
+                        }
+                    }.firstOrNull()
+            else ->
+                RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution, verb, path, status = k
+                ).flatMap { ei ->
+                    ei.evaluatedMainActions().mapNotNull { ea ->
+                        (ea.action as? RestCallAction)
+                            ?.takeIf { it.verb == verb && it.path.isEquivalent(path) }
+                    }
+                }.firstOrNull()
+        } ?: return
+
+        val ind = T.copy() as RestIndividual
+        val getAction = ind.seeMainExecutableActions().last().copy() as RestCallAction
+
+        val templateCopy = actionTemplate.copy() as RestCallAction
+        templateCopy.forceNewTaints()
+        templateCopy.resetLocalIdRecursively()
+
+        val modifyCopy = builder.createBoundActionFor(templateCopy, getAction)
+        when (k) {
+            401 -> modifyCopy.auth = HttpWsNoAuth()
+            403 -> {
+                val otherAuths = sampler.authentications
+                    .getAllOthers(getAction.auth.name, HttpWsAuthenticationInfo::class.java)
+                if (otherAuths.isEmpty()) return
+                modifyCopy.auth = otherAuths.first()
+            }
+            else -> modifyCopy.auth = getAction.auth
+        }
+
+        getAction.forceNewTaints()
+        getAction.resetLocalIdRecursively()
+
+        val getAfter = builder.createBoundActionFor(getDef, getAction)
+
+        ind.addMainActionInEmptyEnterpriseGroup(action = modifyCopy)
+        ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
+
+        ind.ensureFlattenedStructure()
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+
+        prepareEvaluateAndSave(ind)
+    }
+
 
 }

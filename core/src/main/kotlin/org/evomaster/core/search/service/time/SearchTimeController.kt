@@ -1,11 +1,13 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.time
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.IncrementalAverage
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Queue
 import kotlin.math.ceil
 
 /**
@@ -15,43 +17,15 @@ import kotlin.math.ceil
  */
 class SearchTimeController {
 
+    companion object{
+        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+    }
+
     @Inject
     private lateinit var configuration: EMConfig
 
-    companion object{
-        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
-
-        /**
-         * Invoke the [function] lambda, which will return some result of generic type [T].
-         * Once this is completed, the [loggingFunction] will be automatically called with,
-         * as input, the execution time expressed in milliseconds, as well as the [function]'s result
-         * of type [T].
-         *
-         * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
-         */
-        inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
-                                         function: () -> T): T {
-
-            val startTime = System.currentTimeMillis()
-            val result: T = function.invoke()
-            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-            return result
-        }
-
-        fun getElapsedTime(totalInSeconds: Long) : String{
-
-            val seconds = totalInSeconds
-            val minutes = seconds / 60.0
-            val hours = minutes / 60.0
-
-            val ps = "%d".format(seconds % 60)
-            val pm = "%d".format(minutes.toInt() % 60)
-            val ph = "%d".format(hours.toInt())
-
-            return "${ph}h ${pm}m ${ps}s"
-        }
-    }
+    @Inject
+    private lateinit var ssu: SearchStatusUpdater
 
 
     var evaluatedIndividuals = 0
@@ -102,7 +76,7 @@ class SearchTimeController {
      * Time expressed in ms (Long).
      * Also keeping track of number of actions (Int)
      */
-    private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
+    private val executedIndividualTime : Queue<Pair<Long, Int>> = ArrayDeque(100)
 
     private val listeners = mutableListOf<SearchListener>()
 
@@ -123,6 +97,7 @@ class SearchTimeController {
 
     fun doStopRecording(){
         recording = false
+        ssu.finished()
     }
 
     /**
@@ -229,9 +204,13 @@ class SearchTimeController {
     }
 
     fun newActionEvaluation(n: Int = 1) {
-        if(!recording) return
+
+        listeners.forEach{it.newActionsEvaluated(n)}
+
+        if(!recording){
+            return
+        }
         evaluatedActions += n
-        listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){
@@ -256,7 +235,7 @@ class SearchTimeController {
     }
 
     fun getElapsedTime() : String{
-        return getElapsedTime(getElapsedSeconds().toLong())
+        return TimeUtils.getElapsedTime(getElapsedSeconds().toLong())
     }
 
     fun shouldContinueSearch(): Boolean{

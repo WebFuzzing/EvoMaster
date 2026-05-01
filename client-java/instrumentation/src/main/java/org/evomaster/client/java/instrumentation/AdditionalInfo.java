@@ -112,6 +112,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<RedisCommand> redisCommandData = new CopyOnWriteArraySet<>();
 
+    private final Set<DynamoDbCommand> dynamoDbInfoData = new CopyOnWriteArraySet<>();
+
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
     public Set<ExecutedSqlCommand> getSqlInfoData(){
@@ -132,6 +134,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<RedisCommand> getRedisCommandData(){
         return Collections.unmodifiableSet(redisCommandData);
+    }
+
+    public Set<DynamoDbCommand> getDynamoDbInfoData(){
+        return Collections.unmodifiableSet(dynamoDbInfoData);
     }
 
     public Set<MongoCollectionSchema> getMongoCollectionTypeData(){
@@ -156,6 +162,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addRedisCommand(RedisCommand info){
         redisCommandData.add(info);
+    }
+
+    public void addDynamoDbInfo(DynamoDbCommand info){
+        dynamoDbInfoData.add(info);
     }
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){

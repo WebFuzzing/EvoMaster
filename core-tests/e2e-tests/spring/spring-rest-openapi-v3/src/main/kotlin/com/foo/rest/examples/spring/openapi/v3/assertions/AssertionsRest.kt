@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class AssertionsRest {
 
     @GetMapping(path = ["/data"])
-    open fun getData() : ResponseEntity<String> {
+    fun getData() : ResponseEntity<String> {
 
         val assertionDto = Gson().toJson(AssertionDto())
         return ResponseEntity.status(200)
@@ -23,55 +23,55 @@ class AssertionsRest {
     }
 
     @PostMapping(path = ["/data"])
-    open fun postData() : ResponseEntity<String> {
+    fun postData() : ResponseEntity<String> {
         return ResponseEntity.status(201)
                 .body("OK")
     }
 
     @GetMapping(path = ["/simpleNumber"])
-    open fun getSimpleNumber() : ResponseEntity<Int> {
+    fun getSimpleNumber() : ResponseEntity<Int> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(42)
     }
 
     @GetMapping(path = ["/simpleString"])
-    open fun getSimpleString() : ResponseEntity<String> {
+    fun getSimpleString() : ResponseEntity<String> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("simple-string")
     }
 
     @GetMapping(path = ["/simpleText"])
-    open fun getSimpleText() : ResponseEntity<String> {
+    fun getSimpleText() : ResponseEntity<String> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.TEXT_PLAIN)
                 .body("simple-text")
     }
 
     @GetMapping(path = ["/simpleArray"])
-    open fun getSimpleArray() : ResponseEntity<String> {
+    fun getSimpleArray() : ResponseEntity<String> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Gson().toJson(arrayOf(123, 456)))
     }
 
     @GetMapping(path = ["/arrayObject"])
-    open fun getArrayObject() : ResponseEntity<Array<SimpleObject>> {
+    fun getArrayObject() : ResponseEntity<Array<SimpleObject>> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(arrayOf(SimpleObject(777), SimpleObject(888)))
     }
 
     @GetMapping(path = ["/arrayEmpty"])
-    open fun getArrayEmpty() : ResponseEntity<Array<String>> {
+    fun getArrayEmpty() : ResponseEntity<Array<String>> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(arrayOf())
     }
 
     @GetMapping(path = ["/objectEmpty"])
-    open fun getObjectEmpty() : ResponseEntity<String> {
+    fun getObjectEmpty() : ResponseEntity<String> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")

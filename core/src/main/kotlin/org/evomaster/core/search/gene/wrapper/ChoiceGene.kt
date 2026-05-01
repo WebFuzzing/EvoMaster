@@ -1,9 +1,9 @@
 package org.evomaster.core.search.gene.wrapper
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -35,7 +35,7 @@ class ChoiceGene<T>(
      */
     valueNames: List<String?>? = null,
 
-) : CompositeFixedGene(name, geneChoices), NamedExamplesGene, WrapperGene where T : Gene {
+) : CompositeFixedGene(name, geneChoices), UserExamplesGene, PhenotypeDormantGene, WrapperGene where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
@@ -183,6 +183,21 @@ class ChoiceGene<T>(
         return valueNames?.get(activeGeneIndex)
     }
 
+    override fun getAvailableExampleNames() : Set<String> {
+        return valueNames?.mapNotNull { it }?.toSet() ?: setOf()
+    }
+
+    override fun selectExampleByName(name: String) {
+        if(!isUsedForExamples()){
+            throw IllegalStateException("Selected choice does not contain example values")
+        }
+        if(valueNames == null || ! valueNames.contains(name)){
+            throw IllegalArgumentException("Selected example value choice does not contain $name")
+        }
+
+        selectActiveGene(valueNames.indexOf(name))
+    }
+
     /**
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].
@@ -287,8 +302,16 @@ class ChoiceGene<T>(
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 
-    override fun isChildUsed(child: Gene) : Boolean{
+    override fun isChildActive(child: Gene) : Boolean{
         verifyChild(child)
         return child == geneChoices[activeGeneIndex]
+    }
+
+    override fun tryToActivateGene(child: Gene): Boolean {
+        verifyChild(child)
+
+        activeGeneIndex = geneChoices.indexOf(child)
+
+        return true
     }
 }

@@ -29,7 +29,7 @@ class BootTimeTargetsRest {
 
 
     @GetMapping
-    open fun getData() : ResponseEntity<String> {
+    fun getData() : ResponseEntity<String> {
 
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)

@@ -51,6 +51,7 @@ experiments/target/
 
 /core-tests/e2e-tests/spring/spring-rest-openapi-v3/target
 /core-tests/e2e-tests/spring/spring-graphql/target
+/core-tests/e2e-tests/spring/spring-mcp-bb/target/
 /core-tests/e2e-tests/ci-utils/target
 
 /core-tests/core-it/target/

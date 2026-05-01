@@ -14,7 +14,7 @@ import javax.validation.Valid
 class UriRest {
 
     @PostMapping(path = ["http"])
-    open fun http(@Valid @RequestBody dto: UriDto) : ResponseEntity<String> {
+    fun http(@Valid @RequestBody dto: UriDto) : ResponseEntity<String> {
 
         val url = URL(dto.x);
         if(url.protocol == "http"){
@@ -25,7 +25,7 @@ class UriRest {
     }
 
     @PostMapping(path = ["data"])
-    open fun data(@Valid @RequestBody dto: UriDto) : ResponseEntity<String> {
+    fun data(@Valid @RequestBody dto: UriDto) : ResponseEntity<String> {
 
 
         val uri = URI(dto.x)

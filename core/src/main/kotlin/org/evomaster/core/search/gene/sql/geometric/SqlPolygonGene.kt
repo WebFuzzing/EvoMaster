@@ -20,7 +20,7 @@ import java.awt.geom.Line2D
  */
 class SqlPolygonGene(
         name: String,
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        databaseType: DatabaseType = DatabaseType.POSTGRES,
         val minLengthOfPolygonRing: Int = 2,
         val onlyNonIntersectingPolygons: Boolean = false,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
@@ -29,6 +29,9 @@ class SqlPolygonGene(
                 minSize = minLengthOfPolygonRing,
                 template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
+
+    var databaseType: DatabaseType = databaseType
+        private set
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPolygonGene::class.java)
@@ -180,7 +183,9 @@ class SqlPolygonGene(
         if (other !is SqlPolygonGene) {
             return false
         }
-        return this.points.unsafeCopyValueFrom(other.points)
+        this.databaseType = other.databaseType
+        val ok = this.points.unsafeCopyValueFrom(other.points)
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

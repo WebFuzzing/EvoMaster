@@ -50,6 +50,11 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle NEO4J command interceptions
      */
-    NEO4J
+    NEO4J,
+
+    /**
+     * Replacements to handle DYNAMODB command interceptions
+     */
+    DYNAMODB
 }
 

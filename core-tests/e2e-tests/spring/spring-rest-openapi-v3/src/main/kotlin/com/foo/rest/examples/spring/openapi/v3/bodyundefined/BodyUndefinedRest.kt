@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse
 class BodyUndefinedRest {
 
     @RequestMapping(method = [RequestMethod.GET,RequestMethod.DELETE], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun send(@RequestBody(required = true) body : BodyUndefinedDto) : ResponseEntity<String>{
+    fun send(@RequestBody(required = true) body : BodyUndefinedDto) : ResponseEntity<String>{
 
         if(body.user != null){
             return ResponseEntity.status(200).body("OK")

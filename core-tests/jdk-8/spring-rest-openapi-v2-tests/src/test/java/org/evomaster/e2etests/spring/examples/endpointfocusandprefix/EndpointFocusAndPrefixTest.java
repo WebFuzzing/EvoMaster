@@ -51,6 +51,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut);
                     args.add("--bbSwaggerUrl");
                     args.add(baseUrlOfSut + "/v2/api-docs");
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -122,6 +124,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointFocus");
                     args.add(endpointFocus);
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -164,6 +168,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add("--endpointFocus");
                     args.add(endpointFocus);
                     setOption(args, "advancedBlackBoxCoverage", "false");
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -204,6 +210,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointFocus");
                     args.add(endpointFocus);
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -244,6 +252,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointPrefix");
                     args.add(endpointPrefix);
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -285,6 +295,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add("--endpointPrefix");
                     args.add(endpointPrefix);
                     setOption(args, "advancedBlackBoxCoverage", "false");
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -326,6 +338,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add("--endpointPrefix");
                     args.add(endpointPrefix);
                     setOption(args, "advancedBlackBoxCoverage", "false");
+                    setOption(args, "security", "false");
+                    setOption(args, "httpOracles", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);

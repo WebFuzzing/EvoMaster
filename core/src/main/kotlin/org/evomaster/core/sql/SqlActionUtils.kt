@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.ForeignKey
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.sql.schema.Table
@@ -140,49 +141,101 @@ object SqlActionUtils {
     }
 
 
+    /**
+     * Validates the foreign key constraints in the provided list of SQL actions.
+     *
+     * @param actions A list of SQL actions to validate their foreign key constraints.
+     * @param errors An optional mutable list to store error messages if any invalidity is found.
+     * If null, errors will not be collected.
+     *
+     * @return A boolean value indicating whether all foreign key constraints are valid.
+     * Returns true if valid, otherwise false.
+     */
     fun isValidForeignKeys(actions: List<SqlAction>, errors: MutableList<String>? = null): Boolean {
 
         for (i in 0 until actions.size) {
-
-            val fks = actions[i].seeTopGenes()
-                .flatMap { it.flatView() }
+            val currentAction = actions[i]
+            val currentFkGenes = currentAction.seeAllGenes()
                 .filterIsInstance<SqlForeignKeyGene>()
 
-            fks.find { !it.nullable && !it.isBound() }
+            currentFkGenes.find { !it.nullable && !it.isBound() }
                 ?.let {
                     errors?.add("FK ${it.name} is not nullable and not bound: this is invalid")
                     return false
                 }
 
             if (i == 0) {
-                if(fks.isEmpty()) {
+                if (currentFkGenes.isEmpty()) {
                     continue
-                }
-                else {
+                } else {
                     errors?.add("First SQL action has FKs")
                     return false
                 }
             }
 
-            /*
-                note: a row could have FK to itself... weird, but possible.
-                but not sure if we should allow it
-             */
-            val previous = actions.subList(0, i)
+            // Collect all unique Ids and their associated table IDs
+            val previousSqlActions = actions.subList(0, i)
+            val previousPkMap = previousSqlActions
+                .flatMap { it.seeAllGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .associateBy ( { it.uniqueId} ,{ it.tableName })
 
-            fks.filter { it.isBound() }
-                .map { it.uniqueIdOfPrimaryKey }
-                .forEach { id ->
-                    val match = previous.asSequence()
-                        .flatMap { it.seeTopGenes().asSequence() }
-                        .filterIsInstance<SqlPrimaryKeyGene>()
-                        .any { it.uniqueId == id }
 
-                    if (!match) {
-                        errors?.add("FK is pointing to $id, but such action could not be found in previous insertions.")
-                        return false
-                    }
+            // Check each foreign key constraint defined in the table
+            for (fkConstraint in currentAction.table.foreignKeys) {
+                if (!isValidForeignKey(fkConstraint, currentFkGenes, previousPkMap, errors)) {
+                    return false
                 }
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Validates if the provided foreign key constraint is satisfied given the specified context.
+     *
+     * @param fkConstraint the foreign key constraint to validate
+     * @param currentFkGenes a list of `SqlForeignKeyGene` representing the current foreign key elements
+     * @param previousPkUniqueIds a set of unique IDs of primary keys from previous operations
+     * @param errors a mutable list to which validation error messages will be added, if any
+     * @return `true` if the foreign key constraint is valid, `false` otherwise
+     */
+    private fun isValidForeignKey(
+        fkConstraint: ForeignKey,
+        currentFkGenes: List<SqlForeignKeyGene>,
+        previousPkMap: Map<Long, TableId>,
+        errors: MutableList<String>?
+    ): Boolean {
+        val sourceColumnNames = fkConstraint.sourceColumns.map { it.name }
+        val genesInFk = currentFkGenes.filter { sourceColumnNames.contains(it.name) }
+
+        if (genesInFk.isEmpty()) {
+            if (fkConstraint.sourceColumns.all { it.nullable }) {
+                return true
+            }
+            errors?.add("FK constraint $fkConstraint is not satisfied: no genes found for source columns ${sourceColumnNames.joinToString(",")}")
+            return false
+        }
+
+        val boundIds = genesInFk.filter { it.isBound() }.map { it.uniqueIdOfPrimaryKey }.distinct()
+        if (boundIds.size > 1) {
+            errors?.add("Composite FK $fkConstraint points to multiple different primary keys: $boundIds")
+            return false
+        }
+
+        if (boundIds.isNotEmpty()) {
+            val referencedPkUniqueId = boundIds.first()
+            if (!previousPkMap.containsKey(referencedPkUniqueId)) {
+                errors?.add("FK is pointing to $referencedPkUniqueId, but such action could not be found in previous insertions.")
+                return false
+            }
+
+            val actualTableId = previousPkMap[referencedPkUniqueId]
+            if (actualTableId != fkConstraint.targetTableId) {
+                errors?.add("FK is pointing to $referencedPkUniqueId from table $actualTableId, but the constraint expects table ${fkConstraint.targetTableId}")
+                return false
+            }
         }
 
         return true

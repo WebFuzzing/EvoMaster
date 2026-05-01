@@ -5,13 +5,12 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-instrumentation</artifactId>
     <packaging>jar</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
-
 
     <dependencies>
         <dependency>
@@ -72,6 +71,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
             <version>${springboot.version}</version>
+            <!-- Need to exclude Netty from this package to avoid a clash of versions with AWS SDK -->
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
         <!--        <dependency>-->
@@ -86,6 +92,17 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+        </dependency>
+        <!--  DynamoDB, need to bring Netty explicitly to avoid conflicts from the version coming from Lettuce -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Dependencies for Java Regex distances -->

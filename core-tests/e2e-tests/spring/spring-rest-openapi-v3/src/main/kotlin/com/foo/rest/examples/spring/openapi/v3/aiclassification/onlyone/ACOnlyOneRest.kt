@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACOnlyOneRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -33,7 +33,7 @@ class ACOnlyOneRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACOnlyOneDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACOnlyOneDto) : ResponseEntity<String> {
 
         val pa = body.a == false
         val pd = body.d == ACOnlyOneEnum.FOO

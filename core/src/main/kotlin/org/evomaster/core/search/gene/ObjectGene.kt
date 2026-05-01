@@ -44,7 +44,7 @@ import java.net.URLEncoder
  */
 open class ObjectGene(
     name: String,
-    val fixedFields: List<out Gene>,
+    val fixedFields: List<Gene>,
     val refType: String? = null,
     /**
      * represent whether the Object is fixed
@@ -80,7 +80,7 @@ open class ObjectGene(
         }
     }
 
-    constructor(name: String, fields: List<out Gene>, refType: String? = null) : this(name, fields, refType, true, null, null)
+    constructor(name: String, fields: List<Gene>, refType: String? = null) : this(name, fields, refType, true, null, null)
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
@@ -93,7 +93,7 @@ open class ObjectGene(
         private val mapper = ObjectMapper()
     }
 
-    val fields : List<out Gene>
+    val fields : List<Gene>
         get() {return children}
 
     /**

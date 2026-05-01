@@ -58,7 +58,7 @@ class MongoDbAction(
         return "MONGO_Insert_${database}_${collection}_${documentsType}"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return genes
     }
 

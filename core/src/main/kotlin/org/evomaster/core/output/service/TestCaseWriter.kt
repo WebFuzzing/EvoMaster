@@ -12,6 +12,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -329,10 +330,17 @@ abstract class TestCaseWriter {
                         https://github.com/facebook/jest/issues/2129
                         what about expect(false).toBe(true)?
                      */
-                    if (format.isPython()) {
-                        lines.add("raise AssertionError(\"Expected exception\")")
+                    if(res is HttpWsCallResult && res.invalidStatus()){
+                        //whether the target library of the generated test will throw an exception on an invalid
+                        //status is not something we can predict, it might vary, and change in the future.
+                        //so, we don't expect throwing an exception.
+                        //for example, Jersey is inconsistent: it throws below 100 but not above 599
                     } else {
-                        lines.add("fail(\"Expected exception\");")
+                        if (format.isPython()) {
+                            lines.add("raise AssertionError(\"Expected exception\")")
+                        } else {
+                            lines.add("fail(\"Expected exception\");")
+                        }
                     }
                 }
             }

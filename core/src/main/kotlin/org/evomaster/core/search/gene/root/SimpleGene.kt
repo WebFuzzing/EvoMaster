@@ -42,7 +42,7 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
         throw IllegalStateException(errorChildMsg)
     }
 
-    override fun killChildren(toKill: List<out StructuralElement>){
+    override fun killChildren(toKill: List<StructuralElement>){
         throw IllegalStateException(errorChildMsg)
     }
 

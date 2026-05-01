@@ -14,6 +14,8 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.time.SearchListener
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.utils.ReportWriter.writeByChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -122,7 +124,8 @@ class SearchProcessMonitor: SearchListener {
         }
     }
 
-    override fun newActionEvaluated() {
+
+    override fun newActionsEvaluated(n: Int) {
         if(config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL){
             step = StepOfSearchProcess(archive, time.evaluatedIndividuals, eval!!.individual, eval!!, System.currentTimeMillis(),isMutated)
         }
