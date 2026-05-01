@@ -329,6 +329,7 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs5xx`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 5xx. *Default value*: `false`.|
 |`skipAIModelUpdateWhenResponseIsNot2xxOr400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 2xx or 400. *Default value*: `false`.|
+|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|

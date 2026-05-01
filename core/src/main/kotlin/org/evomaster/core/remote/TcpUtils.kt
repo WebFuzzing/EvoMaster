@@ -1,6 +1,7 @@
 package org.evomaster.core.remote
 
 import org.apache.http.NoHttpResponseException
+import org.apache.http.client.ClientProtocolException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
@@ -19,7 +20,17 @@ object TcpUtils {
 
     fun isTimeout(e: ProcessingException) = e.cause is SocketTimeoutException
 
+    /**
+     * Response is not HTTP
+     */
     fun isNoHttpResponse(e: ProcessingException) = e.cause is NoHttpResponseException
+
+    /**
+     * The response is HTTP, but with some invalid formatting.
+     * Note: it is unclear what makes the client use this instead of [isNoHttpResponse]...
+     */
+    fun isInvalidHttpResponse(e: ProcessingException) = e.cause is ClientProtocolException
+            && e.cause?.cause is org.apache.http.ProtocolException
 
     /**
      * This one is tricky.
