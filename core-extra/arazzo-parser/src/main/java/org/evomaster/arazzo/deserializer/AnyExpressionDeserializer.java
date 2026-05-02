@@ -9,6 +9,11 @@ import org.evomaster.arazzo.models.domain.AnyExpression;
 
 import java.io.IOException;
 
+/**
+ * Custom Jackson deserializer for {@link AnyExpression}.
+ * It resolves dynamic JSON payloads by mapping plain text to a {@link AnyExpression.Expression},
+ * and any other complex structure to a generic JSON node.
+ */
 public class AnyExpressionDeserializer extends JsonDeserializer<AnyExpression> {
 
     @Override

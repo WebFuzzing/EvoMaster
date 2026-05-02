@@ -12,6 +12,11 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Representing the Workflow (DTO)
+ * Used for direct document parsing
+ * Use SuccessReusable, FailureReusable and ParameterReusable, for representing (Object | Reusable Object)
+ */
 public class WorkflowDTO {
     private String workflowId;
     private String summary;

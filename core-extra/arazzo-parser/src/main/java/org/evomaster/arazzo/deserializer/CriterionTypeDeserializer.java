@@ -10,6 +10,11 @@ import org.evomaster.arazzo.models.domain.CriterionType;
 
 import java.io.IOException;
 
+/**
+ * Custom Jackson deserializer for {@link CriterionType}.
+ * It resolves dynamic JSON payloads by mapping plain text to a {@link CriterionType.Simple},
+ * and a JSON object to a {@link CriterionType.Complex}.
+ */
 public class CriterionTypeDeserializer extends JsonDeserializer<CriterionType> {
 
     @Override

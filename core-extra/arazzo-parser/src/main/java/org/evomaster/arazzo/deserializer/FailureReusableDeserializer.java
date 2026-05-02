@@ -9,6 +9,11 @@ import org.evomaster.arazzo.models.domain.*;
 
 import java.io.IOException;
 
+/**
+ * Custom Jackson deserializer for {@link FailureReusable}.
+ * It differentiates the incoming JSON payload based on the presence of the "reference" field,
+ * mapping it to a {@link FailureReusable.ReusableObj} if present, or to a {@link FailureReusable.Failure} otherwise.
+ */
 public class FailureReusableDeserializer extends JsonDeserializer<FailureReusable> {
 
     @Override

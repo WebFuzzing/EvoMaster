@@ -12,6 +12,10 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Mapper class responsible for converting Arazzo Specification (DTOs)
+ * into their corresponding domain models.
+ */
 public class ArazzoMapper {
     private ArazzoReferenceResolver resolver;
 

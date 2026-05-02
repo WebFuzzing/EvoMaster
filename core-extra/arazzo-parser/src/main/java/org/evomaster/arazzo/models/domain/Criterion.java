@@ -3,6 +3,11 @@ package org.evomaster.arazzo.models.domain;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.evomaster.arazzo.deserializer.CriterionTypeDeserializer;
 
+/**
+ * Representing the model Criterion Object
+ * An object used to specify the context, conditions,
+ * and condition types that can be used to prove or satisfy assertions specified
+ */
 public class Criterion {
     private String context;
     private String condition;

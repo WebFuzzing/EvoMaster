@@ -9,6 +9,9 @@ import org.evomaster.arazzo.models.domain.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Resolver class responsible for resolving Arazzo references.
+ */
 public class ArazzoReferenceResolver {
     private Components components;
     private JsonNode arazzoJsonNode;
@@ -32,6 +35,9 @@ public class ArazzoReferenceResolver {
         this.openApi = openApi;
     }
 
+    /**
+     * Resolve the {@link SuccessReusable} references to get a complete list of {@link SuccessAction}
+     */
     public List<SuccessAction> resolveSuccessReusable(List<SuccessReusable> items) {
         if (items == null) {
             return null;
@@ -47,6 +53,9 @@ public class ArazzoReferenceResolver {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Resolve the {@link FailureReusable} references to get a complete list of {@link FailureAction}
+     */
     public List<FailureAction> resolveFailureReusable(List<FailureReusable> items) {
         if (items == null) {
             return null;
@@ -62,6 +71,9 @@ public class ArazzoReferenceResolver {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Resolve the {@link ParameterReusable} references to get a complete list of {@link Parameter}
+     */
     public List<Parameter> resolveParametersReusable(List<ParameterReusable> items) {
         if (items == null) {
             return null;

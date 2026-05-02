@@ -5,12 +5,18 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.evomaster.arazzo.models.domain.ParameterReusable;
 import org.evomaster.arazzo.models.domain.Reusable;
 import org.evomaster.arazzo.models.domain.SuccessAction;
 import org.evomaster.arazzo.models.domain.SuccessReusable;
 
 import java.io.IOException;
 
+/**
+ * Custom Jackson deserializer for {@link SuccessReusable}.
+ * It differentiates the incoming JSON payload based on the presence of the "reference" field,
+ * mapping it to a {@link SuccessReusable.ReusableObj} if present, or to a {@link SuccessReusable.Success} otherwise.
+ */
 public class SuccessReusableDeserializer extends JsonDeserializer<SuccessReusable> {
 
     @Override

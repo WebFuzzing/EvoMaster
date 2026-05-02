@@ -2,6 +2,10 @@ package org.evomaster.arazzo.models.domain;
 
 import java.util.List;
 
+/**
+ * Representing the model Arazzo Specification Object
+ * This is the root object of the Arazzo Description
+ */
 public class ArazzoSpecifications {
     private String arazzo;
     private InfoArazzo info;

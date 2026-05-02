@@ -3,6 +3,10 @@ package org.evomaster.arazzo.models.domain;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.evomaster.arazzo.deserializer.AnyExpressionDeserializer;
 
+/**
+ * Representing the model Parameter Object
+ * Describes a single step parameter
+ */
 public class Parameter {
     private String name;
     private String in;

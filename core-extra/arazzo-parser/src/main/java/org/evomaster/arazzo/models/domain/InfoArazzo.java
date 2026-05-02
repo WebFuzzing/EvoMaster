@@ -1,5 +1,9 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * Representing the model Info Object
+ * This is the root object of the Arazzo Description
+ */
 public class InfoArazzo {
     private String title;
     private String summary;

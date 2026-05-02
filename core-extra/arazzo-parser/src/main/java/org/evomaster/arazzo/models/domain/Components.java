@@ -3,6 +3,12 @@ package org.evomaster.arazzo.models.domain;
 import java.util.Map;
 import io.swagger.v3.oas.models.media.Schema;
 
+/**
+ * Representing the model Components Object
+ * Holds a set of reusable objects for different aspects of the Arazzo Specification.
+ * All objects defined within the components object will have no effect on the Arazzo Description
+ * unless they are explicitly referenced from properties outside the components object.
+ */
 public class Components {
     private Map<String, Schema<?>> inputs;
     private Map<String, Parameter> parameters;

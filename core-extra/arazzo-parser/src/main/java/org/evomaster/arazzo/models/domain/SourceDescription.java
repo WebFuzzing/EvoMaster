@@ -1,5 +1,10 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * Representing the model Source Description Object
+ * Describes a source description (such as an OpenAPI description)
+ * that will be referenced by one or more workflows described within an Arazzo Description
+ */
 public class SourceDescription {
     private String name;
     private  String url;

@@ -1,8 +1,17 @@
 package org.evomaster.arazzo.models.domain;
 
+import org.evomaster.arazzo.resolver.ArazzoReferenceResolver;
+
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Representing the model Step Object
+ * Describes a single workflow step which MAY be a call
+ * to an API operation (OpenAPI Operation Object) or another Workflow Object
+ * This model only have SuccessAction, FailureAction and Parameter.
+ * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
+ */
 public class Step {
     private String description;
     private String stepId;

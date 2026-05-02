@@ -9,6 +9,11 @@ import org.evomaster.arazzo.models.domain.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Representing the Step (DTO)
+ * Used for direct document parsing
+ * Use SuccessReusable, FailureReusable and ParameterReusable, for representing (Object | Reusable Object)
+ */
 public class StepDTO {
     private String description;
     private String stepId;

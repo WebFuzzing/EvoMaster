@@ -3,6 +3,10 @@ package org.evomaster.arazzo.models.domain;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.evomaster.arazzo.deserializer.AnyExpressionDeserializer;
 
+/**
+ * Representing the model Payload Replacement Object
+ * Describes a location within a payload (e.g., a request body) and a value to set within the location.
+ */
 public class PayloadReplacement {
     private String target;
 

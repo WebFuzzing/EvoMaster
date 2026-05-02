@@ -1,10 +1,20 @@
 package org.evomaster.arazzo.models.domain;
 
 import io.swagger.v3.oas.models.media.Schema;
+import org.evomaster.arazzo.resolver.ArazzoReferenceResolver;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Representing the model Workflow Object
+ * Describes the steps to be taken across one or more APIs to achieve an objective.
+ * The workflow object MAY define inputs needed in order to execute workflow steps,
+ * where the defined steps represent a call to an API operation or another workflow,
+ * and a set of outputs.
+ * This model only have SuccessAction, FailureAction and Parameter.
+ * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
+ */
 public class Workflow {
     private String workflowId;
     private String summary;

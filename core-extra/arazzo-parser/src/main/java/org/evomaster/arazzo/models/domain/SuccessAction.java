@@ -2,6 +2,10 @@ package org.evomaster.arazzo.models.domain;
 
 import java.util.List;
 
+/**
+ * Representing the model Success Action Object
+ * A single success action which describes an action to take upon success of a workflow step
+ */
 public class SuccessAction {
     private String name;
     private String type;

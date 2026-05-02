@@ -6,6 +6,10 @@ import org.evomaster.arazzo.models.domain.SourceDescription;
 
 import java.util.List;
 
+/**
+ * Representing the ArazzoSpecifications (DTO)
+ * Used for direct document parsing
+ */
 public class ArazzoSpecificationsDTO {
     private String arazzo;
     private InfoArazzo info;

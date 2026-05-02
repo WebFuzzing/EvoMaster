@@ -1,5 +1,9 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * Representing the model Reusable Object
+ * A simple object to allow referencing of objects contained within the {@link Components}
+ */
 public class Reusable {
     private String reference;
     private String value;

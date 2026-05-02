@@ -1,5 +1,8 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * It represents an object that can be a String or a {@link CriterionExpression}.
+ */
 public abstract class CriterionType {
 
     public CriterionType() {

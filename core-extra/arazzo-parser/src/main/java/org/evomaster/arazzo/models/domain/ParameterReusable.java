@@ -1,5 +1,8 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * It represents an object that can be a {@link Parameter} or a {@link Reusable}.
+ */
 public abstract class ParameterReusable {
 
     public ParameterReusable() {

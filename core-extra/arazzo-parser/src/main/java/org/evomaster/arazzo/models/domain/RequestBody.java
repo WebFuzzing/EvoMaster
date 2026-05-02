@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 
+/**
+ * Representing the model Request Body Object
+ * A single request body describing the Content-Type and request body content to be passed by a step to an operation.
+ */
 public class RequestBody {
     private String contentType;
     private JsonNode payload;

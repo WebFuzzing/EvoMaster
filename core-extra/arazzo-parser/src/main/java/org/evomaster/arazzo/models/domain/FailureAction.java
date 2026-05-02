@@ -2,6 +2,10 @@ package org.evomaster.arazzo.models.domain;
 
 import java.util.List;
 
+/**
+ * Representing the model Failure Action Object
+ * A single failure action which describes an action to take upon failure of a workflow step
+ */
 public class FailureAction {
     private String name;
     private String type;

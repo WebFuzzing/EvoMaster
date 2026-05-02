@@ -2,6 +2,12 @@ package org.evomaster.arazzo.models.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * Representing the model (Any | {expression})
+ * The value to pass in the parameter.
+ * The value can be a constant or a Runtime Expression to be evaluated
+ * and passed to the referenced operation or workflow
+ */
 public abstract class AnyExpression {
 
     public AnyExpression() {

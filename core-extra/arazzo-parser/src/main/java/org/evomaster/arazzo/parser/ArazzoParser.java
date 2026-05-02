@@ -10,6 +10,9 @@ import org.evomaster.arazzo.models.domain.ArazzoSpecifications;
 import org.evomaster.arazzo.models.dto.ArazzoSpecificationsDTO;
 import org.evomaster.arazzo.resolver.ArazzoReferenceResolver;
 
+/**
+ * Parse a String containing an Arazzo document into a complete model in ArazzoSpecifications
+ */
 public class ArazzoParser {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().findAndRegisterModules();

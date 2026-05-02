@@ -6,6 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Read Arrazzo documents
+ */
 public class ArazzoAccess {
     public static String readFromDisk(String arazzoLocation) throws Exception {
         String fileScheme = "file:";

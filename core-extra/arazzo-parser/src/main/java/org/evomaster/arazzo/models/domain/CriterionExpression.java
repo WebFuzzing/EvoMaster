@@ -1,5 +1,9 @@
 package org.evomaster.arazzo.models.domain;
 
+/**
+ * Representing the model Criterion Expression Type Object
+ * An object used to describe the type and version of an expression used within a Criterion Object
+ */
 public class CriterionExpression {
     private String type;
     private String version;
