@@ -10,11 +10,17 @@ import org.evomaster.core.search.gene.utils.GeneUtils
  * Used for: move, copy.
  */
 class JsonPatchFromPathGene(
+    name: String,
     operationName: String,
     val fromGene: EnumGene<String>,
-    val pathGene: EnumGene<String>,
-    geneName: String = "${operationName}Op"
-) : JsonPatchOperationGene(geneName, operationName, listOf(fromGene, pathGene)) {
+    val pathGene: EnumGene<String>
+) : JsonPatchOperationGene(name, operationName, listOf(fromGene, pathGene)) {
+
+    init {
+        require(operationName == "move" || operationName == "copy") {
+            "JsonPatchFromPathGene only supports 'move' or 'copy', got: $operationName"
+        }
+    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -22,6 +28,11 @@ class JsonPatchFromPathGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        if (mode == GeneUtils.EscapeMode.XML) {
+            val from = fromGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
+            val path = pathGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
+            return "<operation><op>$operationName</op><from>$from</from><path>$path</path></operation>"
+        }
         val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"from\":$from,\"path\":$path}"
@@ -29,10 +40,10 @@ class JsonPatchFromPathGene(
 
     override fun copyContent(): Gene =
         JsonPatchFromPathGene(
+            name,
             operationName,
             fromGene.copy() as EnumGene<String>,
-            pathGene.copy() as EnumGene<String>,
-            name
+            pathGene.copy() as EnumGene<String>
         )
 
     override fun containsSameValueAs(other: Gene): Boolean {

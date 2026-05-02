@@ -10,10 +10,16 @@ import org.evomaster.core.search.gene.utils.GeneUtils
  * Currently used for: remove.
  */
 class JsonPatchPathOnlyGene(
+    name: String,
     operationName: String,
-    val pathGene: EnumGene<String>,
-    geneName: String = "${operationName}Op"
-) : JsonPatchOperationGene(geneName, operationName, listOf(pathGene)) {
+    val pathGene: EnumGene<String>
+) : JsonPatchOperationGene(name, operationName, listOf(pathGene)) {
+
+    init {
+        require(operationName == "remove") {
+            "JsonPatchPathOnlyGene only supports 'remove', got: $operationName"
+        }
+    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -21,12 +27,16 @@ class JsonPatchPathOnlyGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        if (mode == GeneUtils.EscapeMode.XML) {
+            val path = pathGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
+            return "<operation><op>$operationName</op><path>$path</path></operation>"
+        }
         val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"path\":$path}"
     }
 
     override fun copyContent(): Gene =
-        JsonPatchPathOnlyGene(operationName, pathGene.copy() as EnumGene<String>, name)
+        JsonPatchPathOnlyGene(name, operationName, pathGene.copy() as EnumGene<String>)
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is JsonPatchPathOnlyGene) throw IllegalArgumentException("Invalid gene type ${other.javaClass}")

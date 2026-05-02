@@ -17,10 +17,16 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
  * keeping path and value type-compatible at all times.
  */
 class JsonPatchPathValueGene(
+    name: String,
     operationName: String,
-    val pathValueChoice: ChoiceGene<PairGene<EnumGene<String>, Gene>>,
-    geneName: String = "${operationName}Op"
-) : JsonPatchOperationGene(geneName, operationName, listOf(pathValueChoice)) {
+    val pathValueChoice: ChoiceGene<PairGene<EnumGene<String>, Gene>>
+) : JsonPatchOperationGene(name, operationName, listOf(pathValueChoice)) {
+
+    init {
+        require(operationName in listOf("add", "replace", "test")) {
+            "JsonPatchPathValueGene only supports 'add', 'replace' or 'test', got: $operationName"
+        }
+    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -29,6 +35,11 @@ class JsonPatchPathValueGene(
         extraCheck: Boolean
     ): String {
         val activePair = pathValueChoice.activeGene()
+        if (mode == GeneUtils.EscapeMode.XML) {
+            val path  = activePair.first.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
+            val value = activePair.second.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
+            return "<operation><op>$operationName</op><path>$path</path><value>$value</value></operation>"
+        }
         val path  = activePair.first.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         val value = activePair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"path\":$path,\"value\":$value}"
@@ -36,9 +47,9 @@ class JsonPatchPathValueGene(
 
     override fun copyContent(): Gene =
         JsonPatchPathValueGene(
+            name,
             operationName,
-            pathValueChoice.copy() as ChoiceGene<PairGene<EnumGene<String>, Gene>>,
-            name
+            pathValueChoice.copy() as ChoiceGene<PairGene<EnumGene<String>, Gene>>
         )
 
     override fun containsSameValueAs(other: Gene): Boolean {

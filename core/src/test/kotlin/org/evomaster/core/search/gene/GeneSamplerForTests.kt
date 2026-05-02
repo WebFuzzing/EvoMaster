@@ -6,10 +6,10 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
-import org.evomaster.core.search.gene.patch.JsonPatchDocumentGene
-import org.evomaster.core.search.gene.patch.JsonPatchFromPathGene
-import org.evomaster.core.search.gene.patch.JsonPatchPathOnlyGene
-import org.evomaster.core.search.gene.patch.JsonPatchPathValueGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.sql.schema.TableId
@@ -967,11 +967,12 @@ object GeneSamplerForTests {
     }
 
     private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
-        return JsonPatchPathOnlyGene("remove", EnumGene("path", listOf("/")))
+        return JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/")))
     }
 
     private fun sampleJsonPatchFromPathGene(rand: Randomness): JsonPatchFromPathGene {
         return JsonPatchFromPathGene(
+            "move",
             "move",
             fromGene = EnumGene("from", listOf("/")),
             pathGene = EnumGene("path", listOf("/")),
@@ -981,7 +982,7 @@ object GeneSamplerForTests {
     private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
         val entry: PairGene<EnumGene<String>, Gene> =
             PairGene("entry_0", EnumGene<String>("path", listOf("/")), StringGene("value"))
-        return JsonPatchPathValueGene("add", ChoiceGene("addPathValue", listOf(entry)))
+        return JsonPatchPathValueGene("add", "add", ChoiceGene("addPathValue", listOf(entry)))
     }
 
     fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {

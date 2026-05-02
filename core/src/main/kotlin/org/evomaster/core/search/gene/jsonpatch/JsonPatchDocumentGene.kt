@@ -1,13 +1,10 @@
 package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.builder.JsonPatchGeneBuilder
+import org.evomaster.core.problem.rest.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.service.Randomness
@@ -21,11 +18,10 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * a ChoiceGene that selects among the six standard operations:
  *   remove, move, copy, add, replace, test.
  *
- * When [resourceSchema] is provided, paths are extracted from the schema and value genes
- * are typed to match each field's schema type. Otherwise a single "/" fallback path is used.
+ * [resourceSchema] is stored for future schema-aware path extraction but is not yet analysed.
+ * Until that step is wired in, paths come from [JsonPatchDocumentGeneBuilder.DEFAULT_PATHS].
  *
- * The primary constructor builds the operations array from [resourceSchema].
- * The private secondary constructor accepts a pre-built array, used internally by [copyContent].
+ * The private constructor accepts a pre-built operations array (used by [copyContent]).
  */
 class JsonPatchDocumentGene private constructor(
     name: String,
@@ -34,69 +30,13 @@ class JsonPatchDocumentGene private constructor(
 ) : CompositeFixedGene(name, listOf(operationsArr)) {
 
     constructor(name: String, resourceSchema: Gene? = null)
-            : this(name, resourceSchema, buildOperationsArray(resourceSchema))
+            : this(name, resourceSchema, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema))
 
     companion object {
         const val MIN_SIZE = 1
         const val DEFAULT_MAX_SIZE = 10
-
-        /**
-         * Builds the ArrayGene of patch operations from the resource schema.
-         *
-         * All six operation choices are always present in the ChoiceGene template so that
-         * mutation can switch between them. Only the active choice is included in the phenotype.
-         */
-        fun buildOperationsArray(
-            resourceSchema: Gene?
-        ): ArrayGene<ChoiceGene<JsonPatchOperationGene>> {
-
-            val allPaths = JsonPatchGeneBuilder.extractAllPaths(resourceSchema)
-            val pathList = if (allPaths.isEmpty()) listOf("/") else allPaths.map { it.path }
-            val pathEnum = EnumGene<String>("path", pathList)
-
-            val choices = mutableListOf<JsonPatchOperationGene>()
-
-            // Operations that only need a path
-            choices.add(JsonPatchPathOnlyGene("remove", pathEnum.copy() as EnumGene<String>))
-
-            // Operations that need from + path
-            choices.add(
-                JsonPatchFromPathGene(
-                    "move",
-                    fromGene = pathEnum.copy() as EnumGene<String>,
-                    pathGene = pathEnum.copy() as EnumGene<String>
-                )
-            )
-            choices.add(
-                JsonPatchFromPathGene(
-                    "copy",
-                    fromGene = pathEnum.copy() as EnumGene<String>,
-                    pathGene = pathEnum.copy() as EnumGene<String>
-                )
-            )
-
-            // Operations that need path + value; pairs are grouped by schema field type
-            val pathValueEntries = JsonPatchGeneBuilder.buildPathValueEntries(allPaths)
-            val effectiveEntries: List<PairGene<EnumGene<String>, Gene>> =
-                if (pathValueEntries.isNotEmpty()) {
-                    pathValueEntries
-                } else {
-                    // Fallback: no schema info — use a generic string value on the root path
-                    listOf(PairGene("entry_0", EnumGene("path", listOf("/")), StringGene("value")))
-                }
-
-            for (op in listOf("add", "replace", "test")) {
-                @Suppress("UNCHECKED_CAST")
-                val entryCopies = effectiveEntries.map { it.copy() as PairGene<EnumGene<String>, Gene> }
-                choices.add(JsonPatchPathValueGene(op, ChoiceGene("${op}PathValue", entryCopies)))
-            }
-
-            val template = ChoiceGene<JsonPatchOperationGene>("operation", choices)
-            return ArrayGene("operations", template, minSize = MIN_SIZE, maxSize = DEFAULT_MAX_SIZE)
-        }
     }
 
-    @Suppress("UNCHECKED_CAST")
     private val operationsArray: ArrayGene<ChoiceGene<JsonPatchOperationGene>>
         get() = children[0] as ArrayGene<ChoiceGene<JsonPatchOperationGene>>
 
@@ -115,7 +55,6 @@ class JsonPatchDocumentGene private constructor(
         extraCheck: Boolean
     ): String = operationsArray.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
 
-    @Suppress("UNCHECKED_CAST")
     override fun copyContent(): Gene =
         JsonPatchDocumentGene(
             name,
