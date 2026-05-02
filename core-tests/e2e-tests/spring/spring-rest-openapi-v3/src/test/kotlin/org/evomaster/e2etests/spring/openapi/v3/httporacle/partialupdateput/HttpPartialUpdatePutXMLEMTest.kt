@@ -1,8 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.httporacle.delete
+package org.evomaster.e2etests.spring.openapi.v3.httporacle.partialupdateput
 
-import com.foo.rest.examples.spring.openapi.v3.httporacle.delete.HttpOracleDeleteController
-import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
+import com.foo.rest.examples.spring.openapi.v3.httporacle.partialupdateput.HttpPartialUpdatePutXMLController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -12,13 +10,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HttpOracleDeleteEMTest : SpringTestBase(){
+class HttpPartialUpdatePutXMLEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(HttpOracleDeleteController())
+            initClass(HttpPartialUpdatePutXMLController())
         }
     }
 
@@ -27,8 +25,8 @@ class HttpOracleDeleteEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "HttpOracleDeleteEM",
-                200
+                "HttpPartialUpdatePutXMLEM",
+                1000
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "false")
@@ -41,15 +39,10 @@ class HttpOracleDeleteEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
 
             assertHasAtLeastOne(solution, HttpVerb.PUT, 200, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 204, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 404, "/api/resources/{id}", null)
-
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue({ ExperimentalFaultCategory.HTTP_NONWORKING_DELETE in faults })
-
+            assertEquals(1, faults.size)
+            assertEquals(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT, faults.first())
         }
     }
 }

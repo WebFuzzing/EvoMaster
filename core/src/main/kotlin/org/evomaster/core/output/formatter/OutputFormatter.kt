@@ -74,6 +74,9 @@ abstract class OutputFormatter (val name: String) {
                     if (!node.isObject) return null
                     fieldNames.mapNotNull { field ->
                         val value = node.get(field) ?: return@mapNotNull null
+                        // JSON null is reported as field-absent so callers cannot confuse
+                        // it with the literal 4-char string "null" (asText() collapses both).
+                        if (value.isNull) return@mapNotNull null
                         field to value.asText()
                     }.toMap()
                 } catch (e: Exception) {
