@@ -140,6 +140,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Needed for DynamoDb parsing -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -204,10 +211,15 @@
             <artifactId>lettuce-core</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Bringing Netty dependency explicitly as it was excluded from spring-boot-starter-data-redis to avoid version conflict -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>netty-nio-client</artifactId>
+            <artifactId>dynamodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Removes a warning and actually logs on tests executions -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -227,7 +239,6 @@
             <artifactId>grpc-stub</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -263,6 +274,23 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Needed for DynamoDB parsing -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <configuration>
+                    <listener>false</listener>
+                    <visitor>true</visitor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!--
@@ -346,7 +374,12 @@
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
-                            </relocations>
+                                <!-- Needed for DynamoDb parsing -->
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>shaded.org.antlr</shadedPattern>
+                                </relocation>
+                              </relocations>
                         </configuration>
                     </execution>
                 </executions>
