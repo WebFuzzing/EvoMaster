@@ -12,6 +12,10 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
 
+        operator fun invoke (negated: Boolean, characters: String): MultiCharacterRange {
+            return MultiCharacterRange(negated, characters.map { CharacterRange(it, it) })
+        }
+
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
             if (ranges.isEmpty()) {
                 throw IllegalArgumentException("No defined ranges")

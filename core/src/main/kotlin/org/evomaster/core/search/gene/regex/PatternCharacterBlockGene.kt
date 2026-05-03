@@ -10,16 +10,20 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
-/**
- * Immutable class
- */
 class PatternCharacterBlockGene(
-        name: String,
-        val stringBlock: String
+    name: String,
+    val stringBlock: String,
+    val flags: RegexFlags = RegexFlags()
 ) : RxAtom, SimpleGene(name) {
 
+    /**
+     * Per-character case choice: true = uppercase, false = lowercase.
+     * Only meaningful when flags.caseInsensitive is true.
+     */
+    var caseChoices: BooleanArray = BooleanArray(stringBlock.length) { false }
+
     override fun isMutable(): Boolean {
-        return false
+        return stringBlock.any { c -> flags.isCaseable(c) }
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -27,7 +31,9 @@ class PatternCharacterBlockGene(
     }
 
     override fun copyContent(): Gene {
-        return PatternCharacterBlockGene(name, stringBlock)
+        val copy = PatternCharacterBlockGene(name, stringBlock, flags)
+        copy.caseChoices = caseChoices.copyOf()
+        return copy
     }
 
     override fun setValueWithRawString(value: String) {
@@ -35,15 +41,50 @@ class PatternCharacterBlockGene(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
+
+        if (!isMutable()) {
+            throw IllegalStateException("Not supposed to mutate immutable ${this.javaClass.simpleName}")
+        }
+
+        val previous = caseChoices.copyOf()
+
+        caseChoices = BooleanArray(stringBlock.length) { i ->
+            if (flags.isCaseable(stringBlock[i])) {
+                randomness.nextBoolean()
+            }
+            else {
+                false
+            }
+        }
+
+        if(tryToForceNewValue && caseChoices.contentEquals(previous)){
+            randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
+        if (!isMutable()) {
+            throw IllegalStateException("Not supposed to mutate immutable ${this.javaClass.simpleName}")
+        }
+        val caseableIndices = stringBlock.indices.filter { i ->
+            flags.isCaseable(stringBlock[i])
+        }
+        val i = randomness.choose(caseableIndices)
+        caseChoices[i] = !caseChoices[i]
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return stringBlock
+        if (!isMutable()) {
+            return stringBlock
+        }
+        return stringBlock.mapIndexed { i, c ->
+            when {
+                !flags.isCaseable(c) -> c
+                caseChoices[i] -> c.uppercaseChar()
+                else -> c.lowercaseChar()
+            }
+        }.joinToString("")
     }
 
 
@@ -52,7 +93,8 @@ class PatternCharacterBlockGene(
         if (other !is PatternCharacterBlockGene) {
             return false
         }
-        return this.stringBlock == other.stringBlock
+        return getValueAsPrintableString(targetFormat = null) ==
+                other.getValueAsPrintableString(targetFormat = null)
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {

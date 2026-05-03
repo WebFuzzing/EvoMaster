@@ -30,7 +30,8 @@ import kotlin.collections.contains
 \p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
-    val type: String
+    val type: String,
+    val flags: RegexFlags = RegexFlags()
 ) : RxAtom, SimpleGene("\\$type") {
 
     companion object{
@@ -91,6 +92,12 @@ class CharacterClassEscapeRxGene(
     var value: String = ""
     var multiCharRange: MultiCharacterRange
 
+    /**
+     * Whether to output the sampled character in uppercase.
+     * Only meaningful when flags.caseInsensitive is true.
+     */
+    var useUpperCase: Boolean = false
+
     init {
         if (type[0] !in "wWdDsSvVhHpP") {
             throw IllegalArgumentException("Invalid type: $type")
@@ -127,9 +134,10 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterClassEscapeRxGene(type)
+        val copy = CharacterClassEscapeRxGene(type, flags)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
+        copy.useUpperCase = this.useUpperCase
         return copy
     }
 
@@ -140,10 +148,16 @@ class CharacterClassEscapeRxGene(
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val previous = value
+        val previousUpper = useUpperCase
 
         value = multiCharRange.sample(randomness).toString()
+        useUpperCase = if (flags.isCaseable(value[0])) {
+            randomness.nextBoolean()
+        } else {
+            false
+        }
 
-        if(tryToForceNewValue && previous == value){
+        if(tryToForceNewValue && previous == value && previousUpper == useUpperCase){
             randomize(randomness, tryToForceNewValue)
         }
     }
@@ -153,6 +167,12 @@ class CharacterClassEscapeRxGene(
             // if standardMutation was invoked before calling to randomize
             // then we signal an exception
             throw IllegalStateException("Cannot apply mutation on an uninitialized gene")
+        }
+
+        // flip case if applicable
+        if (flags.isCaseable(value[0]) && randomness.nextBoolean()) {
+            useUpperCase = !useUpperCase
+            return true
         }
 
         if(type == "d"){
@@ -165,7 +185,16 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value
+        val c = value[0]
+        return if (!flags.isCaseable(value[0])) {
+            c.toString()
+        }
+        else if (useUpperCase) {
+            c.uppercaseChar().toString()
+        }
+        else {
+            c.lowercaseChar().toString()
+        }
     }
 
 
@@ -174,7 +203,8 @@ class CharacterClassEscapeRxGene(
         if(other !is CharacterClassEscapeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.value == other.value
+        return getValueAsPrintableString(targetFormat = null) ==
+                other.getValueAsPrintableString(targetFormat = null)
     }
 
 
@@ -184,6 +214,7 @@ class CharacterClassEscapeRxGene(
 
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
+            useUpperCase = gene.useUpperCase
             return true
         }
         LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")

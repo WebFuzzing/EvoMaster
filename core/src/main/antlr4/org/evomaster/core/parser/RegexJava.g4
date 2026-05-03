@@ -90,10 +90,16 @@ atom
  | DOT
  | atomEscape
  | characterClass
+ | FLAG_GROUP_OPEN disjunction PAREN_close
  | PAREN_open disjunction PAREN_close
 
  //TODO
 // | '(' '?' ':' disjunction ')'
+ ;
+
+FLAG_GROUP_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [idmsuxU]+)? COLON
+ | PAREN_open QUESTION MINUS [idmsuxU]+ COLON
  ;
 
 // Special for Java
@@ -178,6 +184,7 @@ patternCharacter
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
+ | COLON
  ;
 
 
@@ -221,6 +228,7 @@ classAtomNoDash
  | DecimalDigit
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
+ | COLON
  ;
 
 decimalDigits
@@ -275,6 +283,7 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+COLON                      : ':';
 
 Q: 'Q';
 E: 'E';
@@ -282,7 +291,7 @@ E: 'E';
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9,^$\\.*+?()[\]{}|-]
+ : ~[0-9:,^$\\.*+?()[\]{}|-]
  ;
 
 fragment OctalEscapeSequence

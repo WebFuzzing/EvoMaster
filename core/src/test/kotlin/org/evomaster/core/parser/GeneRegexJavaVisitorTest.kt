@@ -221,6 +221,14 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testFlags(){
+        checkSameAsJava("""(?i:)""")
+        checkSameAsJava("""(?i:a.*[abc]+\w{1,3})""")
+        checkCanSample("""(?i:a)(?i:A)""", listOf("aa", "aA", "Aa", "AA"), 100)
+        checkSameAsJava("""(?i:\u00C2)""")
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
