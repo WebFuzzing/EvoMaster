@@ -35,6 +35,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitMongo = false;
 
+    private static boolean executingInitCassandra = false;
+
     private static boolean executingInitRedis = false;
 
     private static boolean executingInitNeo4J = false;
@@ -200,6 +202,10 @@ public class ExecutionTracer {
 
     public static void setExecutingInitMongo(boolean executingInitMongo) {
         ExecutionTracer.executingInitMongo = executingInitMongo;
+    }
+
+    public static void setExecutingInitCassandra(boolean executingInitCassandra) {
+        ExecutionTracer.executingInitCassandra = executingInitCassandra;
     }
 
     public static void setExecutingInitRedis(boolean executingInitRedis) {
@@ -440,6 +446,11 @@ public class ExecutionTracer {
     public static void addMongoInfo(MongoFindCommand info){
         if (!executingInitMongo)
             getCurrentAdditionalInfo().addMongoInfo(info);
+    }
+
+    public static void addCqlInfo(ExecutedCqlCommand info){
+        if (!executingInitCassandra)
+            getCurrentAdditionalInfo().addCqlInfo(info);
     }
 
     public static void addNeo4JInfo(Neo4JRunCommand info){
