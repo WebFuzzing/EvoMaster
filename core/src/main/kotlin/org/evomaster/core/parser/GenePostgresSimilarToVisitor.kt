@@ -1,6 +1,5 @@
 package org.evomaster.core.parser
 
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
 
@@ -10,7 +9,7 @@ import org.evomaster.core.utils.CharacterRange
 class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>() {
 
     /*
-        WARNING: lot of code here is similar/adapted from ECMA262 visitor.
+        WARNING: lots of code here is similar/adapted from the ECMA262 visitor.
         But, as the parser objects are different, it does not seem simple to reuse
         the code without avoiding copy&paste&adapt :(
      */
@@ -36,7 +35,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
         val altRes = ctx.alternative().accept(this)
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as Gene }, true, true)
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, true, true)
 
         val res = VisitResult(disj)
 
@@ -182,7 +181,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+        val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>()
 
         val gene = CharacterRangeRxGene(negated, ranges)
 
@@ -195,7 +194,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         val list = mutableListOf<CharacterRange>()
 
         if(ctx.nonemptyClassRanges() != null){
-            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
@@ -222,12 +221,12 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         list.add(CharacterRange(start, end))
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
@@ -255,12 +254,12 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+            val ranges = ctx.classRanges().accept(this).requireDataList<CharacterRange>()
             list.addAll(ranges)
         }
 

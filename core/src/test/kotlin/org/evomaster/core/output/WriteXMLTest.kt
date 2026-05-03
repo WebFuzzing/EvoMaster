@@ -1,13 +1,11 @@
 package org.evomaster.core.output
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
@@ -35,7 +33,7 @@ class WriteXMLTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -82,7 +80,7 @@ class WriteXMLTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -125,7 +123,7 @@ class WriteXMLTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 

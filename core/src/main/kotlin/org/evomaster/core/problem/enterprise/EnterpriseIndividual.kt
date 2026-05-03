@@ -317,7 +317,7 @@ abstract class EnterpriseIndividual(
     }
 
     /**
-     * return a list of all db actions in [this] individual
+     * return a list of all db actions in this individual
      * that include all initializing actions plus db actions among main actions.
      *
      */
