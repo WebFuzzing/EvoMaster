@@ -360,6 +360,13 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     }
 
     @Test
+    fun testSyntaxEscapes(){
+        checkSameAsJava("""}],-:=<>!""")
+        checkSameAsJava("""\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/\-\,\:\<\>\=\!""")
+        checkSameAsJava("""[\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/\-\,\:\<\>\=\!]""")
+    }
+
+    @Test
     open fun testPredefinedCharClassInsideCharClass(){
         checkSameAsJava("""[abc\d0]""")
         checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\u0002¹²³]""")
@@ -372,7 +379,6 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     @Test
     open fun testJSExclusiveEscapes(){
         checkCanSample("""\a""", "a", 100)
-        checkCanSample("""\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/""", "^$\\.*+?()[]{}|/", 100)
         checkCanSample("""[\c0]""", "\u0010", 100)
         checkCanSample("""[\cP][\c0]""", "\u0010\u0010", 100)
         checkCanSample("""[\c_]""", "\u001f", 100)
