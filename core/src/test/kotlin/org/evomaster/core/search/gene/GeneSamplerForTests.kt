@@ -584,7 +584,6 @@ object GeneSamplerForTests {
 
     fun sampleChoiceGene(rand: Randomness): ChoiceGene<*> {
         val selection = geneClasses.filter { !it.isAbstract }
-            .filter { it.java != JsonPatchDocumentGene::class.java }
         return ChoiceGene<Gene>(
                 name = "rand ChoiceGene",
                 geneChoices = listOf(

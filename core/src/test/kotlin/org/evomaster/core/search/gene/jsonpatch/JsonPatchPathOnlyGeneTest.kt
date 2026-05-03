@@ -16,20 +16,20 @@ class JsonPatchPathOnlyGeneTest {
     // --- Construction ---
 
     @Test
-    fun `gene name equals operationName by default`() {
+    fun testGeneNameEqualsOperationNameByDefault() {
         val gene = removeOp()
         assertEquals("remove", gene.name)
         assertEquals("remove", gene.operationName)
     }
 
     @Test
-    fun `custom gene name is accepted`() {
+    fun testCustomGeneNameIsAccepted() {
         val gene = JsonPatchPathOnlyGene("myRemove", "remove", EnumGene("path", listOf("/x")))
         assertEquals("myRemove", gene.name)
     }
 
     @Test
-    fun `has exactly one child (pathGene)`() {
+    fun testHasExactlyOneChild() {
         val gene = removeOp()
         assertEquals(1, gene.getViewOfChildren().size)
         assertSame(gene.pathGene, gene.getViewOfChildren()[0])
@@ -38,27 +38,27 @@ class JsonPatchPathOnlyGeneTest {
     // --- getValueAsPrintableString ---
 
     @Test
-    fun `output is a valid JSON object with op and path`() {
+    fun testOutputIsValidJsonObject() {
         val gene = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/age")))
         val result = gene.getValueAsPrintableString()
         assertEquals("{\"op\":\"remove\",\"path\":\"/age\"}", result)
     }
 
     @Test
-    fun `output starts and ends with braces`() {
+    fun testOutputStartsAndEndsWithBraces() {
         val result = removeOp().getValueAsPrintableString()
         assertTrue(result.startsWith("{"))
         assertTrue(result.endsWith("}"))
     }
 
     @Test
-    fun `output contains op field with correct value`() {
+    fun testOutputContainsOpField() {
         val result = removeOp().getValueAsPrintableString()
         assertTrue(result.contains("\"op\":\"remove\""))
     }
 
     @Test
-    fun `output contains path field with quoted JSON pointer`() {
+    fun testOutputContainsQuotedPath() {
         val gene = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/email")))
         val result = gene.getValueAsPrintableString()
         assertTrue(result.contains("\"path\":\"/email\""))
@@ -67,7 +67,7 @@ class JsonPatchPathOnlyGeneTest {
     // --- copy ---
 
     @Test
-    fun `copy has same operationName and path values`() {
+    fun testCopyHasSameValues() {
         val original = removeOp()
         val copy = original.copy() as JsonPatchPathOnlyGene
         assertEquals(original.operationName, copy.operationName)
@@ -79,7 +79,7 @@ class JsonPatchPathOnlyGeneTest {
     }
 
     @Test
-    fun `copy is independent from original`() {
+    fun testCopyIsIndependentFromOriginal() {
         val original = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/name", "/age")))
         val copy = original.copy() as JsonPatchPathOnlyGene
 
@@ -95,21 +95,21 @@ class JsonPatchPathOnlyGeneTest {
     // --- containsSameValueAs ---
 
     @Test
-    fun `containsSameValueAs true when same path selected`() {
+    fun testContainsSameValueAsTrueForSamePath() {
         val a = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/name")))
         val b = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/name")))
         assertTrue(a.containsSameValueAs(b))
     }
 
     @Test
-    fun `containsSameValueAs false when different path selected`() {
+    fun testContainsSameValueAsFalseForDifferentPath() {
         val a = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/name", "/age")).apply { index = 0 })
         val b = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/name", "/age")).apply { index = 1 })
         assertFalse(a.containsSameValueAs(b))
     }
 
     @Test
-    fun `containsSameValueAs throws for wrong gene type`() {
+    fun testContainsSameValueAsThrowsForWrongType() {
         assertThrows<IllegalArgumentException> {
             removeOp().containsSameValueAs(JsonPatchFromPathGene("move", "move",
                 EnumGene("from", listOf("/")),
@@ -120,7 +120,7 @@ class JsonPatchPathOnlyGeneTest {
     // --- randomize ---
 
     @Test
-    fun `randomize cycles through available paths`() {
+    fun testRandomizeCyclesThroughPaths() {
         val gene = JsonPatchPathOnlyGene(
             "remove", "remove",
             EnumGene("path", listOf("/name", "/email", "/age"))
@@ -135,7 +135,7 @@ class JsonPatchPathOnlyGeneTest {
     }
 
     @Test
-    fun `randomize output always starts with op remove`() {
+    fun testRandomizeOutputAlwaysStartsWithOpRemove() {
         val gene = removeOp()
         gene.doInitialize(rand)
         repeat(10) {
@@ -147,20 +147,18 @@ class JsonPatchPathOnlyGeneTest {
     // --- isMutable ---
 
     @Test
-    fun `isMutable true when path enum has multiple values`() {
+    fun testIsMutableTrueForMultipleValues() {
         assertTrue(removeOp().isMutable())
     }
 
     @Test
-    fun `isMutable true even when path enum has single value`() {
-        // CompositeFixedGene inherits Gene.isMutable() = true; immutability of children
-        // does not propagate upward unless explicitly overridden in the subclass.
+    fun testIsMutableTrueForSingleValue() {
         val gene = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/only")))
         assertTrue(gene.isMutable())
     }
 
     @Test
-    fun `path enum with single value is itself not mutable`() {
+    fun testPathEnumWithSingleValueIsNotMutable() {
         val gene = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/only")))
         assertFalse(gene.pathGene.isMutable())
     }

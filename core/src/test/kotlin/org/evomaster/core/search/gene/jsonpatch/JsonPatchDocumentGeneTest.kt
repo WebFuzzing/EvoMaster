@@ -22,60 +22,60 @@ class JsonPatchDocumentGeneTest {
     // --- Construction ---
 
     @Test
-    fun `construction succeeds`() {
+    fun testConstructionSucceeds() {
         val d = JsonPatchDocumentGene("patch")
         assertEquals("patch", d.name)
     }
 
     @Test
-    fun `has exactly one child (the operations ArrayGene)`() {
+    fun testHasExactlyOneChild() {
         assertEquals(1, JsonPatchDocumentGene("patch").getViewOfChildren().size)
     }
 
     // --- operations property ---
 
     @Test
-    fun `operations is non-empty after initialization`() {
+    fun testOperationsIsNonEmptyAfterInitialization() {
         assertTrue(doc().operations.isNotEmpty())
     }
 
     @Test
-    fun `operations all have valid operation names`() {
+    fun testOperationsAllHaveValidOperationNames() {
         val valid = setOf("add", "remove", "replace", "move", "copy", "test")
         assertTrue(doc().operations.all { it.operationName in valid })
     }
 
     @Test
-    fun `operations size respects minSize constraint`() {
+    fun testOperationsSizeRespectsMinSize() {
         assertTrue(doc().operations.size >= JsonPatchDocumentGene.MIN_SIZE)
     }
 
     @Test
-    fun `operations size respects maxSize constraint`() {
+    fun testOperationsSizeRespectsMaxSize() {
         assertTrue(doc().operations.size <= JsonPatchDocumentGene.DEFAULT_MAX_SIZE)
     }
 
     // --- getValueAsPrintableString ---
 
     @Test
-    fun `output is a JSON array starting with opening bracket`() {
+    fun testOutputStartsWithOpeningBracket() {
         assertTrue(doc().getValueAsPrintableString().startsWith("["))
     }
 
     @Test
-    fun `output is a JSON array ending with closing bracket`() {
+    fun testOutputEndsWithClosingBracket() {
         assertTrue(doc().getValueAsPrintableString().endsWith("]"))
     }
 
     @Test
-    fun `each operation in output is a JSON object`() {
+    fun testEachOperationInOutputIsJsonObject() {
         val result = doc().getValueAsPrintableString()
         val objectPattern = Regex("""\{"op":"[^"]+"""")
         assertTrue(objectPattern.containsMatchIn(result), "Expected at least one JSON object in: $result")
     }
 
     @Test
-    fun `each operation in output contains op field`() {
+    fun testEachOperationContainsOpField() {
         val d = doc()
         val result = d.getValueAsPrintableString()
         val opCount = result.split("\"op\"").size - 1
@@ -83,25 +83,75 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun `paths in output are valid JSON pointers`() {
-        val result = doc().getValueAsPrintableString()
-        val pathMatches = Regex("\"path\":\"(/[^\"]+)\"").findAll(result)
-        pathMatches.forEach { match ->
-            assertTrue(match.groupValues[1].startsWith("/"), "Expected JSON pointer, got: ${match.groupValues[1]}")
+    fun testPathFieldValuesAreDoubleQuoted() {
+        val d = doc()
+        repeat(20) {
+            d.randomize(rand, tryToForceNewValue = true)
+            val result = d.getValueAsPrintableString()
+            assertFalse(result.contains("\"path\":/"),
+                "Found unquoted path value in: $result")
+            val quoted = Regex("\"path\":\"(/[^\"]*?)\"").findAll(result).toList()
+            assertTrue(quoted.isNotEmpty(), "No properly quoted path found in: $result")
         }
+    }
+
+    @Test
+    fun testFromFieldValuesAreDoubleQuoted() {
+        val d = doc()
+        repeat(20) {
+            d.randomize(rand, tryToForceNewValue = true)
+            val result = d.getValueAsPrintableString()
+            assertFalse(result.contains("\"from\":/"),
+                "Found unquoted from value in: $result")
+        }
+    }
+
+    @Test
+    fun testRemoveOperationSerializesToExactJsonFormat() {
+        val op = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/x")))
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"remove\",\"path\":\"/x\"}", result)
+    }
+
+    @Test
+    fun testMoveOperationSerializesToExactJsonFormat() {
+        val op = JsonPatchFromPathGene(
+            "move", "move",
+            fromGene = EnumGene("from", listOf("/a")),
+            pathGene  = EnumGene("path", listOf("/b"))
+        )
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}", result)
+    }
+
+    @Test
+    fun testAddOperationSerializesToExactJsonFormat() {
+        @Suppress("UNCHECKED_CAST")
+        val op = JsonPatchPathValueGene(
+            "add", "add",
+            org.evomaster.core.search.gene.wrapper.ChoiceGene("addPathValue", listOf(
+                PairGene(
+                    "e",
+                    EnumGene("path", listOf("/name")),
+                    StringGene("value", "Alice")
+                ) as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+            ))
+        )
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"add\",\"path\":\"/name\",\"value\":\"Alice\"}", result)
     }
 
     // --- copy ---
 
     @Test
-    fun `copy produces gene with same string output`() {
+    fun testCopyProducesSameStringOutput() {
         val original = doc()
         val copy = original.copy() as JsonPatchDocumentGene
         assertEquals(original.getValueAsPrintableString(), copy.getValueAsPrintableString())
     }
 
     @Test
-    fun `copy is independent from original`() {
+    fun testCopyIsIndependentFromOriginal() {
         val original = doc()
         val copy = original.copy() as JsonPatchDocumentGene
         original.randomize(rand, tryToForceNewValue = true)
@@ -112,14 +162,14 @@ class JsonPatchDocumentGeneTest {
     // --- containsSameValueAs ---
 
     @Test
-    fun `containsSameValueAs true for two copies of the same doc`() {
+    fun testContainsSameValueAsTrueForCopies() {
         val d1 = doc()
         val d2 = d1.copy() as JsonPatchDocumentGene
         assertTrue(d1.containsSameValueAs(d2))
     }
 
     @Test
-    fun `containsSameValueAs throws for wrong gene type`() {
+    fun testContainsSameValueAsThrowsForWrongType() {
         assertThrows<IllegalArgumentException> {
             doc().containsSameValueAs(StringGene("x"))
         }
@@ -128,7 +178,7 @@ class JsonPatchDocumentGeneTest {
     // --- randomize ---
 
     @Test
-    fun `multiple calls to randomize produce valid JSON arrays`() {
+    fun testMultipleRandomizeProduceValidJsonArrays() {
         val d = JsonPatchDocumentGene("patch")
         d.doInitialize(rand)
         repeat(10) {
@@ -140,7 +190,7 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun `randomize produces diverse operation names`() {
+    fun testRandomizeProducesDiverseOperationNames() {
         val d = JsonPatchDocumentGene("patch")
         d.doInitialize(rand)
         val seenOps = mutableSetOf<String>()
@@ -154,20 +204,20 @@ class JsonPatchDocumentGeneTest {
     // --- template structure (delegated to builder; sanity checks here) ---
 
     @Test
-    fun `template contains 6 choices`() {
+    fun testTemplateContains6Choices() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(6, array.template.getViewOfChildren().size)
     }
 
     @Test
-    fun `template respects minSize and maxSize`() {
+    fun testTemplateRespectsMinAndMaxSize() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(JsonPatchDocumentGene.MIN_SIZE, array.minSize)
         assertEquals(JsonPatchDocumentGene.DEFAULT_MAX_SIZE, array.maxSize)
     }
 
     @Test
-    fun `path-value operations hold PairGene entries inside their ChoiceGene`() {
+    fun testPathValueOperationsHoldPairGeneEntries() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val children = array.template.getViewOfChildren()
         for (idx in 3..5) {
@@ -184,7 +234,7 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun `path-value entry second is a StringGene`() {
+    fun testPathValueEntrySecondIsStringGene() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
         addOp.pathValueChoice.getViewOfChildren().forEach { entry ->

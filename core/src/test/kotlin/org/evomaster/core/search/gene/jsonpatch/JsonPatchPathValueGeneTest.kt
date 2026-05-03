@@ -31,7 +31,7 @@ class JsonPatchPathValueGeneTest {
     // --- Construction ---
 
     @Test
-    fun `gene name equals operationName by default`() {
+    fun testGeneNameEqualsOperationNameByDefault() {
         assertEquals("add", addOp().name)
         assertEquals("replace", JsonPatchPathValueGene("replace", "replace",
             ChoiceGene("x", listOf(stringPair() as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>))).name)
@@ -40,19 +40,19 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `custom gene name is accepted`() {
+    fun testCustomGeneNameIsAccepted() {
         val gene = JsonPatchPathValueGene("myAdd", "add",
             ChoiceGene("x", listOf(stringPair() as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>)))
         assertEquals("myAdd", gene.name)
     }
 
     @Test
-    fun `operationName is stored`() {
+    fun testOperationNameIsStored() {
         assertEquals("add", addOp().operationName)
     }
 
     @Test
-    fun `has exactly one child (the ChoiceGene)`() {
+    fun testHasExactlyOneChild() {
         val gene = addOp()
         assertEquals(1, gene.getViewOfChildren().size)
         assertSame(gene.pathValueChoice, gene.getViewOfChildren()[0])
@@ -61,7 +61,7 @@ class JsonPatchPathValueGeneTest {
     // --- getValueAsPrintableString ---
 
     @Test
-    fun `add with string pair produces valid JSON object`() {
+    fun testAddWithStringPairProducesValidJson() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "add", "add",
@@ -75,7 +75,7 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `replace with integer pair produces valid JSON object`() {
+    fun testReplaceWithIntegerPairProducesValidJson() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "replace", "replace",
@@ -89,7 +89,7 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `test operation is correctly labelled`() {
+    fun testOperationIsCorrectlyLabelled() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "test", "test",
@@ -102,14 +102,14 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `output is wrapped in braces`() {
+    fun testOutputIsWrappedInBraces() {
         val result = addOp().getValueAsPrintableString()
         assertTrue(result.startsWith("{"))
         assertTrue(result.endsWith("}"))
     }
 
     @Test
-    fun `output contains op, path, value fields`() {
+    fun testOutputContainsRequiredFields() {
         val result = addOp().getValueAsPrintableString()
         assertTrue(result.contains("\"op\""))
         assertTrue(result.contains("\"path\""))
@@ -117,7 +117,7 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `active pair in ChoiceGene determines output`() {
+    fun testActivePairDeterminesOutput() {
         @Suppress("UNCHECKED_CAST")
         val choice = ChoiceGene("addPathValue", listOf(
             PairGene("e0", EnumGene("path", listOf("/name")), StringGene("value", "hello"))
@@ -137,7 +137,7 @@ class JsonPatchPathValueGeneTest {
     // --- copy ---
 
     @Test
-    fun `copy preserves operationName and output`() {
+    fun testCopyPreservesValues() {
         val original = addOp(stringPair("/name", "test"))
         val copy = original.copy() as JsonPatchPathValueGene
         assertEquals(original.operationName, copy.operationName)
@@ -146,7 +146,7 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `copy is independent from original`() {
+    fun testCopyIsIndependentFromOriginal() {
         @Suppress("UNCHECKED_CAST")
         val original = JsonPatchPathValueGene(
             "add", "add",
@@ -168,21 +168,21 @@ class JsonPatchPathValueGeneTest {
     // --- containsSameValueAs ---
 
     @Test
-    fun `containsSameValueAs true for equal active pairs`() {
+    fun testContainsSameValueAsTrueForEqualPairs() {
         val a = addOp(stringPair("/name", "x"))
         val b = addOp(stringPair("/name", "x"))
         assertTrue(a.containsSameValueAs(b))
     }
 
     @Test
-    fun `containsSameValueAs false when values differ`() {
+    fun testContainsSameValueAsFalseWhenValuesDiffer() {
         val a = addOp(stringPair("/name", "x"))
         val b = addOp(stringPair("/name", "y"))
         assertFalse(a.containsSameValueAs(b))
     }
 
     @Test
-    fun `containsSameValueAs throws for wrong gene type`() {
+    fun testContainsSameValueAsThrowsForWrongType() {
         assertThrows<IllegalArgumentException> {
             addOp().containsSameValueAs(JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/"))))
         }
@@ -191,7 +191,7 @@ class JsonPatchPathValueGeneTest {
     // --- randomize ---
 
     @Test
-    fun `randomize changes value gene content over multiple iterations`() {
+    fun testRandomizeChangesValueContent() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "add", "add",
@@ -210,7 +210,7 @@ class JsonPatchPathValueGeneTest {
     }
 
     @Test
-    fun `randomize with multiple pairs can switch active pair`() {
+    fun testRandomizeCanSwitchActivePair() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "add", "add",
@@ -231,14 +231,14 @@ class JsonPatchPathValueGeneTest {
     // --- isMutable ---
 
     @Test
-    fun `isMutable when value gene is mutable`() {
+    fun testIsMutableWhenValueGeneIsMutable() {
         assertTrue(addOp().isMutable())
     }
 
     // --- PairGene structure ---
 
     @Test
-    fun `active pair first is path EnumGene, second is value gene`() {
+    fun testActivePairStructure() {
         @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
             "add", "add",

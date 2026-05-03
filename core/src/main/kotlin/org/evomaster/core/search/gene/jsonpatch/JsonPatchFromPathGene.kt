@@ -35,7 +35,7 @@ class JsonPatchFromPathGene(
         }
         val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-        return "{\"op\":\"$operationName\",\"from\":$from,\"path\":$path}"
+        return "{\"op\":\"$operationName\",\"from\":\"$from\",\"path\":\"$path\"}"
     }
 
     override fun copyContent(): Gene =

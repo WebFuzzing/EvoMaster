@@ -18,12 +18,12 @@ class JsonPatchDocumentGeneBuilderTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `buildOperationsArray with default paths does not throw`() {
+    fun testBuildOperationsArrayWithDefaultPaths() {
         assertDoesNotThrow { JsonPatchDocumentGeneBuilder.buildOperationsArray() }
     }
 
     @Test
-    fun `buildOperationsArray with empty paths falls back to root`() {
+    fun testBuildOperationsArrayEmptyPathsFallsBackToRoot() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(paths = emptyList())
         val pathEnum = (array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene)
             .pathGene as EnumGene<*>
@@ -31,18 +31,18 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `buildOperationsArray produces template with 6 choices`() {
+    fun testBuildOperationsArrayProduces6Choices() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(6, array.template.getViewOfChildren().size)
     }
 
     @Test
-    fun `buildOperationsArray minSize is 1`() {
+    fun testBuildOperationsArrayMinSizeIs1() {
         assertEquals(1, JsonPatchDocumentGeneBuilder.buildOperationsArray().minSize)
     }
 
     @Test
-    fun `buildOperationsArray maxSize is 10`() {
+    fun testBuildOperationsArrayMaxSizeIs10() {
         assertEquals(10, JsonPatchDocumentGeneBuilder.buildOperationsArray().maxSize)
     }
 
@@ -55,42 +55,42 @@ class JsonPatchDocumentGeneBuilderTest {
             .map { it as JsonPatchOperationGene }
 
     @Test
-    fun `first choice is remove (JsonPatchPathOnlyGene)`() {
+    fun testFirstChoiceIsRemove() {
         val op = children()[0]
         assertEquals("remove", op.operationName)
         assertInstanceOf(JsonPatchPathOnlyGene::class.java, op)
     }
 
     @Test
-    fun `second choice is move (JsonPatchFromPathGene)`() {
+    fun testSecondChoiceIsMove() {
         val op = children()[1]
         assertEquals("move", op.operationName)
         assertInstanceOf(JsonPatchFromPathGene::class.java, op)
     }
 
     @Test
-    fun `third choice is copy (JsonPatchFromPathGene)`() {
+    fun testThirdChoiceIsCopy() {
         val op = children()[2]
         assertEquals("copy", op.operationName)
         assertInstanceOf(JsonPatchFromPathGene::class.java, op)
     }
 
     @Test
-    fun `fourth choice is add (JsonPatchPathValueGene)`() {
+    fun testFourthChoiceIsAdd() {
         val op = children()[3]
         assertEquals("add", op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
     }
 
     @Test
-    fun `fifth choice is replace (JsonPatchPathValueGene)`() {
+    fun testFifthChoiceIsReplace() {
         val op = children()[4]
         assertEquals("replace", op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
     }
 
     @Test
-    fun `sixth choice is test (JsonPatchPathValueGene)`() {
+    fun testSixthChoiceIsTest() {
         val op = children()[5]
         assertEquals("test", op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
@@ -101,7 +101,7 @@ class JsonPatchDocumentGeneBuilderTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `custom paths are present in remove path enum`() {
+    fun testCustomPathsInRemovePathEnum() {
         val customPaths = listOf("/name", "/age")
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(paths = customPaths)
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
@@ -111,7 +111,7 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `custom paths are present in move from-gene enum`() {
+    fun testCustomPathsInMoveFromGeneEnum() {
         val customPaths = listOf("/x", "/y")
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(paths = customPaths)
         val moveOp = array.template.getViewOfChildren()[1] as JsonPatchFromPathGene
@@ -121,7 +121,7 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `custom paths are present in add path-value entry enum`() {
+    fun testCustomPathsInAddPathValueEntryEnum() {
         val customPaths = listOf("/foo", "/bar")
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(paths = customPaths)
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
@@ -136,7 +136,7 @@ class JsonPatchDocumentGeneBuilderTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `path-value operations hold exactly one PairGene entry`() {
+    fun testPathValueOperationsHoldOnePairGeneEntry() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         for (idx in 3..5) {
             val op = array.template.getViewOfChildren()[idx] as JsonPatchPathValueGene
@@ -145,7 +145,7 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `path-value entry first is EnumGene named path`() {
+    fun testPathValueEntryFirstIsEnumGeneNamedPath() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
         val entry = addOp.pathValueChoice.getViewOfChildren()[0] as PairGene<*, *>
@@ -154,7 +154,7 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `path-value entry second is StringGene named value`() {
+    fun testPathValueEntrySecondIsStringGeneNamedValue() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
         val entry = addOp.pathValueChoice.getViewOfChildren()[0] as PairGene<*, *>
@@ -163,7 +163,7 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun `all paths in enums start with slash`() {
+    fun testAllPathsInEnumsStartWithSlash() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
         val paths = (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
@@ -175,17 +175,17 @@ class JsonPatchDocumentGeneBuilderTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `DEFAULT_PATHS is non-empty`() {
+    fun testDefaultPathsIsNonEmpty() {
         assertTrue(JsonPatchDocumentGeneBuilder.DEFAULT_PATHS.isNotEmpty())
     }
 
     @Test
-    fun `DEFAULT_PATHS all start with slash`() {
+    fun testDefaultPathsAllStartWithSlash() {
         assertTrue(JsonPatchDocumentGeneBuilder.DEFAULT_PATHS.all { it.startsWith("/") })
     }
 
     @Test
-    fun `buildOperationsArray with ChoiceGene template is a ChoiceGene`() {
+    fun testBuildOperationsArrayTemplateIsChoiceGene() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertInstanceOf(ChoiceGene::class.java, array.template)
     }

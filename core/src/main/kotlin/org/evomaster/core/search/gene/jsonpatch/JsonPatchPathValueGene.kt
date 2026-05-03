@@ -42,7 +42,7 @@ class JsonPatchPathValueGene(
         }
         val path  = activePair.first.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         val value = activePair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-        return "{\"op\":\"$operationName\",\"path\":$path,\"value\":$value}"
+        return "{\"op\":\"$operationName\",\"path\":\"$path\",\"value\":$value}"
     }
 
     override fun copyContent(): Gene =
