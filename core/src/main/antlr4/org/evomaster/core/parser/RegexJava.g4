@@ -38,6 +38,7 @@ alternative
 
 term
  : assertion
+ | FLAG_SCOPE_OPEN
  | atom
  | atom quantifier
  ;
@@ -100,6 +101,11 @@ atom
 FLAG_GROUP_OPEN
  : PAREN_open QUESTION [idmsuxU]+ (MINUS [idmsuxU]+)? COLON
  | PAREN_open QUESTION MINUS [idmsuxU]+ COLON
+ ;
+
+FLAG_SCOPE_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [iumdsx]+)? PAREN_close
+ | PAREN_open QUESTION MINUS [idmsuxU]+ PAREN_close
  ;
 
 // Special for Java

@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
 
@@ -83,6 +84,34 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         var dollar = false
 
         for(i in 0 until ctx.term().size){
+
+            val term = ctx.term()[i]
+
+            if (term.FLAG_SCOPE_OPEN() != null) {
+                // parse flags from token e.g. "(?iu)" -> strip "(?" and ")"
+                val (toEnable, toDisable) = parseFlagToken(term.FLAG_SCOPE_OPEN().text)
+
+                val previous = currentFlags
+                val merged = previous.merge(toEnable, toDisable)
+
+                merged.validate()
+
+                currentFlags = merged
+
+                // Visit all remaining terms under the new flags. Same as what
+                // visitAtom does for the colon form, just consuming terms instead
+                // of a disjunction subtree.
+                val remainingGenes = mutableListOf<Gene>()
+                for (j in i + 1 until ctx.term().size) {
+                    val resTerm = ctx.term()[j].accept(this)
+                    resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                }
+
+                currentFlags = previous
+
+                res.genes.addAll(remainingGenes)
+                break // remaining terms already consumed
+            }
 
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()

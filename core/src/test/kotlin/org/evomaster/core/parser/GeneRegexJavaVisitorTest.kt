@@ -226,6 +226,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""(?i:a.*[abc]+\w{1,3})""")
         checkCanSample("""(?i:a)(?i:A)""", listOf("aa", "aA", "Aa", "AA"), 100)
         checkSameAsJava("""(?i:\u00C2)""")
+        checkSameAsJava("^((?i)@.+)$")
     }
 
     @Test
