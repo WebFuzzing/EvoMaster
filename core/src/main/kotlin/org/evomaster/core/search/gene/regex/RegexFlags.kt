@@ -3,9 +3,9 @@ package org.evomaster.core.search.gene.regex
 data class RegexFlags(
     // currently implemented
     val caseInsensitive: Boolean = false,        // i
+    val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
 
     // recognised but not yet implemented, validate() throws on these
-    val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
     val dotAll: Boolean = false,                 // s
     val multiline: Boolean = false,              // m
     val unixLines: Boolean = false,              // d
@@ -56,7 +56,6 @@ data class RegexFlags(
      * Call this after merging, before recursing into the flagged disjunction.
      */
     fun validate() {
-        if (unicodeCase)                throw IllegalStateException("Regex flag 'u' (UNICODE_CASE) is not yet supported")
         if (dotAll)                throw IllegalStateException("Regex flag 's' (DOTALL) is not yet supported")
         if (multiline)             throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
         if (unixLines)             throw IllegalStateException("Regex flag 'd' (UNIX_LINES) is not yet supported")
@@ -65,10 +64,14 @@ data class RegexFlags(
     }
 
     /**
-     * Checks if the provided character has a case variant, checking caseInsensitive flag.
+     * Checks if the provided character has a case variant according to the flag behavior, checking both caseInsensitive
+     * and unicodeCase flag values.
      */
     fun isCaseable(codePoint: Int): Boolean {
-        return if (caseInsensitive) {
+        return if (caseInsensitive && unicodeCase) {
+            Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
+        }
+        else if (caseInsensitive) {
             codePoint in 0..127 && Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
         }
         else {
