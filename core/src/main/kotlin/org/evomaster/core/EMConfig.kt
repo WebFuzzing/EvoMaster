@@ -1990,10 +1990,10 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_MONGO = true
 
+    @Experimental
     @Cfg("Execute instrumentation for method replace with category CASSANDRA." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
-    @Experimental
     var instrumentMR_CASSANDRA = false
 
     @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
