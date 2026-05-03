@@ -9,6 +9,10 @@ private const val EOF_TOKEN = "<EOF>"
  */
 class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
+    /**
+     * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
+     */
+    private val allowedSyntaxEscapes = "^$\\.*+?()[]{}|/-,:<>=!"
 
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
@@ -215,18 +219,6 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return ctx.characterClass().accept(this)
         }
 
-        if (ctx.ESCAPED_PLUS()!=null) {
-            val name = "blankBlock"
-            val char = ctx.ESCAPED_PLUS().text[1].toString()
-            return VisitResult(PatternCharacterBlockGene(name, char))
-        }
-
-        if (ctx.ESCAPED_DOT()!=null) {
-            val name = "blankBlock"
-            val char = ctx.ESCAPED_DOT().text[1].toString()
-            return VisitResult(PatternCharacterBlockGene(name, char))
-        }
-
         throw IllegalStateException("No valid atom resolver for: ${ctx.text}")
     }
 
@@ -281,10 +273,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                     start
                 }
             } else {
-                // This case handles the \. and \+ cases
-                // wheren . and + should be treated as
-                // regular chars
-                assert(startText == "\\+" || startText == "\\.")
+                // This case handles the escaped syntax characters, like "\." and "\+", etc. cases
+                // where '.' and '+', etc. should be treated as regular chars
+                assert(startText[0] == '\\' && startText[1] in allowedSyntaxEscapes)
                 start = startText[1]
                 end = start
             }
@@ -325,8 +316,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<CharacterRange>
                 list.addAll(rec)
             } else {
-                val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
-                list.add(CharacterRange(char, char))
+                val text = (ctx.classAtom() ?: ctx.classAtomNoDash()).text
+                if(text.length==1) {
+                    list.add(CharacterRange(text[0], text[0]))
+                }
+                else {
+                    list.add(CharacterRange(text[1], text[1]))
+                }
             }
         }
 
@@ -415,6 +411,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                         String(Character.toChars(hexValue))
                 )
             }
+            in allowedSyntaxEscapes -> PatternCharacterBlockGene(txt, txt.substring(1))
             else -> CharacterClassEscapeRxGene(txt.substring(1))
         })
     }
