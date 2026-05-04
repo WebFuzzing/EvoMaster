@@ -771,14 +771,17 @@ object RestActionBuilderV3 {
         return gene
     }
 
-    private fun possiblyNullable(gene: Gene, nullable: Boolean) : Gene{
+    // internal so the AsyncAPI action builder can reuse the JSON-Schema → Gene
+    // pipeline without duplicating ~800 LOC. A future refactor will lift the
+    // pipeline into a protocol-agnostic JsonSchemaToGeneConverter.
+    internal fun possiblyNullable(gene: Gene, nullable: Boolean) : Gene{
         if(nullable) {
             return NullableGene(gene.name, gene).also { GeneUtils.preventCycles(it) }
         }
         return gene
     }
 
-    private fun getGene(
+    internal fun getGene(
         name: String,
         schema: Schema<*>,
         schemaHolder: RestSchema,
@@ -821,7 +824,7 @@ object RestActionBuilderV3 {
         return possiblyNullable(gene, nullable)
     }
 
-    private fun getNonNullGene(
+    internal fun getNonNullGene(
         schema: Schema<*>,
         name: String,
         options: Options,
@@ -2021,7 +2024,7 @@ object RestActionBuilderV3 {
             .apply { this.description = schema.description }
     }
 
-    private fun createObjectFromReference(name: String,
+    internal fun createObjectFromReference(name: String,
                                           reference: String,
                                           schemaHolder: RestSchema,
                                           currentSchema: SchemaOpenAPI,
