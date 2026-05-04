@@ -16,9 +16,17 @@ license = {text = "LGPL"}
 Homepage = "https://github.com/WebFuzzing/EvoMaster"
 Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+evomaster = ["dmg/**"]
+
 
 [project.scripts]
 evomaster = "evomaster.__main__:main"
+
+
 
 
 ###  Release
