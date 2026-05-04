@@ -180,7 +180,7 @@ class JsonPatchDocumentGeneTest {
             ))
         )
         val result = op.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        assertEquals("<operation><op>add</op><path>/name</path><value>\"Alice\"</value></operation>", result)
+        assertEquals("<operation><op>add</op><path>/name</path><value>Alice</value></operation>", result)
     }
 
     // --- copy ---

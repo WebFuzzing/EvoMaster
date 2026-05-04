@@ -28,15 +28,13 @@ class JsonPatchFromPathGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        // getValueAsRawString() returns the plain string without surrounding quotes,
+        // which is what we need to embed correctly in the JSON/XML template.
+        val from = fromGene.getValueAsRawString()
+        val path = pathGene.getValueAsRawString()
         if (mode == GeneUtils.EscapeMode.XML) {
-            val from = fromGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
-            val path = pathGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
             return "<operation><op>$operationName</op><from>$from</from><path>$path</path></operation>"
         }
-        // EnumGene<String>.getValueAsPrintableString() returns the raw string (no surrounding quotes),
-        // so the manual "..." wrapping below produces valid JSON.
-        val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-        val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"from\":\"$from\",\"path\":\"$path\"}"
     }
 

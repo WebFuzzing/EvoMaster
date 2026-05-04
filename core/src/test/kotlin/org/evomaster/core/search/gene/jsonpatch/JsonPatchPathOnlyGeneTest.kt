@@ -131,9 +131,10 @@ class JsonPatchPathOnlyGeneTest {
 
     @Test
     fun testUnsafeCopyValueFromSameTypeCopiesPath() {
-        val source = JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE,
-            EnumGene("path", listOf("/name", "/email")).apply { index = 1 })
-        val target = removeOp()
+        // Both genes must share the same values list so that copying the index copies the same value.
+        // EnumGene sorts its list, so the effective order is ["/age", "/email", "/name"].
+        val source = removeOp().also { it.pathGene.index = 2 }  // "/name"
+        val target = removeOp()                                   // index 0 = "/age"
         assertTrue(target.unsafeCopyValueFrom(source))
         assertEquals(source.getValueAsPrintableString(), target.getValueAsPrintableString())
     }

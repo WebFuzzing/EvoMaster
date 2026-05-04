@@ -27,11 +27,10 @@ class JsonPatchPathOnlyGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        val path = pathGene.getValueAsRawString()
         if (mode == GeneUtils.EscapeMode.XML) {
-            val path = pathGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
             return "<operation><op>$operationName</op><path>$path</path></operation>"
         }
-        val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"path\":\"$path\"}"
     }
 
