@@ -170,3 +170,5 @@ core-tests/e2e-tests/spring/spring-rest-mysql/target
 /build/
 /pypi-distribution/dmg/
 /pypi-distribution/src/evomaster/dmg/
+/pypi-distribution/src/evomaster/release/
+/pypi-distribution/em.yaml

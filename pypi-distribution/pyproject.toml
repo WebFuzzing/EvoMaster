@@ -20,7 +20,7 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-evomaster = ["dmg/**"]
+evomaster = ["release/**"]
 
 
 [project.scripts]
