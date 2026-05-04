@@ -164,12 +164,17 @@ class FitnessValue(
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
             databaseExecutions.values
-                // Only the commands whose WHERE clause actually failed are relevant.
                 .filter { it.failedWhere.isNotEmpty() }
-                .flatMap { it.executionInfo }
+                .flatMap { exec ->
+                    // executionInfo contains ALL commands for this execution, not just the ones
+                    // whose WHERE failed. Use table-name substring matching as a heuristic to keep
+                    // only commands that reference a table with a failed WHERE clause.
+                    val failedTables = exec.failedWhere.keys.map { it.name.lowercase() }.toSet()
+                    exec.executionInfo.filter { info ->
+                        failedTables.any { table -> info.sqlCommand.lowercase().contains(table) }
+                    }
+                }
                 .map { it.sqlCommand }
-                // JSQLParser >= 4.9 may produce empty-string SQL commands (it used to throw, now
-                // parses "" to null). Guard here at the source rather than at every call site.
                 .filter { it.isNotBlank() }
         )
     }

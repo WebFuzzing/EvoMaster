@@ -171,6 +171,36 @@ class FitnessValueTest {
     }
 
     @Test
+    fun testAggregatedFailedWhereQueriesOnlyIncludesCommandsReferencingFailedTable() {
+        val fv = FitnessValue(1.0)
+
+        val failedTable = TableId("foo")
+
+        // Execution with failedWhere on "foo"; executionInfo has two commands —
+        // one referencing "foo" (relevant) and one referencing "bar" (irrelevant)
+        val execution = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = mapOf(failedTable to setOf("id")),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 2,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("SELECT * FROM foo WHERE id = 1", false, 10L),
+                SqlExecutionInfo("INSERT INTO bar VALUES (1)", false, 5L)
+            )
+        )
+        fv.setDatabaseExecution(0, execution)
+        fv.aggregateDatabaseData()
+
+        val queries = fv.getViewOfAggregatedFailedWhereQueries()
+        assertEquals(1, queries.size)
+        assertTrue(queries.contains("SELECT * FROM foo WHERE id = 1"))
+        assertFalse(queries.contains("INSERT INTO bar VALUES (1)"))
+    }
+
+    @Test
     fun testAggregatedFailedWhereQueriesExcludesBlankSqlCommands() {
         val fv = FitnessValue(1.0)
 
