@@ -2,11 +2,13 @@ package org.evomaster.e2etests.spring.rest.opensearch.age;
 
 import com.foo.spring.rest.opensearch.age.OpenSearchAgeController;
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class OpenSearchAgeEMTest extends RestTestBase {
 
@@ -18,6 +20,7 @@ public class OpenSearchAgeEMTest extends RestTestBase {
     }
 
     @Disabled("TODO: Enable once we have added support for range queries")
+    @Test
     public void testRunEM() throws Throwable {
         runTestHandlingFlaky(
             "OpenSearchAgeEM",
@@ -29,7 +32,14 @@ public class OpenSearchAgeEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
-//                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/age/{q}", null);
+                // Assert 200 responses when data is found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/age/{age}", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/age/gte/{gte}", null);
+                assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/age/age", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/age/{age}", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/age/gte/{gte}", null);
             });
     }
 }

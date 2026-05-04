@@ -37,6 +37,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitRedis = false;
 
+    private static boolean executingInitOpenSearch = false;
+
     private static boolean executingInitNeo4J = false;
 
     private static boolean executingInitDynamoDB = false;
@@ -448,7 +450,9 @@ public class ExecutionTracer {
     }
 
     public static void addOpenSearchInfo(OpenSearchCommand info) {
-        getCurrentAdditionalInfo().addOpenSearchInfo(info);
+        if (!executingInitOpenSearch) {
+            getCurrentAdditionalInfo().addOpenSearchInfo(info);
+        }
     }
 
     public static void addRedisCommand(RedisCommand info){
@@ -467,6 +471,11 @@ public class ExecutionTracer {
         }
     }
 
+    public static void addOpenSearchIndexSchema(OpenSearchIndexSchema openSearchIndexSchema){
+        if (!executingInitOpenSearch) {
+            getCurrentAdditionalInfo().addOpenSearchIndexSchema(openSearchIndexSchema);
+        }
+    }
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
