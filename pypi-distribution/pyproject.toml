@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evomaster"
-version = "0.1.1"
+version = "0.1.3"
 description = "EvoMaster: The first open-source AI-driven tool for automatically generating system-level test cases (also known as fuzzing) for web/enterprise applications. Currently targeting whitebox and blackbox testing of Web APIs, like REST, GraphQL and RPC (e.g., gRPC and Thrift). "
 readme = "README.md"
 authors = [
@@ -18,5 +18,5 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 
 
 [project.scripts]
-your-cli-command = "evomaster.__main__:main"
+evomaster = "evomaster.__main__:main"
 
