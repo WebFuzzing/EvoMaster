@@ -20,3 +20,8 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 [project.scripts]
 evomaster = "evomaster.__main__:main"
 
+
+###  Release
+# rm -r dist
+# python3 -m build
+# python3 -m twine upload dist/*
