@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 
 private const val EOF_TOKEN = "<EOF>"
@@ -24,9 +25,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
     /**
      * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
-     * into a pair of (flagsToEnable, flagsToDisable).
+     * into a [ParsedFlagExpression] that can be applied to the current flags.
      */
-    private fun parseFlagToken(tokenText: String): Pair<RegexFlags, RegexFlags> {
+    private fun parseFlagToken(tokenText: String): ParsedFlagExpression {
         // strip "(?" from start and ":" (or ")") from end
         val inner = tokenText.drop(2).dropLast(1)
 
@@ -34,7 +35,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             inner.split('-', limit = 2).let { it[0] to it[1] }
         else Pair(inner, "")
 
-        return Pair(RegexFlags.fromString(enableStr), RegexFlags.fromString(disableStr))
+        return ParsedFlagExpression(
+            RegexFlags.fromString(enableStr),
+            RegexFlags.fromString(disableStr)
+        )
     }
 
 
@@ -89,11 +93,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val term = ctx.term()[i]
 
             if (term.FLAG_SCOPE_OPEN() != null) {
-                // parse flags from token e.g. "(?iu)" -> strip "(?" and ")"
-                val (toEnable, toDisable) = parseFlagToken(term.FLAG_SCOPE_OPEN().text)
-
                 val previous = currentFlags
-                val merged = previous.merge(toEnable, toDisable)
+
+                val merged = currentFlags.merge(
+                    parseFlagToken(term.FLAG_SCOPE_OPEN().text)
+                )
 
                 merged.validate()
 
@@ -223,10 +227,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         // flag group: (?i:disjunction) (?iu:disjunction) (?-i:disjunction) etc.
         if (ctx.FLAG_GROUP_OPEN() != null) {
-            val (toEnable, toDisable) = parseFlagToken(ctx.FLAG_GROUP_OPEN().text)
-
             val previous = currentFlags
-            val merged = previous.merge(toEnable, toDisable)
+
+            val merged = currentFlags.merge(
+                parseFlagToken(ctx.FLAG_GROUP_OPEN().text)
+            )
 
             merged.validate()
 

@@ -1,5 +1,30 @@
 package org.evomaster.core.utils
 
+/**
+ * Represents a parsed flag expression like "(?iu-s:".
+ * Encapsulates the flags being turned on and off, to be applied to an existing [RegexFlags] via [RegexFlags.merge].
+ */
+data class ParsedFlagExpression(
+    private val toEnable: RegexFlags,
+    private val toDisable: RegexFlags
+) {
+    internal fun applyTo(current: RegexFlags): RegexFlags = RegexFlags(
+        caseInsensitive       = merge(current.caseInsensitive,       toEnable.caseInsensitive,       toDisable.caseInsensitive),
+        unicodeCase           = merge(current.unicodeCase,           toEnable.unicodeCase,           toDisable.unicodeCase),
+        dotAll                = merge(current.dotAll,                toEnable.dotAll,                toDisable.dotAll),
+        multiline             = merge(current.multiline,             toEnable.multiline,             toDisable.multiline),
+        unixLines             = merge(current.unixLines,             toEnable.unixLines,             toDisable.unixLines),
+        unicodeCharacterClass = merge(current.unicodeCharacterClass, toEnable.unicodeCharacterClass, toDisable.unicodeCharacterClass),
+        comments              = merge(current.comments,              toEnable.comments,              toDisable.comments),
+    )
+
+    private fun merge(current: Boolean, enable: Boolean, disable: Boolean) = when {
+        disable -> false
+        enable  -> true
+        else    -> current
+    }
+}
+
 data class RegexFlags(
     // currently implemented
     val caseInsensitive: Boolean = false,        // i
@@ -32,23 +57,12 @@ data class RegexFlags(
         }
     }
 
-    fun merge(toEnable: RegexFlags, toDisable: RegexFlags): RegexFlags {
-        return RegexFlags(
-            caseInsensitive       = merge(caseInsensitive,       toEnable.caseInsensitive,       toDisable.caseInsensitive),
-            unicodeCase           = merge(unicodeCase,           toEnable.unicodeCase,           toDisable.unicodeCase),
-            dotAll                = merge(dotAll,                toEnable.dotAll,                toDisable.dotAll),
-            multiline             = merge(multiline,             toEnable.multiline,             toDisable.multiline),
-            unixLines             = merge(unixLines,             toEnable.unixLines,             toDisable.unixLines),
-            unicodeCharacterClass = merge(unicodeCharacterClass, toEnable.unicodeCharacterClass, toDisable.unicodeCharacterClass),
-            comments              = merge(comments,              toEnable.comments,              toDisable.comments),
-        )
-    }
-
-    private fun merge(current: Boolean, enable: Boolean, disable: Boolean) = when {
-        disable -> false
-        enable  -> true
-        else    -> current
-    }
+    /**
+     * Merges this [RegexFlags] with a [ParsedFlagExpression], returning a new [RegexFlags] with the
+     * enabled flags turned on and the disabled flags turned off.
+     * Flags not mentioned in either are inherited from the receiver unchanged.
+     */
+    fun merge(expression: ParsedFlagExpression): RegexFlags = expression.applyTo(this)
 
     /**
      * Throws a clear error for any flag that is recognised in the grammar
