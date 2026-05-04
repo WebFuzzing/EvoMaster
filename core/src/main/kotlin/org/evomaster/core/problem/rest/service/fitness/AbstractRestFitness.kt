@@ -211,6 +211,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
+        if (actionResults.size < additionalInfoList.size) {
+            log.warn("Length mismatch between ${actionResults.size} action results and ${additionalInfoList.size} info data")
+            return
+        }
+
         for (i in additionalInfoList.indices) {
 
             val action = individual.seeAllActions()[i]
@@ -389,7 +394,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
                 handleHttpStatusOracles(fv, actions[it], result, it)
 
-                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                val location5xx: String? = if (it < additionalInfoList.size)
+                    getlocation5xx(status, additionalInfoList, it, result, name)
+                else null
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
             }
