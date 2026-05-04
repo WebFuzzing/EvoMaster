@@ -35,14 +35,12 @@ class JsonPatchPathValueGene(
         extraCheck: Boolean
     ): String {
         val activePair = pathValueChoice.activeGene()
-        // path is always a JSON Pointer string — use getValueAsRawString() to avoid double-quoting.
-        // value delegates to its own gene serialization since it can be any JSON type.
-        val path  = activePair.first.getValueAsRawString()
-        val value = activePair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-        if (mode == GeneUtils.EscapeMode.XML) {
-            return "<operation><op>$operationName</op><path>$path</path><value>$value</value></operation>"
-        }
-        return "{\"op\":\"$operationName\",\"path\":\"$path\",\"value\":$value}"
+        return formatOperation(
+            mode,
+            OpField("path", activePair.first.getValueAsRawString()),
+            // value is unquoted in JSON since it can be any type (string, number, boolean, etc.)
+            OpField("value", activePair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck), quoted = false)
+        )
     }
 
     override fun copyContent(): Gene =

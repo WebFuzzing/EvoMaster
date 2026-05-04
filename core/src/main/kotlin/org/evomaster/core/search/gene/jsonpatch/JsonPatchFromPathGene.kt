@@ -27,16 +27,11 @@ class JsonPatchFromPathGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String {
-        // getValueAsRawString() returns the plain string without surrounding quotes,
-        // which is what we need to embed correctly in the JSON/XML template.
-        val from = fromGene.getValueAsRawString()
-        val path = pathGene.getValueAsRawString()
-        if (mode == GeneUtils.EscapeMode.XML) {
-            return "<operation><op>$operationName</op><from>$from</from><path>$path</path></operation>"
-        }
-        return "{\"op\":\"$operationName\",\"from\":\"$from\",\"path\":\"$path\"}"
-    }
+    ): String = formatOperation(
+        mode,
+        OpField("from", fromGene.getValueAsRawString()),
+        OpField("path", pathGene.getValueAsRawString())
+    )
 
     override fun copyContent(): Gene =
         JsonPatchFromPathGene(

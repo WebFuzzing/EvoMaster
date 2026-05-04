@@ -26,13 +26,7 @@ class JsonPatchPathOnlyGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String {
-        val path = pathGene.getValueAsRawString()
-        if (mode == GeneUtils.EscapeMode.XML) {
-            return "<operation><op>$operationName</op><path>$path</path></operation>"
-        }
-        return "{\"op\":\"$operationName\",\"path\":\"$path\"}"
-    }
+    ): String = formatOperation(mode, OpField("path", pathGene.getValueAsRawString()))
 
     override fun copyContent(): Gene =
         JsonPatchPathOnlyGene(name, operationName, pathGene.copy() as EnumGene<String>)
