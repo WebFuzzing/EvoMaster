@@ -11,6 +11,12 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.RegexFlags
 
+/**
+ * This class is immutable unless the regular expression has the CASE_INSENSITIVE flag on and at least one caseable
+ * character, which may depend on the state of UNICODE_CASE flag as well. If the flag CASE_INSENSITIVE is on and there
+ * is at least one caseable character, the class only allows case mutations for the caseable characters present.
+ * @see org.evomaster.core.utils.RegexFlags.isCaseable
+ */
 class PatternCharacterBlockGene(
     name: String,
     val stringBlock: String,
@@ -24,6 +30,7 @@ class PatternCharacterBlockGene(
     var caseChoices: BooleanArray = BooleanArray(stringBlock.length) { false }
 
     override fun isMutable(): Boolean {
+        // check if there are any caseable characters (this also checks the CASE_INSENSITIVE flag value)
         return stringBlock.any { c -> flags.isCaseable(c) }
     }
 
@@ -33,7 +40,7 @@ class PatternCharacterBlockGene(
 
     override fun copyContent(): Gene {
         val copy = PatternCharacterBlockGene(name, stringBlock, flags)
-        copy.caseChoices = caseChoices.copyOf()
+        copy.caseChoices = caseChoices.copyOf() //copy the current casings too
         return copy
     }
 
@@ -42,7 +49,8 @@ class PatternCharacterBlockGene(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
+        /* This class is mutable only if the CASE_INSENSITIVE flag is on and at least one caseable character is present.
+         If this is the case we can randomize the casings for those characters. */
         if (!isMutable()) {
             throw IllegalStateException("Not supposed to mutate immutable ${this.javaClass.simpleName}")
         }
@@ -64,6 +72,8 @@ class PatternCharacterBlockGene(
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        /* This class is mutable only if the CASE_INSENSITIVE flag is on and at least one caseable character is present.
+         If this is the case we can mutate by randomly flipping the casing for one of those characters. */
         if (!isMutable()) {
             throw IllegalStateException("Not supposed to mutate immutable ${this.javaClass.simpleName}")
         }
@@ -76,6 +86,7 @@ class PatternCharacterBlockGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+    // We apply the case selected for each character (for the caseable characters)
         if (!isMutable()) {
             return stringBlock
         }
@@ -94,6 +105,7 @@ class PatternCharacterBlockGene(
         if (other !is PatternCharacterBlockGene) {
             return false
         }
+        // we need to consider casings too, therefore we can just compare the strings using getValueAsPrintableString
         return getValueAsPrintableString(targetFormat = null) ==
                 other.getValueAsPrintableString(targetFormat = null)
     }

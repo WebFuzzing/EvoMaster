@@ -139,7 +139,7 @@ class CharacterClassEscapeRxGene(
         val copy = CharacterClassEscapeRxGene(type, flags)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
-        copy.useUpperCase = this.useUpperCase
+        copy.useUpperCase = this.useUpperCase //copy the current casing
         return copy
     }
 
@@ -148,7 +148,11 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
+        /*
+        Besides randomizing by sampling from the MultiCharacterRange, we can also randomize the casings for the sampled
+        characters (if applicable), this is needed to allow things like "\p{Lower}" sampling things like "A" when the
+        CASE_INSENSITIVE flag is on, etc.
+         */
         val previous = value
         val previousUpper = useUpperCase
 
@@ -187,15 +191,15 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        val c = value[0]
         return if (!flags.isCaseable(value[0])) {
-            c.toString()
+            value[0].toString()
         }
+        // We apply the case selected for each character (for the caseable characters)
         else if (useUpperCase) {
-            c.uppercaseChar().toString()
+            value[0].uppercaseChar().toString()
         }
         else {
-            c.lowercaseChar().toString()
+            value[0].lowercaseChar().toString()
         }
     }
 
@@ -205,6 +209,7 @@ class CharacterClassEscapeRxGene(
         if(other !is CharacterClassEscapeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        // we need to consider casings too, therefore we can just compare the strings using getValueAsPrintableString
         return getValueAsPrintableString(targetFormat = null) ==
                 other.getValueAsPrintableString(targetFormat = null)
     }
@@ -216,7 +221,7 @@ class CharacterClassEscapeRxGene(
 
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
-            useUpperCase = gene.useUpperCase
+            useUpperCase = gene.useUpperCase //copy current casing
             return true
         }
         LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")
