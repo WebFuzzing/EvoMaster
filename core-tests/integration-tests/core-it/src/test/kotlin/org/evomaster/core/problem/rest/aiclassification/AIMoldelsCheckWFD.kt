@@ -148,7 +148,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             println("Input vector size: ${inputVector.size}")
 
             // Warm-up
-            val innerModel = aiGlobalClassifier.viewInnerModel()
+            val innerModel = aiGlobalClassifier.viewInnerModels()
             println("innerModel is ${innerModel.javaClass.simpleName ?: "Unknown"}")
             val endpointModel = when(innerModel) {
                 is Gaussian400Classifier -> innerModel.getModel(endPoint)
@@ -252,7 +252,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 
         // Save the final result as a .txt file
         if (saveReport){
-            val innerModel = aiGlobalClassifier.viewInnerModel()
+            val innerModel = aiGlobalClassifier.viewInnerModels()
             val allModels = when (innerModel) {
                 is Gaussian400Classifier -> innerModel.getAllModels()
                 is GLM400Classifier      -> innerModel.getAllModels()
