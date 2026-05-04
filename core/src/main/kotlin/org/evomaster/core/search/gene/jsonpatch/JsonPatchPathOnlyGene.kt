@@ -16,7 +16,7 @@ class JsonPatchPathOnlyGene(
 ) : JsonPatchOperationGene(name, operationName, listOf(pathGene)) {
 
     init {
-        require(operationName == "remove") {
+        require(operationName == JsonPatchOperationGene.OP_REMOVE) {
             "JsonPatchPathOnlyGene only supports 'remove', got: $operationName"
         }
     }

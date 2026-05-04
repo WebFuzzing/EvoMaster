@@ -17,7 +17,7 @@ class JsonPatchFromPathGene(
 ) : JsonPatchOperationGene(name, operationName, listOf(fromGene, pathGene)) {
 
     init {
-        require(operationName == "move" || operationName == "copy") {
+        require(operationName == JsonPatchOperationGene.OP_MOVE || operationName == JsonPatchOperationGene.OP_COPY) {
             "JsonPatchFromPathGene only supports 'move' or 'copy', got: $operationName"
         }
     }
@@ -33,6 +33,8 @@ class JsonPatchFromPathGene(
             val path = pathGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat, extraCheck)
             return "<operation><op>$operationName</op><from>$from</from><path>$path</path></operation>"
         }
+        // EnumGene<String>.getValueAsPrintableString() returns the raw string (no surrounding quotes),
+        // so the manual "..." wrapping below produces valid JSON.
         val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
         return "{\"op\":\"$operationName\",\"from\":\"$from\",\"path\":\"$path\"}"
@@ -56,6 +58,9 @@ class JsonPatchFromPathGene(
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is JsonPatchFromPathGene) return false
         if (operationName != other.operationName) return false
-        return fromGene.unsafeCopyValueFrom(other.fromGene) && pathGene.unsafeCopyValueFrom(other.pathGene)
+        // Evaluate both before returning so neither field is skipped on partial failure.
+        val fromOk = fromGene.unsafeCopyValueFrom(other.fromGene)
+        val pathOk = pathGene.unsafeCopyValueFrom(other.pathGene)
+        return fromOk && pathOk
     }
 }

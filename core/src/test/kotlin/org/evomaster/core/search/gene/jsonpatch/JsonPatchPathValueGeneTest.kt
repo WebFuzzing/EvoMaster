@@ -1,9 +1,11 @@
 package org.evomaster.core.search.gene.jsonpatch
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -14,41 +16,40 @@ class JsonPatchPathValueGeneTest {
 
     private val rand = Randomness().apply { updateSeed(42) }
 
-    private fun stringPair(path: String = "/name", value: String = "foo") =
-        PairGene<EnumGene<String>, StringGene>("entry_str", EnumGene("path", listOf(path)), StringGene("value", value))
+    private fun stringPair(path: String = "/name", value: String = "foo"): PairGene<EnumGene<String>, Gene> =
+        PairGene("entry_str", EnumGene("path", listOf(path)), StringGene("value", value))
 
-    private fun intPair(path: String = "/age", value: Int = 0) =
-        PairGene<EnumGene<String>, IntegerGene>("entry_int", EnumGene("path", listOf(path)), IntegerGene("value", value))
+    private fun intPair(path: String = "/age", value: Int = 0): PairGene<EnumGene<String>, Gene> =
+        PairGene("entry_int", EnumGene("path", listOf(path)), IntegerGene("value", value))
 
-    @Suppress("UNCHECKED_CAST")
-    private fun addOp(vararg pairs: PairGene<EnumGene<String>, out org.evomaster.core.search.gene.Gene>): JsonPatchPathValueGene {
-        val list: List<PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>> =
-            if (pairs.isEmpty()) listOf(stringPair()) as List<PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>>
-            else pairs.map { it as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene> }
-        return JsonPatchPathValueGene("add", "add", ChoiceGene("addPathValue", list))
+    private fun addOp(vararg pairs: PairGene<EnumGene<String>, Gene>): JsonPatchPathValueGene {
+        val list = if (pairs.isEmpty()) listOf(stringPair()) else pairs.toList()
+        return JsonPatchPathValueGene(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD, ChoiceGene("addPathValue", list))
     }
 
     // --- Construction ---
 
     @Test
     fun testGeneNameEqualsOperationNameByDefault() {
-        assertEquals("add", addOp().name)
-        assertEquals("replace", JsonPatchPathValueGene("replace", "replace",
-            ChoiceGene("x", listOf(stringPair() as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>))).name)
-        assertEquals("test", JsonPatchPathValueGene("test", "test",
-            ChoiceGene("x", listOf(stringPair() as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>))).name)
+        assertEquals(JsonPatchOperationGene.OP_ADD, addOp().name)
+        assertEquals(JsonPatchOperationGene.OP_REPLACE, JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_REPLACE,
+            ChoiceGene("x", listOf(stringPair()))).name)
+        assertEquals(JsonPatchOperationGene.OP_TEST, JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_TEST, JsonPatchOperationGene.OP_TEST,
+            ChoiceGene("x", listOf(stringPair()))).name)
     }
 
     @Test
     fun testCustomGeneNameIsAccepted() {
-        val gene = JsonPatchPathValueGene("myAdd", "add",
-            ChoiceGene("x", listOf(stringPair() as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>)))
+        val gene = JsonPatchPathValueGene("myAdd", JsonPatchOperationGene.OP_ADD,
+            ChoiceGene("x", listOf(stringPair())))
         assertEquals("myAdd", gene.name)
     }
 
     @Test
     fun testOperationNameIsStored() {
-        assertEquals("add", addOp().operationName)
+        assertEquals(JsonPatchOperationGene.OP_ADD, addOp().operationName)
     }
 
     @Test
@@ -62,12 +63,10 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testAddWithStringPairProducesValidJson() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "add", "add",
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
             ChoiceGene("addPathValue", listOf(
-                PairGene("e", EnumGene("path", listOf("/name")), StringGene("value", "Alice"))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "Alice"))
             ))
         )
         val result = gene.getValueAsPrintableString()
@@ -76,12 +75,10 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testReplaceWithIntegerPairProducesValidJson() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "replace", "replace",
+            JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_REPLACE,
             ChoiceGene("replacePathValue", listOf(
-                PairGene("e", EnumGene("path", listOf("/age")), IntegerGene("value", 30))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/age")), IntegerGene("value", 30))
             ))
         )
         val result = gene.getValueAsPrintableString()
@@ -90,12 +87,10 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testOperationIsCorrectlyLabelled() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "test", "test",
+            JsonPatchOperationGene.OP_TEST, JsonPatchOperationGene.OP_TEST,
             ChoiceGene("testPathValue", listOf(
-                PairGene("e", EnumGene("path", listOf("/name")), StringGene("value", "Bob"))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "Bob"))
             ))
         )
         assertTrue(gene.getValueAsPrintableString().startsWith("{\"op\":\"test\""))
@@ -118,20 +113,33 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testActivePairDeterminesOutput() {
-        @Suppress("UNCHECKED_CAST")
         val choice = ChoiceGene("addPathValue", listOf(
-            PairGene("e0", EnumGene("path", listOf("/name")), StringGene("value", "hello"))
-                    as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>,
-            PairGene("e1", EnumGene("path", listOf("/age")), IntegerGene("value", 25))
-                    as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+            PairGene<EnumGene<String>, Gene>("e0", EnumGene("path", listOf("/name")), StringGene("value", "hello")),
+            PairGene<EnumGene<String>, Gene>("e1", EnumGene("path", listOf("/age")), IntegerGene("value", 25))
         ))
-        val gene = JsonPatchPathValueGene("add", "add", choice)
+        val gene = JsonPatchPathValueGene(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD, choice)
 
         choice.selectActiveGene(0)
         assertTrue(gene.getValueAsPrintableString().contains("\"value\":\"hello\""))
 
         choice.selectActiveGene(1)
         assertTrue(gene.getValueAsPrintableString().contains("\"value\":25"))
+    }
+
+    // --- XML serialization ---
+
+    @Test
+    fun testAddOutputInXmlMode() {
+        val gene = JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
+            ChoiceGene("addPathValue", listOf(
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "Alice"))
+            ))
+        )
+        val result = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertTrue(result.startsWith("<operation><op>add</op>"))
+        assertTrue(result.contains("<path>/name</path>"))
+        assertTrue(result.contains("<value>"))
     }
 
     // --- copy ---
@@ -147,12 +155,10 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testCopyIsIndependentFromOriginal() {
-        @Suppress("UNCHECKED_CAST")
         val original = JsonPatchPathValueGene(
-            "add", "add",
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
             ChoiceGene("x", listOf(
-                PairGene("e", EnumGene("path", listOf("/name")), StringGene("value", "before"))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "before"))
             ))
         )
         val copy = original.copy() as JsonPatchPathValueGene
@@ -184,20 +190,43 @@ class JsonPatchPathValueGeneTest {
     @Test
     fun testContainsSameValueAsThrowsForWrongType() {
         assertThrows<IllegalArgumentException> {
-            addOp().containsSameValueAs(JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/"))))
+            addOp().containsSameValueAs(JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/"))))
         }
+    }
+
+    // --- unsafeCopyValueFrom ---
+
+    @Test
+    fun testUnsafeCopyValueFromSameTypeCopiesValue() {
+        val source = addOp(stringPair("/name", "hello"))
+        val target = addOp(stringPair("/name", "world"))
+        assertTrue(target.unsafeCopyValueFrom(source))
+        assertEquals(source.getValueAsPrintableString(), target.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromWrongTypeReturnsFalse() {
+        assertFalse(addOp().unsafeCopyValueFrom(
+            JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/")))
+        ))
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromDifferentOperationReturnsFalse() {
+        val add = addOp()
+        val replace = JsonPatchPathValueGene(JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_REPLACE,
+            ChoiceGene("x", listOf(stringPair())))
+        assertFalse(add.unsafeCopyValueFrom(replace))
     }
 
     // --- randomize ---
 
     @Test
     fun testRandomizeChangesValueContent() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "add", "add",
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
             ChoiceGene("x", listOf(
-                PairGene("e", EnumGene("path", listOf("/name")), StringGene("value", "init"))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "init"))
             ))
         )
         gene.doInitialize(rand)
@@ -211,12 +240,11 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testRandomizeCanSwitchActivePair() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "add", "add",
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
             ChoiceGene("x", listOf(
-                stringPair("/name") as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>,
-                intPair("/age") as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                stringPair("/name"),
+                intPair("/age")
             ))
         )
         gene.doInitialize(rand)
@@ -239,12 +267,10 @@ class JsonPatchPathValueGeneTest {
 
     @Test
     fun testActivePairStructure() {
-        @Suppress("UNCHECKED_CAST")
         val gene = JsonPatchPathValueGene(
-            "add", "add",
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
             ChoiceGene("x", listOf(
-                PairGene("e", EnumGene("path", listOf("/name")), StringGene("value", "hi"))
-                        as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "hi"))
             ))
         )
         val pair = gene.pathValueChoice.activeGene()

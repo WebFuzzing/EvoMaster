@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.builder
+package org.evomaster.core.search.gene.builder
 
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
@@ -38,12 +38,12 @@ class JsonPatchDocumentGeneBuilderTest {
 
     @Test
     fun testBuildOperationsArrayMinSizeIs1() {
-        assertEquals(1, JsonPatchDocumentGeneBuilder.buildOperationsArray().minSize)
+        assertEquals(JsonPatchDocumentGeneBuilder.MIN_SIZE, JsonPatchDocumentGeneBuilder.buildOperationsArray().minSize)
     }
 
     @Test
     fun testBuildOperationsArrayMaxSizeIs10() {
-        assertEquals(10, JsonPatchDocumentGeneBuilder.buildOperationsArray().maxSize)
+        assertEquals(JsonPatchDocumentGeneBuilder.DEFAULT_MAX_SIZE, JsonPatchDocumentGeneBuilder.buildOperationsArray().maxSize)
     }
 
     // -------------------------------------------------------------------------
@@ -57,42 +57,42 @@ class JsonPatchDocumentGeneBuilderTest {
     @Test
     fun testFirstChoiceIsRemove() {
         val op = children()[0]
-        assertEquals("remove", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_REMOVE, op.operationName)
         assertInstanceOf(JsonPatchPathOnlyGene::class.java, op)
     }
 
     @Test
     fun testSecondChoiceIsMove() {
         val op = children()[1]
-        assertEquals("move", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_MOVE, op.operationName)
         assertInstanceOf(JsonPatchFromPathGene::class.java, op)
     }
 
     @Test
     fun testThirdChoiceIsCopy() {
         val op = children()[2]
-        assertEquals("copy", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_COPY, op.operationName)
         assertInstanceOf(JsonPatchFromPathGene::class.java, op)
     }
 
     @Test
     fun testFourthChoiceIsAdd() {
         val op = children()[3]
-        assertEquals("add", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_ADD, op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
     }
 
     @Test
     fun testFifthChoiceIsReplace() {
         val op = children()[4]
-        assertEquals("replace", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_REPLACE, op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
     }
 
     @Test
     fun testSixthChoiceIsTest() {
         val op = children()[5]
-        assertEquals("test", op.operationName)
+        assertEquals(JsonPatchOperationGene.OP_TEST, op.operationName)
         assertInstanceOf(JsonPatchPathValueGene::class.java, op)
     }
 

@@ -16,6 +16,15 @@ abstract class JsonPatchOperationGene(
     children: List<Gene>
 ) : CompositeFixedGene(name, children) {
 
+    companion object {
+        const val OP_ADD     = "add"
+        const val OP_REMOVE  = "remove"
+        const val OP_REPLACE = "replace"
+        const val OP_MOVE    = "move"
+        const val OP_COPY    = "copy"
+        const val OP_TEST    = "test"
+    }
+
     override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

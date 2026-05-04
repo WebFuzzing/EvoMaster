@@ -1,9 +1,12 @@
 package org.evomaster.core.search.gene.jsonpatch
 
-import org.evomaster.core.problem.rest.builder.JsonPatchDocumentGeneBuilder
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -32,6 +35,18 @@ class JsonPatchDocumentGeneTest {
         assertEquals(1, JsonPatchDocumentGene("patch").getViewOfChildren().size)
     }
 
+    @Test
+    fun testConstructionWithNonNullResourceSchemaDoesNotThrow() {
+        assertDoesNotThrow { JsonPatchDocumentGene("patch", StringGene("schema")) }
+    }
+
+    @Test
+    fun testCopyPreservesNonNullResourceSchema() {
+        val original = JsonPatchDocumentGene("patch", StringGene("schema"))
+        val copy = original.copy() as JsonPatchDocumentGene
+        assertNotNull(copy.resourceSchema)
+    }
+
     // --- operations property ---
 
     @Test
@@ -41,7 +56,7 @@ class JsonPatchDocumentGeneTest {
 
     @Test
     fun testOperationsAllHaveValidOperationNames() {
-        val valid = setOf("add", "remove", "replace", "move", "copy", "test")
+        val valid = setOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_COPY, JsonPatchOperationGene.OP_TEST)
         assertTrue(doc().operations.all { it.operationName in valid })
     }
 
@@ -108,7 +123,7 @@ class JsonPatchDocumentGeneTest {
 
     @Test
     fun testRemoveOperationSerializesToExactJsonFormat() {
-        val op = JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/x")))
+        val op = JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/x")))
         val result = op.getValueAsPrintableString()
         assertEquals("{\"op\":\"remove\",\"path\":\"/x\"}", result)
     }
@@ -116,7 +131,7 @@ class JsonPatchDocumentGeneTest {
     @Test
     fun testMoveOperationSerializesToExactJsonFormat() {
         val op = JsonPatchFromPathGene(
-            "move", "move",
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
             fromGene = EnumGene("from", listOf("/a")),
             pathGene  = EnumGene("path", listOf("/b"))
         )
@@ -126,19 +141,46 @@ class JsonPatchDocumentGeneTest {
 
     @Test
     fun testAddOperationSerializesToExactJsonFormat() {
-        @Suppress("UNCHECKED_CAST")
         val op = JsonPatchPathValueGene(
-            "add", "add",
-            org.evomaster.core.search.gene.wrapper.ChoiceGene("addPathValue", listOf(
-                PairGene(
-                    "e",
-                    EnumGene("path", listOf("/name")),
-                    StringGene("value", "Alice")
-                ) as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
+            ChoiceGene("addPathValue", listOf(
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "Alice"))
             ))
         )
         val result = op.getValueAsPrintableString()
         assertEquals("{\"op\":\"add\",\"path\":\"/name\",\"value\":\"Alice\"}", result)
+    }
+
+    // --- XML serialization ---
+
+    @Test
+    fun testRemoveOperationXmlFormat() {
+        val op = JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/x")))
+        val result = op.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<operation><op>remove</op><path>/x</path></operation>", result)
+    }
+
+    @Test
+    fun testMoveOperationXmlFormat() {
+        val op = JsonPatchFromPathGene(
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
+            fromGene = EnumGene("from", listOf("/a")),
+            pathGene  = EnumGene("path", listOf("/b"))
+        )
+        val result = op.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<operation><op>move</op><from>/a</from><path>/b</path></operation>", result)
+    }
+
+    @Test
+    fun testAddOperationXmlFormat() {
+        val op = JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
+            ChoiceGene("addPathValue", listOf(
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/name")), StringGene("value", "Alice"))
+            ))
+        )
+        val result = op.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<operation><op>add</op><path>/name</path><value>\"Alice\"</value></operation>", result)
     }
 
     // --- copy ---
@@ -173,6 +215,21 @@ class JsonPatchDocumentGeneTest {
         assertThrows<IllegalArgumentException> {
             doc().containsSameValueAs(StringGene("x"))
         }
+    }
+
+    // --- unsafeCopyValueFrom ---
+
+    @Test
+    fun testUnsafeCopyValueFromSameTypeSucceeds() {
+        val source = doc(seed = 1L)
+        val target = doc(seed = 2L)
+        assertTrue(target.unsafeCopyValueFrom(source))
+        assertEquals(source.getValueAsPrintableString(), target.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromWrongTypeReturnsFalse() {
+        assertFalse(doc().unsafeCopyValueFrom(StringGene("x")))
     }
 
     // --- randomize ---
@@ -226,8 +283,7 @@ class JsonPatchDocumentGeneTest {
             assertTrue(choiceChildren.isNotEmpty())
             choiceChildren.forEach { entry ->
                 assertInstanceOf(PairGene::class.java, entry)
-                @Suppress("UNCHECKED_CAST")
-                val pair = entry as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+                val pair = entry as PairGene<*, *>
                 assertInstanceOf(EnumGene::class.java, pair.first)
             }
         }
@@ -238,11 +294,10 @@ class JsonPatchDocumentGeneTest {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
         addOp.pathValueChoice.getViewOfChildren().forEach { entry ->
-            @Suppress("UNCHECKED_CAST")
-            val pair = entry as PairGene<EnumGene<String>, org.evomaster.core.search.gene.Gene>
+            val pair = entry as PairGene<*, *>
             assertInstanceOf(StringGene::class.java, pair.second)
-            val paths = pair.first.values.map { it.toString() }
-            assertTrue(paths.all { it.startsWith("/") }, "Expected JSON pointer paths, got: $paths")
+            val pathEnum = pair.first as EnumGene<*>
+            assertTrue(pathEnum.values.all { it.toString().startsWith("/") }, "Expected JSON pointer paths, got: ${pathEnum.values}")
         }
     }
 }

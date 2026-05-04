@@ -23,7 +23,7 @@ class JsonPatchPathValueGene(
 ) : JsonPatchOperationGene(name, operationName, listOf(pathValueChoice)) {
 
     init {
-        require(operationName in listOf("add", "replace", "test")) {
+        require(operationName in listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST)) {
             "JsonPatchPathValueGene only supports 'add', 'replace' or 'test', got: $operationName"
         }
     }

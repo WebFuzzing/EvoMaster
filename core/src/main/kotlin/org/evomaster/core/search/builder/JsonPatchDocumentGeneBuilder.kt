@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.builder
+package org.evomaster.core.search.gene.builder
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -18,6 +18,9 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
  * will be wired in a future step. Until then, [DEFAULT_PATHS] are used as placeholders.
  */
 object JsonPatchDocumentGeneBuilder {
+
+    const val MIN_SIZE = 1
+    const val DEFAULT_MAX_SIZE = 10
 
     val DEFAULT_PATHS = listOf("/", "/a", "/b", "/c")
 
@@ -39,32 +42,34 @@ object JsonPatchDocumentGeneBuilder {
 
         val choices = mutableListOf<JsonPatchOperationGene>()
 
-        choices.add(JsonPatchPathOnlyGene("remove", "remove", pathEnum.copy() as EnumGene<String>))
+        choices.add(JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, pathEnum.copy() as EnumGene<String>))
 
         choices.add(
             JsonPatchFromPathGene(
-                "move",
-                "move",
+                JsonPatchOperationGene.OP_MOVE,
+                JsonPatchOperationGene.OP_MOVE,
                 fromGene = pathEnum.copy() as EnumGene<String>,
                 pathGene  = pathEnum.copy() as EnumGene<String>
             )
         )
         choices.add(
             JsonPatchFromPathGene(
-                "copy",
-                "copy",
+                JsonPatchOperationGene.OP_COPY,
+                JsonPatchOperationGene.OP_COPY,
                 fromGene = pathEnum.copy() as EnumGene<String>,
                 pathGene  = pathEnum.copy() as EnumGene<String>
             )
         )
 
+        // TODO: replace StringGene with a schema-aware gene derived from resourceSchema
+        //  (e.g. IntegerGene, BooleanGene, ObjectGene) once path extraction is wired in
         val entryTemplate = PairGene<EnumGene<String>, Gene>(
             "entry_0",
             pathEnum.copy() as EnumGene<String>,
             StringGene("value")
         )
 
-        for (op in listOf("add", "replace", "test")) {
+        for (op in listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST)) {
             choices.add(
                 JsonPatchPathValueGene(
                     op,
@@ -75,6 +80,6 @@ object JsonPatchDocumentGeneBuilder {
         }
 
         val template = ChoiceGene<JsonPatchOperationGene>("operation", choices)
-        return ArrayGene("operations", template, minSize = 1, maxSize = 10)
+        return ArrayGene("operations", template, minSize = MIN_SIZE, maxSize = DEFAULT_MAX_SIZE)
     }
 }

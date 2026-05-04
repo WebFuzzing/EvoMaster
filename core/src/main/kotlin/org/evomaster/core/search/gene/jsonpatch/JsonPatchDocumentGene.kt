@@ -1,8 +1,8 @@
 package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -33,8 +33,8 @@ class JsonPatchDocumentGene private constructor(
             : this(name, resourceSchema, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema))
 
     companion object {
-        const val MIN_SIZE = 1
-        const val DEFAULT_MAX_SIZE = 10
+        val MIN_SIZE get() = JsonPatchDocumentGeneBuilder.MIN_SIZE
+        val DEFAULT_MAX_SIZE get() = JsonPatchDocumentGeneBuilder.DEFAULT_MAX_SIZE
     }
 
     private val operationsArray: ArrayGene<ChoiceGene<JsonPatchOperationGene>>

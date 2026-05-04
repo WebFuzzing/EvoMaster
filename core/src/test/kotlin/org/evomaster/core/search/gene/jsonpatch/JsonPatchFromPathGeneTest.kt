@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -13,13 +14,13 @@ class JsonPatchFromPathGeneTest {
     private val paths = listOf("/name", "/email", "/age")
 
     private fun moveOp() = JsonPatchFromPathGene(
-        "move", "move",
+        JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
         fromGene = EnumGene("from", paths),
         pathGene = EnumGene("path", paths)
     )
 
     private fun copyOp() = JsonPatchFromPathGene(
-        "copy", "copy",
+        JsonPatchOperationGene.OP_COPY, JsonPatchOperationGene.OP_COPY,
         fromGene = EnumGene("from", paths),
         pathGene = EnumGene("path", paths)
     )
@@ -28,13 +29,13 @@ class JsonPatchFromPathGeneTest {
 
     @Test
     fun testGeneNameEqualsOperationNameByDefault() {
-        assertEquals("move", moveOp().name)
-        assertEquals("copy", copyOp().name)
+        assertEquals(JsonPatchOperationGene.OP_MOVE, moveOp().name)
+        assertEquals(JsonPatchOperationGene.OP_COPY, copyOp().name)
     }
 
     @Test
     fun testCustomGeneNameIsAccepted() {
-        val gene = JsonPatchFromPathGene("customMove", "move",
+        val gene = JsonPatchFromPathGene("customMove", JsonPatchOperationGene.OP_MOVE,
             EnumGene("from", listOf("/")),
             EnumGene("path", listOf("/"))
         )
@@ -43,8 +44,8 @@ class JsonPatchFromPathGeneTest {
 
     @Test
     fun testOperationNameIsStoredCorrectly() {
-        assertEquals("move", moveOp().operationName)
-        assertEquals("copy", copyOp().operationName)
+        assertEquals(JsonPatchOperationGene.OP_MOVE, moveOp().operationName)
+        assertEquals(JsonPatchOperationGene.OP_COPY, copyOp().operationName)
     }
 
     @Test
@@ -61,7 +62,7 @@ class JsonPatchFromPathGeneTest {
     @Test
     fun testMoveOutputHasCorrectJsonStructure() {
         val gene = JsonPatchFromPathGene(
-            "move", "move",
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
             fromGene = EnumGene("from", listOf("/name")),
             pathGene = EnumGene("path", listOf("/email"))
         )
@@ -72,7 +73,7 @@ class JsonPatchFromPathGeneTest {
     @Test
     fun testCopyOutputHasCorrectJsonStructure() {
         val gene = JsonPatchFromPathGene(
-            "copy", "copy",
+            JsonPatchOperationGene.OP_COPY, JsonPatchOperationGene.OP_COPY,
             fromGene = EnumGene("from", listOf("/age")),
             pathGene = EnumGene("path", listOf("/name"))
         )
@@ -100,13 +101,37 @@ class JsonPatchFromPathGeneTest {
     @Test
     fun testFromAndPathAreIndependentlySelectable() {
         val gene = JsonPatchFromPathGene(
-            "move", "move",
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
             fromGene = EnumGene("from", listOf("/a", "/b")).apply { index = 0 },
             pathGene = EnumGene("path", listOf("/a", "/b")).apply { index = 1 }
         )
         val result = gene.getValueAsPrintableString()
         assertTrue(result.contains("\"from\":\"/a\""))
         assertTrue(result.contains("\"path\":\"/b\""))
+    }
+
+    // --- XML serialization ---
+
+    @Test
+    fun testMoveOutputInXmlMode() {
+        val gene = JsonPatchFromPathGene(
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
+            fromGene = EnumGene("from", listOf("/a")),
+            pathGene  = EnumGene("path", listOf("/b"))
+        )
+        val result = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<operation><op>move</op><from>/a</from><path>/b</path></operation>", result)
+    }
+
+    @Test
+    fun testCopyOutputInXmlMode() {
+        val gene = JsonPatchFromPathGene(
+            JsonPatchOperationGene.OP_COPY, JsonPatchOperationGene.OP_COPY,
+            fromGene = EnumGene("from", listOf("/x")),
+            pathGene  = EnumGene("path", listOf("/y"))
+        )
+        val result = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<operation><op>copy</op><from>/x</from><path>/y</path></operation>", result)
     }
 
     // --- copy ---
@@ -141,32 +166,56 @@ class JsonPatchFromPathGeneTest {
 
     @Test
     fun testContainsSameValueAsTrueWhenBothMatch() {
-        val a = JsonPatchFromPathGene("move", "move", EnumGene("from", listOf("/x")), EnumGene("path", listOf("/y")))
-        val b = JsonPatchFromPathGene("move", "move", EnumGene("from", listOf("/x")), EnumGene("path", listOf("/y")))
+        val a = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", listOf("/x")), EnumGene("path", listOf("/y")))
+        val b = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", listOf("/x")), EnumGene("path", listOf("/y")))
         assertTrue(a.containsSameValueAs(b))
     }
 
     @Test
     fun testContainsSameValueAsFalseWhenFromDiffers() {
         val pathEnum = listOf("/a", "/b")
-        val a = JsonPatchFromPathGene("move", "move", EnumGene("from", pathEnum).apply { index = 0 }, EnumGene("path", listOf("/x")))
-        val b = JsonPatchFromPathGene("move", "move", EnumGene("from", pathEnum).apply { index = 1 }, EnumGene("path", listOf("/x")))
+        val a = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", pathEnum).apply { index = 0 }, EnumGene("path", listOf("/x")))
+        val b = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", pathEnum).apply { index = 1 }, EnumGene("path", listOf("/x")))
         assertFalse(a.containsSameValueAs(b))
     }
 
     @Test
     fun testContainsSameValueAsFalseWhenPathDiffers() {
         val pathEnum = listOf("/a", "/b")
-        val a = JsonPatchFromPathGene("move", "move", EnumGene("from", listOf("/x")), EnumGene("path", pathEnum).apply { index = 0 })
-        val b = JsonPatchFromPathGene("move", "move", EnumGene("from", listOf("/x")), EnumGene("path", pathEnum).apply { index = 1 })
+        val a = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", listOf("/x")), EnumGene("path", pathEnum).apply { index = 0 })
+        val b = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE, EnumGene("from", listOf("/x")), EnumGene("path", pathEnum).apply { index = 1 })
         assertFalse(a.containsSameValueAs(b))
     }
 
     @Test
     fun testContainsSameValueAsThrowsForWrongType() {
         assertThrows<IllegalArgumentException> {
-            moveOp().containsSameValueAs(JsonPatchPathOnlyGene("remove", "remove", EnumGene("path", listOf("/"))))
+            moveOp().containsSameValueAs(JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/"))))
         }
+    }
+
+    // --- unsafeCopyValueFrom ---
+
+    @Test
+    fun testUnsafeCopyValueFromSameTypeCopiesValues() {
+        val source = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
+            fromGene = EnumGene("from", paths).apply { index = 2 },
+            pathGene = EnumGene("path", paths).apply { index = 1 })
+        val target = moveOp()
+        assertTrue(target.unsafeCopyValueFrom(source))
+        assertEquals(source.getValueAsPrintableString(), target.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromWrongTypeReturnsFalse() {
+        assertFalse(moveOp().unsafeCopyValueFrom(
+            JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/")))
+        ))
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromDifferentOperationReturnsFalse() {
+        assertFalse(moveOp().unsafeCopyValueFrom(copyOp()))
     }
 
     // --- randomize ---
@@ -203,7 +252,7 @@ class JsonPatchFromPathGeneTest {
 
     @Test
     fun testIsMutableTrueForSingleValues() {
-        val gene = JsonPatchFromPathGene("move", "move",
+        val gene = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
             EnumGene("from", listOf("/only")),
             EnumGene("path", listOf("/only"))
         )
@@ -212,7 +261,7 @@ class JsonPatchFromPathGeneTest {
 
     @Test
     fun testChildEnumsWithSingleValueNotMutable() {
-        val gene = JsonPatchFromPathGene("move", "move",
+        val gene = JsonPatchFromPathGene(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
             EnumGene("from", listOf("/only")),
             EnumGene("path", listOf("/only"))
         )
