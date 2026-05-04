@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evomaster"
+version = "0.1.0"
+description = "Work in Progress - Coming Soon"
+authors = [
+    {name = "Andrea Arcuri", email = "arcuri82@gmail.com"}
+]
+license = {text = "LGPL"}
+
+[project.scripts]
+your-cli-command = "evomaster.__main__:main"
