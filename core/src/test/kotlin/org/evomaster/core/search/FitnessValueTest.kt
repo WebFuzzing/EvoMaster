@@ -5,6 +5,9 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.sql.SqlExecutionInfo
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -121,6 +124,110 @@ class FitnessValueTest {
         assertEquals(4, linesInfo.total)
         assertEquals(2, linesInfo.bootTime)
         assertEquals(3, linesInfo.searchTime)
+    }
+
+    @Test
+    fun testAggregatedFailedWhereQueriesOnlyFromExecutionsWithFailedWhere() {
+        val fv = FitnessValue(1.0)
+
+        val tableId = TableId("foo")
+
+        // Execution that has a failing WHERE clause — its queries should be collected
+        val executionWithFailedWhere = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = mapOf(tableId to setOf("id")),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 1,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("SELECT * FROM foo WHERE id = 1", false, 10L)
+            )
+        )
+
+        // Execution with no failing WHERE clause — its queries must NOT be collected,
+        // even though it has executionInfo entries
+        val executionWithoutFailedWhere = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = emptyMap(),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 1,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("INSERT INTO bar VALUES (1)", false, 5L)
+            )
+        )
+
+        fv.setDatabaseExecution(0, executionWithFailedWhere)
+        fv.setDatabaseExecution(1, executionWithoutFailedWhere)
+        fv.aggregateDatabaseData()
+
+        val queries = fv.getViewOfAggregatedFailedWhereQueries()
+        assertEquals(1, queries.size)
+        assertTrue(queries.contains("SELECT * FROM foo WHERE id = 1"))
+    }
+
+    @Test
+    fun testAggregatedFailedWhereQueriesOnlyIncludesCommandsReferencingFailedTable() {
+        val fv = FitnessValue(1.0)
+
+        val failedTable = TableId("foo")
+
+        // Execution with failedWhere on "foo"; executionInfo has two commands —
+        // one referencing "foo" (relevant) and one referencing "bar" (irrelevant)
+        val execution = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = mapOf(failedTable to setOf("id")),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 2,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("SELECT * FROM foo WHERE id = 1", false, 10L),
+                SqlExecutionInfo("INSERT INTO bar VALUES (1)", false, 5L)
+            )
+        )
+        fv.setDatabaseExecution(0, execution)
+        fv.aggregateDatabaseData()
+
+        val queries = fv.getViewOfAggregatedFailedWhereQueries()
+        assertEquals(1, queries.size)
+        assertTrue(queries.contains("SELECT * FROM foo WHERE id = 1"))
+        assertFalse(queries.contains("INSERT INTO bar VALUES (1)"))
+    }
+
+    @Test
+    fun testAggregatedFailedWhereQueriesExcludesBlankSqlCommands() {
+        val fv = FitnessValue(1.0)
+
+        val tableId = TableId("foo")
+
+        // JSQLParser >= 4.9 can produce empty-string SQL commands; they must be filtered out
+        // at the source in aggregateDatabaseData() rather than at every call site
+        val execution = DatabaseExecution(
+            queriedData = emptyMap(),
+            updatedData = emptyMap(),
+            insertedData = emptyMap(),
+            failedWhere = mapOf(tableId to setOf("id")),
+            deletedData = emptyList(),
+            numberOfSqlCommands = 3,
+            sqlParseFailureCount = 0,
+            executionInfo = listOf(
+                SqlExecutionInfo("SELECT * FROM foo WHERE id = 1", false, 10L),
+                SqlExecutionInfo("", false, 5L),
+                SqlExecutionInfo("   ", false, 5L)
+            )
+        )
+        fv.setDatabaseExecution(0, execution)
+        fv.aggregateDatabaseData()
+
+        val queries = fv.getViewOfAggregatedFailedWhereQueries()
+        assertEquals(1, queries.size)
+        assertTrue(queries.contains("SELECT * FROM foo WHERE id = 1"))
     }
 
 }
