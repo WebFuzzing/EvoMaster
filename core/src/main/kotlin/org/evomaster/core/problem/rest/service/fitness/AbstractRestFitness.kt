@@ -25,6 +25,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.HttpStatusOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -56,8 +57,8 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -386,10 +387,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(statusId, 1.0, it)
 
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
+                handleHttpStatusOracles(fv, actions[it], result, it)
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
+            }
+    }
+
+    private fun handleHttpStatusOracles(fv: FitnessValue, call: RestCallAction, result: RestCallResult, index: Int) {
+        if(!config.statusOracles){
+            return
+        }
+
+        val name = call.getName()
+
+        HttpStatusOracle.checkOracles(call, result, (sampler as AbstractRestSampler).schemaHolder)
+            .filter { config.isEnabledFaultCategory(it) }
+            .forEach {
+                val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(it, name))
+                fv.updateTarget(scenarioId, 1.0, index)
+                result.addFault(DetectedFault(it, name, null))
             }
     }
 
@@ -625,7 +643,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val response = try {
             val call = createInvocation(a, chainState, cookies, tokens)
 
-            SearchTimeController.measureTimeMillis(
+            TimeUtils.measureTimeMillis(
                 { t, res ->
                     rcr.setResponseTimeMs(t)
                     executionStats.record(a.id, t)
@@ -690,6 +708,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                      */
                     log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
                     rcr.setTcpProblem(true)
+                    return false
+                }
+
+                TcpUtils.isInvalidHttpResponse(e) -> {
+                    // this can happen if API sends back an invalid status code.
+                    rcr.setInvalidHTTP(true)
                     return false
                 }
 
@@ -804,7 +828,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         fv: FitnessValue
     ) {
-        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+        if (!config.schemaOracles
+            || !schemaOracle.canValidate()
+            || a.id == CALL_TO_SWAGGER_ID
+            || !callGraphService.isDeclared(a.verb,a.path)
+            ) {
             return
         }
 
@@ -1227,9 +1255,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
-
+    
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
+        }
+        
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+            handlePartialUpdatePut(individual, actionResults, fv)
         }
     }
 
@@ -1310,6 +1342,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handlePartialUpdatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
+        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+
+        val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

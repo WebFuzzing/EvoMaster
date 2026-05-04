@@ -122,6 +122,7 @@ There are 3 types of options:
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *DEBUG option*. *Default value*: `false`.|
 |`extraHeader`| __Boolean__. Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers that were not specified in the schema. *Default value*: `true`.|
 |`extraHeuristicsFile`| __String__. Where the extra heuristics file (if any) is going to be written (in CSV format). *Default value*: `extra_heuristics.csv`.|
+|`extraPhaseBudgetPercentage`| __Double__. When the main fuzzing session is over, there are several following phases in which test cases can be created and evaluated (e.g., for minimization, flakiness and security checks). Each of these follow up phases takes some time, which is not included in 'maxTime'. All those phases are time-bounded, based on the main search budget. For example, with a default of 10% and main budget of 1 hour, then each phase will take at most 6 minutes each after the 1 hour search. Phases will be preemptively stopped if they reach their timeouts. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`extraQueryParam`| __Boolean__. Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params that were not specified in the schema. *Default value*: `true`.|
 |`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
@@ -212,6 +213,10 @@ There are 3 types of options:
 |`snapshotInterval`| __Double__. If positive, check how often, in percentage % of the budget, to collect statistics snapshots. For example, every 5% of the time. *Constraints*: `max=50.0`. *Default value*: `-1.0`.|
 |`snapshotStatisticsFile`| __String__. Where the snapshot file (if any) is going to be written (in CSV format). *Default value*: `snapshot.csv`.|
 |`specializeSQLGeneSelection`| __Boolean__. Whether to specialize sql gene selection to mutation. *Default value*: `true`.|
+|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Depends on*: `security=true`. *Default value*: `true`.|
+|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Depends on*: `sqli=true`. *Default value*: `2000`.|
+|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Depends on*: `sqli=true`. *Default value*: `5000`.|
+|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Depends on*: `security=true`. *Default value*: `true`.|
 |`startNumberOfMutations`| __Int__. Number of applied mutations on sampled individuals, at the start of the search. *Constraints*: `min=0.0`. *Default value*: `1`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`statisticsColumnId`| __String__. An id that will be part as a column of the statistics file (if any is generated). *Default value*: `-`.|
@@ -241,6 +246,7 @@ There are 3 types of options:
 |`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Depends on*: `createTests=true`. *Default value*: `true`.|
 |`writeWFCReportExcludeWebApp`| __Boolean__. If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only the JSON report file will be created. *Default value*: `false`.|
 |`xoverProbability`| __Double__. Probability of applying crossover operation (if any is used in the search algorithm). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.7`.|
+|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Depends on*: `security=true`. *Default value*: `true`.|
 
 ## Experimental Command-Line Options
 
@@ -286,6 +292,7 @@ There are 3 types of options:
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`instrumentMR_DYNAMODB`| __Boolean__. Execute instrumentation for method replace with category DYNAMODB. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_OPENSEARCH`| __Boolean__. Execute instrumentation for method replace with category OPENSEARCH. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_REDIS`| __Boolean__. Execute instrumentation for method replace with category REDIS. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -322,10 +329,7 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs5xx`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 5xx. *Default value*: `false`.|
 |`skipAIModelUpdateWhenResponseIsNot2xxOr400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 2xx or 400. *Default value*: `false`.|
-|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
-|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Depends on*: `sqli=true`. *Default value*: `2000`.|
-|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Depends on*: `sqli=true`. *Default value*: `5000`.|
-|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
+|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|
@@ -342,4 +346,3 @@ There are 3 types of options:
 |`vulnerableInputClassificationStrategy`| __Enum__. Strategy to classify inputs for potential vulnerability classes related to an REST endpoint. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
-|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|

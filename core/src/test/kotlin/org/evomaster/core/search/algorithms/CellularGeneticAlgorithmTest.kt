@@ -12,7 +12,7 @@ import org.evomaster.core.search.algorithms.observer.GARecorder
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -88,15 +88,15 @@ class CellularGeneticAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
             val solution = cga.search()
-            epc.finishSearch()
+            epc.markFinishedSession()
 
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
     }
-    
+
     // Edge Case: CrossoverProbability=0 and MutationProbability=1 on CGA
     @Test
     fun testNoCrossoverWhenProbabilityZero_CGA() {
@@ -167,7 +167,7 @@ class CellularGeneticAlgorithmTest {
             // two selections per iteration
             assertEquals(2 * n, rec.selections.size)
             // one crossover per iteration (crossover probability = 1)
-            assertEquals(n, rec.xoCalls.size) 
+            assertEquals(n, rec.xoCalls.size)
             // mutation disabled
             assertEquals(0, rec.mutated.size)
         }

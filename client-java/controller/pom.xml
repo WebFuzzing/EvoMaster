@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-controller</artifactId>
@@ -202,6 +202,12 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Bringing Netty dependency explicitly as it was excluded from spring-boot-starter-data-redis to avoid version conflict -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
             <scope>test</scope>
         </dependency>
 

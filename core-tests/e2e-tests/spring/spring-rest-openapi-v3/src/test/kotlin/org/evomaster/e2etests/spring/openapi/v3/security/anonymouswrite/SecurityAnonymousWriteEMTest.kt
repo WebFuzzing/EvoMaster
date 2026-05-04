@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.anonymouswrite
 
 import com.foo.rest.examples.spring.openapi.v3.security.anonymouswrite.AnonymousWriteController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -42,11 +43,11 @@ class SecurityAnonymousWriteEMTest : SpringTestBase(){
             assertEquals(1, faultsCategories.size)
             assertEquals(3, faults.size)
 
-            assertTrue(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories)
+            assertTrue(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS in faultsCategories)
 
             // PUT:/api/resources/201/{id}
             assertTrue(faults.none {
-                it.category == ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS
+                it.category == DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
                         && it.operationId == "PUT:/api/resources/201/{id}"
             })
         }

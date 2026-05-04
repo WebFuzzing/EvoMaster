@@ -39,7 +39,16 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * However, these intermediate structures should only impact the phenotype, and not
      * the genotype
      */
-    abstract fun seeTopGenes(): List<out Gene>
+    abstract fun seeTopGenes(): List<Gene>
+
+    /**
+     * Check if this action has invalid data on purpose, done or Robustness Testing
+     */
+    open fun isForRobustnessTesting() : Boolean{
+        //TODO currently this is just a place-holder, needed for code that we already know will
+        //depend on this check
+        return false
+    }
 
     fun seeAllGenes(): List<Gene> = seeTopGenes().flatMap {g ->  g.flatView() }
 

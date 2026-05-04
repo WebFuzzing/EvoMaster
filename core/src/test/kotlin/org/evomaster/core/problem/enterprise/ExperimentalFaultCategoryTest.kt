@@ -11,11 +11,11 @@ class ExperimentalFaultCategoryTest {
 
     @Test
     fun testUniqueCodes() {
-        val total = DefinedFaultCategory.values().size + ExperimentalFaultCategory.values().size
+        val total = DefinedFaultCategory.entries.size + ExperimentalFaultCategory.entries.size
 
         val unique = Stream.concat(
-            Arrays.stream(DefinedFaultCategory.values()),
-            Arrays.stream(ExperimentalFaultCategory.values())
+            Arrays.stream(DefinedFaultCategory.entries.toTypedArray()),
+            Arrays.stream(ExperimentalFaultCategory.entries.toTypedArray())
         ).map { it.code }
             .collect(Collectors.toSet())
             .size

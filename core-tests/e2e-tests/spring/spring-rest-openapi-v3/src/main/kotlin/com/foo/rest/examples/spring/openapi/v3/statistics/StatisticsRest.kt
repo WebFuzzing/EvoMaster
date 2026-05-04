@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 private class StatisticsRest {
 
     @GetMapping(path = ["/getExpectations/{b}"])
-    open fun expectTest(@PathVariable("b") succeeded: Boolean ) : ResponseEntity<String> {
+    fun expectTest(@PathVariable("b") succeeded: Boolean ) : ResponseEntity<String> {
         if (succeeded){
             return ResponseEntity.ok("Success!")
         }
@@ -24,7 +24,7 @@ private class StatisticsRest {
     }
 
     @GetMapping(path = ["/basicResponsesString/{b}"])
-    open fun basicResponseString(@PathVariable("b") succeeded: Boolean) : ResponseEntity<String> {
+    fun basicResponseString(@PathVariable("b") succeeded: Boolean) : ResponseEntity<String> {
         if (succeeded){
             return ResponseEntity.ok("Success!")
         }
@@ -34,7 +34,7 @@ private class StatisticsRest {
     }
 
     @GetMapping(path = ["/basicNumbersString/{b}"])
-    open fun basicResponsesNumber(@PathVariable("b") succeeded: Boolean) : ResponseEntity<String> {
+    fun basicResponsesNumber(@PathVariable("b") succeeded: Boolean) : ResponseEntity<String> {
         if (succeeded){
             return ResponseEntity.ok("42")
         }

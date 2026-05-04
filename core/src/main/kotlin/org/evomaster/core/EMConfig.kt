@@ -1990,6 +1990,12 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_MONGO = true
 
+    @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_DYNAMODB = false
+
 
     @Cfg("Execute instrumentation for method replace with category NET." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
@@ -2616,6 +2622,17 @@ class EMConfig {
     var minimize: Boolean = true
 
 
+    @Cfg("When the main fuzzing session is over, there are several following phases in which test cases can be created" +
+            " and evaluated (e.g., for minimization, flakiness and security checks)." +
+            " Each of these follow up phases takes some time, which is not included in 'maxTime'." +
+            " All those phases are time-bounded, based on the main search budget." +
+            " For example, with a default of 10% and main budget of 1 hour, then each phase will take" +
+            " at most 6 minutes each after the 1 hour search." +
+            " Phases will be preemptively stopped if they reach their timeouts.")
+    @PercentageAsProbability
+    var extraPhaseBudgetPercentage: Double = 0.10
+
+    @Deprecated("No longer in use, replaced by 'extraPhaseBudgetPercentage'")
     @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
             " A negative number mean no timeout is considered." +
             " A value of 0 means minimization will be skipped, even if minimize=true.")
@@ -2855,27 +2872,22 @@ class EMConfig {
     var security = true
 
 
-    @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var ssrf = false
+    var ssrf = true
 
-    @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var xss = false
+    var xss = true
 
-    @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var sqli = false
+    var sqli = true
 
-    @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
     @DependsOnTrueFor("sqli")
     var sqliInjectedSleepDurationMs = 5000
 
-    @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
     @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
@@ -2939,6 +2951,10 @@ class EMConfig {
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
+
+    @Experimental
+    @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
+    var statusOracles = false
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3178,6 +3194,7 @@ class EMConfig {
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
 

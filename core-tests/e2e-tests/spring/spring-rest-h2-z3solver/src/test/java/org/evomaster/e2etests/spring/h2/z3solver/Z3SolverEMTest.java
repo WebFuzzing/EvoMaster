@@ -5,9 +5,11 @@ import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+
 
 public class Z3SolverEMTest extends SpringTestBase {
 
