@@ -1,8 +1,9 @@
 #!/bin/bash
 
-WINDOWS="--type msi --win-dir-chooser  --win-console"
-OSX="--type dmg"
-DEBIAN="--type deb"
+WINDOWS="--license-file ./LICENSE --type msi --win-dir-chooser  --win-console"
+OSX="--license-file ./LICENSE --type dmg"
+DEBIAN="--license-file ./LICENSE --type deb"
+APP="--type  app-image"
 JPACKAGE=jpackage
 
 TAG=$1
@@ -14,6 +15,8 @@ elif [ "$TAG" == "OSX" ]; then
     OS=$OSX
 elif [ "$TAG" == "DEBIAN" ]; then
     OS=$DEBIAN
+elif [ "$TAG" == "APP" ]; then
+    OS=$APP
 else
     echo Unrecognized tag "$TAG"
     exit 1
@@ -38,7 +41,7 @@ COPYRIGHT="Copyright 2016-$YEAR EvoMaster Team"
 VENDOR="EvoMaster Team"
 
 $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
-  --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS \
+  --copyright "$COPYRIGHT"  --vendor "$VENDOR" --app-version $VERSION $OS \
   --java-options "--add-opens java.base/java.net=ALL-UNNAMED" \
   --java-options "--add-opens java.base/java.util=ALL-UNNAMED"
 # In theory, should not need --add-opens here, as in theory handled inside manifest of uber jar.
