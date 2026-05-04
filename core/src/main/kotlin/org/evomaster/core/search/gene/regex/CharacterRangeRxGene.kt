@@ -12,16 +12,19 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.RegexFlags
 import org.slf4j.LoggerFactory
 
 class CharacterRangeRxGene private constructor(
     /**
      * this represents the valid ranges for a character class, removing overlaps and applying negation
      */
-    val validRanges: MultiCharacterRange
+    val validRanges: MultiCharacterRange,
+    val flags: RegexFlags
 ) : RxAtom, SimpleGene("."){
 
-    constructor(negated: Boolean, ranges: List<CharacterRange>) : this(MultiCharacterRange(negated, ranges))
+    constructor(negated: Boolean, ranges: List<CharacterRange>, flags: RegexFlags = RegexFlags())
+            : this(MultiCharacterRange(negated, ranges), flags)
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -29,18 +32,32 @@ class CharacterRangeRxGene private constructor(
 
     var value : Char = validRanges[0].start
 
+    /**
+     * Whether to output the character in uppercase.
+     * Only meaningful when flags.caseInsensitive is true.
+     */
+    var useUpperCase: Boolean = false
+
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return validRanges.any { value in it }
+        return validRanges.any {
+            value in it ||
+                    // to check validity we also have to take into account case insensitivity
+                    ( flags.isCaseable(value) &&
+                            ( value.lowercaseChar() in it || value.uppercaseChar() in it )
+                    )
+        }
     }
 
     override fun isMutable(): Boolean {
-        return validRanges.size > 1 || validRanges[0].size > 1
+        // check if there is more than one character or if the character is caseable
+        return validRanges.charCount > 1 || flags.isCaseable(value)
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterRangeRxGene(validRanges)
+        val copy = CharacterRangeRxGene(validRanges, flags)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
+        copy.useUpperCase = this.useUpperCase //copy also the current casing
         return copy
     }
 
@@ -52,12 +69,22 @@ class CharacterRangeRxGene private constructor(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
+        /*
+        Besides randomizing by sampling from the MultiCharacterRange, we can also randomize the casings for the sampled
+        characters (if applicable), this is needed to allow things like "[abc]" sampling things like "A" when the
+        CASE_INSENSITIVE flag is on, etc.
+         */
         val previous = value
+        val previousUpper = useUpperCase
 
         value = validRanges.sample(randomness)
+        useUpperCase = if (flags.isCaseable(value)) {
+            randomness.nextBoolean()
+        } else {
+            false
+        }
 
-        if(tryToForceNewValue && previous == value){
+        if(tryToForceNewValue && previous == value && previousUpper == useUpperCase){
             randomize(randomness, tryToForceNewValue)
         }
     }
@@ -91,6 +118,14 @@ class CharacterRangeRxGene private constructor(
             value += delta
         }
 
+        // mutate the case of the character, if applicable
+        useUpperCase = if (flags.isCaseable(value)) {
+            randomness.nextBoolean()
+        } else {
+            false
+        }
+
+
         return true
     }
 
@@ -99,7 +134,16 @@ class CharacterRangeRxGene private constructor(
             TODO should \ be handled specially?
             In any case, would have same handling as AnyCharacterRxGene
          */
-        return value.toString()
+        return if (!flags.isCaseable(value)) {
+            value.toString()
+        }
+        // We apply the case selected for each character (for the caseable characters)
+        else if (useUpperCase) {
+            value.uppercaseChar().toString()
+        }
+        else {
+            value.lowercaseChar().toString()
+        }
     }
 
 
@@ -107,7 +151,9 @@ class CharacterRangeRxGene private constructor(
         if(other !is CharacterRangeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.value == other.value
+        // we need to consider casings too, therefore we can just compare the strings using getValueAsPrintableString
+        return getValueAsPrintableString(targetFormat = null) ==
+                other.getValueAsPrintableString(targetFormat = null)
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
@@ -116,6 +162,7 @@ class CharacterRangeRxGene private constructor(
 
         if(gene is CharacterRangeRxGene){
             value = gene.value
+            useUpperCase = gene.useUpperCase //copy the current casing
             return true
         }
         LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")

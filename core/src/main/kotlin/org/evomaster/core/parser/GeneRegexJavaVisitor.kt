@@ -1,7 +1,10 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.ParsedFlagExpression
+import org.evomaster.core.utils.RegexFlags
 
 private const val EOF_TOKEN = "<EOF>"
 /**
@@ -13,6 +16,31 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
      * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
      */
     private val allowedSyntaxEscapes = "^$\\.*+?()[]{}|/-,:<>=!"
+
+    /**
+     * Tracks the flags active in the current lexical scope.
+     * Updated when entering a flag group, restored on exit.
+     */
+    private var currentFlags = RegexFlags()
+
+    /**
+     * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
+     * into a [ParsedFlagExpression] that can be applied to the current flags.
+     */
+    private fun parseFlagToken(tokenText: String): ParsedFlagExpression {
+        // strip "(?" from start and ":" (or ")") from end
+        val inner = tokenText.drop(2).dropLast(1)
+
+        val (enableStr, disableStr) = if ('-' in inner)
+            inner.split('-', limit = 2).let { it[0] to it[1] }
+        else Pair(inner, "")
+
+        return ParsedFlagExpression(
+            RegexFlags.fromString(enableStr),
+            RegexFlags.fromString(disableStr)
+        )
+    }
+
 
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
@@ -61,6 +89,34 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         var dollar = false
 
         for(i in 0 until ctx.term().size){
+
+            val term = ctx.term()[i]
+
+            if (term.FLAG_SCOPE_OPEN() != null) {
+                val previous = currentFlags
+
+                val merged = currentFlags.merge(
+                    parseFlagToken(term.FLAG_SCOPE_OPEN().text)
+                )
+
+                merged.validate()
+
+                currentFlags = merged
+
+                // Visit all remaining terms under the new flags. Same as what
+                // visitAtom does for the colon form, just consuming terms instead
+                // of a disjunction subtree.
+                val remainingGenes = mutableListOf<Gene>()
+                for (j in i + 1 until ctx.term().size) {
+                    val resTerm = ctx.term()[j].accept(this)
+                    resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                }
+
+                currentFlags = previous
+
+                res.genes.addAll(remainingGenes)
+                break // remaining terms already consumed
+            }
 
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
@@ -169,6 +225,35 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
     override fun visitAtom(ctx: RegexJavaParser.AtomContext): VisitResult {
 
+        // flag group: (?i:disjunction) (?iu:disjunction) (?-i:disjunction) etc.
+        if (ctx.FLAG_GROUP_OPEN() != null) {
+            val previous = currentFlags
+
+            val merged = currentFlags.merge(
+                parseFlagToken(ctx.FLAG_GROUP_OPEN().text)
+            )
+
+            merged.validate()
+
+            currentFlags = merged
+
+            val res = ctx.disjunction().accept(this)
+
+            currentFlags = previous
+
+            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+
+            //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
+            for (gene in disjList.disjunctions) {
+                gene.extraPrefix = false
+                gene.extraPostfix = false
+                gene.matchStart = true
+                gene.matchEnd = true
+            }
+
+            return VisitResult(disjList)
+        }
+
         if(ctx.quote() != null){
 
             val block = ctx.quote().quoteBlock().quoteChar().map { it.text }
@@ -176,7 +261,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val name = if(block.isBlank()) "blankBlock" else block
 
-            val gene = PatternCharacterBlockGene(name, block)
+            val gene = PatternCharacterBlockGene(name, block, currentFlags)
 
             return VisitResult(gene)
         }
@@ -185,7 +270,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlockGene("block", block)
+            val gene = PatternCharacterBlockGene("block", block, currentFlags)
 
             return VisitResult(gene)
         }
@@ -229,7 +314,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
-        val gene = CharacterRangeRxGene(negated, ranges)
+        val gene = CharacterRangeRxGene(negated, ranges, currentFlags)
 
         return VisitResult(gene)
     }
@@ -375,7 +460,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 val octalValue = txt.substring(2).toInt(8)
                 PatternCharacterBlockGene(
                         txt,
-                        String(Character.toChars(octalValue))
+                        String(Character.toChars(octalValue)),
+                        currentFlags
                 )
             }
             'c' -> {
@@ -384,18 +470,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 } else {
                     txt[2].code.xor(0x40)
                 }
-                PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString())
+                PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString(), currentFlags)
             }
             in "aefnrt" -> {
-                val escape = when {
-                    txt[1] == 'a' -> "\u0007"
-                    txt[1] == 'e' -> "\u001B"
-                    txt[1] == 'f' -> "\u000C"
-                    txt[1] == 'n' -> "\u000A"
-                    txt[1] == 'r' -> "\u000D"
+                val escape = when (txt[1]) {
+                    'a' -> "\u0007"
+                    'e' -> "\u001B"
+                    'f' -> "\u000C"
+                    'n' -> "\u000A"
+                    'r' -> "\u000D"
                     else -> "\u0009"
                 }
-                PatternCharacterBlockGene(txt, escape)
+                PatternCharacterBlockGene(txt, escape, currentFlags)
             }
             in "xu" -> {
                 val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}') {
@@ -408,11 +494,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 }
                 PatternCharacterBlockGene(
                         txt,
-                        String(Character.toChars(hexValue))
+                        String(Character.toChars(hexValue)),
+                        currentFlags
                 )
             }
-            in allowedSyntaxEscapes -> PatternCharacterBlockGene(txt, txt.substring(1))
-            else -> CharacterClassEscapeRxGene(txt.substring(1))
+            in allowedSyntaxEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
+            else -> CharacterClassEscapeRxGene(txt.substring(1), currentFlags)
         })
     }
 }
