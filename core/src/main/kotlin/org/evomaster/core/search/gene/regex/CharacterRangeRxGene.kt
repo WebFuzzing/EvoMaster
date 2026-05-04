@@ -49,7 +49,8 @@ class CharacterRangeRxGene private constructor(
     }
 
     override fun isMutable(): Boolean {
-        return validRanges.size > 1 || validRanges[0].size > 1 || flags.isCaseable(value)
+        // check if there is more than one character or if the character is caseable
+        return validRanges.charCount > 1 || flags.isCaseable(value)
     }
 
     override fun copyContent(): Gene {
