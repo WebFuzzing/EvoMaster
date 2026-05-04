@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.regex
+package org.evomaster.core.utils
 
 data class RegexFlags(
     // currently implemented
@@ -78,6 +78,6 @@ data class RegexFlags(
             false
         }
     }
-    /** @see org.evomaster.core.search.gene.regex.RegexFlags.isCaseable */
+    /** @see org.evomaster.core.utils.RegexFlags.isCaseable */
     fun isCaseable(char: Char): Boolean = isCaseable(char.code)
 }

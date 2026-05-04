@@ -12,6 +12,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.RegexFlags
 import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains

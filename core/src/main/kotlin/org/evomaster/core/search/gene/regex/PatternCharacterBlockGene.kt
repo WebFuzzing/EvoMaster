@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
 
 class PatternCharacterBlockGene(
     name: String,
