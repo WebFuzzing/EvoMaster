@@ -39,7 +39,13 @@ class CharacterRangeRxGene private constructor(
     var useUpperCase: Boolean = false
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return validRanges.any { value in it }
+        return validRanges.any {
+            value in it ||
+                    // to check validity we also have to take into account case insensitivity
+                    ( flags.isCaseable(value) &&
+                            ( value.lowercaseChar() in it || value.uppercaseChar() in it )
+                    )
+        }
     }
 
     override fun isMutable(): Boolean {

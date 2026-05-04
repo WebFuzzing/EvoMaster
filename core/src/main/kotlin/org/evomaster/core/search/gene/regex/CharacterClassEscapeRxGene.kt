@@ -131,7 +131,8 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return value.matches(Regex("\\$type"))
+        // we pass the same embedded flags to the regex to accurately match the expected behavior
+        return value.matches(Regex("${flags.getScopeString()}\\$type"))
     }
 
     override fun copyContent(): Gene {

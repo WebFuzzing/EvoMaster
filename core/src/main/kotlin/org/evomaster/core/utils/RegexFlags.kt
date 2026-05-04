@@ -58,6 +58,51 @@ data class RegexFlags(
     }
 
     /**
+     * Returns a flag scope string, which enables the same flags as what the current object has enabled. If none are
+     * active then returns empty string, else returns "(?iusmdUx)" only including the currently active flags.
+     */
+    fun getScopeString(): String {
+        if (!(caseInsensitive ||
+                    unicodeCase ||
+                    dotAll ||
+                    multiline ||
+                    unixLines ||
+                    unicodeCharacterClass ||
+                    comments)) {
+            return ""
+        }
+        else {
+            val sb = StringBuilder()
+            sb.append("(?")
+
+            if (caseInsensitive) {
+                sb.append('i')
+            }
+            if (unicodeCase) {
+                sb.append('u')
+            }
+            if (dotAll) {
+                sb.append('s')
+            }
+            if (multiline) {
+                sb.append('m')
+            }
+            if (unixLines) {
+                sb.append('d')
+            }
+            if (unicodeCharacterClass) {
+                sb.append('U')
+            }
+            if (comments) {
+                sb.append('x')
+            }
+
+            sb.append(")")
+            return sb.toString()
+        }
+    }
+
+    /**
      * Merges this [RegexFlags] with a [ParsedFlagExpression], returning a new [RegexFlags] with the
      * enabled flags turned on and the disabled flags turned off.
      * Flags not mentioned in either are inherited from the receiver unchanged.
