@@ -4,6 +4,7 @@ WINDOWS="--license-file ./LICENSE --type msi --win-dir-chooser  --win-console"
 OSX="--license-file ./LICENSE --type dmg"
 DEBIAN="--license-file ./LICENSE --type deb"
 APP="--type  app-image"
+APPWIN="--type  app-image --win-console"
 JPACKAGE=jpackage
 
 TAG=$1
@@ -17,6 +18,8 @@ elif [ "$TAG" == "DEBIAN" ]; then
     OS=$DEBIAN
 elif [ "$TAG" == "APP" ]; then
     OS=$APP
+elif [ "$TAG" == "APPWIN" ]; then
+    OS=$APPWIN
 else
     echo Unrecognized tag "$TAG"
     exit 1
@@ -50,7 +53,7 @@ $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
 # --add-opens here as well.
 # IMPORTANT: must be kept in sync with maven-shade-plugin in pom.xml and JdkIssue
 
-if [ "$TAG" == "APP" ]; then
+if [[ "$TAG" == "APP" || "$TAG" == "APPWIN" ]]; then
   rm -fr pypi-distribution/src/evomaster/release
   cp -r release pypi-distribution/src/evomaster/release
 fi
