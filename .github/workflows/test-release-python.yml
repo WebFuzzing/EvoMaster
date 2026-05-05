@@ -47,6 +47,7 @@ jobs:
 
 ##########################################################
   build-app-image:
+    needs: build-base
     name: Build app-image on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
@@ -98,7 +99,7 @@ jobs:
           path: dist/*.whl
 
   publish:
-    needs: build-base
+    needs: build-app-image
     runs-on: ubuntu-latest
 
     defaults:
