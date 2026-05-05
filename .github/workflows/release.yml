@@ -47,6 +47,18 @@ jobs:
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+
+
+  publish-docker:
+    needs: build-base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download fat jar
+        uses: actions/download-artifact@v4
+        with:
+          name: evomaster.jar
+          path: core/target
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -69,6 +81,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
 
   installer-for-windows:
     needs: build-base
