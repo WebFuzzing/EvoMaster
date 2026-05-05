@@ -28,9 +28,12 @@ evomaster = ["release/**","_dummy.c"]
 ## Now even trying to have a dummy C file...
 [tool.setuptools]
 zip-safe = false
-[tool.setuptools.ext-modules]
-dummy = { sources = ["src/evomaster/_dummy.c"] }
-
+#[tool.setuptools.ext-modules]
+#dummy = { sources = ["src/evomaster/_dummy.c"] }
+[tool.setuptools]
+ext-modules = [
+    {name = "mylib.foo", sources = ["src/evomaster/_dummy.c"]}
+]
 
 [project.scripts]
 evomaster = "evomaster.__main__:main"
