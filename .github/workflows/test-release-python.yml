@@ -92,12 +92,13 @@ jobs:
         shell: bash
         run: |
           rm -fr dist
-          python -m cibuildwheel --output-dir dist
+          python -m cibuildwheel --output-dir dist 
 
       - uses: actions/upload-artifact@v7
         with:
           name: wheel-${{ matrix.os }}
           path: dist/*.whl
+          retention-days: ${{env.retention-days}}
 
   publish:
     needs: build-app-image
@@ -116,6 +117,6 @@ jobs:
           cp wheel-*/*.whl dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
