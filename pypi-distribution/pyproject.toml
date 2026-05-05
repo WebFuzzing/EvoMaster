@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evomaster"
+version = "0.2.0"
+description = "EvoMaster: The first open-source AI-driven tool for automatically generating system-level test cases (also known as fuzzing) for web/enterprise applications. Currently targeting whitebox and blackbox testing of Web APIs, like REST, GraphQL and RPC (e.g., gRPC and Thrift). "
+readme = "README.md"
+authors = [
+    {name = "Andrea Arcuri", email = "arcuri82@gmail.com"}
+]
+license = {text = "LGPL"}
+
+[project.urls]
+Homepage = "https://github.com/WebFuzzing/EvoMaster"
+Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[project.scripts]
+evomaster = "evomaster.__main__:main"
+
+
+###  Release
+# rm -r dist
+# python3 -m build
+# python3 -m twine upload dist/*
