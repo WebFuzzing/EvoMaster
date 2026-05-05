@@ -53,8 +53,4 @@ $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
 # --add-opens here as well.
 # IMPORTANT: must be kept in sync with maven-shade-plugin in pom.xml and JdkIssue
 
-if [[ "$TAG" == "APP" || "$TAG" == "APPWIN" ]]; then
-  rm -fr pypi-distribution/src/evomaster/release
-  cp -r release pypi-distribution/src/evomaster/release
-fi
 

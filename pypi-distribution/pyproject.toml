@@ -19,35 +19,9 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.package-data]
-evomaster = ["release/**","_dummy.c"]
-
-## ARGHHHHHHH what the f**k!!!
-## No option to say that this is not a "pure" Python portable project???
-## and have to use these "tricks" to fool the build tool? really WTF?!?
-## Now even trying to have a dummy C file...
-#[tool.setuptools]
-#ext-modules = [
-#    {name = "mylib.foo", sources = ["src/evomaster/_dummy.c"]}
-#]
-#[tool.cibuildwheel]
-#repair-wheel-command = ""
-
-
-[tool.cibuildwheel]
-build = "*-*"
-[tool.cibuildwheel.linux]
-build = "*-manylinux_x86_64"
-[tool.cibuildwheel.macos]
-build = "*-macosx_arm64"
-[tool.cibuildwheel.windows]
-build = "*-win_amd64"
-
 
 [project.scripts]
 evomaster = "evomaster.__main__:main"
-
-
 
 
 ###  Release
