@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evomaster"
-version = "0.1.3"
+version = "0.2.0"
 description = "EvoMaster: The first open-source AI-driven tool for automatically generating system-level test cases (also known as fuzzing) for web/enterprise applications. Currently targeting whitebox and blackbox testing of Web APIs, like REST, GraphQL and RPC (e.g., gRPC and Thrift). "
 readme = "README.md"
 authors = [
@@ -21,6 +21,13 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 evomaster = ["release/**"]
+
+## ARGHHHHHHH what the f**k!!!
+## No option to say that this is not a "pure" Python portable project???
+## and have to use these "tricks" to fool the build tool? really WTF?!?
+[tool.setuptools.ext-modules]
+[tool.setuptools]
+zip-safe = false
 
 
 [project.scripts]

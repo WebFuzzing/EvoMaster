@@ -27,7 +27,7 @@ jobs:
           java-version: ${{env.jdk-jar}}
           distribution: ${{env.java-distribution}}
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -53,7 +53,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
 
     steps:
       - uses: actions/checkout@v6
