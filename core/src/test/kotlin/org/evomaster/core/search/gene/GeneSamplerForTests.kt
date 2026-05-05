@@ -6,6 +6,10 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.sql.schema.TableId
@@ -177,6 +181,12 @@ object GeneSamplerForTests {
 
             // Mongo genes
             ObjectIdGene::class -> sampleMongoObjectIdGene(rand) as T
+
+            // JSON Patch genes
+            JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
+            JsonPatchPathOnlyGene::class  -> sampleJsonPatchPathOnlyGene(rand) as T
+            JsonPatchFromPathGene::class  -> sampleJsonPatchFromPathGene(rand) as T
+            JsonPatchPathValueGene::class -> sampleJsonPatchPathValueGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
@@ -948,6 +958,52 @@ object GeneSamplerForTests {
             if (!contains(".")) 0
             else split(".")[1].length
         }
+    }
+
+    private fun jsonPatchSelection(): List<KClass<out Gene>> {
+        return selectionForArrayTemplate()
+            .filter { it.java != SqlRangeGene::class.java }
+            .filter { it.java != SqlMultiRangeGene::class.java }
+            .filter { it.java != TaintedArrayGene::class.java }
+            .filter { it.java != TaintedMapGene::class.java }
+            .filter { it.java != ChoiceGene::class.java }
+            .filter { it.java.`package`?.name?.contains("jsonpatch") != true }
+    }
+
+    private fun randomPaths(rand: Randomness): List<String> {
+        val n = rand.nextInt(1, 5)
+        return (1..n).map { "/" + rand.nextWordString() }
+    }
+
+    private fun sampleJsonPatchDocumentGene(rand: Randomness): JsonPatchDocumentGene {
+        return JsonPatchDocumentGene("rand JsonPatchDocumentGene ${rand.nextInt()}")
+    }
+
+    private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
+        val name = "rand JsonPatchPathOnlyGene ${rand.nextInt()}"
+        return JsonPatchPathOnlyGene(name, "remove", EnumGene("path", randomPaths(rand)))
+    }
+
+    private fun sampleJsonPatchFromPathGene(rand: Randomness): JsonPatchFromPathGene {
+        val operationName = rand.choose(listOf("move", "copy"))
+        val name = "rand JsonPatchFromPathGene ${rand.nextInt()}"
+        return JsonPatchFromPathGene(
+            name, operationName,
+            fromGene = EnumGene("from", randomPaths(rand)),
+            pathGene  = EnumGene("path", randomPaths(rand))
+        )
+    }
+
+    private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
+        val operationName = rand.choose(listOf("add", "replace", "test"))
+        val name = "rand JsonPatchPathValueGene ${rand.nextInt()}"
+        val selection = jsonPatchSelection()
+        val entry = PairGene(
+            "entry_0",
+            EnumGene<String>("path", randomPaths(rand)),
+            samplePrintableTemplate(selection, rand)
+        )
+        return JsonPatchPathValueGene(name, operationName, ChoiceGene("${operationName}PathValue", listOf(entry)))
     }
 
     fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {
