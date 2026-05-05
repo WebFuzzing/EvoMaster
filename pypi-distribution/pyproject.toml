@@ -27,10 +27,6 @@ evomaster = ["release/**","_dummy.c"]
 ## and have to use these "tricks" to fool the build tool? really WTF?!?
 ## Now even trying to have a dummy C file...
 [tool.setuptools]
-zip-safe = false
-#[tool.setuptools.ext-modules]
-#dummy = { sources = ["src/evomaster/_dummy.c"] }
-[tool.setuptools]
 ext-modules = [
     {name = "mylib.foo", sources = ["src/evomaster/_dummy.c"]}
 ]
