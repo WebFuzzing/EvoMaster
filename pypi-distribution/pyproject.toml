@@ -30,6 +30,8 @@ evomaster = ["release/**","_dummy.c"]
 ext-modules = [
     {name = "mylib.foo", sources = ["src/evomaster/_dummy.c"]}
 ]
+[tool.cibuildwheel]
+repair-wheel-command = ""
 
 [project.scripts]
 evomaster = "evomaster.__main__:main"
