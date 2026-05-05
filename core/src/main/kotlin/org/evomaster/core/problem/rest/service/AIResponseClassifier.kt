@@ -136,7 +136,7 @@ class AIResponseClassifier : AIModel {
     @PostConstruct
     fun initModel() {
 
-        val models = config.getAIModelsForResponseClassification()
+        val models = config.getAIModelForResponseClassification()
 
         delegates = models.map { model ->
             when (model) {

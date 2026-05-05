@@ -1532,10 +1532,15 @@ class EMConfig {
     @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
             "Supports both single-model and ensemble configurations. " +
             "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
-    var aiModelsForResponseClassification: String = "NONE"
+    var aiModelForResponseClassification: String = "NONE"
 
-    fun getAIModelsForResponseClassification(): List<AIResponseClassifierModel> {
-        return aiModelsForResponseClassification
+    fun setAIModels(vararg models: AIResponseClassifierModel) {
+        aiModelForResponseClassification =
+            models.joinToString(",") { it.name }
+    }
+
+    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
+        val models = aiModelForResponseClassification
             .split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
@@ -1547,6 +1552,16 @@ class EMConfig {
                 }
             }
             .distinct()
+            .sorted()
+
+        // EvoMaster accept NONE or a combination of the AI models and not both
+        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
+            throw ConfigProblemException(
+                "Invalid configuration: NONE cannot be combined with other AI models"
+            )
+        }
+
+        return models
     }
 
     @Experimental
@@ -3257,7 +3272,7 @@ class EMConfig {
 
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
-    fun isEnabledAIModelForResponseClassification() = getAIModelsForResponseClassification().any { it != AIResponseClassifierModel.NONE }
+    fun isEnabledAIModelForResponseClassification() = getAIModelForResponseClassification().any { it != AIResponseClassifierModel.NONE }
 
     /**
      * Source to build the final GA solution when evolving full test suites (not single tests).

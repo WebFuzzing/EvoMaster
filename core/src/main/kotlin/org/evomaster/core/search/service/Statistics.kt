@@ -489,12 +489,12 @@ class Statistics : SearchListener {
         }
 
         // Compute metrics
-        val metrics = aiResponseClassifier.viewInnerModels().estimateOverallMetrics()
+        val metrics = aiResponseClassifier.estimateOverallMetrics()
         val aiStats = aiResponseClassifier.getStats()
 
         return aiMetricsAsPairs(
             enabled = true,
-            type = config.aiModelForResponseClassification.name,
+            type = config.aiModelForResponseClassification,
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
             sensitivity = metrics.sensitivity400,
