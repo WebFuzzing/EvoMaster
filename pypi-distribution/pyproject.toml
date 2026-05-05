@@ -20,7 +20,7 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-evomaster = ["release/**","evomaster/_dummy.C"]
+evomaster = ["release/**","_dummy.c"]
 
 ## ARGHHHHHHH what the f**k!!!
 ## No option to say that this is not a "pure" Python portable project???
@@ -28,6 +28,8 @@ evomaster = ["release/**","evomaster/_dummy.C"]
 ## Now even trying to have a dummy C file...
 [tool.setuptools]
 zip-safe = false
+[tool.setuptools.ext-modules]
+dummy = { sources = ["src/evomaster/_dummy.c"] }
 
 
 [project.scripts]
