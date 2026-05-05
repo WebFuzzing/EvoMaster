@@ -29,8 +29,8 @@ class JsonPatchDocumentGene private constructor(
     operationsArr: ArrayGene<ChoiceGene<JsonPatchOperationGene>>
 ) : CompositeFixedGene(name, listOf(operationsArr)) {
 
-    constructor(name: String, resourceSchema: Gene? = null)
-            : this(name, resourceSchema, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema))
+    constructor(name: String, resourceSchema: Gene? = null, randomness: Randomness? = null)
+            : this(name, resourceSchema, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema, randomness = randomness))
 
     companion object {
         val MIN_SIZE get() = JsonPatchDocumentGeneBuilder.MIN_SIZE
@@ -53,7 +53,10 @@ class JsonPatchDocumentGene private constructor(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String = operationsArray.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+    ): String {
+        val inner = operationsArray.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+        return if (mode == GeneUtils.EscapeMode.XML) "<patch>$inner</patch>" else inner
+    }
 
     override fun copyContent(): Gene =
         JsonPatchDocumentGene(
@@ -64,7 +67,16 @@ class JsonPatchDocumentGene private constructor(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is JsonPatchDocumentGene) throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return operationsArray.containsSameValueAs(other.operationsArray)
+        val schemaMatch = when {
+            resourceSchema == null && other.resourceSchema == null -> true
+            resourceSchema == null || other.resourceSchema == null -> false
+            else -> try {
+                resourceSchema.containsSameValueAs(other.resourceSchema)
+            } catch (_: IllegalArgumentException) {
+                false
+            }
+        }
+        return schemaMatch && operationsArray.containsSameValueAs(other.operationsArray)
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
