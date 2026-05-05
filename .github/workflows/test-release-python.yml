@@ -1,0 +1,119 @@
+name: Release on GitHub
+
+
+## Run only when we push a tag. See "docs/release.md" instructions
+on:
+  push:
+    tags:
+      - "test*"
+
+env:
+  evomaster-version: 5.2.1
+  jdk-jar: 17
+  jdk-jpackage: 21
+  java-distribution: temurin
+  retention-days: 1
+
+
+jobs:
+
+  build-base:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.jdk-jar}}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{env.jdk-jar}}
+          distribution: ${{env.java-distribution}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        # Don't run any test, as build should had already been verified (and it takes hours...)
+        run: mvn clean verify -DskipTests
+        env:
+          CI_env: GithubAction
+      - name: Upload evomaster.jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: evomaster.jar
+          path: core/target/evomaster.jar
+          retention-days: ${{env.retention-days}}
+          if-no-files-found: error
+
+##########################################################
+  build-app-image:
+    name: Build app-image on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK ${{env.jdk-jpackage}}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{env.jdk-jpackage}}
+          distribution: ${{env.java-distribution}}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Download fat jar
+        uses: actions/download-artifact@v4
+        with:
+          name: evomaster.jar
+          path: core/target
+
+      - name: Build app-image
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            bash makeExecutable.sh APPWIN
+          else
+            bash makeExecutable.sh APP
+          fi
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build Python Wheel
+        working-directory: ./pypi-distribution
+        run: |
+          rm -fr dist
+          python -m cibuildwheel --output-dir dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}
+          path: dist/*.whl
+
+  publish:
+    needs: build-base
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./pypi-distribution
+
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Collect wheels
+        run: |
+          mkdir dist
+          cp wheel-*/*.whl dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
