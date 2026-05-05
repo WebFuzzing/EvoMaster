@@ -459,11 +459,11 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             if (hasPhaseTimedOut()) return
 
-            // template: an existing PUT 201 on this path (its body is known valid)
+            // template: an existing PUT 201 on this path (its body is known valid).
             val putTemplate = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution, HttpVerb.PUT, putOp.path, status = 201
-            ).flatMap { ei ->
-                ei.evaluatedMainActions().mapNotNull { ea ->
+            ).asSequence().flatMap { ei ->
+                ei.evaluatedMainActions().asSequence().mapNotNull { ea ->
                     val a = ea.action as? RestCallAction ?: return@mapNotNull null
                     val r = ea.result as? RestCallResult ?: return@mapNotNull null
                     if (a.verb == HttpVerb.PUT && a.path.isEquivalent(putOp.path)
