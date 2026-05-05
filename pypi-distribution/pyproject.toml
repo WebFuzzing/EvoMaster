@@ -20,7 +20,7 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-evomaster = ["release/**"]
+evomaster = ["release/**","evomaster/_dummy.C"]
 
 ## ARGHHHHHHH what the f**k!!!
 ## No option to say that this is not a "pure" Python portable project???
