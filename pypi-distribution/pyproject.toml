@@ -25,7 +25,7 @@ evomaster = ["release/**"]
 ## ARGHHHHHHH what the f**k!!!
 ## No option to say that this is not a "pure" Python portable project???
 ## and have to use these "tricks" to fool the build tool? really WTF?!?
-[tool.setuptools.ext-modules]
+## Now even trying to have a dummy C file...
 [tool.setuptools]
 zip-safe = false
 
