@@ -12,40 +12,28 @@ import io.swagger.v3.oas.models.media.StringSchema
 import org.evomaster.core.remote.SutProblemException
 
 /**
- * Converts an AsyncAPI 3.0 message payload (which is plain JSON Schema) into
- * the Swagger media [Schema] tree that [org.evomaster.core.problem.rest.builder.RestActionBuilderV3]
- * already knows how to map onto Genes.
+ * Converts an AsyncAPI 3.0 message payload (plain JSON Schema, parsed into a
+ * Jackson [JsonNode]) into the Swagger media [Schema] tree that the shared
+ * [org.evomaster.core.search.gene.builder.JsonSchemaToGeneConverter] consumes.
  *
- * This is the load-bearing reuse hook described in the thesis plan: the
- * starter slice deliberately does not duplicate the ~800 LOC schema-to-gene
- * pipeline.  Instead, all AsyncAPI message schemas are translated to
- * [Schema] here and fed to `RestActionBuilderV3.getGene` in the builder
- * layer.
+ * Scope: type/format/enum/properties/required/items/additionalProperties plus
+ * oneOf/anyOf/allOf and `$ref`.  Refs are kept verbatim — the converter
+ * downstream resolves them via [org.evomaster.core.search.gene.builder.SchemaRefResolver],
+ * which on the AsyncAPI side is backed by
+ * [org.evomaster.core.problem.asyncapi.builder.AsyncAPISchemaRefResolver].
  *
- * Scope: type/format/enum/properties/required/items/additionalProperties
- * plus oneOf/anyOf/allOf and `$ref` (rewritten so the rest builder treats
- * them as plain refs).  Exotic JSON Schema features (conditional schemas,
- * `if`/`then`/`else`, `not`, `dependencies`) are out of scope and trigger a
- * SutProblemException pointing the user at the limitation.
+ * Exotic JSON Schema features (conditional schemas, `if`/`then`/`else`,
+ * `not`, `dependencies`) are out of scope and trigger a SutProblemException
+ * pointing the user at the limitation.
  */
 object JsonSchemaConverter {
-
-    private const val ASYNC_LOCAL_REF_PREFIX = "#/components/schemas/"
-    /**
-     * The AsyncAPI builder rewrites refs into the OpenAPI shape so the rest
-     * builder can resolve them out of a synthetic OpenAPI doc populated with
-     * the same component schemas.
-     */
-    private const val OPENAPI_LOCAL_REF_PREFIX = "#/components/schemas/"
 
     fun convert(node: JsonNode): Schema<*> = convertNode(node)
 
     private fun convertNode(node: JsonNode): Schema<*> {
-        // $ref shortcut — rewrite to OpenAPI-shaped ref.
+        // Pass refs through unchanged; the gene builder's resolver looks them up.
         node.get("\$ref")?.asText()?.let { ref ->
-            val schemaId = ref.removePrefix(ASYNC_LOCAL_REF_PREFIX)
-            val rewritten = OPENAPI_LOCAL_REF_PREFIX + schemaId
-            return ObjectSchema().apply { this.`$ref` = rewritten }
+            return ObjectSchema().apply { this.`$ref` = ref }
         }
 
         // oneOf / anyOf / allOf
