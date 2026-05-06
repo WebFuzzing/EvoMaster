@@ -118,8 +118,15 @@ class AIResponseClassifier : AIModel {
     /**
      * In the ensemble scenario the function selects the strongest model for a given endpoint
      * among all the other used models based on the average of key metrics.
+     * For the single-model scenario, the function simply returns the single model.
      */
     private fun selectBestModel(endpoint: Endpoint): AIModel? {
+
+        // Return the single model if there is only one delegate.
+        if (delegates.size == 1) {
+            return delegates[0]
+        }
+
         return delegates.maxByOrNull { model ->
             val m = model.estimateMetrics(endpoint)
             listOf(
