@@ -86,7 +86,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 
     // Configure classifier and other parameters
     fun setup(modelName: String) {
-        config.aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.valueOf(modelName)
+        config.setAIModels(EMConfig.AIResponseClassifierModel.valueOf(modelName))
         config.aiEncoderType = EMConfig.EncoderType.valueOf(encoderType)
         config.aiClassifierRepairActivation = EMConfig.AIClassificationRepairActivation.valueOf(decisionMaking)
         config.aiResponseClassifierWarmup = warmUpRep
