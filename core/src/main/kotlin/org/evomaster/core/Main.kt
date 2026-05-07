@@ -21,6 +21,8 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
+import org.evomaster.core.problem.asyncapi.service.module.AsyncAPIBlackBoxModule
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
@@ -594,6 +596,14 @@ class Main {
                 EMConfig.ProblemType.WEBFRONTEND -> {
                     //TODO black-box mode
                     WebModule()
+                }
+
+                EMConfig.ProblemType.ASYNCAPI -> {
+                    if (config.blackBox) {
+                        AsyncAPIBlackBoxModule()
+                    } else {
+                        throw IllegalStateException("AsyncAPI white-box is not implemented yet (M5 in the plan); pass --blackBox true")
+                    }
                 }
 
                 //this should never happen, unless we add new type and forget to add it here
