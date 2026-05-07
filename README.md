@@ -270,6 +270,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
 * [Build EvoMaster from source](docs/build.md)
 * [Command-Line Interface (CLI) options](docs/options.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
+* [AsyncAPI 3.0 Schema (experimental)](docs/asyncapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
   * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
