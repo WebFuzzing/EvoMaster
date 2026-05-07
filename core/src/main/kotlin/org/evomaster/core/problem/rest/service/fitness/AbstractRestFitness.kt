@@ -1267,6 +1267,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
             handleMisleadingCreatePut(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
+            handleNonIdempotentPut(individual, actionResults, fv)
+        }
     }
 
     private fun handleFailedModification(
@@ -1379,6 +1383,25 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
         ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleNonIdempotentPut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasNonIdempotentPut(individual, actionResults)) return
+
+        val actions = individual.seeMainExecutableActions()
+        // sequence ends with: PUT, GET, PUT, GET — flag the 2nd PUT as the offending action
+        val secondPut = actions[actions.size - 2]
+
+        val category = ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, secondPut.getName()))
+        fv.updateTarget(scenarioId, 1.0, actions.size - 2)
+
+        val ar = actionResults.find { it.sourceLocalId == secondPut.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, secondPut.getName(), null))
     }
 
 
