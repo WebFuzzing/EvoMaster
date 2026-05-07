@@ -123,9 +123,7 @@ class AIResponseClassifier : AIModel {
     private fun selectBestModel(endpoint: Endpoint): AIModel? {
 
         // Return the single model if there is only one delegate.
-        if (delegates.size == 1) {
-            return delegates[0]
-        }
+        if (delegates.size == 1) return delegates.first()
 
         return delegates.maxByOrNull { model ->
             val m = model.estimateMetrics(endpoint)
@@ -427,7 +425,7 @@ class AIResponseClassifier : AIModel {
 
         // skip conditions
         val skip5xx =
-            trueStatusCode !in 500..599 && config.skipAIModelUpdateWhenResponseIs5xx
+            trueStatusCode in 500..599 && config.skipAIModelUpdateWhenResponseIs5xx
 
         val skipNot2xxOr400 =
             trueStatusCode !in 200..299
