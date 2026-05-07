@@ -571,6 +571,45 @@ object HttpSemanticsOracle {
         return false
     }
 
+    /**
+     * Checks the misleading-create PUT oracle:
+     *
+     *   GET /path -> ???  (should be 404 if PUT truly creates)
+     *   PUT /path -> 201  (claims resource was created)
+     *
+     * Returns true if the GET before the PUT returns 2xx, meaning the resource already
+     * existed and the 201 is misleading (should be 200 or 204 for an update).
+     */
+    fun hasMisleadingCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 2) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val get = actions[actions.size - 2]
+        val put = actions[actions.size - 1]
+
+        if (get.verb != HttpVerb.GET) return false
+        if (put.verb != HttpVerb.PUT) return false
+
+        if (!get.usingSameResolvedPath(put)) return false
+
+        if (get.auth.isDifferentFrom(put.auth)) return false
+
+        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
+            ?: return false
+        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // PUT must have returned 201 (claiming creation)
+        if (resPut.getStatusCode() != 201) return false
+
+        // If GET before PUT returned 2xx, the resource already existed -> misleading 201
+        return StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())
+    }
+
     private fun parseFormBody(body: String): Map<String, String> {
         return body.split("&").mapNotNull { pair ->
             val parts = pair.split("=", limit = 2)
