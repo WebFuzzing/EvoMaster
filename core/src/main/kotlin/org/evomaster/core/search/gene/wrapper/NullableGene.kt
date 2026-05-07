@@ -127,4 +127,12 @@ class NullableGene(name: String,
                 && this.nullLabel == other.nullLabel
     }
 
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        if(value == nullLabel){
+            isActive = false
+            return true
+        } else {
+            return gene.unsafeSetFromStringValue(value)
+        }
+    }
 }

@@ -170,4 +170,29 @@ class SMTLibZ3DbConstraintSolverTest {
         // This will be empty as the query does not correspond to the created database, just checking that it doesn't throw an exception
         assertEquals(0, newActions.size)
     }
+
+    @Test
+    fun findTableByNamePreservesGroups() {
+        val table = schemaDto.tables.first()
+        val tableName = table.id.name
+        val oldCatalog = table.id.catalog
+        val oldSchema = table.id.schema
+
+        try {
+            // Ensure we have some groups set to test
+            table.id.catalog = "MY_CATALOG"
+            table.id.schema = "MY_SCHEMA"
+
+            val actions = solver.solve(schemaDto, "SELECT * FROM $tableName WHERE 1=1", 1)
+
+            assertFalse(actions.isEmpty())
+            val action = actions[0]
+            assertEquals("MY_CATALOG", action.table.id.sealedGroupName)
+            assertEquals("MY_SCHEMA", action.table.id.openGroupName)
+        } finally {
+            // Restore original values to avoid side effects on other tests
+            table.id.catalog = oldCatalog
+            table.id.schema = oldSchema
+        }
+    }
 }

@@ -24,6 +24,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
+        const val INVALID_HTTP = "INVALID_HTTP"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
         const val ALLOW = "ALLOW"
@@ -45,15 +46,43 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
      * object with info
      */
     fun failedCall(): Boolean{
-        return getInfiniteLoop() || getTimedout() || getTcpProblem()
+        return getInfiniteLoop() || getTimedout() || getTcpProblem() || getInvalidHTTP()
     }
 
 
+    /**
+     * This is VERY TRICKY.
+     * We can have a failedCall()... as well as a call that works fine in EM,
+     * but then "fail" in the generated tests.
+     * This depends on how different libraries dealing with HTTP handle invalid HTTP messages.
+     * For example, Jersey throw an exception if below 100, but works fine if 600 or above.
+     * RestAssured throws exceptions even in this latter case.
+     * No idea (not checked) what the libraries in JS and Python do.
+     * So, here we mark as "invalid" (equivalent to "failed") even successful calls, as long
+     * as their status is invalid.
+     *
+     * To make things even more than the shitshow it is already, technically speaking the range 600-999 is not
+     * invalid according to RFC specs... (it should be just treated as 5xx)
+     */
+    fun invalidCall(): Boolean{
+        return failedCall() || invalidStatus()
+    }
+
+    fun invalidStatus() : Boolean{
+        val statusCode = getStatusCode()
+        if(statusCode != null && statusCode !in 100..<600){
+            return true
+        }
+        //in theory, could be other cases that leads to an invalid HTTP besides the status
+        return getInvalidHTTP()
+    }
 
     fun setStatusCode(code: Int) {
-        if (code !in 100..<600) {
-            throw IllegalArgumentException("Invalid HTTP code $code")
-        }
+        // We can't have this check here... it would crash if API sends a wrong code,
+        // which now we actually do in some E2E tests...
+//        if (code !in 100..<600) {
+//            throw IllegalArgumentException("Invalid HTTP code $code")
+//        }
 
         addResultValue(STATUS_CODE, code.toString())
     }
@@ -153,6 +182,10 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     fun setTcpProblem(tcpProblem: Boolean) = addResultValue(TCP_PROBLEM, tcpProblem.toString())
     fun getTcpProblem() : Boolean = getResultValue(TCP_PROBLEM)?.toBoolean() ?: false
+
+    fun setInvalidHTTP(invalidHTTP: Boolean) = addResultValue(INVALID_HTTP, invalidHTTP.toString())
+    fun getInvalidHTTP() : Boolean = getResultValue(INVALID_HTTP)?.toBoolean() ?: false
+
 
     fun setAppliedLink(applied: Boolean) = addResultValue(APPLIED_LINK, applied.toString())
     fun getAppliedLink(): Boolean = getResultValue(APPLIED_LINK)?.toBoolean() ?: false
