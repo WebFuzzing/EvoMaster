@@ -23,6 +23,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHt
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
 import org.evomaster.core.problem.asyncapi.service.module.AsyncAPIBlackBoxModule
+import org.evomaster.core.problem.asyncapi.service.module.AsyncAPIModule
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
@@ -550,6 +551,8 @@ class Main {
                     config.problemType = EMConfig.ProblemType.RPC
                 } else if (info.webProblem != null) {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
+                } else if (info.asyncAPIProblem != null) {
+                    config.problemType = EMConfig.ProblemType.ASYNCAPI
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -602,7 +605,7 @@ class Main {
                     if (config.blackBox) {
                         AsyncAPIBlackBoxModule()
                     } else {
-                        throw IllegalStateException("AsyncAPI white-box is not implemented yet (M5 in the plan); pass --blackBox true")
+                        AsyncAPIModule()
                     }
                 }
 

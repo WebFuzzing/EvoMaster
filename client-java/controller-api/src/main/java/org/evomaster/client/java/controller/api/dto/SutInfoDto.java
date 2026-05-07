@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.problem.AsyncAPIProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
@@ -34,6 +35,13 @@ public class SutInfoDto {
      * on how to interact with it
      */
     public WebProblemDto webProblem;
+
+    /**
+     * If the SUT exposes an AsyncAPI 3.0 messaging contract (request/reply
+     * over Kafka, MQTT, etc.), here there will be the info on how to
+     * interact with it
+     */
+    public AsyncAPIProblemDto asyncAPIProblem;
 
     /**
      * Whether the SUT is running or not
