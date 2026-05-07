@@ -219,7 +219,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         when {
             format.isPlaywright() -> {
-                lines.add("request.$verb(")
+                lines.add("await request.$verb(")
             }
             format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
             else -> {

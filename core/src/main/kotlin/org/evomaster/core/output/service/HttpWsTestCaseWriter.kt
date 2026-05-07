@@ -113,7 +113,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
-            format.isPlaywright() -> lines.append("await request")
+            format.isPlaywright() -> {} // already handled in handleVerbEndpoint in RestTestCaseWriter
             format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
@@ -881,7 +881,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if(!allow.isNullOrBlank()){
             val instruction = when {
                 format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
-                format.isPlaywright() -> "expect(await $responseVariableName.headerValue(\"allow\")).toContain(\"$allow\")"
+                format.isPlaywright() -> "expect($responseVariableName.headers()[\"allow\"]).toContain(\"$allow\")"
                 format.isJavaScript() -> "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
                 format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
@@ -913,7 +913,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             val instruction = when {
                 format.isJavaOrKotlin() -> ".contentType(\"$bodyTypeSimplified\")"
-                format.isPlaywright() -> "expect(await $responseVariableName.headerValue(\"content-type\")).toContain(\"$bodyTypeSimplified\")"
+                format.isPlaywright() -> "expect($responseVariableName.headers()[\"content-type\"]).toContain(\"$bodyTypeSimplified\")"
                 format.isJavaScript() ->
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
 
