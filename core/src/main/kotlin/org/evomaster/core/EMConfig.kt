@@ -1528,11 +1528,41 @@ class EMConfig {
         DETERMINISTIC
     }
 
-
-
     @Experimental
-    @Cfg("Model used to learn input constraints and infer response status before making request.")
-    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+    @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
+            "Supports both single-model and ensemble configurations. " +
+            "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
+    var aiModelForResponseClassification: String = "NONE"
+
+    fun setAIModels(vararg models: AIResponseClassifierModel) {
+        aiModelForResponseClassification =
+            models.joinToString(",") { it.name }
+    }
+
+    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
+        val models = aiModelForResponseClassification
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map {
+                try {
+                    AIResponseClassifierModel.valueOf(it)
+                } catch (e: Exception) {
+                    throw ConfigProblemException("Invalid AI model: $it")
+                }
+            }
+            .distinct()
+            .sorted()
+
+        // EvoMaster accept NONE or a combination of the AI models and not both
+        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
+            throw ConfigProblemException(
+                "Invalid configuration: NONE cannot be combined with other AI models"
+            )
+        }
+
+        return models
+    }
 
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
@@ -3242,7 +3272,7 @@ class EMConfig {
 
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
-    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+    fun isEnabledAIModelForResponseClassification() = getAIModelForResponseClassification().any { it != AIResponseClassifierModel.NONE }
 
     /**
      * Source to build the final GA solution when evolving full test suites (not single tests).

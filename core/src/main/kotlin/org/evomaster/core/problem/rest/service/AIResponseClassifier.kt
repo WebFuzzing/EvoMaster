@@ -91,7 +91,7 @@ class AIResponseClassifier : AIModel {
     @Inject
     private lateinit var randomness: Randomness
 
-    private lateinit var delegate: AIModel
+    private lateinit var delegates: List<AIModel>
 
     private var enabledLearning : Boolean = true
 
@@ -102,52 +102,94 @@ class AIResponseClassifier : AIModel {
     /** Read-only snapshot for reporting */
     fun getStats(): AIResponseClassifierStats = stats.copy()
 
+    /** Determines whether the model's performance metrics indicate that the model is weak
+     *  A model is weak if any of its key metrics falls below the defined weaknessThreshold.
+     */
+    private fun isWeak(metrics: ModelEvaluation): Boolean {
+
+        val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
+
+        return metrics.precision400 <= weaknessThreshold||
+                metrics.sensitivity400 <= weaknessThreshold ||
+                metrics.specificity <= weaknessThreshold ||
+                metrics.npv <= weaknessThreshold
+    }
+
+    /**
+     * In the ensemble scenario the function selects the strongest model for a given endpoint
+     * among all the other used models based on the average of key metrics.
+     * For the single-model scenario, the function simply returns the single model.
+     */
+    private fun selectBestModel(endpoint: Endpoint): AIModel? {
+
+        // Return the single model if there is only one delegate.
+        if (delegates.size == 1) return delegates.first()
+
+        return delegates.maxByOrNull { model ->
+            val m = model.estimateMetrics(endpoint)
+            listOf(
+                m.precision400,
+                m.sensitivity400,
+                m.specificity,
+                m.npv
+            ).average()
+        }
+    }
+
+    fun viewInnerModels(): List<AIModel> = delegates
+
     @PostConstruct
     fun initModel() {
-        delegate = when (config.aiModelForResponseClassification) {
-            EMConfig.AIResponseClassifierModel.GAUSSIAN ->
-                Gaussian400Classifier(
-                    warmup = config.aiResponseClassifierWarmup,
-                    encoderType=config.aiEncoderType,
-                    metricType =config.aIClassificationMetrics,
-                    randomness = randomness)
-            EMConfig.AIResponseClassifierModel.GLM ->
-                GLM400Classifier(
-                    warmup = config.aiResponseClassifierWarmup,
-                    encoderType=config.aiEncoderType,
-                    metricType =config.aIClassificationMetrics,
-                    randomness = randomness,
-                    learningRate = config.aiResponseClassifierLearningRate)
-            EMConfig.AIResponseClassifierModel.NN ->
-                NN400Classifier(
-                    warmup = config.aiResponseClassifierWarmup,
-                    encoderType=config.aiEncoderType,
-                    metricType =config.aIClassificationMetrics,
-                    randomness = randomness,
-                    learningRate = config.aiResponseClassifierLearningRate)
-            EMConfig.AIResponseClassifierModel.KNN ->
-                KNN400Classifier(
-                    warmup = config.aiResponseClassifierWarmup,
-                    encoderType=config.aiEncoderType,
-                    metricType =config.aIClassificationMetrics,
-                    randomness = randomness,
-                    k = 3)
-            EMConfig.AIResponseClassifierModel.KDE ->
-                KDE400Classifier(
-                    warmup = config.aiResponseClassifierWarmup,
-                    encoderType=config.aiEncoderType,
-                    metricType =config.aIClassificationMetrics,
-                    randomness = randomness
-                )
-            EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
-                Deterministic400Classifier(
-                    config.classificationRepairThreshold,
-                    metricType = config.aIClassificationMetrics)
-            else -> object : AIModel {
-                override fun updateModel(input: RestCallAction, output: RestCallResult) {}
-                override fun classify(input: RestCallAction) = AIResponseClassification()
-                override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
-                override fun estimateOverallMetrics(): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
+
+        val models = config.getAIModelForResponseClassification()
+
+        delegates = models.map { model ->
+            when (model) {
+
+                EMConfig.AIResponseClassifierModel.GAUSSIAN ->
+                    Gaussian400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType=config.aiEncoderType,
+                        metricType =config.aIClassificationMetrics,
+                        randomness = randomness)
+                EMConfig.AIResponseClassifierModel.GLM ->
+                    GLM400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType=config.aiEncoderType,
+                        metricType =config.aIClassificationMetrics,
+                        randomness = randomness,
+                        learningRate = config.aiResponseClassifierLearningRate)
+                EMConfig.AIResponseClassifierModel.NN ->
+                    NN400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType=config.aiEncoderType,
+                        metricType =config.aIClassificationMetrics,
+                        randomness = randomness,
+                        learningRate = config.aiResponseClassifierLearningRate)
+                EMConfig.AIResponseClassifierModel.KNN ->
+                    KNN400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType=config.aiEncoderType,
+                        metricType =config.aIClassificationMetrics,
+                        randomness = randomness,
+                        k = 3)
+                EMConfig.AIResponseClassifierModel.KDE ->
+                    KDE400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType=config.aiEncoderType,
+                        metricType =config.aIClassificationMetrics,
+                        randomness = randomness
+                    )
+                EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
+                    Deterministic400Classifier(
+                        config.classificationRepairThreshold,
+                        metricType = config.aIClassificationMetrics)
+                else -> object : AIModel {
+                    override fun updateModel(input: RestCallAction, output: RestCallResult) {}
+                    override fun classify(input: RestCallAction) = AIResponseClassification()
+                    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
+                    override fun estimateOverallMetrics(): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
+                }
             }
         }
     }
@@ -190,7 +232,7 @@ class AIResponseClassifier : AIModel {
 
             // Measuring the time of update
             val start = System.nanoTime()
-            delegate.updateModel(input, output)
+            delegates.forEach { it.updateModel(input, output) }
             val t = System.nanoTime() - start
 
             // updating time stats
@@ -210,26 +252,59 @@ class AIResponseClassifier : AIModel {
         }
 
         val start = System.nanoTime()
-        val result = delegate.classify(input)
+
+        val bestModel = selectBestModel(input.endpoint)
+
+        val result = bestModel?.classify(input) ?: AIResponseClassification()
+
+        val p = result.probabilityOf400()
+        val invalidFields = result.invalidFields
+
         val t = System.nanoTime() - start
 
         stats.classifyTimeNs += t
         stats.classifyCount++
 
-        return result
+        return AIResponseClassification(
+            probabilities = mapOf(400 to p),
+            invalidFields = invalidFields
+        )
     }
 
+    /**
+     * In the ensemble setting, the reported metrics correspond to the best-performing
+     * individual model for the given endpoint. In the single-model case, the metrics
+     * are naturally derived from that model alone.
+     * In other words, for ensembles, the metrics reflect the strongest performance
+     * achieved among all available models.
+     */
     override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
-        return delegate.estimateMetrics(endpoint)
+        val bestModel = selectBestModel(endpoint)
+        return bestModel?.estimateMetrics(endpoint)
+            ?: ModelEvaluation.DEFAULT_NO_DATA
     }
 
-
+    /**
+     * In the ensemble setting, the reported overall metrics are computed as the average
+     * of the corresponding metrics across all models.
+     * In the single-model case, the overall metrics coincide with those of
+     * the individual model (see [org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400Classifier]).
+     */
     override fun estimateOverallMetrics(): ModelEvaluation {
-        return delegate.estimateOverallMetrics()
+
+        val metrics = delegates.map { it.estimateOverallMetrics() }
+
+        return ModelEvaluation(
+            accuracy = metrics.map { it.accuracy }.average(),
+            precision400 = metrics.map { it.precision400 }.average(),
+            sensitivity400 = metrics.map { it.sensitivity400 }.average(),
+            specificity = metrics.map { it.specificity }.average(),
+            npv = metrics.map { it.npv }.average(),
+            mcc = metrics.map { it.mcc }.average()
+        )
+
     }
 
-
-    fun viewInnerModel(): AIModel = delegate
 
     /**
      * If the model thinks this call will lead to a user error (e.g., 400), then try to repair
@@ -241,19 +316,13 @@ class AIResponseClassifier : AIModel {
 
         /**
          * Skips repair when the classifier is still too weak to provide meaningful guidance.
-         * Reliability is assessed using precision, recall, and MCC (see [ModelEvaluation]) to
+         * Reliability is assessed using model metrics (see [ModelEvaluation]) to
          * ensure the model performs better than random guessing, especially important under the class imbalance.
          * If any of the criteria are not met, the classifier is considered unreliable
          * for steering repairs. In such cases, the call is executed without modification so the
          * classifier can gather additional informative samples and improve over time.
          */
-        val metrics = estimateMetrics(call.endpoint)
-        val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
-        if (metrics.precision400 <= weaknessThreshold
-            || metrics.sensitivity400 <= weaknessThreshold
-            || metrics.specificity <= weaknessThreshold
-            || metrics.npv <= weaknessThreshold) {
-
+        if (isWeak(estimateMetrics(call.endpoint))) {
             //do nothing
             return
         }
@@ -356,7 +425,7 @@ class AIResponseClassifier : AIModel {
 
         // skip conditions
         val skip5xx =
-            trueStatusCode !in 500..599 && config.skipAIModelUpdateWhenResponseIs5xx
+            trueStatusCode in 500..599 && config.skipAIModelUpdateWhenResponseIs5xx
 
         val skipNot2xxOr400 =
             trueStatusCode !in 200..299

@@ -72,12 +72,18 @@ class GLM400EndpointModel(
         val prob400 = 1 - sigmoid(z)
         val probNot400 = 1.0 - prob400
 
-        return AIResponseClassification(
-            probabilities = mapOf(
-                NOT_400 to probNot400,
-                400 to prob400
+        return if (prob400.isNaN() || probNot400.isNaN()) {
+            AIResponseClassification(
+                probabilities = mapOf(NOT_400 to 0.5, 400 to 0.5)
             )
-        )
+        }else {
+            AIResponseClassification(
+                probabilities = mapOf(
+                    NOT_400 to probNot400,
+                    400 to prob400
+                )
+            )
+        }
 
     }
 
