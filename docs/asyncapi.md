@@ -86,11 +86,22 @@ Schema-validity is the cheap "required + enum" check, not full JSON-Schema valid
 
 The starter slice emits a structural JUnit 5 skeleton with one test method per individual and one comment block per action describing what was published or awaited. Real `KafkaProducer` / `KafkaConsumer` setup in the generated tests is parked for the next slice — keeping it out lets the test suite compile without dragging `kafka-clients` into the project's runtime dependencies.
 
+## Fire-and-forget operations and the hybrid wait
+
+For `send` operations that declare a `reply`, EvoMaster awaits the reply (5s default) and that wait acts as the synchronisation barrier between the publish and the SUT's consumer code finishing.
+
+For fire-and-forget `send` operations there is no such barrier. The behaviour depends on the mode:
+
+- **Black-box** sleeps for `--asyncApiFireAndForgetSettleMs` (default 200ms) after each fire-and-forget publish. Tune this if your consumers are slow.
+- **White-box** runs a hybrid coverage-stabilisation strategy: it polls the EM Driver's `getTestResults` every `--asyncApiCoverageStabilisationPollMs` (default 100ms) until the covered-target count has been stable for `--asyncApiCoverageStabilisationWindowMs` (default 300ms), capped at `--asyncApiCoverageStabilisationMaxMs` (default 3000ms). The simple settle still runs as a lower-bound floor before polling starts, so the driver has time to receive at least one batch of targets before "stable" is meaningful.
+
+The settle / polling are skipped entirely for `request`/`reply` operations because the reply-await already serves as the barrier.
+
 ## Known limitations (starter slice)
 
 - **AsyncAPI 3.0 only.** 2.x schemas are rejected with a clear error referencing this page; 2.x support will go through the same internal model and is mechanical to add.
 - **Kafka only.** The `MessageBrokerClient` interface is shaped to accept MQTT/AMQP implementations later, but only `KafkaBrokerClient` ships today.
-- **Fixed reply timeout.** 5 seconds per `SUBSCRIBE_REPLY`. The plan calls for a hybrid coverage-stabilisation strategy; tracked as follow-up.
+- **Fixed reply timeout.** 5 seconds per `SUBSCRIBE_REPLY`; not yet configurable. (The hybrid wait above only addresses fire-and-forget operations.)
 - **No driver-side `ScheduleTask`-style instrumentation.** White-box coverage relies on the SUT's `@KafkaListener` callback running before the end-of-individual poll fires.
 - **Generated test bodies are stubs.** Action sequences and outcomes are emitted as comments; concrete Kafka client code generation is follow-up work.
 - **No content-equality reply oracles.** Assertions stay schema-derivable: schema validity, correlation match, oneOf-variant detection. SUT-specific oracles are out of scope and shouldn't be added — the AsyncAPI search is meant to ride on the schema.

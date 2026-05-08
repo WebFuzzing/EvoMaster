@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.asyncapi.service.fitness
 
+import org.evomaster.core.problem.asyncapi.data.AsyncAPIAction
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
@@ -11,21 +12,19 @@ import org.slf4j.LoggerFactory
  * Inherits the full schema-derivable target set from [AbstractAsyncAPIFitness]
  * and layers on the JVM-coverage signals the EM Driver provides:
  *
- *  - Each action is registered with the driver via
- *    [org.evomaster.core.problem.enterprise.service.EnterpriseFitness.registerNewAction]
- *    just before publish/subscribe so the bytecode instrumentation attributes
- *    branch/line targets to it.
- *  - Once all actions in an individual have been processed, the driver is
- *    polled for the resulting branch/line coverage and the targets are
- *    merged into the fitness value.
- *
- * The reason this is more than a one-liner over black-box: the broker hop
- * between EvoMaster's publish call and the SUT's `@KafkaListener` callback
- * is asynchronous, so the driver's coverage poll happens once at the *end*
- * of the action loop rather than per-action.  M6 is expected to refine
- * this with a hybrid wait strategy (coverage stabilisation + per-action
- * timeout); the starter slice trusts the broker's at-least-once semantics
- * to have delivered every message before we ask for results.
+ *  - Before each action [registerNewAction] tells the driver which action's
+ *    coverage is about to be exercised so attribution lands on the right index.
+ *  - After a fire-and-forget PUBLISH, [awaitConsumerSettled] runs the hybrid
+ *    coverage-stabilisation strategy from the plan / Thesis §7: poll
+ *    `getTestResults` every [EMConfig.asyncApiCoverageStabilisationPollMs]
+ *    until the covered-target count hasn't changed for
+ *    [EMConfig.asyncApiCoverageStabilisationWindowMs], capped at
+ *    [EMConfig.asyncApiCoverageStabilisationMaxMs].  The simple settle from
+ *    the abstract base remains as a lower bound — gives the driver time to
+ *    receive at least one batch of targets before polling can declare
+ *    "stable".
+ *  - At end-of-individual the driver is polled for the resulting branch/line
+ *    coverage and those targets are merged into the fitness value.
  */
 class AsyncAPIFitness : AbstractAsyncAPIFitness() {
 
@@ -46,9 +45,68 @@ class AsyncAPIFitness : AbstractAsyncAPIFitness() {
         }
     }
 
-    override fun beforeAction(action: org.evomaster.core.problem.asyncapi.data.AsyncAPIAction, index: Int) {
+    override fun beforeAction(action: AsyncAPIAction, index: Int) {
         // Tell the EM Driver which action's coverage is about to be exercised.
         registerNewAction(action, index)
+    }
+
+    override fun awaitConsumerSettled(action: AsyncAPIAction, index: Int) {
+        // Lower-bound floor: let the driver receive at least one batch of
+        // targets before we start asking "is anything still arriving?".  This
+        // also doubles as the fallback for runs where getTestResults fails
+        // (the catch in the loop below logs and breaks out without raising).
+        applyFireAndForgetSettle()
+
+        val pollMs = config.asyncApiCoverageStabilisationPollMs.toLong()
+        val windowMs = config.asyncApiCoverageStabilisationWindowMs.toLong()
+        val maxMs = config.asyncApiCoverageStabilisationMaxMs.toLong()
+
+        val deadline = System.currentTimeMillis() + maxMs
+        var lastTargetCount = sampleCoveredTargetCount() ?: return  // driver unreachable; the settle was the best we could do
+        var lastChange = System.currentTimeMillis()
+
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(pollMs)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            }
+
+            val now = sampleCoveredTargetCount() ?: return
+            if (now != lastTargetCount) {
+                lastTargetCount = now
+                lastChange = System.currentTimeMillis()
+            } else if (System.currentTimeMillis() - lastChange >= windowMs) {
+                if (log.isTraceEnabled) {
+                    log.trace(
+                        "AsyncAPI fire-and-forget action #{} ({}) settled at {} targets",
+                        index, action.getName(), now
+                    )
+                }
+                return
+            }
+        }
+
+        log.debug(
+            "AsyncAPI fire-and-forget action #{} ({}) did not settle within {}ms; proceeding",
+            index, action.getName(), maxMs
+        )
+    }
+
+    /**
+     * Cheap probe of the driver's current covered-target count.  We do not
+     * keep the result — coverage is harvested in bulk at end-of-individual via
+     * [updateFitnessAfterEvaluation].  Returns null on transient failure so
+     * the caller can fall back to the simple settle without aborting.
+     */
+    private fun sampleCoveredTargetCount(): Int? {
+        return try {
+            rc.getTestResults(setOf(), ignoreKillSwitch = true)?.targets?.size
+        } catch (e: Exception) {
+            log.debug("Stabilisation poll skipped: {}", e.message)
+            null
+        }
     }
 
     override fun afterIndividualEvaluated(

@@ -97,13 +97,13 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                         handlePublish(action, fv, correlationByPair, result)
                         // Fire-and-forget operations have no SUBSCRIBE_REPLY barrier
                         // after the publish, so the SUT's consumer handler may still
-                        // be running by the time we process the next action.  A short
-                        // configurable settle gives the listener time to land before
-                        // per-action coverage attribution gets confused.  Skipped when
-                        // a paired SUBSCRIBE_REPLY follows, because awaiting the reply
-                        // already serves as the barrier.
+                        // be running by the time we process the next action.  Defer to
+                        // [awaitConsumerSettled] — black-box uses the simple settle,
+                        // white-box overrides with coverage-stabilisation polling.
+                        // Skipped when a paired SUBSCRIBE_REPLY follows, because
+                        // awaiting the reply already serves as the barrier.
                         if (!result.stopping && !isFollowedByReply(actions, index, action.pairId)) {
-                            applyFireAndForgetSettle()
+                            awaitConsumerSettled(action, index)
                         }
                     }
                     AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> handleSubscribeReply(action, schema, fv, correlationByPair, result)
@@ -147,7 +147,13 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         return next.kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY && next.pairId == pairId
     }
 
-    private fun applyFireAndForgetSettle() {
+    /**
+     * Default settle: a fixed sleep of [EMConfig.asyncApiFireAndForgetSettleMs].
+     * Used by black-box (no driver to poll) and as the lower-bound floor before
+     * white-box's stabilisation loop kicks in.  Exposed `protected` so the
+     * white-box subclass can call it as part of the hybrid strategy.
+     */
+    protected fun applyFireAndForgetSettle() {
         val ms = config.asyncApiFireAndForgetSettleMs.toLong()
         if (ms <= 0) return
         try {
@@ -155,6 +161,17 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         }
+    }
+
+    /**
+     * Hook invoked after a fire-and-forget PUBLISH (a [PUBLISH][AsyncAPIAction.Kind.PUBLISH]
+     * with no following [SUBSCRIBE_REPLY][AsyncAPIAction.Kind.SUBSCRIBE_REPLY]
+     * twin).  Default: the simple settle from [applyFireAndForgetSettle].
+     * White-box overrides this with coverage-stabilisation polling against the
+     * EM Driver — see [AsyncAPIFitness.awaitConsumerSettled].
+     */
+    protected open fun awaitConsumerSettled(action: AsyncAPIAction, index: Int) {
+        applyFireAndForgetSettle()
     }
 
     /**
