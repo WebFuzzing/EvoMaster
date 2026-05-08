@@ -1271,10 +1271,36 @@ class EMConfig {
             " channel), how many milliseconds to wait before processing the next action. Gives the" +
             " SUT's consumer handler time to run before per-action coverage is attributed or the" +
             " end-of-individual coverage poll fires. Has no effect on 'request'/'reply' operations" +
-            " because the reply-await already serves as a barrier. Set to 0 to disable.")
+            " because the reply-await already serves as a barrier. In white-box AsyncAPI the hybrid" +
+            " coverage-stabilisation strategy supersedes this; the value is then used as the lower" +
+            " bound that applies before the polling loop kicks in.")
     @Min(0.0)
     @Max(60_000.0)
     var asyncApiFireAndForgetSettleMs = 200
+
+    @Experimental
+    @Cfg("White-box AsyncAPI: how often (ms) to poll the EM Driver's getTestResults while waiting" +
+            " for a fire-and-forget consumer to settle. Lower values detect completion faster at" +
+            " the cost of more driver round-trips.")
+    @Min(10.0)
+    @Max(10_000.0)
+    var asyncApiCoverageStabilisationPollMs = 100
+
+    @Experimental
+    @Cfg("White-box AsyncAPI: time window (ms) the covered-target count must stay unchanged before" +
+            " the hybrid wait declares the SUT's consumer handler done. A larger window is more" +
+            " forgiving of bursty coverage but waits longer.")
+    @Min(50.0)
+    @Max(10_000.0)
+    var asyncApiCoverageStabilisationWindowMs = 300
+
+    @Experimental
+    @Cfg("White-box AsyncAPI: hard ceiling (ms) on the hybrid wait per fire-and-forget action. If" +
+            " the consumer never settles within this window the search proceeds anyway, accepting" +
+            " whatever coverage was collected so far.")
+    @Min(100.0)
+    @Max(120_000.0)
+    var asyncApiCoverageStabilisationMaxMs = 3_000
 
 
     @Important(3.7)
