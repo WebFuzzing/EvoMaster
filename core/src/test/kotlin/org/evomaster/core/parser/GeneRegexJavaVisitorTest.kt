@@ -222,6 +222,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testFlags(){
+        checkSameAsJava("""[(?iu)(?sd:x)]""")
+        checkCanSample("""[(?iu)(?sd:x)]""", listOf("(", ")", "?", "i", "u", "s", "d", ":", "x"), 1000)
         checkSameAsJava("""(?i:)""")
         checkSameAsJava("""(?i:a.*[abc]+\w{1,3})""")
         checkCanSample("""(?i:a)(?i:A)""", listOf("aa", "aA", "Aa", "AA"), 100)
@@ -231,6 +233,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkCanSample("""(?iu:\u03A1\u00C2)""", listOf("\u03a1\u00c2", "\u03a1\u00e2", "\u03c1\u00c2", "\u03c1\u00e2"), 100)
         checkSameAsJava("^((?iu)@.+)$")
         checkSameAsJava("^(?iu)")
+        checkSameAsJava("(?iu)")
     }
 
     @Test

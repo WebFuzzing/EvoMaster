@@ -342,6 +342,15 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
             val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
+        } else if (ctx.classAtom()[0]?.classAtomNoDash() != null &&
+            (
+                    ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
+                    || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
+                    )
+            ) {
+            // these should be interpreted literally within a charclass.
+            val ranges = ctx.text.map { ch -> CharacterRange(ch, ch) }
+            list.addAll(ranges)
         } else {
             val startText = ctx.classAtom()[0].text
             assert(startText.length == 1 || startText.length == 2) // single chars or \+ and \. escaped chars
