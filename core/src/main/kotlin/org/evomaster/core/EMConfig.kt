@@ -1255,14 +1255,12 @@ class EMConfig {
     var bbTargetUrl: String = ""
 
     @Experimental
-    @Important(3.6)
     @Cfg("When in black-box mode for AsyncAPI, specify the URL of where the AsyncAPI 3.0 schema" +
             " can be downloaded from. As with bbSwaggerUrl, you can use a 'file://' URL or a plain" +
             " local file path.")
     var bbAsyncApiUrl: String = ""
 
     @Experimental
-    @Important(3.7)
     @Cfg("When in black-box mode for AsyncAPI, specify the broker bootstrap URL EvoMaster will use" +
             " to publish requests and observe replies. For Kafka this is the bootstrap-servers value," +
             " e.g. 'localhost:9092'.")

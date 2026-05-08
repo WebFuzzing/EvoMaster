@@ -749,6 +749,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <!-- Kafka via Testcontainers; used by the AsyncAPI broker IT -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-remote-driver</artifactId>
                 <version>${selenium.version}</version>
