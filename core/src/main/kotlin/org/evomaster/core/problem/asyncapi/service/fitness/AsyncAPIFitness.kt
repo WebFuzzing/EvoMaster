@@ -33,6 +33,19 @@ class AsyncAPIFitness : AbstractAsyncAPIFitness() {
         private val log = LoggerFactory.getLogger(AsyncAPIFitness::class.java)
     }
 
+    override fun beforeIndividualEvaluation() {
+        // Reset the SUT so coverage is measured against a clean baseline on
+        // every evaluation.  Without this, listener-side state (DB rows,
+        // in-memory caches, retry queues) accumulates across individuals and
+        // fitness measurements drift.  REST does the equivalent in
+        // RestFitness; aligning here mirrors that contract.
+        try {
+            rc.resetSUT()
+        } catch (e: Exception) {
+            log.warn("rc.resetSUT() failed before AsyncAPI individual evaluation: {}", e.message)
+        }
+    }
+
     override fun beforeAction(action: org.evomaster.core.problem.asyncapi.data.AsyncAPIAction, index: Int) {
         // Tell the EM Driver which action's coverage is about to be exercised.
         registerNewAction(action, index)

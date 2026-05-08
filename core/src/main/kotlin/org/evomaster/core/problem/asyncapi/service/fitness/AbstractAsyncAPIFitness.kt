@@ -75,6 +75,11 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             return null
         }
 
+        // Subclass hook: white-box overrides to reset SUT state before each
+        // individual so coverage is measured against a clean baseline.  Black-
+        // box defaults to a no-op (no driver to call).
+        beforeIndividualEvaluation()
+
         val fv = FitnessValue(individual.size().toDouble())
         val actionResults = mutableListOf<ActionResult>()
         val actions = individual.seeMainExecutableActions()
@@ -88,7 +93,19 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             try {
                 beforeAction(action, index)
                 when (action.kind) {
-                    AsyncAPIAction.Kind.PUBLISH -> handlePublish(action, fv, correlationByPair, result)
+                    AsyncAPIAction.Kind.PUBLISH -> {
+                        handlePublish(action, fv, correlationByPair, result)
+                        // Fire-and-forget operations have no SUBSCRIBE_REPLY barrier
+                        // after the publish, so the SUT's consumer handler may still
+                        // be running by the time we process the next action.  A short
+                        // configurable settle gives the listener time to land before
+                        // per-action coverage attribution gets confused.  Skipped when
+                        // a paired SUBSCRIBE_REPLY follows, because awaiting the reply
+                        // already serves as the barrier.
+                        if (!result.stopping && !isFollowedByReply(actions, index, action.pairId)) {
+                            applyFireAndForgetSettle()
+                        }
+                    }
                     AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> handleSubscribeReply(action, schema, fv, correlationByPair, result)
                 }
             } catch (e: Exception) {
@@ -109,6 +126,35 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             index = time.evaluatedIndividuals,
             config = config
         )
+    }
+
+    /**
+     * Hook invoked once at the very start of each individual evaluation, after
+     * the broker has been connected but before any actions run.  Default:
+     * no-op (black-box).  White-box overrides this to reset the SUT so
+     * coverage doesn't accumulate against a dirty baseline across individuals.
+     */
+    protected open fun beforeIndividualEvaluation() {
+        // intentionally empty
+    }
+
+    private fun isFollowedByReply(
+        actions: List<AsyncAPIAction>,
+        index: Int,
+        pairId: String
+    ): Boolean {
+        val next = actions.getOrNull(index + 1) ?: return false
+        return next.kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY && next.pairId == pairId
+    }
+
+    private fun applyFireAndForgetSettle() {
+        val ms = config.asyncApiFireAndForgetSettleMs.toLong()
+        if (ms <= 0) return
+        try {
+            Thread.sleep(ms)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
     }
 
     /**
