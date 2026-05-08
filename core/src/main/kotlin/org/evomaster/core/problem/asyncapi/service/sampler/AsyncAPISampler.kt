@@ -42,16 +42,8 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
         log.debug("Initializing AsyncAPISampler (blackBox={}, bbAsyncApiUrl={})",
             configuration.blackBox, configuration.bbAsyncApiUrl)
 
-        if (!configuration.blackBox) {
-            throw IllegalStateException(
-                "AsyncAPI white-box is not implemented in this build; run with --blackBox true"
-            )
-        }
-        if (configuration.bbAsyncApiUrl.isBlank()) {
-            throw SutProblemException("Missing --bbAsyncApiUrl for AsyncAPI black-box mode")
-        }
-
-        val schema = AsyncAPIAccess.getAsyncAPIFromLocation(configuration.bbAsyncApiUrl)
+        val schemaUrl = resolveSchemaUrl()
+        val schema = AsyncAPIAccess.getAsyncAPIFromLocation(schemaUrl)
         parsedSchema = schema
 
         val built = AsyncAPIActionBuilder(configuration).build(schema)
@@ -66,12 +58,47 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
 
         if (operationTemplates.isEmpty()) {
             throw SutProblemException(
-                "No usable AsyncAPI operations found in schema at ${configuration.bbAsyncApiUrl}." +
-                        " Only `send`/`request` operations are exercisable for black-box."
+                "No usable AsyncAPI operations found in schema at $schemaUrl." +
+                        " Only `send`/`request` operations are exercisable."
             )
         }
 
         log.info("AsyncAPI operation cluster initialised with {} operation(s)", operationTemplates.size)
+    }
+
+    /**
+     * Black-box reads the schema URL from `--bbAsyncApiUrl`; white-box reads
+     * it from the EM Driver's `SutInfoDto.asyncAPIProblem.asyncApiUrl`.  The
+     * driver call is done here on first use so the rest of the search loop
+     * can stay agnostic.
+     */
+    private fun resolveSchemaUrl(): String {
+        if (configuration.blackBox) {
+            if (configuration.bbAsyncApiUrl.isBlank()) {
+                throw SutProblemException("Missing --bbAsyncApiUrl for AsyncAPI black-box mode")
+            }
+            return configuration.bbAsyncApiUrl
+        }
+
+        // White-box: ask the EM Driver where the schema lives.
+        rc.checkConnection()
+        val started = rc.startSUT()
+        if (!started) {
+            throw SutProblemException("Failed to start the system under test")
+        }
+        val infoDto = rc.getSutInfo()
+            ?: throw SutProblemException("Failed to retrieve the info about the system under test")
+        val problem = infoDto.asyncAPIProblem
+            ?: throw SutProblemException(
+                "EM Driver did not report an AsyncAPI problem; check the controller's getProblemInfo() implementation"
+            )
+        val url = problem.asyncApiUrl
+        if (url.isNullOrBlank()) {
+            throw SutProblemException(
+                "EM Driver's AsyncAPIProblem must set asyncApiUrl (inline asyncApiSchema is not supported in this slice)"
+            )
+        }
+        return url
     }
 
     override fun sampleAtRandom(): AsyncAPIIndividual {

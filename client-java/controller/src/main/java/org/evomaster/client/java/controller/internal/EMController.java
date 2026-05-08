@@ -241,6 +241,14 @@ public class EMController {
             dto.webProblem = new WebProblemDto();
             dto.webProblem.urlPathOfStartingPage = p.getUrlPathOfStartingPage();
             dto.webProblem.servicesToNotMock = servicesToNotMock;
+        } else if (info instanceof AsyncAPIProblem) {
+            AsyncAPIProblem p = (AsyncAPIProblem) info;
+            dto.asyncAPIProblem = new AsyncAPIProblemDto();
+            dto.asyncAPIProblem.asyncApiUrl = p.getAsyncApiUrl();
+            dto.asyncAPIProblem.asyncApiSchema = p.getAsyncApiSchema();
+            dto.asyncAPIProblem.brokerBootstrapServers = p.getBrokerBootstrapServers();
+            dto.asyncAPIProblem.correlationIdHeader = p.getCorrelationIdHeader();
+            dto.asyncAPIProblem.servicesToNotMock = servicesToNotMock;
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
