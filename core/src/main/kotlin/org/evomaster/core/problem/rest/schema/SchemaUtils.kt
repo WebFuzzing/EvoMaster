@@ -35,12 +35,8 @@ object SchemaUtils {
 
         //TODO should handle $ref
 
-        val securitySchemes = schema.main.schemaParsed.components.securitySchemes
-        if(securitySchemes == null || securitySchemes.isEmpty()){
-            return false
-        }
-
-        return  true
+        val securitySchemes = schema.main.schemaParsed.components?.securitySchemes
+        return !securitySchemes.isNullOrEmpty()
     }
 
     fun getDeclaredStatusInResponse(endpoint: Endpoint, schema: RestSchema) : Set<Int>{
