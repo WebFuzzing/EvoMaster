@@ -1266,6 +1266,16 @@ class EMConfig {
             " e.g. 'localhost:9092'.")
     var bbBrokerUrl: String = ""
 
+    @Experimental
+    @Cfg("After publishing on a fire-and-forget AsyncAPI operation (one that does not declare a 'reply'" +
+            " channel), how many milliseconds to wait before processing the next action. Gives the" +
+            " SUT's consumer handler time to run before per-action coverage is attributed or the" +
+            " end-of-individual coverage poll fires. Has no effect on 'request'/'reply' operations" +
+            " because the reply-await already serves as a barrier. Set to 0 to disable.")
+    @Min(0.0)
+    @Max(60_000.0)
+    var asyncApiFireAndForgetSettleMs = 200
+
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
