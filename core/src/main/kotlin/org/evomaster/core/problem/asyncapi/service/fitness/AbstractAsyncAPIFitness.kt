@@ -3,6 +3,7 @@ package org.evomaster.core.problem.asyncapi.service.fitness
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.broker.MessageBrokerClient
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIAction
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
@@ -16,6 +17,8 @@ import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.slf4j.LoggerFactory
@@ -123,6 +126,59 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                     val state = if (g.isActive) "present" else "absent"
                     "FIELD_PRESENCE:${action.channelAddress}:${action.operationName}:${g.name}=$state"
                 }
+        }
+
+        /**
+         * Walk [payloadGene] and produce one target per numeric / string
+         * boundary the sampled value happens to land on:
+         * `BOUNDARY_HIT:<channel>:<op>:<path>=<at-min|at-max|at-min-length|at-max-length>`.
+         *
+         * Targets only fire when the value sits *exactly* on a schema-declared
+         * bound — this is the schema-derivable signal that the EA explored a
+         * boundary (which is where most off-by-one and overflow bugs live).
+         * Genes whose bounds are the type-level extremes (Int.MIN/MAX, default
+         * string limits) are skipped because hitting those carries no signal.
+         *
+         * `pattern` constraints are out of scope for v1 — regex satisfaction is
+         * a binary signal that's already covered indirectly by the schema-
+         * validity check on the reply, so adding it here would mostly be
+         * duplicate noise.
+         */
+        fun boundaryTargets(action: AsyncAPIAction, payloadGene: Gene): List<String> {
+            val out = mutableListOf<String>()
+            payloadGene.flatView().forEach { g ->
+                when (g) {
+                    is NumberGene<*> -> {
+                        val v = g.value
+                        val effectiveMin = g.getMinimum()
+                        val effectiveMax = g.getMaximum()
+                        // Only emit when the schema actually constrained the
+                        // gene; type-level extremes mean "unbounded".
+                        val minIsConstrained = effectiveMin.toDouble() != Long.MIN_VALUE.toDouble()
+                                && effectiveMin.toDouble() != Int.MIN_VALUE.toDouble()
+                                && effectiveMin.toDouble() != -Double.MAX_VALUE
+                        val maxIsConstrained = effectiveMax.toDouble() != Long.MAX_VALUE.toDouble()
+                                && effectiveMax.toDouble() != Int.MAX_VALUE.toDouble()
+                                && effectiveMax.toDouble() != Double.MAX_VALUE
+                        if (minIsConstrained && v.toDouble() == effectiveMin.toDouble()) {
+                            out += "BOUNDARY_HIT:${action.channelAddress}:${action.operationName}:${g.name}=at-min"
+                        }
+                        if (maxIsConstrained && v.toDouble() == effectiveMax.toDouble()) {
+                            out += "BOUNDARY_HIT:${action.channelAddress}:${action.operationName}:${g.name}=at-max"
+                        }
+                    }
+                    is StringGene -> {
+                        val len = g.getValueAsRawString().length
+                        if (g.minLength > 0 && len == g.minLength) {
+                            out += "BOUNDARY_HIT:${action.channelAddress}:${action.operationName}:${g.name}=at-min-length"
+                        }
+                        if (g.maxLength < EMConfig.stringLengthHardLimit && len == g.maxLength) {
+                            out += "BOUNDARY_HIT:${action.channelAddress}:${action.operationName}:${g.name}=at-max-length"
+                        }
+                    }
+                }
+            }
+            return out
         }
     }
 
@@ -309,16 +365,15 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 // Gate the input-side coverage layer behind the same
                 // --advancedBlackBoxCoverage flag REST uses for the equivalent
                 // `handleAdvancedBlackBoxCriteria` machinery (default true).
-                // A user with an unusually wide AsyncAPI schema can opt out
-                // if the target-set growth becomes a problem; ergonomic
-                // alignment with the rest of the engine costs one branch.
-                // Field-presence targets sit inside the same gate because
-                // they're the same kind of input-side coverage signal.
+                // Every per-input target (enum, boolean, presence, boundary)
+                // sits inside the same gate — they are all "advanced black-
+                // box coverage criteria" in REST's terminology.
                 if (config.advancedBlackBoxCoverage) {
                     payloadGene?.let { gene ->
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.booleanValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
                 }
                 result.addResultValue("delivery", "ok")
