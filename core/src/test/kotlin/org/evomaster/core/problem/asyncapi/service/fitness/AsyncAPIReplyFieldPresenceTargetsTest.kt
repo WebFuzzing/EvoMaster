@@ -70,6 +70,7 @@ class AsyncAPIReplyFieldPresenceTargetsTest {
         kind = AsyncAPIAction.Kind.SUBSCRIBE_REPLY,
         pairId = "test-pair",
         messageId = "ReplyMessage",
+        additionalReplyMessageIds = emptyList(),
         parameters = mutableListOf(),
         correlationHeaderName = "evm-correlation-id"
     )
