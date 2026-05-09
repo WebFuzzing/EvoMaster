@@ -385,6 +385,11 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         val correlationId = "evm-${UUID.randomUUID()}"
         correlationByPair[action.pairId] = correlationId
 
+        // Render the templated channel address (e.g. `tenants/{tenantId}/orders`)
+        // by reading each per-parameter gene's value.  Untemplated addresses
+        // pass through untouched.
+        val channelAddress = renderChannelAddress(action)
+
         val headers = mutableMapOf<String, ByteArray>()
         action.correlationHeaderName?.let { name ->
             headers[name] = correlationId.toByteArray(StandardCharsets.UTF_8)
@@ -397,7 +402,7 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         materialiseHeaders(headersGene)?.forEach { (k, v) -> headers[k] = v }
 
         val outcome = broker.publish(
-            channel = action.channelAddress,
+            channel = channelAddress,
             key = null,
             headers = headers,
             payload = payloadJson.toByteArray(StandardCharsets.UTF_8)
@@ -428,6 +433,16 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
+                    // Channel-parameter genes likewise — `ENUM_VALUE_USED:
+                    // <channel>:<op>:tenantId=tenant-1` is exactly the gradient
+                    // MIO needs to explore each tenant.  Same gate, same
+                    // contract.
+                    action.channelParams().values.forEach { param ->
+                        val gene = param.primaryGene()
+                        AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
+                    }
                 }
                 result.addResultValue("delivery", "ok")
                 result.addResultValue("correlationId", correlationId)
@@ -439,6 +454,22 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 result.stopping = true
             }
         }
+    }
+
+    /**
+     * Substitute every `{paramName}` placeholder in the templated address
+     * with the per-parameter gene's current value.  Returns the raw
+     * address unchanged when the action has no channel parameters.
+     */
+    private fun renderChannelAddress(action: AsyncAPIAction): String {
+        val params = action.channelParams()
+        if (params.isEmpty()) return action.channelAddress
+        var rendered = action.channelAddress
+        params.forEach { (name, param) ->
+            val value = param.primaryGene().getValueAsRawString()
+            rendered = rendered.replace("{$name}", value)
+        }
+        return rendered
     }
 
     /**
@@ -473,8 +504,12 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         val expectedCorrelation = correlationByPair[action.pairId]
         val headerName = action.correlationHeaderName
 
+        // Reply channels can also be templated (e.g. tenant-scoped reply
+        // topics).  Render the same way as PUBLISH so the consumer subscribes
+        // to the rendered topic.
+        val replyChannelAddress = renderChannelAddress(action)
         val outcome = broker.awaitFirstMatching(
-            channel = action.channelAddress,
+            channel = replyChannelAddress,
             predicate = { headers ->
                 if (headerName == null || expectedCorrelation == null) return@awaitFirstMatching true
                 val received = headers[headerName]?.toString(StandardCharsets.UTF_8)

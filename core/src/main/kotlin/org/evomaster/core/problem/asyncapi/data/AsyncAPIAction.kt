@@ -81,10 +81,25 @@ class AsyncAPIAction(
     fun headersParam(): AsyncAPIParam? =
         parameters.firstOrNull { (it as AsyncAPIParam).name == HEADERS_PARAM } as AsyncAPIParam?
 
+    /** All channel-parameter AsyncAPIParams, keyed by the AsyncAPI parameter name (sans prefix). */
+    fun channelParams(): Map<String, AsyncAPIParam> {
+        return parameters.asSequence()
+            .map { it as AsyncAPIParam }
+            .filter { it.name.startsWith(CHANNEL_PARAM_PREFIX) }
+            .associateBy { it.name.removePrefix(CHANNEL_PARAM_PREFIX) }
+    }
+
     companion object {
         const val PAYLOAD_PARAM = "payload"
         const val CORRELATION_PARAM = "correlationId"
         const val KEY_PARAM = "key"
         const val HEADERS_PARAM = "headers"
+        /**
+         * Channel-parameter AsyncAPIParams are stored under
+         * `param:<paramName>` so they don't collide with payload/headers/key
+         * and can be enumerated at publish time to render the templated
+         * channel address.
+         */
+        const val CHANNEL_PARAM_PREFIX = "param:"
     }
 }

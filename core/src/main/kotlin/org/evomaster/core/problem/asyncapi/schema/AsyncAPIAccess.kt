@@ -166,7 +166,16 @@ object AsyncAPIAccess {
             messages?.fields()?.forEach { (_, ref) ->
                 resolveLocalRef(ref, LOCAL_MESSAGE_REF_PREFIX)?.let { messageIds.add(it) }
             }
-            out[key] = AsyncAPIChannel(name = key, address = address, messageIds = messageIds)
+            val parameters = LinkedHashMap<String, JsonNode>()
+            channel.get("parameters")?.takeIf { it.isObject }?.fields()?.forEach { (paramName, paramNode) ->
+                parameters[paramName] = paramNode
+            }
+            out[key] = AsyncAPIChannel(
+                name = key,
+                address = address,
+                messageIds = messageIds,
+                parameters = parameters
+            )
         }
         return out
     }

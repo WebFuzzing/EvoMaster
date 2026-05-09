@@ -96,6 +96,7 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             op = op,
             channelAddress = channelAddress,
             channelName = op.channelName,
+            channelParameters = channel.parameters,
             message = publishMessage,
             pairId = pairId,
             schema = schema,
@@ -124,6 +125,7 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
                     op = op,
                     channelAddress = replyAddress,
                     channelName = replyChannelName,
+                    channelParameters = replyChannel.parameters,
                     message = replyMessage,
                     pairId = pairId,
                     schema = schema,
@@ -142,6 +144,7 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         op: AsyncAPIOperation,
         channelAddress: String,
         channelName: String,
+        channelParameters: Map<String, com.fasterxml.jackson.databind.JsonNode>,
         message: AsyncAPIMessage,
         pairId: String,
         schema: AsyncAPISchema,
@@ -168,6 +171,32 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         val payloadParam = AsyncAPIParam(AsyncAPIAction.PAYLOAD_PARAM, payloadGene)
 
         val params = mutableListOf<AsyncAPIParam>(payloadParam)
+
+        // AsyncAPI 3.0 channel parameters: the address may carry `{...}`
+        // placeholders (e.g. `tenants/{tenantId}/orders`) and the channel
+        // declares each placeholder under `parameters.<name>` with its own
+        // schema.  Build a gene per parameter so the EA mutates them
+        // independently of the payload; the placeholder is rendered to a
+        // concrete topic at publish time by reading the gene's value.
+        // Restrict to placeholders that actually appear in the address —
+        // the schema sometimes lists more parameters than the address uses.
+        val placeholders = extractPlaceholders(channelAddress)
+        channelParameters.forEach { (paramName, paramNode) ->
+            if (paramName !in placeholders) return@forEach
+            val swaggerSchema = JsonSchemaConverter.convert(paramNode)
+            val paramMsgs = mutableListOf<String>()
+            val paramGene = converter.getGene(
+                name = paramName,
+                schema = swaggerSchema,
+                referenceClassDef = null,
+                messages = paramMsgs
+            )
+            if (paramMsgs.isNotEmpty() && log.isDebugEnabled) {
+                paramMsgs.forEach { log.debug("AsyncAPI channel-parameter gene-build message: {}", it) }
+            }
+            val unwrappedParam = if (paramGene is NullableGene) paramGene.gene else paramGene
+            params += AsyncAPIParam(AsyncAPIAction.CHANNEL_PARAM_PREFIX + paramName, unwrappedParam)
+        }
         // AsyncAPI 3.0 lets messages declare a `headers` schema independent
         // of the payload — typically auth tokens, tenant ids, tracing ids.
         // Build a separate gene tree for it so the EA can mutate the
@@ -235,6 +264,13 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     private fun pickFirstReplyMessageId(reply: ReplyBinding, channel: AsyncAPIChannel): String? {
         val opIds = reply.messageIds.toSet()
         return channel.messageIds.firstOrNull { it in opIds || opIds.isEmpty() }
+    }
+
+    private fun extractPlaceholders(address: String): Set<String> {
+        // Match {paramName} segments — AsyncAPI 3.0 address templating uses
+        // the same brace syntax as RFC 6570 URI templates.
+        val regex = Regex("""\{([^{}/]+)\}""")
+        return regex.findAll(address).map { it.groupValues[1] }.toSet()
     }
 
     private fun extractHeaderName(location: String): String? {
