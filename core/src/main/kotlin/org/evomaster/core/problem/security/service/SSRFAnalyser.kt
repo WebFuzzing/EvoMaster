@@ -30,14 +30,22 @@ class SSRFAnalyser {
     @Inject
     private lateinit var config: EMConfig
 
-    @Inject
-    private lateinit var fitness: FitnessFunction<RestIndividual>
+    /*
+     * The REST-typed `fitness` and `archive` are bound only when EvoMaster
+     * runs against a REST SUT.  EnterpriseModule binds SSRFAnalyser as an
+     * eager singleton so these dependencies must be optional — otherwise
+     * any non-REST flow (GraphQL, RPC, AsyncAPI, …) trips on injector
+     * creation.  The SSRF feature itself is REST-only, so non-REST runs
+     * leave both null and `apply()` is a no-op.
+     */
+    @Inject(optional = true)
+    private var fitness: FitnessFunction<RestIndividual>? = null
 
     /**
      * Archive including test cases
      */
-    @Inject
-    private lateinit var archive: Archive<RestIndividual>
+    @Inject(optional = true)
+    private var archive: Archive<RestIndividual>? = null
 
     @Inject
     private lateinit var languageModelConnector: LanguageModelConnector
@@ -96,6 +104,12 @@ class SSRFAnalyser {
      * newly created individual will be in the archive
      */
     fun apply(){
+
+        // SSRF analysis is REST-only.  When running a non-REST problem type
+        // the optional REST-typed dependencies are unbound, so bail out early.
+        if (fitness == null || archive == null) {
+            return
+        }
 
         val individualsWith2XX = getIndividualsWithStatus2XX()
 
@@ -309,7 +323,8 @@ class SSRFAnalyser {
             }
         }
 
-        val executedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+        // Reachable only after [apply] guarded that fitness/archive are non-null.
+        val executedIndividual = fitness!!.computeWholeAchievedCoverageForPostProcessing(copy)
 
         if (executedIndividual != null) {
             handleExecutedIndividual(action, executedIndividual)
@@ -325,7 +340,7 @@ class SSRFAnalyser {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
             actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
             // Create a testing target
-            archive.addIfNeeded(executedIndividual)
+            archive!!.addIfNeeded(executedIndividual)
         }
     }
 
@@ -344,13 +359,13 @@ class SSRFAnalyser {
 
     private fun getIndividualsWithStatus2XX(): List<EvaluatedIndividual<RestIndividual>> {
         return RestIndividualSelectorUtils.findIndividuals(
-            this.archive.extractSolution().individuals,
+            this.archive!!.extractSolution().individuals,
             statusGroup = StatusGroup.G_2xx
         )
     }
     private fun getIndividualsWithStatus4XX(): List<EvaluatedIndividual<RestIndividual>> {
         return RestIndividualSelectorUtils.findIndividuals(
-            this.archive.extractSolution().individuals,
+            this.archive!!.extractSolution().individuals,
             statusCodes = listOf(422)
         )
     }
