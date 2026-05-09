@@ -167,6 +167,29 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             ?: ObjectGene(AsyncAPIAction.PAYLOAD_PARAM, listOf(gene))
         val payloadParam = AsyncAPIParam(AsyncAPIAction.PAYLOAD_PARAM, payloadGene)
 
+        val params = mutableListOf<AsyncAPIParam>(payloadParam)
+        // AsyncAPI 3.0 lets messages declare a `headers` schema independent
+        // of the payload — typically auth tokens, tenant ids, tracing ids.
+        // Build a separate gene tree for it so the EA can mutate the
+        // headers without disturbing the payload, and the existing
+        // enum/field/boundary target builders pick them up automatically.
+        resolveHeadersSchema(message, schema)?.let { headersSwagger ->
+            val headersMsgs = mutableListOf<String>()
+            val headersGene = converter.getGene(
+                name = AsyncAPIAction.HEADERS_PARAM,
+                schema = headersSwagger,
+                referenceClassDef = null,
+                messages = headersMsgs
+            )
+            if (headersMsgs.isNotEmpty() && log.isDebugEnabled) {
+                headersMsgs.forEach { log.debug("AsyncAPI headers gene-build message: {}", it) }
+            }
+            val headersUnwrapped = if (headersGene is NullableGene) headersGene.gene else headersGene
+            val headersObj = headersUnwrapped as? ObjectGene
+                ?: ObjectGene(AsyncAPIAction.HEADERS_PARAM, listOf(headersGene))
+            params += AsyncAPIParam(AsyncAPIAction.HEADERS_PARAM, headersObj)
+        }
+
         return AsyncAPIAction(
             operationName = op.name,
             channelAddress = channelAddress,
@@ -174,10 +197,22 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             kind = kind,
             pairId = pairId,
             messageId = message.id,
-            parameters = mutableListOf(payloadParam),
+            parameters = params.toMutableList(),
             replyBinding = replyBinding,
             correlationHeaderName = correlationLocation?.let(::extractHeaderName)
         )
+    }
+
+    private fun resolveHeadersSchema(message: AsyncAPIMessage, schema: AsyncAPISchema): Schema<*>? {
+        val node = when {
+            message.headersInline != null -> message.headersInline
+            message.headersSchemaRef != null -> schema.componentSchemas[message.headersSchemaRef]
+                ?: throw SutProblemException(
+                    "AsyncAPI message '${message.id}' references missing headers schema '${message.headersSchemaRef}'"
+                )
+            else -> return null
+        }
+        return JsonSchemaConverter.convert(node)
     }
 
     private fun resolvePayloadSchema(message: AsyncAPIMessage, schema: AsyncAPISchema): Schema<*> {

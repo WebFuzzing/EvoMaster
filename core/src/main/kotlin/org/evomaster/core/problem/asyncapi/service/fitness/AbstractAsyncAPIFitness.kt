@@ -389,6 +389,12 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         action.correlationHeaderName?.let { name ->
             headers[name] = correlationId.toByteArray(StandardCharsets.UTF_8)
         }
+        // User-defined headers (auth tokens, tenant ids, tracing) live in a
+        // separate gene tree from the payload so the EA can mutate them
+        // independently.  Render each scalar property to a UTF-8 string and
+        // stamp it on the Kafka record before publishing.
+        val headersGene = action.headersParam()?.primaryGene()
+        materialiseHeaders(headersGene)?.forEach { (k, v) -> headers[k] = v }
 
         val outcome = broker.publish(
             channel = action.channelAddress,
@@ -413,6 +419,15 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
+                    // Headers tree gets the same target machinery so the EA
+                    // has a gradient on header enums / optional headers /
+                    // length bounds.  Same gate as payload-side targets so
+                    // the flag's contract stays consistent.
+                    headersGene?.let { gene ->
+                        AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
+                    }
                 }
                 result.addResultValue("delivery", "ok")
                 result.addResultValue("correlationId", correlationId)
@@ -424,6 +439,28 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 result.stopping = true
             }
         }
+    }
+
+    /**
+     * Render a parsed headers gene tree (an [ObjectGene] of scalar
+     * properties) into a Map ready for [MessageBrokerClient.publish].
+     * Inactive [OptionalGene] fields are skipped — that's how the EA
+     * fuzzes header omission.  Non-string scalars are converted via
+     * [Gene.getValueAsRawString] so an `integer`-typed header value
+     * (e.g. priority) still serialises sensibly.
+     */
+    private fun materialiseHeaders(headersGene: Gene?): Map<String, ByteArray>? {
+        if (headersGene !is org.evomaster.core.search.gene.ObjectGene) return null
+        val out = mutableMapOf<String, ByteArray>()
+        headersGene.fields.forEach { field ->
+            when (field) {
+                is OptionalGene -> if (field.isActive) {
+                    out[field.name] = field.gene.getValueAsRawString().toByteArray(StandardCharsets.UTF_8)
+                }
+                else -> out[field.name] = field.getValueAsRawString().toByteArray(StandardCharsets.UTF_8)
+            }
+        }
+        return out
     }
 
     private fun handleSubscribeReply(

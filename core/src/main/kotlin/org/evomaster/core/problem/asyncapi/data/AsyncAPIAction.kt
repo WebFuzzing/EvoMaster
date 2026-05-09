@@ -77,9 +77,14 @@ class AsyncAPIAction(
     fun keyParam(): AsyncAPIParam? =
         parameters.firstOrNull { (it as AsyncAPIParam).name == KEY_PARAM } as AsyncAPIParam?
 
+    /** Convenience accessor: the AsyncAPIParam holding user-defined Kafka headers (separate from correlation). */
+    fun headersParam(): AsyncAPIParam? =
+        parameters.firstOrNull { (it as AsyncAPIParam).name == HEADERS_PARAM } as AsyncAPIParam?
+
     companion object {
         const val PAYLOAD_PARAM = "payload"
         const val CORRELATION_PARAM = "correlationId"
         const val KEY_PARAM = "key"
+        const val HEADERS_PARAM = "headers"
     }
 }

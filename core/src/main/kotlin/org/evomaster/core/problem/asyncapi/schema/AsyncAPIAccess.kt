@@ -128,13 +128,21 @@ object AsyncAPIAccess {
 
             val correlationLocation = message.get("correlationId")?.get("location")?.asText()
 
+            val headers = message.get("headers")
+            val headersRefRaw = headers?.get("\$ref")?.asText()
+            val headersRef = headersRefRaw?.removePrefix(LOCAL_SCHEMA_REF_PREFIX)
+                ?.takeIf { it != headersRefRaw }
+            val headersInline = if (headers != null && headersRef == null) headers else null
+
             out[id] = AsyncAPIMessage(
                 id = id,
                 name = message.get("name")?.asText() ?: id,
                 contentType = message.get("contentType")?.asText() ?: defaultContentType,
                 correlationLocation = correlationLocation,
                 payloadSchemaRef = payloadRef,
-                payloadInline = payloadInline
+                payloadInline = payloadInline,
+                headersSchemaRef = headersRef,
+                headersInline = headersInline
             )
         }
         return out
