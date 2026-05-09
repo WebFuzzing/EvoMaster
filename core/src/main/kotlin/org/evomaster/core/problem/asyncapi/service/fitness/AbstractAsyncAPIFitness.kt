@@ -144,6 +144,44 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
          * validity check on the reply, so adding it here would mostly be
          * duplicate noise.
          */
+        /**
+         * For each optional field in the matched reply-variant schema (any
+         * property NOT listed in the variant's `required` array), emit one
+         * schema-derivable target reading whether the actual reply payload
+         * contained the field:
+         * `REPLY_FIELD_PRESENCE:<variant>:<channel>:<op>:<field>=<present|absent>`.
+         *
+         * Reply payloads in real-world AsyncAPI schemas are usually richer
+         * than request payloads — error replies tend to carry `code` always
+         * but `details` only sometimes, success replies tend to have optional
+         * progress / pagination fields.  Without this hook the EA has no
+         * signal to push the SUT toward emitting the optional fields.
+         *
+         * Pulled out as a pure function (companion object) so unit tests can
+         * assert the target set directly off a hand-rolled JsonNode pair
+         * without spinning up a broker or running a full evaluation.
+         */
+        fun replyFieldPresenceTargets(
+            action: AsyncAPIAction,
+            variantName: String?,
+            parsedReply: JsonNode,
+            variantSchema: JsonNode
+        ): List<String> {
+            if (!parsedReply.isObject) return emptyList()
+            val properties = variantSchema.get("properties") ?: return emptyList()
+            if (!properties.isObject) return emptyList()
+            val required = variantSchema.get("required")?.takeIf { it.isArray }
+                ?.map { it.asText() }?.toSet() ?: emptySet()
+            val variantTag = variantName ?: "default"
+            val out = mutableListOf<String>()
+            properties.fieldNames().forEach { name ->
+                if (name in required) return@forEach
+                val state = if (parsedReply.has(name)) "present" else "absent"
+                out += "REPLY_FIELD_PRESENCE:$variantTag:${action.channelAddress}:${action.operationName}:$name=$state"
+            }
+            return out
+        }
+
         fun boundaryTargets(action: AsyncAPIAction, payloadGene: Gene): List<String> {
             val out = mutableListOf<String>()
             payloadGene.flatView().forEach { g ->
@@ -457,17 +495,27 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 coverLocal(fv, "REPLY_VARIANT:${variant}:${action.channelAddress}:${action.operationName}")
                 result.addResultValue("variant", variant)
             }
+            variantMatch.matchedVariantSchema?.let { variantSchema ->
+                AbstractAsyncAPIFitness.replyFieldPresenceTargets(
+                    action, variantMatch.matchedVariantName, parsed, variantSchema
+                ).forEach { coverLocal(fv, it) }
+            }
         } else {
             coverLocal(fv, "REPLY_SCHEMA_INVALID:${action.channelAddress}:${action.operationName}")
             result.addResultValue("schemaValid", "false")
         }
     }
 
+
     private fun resolvePayloadNode(message: AsyncAPIMessage, schema: AsyncAPISchema): JsonNode? {
         return message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
     }
 
-    private data class VariantMatch(val anyValid: Boolean, val matchedVariantName: String?)
+    private data class VariantMatch(
+        val anyValid: Boolean,
+        val matchedVariantName: String?,
+        val matchedVariantSchema: JsonNode?
+    )
 
     private fun matchVariants(payload: JsonNode, schemaNode: JsonNode, schema: AsyncAPISchema): VariantMatch {
         val variants: List<Pair<String, JsonNode>> = when {
@@ -477,13 +525,19 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         }
 
         var matchedName: String? = null
+        var matchedSchema: JsonNode? = null
         for ((name, variant) in variants) {
             if (matchesShallow(payload, variant)) {
                 matchedName = name
+                matchedSchema = variant
                 break
             }
         }
-        return VariantMatch(anyValid = matchedName != null, matchedVariantName = matchedName)
+        return VariantMatch(
+            anyValid = matchedName != null,
+            matchedVariantName = matchedName,
+            matchedVariantSchema = matchedSchema
+        )
     }
 
     private fun resolveVariants(arrayNode: JsonNode, schema: AsyncAPISchema): List<Pair<String, JsonNode>> {
