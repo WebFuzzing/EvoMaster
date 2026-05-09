@@ -13,6 +13,8 @@ import org.evomaster.core.problem.enterprise.service.EnterpriseFitness
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
@@ -47,6 +49,32 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
     companion object {
         private val log = LoggerFactory.getLogger(AbstractAsyncAPIFitness::class.java)
         private const val DEFAULT_REPLY_TIMEOUT_MS = 5_000L
+
+        /**
+         * Walk [payloadGene] and produce one schema-derivable target id per
+         * (gene path, sampled enum value) pair:
+         * `ENUM_VALUE_USED:<channel>:<op>:<path>=<value>`.
+         *
+         * Lifts the black-box target ceiling beyond the coarse-grained
+         * delivery / reply signals: with a `send` operation that dispatches
+         * on an enum field (e.g. `operation: triangle|bessjy|expint|...`),
+         * the EA now has a target per branch instead of one for the whole
+         * operation, giving MIO a gradient to explore each enum value at
+         * least once.
+         *
+         * Path uses `gene.name` for the leaf — collisions only happen if two
+         * enums in different sub-objects share a field name; coverage still
+         * fires correctly in that case, just under a shared id (acceptable
+         * given the schema-derivable rule).  Pulled out as a pure function so
+         * unit tests can assert the target set without spinning up a broker.
+         */
+        fun enumValueTargets(action: AsyncAPIAction, payloadGene: Gene): List<String> {
+            return payloadGene.flatView()
+                .filterIsInstance<EnumGene<*>>()
+                .map { g ->
+                    "ENUM_VALUE_USED:${action.channelAddress}:${action.operationName}:${g.name}=${g.getValueAsRawString()}"
+                }
+        }
     }
 
     @Inject
@@ -229,6 +257,9 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         when (outcome) {
             is MessageBrokerClient.PublishOutcome.Sent -> {
                 coverLocal(fv, "DELIVERY_OK:${action.channelAddress}:${action.operationName}")
+                payloadGene?.let { gene ->
+                    AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
+                }
                 result.addResultValue("delivery", "ok")
                 result.addResultValue("correlationId", correlationId)
             }
@@ -380,4 +411,5 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         val id = idMapper.handleLocalTarget("Local:$descriptiveId")
         fv.coverTarget(id)
     }
+
 }
