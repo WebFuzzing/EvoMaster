@@ -414,29 +414,26 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 // Gate the input-side coverage layer behind the same
                 // --advancedBlackBoxCoverage flag REST uses for the equivalent
                 // `handleAdvancedBlackBoxCriteria` machinery (default true).
-                // Every per-input target (enum, boolean, presence, boundary)
-                // sits inside the same gate — they are all "advanced black-
-                // box coverage criteria" in REST's terminology.
+                // Every per-input target (enum, boolean, presence, boundary,
+                // per-variant message dispatch) sits inside the same gate —
+                // they are all "advanced black-box coverage criteria" in
+                // REST's terminology.
                 if (config.advancedBlackBoxCoverage) {
+                    // When an operation can dispatch multiple message types
+                    // over one channel, this target records which variant was
+                    // actually sent so MIO has a per-variant gradient.
+                    coverLocal(fv, "PUBLISH_MESSAGE_TYPE:${action.channelAddress}:${action.operationName}=${action.messageId}")
                     payloadGene?.let { gene ->
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.booleanValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
-                    // Headers tree gets the same target machinery so the EA
-                    // has a gradient on header enums / optional headers /
-                    // length bounds.  Same gate as payload-side targets so
-                    // the flag's contract stays consistent.
                     headersGene?.let { gene ->
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
-                    // Channel-parameter genes likewise — `ENUM_VALUE_USED:
-                    // <channel>:<op>:tenantId=tenant-1` is exactly the gradient
-                    // MIO needs to explore each tenant.  Same gate, same
-                    // contract.
                     action.channelParams().values.forEach { param ->
                         val gene = param.primaryGene()
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }

@@ -57,7 +57,9 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
 
         schema.operations.values.forEach { op ->
             try {
-                out[op.name] = buildForOperation(op, schema, converter)
+                buildForOperation(op, schema, converter).forEach { (key, actions) ->
+                    out[key] = actions
+                }
             } catch (e: Exception) {
                 log.warn("Skipping AsyncAPI operation '{}': {}", op.name, e.message)
             }
@@ -70,14 +72,14 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         op: AsyncAPIOperation,
         schema: AsyncAPISchema,
         converter: JsonSchemaToGeneConverter
-    ): List<AsyncAPIAction> {
+    ): Map<String, List<AsyncAPIAction>> {
 
         if (op.action != AsyncAPIOperation.Action.SEND) {
             // Black-box can only directly trigger SUTs via SEND-from-our-side
             // (the SUT consumes); RECEIVE operations describe SUT producers we
             // can only observe, which the M4 fitness layer does not yet model
             // as standalone actions — they only show up via reply bindings.
-            return emptyList()
+            return mapOf(op.name to emptyList())
         }
 
         val channel = schema.channels[op.channelName]
@@ -85,8 +87,31 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         val channelAddress = channel.address
             ?: throw SutProblemException("AsyncAPI channel '${channel.name}' has no address; cannot publish")
 
-        val publishMessageId = pickFirstMessageId(op, channel)
-            ?: throw SutProblemException("AsyncAPI operation '${op.name}' has no resolvable message id")
+        val resolvedMessageIds = resolveMessageIds(op, channel)
+        if (resolvedMessageIds.isEmpty()) {
+            throw SutProblemException("AsyncAPI operation '${op.name}' has no resolvable message id")
+        }
+
+        val out = LinkedHashMap<String, List<AsyncAPIAction>>()
+        resolvedMessageIds.forEach { publishMessageId ->
+            // Operation-key disambiguates per message type so the sampler can
+            // pick any of them with uniform probability and the structure
+            // mutator keeps each variant's PUBLISH/SUBSCRIBE_REPLY pair intact.
+            val key = if (resolvedMessageIds.size == 1) op.name else "${op.name}#$publishMessageId"
+            out[key] = buildSingleVariantActions(op, channel, channelAddress, publishMessageId, schema, converter)
+        }
+        return out
+    }
+
+    private fun buildSingleVariantActions(
+        op: AsyncAPIOperation,
+        channel: AsyncAPIChannel,
+        channelAddress: String,
+        publishMessageId: String,
+        schema: AsyncAPISchema,
+        converter: JsonSchemaToGeneConverter
+    ): List<AsyncAPIAction> {
+
         val publishMessage = schema.messages[publishMessageId]
             ?: throw SutProblemException("AsyncAPI operation '${op.name}' references unknown component message '$publishMessageId'")
 
@@ -259,6 +284,17 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     private fun pickFirstMessageId(op: AsyncAPIOperation, channel: AsyncAPIChannel): String? {
         val opIds = op.messageIds.toSet()
         return channel.messageIds.firstOrNull { it in opIds || opIds.isEmpty() }
+    }
+
+    /**
+     * Every message id the operation can dispatch on this channel.  An
+     * AsyncAPI 3.0 operation's `messages:` array enumerates which of the
+     * channel's declared messages it actually picks from; when omitted, the
+     * operation can dispatch any of them.
+     */
+    private fun resolveMessageIds(op: AsyncAPIOperation, channel: AsyncAPIChannel): List<String> {
+        val opIds = op.messageIds.toSet()
+        return channel.messageIds.filter { it in opIds || opIds.isEmpty() }
     }
 
     private fun pickFirstReplyMessageId(reply: ReplyBinding, channel: AsyncAPIChannel): String? {
