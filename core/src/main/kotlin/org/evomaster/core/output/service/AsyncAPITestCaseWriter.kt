@@ -70,7 +70,11 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             if (async != null && async.kind == AsyncAPIAction.Kind.PUBLISH) {
                 correlationByPair[async.pairId] = "evm-${UUID.randomUUID()}"
             }
-            addAsyncAPIAction(async, i, lines, result!!, correlationByPair)
+            if (result == null) {
+                lines.addSingleCommentLine("Action #$i (${async?.kind ?: "?"}) — no result captured (action chain stopped early)")
+                continue
+            }
+            addAsyncAPIAction(async, i, lines, result, correlationByPair)
         }
     }
 

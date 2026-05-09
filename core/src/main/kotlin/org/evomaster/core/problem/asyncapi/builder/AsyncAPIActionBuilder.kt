@@ -214,7 +214,11 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         val placeholders = extractPlaceholders(channelAddress)
         channelParameters.forEach { (paramName, paramNode) ->
             if (paramName !in placeholders) return@forEach
-            val swaggerSchema = JsonSchemaConverter.convert(paramNode)
+            // AsyncAPI 3.0 parameter objects nest their JSON Schema under
+            // `schema:`.  Tolerate shorthand (a bare schema with no `schema`
+            // wrapper) for backwards compatibility with hand-written schemas.
+            val schemaNode = paramNode.get("schema") ?: paramNode
+            val swaggerSchema = JsonSchemaConverter.convert(schemaNode)
             val paramMsgs = mutableListOf<String>()
             val paramGene = converter.getGene(
                 name = paramName,
