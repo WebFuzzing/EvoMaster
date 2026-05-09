@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -95,6 +96,32 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 .filterIsInstance<BooleanGene>()
                 .map { g ->
                     "BOOLEAN_VALUE_USED:${action.channelAddress}:${action.operationName}:${g.name}=${g.getValueAsRawString()}"
+                }
+        }
+
+        /**
+         * Walk [payloadGene] and produce one schema-derivable target per
+         * (optional field, present|absent) pair:
+         * `FIELD_PRESENCE:<channel>:<op>:<path>=<present|absent>`.
+         *
+         * RestActionBuilderV3 wraps every JSON-Schema property *not* listed in
+         * the schema's `required` array in an [OptionalGene]; this hook reads
+         * the wrapper's `isActive` flag at sample time so MIO has a gradient
+         * pulling each optional field through both presence states.  Required
+         * fields stay non-optional (per the schema) and are not represented
+         * here — exploring required-field omission requires a deliberate
+         * builder change that violates the declared schema and is tracked
+         * separately.
+         *
+         * Pulled out as a pure function so unit tests can assert the target
+         * set without spinning up a broker.
+         */
+        fun fieldPresenceTargets(action: AsyncAPIAction, payloadGene: Gene): List<String> {
+            return payloadGene.flatView()
+                .filterIsInstance<OptionalGene>()
+                .map { g ->
+                    val state = if (g.isActive) "present" else "absent"
+                    "FIELD_PRESENCE:${action.channelAddress}:${action.operationName}:${g.name}=$state"
                 }
         }
     }
@@ -285,10 +312,13 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 // A user with an unusually wide AsyncAPI schema can opt out
                 // if the target-set growth becomes a problem; ergonomic
                 // alignment with the rest of the engine costs one branch.
+                // Field-presence targets sit inside the same gate because
+                // they're the same kind of input-side coverage signal.
                 if (config.advancedBlackBoxCoverage) {
                     payloadGene?.let { gene ->
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.booleanValueTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
                 }
                 result.addResultValue("delivery", "ok")
