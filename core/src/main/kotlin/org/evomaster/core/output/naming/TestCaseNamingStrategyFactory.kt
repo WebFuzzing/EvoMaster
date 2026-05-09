@@ -2,6 +2,7 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
+import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -39,6 +40,10 @@ class TestCaseNamingStrategyFactory(
             individuals.any { it.individual is RPCIndividual } -> return RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
+                return NamingHelperNumberedTestCaseNamingStrategy(solution)
+            }
+            individuals.any { it.individual is AsyncAPIIndividual } -> {
+                log.warn("AsyncAPI individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 return NamingHelperNumberedTestCaseNamingStrategy(solution)
             }
             individuals.isEmpty() -> {

@@ -4,6 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.output.naming.TestCaseNamingStrategy
 import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.problem.graphql.GraphQLAction
+import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -297,6 +298,10 @@ class SortingHelper {
             individuals.any { it.individual is RPCIndividual } -> rpcComparator
             individuals.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
+                statusCode
+            }
+            individuals.any { it.individual is AsyncAPIIndividual } -> {
+                log.warn("AsyncAPI individuals do not have action based test case sorting yet. Defaulting to status-code comparator.")
                 statusCode
             }
             else -> throw IllegalStateException("Unrecognized test individuals with no target incremental based sorting strategy set.")
