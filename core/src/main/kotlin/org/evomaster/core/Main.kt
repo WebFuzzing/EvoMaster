@@ -784,6 +784,28 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyAsyncAPI(config: EMConfig): Key<out SearchAlgorithm<AsyncAPIIndividual>> {
+
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<AsyncAPIIndividual>>() {})
+
+                EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<AsyncAPIIndividual>>() {})
+
+                EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<AsyncAPIIndividual>>() {})
+
+                EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<AsyncAPIIndividual>>() {})
+
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<AsyncAPIIndividual>>() {})
+
+                else -> throw IllegalStateException("Algorithm ${config.algorithm} is not supported for AsyncAPI yet")
+            }
+        }
+
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
             return when (config.algorithm) {
@@ -852,6 +874,7 @@ class Main {
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
                 EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
                 EMConfig.ProblemType.WEBFRONTEND -> getAlgorithmKeyWeb(config)
+                EMConfig.ProblemType.ASYNCAPI -> getAlgorithmKeyAsyncAPI(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 

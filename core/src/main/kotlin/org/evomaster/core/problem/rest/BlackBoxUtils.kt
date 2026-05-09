@@ -56,6 +56,13 @@ object BlackBoxUtils {
                         }
                     }
                 }
+                EMConfig.ProblemType.ASYNCAPI -> {
+                    // For AsyncAPI black-box, the broker URL is the operational
+                    // target, but the test scaffold's "base URL" string is only
+                    // used for display.  The schema URL is the closest analog
+                    // we have when --bbTargetUrl wasn't specified.
+                    return extractTarget(config.bbAsyncApiUrl)
+                }
                 else -> throw IllegalStateException("Black-box testing is currently not supported for ${config.problemType}")
             }
         }

@@ -1,7 +1,5 @@
 package org.evomaster.core.problem.asyncapi.service.module
 
-import com.google.inject.Provides
-import com.google.inject.Singleton
 import com.google.inject.TypeLiteral
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.AsyncAPITestCaseWriter
@@ -56,22 +54,76 @@ open class AsyncAPIBaseModule : EnterpriseModule() {
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<AsyncAPIIndividual>>() {})
             .asEagerSingleton()
+
+        // Bind LazyBrokerClient so Guice manages its (optional) RemoteController
+        // injection.  The interface alias lets fitness/sampler depend on the
+        // protocol-agnostic type.
+        bind(LazyBrokerClient::class.java)
+            .asEagerSingleton()
+        bind(MessageBrokerClient::class.java)
+            .to(LazyBrokerClient::class.java)
+            .asEagerSingleton()
+    }
+}
+
+/**
+ * Wraps a [KafkaBrokerClient] but defers bootstrap-URL resolution until
+ * the first call to [connect].  Lets us bind the broker as an eager
+ * Guice singleton without forcing the URL to be known at injector-creation
+ * time — important for white-box, where the URL comes from the EM Driver
+ * after `startSUT` has fired.
+ *
+ * Black-box runs read [EMConfig.bbBrokerUrl] directly; white-box runs ask
+ * the driver via the optionally-injected [RemoteController].
+ */
+class LazyBrokerClient @com.google.inject.Inject constructor(
+    private val config: EMConfig
+) : MessageBrokerClient {
+
+    @com.google.inject.Inject(optional = true)
+    private var rc: org.evomaster.core.remote.service.RemoteController? = null
+
+    @Volatile
+    private var delegate: KafkaBrokerClient? = null
+
+    private fun resolveBootstrapServers(): String {
+        if (config.bbBrokerUrl.isNotBlank()) {
+            return config.bbBrokerUrl
+        }
+        val controller = rc
+            ?: throw IllegalStateException("AsyncAPI requires either --bbBrokerUrl (black-box) or an EM Driver (white-box) reporting an AsyncAPIProblem")
+        val info = controller.getSutInfo()
+            ?: throw IllegalStateException("AsyncAPI white-box: EM Driver returned no SUT info")
+        val bootstrap = info.asyncAPIProblem?.brokerBootstrapServers
+            ?: throw IllegalStateException("AsyncAPI white-box: EM Driver's AsyncAPIProblem did not report brokerBootstrapServers")
+        return bootstrap
     }
 
-    /**
-     * Construct the broker bridge from the runtime config so the same
-     * instance is reused across the search.  Producing it here keeps the
-     * fitness function free of broker-construction logic and lets later
-     * additions (MQTT, etc.) plug in by replacing this provider.
-     */
-    @Provides
-    @Singleton
-    fun provideBrokerClient(config: EMConfig): MessageBrokerClient {
-        if (config.bbBrokerUrl.isBlank()) {
-            throw IllegalStateException(
-                "AsyncAPI requires --bbBrokerUrl to be set (e.g. localhost:9092)"
-            )
-        }
-        return KafkaBrokerClient(bootstrapServers = config.bbBrokerUrl)
+    @Synchronized
+    private fun ensure(): KafkaBrokerClient {
+        delegate?.let { return it }
+        val client = KafkaBrokerClient(bootstrapServers = resolveBootstrapServers())
+        delegate = client
+        return client
+    }
+
+    override fun connect() = ensure().connect()
+
+    override fun publish(
+        channel: String,
+        key: String?,
+        headers: Map<String, ByteArray>,
+        payload: ByteArray
+    ) = ensure().publish(channel, key, headers, payload)
+
+    override fun awaitFirstMatching(
+        channel: String,
+        predicate: (Map<String, ByteArray>) -> Boolean,
+        timeoutMs: Long
+    ) = ensure().awaitFirstMatching(channel, predicate, timeoutMs)
+
+    override fun close() {
+        delegate?.close()
+        delegate = null
     }
 }

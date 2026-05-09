@@ -92,6 +92,10 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
             ?: throw SutProblemException(
                 "EM Driver did not report an AsyncAPI problem; check the controller's getProblemInfo() implementation"
             )
+        // Pick up driver-supplied defaults (e.g. preferred output format) so
+        // generated tests get the right language even when --outputFormat is
+        // left at its DEFAULT.
+        updateConfigBasedOnSutInfoDto(infoDto)
         val url = problem.asyncApiUrl
         if (url.isNullOrBlank()) {
             throw SutProblemException(
