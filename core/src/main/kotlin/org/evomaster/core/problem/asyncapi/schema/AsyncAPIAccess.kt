@@ -134,6 +134,13 @@ object AsyncAPIAccess {
                 ?.takeIf { it != headersRefRaw }
             val headersInline = if (headers != null && headersRef == null) headers else null
 
+            // AsyncAPI 3.0 protocol bindings: per the asyncapi/bindings/kafka
+            // spec, message-level kafka.key is the routing-key schema we want
+            // the EA to mutate independently of payload + headers.
+            val kafkaKey = message.get("bindings")
+                ?.get("kafka")
+                ?.get("key")
+
             out[id] = AsyncAPIMessage(
                 id = id,
                 name = message.get("name")?.asText() ?: id,
@@ -142,7 +149,8 @@ object AsyncAPIAccess {
                 payloadSchemaRef = payloadRef,
                 payloadInline = payloadInline,
                 headersSchemaRef = headersRef,
-                headersInline = headersInline
+                headersInline = headersInline,
+                kafkaKeyInline = kafkaKey
             )
         }
         return out

@@ -36,5 +36,14 @@ data class AsyncAPIMessage(
      */
     val headersSchemaRef: String? = null,
     /** Inline headers schema, set only when no `$ref` was used. */
-    val headersInline: JsonNode? = null
+    val headersInline: JsonNode? = null,
+    /**
+     * Schema of the Kafka message key, lifted from
+     * `bindings.kafka.key` in AsyncAPI 3.0.  Null when the message
+     * declares no key binding (Kafka uses the empty key in that case,
+     * which means the broker round-robins partitions).  Building a gene
+     * for this lets the EA target specific partitions and exercise
+     * partition-aware SUT logic.
+     */
+    val kafkaKeyInline: JsonNode? = null
 )

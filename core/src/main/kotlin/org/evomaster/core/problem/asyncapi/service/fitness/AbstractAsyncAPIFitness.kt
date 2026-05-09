@@ -401,9 +401,15 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         val headersGene = action.headersParam()?.primaryGene()
         materialiseHeaders(headersGene)?.forEach { (k, v) -> headers[k] = v }
 
+        // AsyncAPI 3.0 Kafka binding: message.bindings.kafka.key, if declared,
+        // is materialised as the action's KEY_PARAM gene.  Stamping it on the
+        // record tells the broker which partition to use — partition-aware
+        // SUT logic (e.g. per-tenant handlers) needs this to be exercised.
+        val kafkaKey = action.keyParam()?.primaryGene()?.getValueAsRawString()
+
         val outcome = broker.publish(
             channel = channelAddress,
-            key = null,
+            key = kafkaKey,
             headers = headers,
             payload = payloadJson.toByteArray(StandardCharsets.UTF_8)
         )
@@ -438,6 +444,15 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                         val gene = param.primaryGene()
                         AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.fieldPresenceTargets(action, gene).forEach { coverLocal(fv, it) }
+                        AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
+                    }
+                    // Kafka key gene: when bindings.kafka.key declares an enum
+                    // (e.g. tenant routing keys), the existing enumValueTargets
+                    // helper picks each value up automatically.  Same gate as
+                    // the other input-side coverage so the flag's contract
+                    // stays consistent.
+                    action.keyParam()?.primaryGene()?.let { gene ->
+                        AbstractAsyncAPIFitness.enumValueTargets(action, gene).forEach { coverLocal(fv, it) }
                         AbstractAsyncAPIFitness.boundaryTargets(action, gene).forEach { coverLocal(fv, it) }
                     }
                 }

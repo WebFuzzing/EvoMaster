@@ -222,6 +222,27 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             val unwrappedParam = if (paramGene is NullableGene) paramGene.gene else paramGene
             params += AsyncAPIParam(AsyncAPIAction.CHANNEL_PARAM_PREFIX + paramName, unwrappedParam)
         }
+        // AsyncAPI 3.0 protocol bindings — Kafka message key.  Mutating it
+        // changes which partition the broker picks, which is the schema-
+        // derivable signal that exercises partition-aware SUT logic.  The
+        // existing enum/field/boundary target builders pick up the gene
+        // automatically once it's threaded into the action's parameter list.
+        message.kafkaKeyInline?.let { keyNode ->
+            val keySwagger = JsonSchemaConverter.convert(keyNode)
+            val keyMsgs = mutableListOf<String>()
+            val keyGene = converter.getGene(
+                name = AsyncAPIAction.KEY_PARAM,
+                schema = keySwagger,
+                referenceClassDef = null,
+                messages = keyMsgs
+            )
+            if (keyMsgs.isNotEmpty() && log.isDebugEnabled) {
+                keyMsgs.forEach { log.debug("AsyncAPI Kafka-key gene-build message: {}", it) }
+            }
+            val keyUnwrapped = if (keyGene is NullableGene) keyGene.gene else keyGene
+            params += AsyncAPIParam(AsyncAPIAction.KEY_PARAM, keyUnwrapped)
+        }
+
         // AsyncAPI 3.0 lets messages declare a `headers` schema independent
         // of the payload — typically auth tokens, tenant ids, tracing ids.
         // Build a separate gene tree for it so the EA can mutate the
