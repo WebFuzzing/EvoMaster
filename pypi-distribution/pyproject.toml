@@ -11,6 +11,10 @@ authors = [
     {name = "Andrea Arcuri", email = "arcuri82@gmail.com"}
 ]
 license = {text = "LGPL"}
+dependencies = [
+    "requests>=2.0.0",
+    "tqdm>=4.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/WebFuzzing/EvoMaster"
@@ -19,12 +23,16 @@ Issues = "https://github.com/WebFuzzing/EvoMaster/issues"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-
 [project.scripts]
 evomaster = "evomaster.__main__:main"
+
+
 
 
 ###  Release
 # rm -r dist
 # python3 -m build
 # python3 -m twine upload dist/*
+
+### For testing
+# pip3 install --force-reinstall dist/evomaster-*.whl
