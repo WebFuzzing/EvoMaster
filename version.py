@@ -64,6 +64,10 @@ def replaceInPyPi():
     replacement = 'version = "'+reducedVersion+'"\n'
     replace("pypi-distribution/pyproject.toml", regex, replacement)
 
+    regex = re.compile(r'evomaster_version =.*')
+    replacement = 'evomaster_version = "'+reducedVersion+'"\n'
+    replace("pypi-distribution/src/evomaster/__main__.py", regex, replacement)
+
 
 ### JS and C# no longer supported
 # def replaceInJS():
