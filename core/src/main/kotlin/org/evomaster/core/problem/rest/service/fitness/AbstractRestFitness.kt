@@ -399,6 +399,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(!config.statusOracles){
             return
         }
+        if(!callGraphService.isInUse(call.verb, call.path)) {
+            //avoid computing for call outside schema, as it can lead to false-positives
+            return
+        }
 
         val name = call.getName()
 

@@ -163,7 +163,19 @@ class FitnessValue(
 
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
-            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+            databaseExecutions.values
+                .filter { it.failedWhere.isNotEmpty() }
+                .flatMap { exec ->
+                    // executionInfo contains ALL commands for this execution, not just the ones
+                    // whose WHERE failed. Use table-name substring matching as a heuristic to keep
+                    // only commands that reference a table with a failed WHERE clause.
+                    val failedTables = exec.failedWhere.keys.map { it.name.lowercase() }.toSet()
+                    exec.executionInfo.filter { info ->
+                        failedTables.any { table -> info.sqlCommand.lowercase().contains(table) }
+                    }
+                }
+                .map { it.sqlCommand }
+                .filter { it.isNotBlank() }
         )
     }
 
