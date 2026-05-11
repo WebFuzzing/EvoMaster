@@ -107,7 +107,7 @@ def install_corretto(base_dir: str, jdk_folder_name: str) -> str:
 
         url = (
             "https://corretto.aws/downloads/latest/"
-            "amazon-corretto-{jdk_version}-x64-windows-jdk.zip"
+            f"amazon-corretto-{jdk_version}-x64-windows-jdk.zip"
         )
 
         extension = ".zip"
