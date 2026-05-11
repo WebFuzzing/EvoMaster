@@ -51,7 +51,7 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          path: ./pypi-distributiondist/dist/*.whl
+          path: ./pypi-distribution/dist/*.whl
           retention-days: ${{env.retention-days}}
 
       - name: Publish to PyPI
