@@ -153,7 +153,7 @@ class SearchTimeController {
             tooLongWait = true
             return false
         } else {
-            Thread.sleep(seconds)
+            Thread.sleep(seconds * 1000)
             return true
         }
     }
