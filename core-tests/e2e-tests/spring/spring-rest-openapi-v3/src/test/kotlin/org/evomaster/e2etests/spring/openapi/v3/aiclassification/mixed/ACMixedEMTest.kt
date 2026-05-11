@@ -33,40 +33,45 @@ class ACMixedEMTest : AIClassificationEMTestBase() {
     @Disabled
     @Test
     fun testRunDeterministic(){
-        testRunEM(AIResponseClassifierModel.DETERMINISTIC)
+        testRunEM("DETERMINISTIC")
     }
 
     @Disabled
     @Test
     fun testRunGaussian(){
-        testRunEM(AIResponseClassifierModel.GAUSSIAN)
+        testRunEM("GAUSSIAN")
     }
 
     @Disabled
     @Test
     fun testRunGLM(){
-        testRunEM(AIResponseClassifierModel.GLM)
+        testRunEM("GLM")
     }
 
     @Disabled
     @Test
     fun testRunKDE(){
-        testRunEM(AIResponseClassifierModel.KDE)
+        testRunEM("KDE")
     }
 
     @Disabled
     @Test
     fun testRunKNN(){
-        testRunEM(AIResponseClassifierModel.KNN)
+        testRunEM("KNN")
     }
 
     @Disabled
     @Test
     fun testRunNN(){
-        testRunEM(AIResponseClassifierModel.NN)
+        testRunEM("NN")
     }
 
-    private fun testRunEM(model: AIResponseClassifierModel) {
+    @Test
+    fun testRunEnsemble(){
+        testRunEM("GAUSSIAN,GLM,KDE,KNN,NN")
+    }
+
+    private fun testRunEM(model: String) {
 
         runTestHandlingFlakyAndCompilation(
             "ACMixedEM",
