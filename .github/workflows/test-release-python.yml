@@ -29,6 +29,10 @@ jobs:
     name: Build Python Distribution and Publish on PyPi
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./pypi-distribution
+
     steps:
       - uses: actions/checkout@v6
 
@@ -43,7 +47,6 @@ jobs:
           pip install build
 
       - name: Build Python Wheel
-        working-directory: ./pypi-distribution
         shell: bash
         run: |
           rm -fr dist
