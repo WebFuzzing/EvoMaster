@@ -106,6 +106,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
+    private final Set<ExecutedCqlCommand> executedCqlCommandData = new CopyOnWriteArraySet<>();
+
     private final Set<Neo4JRunCommand> neo4JRunCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<OpenSearchCommand> openSearchCommandData = new CopyOnWriteArraySet<>();
@@ -122,6 +124,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<MongoFindCommand> getMongoInfoData(){
         return Collections.unmodifiableSet(mongoFindCommandData);
+    }
+
+    public Set<ExecutedCqlCommand> getCqlInfoData(){
+        return Collections.unmodifiableSet(executedCqlCommandData);
     }
 
     public Set<Neo4JRunCommand> getNeo4JInfoData(){
@@ -150,6 +156,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoInfo(MongoFindCommand info){
         mongoFindCommandData.add(info);
+    }
+
+    public void addCqlInfo(ExecutedCqlCommand info){
+        executedCqlCommandData.add(info);
     }
 
     public void addNeo4JInfo(Neo4JRunCommand info){
