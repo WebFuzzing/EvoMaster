@@ -29,6 +29,8 @@ When `evomaster` Python script is executed, it simply calls something like:
 
 `~/.evomaster/jdk/bin/java -jar ~/.evomaster/evomaster/<version>/evomaster.jar <args>`
 
+To upgrade to latest release, use:
 
+`pip install --upgrade evomaster`
 
 
