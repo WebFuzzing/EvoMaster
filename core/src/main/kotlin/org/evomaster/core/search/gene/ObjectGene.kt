@@ -431,13 +431,14 @@ open class ObjectGene(
                 serializeXml(previousGenes, f.name, f.getLeafGene(), targetFormat)
             }
 
-            val singleField = includedFields.singleOrNull()
-            val leafGene = singleField?.getLeafGene()
-
-            val inlinePrimitive = leafGene != null && leafGene.getViewOfChildren().isEmpty()
+            // Only inline the value when the single field uses the #text convention,
+            // which marks direct text content (e.g. mixed-content elements with attributes).
+            // Named fields must always produce their own child element tag.
+            val inlinePrimitive = includedFields.singleOrNull()?.name == contentXMLTag
 
             val xmlPayload = if (inlinePrimitive) {
-                val childValue = singleField.getLeafGene().getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
+                val childValue = includedFields.single().getLeafGene()
+                    .getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat)
                 "<$name>$childValue</$name>"
             } else {
                 "<$name>$inner</$name>"

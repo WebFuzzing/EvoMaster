@@ -39,28 +39,46 @@ internal class ObjectGeneTest {
     fun testIntegerGene() {
         val gene = ObjectGene("anElement", listOf(IntegerGene("integerValue", value = 0)))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        Assertions.assertEquals("<anElement>0</anElement>", actual)
+        Assertions.assertEquals("<anElement><integerValue>0</integerValue></anElement>", actual)
     }
 
     @Test
     fun testBooleanGene() {
         val gene = ObjectGene("anElement", listOf(BooleanGene("booleanValue", value = false)))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        Assertions.assertEquals("<anElement>false</anElement>", actual)
+        Assertions.assertEquals("<anElement><booleanValue>false</booleanValue></anElement>", actual)
     }
 
     @Test
     fun testStringGene() {
         val gene = ObjectGene("anElement", listOf(StringGene("stringValue", value = "Hello World")))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        Assertions.assertEquals("<anElement>Hello World</anElement>", actual)
+        Assertions.assertEquals("<anElement><stringValue>Hello World</stringValue></anElement>", actual)
     }
 
     @Test
     fun testEscapedStringGene() {
         val gene = ObjectGene("anElement", listOf(StringGene("stringValue", value = "<xml>This should be escaped</xml>")))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        Assertions.assertEquals("<anElement>&lt;xml&gt;This should be escaped&lt;/xml&gt;</anElement>", actual)
+        Assertions.assertEquals("<anElement><stringValue>&lt;xml&gt;This should be escaped&lt;/xml&gt;</stringValue></anElement>", actual)
+    }
+
+    @Test
+    fun testSingleFieldObjectIsNested() {
+        // Regression: ObjectGene with one named field must produce a child element, not inline value.
+        // e.g. @XmlRootElement class DepositRequest(var amount: Int) should serialize as
+        // <depositRequest><amount>5</amount></depositRequest>, not <depositRequest>5</depositRequest>.
+        val gene = ObjectGene("depositRequest", listOf(IntegerGene("amount", value = 5)))
+        val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<depositRequest><amount>5</amount></depositRequest>", actual)
+    }
+
+    @Test
+    fun testHashTextFieldIsInline() {
+        // A field named "#text" represents direct text content.
+        val gene = ObjectGene("element", listOf(StringGene("#text", value = "hello")))
+        val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        assertEquals("<element>hello</element>", actual)
     }
 
     @Test
