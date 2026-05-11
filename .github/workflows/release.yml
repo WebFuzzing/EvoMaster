@@ -198,3 +198,39 @@ jobs:
             evomaster-${{env.evomaster-version}}.dmg           
             evomaster_${{env.evomaster-version}}_amd64.deb
           #   JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+
+  publish-python:
+    needs: build-base
+    name: Build Python Distribution and Publish on PyPi
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install 'build'
+        shell: bash
+        run: |
+          pip install build
+
+      - name: Build Python Wheel
+        shell: bash
+        working-directory: ./pypi-distribution
+        run: |
+          rm -fr dist
+          python -m build
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ./pypi-distribution/dist/*.whl
+          retention-days: ${{env.retention-days}}
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ./pypi-distribution/dist
+          password: ${{ secrets.PYPI_API_TOKEN }}

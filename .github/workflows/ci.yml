@@ -11,8 +11,6 @@ on:
     # An exception is docs/options.md , as created from build
     paths:
       - "**"
-      #  FIXME remove this once done testing
-      - '!.github/workflows/test-release-python.yml'
       - '!pypi-distribution/**'
       - '!scripts/**'
       - '!version.py'
