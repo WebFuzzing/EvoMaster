@@ -15,6 +15,7 @@ dependencies = [
     "requests>=2.0.0",
     "tqdm>=4.0.0",
 ]
+requires-python = ">=3.8"
 
 [project.urls]
 Homepage = "https://github.com/WebFuzzing/EvoMaster"
