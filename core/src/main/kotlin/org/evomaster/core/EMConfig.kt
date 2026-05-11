@@ -640,10 +640,11 @@ class EMConfig {
 
         if (blackBox && !bbExperiments) {
 
-            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw ConfigProblemException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
+            if (problemType == ProblemType.REST && schema.isBlank()) {
+                throw ConfigProblemException("In black-box mode for REST APIs, you must set the 'schema' option." +
+                        " If instead you were going to do white-box testing, recall to use '--blackBox false'.")
             }
-            if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()) {
+            if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
         }
@@ -1221,30 +1222,42 @@ class EMConfig {
 
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
-    var blackBox = false
+    var blackBox = true
 
     @Important(3.2)
     @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
             " If the schema is on the local machine, you can use a URL starting with 'file://'." +
             " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
-    var bbSwaggerUrl: String = ""
+    var schema: String = ""
+
+    @Deprecated("Rather use 'schema'")
+    @Cfg("Old, deprecated parameter for 'schema'.")
+    var bbSwaggerUrl: String
+        get() = schema
+        set(value){ schema = value }
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached, e.g.," +
+    @Cfg("When in black-box mode, specify the base URL of where the SUT can be reached, e.g.," +
             " http://localhost:8080 ." +
             " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " Otherwise, it should not contain any path elements (e.g., '/api'), as it will be inferred from the schema." +
             " In GraphQL, this must point to the entry point of the API, e.g.," +
             " http://localhost:8080/graphql .")
-    var bbTargetUrl: String = ""
+    var base: String = ""
 
+    @Deprecated("Rather use 'base'")
+    @Cfg("Old, deprecated parameter for 'base'.")
+    var bbTargetUrl: String = ""
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
             " an external service, might want to limit the number of calls to avoid bombarding such service" +
             " (which could end up becoming equivalent to a DoS attack)." +
             " A value of zero or negative means that no limiter is applied." +
-            " This is needed only for black-box testing of remote services.")
+            " This is needed only for black-box testing of remote services." +
+            " Note that, evan without this parameter, EvoMaster will still respect the Retry-After given back" +
+            " in 429 responses.")
     var ratePerMinute = 0
 
     @Important(4.0)
