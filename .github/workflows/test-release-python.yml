@@ -29,10 +29,6 @@ jobs:
     name: Build Python Distribution and Publish on PyPi
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./pypi-distribution
-
     steps:
       - uses: actions/checkout@v6
 
@@ -48,19 +44,20 @@ jobs:
 
       - name: Build Python Wheel
         shell: bash
+        working-directory: ./pypi-distribution
         run: |
           rm -fr dist
           python -m build
 
       - uses: actions/upload-artifact@v7
         with:
-          path: dist/*.whl
+          path: ./pypi-distributiondist/dist/*.whl
           retention-days: ${{env.retention-days}}
-
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: ./pypi-distribution/dist
           password: ${{ secrets.PYPI_API_TOKEN }}
 
 
