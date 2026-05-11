@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install 'build'
+        shell: bash
+        run: |
+          pip install build
+
       - name: Build Python Wheel
         working-directory: ./pypi-distribution
         shell: bash
