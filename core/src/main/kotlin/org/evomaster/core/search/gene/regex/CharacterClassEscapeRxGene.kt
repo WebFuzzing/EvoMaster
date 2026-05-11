@@ -99,8 +99,10 @@ class CharacterClassEscapeRxGene(
      */
     var useUpperCase: Boolean = false
 
+    private var validClassEscapeChars = setOf('w', 'W', 'd', 'D', 's', 'S', 'v', 'V' , 'h', 'H', 'p', 'P')
+
     init {
-        if (type[0] !in "wWdDsSvVhHpP") {
+        if (type[0] !in validClassEscapeChars) {
             throw IllegalArgumentException("Invalid type: $type")
         }
 

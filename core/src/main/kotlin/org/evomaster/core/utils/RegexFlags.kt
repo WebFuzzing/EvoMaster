@@ -25,6 +25,8 @@ data class ParsedFlagExpression(
     }
 }
 
+    private val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
+
 data class RegexFlags(
     // currently implemented
     val caseInsensitive: Boolean = false,        // i
@@ -44,7 +46,7 @@ data class RegexFlags(
          * Valid characters are: i, u, s, m, d, U, x.
          */
         fun fromString(s: String): RegexFlags {
-            require(s.all { c -> c in "iusmdUx" }) { "Invalid flag characters in: '$s'" }
+            require(s.all { c -> c in validFlagCharacters }) { "Invalid flag characters in: '$s'" }
             return RegexFlags(
                 caseInsensitive       = 'i' in s,
                 unicodeCase           = 'u' in s,

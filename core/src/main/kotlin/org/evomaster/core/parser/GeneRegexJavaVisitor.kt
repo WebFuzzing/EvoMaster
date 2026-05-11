@@ -12,6 +12,20 @@ private const val EOF_TOKEN = "<EOF>"
  */
 class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
+    private val hexEscapePrefixes = setOf('x', 'u')
+
+    /**
+     * Mappings of various escapes to their matching characters.
+     */
+    private val escapeMap = mapOf(
+        'a' to "\u0007",
+        'e' to "\u001B",
+        'f' to "\u000C",
+        'n' to "\u000A",
+        'r' to "\u000D",
+        't' to "\u0009"
+    )
+
     /**
      * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
      */
@@ -481,18 +495,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 }
                 PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString(), currentFlags)
             }
-            in "aefnrt" -> {
-                val escape = when (txt[1]) {
-                    'a' -> "\u0007"
-                    'e' -> "\u001B"
-                    'f' -> "\u000C"
-                    'n' -> "\u000A"
-                    'r' -> "\u000D"
-                    else -> "\u0009"
-                }
+            in escapeMap -> {
+                val escape = escapeMap[txt[1]]!!
                 PatternCharacterBlockGene(txt, escape, currentFlags)
             }
-            in "xu" -> {
+            in hexEscapePrefixes -> {
                 val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}') {
                     txt.substring(3, txt.length - 1).toInt(16)
                 } else {
