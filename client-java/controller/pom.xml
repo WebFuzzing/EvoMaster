@@ -140,12 +140,12 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Needed for DynamoDb parsing -->
+        <!-- Needed for DynamoDb parsing, fixing version to latest one compatible with Java 8, don't upgrade to 4.10 -->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
+            <version>4.9.3</version>
         </dependency>
-
 
         <dependency>
             <groupId>com.h2database</groupId>

@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeValueHelpe
 import org.evomaster.client.java.controller.dynamodb.operations.OrOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
@@ -38,12 +39,14 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
         for (Map.Entry<?, ?> entry : requestItems.entrySet()) {
             String tableName = entry.getKey() == null ? null : String.valueOf(entry.getKey());
             if (tableName == null || tableName.trim().isEmpty()) {
+                SimpleLogger.uniqueWarn("Failed to parse tablename for BatchGetItem");
                 continue;
             }
 
             Object keysAndAttributes = entry.getValue();
             Object keysObj = invokeNoArg(keysAndAttributes, METHOD_KEYS);
             if (!(keysObj instanceof Collection<?>)) {
+                SimpleLogger.uniqueWarn("Failed to parse keys for BatchGetItem for table: " + tableName);
                 continue;
             }
 
