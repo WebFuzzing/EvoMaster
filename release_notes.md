@@ -2,6 +2,11 @@
 
 Under development in `master` branch.
 
+### New Features
+
+- EvoMaster is now available on PyPi. Can be installed with a simple "pip install evomaster". 
+
+
 # Version 5.2.0
 
 ### New Features

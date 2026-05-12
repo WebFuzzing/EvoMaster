@@ -22,7 +22,7 @@ object JdkIssue {
             return true
         }catch (e: Exception){
 
-            //This needs to be kept in sync with core/pom.xml -> maven-assembly-plugin
+            //This needs to be kept in sync with core/pom.xml -> maven-assembly-plugin and makeExecutable.sh
             val command = "--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
 
             LoggingUtil.getInfoLogger().error(inRed("It looks like you are running EvoMaster with JDK 17+," +

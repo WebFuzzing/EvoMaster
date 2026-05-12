@@ -60,7 +60,7 @@ object HttpStatusOracle {
             }
         }
 
-        if(status == 204 && verb == HttpVerb.GET){
+        if(status == 204 && verb == HttpVerb.GET && result.hasBody()){
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT)
         }
 
