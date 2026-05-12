@@ -29,6 +29,7 @@ abstract class IntegrationTestRestBase : RestTestBase() {
 
     protected fun recreateInjectorForWhite(extraArgs: List<String> = listOf()) {
         val args = listOf(
+            "--blackBox", "false",
             "--sutControllerPort", "" + controllerPort,
             "--createConfigPathIfMissing", "false",
             "--seed", "42"

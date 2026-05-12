@@ -31,7 +31,6 @@ import kotlin.io.path.Path
 import kotlin.sequences.filter
 import kotlin.text.contains
 
-
 class SamplerVerifierTest {
 
     companion object {
@@ -456,7 +455,7 @@ class SamplerVerifierTest {
             blackBox: Boolean,
             args: List<String> = listOf()): Injector {
 
-        val base = BaseModule(args.toTypedArray())
+        val base = BaseModule(args.toTypedArray().plus("--blackBox").plus("$blackBox"))
         val problemModule = if(blackBox){
             BlackBoxRestModule(false)
         } else {
