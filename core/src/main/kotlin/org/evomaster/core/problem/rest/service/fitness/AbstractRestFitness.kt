@@ -211,6 +211,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
+        /*
+            actionResults contains only the REST calls that were executed on the client side,
+            collected one by one during the test run. If execution was stopped early (e.g.,
+            due to a stopping condition or timeout), fewer results are recorded here than
+            the number of additional info entries the SUT reports back. This guard avoids
+            an index-out-of-bounds when iterating below.
+         */
         if (actionResults.size < additionalInfoList.size) {
             log.warn("Length mismatch between ${actionResults.size} action results and ${additionalInfoList.size} info data")
             return
