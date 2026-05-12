@@ -459,6 +459,7 @@ public abstract class EnterpriseTestBase {
         boolean active = code % 2 == 0;
 
         return new ArrayList<>(Arrays.asList(
+                "--blackBox", "false",
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
