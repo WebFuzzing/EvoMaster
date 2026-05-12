@@ -11,6 +11,7 @@ on:
     # An exception is docs/options.md , as created from build
     paths:
       - "**"
+      - '!pypi-distribution/**'
       - '!scripts/**'
       - '!version.py'
       - '!makeExecutable.sh'
