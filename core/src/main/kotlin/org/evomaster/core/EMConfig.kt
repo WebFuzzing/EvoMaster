@@ -1534,36 +1534,6 @@ class EMConfig {
             "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
     var aiModelForResponseClassification: String = "NONE"
 
-    fun setAIModels(vararg models: AIResponseClassifierModel) {
-        aiModelForResponseClassification =
-            models.joinToString(",") { it.name }
-    }
-
-    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
-        val models = aiModelForResponseClassification
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .map {
-                try {
-                    AIResponseClassifierModel.valueOf(it)
-                } catch (e: Exception) {
-                    throw ConfigProblemException("Invalid AI model: $it")
-                }
-            }
-            .distinct()
-            .sorted()
-
-        // EvoMaster accept NONE or a combination of the AI models and not both
-        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
-            throw ConfigProblemException(
-                "Invalid configuration: NONE cannot be combined with other AI models"
-            )
-        }
-
-        return models
-    }
-
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
             "Relevant for gradient-based models such as GLM and neural networks. " +
@@ -3274,6 +3244,7 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = getAIModelForResponseClassification().any { it != AIResponseClassifierModel.NONE }
 
+
     /**
      * Source to build the final GA solution when evolving full test suites (not single tests).
      * ARCHIVE: use current behavior (take tests from the archive).
@@ -3373,6 +3344,43 @@ class EMConfig {
 
         disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
+    }
+
+    // Sets the AI response classification models programmatically.
+    fun setAIModels(vararg models: AIResponseClassifierModel) {
+        aiModelForResponseClassification =
+            models.joinToString(",") { it.name }
+    }
+
+    /**
+     * Parses and validates the configured AI response classification models.
+     * The configuration may contain a single model (e.g., "GLM") or
+     * multiple models separated by commas for ensemble usage (e.g., "GLM, NN, KDE")
+     * The value "NONE" to disable AI-based response classification.
+     */
+    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
+        val models = aiModelForResponseClassification
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map {
+                try {
+                    AIResponseClassifierModel.valueOf(it)
+                } catch (e: Exception) {
+                    throw ConfigProblemException("Invalid AI model: $it")
+                }
+            }
+            .distinct()
+            .sorted()
+
+        // EvoMaster accept NONE or a combination of the AI models and not both
+        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
+            throw ConfigProblemException(
+                "Invalid configuration: NONE cannot be combined with other AI models"
+            )
+        }
+
+        return models
     }
 
 }

@@ -120,12 +120,16 @@ class AIResponseClassifier : AIModel {
      * among all the other used models based on the average of key metrics.
      * For the single-model scenario, the function simply returns the single model.
      */
-    private fun selectBestModel(endpoint: Endpoint): AIModel? {
+    private fun selectBestModel(endpoint: Endpoint): AIModel {
+
+        require(delegates.isNotEmpty()) {
+            "No AI models were initialized in AIResponseClassifier for the endpoint: ${endpoint.path}"
+        }
 
         // Return the single model if there is only one delegate.
         if (delegates.size == 1) return delegates.first()
 
-        return delegates.maxByOrNull { model ->
+        return delegates.maxBy { model ->
             val m = model.estimateMetrics(endpoint)
             listOf(
                 m.precision400,
@@ -254,8 +258,7 @@ class AIResponseClassifier : AIModel {
         val start = System.nanoTime()
 
         val bestModel = selectBestModel(input.endpoint)
-
-        val result = bestModel?.classify(input) ?: AIResponseClassification()
+        val result = bestModel.classify(input)
 
         val p = result.probabilityOf400()
         val invalidFields = result.invalidFields
@@ -280,8 +283,7 @@ class AIResponseClassifier : AIModel {
      */
     override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
         val bestModel = selectBestModel(endpoint)
-        return bestModel?.estimateMetrics(endpoint)
-            ?: ModelEvaluation.DEFAULT_NO_DATA
+        return bestModel.estimateMetrics(endpoint)
     }
 
     /**
