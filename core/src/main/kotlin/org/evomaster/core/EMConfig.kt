@@ -3139,6 +3139,14 @@ class EMConfig {
             " applying any overlay.")
     var overlayLenient = false
 
+
+    @Min(0.0)
+    @Cfg("A 429 'Too Many Requests' response might not provide info on for how long the rate-limiter is in place." +
+            " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
+            " before attempting again to make any call")
+    var defaultDelayInSecondsFor429 = 10
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
