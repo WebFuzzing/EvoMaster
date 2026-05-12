@@ -50,12 +50,15 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
+                format.isPlaywright() -> lines.add("let ${cookiesName(k)};")
                 format.isJavaScript() -> lines.add("const ${cookiesName(k)} = ")
             }
 
             if (!format.isPython()) {
                 // TODO: should we use DTO for cookie related requests?
-                testCaseWriter.startRequest(lines)
+                if (!format.isPlaywright()) {
+                    testCaseWriter.startRequest(lines)
+                }
                 lines.indent()
             }
 
@@ -83,7 +86,7 @@ object CookieWriter {
             }
 
             if (format.isPlaywright()) {
-                lines.add(".then(async (res) => (await res.headerValue('set-cookie'))?.split(';')[0])")
+                lines.add(".then(async (res) => { ${cookiesName(k)} = res.headers()['set-cookie']?.split('\\n')?.find(c => c.trim().length > 0)?.split(';')[0]; })")
                 lines.appendSemicolon()
             }
 
@@ -114,6 +117,11 @@ object CookieWriter {
         baseUrlOfSut: String,
         targetVariable: String
     ) {
+
+        if (format.isPlaywright()) {
+            callEndpoint(lines, k, format, baseUrlOfSut)
+            return
+        }
 
         if(format.isJavaScript() && !format.isPlaywright()) {
             callEndpoint(lines, k, format, baseUrlOfSut)
@@ -182,9 +190,6 @@ object CookieWriter {
             callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-        if (format.isPlaywright()) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
-        }
 
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
@@ -207,7 +212,7 @@ object CookieWriter {
         val verb = k.verb.name.lowercase()
 
         if (format.isPlaywright()) {
-            lines.add("request.$verb(")
+            lines.add("await request.$verb(")
         } else {
             lines.add(".$verb(")
         }

@@ -52,13 +52,15 @@ object TokenWriter {
             when {
                 format.isJava() -> lines.add("final String ${tokenName(k)} = ")
                 format.isKotlin() -> lines.add("val ${tokenName(k)} : String = ")
+                format.isPlaywright() -> {
+                    lines.add("let ${tokenName(k)};")
+                }
                 format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
             }
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
                 format.isPlaywright() -> {
-                    lines.append("await ")
                 }
                 format.isJavaScript() -> {
                     lines.append("\"\"")
@@ -107,7 +109,7 @@ object TokenWriter {
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = token.extractSelector
                     if (format.isPlaywright()) {
-                        lines.add(".then(async res => {${tokenName(k)} = await res.headerValue(\"$header\");},")
+                        lines.add(".then(async res => {${tokenName(k)} = res.headers()[\"${header.lowercase()}\"];},")
                         lines.indented { lines.add("async error => {console.log(await error.response.text()); throw Error(\"Auth failed.\")})") }
                     } else if (format.isJavaScript()) {
                         lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")

@@ -219,7 +219,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         when {
             format.isPlaywright() -> {
-                lines.add("await request.$verb(")
+                val verbToUse = call.verb.name.lowercase()
+                if (verbToUse.uppercase() == "OPTIONS") {
+                    lines.add("await request.fetch(")
+                } else {
+                    lines.add("await request.$verbToUse(")
+                }
             }
             format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
             else -> {

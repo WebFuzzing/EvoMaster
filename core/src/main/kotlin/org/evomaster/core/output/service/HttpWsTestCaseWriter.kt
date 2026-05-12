@@ -274,6 +274,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 val escapedHeader = GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)
                 if (format.isPython()) {
                     lines.add("headers[\"${it.name}\"] = \"${escapedHeader}\"")
+                } else if (format.isPlaywright()) {
+                    lines.add("'${it.name}': '${escapedHeader}',")
                 } else {
 
                     lines.add(".$set(\"${it.name}\", \"${escapedHeader}\")")
@@ -552,6 +554,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.append(", {")
                     lines.addEmpty()
                     lines.indented {
+                        if (call is org.evomaster.core.problem.rest.data.RestCallAction) {
+                            lines.add("method: \"${call.verb.name.uppercase()}\",")
+                        }
                         lines.add("headers: {")
                         lines.indented {
                             lines.add(getAcceptHeader(call, res))
