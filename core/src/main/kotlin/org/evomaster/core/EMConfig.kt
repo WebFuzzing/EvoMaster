@@ -626,10 +626,10 @@ class EMConfig {
             algorithm = if(blackBox) defaultAlgorithmForBlackBox else defaultAlgorithmForWhiteBox
         }
 
-
-        if (!blackBox && bbSwaggerUrl.isNotBlank()) {
-            throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
-        }
+        //no longer the case, once we got default value
+//        if (!blackBox && bbSwaggerUrl.isNotBlank()) {
+//            throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
+//        }
         if (!blackBox && bbTargetUrl.isNotBlank()) {
             throw ConfigProblemException("'bbTargetUrl' should be set only in black-box mode")
         }
