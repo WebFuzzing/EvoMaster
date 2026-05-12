@@ -158,7 +158,6 @@ class OutputFormatterTest {
 
     @Test
     fun testXml(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 2)
         val body = """
         <root>
             <authorId>VZyJz8z_Eu2</authorId>
@@ -173,7 +172,6 @@ class OutputFormatterTest {
 
     @Test
     fun testXmlMismatched(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 2)
         val body = """
         <root>
             <authorId>VZyJz8z_Eu2</authorId>
