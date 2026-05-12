@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
 class MioAlgorithmOnConstantTest {
 
     val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
 
     @Test

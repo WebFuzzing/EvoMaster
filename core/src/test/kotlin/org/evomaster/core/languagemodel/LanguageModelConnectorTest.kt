@@ -20,7 +20,7 @@ class LanguageModelConnectorTest {
     private lateinit var config: EMConfig
 
     val injector: Injector = LifecycleInjector.builder()
-        .withModules(BaseModule())
+        .withModules(BaseModule(arrayOf("--blackBox","false")))
         .build().createInjector()
 
     private lateinit var languageModelConnector: LanguageModelConnector

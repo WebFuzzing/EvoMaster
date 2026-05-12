@@ -26,7 +26,7 @@ class BreederGeneticAlgorithmTest {
     @BeforeEach
     fun setUp() {
         injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
     }
 

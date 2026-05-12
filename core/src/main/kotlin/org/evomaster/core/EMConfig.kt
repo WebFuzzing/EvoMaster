@@ -640,6 +640,15 @@ class EMConfig {
 
         if (blackBox && !bbExperiments) {
 
+            if(problemType == ProblemType.REST && schema == defaultSchema && !Files.exists(Paths.get(defaultSchema))){
+                LoggingUtil.uniqueUserInfo(
+                    AnsiColor.blinking(AnsiColor.inBlue("[IMPORTANT]")) +
+                        AnsiColor.inYellow(" When doing black-box testing, you need to specify the location of the schema" +
+                    " via a URL or local file path using '--schema' option." +
+                    " If not, default is checking for file $defaultSchema," +
+                    " which seems not currently existing on your machine."))
+            }
+
             if (problemType == ProblemType.REST && schema.isBlank()) {
                 throw ConfigProblemException("In black-box mode for REST APIs, you must set the 'schema' option." +
                         " If instead you were going to do white-box testing, recall to use '--blackBox false'.")
@@ -660,11 +669,14 @@ class EMConfig {
         if (blackBox && ratePerMinute <= 0) {
             LoggingUtil.uniqueUserWarn("You have not setup 'ratePerMinute'. If you are doing testing of" +
                     " a remote service which you do not own, you might want to put a rate-limiter to prevent" +
-                    " EvoMaster from bombarding such service with HTTP requests.")
+                    " EvoMaster from bombarding such service with HTTP requests." +
+                    " EvoMaster automatically honors 429 responses, and waits accordingly based on the returned" +
+                    " Retry-After header. Still, you might also want to use 'ratePerMinute' if you are just" +
+                    " testing EvoMaster out on some public APIs.")
         }
 
-        if (!blackBox && outputFormat == OutputFormat.PYTHON_UNITTEST) {
-            throw ConfigProblemException("Python output is used only for black-box testing")
+        if (!blackBox && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJavaOrKotlin()) {
+            throw ConfigProblemException("$outputFormat output is used only for black-box testing")
         }
 
         when (stoppingCriterion) {
@@ -722,21 +734,13 @@ class EMConfig {
         }
 
         if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
-                && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+                && outputFormat.isJavaOrKotlin()) {
             throw ConfigProblemException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
-        if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
+        if (seedTestCases && seedTestCasesPath.isBlank()) {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
-
-        // Clustering constraints: the executive summary is not really meaningful without the clustering
-//        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
-//            executiveSummary = false
-//            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
-//                    "The option has been deactivated for this run, to prevent a crash.")
-//            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
-//        }
 
         if (problemType == ProblemType.RPC
                 && createTests
@@ -1224,11 +1228,13 @@ class EMConfig {
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
     var blackBox = true
 
+    val defaultSchema = "openapi.json"
+
     @Important(3.2)
     @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
             " If the schema is on the local machine, you can use a URL starting with 'file://'." +
             " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
-    var schema: String = ""
+    var schema: String = defaultSchema
 
     @Deprecated("Rather use 'schema'")
     @Cfg("Old, deprecated parameter for 'schema'.")
