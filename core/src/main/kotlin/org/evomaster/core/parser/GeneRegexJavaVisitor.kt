@@ -29,7 +29,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     /**
      * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
      */
-    private val allowedSyntaxEscapes = "^$\\.*+?()[]{}|/-,:<>=!"
+    private val allowedSyntaxEscapes = setOf(
+        '^', '$', '\\', '.', '*', '+', '?',
+        '(', ')', '[', ']', '{', '}', '|',
+        '/', '-', ',' ,':', '<', '>', '=', '!'
+    )
 
     /**
      * Tracks the flags active in the current lexical scope.
