@@ -32,6 +32,18 @@
             <artifactId>testcontainers</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!--
+            kafka-clients is `provided` because it's only needed when
+            generated AsyncAPI tests run; users opting into AsyncAPI
+            output add it themselves.  Keeping it provided here means
+            REST/GraphQL/RPC users don't pull in 30 MB of broker
+            machinery they never touch.
+        -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

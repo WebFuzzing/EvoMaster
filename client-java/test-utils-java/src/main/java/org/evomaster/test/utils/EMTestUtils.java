@@ -202,4 +202,113 @@ public class EMTestUtils {
         Path javaExecutable = Paths.get(javaHome, others);
         return javaExecutable.toAbsolutePath();
     }
+
+    // --------------------------------------------------------------------
+    // AsyncAPI / Kafka helpers used by EvoMaster-generated tests.
+    //
+    // These wrap kafka-clients so the generated test files stay readable
+    // (one call per action instead of ~20 lines of producer/consumer
+    // setup).  They are deliberately reflective so a project can pull in
+    // EMTestUtils without taking a hard kafka-clients dep — the methods
+    // throw IllegalStateException with a clear message if kafka-clients
+    // is missing at runtime.
+    //
+    // WARNING: code generation in
+    // core/.../output/service/AsyncAPITestCaseWriter.kt emits literal
+    // calls to these methods.  Any signature change here must be
+    // mirrored there.
+    // --------------------------------------------------------------------
+
+    /**
+     * Publish a single record onto a Kafka topic.  Used by AsyncAPI-generated
+     * tests as a one-liner replacement for opening a producer per action.
+     *
+     * @param bootstrapServers comma-separated `host:port` list
+     * @param topic            destination topic (already rendered if it had channel-parameter placeholders)
+     * @param key              partition-routing key, or null
+     * @param payload          record value (typically the JSON-serialised AsyncAPI payload)
+     * @param headers          additional message headers (correlation id + user-defined headers)
+     */
+    public static void kafkaPublish(
+            String bootstrapServers,
+            String topic,
+            String key,
+            byte[] payload,
+            java.util.Map<String, byte[]> headers
+    ) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.put("bootstrap.servers", bootstrapServers);
+            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+            props.put("acks", "all");
+            try (org.apache.kafka.clients.producer.KafkaProducer<String, byte[]> producer =
+                         new org.apache.kafka.clients.producer.KafkaProducer<>(props)) {
+                org.apache.kafka.clients.producer.ProducerRecord<String, byte[]> record =
+                        new org.apache.kafka.clients.producer.ProducerRecord<>(topic, key, payload);
+                if (headers != null) {
+                    for (java.util.Map.Entry<String, byte[]> e : headers.entrySet()) {
+                        record.headers().add(e.getKey(), e.getValue());
+                    }
+                }
+                producer.send(record).get(5, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        } catch (NoClassDefFoundError nf) {
+            throw new IllegalStateException(
+                    "kafka-clients not on the test classpath; add `org.apache.kafka:kafka-clients` to run AsyncAPI tests",
+                    nf);
+        } catch (Exception e) {
+            throw new RuntimeException("kafkaPublish failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Subscribe to {@code topic} and return the first record whose
+     * {@code correlationHeaderName} header equals {@code expectedCorrelationId}.
+     * Returns {@code null} on timeout — the caller decides whether that's a
+     * test failure or an expected fire-and-forget outcome.
+     */
+    public static byte[] kafkaAwaitReply(
+            String bootstrapServers,
+            String topic,
+            String correlationHeaderName,
+            String expectedCorrelationId,
+            long timeoutMs
+    ) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.put("bootstrap.servers", bootstrapServers);
+            props.put("group.id", "evm-test-" + java.util.UUID.randomUUID());
+            props.put("auto.offset.reset", "latest");
+            props.put("enable.auto.commit", "false");
+            props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+            try (org.apache.kafka.clients.consumer.KafkaConsumer<String, byte[]> consumer =
+                         new org.apache.kafka.clients.consumer.KafkaConsumer<>(props)) {
+                consumer.subscribe(java.util.Collections.singletonList(topic));
+                long deadline = System.currentTimeMillis() + timeoutMs;
+                while (System.currentTimeMillis() < deadline) {
+                    long remaining = Math.max(50L, deadline - System.currentTimeMillis());
+                    org.apache.kafka.clients.consumer.ConsumerRecords<String, byte[]> records =
+                            consumer.poll(java.time.Duration.ofMillis(Math.min(remaining, 500L)));
+                    for (org.apache.kafka.clients.consumer.ConsumerRecord<String, byte[]> r : records) {
+                        if (correlationHeaderName == null || expectedCorrelationId == null) {
+                            return r.value();
+                        }
+                        org.apache.kafka.common.header.Header h = r.headers().lastHeader(correlationHeaderName);
+                        if (h != null && expectedCorrelationId.equals(new String(h.value(), java.nio.charset.StandardCharsets.UTF_8))) {
+                            return r.value();
+                        }
+                    }
+                }
+                return null;
+            }
+        } catch (NoClassDefFoundError nf) {
+            throw new IllegalStateException(
+                    "kafka-clients not on the test classpath; add `org.apache.kafka:kafka-clients` to run AsyncAPI tests",
+                    nf);
+        } catch (Exception e) {
+            throw new RuntimeException("kafkaAwaitReply failed: " + e.getMessage(), e);
+        }
+    }
 }
