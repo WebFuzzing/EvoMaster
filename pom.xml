@@ -153,6 +153,7 @@
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
         <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
+        <cassandra.driver.version>4.19.2</cassandra.driver.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
         <org.opensearch.version>3.1.0</org.opensearch.version>
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
@@ -598,6 +599,24 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-core</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-query-builder</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-mapper-runtime</artifactId>
+                <version>${cassandra.driver.version}</version>
             </dependency>
 
             <!-- Redis/Lettuce -->
