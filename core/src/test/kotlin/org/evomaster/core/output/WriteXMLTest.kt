@@ -114,7 +114,7 @@ class WriteXMLTest : WriterTestBase() {
         val table = Table("Table0", setOf(xmlColumn), setOf())
 
 
-        val stringGene = StringGene("#text", value = "</element>")
+        val stringGene = StringGene(ObjectGene.contentXMLTag, value = "</element>")
         val objectGene = ObjectGene("anElement", listOf(stringGene))
         val sqlXMLGene = SqlXMLGene("xmlColumn", objectGene)
 

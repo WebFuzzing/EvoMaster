@@ -974,7 +974,7 @@ object GeneSamplerForTests {
         // #text is content, not an attribute
         val stringFields = fields
             .filterIsInstance<StringGene>()
-            .filter { it.name != "#text" }
+            .filter { it.name != ObjectGene.contentXMLTag }
 
         // Strategy: use a small number of fixed attribute configurations
         val seed = rand.nextInt(0, 10)

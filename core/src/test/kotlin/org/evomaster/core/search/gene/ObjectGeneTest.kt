@@ -75,8 +75,8 @@ internal class ObjectGeneTest {
 
     @Test
     fun testHashTextFieldIsInline() {
-        // A field named "#text" represents direct text content.
-        val gene = ObjectGene("element", listOf(StringGene("#text", value = "hello")))
+        // A field named "#text" represents direct text content (mixed-content XML elements).
+        val gene = ObjectGene("element", listOf(StringGene(ObjectGene.contentXMLTag, value = "hello")))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         assertEquals("<element>hello</element>", actual)
     }
@@ -127,7 +127,7 @@ internal class ObjectGeneTest {
         val root = ObjectGene(
             name = "device",
             listOf(
-                StringGene("#text", "XPhone"),
+                StringGene(ObjectGene.contentXMLTag, "XPhone"),
                 ObjectGene(
                     name = "location",
                     listOf(
@@ -135,7 +135,7 @@ internal class ObjectGeneTest {
                         ObjectGene(
                             name = "gps",
                             listOf(
-                                IntegerGene("#text", 12),
+                                IntegerGene(ObjectGene.contentXMLTag, 12),
                                 IntegerGene("lon", 34)
                             )
                         )

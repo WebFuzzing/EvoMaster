@@ -88,6 +88,18 @@ open class ObjectGene(
         private const val PROB_MODIFY_SIZE_ADDITIONAL_FIELDS = 0.1
         // the default maximum size for additional fields
         private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
+        /**
+         * Special XML field name following the "#text" convention used in XML data-binding frameworks
+         * (e.g., Jackson, JAXB) to represent an element's direct text content.
+         *
+         * When an [ObjectGene] has exactly one field named `#text`, the field's value is inlined
+         * directly inside the parent element tag instead of being wrapped in a child element.
+         * This is used to model mixed-content XML elements where the element has both attributes
+         * and a text body, e.g. `<amount currency="USD">42</amount>` where `currency` is an
+         * attribute gene and the inner text `42` is the `#text` field.
+         *
+         * Named fields (any name other than `#text`) always produce their own child element tag.
+         */
         const val contentXMLTag = "#text"
 
         private val mapper = ObjectMapper()
