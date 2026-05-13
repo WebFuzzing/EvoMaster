@@ -139,10 +139,14 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
                 ?: throw SutProblemException("AsyncAPI reply on '${op.name}' references missing channel '$replyChannelName'")
             val replyAddress = replyChannel.address
                 ?: throw SutProblemException("AsyncAPI reply channel '${replyChannel.name}' has no address")
-            val replyMessageId = pickFirstReplyMessageId(reply, replyChannel)
-                ?: throw SutProblemException("AsyncAPI reply on '${op.name}' has no resolvable message id")
-            val replyMessage = schema.messages[replyMessageId]
-                ?: throw SutProblemException("AsyncAPI reply on '${op.name}' references unknown component message '$replyMessageId'")
+            val resolvedReplyIds = resolveReplyMessageIds(reply, replyChannel)
+            if (resolvedReplyIds.isEmpty()) {
+                throw SutProblemException("AsyncAPI reply on '${op.name}' has no resolvable message id")
+            }
+            val primaryReplyId = resolvedReplyIds.first()
+            val alternativeReplyIds = resolvedReplyIds.drop(1)
+            val replyMessage = schema.messages[primaryReplyId]
+                ?: throw SutProblemException("AsyncAPI reply on '${op.name}' references unknown component message '$primaryReplyId'")
 
             out.add(
                 buildAction(
@@ -156,7 +160,8 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
                     schema = schema,
                     converter = converter,
                     replyBinding = null,
-                    correlationLocation = replyMessage.correlationLocation
+                    correlationLocation = replyMessage.correlationLocation,
+                    additionalReplyMessageIds = alternativeReplyIds
                 )
             )
         }
@@ -175,7 +180,8 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         schema: AsyncAPISchema,
         converter: JsonSchemaToGeneConverter,
         replyBinding: ReplyBinding?,
-        correlationLocation: String?
+        correlationLocation: String?,
+        additionalReplyMessageIds: List<String> = emptyList()
     ): AsyncAPIAction {
 
         val swaggerSchema = resolvePayloadSchema(message, schema)
@@ -272,6 +278,7 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             kind = kind,
             pairId = pairId,
             messageId = message.id,
+            additionalReplyMessageIds = additionalReplyMessageIds,
             parameters = params.toMutableList(),
             replyBinding = replyBinding,
             correlationHeaderName = correlationLocation?.let(::extractHeaderName)
@@ -316,6 +323,17 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     private fun resolveMessageIds(op: AsyncAPIOperation, channel: AsyncAPIChannel): List<String> {
         val opIds = op.messageIds.toSet()
         return channel.messageIds.filter { it in opIds || opIds.isEmpty() }
+    }
+
+    /**
+     * All reply message ids declared on the operation that resolve to messages
+     * the channel actually carries.  When `reply.messages: [...]` enumerates
+     * several variants, every one becomes a candidate the fitness layer can
+     * match against.
+     */
+    private fun resolveReplyMessageIds(reply: ReplyBinding, channel: AsyncAPIChannel): List<String> {
+        val replyIds = reply.messageIds.toSet()
+        return channel.messageIds.filter { it in replyIds || replyIds.isEmpty() }
     }
 
     private fun pickFirstReplyMessageId(reply: ReplyBinding, channel: AsyncAPIChannel): String? {

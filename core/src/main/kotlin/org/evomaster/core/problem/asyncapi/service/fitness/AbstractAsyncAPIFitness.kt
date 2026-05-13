@@ -563,30 +563,59 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             return
         }
 
-        val message = schema.messages[action.messageId]
-        val replyPayloadSchema = message?.let { resolvePayloadNode(it, schema) }
-        if (replyPayloadSchema == null) {
-            coverLocal(fv, "REPLY_SCHEMA_VALID:${action.channelAddress}:${action.operationName}")
-            result.addResultValue("schemaValid", "unknown")
+        // AsyncAPI 3.0 lets `reply.messages: [...]` enumerate several reply
+        // variants on a channel.  Try every declared variant and emit the
+        // signal for the first whose schema validates.
+        val candidateMessageIds = listOf(action.messageId) + action.additionalReplyMessageIds
+        var matchedAgainstId: String? = null
+        var winningMatch: VariantMatch? = null
+        for (messageId in candidateMessageIds) {
+            val message = schema.messages[messageId] ?: continue
+            val replyPayloadSchema = resolvePayloadNode(message, schema) ?: continue
+            val match = matchVariants(parsed, replyPayloadSchema, schema)
+            if (match.anyValid) {
+                matchedAgainstId = messageId
+                winningMatch = match
+                break
+            }
+        }
+
+        if (winningMatch == null) {
+            // No schema available at all → unknown rather than invalid (keeps
+            // the existing "no payload schema" semantics).
+            val anyResolvable = candidateMessageIds.any {
+                schema.messages[it]?.let { m -> resolvePayloadNode(m, schema) } != null
+            }
+            if (!anyResolvable) {
+                coverLocal(fv, "REPLY_SCHEMA_VALID:${action.channelAddress}:${action.operationName}")
+                result.addResultValue("schemaValid", "unknown")
+            } else {
+                coverLocal(fv, "REPLY_SCHEMA_INVALID:${action.channelAddress}:${action.operationName}")
+                result.addResultValue("schemaValid", "false")
+            }
             return
         }
 
-        val variantMatch = matchVariants(parsed, replyPayloadSchema, schema)
-        if (variantMatch.anyValid) {
-            coverLocal(fv, "REPLY_SCHEMA_VALID:${action.channelAddress}:${action.operationName}")
-            result.addResultValue("schemaValid", "true")
-            variantMatch.matchedVariantName?.let { variant ->
-                coverLocal(fv, "REPLY_VARIANT:${variant}:${action.channelAddress}:${action.operationName}")
-                result.addResultValue("variant", variant)
+        coverLocal(fv, "REPLY_SCHEMA_VALID:${action.channelAddress}:${action.operationName}")
+        result.addResultValue("schemaValid", "true")
+        winningMatch.matchedVariantName?.let { variant ->
+            coverLocal(fv, "REPLY_VARIANT:${variant}:${action.channelAddress}:${action.operationName}")
+            result.addResultValue("variant", variant)
+        }
+        // Reply-side advanced coverage targets (per-variant-actually-fired
+        // and per-optional-field presence) sit behind the same flag as the
+        // publish-side advanced coverage — they are the reply analog of
+        // PUBLISH_MESSAGE_TYPE / FIELD_PRESENCE, same contract.
+        if (config.advancedBlackBoxCoverage) {
+            if (action.additionalReplyMessageIds.isNotEmpty() && matchedAgainstId != null) {
+                coverLocal(fv, "REPLY_MESSAGE_TYPE:${action.channelAddress}:${action.operationName}=$matchedAgainstId")
+                result.addResultValue("replyMessageType", matchedAgainstId!!)
             }
-            variantMatch.matchedVariantSchema?.let { variantSchema ->
+            winningMatch.matchedVariantSchema?.let { variantSchema ->
                 AbstractAsyncAPIFitness.replyFieldPresenceTargets(
-                    action, variantMatch.matchedVariantName, parsed, variantSchema
+                    action, winningMatch.matchedVariantName, parsed, variantSchema
                 ).forEach { coverLocal(fv, it) }
             }
-        } else {
-            coverLocal(fv, "REPLY_SCHEMA_INVALID:${action.channelAddress}:${action.operationName}")
-            result.addResultValue("schemaValid", "false")
         }
     }
 

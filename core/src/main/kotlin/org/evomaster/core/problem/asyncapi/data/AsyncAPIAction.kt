@@ -27,6 +27,15 @@ class AsyncAPIAction(
     val pairId: String,
     /** Component message id this action carries. */
     val messageId: String,
+    /**
+     * For SUBSCRIBE_REPLY actions only: the *other* message ids the operation
+     * declares as possible reply variants (`reply.messages: [...]`).  The
+     * fitness layer tries every variant's schema when matching an incoming
+     * reply, so a SUT that responds with any of N declared replies is fully
+     * targeted.  Empty for PUBLISH actions and for replies that declare a
+     * single message type.
+     */
+    val additionalReplyMessageIds: List<String> = emptyList(),
     /** Parameters owned by this action (payload, optional key, optional correlation id). */
     parameters: MutableList<AsyncAPIParam>,
     /** Reply binding for PUBLISH actions; null for SUBSCRIBE_REPLY. */
@@ -58,6 +67,7 @@ class AsyncAPIAction(
             kind = kind,
             pairId = pairId,
             messageId = messageId,
+            additionalReplyMessageIds = additionalReplyMessageIds,
             parameters = copies,
             replyBinding = replyBinding,
             correlationHeaderName = correlationHeaderName,
