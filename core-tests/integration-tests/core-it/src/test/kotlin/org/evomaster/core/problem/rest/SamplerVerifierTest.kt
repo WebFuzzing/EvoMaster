@@ -399,7 +399,7 @@ class SamplerVerifierTest {
         val controllerInfo = ControllerInfoDto()
 
         val injector = try{
-            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
+            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42","--schema",resourcePath))
         } catch (e: Throwable){
 
             val s = if(e.cause is InvocationTargetException) {
