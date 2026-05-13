@@ -38,6 +38,11 @@ public enum ReplacementCategory {
     MONGO,
 
     /**
+     * Replacements to handle CASSANDRA command intereception
+     */
+    CASSANDRA,
+
+    /**
      * Replacements to handle OPENSEARCH command interceptions
      */
     OPENSEARCH,
