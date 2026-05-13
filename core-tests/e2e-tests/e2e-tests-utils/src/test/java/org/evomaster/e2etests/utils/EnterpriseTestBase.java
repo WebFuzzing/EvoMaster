@@ -460,12 +460,11 @@ public abstract class EnterpriseTestBase {
 
         return new ArrayList<>(Arrays.asList(
                 "--blackBox", "false",
+        List<String> arguments = new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxEvaluations", "" + iterations,
-                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS
@@ -480,6 +479,15 @@ public abstract class EnterpriseTestBase {
                 //still, we have some specific tests to verify this functionality
                 "--maxTestsPerTestSuite","-1"
         ));
+
+        if(iterations >= 0){
+            arguments.add("--maxEvaluations");
+            arguments.add(""+iterations);
+            arguments.add("--stoppingCriterion");
+            arguments.add("ACTION_EVALUATIONS");
+        }
+
+        return arguments;
     }
 
 
