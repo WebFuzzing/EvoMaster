@@ -216,7 +216,7 @@
             <artifactId>dynamodb</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Removes a warning and actually logs on tests executions -->
+        <!-- Some third-party library we use in our test scaffolding might need SLF4j (i.e., Docker) -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
