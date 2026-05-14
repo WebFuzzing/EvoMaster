@@ -399,6 +399,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(!config.statusOracles){
             return
         }
+        if(!callGraphService.isInUse(call.verb, call.path)) {
+            //avoid computing for call outside schema, as it can lead to false-positives
+            return
+        }
 
         val name = call.getName()
 
@@ -747,7 +751,48 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        rcr.setStatusCode(response.status)
+        val statusCode = response.status
+        if(statusCode == 429){
+            /*
+                Very, very tricky to handle.
+                If "Too Many Requests", we need to wait, and retry.
+                If still fails, it becomes a source of flakiness.
+                Also, if there is a rate-limiter, executing final test suite might
+                have very high chances to be flaky if many tests are generated.
+                Currently we do not handle retry in generated tests...
+                TODO is it something worth to add? sounds complicated...
+             */
+            LoggingUtil.getInfoLogger().warn("Hit a rate-limiter. Received a response with 429 'Too Many Requests'.")
+
+            //TODO should add these on warnings for WFC Report
+
+            val retryAfter = response.getHeaderString("Retry-After")
+            val delay = if(retryAfter == null){
+                config.defaultDelayInSecondsFor429
+            } else {
+                val k = TimeUtils.getTimeToWaitInSeconds(retryAfter)
+                if(k < 0){
+                    //invalid value
+                    config.defaultDelayInSecondsFor429
+                } else {
+                    k
+                }
+            }.toLong()
+
+            LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
+            val hasWaited = searchTimeController.waitUpToSeconds(delay)
+
+            if(hasWaited){
+                actionResults.removeLast()
+                //recursion
+                return handleRestCall(a, all, actionResults, chainState, cookies, tokens, fv)
+            } else {
+                return false
+            }
+        }
+
+
+        rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
         rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)

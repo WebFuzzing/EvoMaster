@@ -2,6 +2,11 @@
 
 Under development in `master` branch.
 
+### New Features
+
+- EvoMaster is now available on PyPi. Can be installed with a simple "pip install evomaster". 
+- Now EvoMaster will honor 429 responses, by waiting for the provided amount of time in the returned Retry-After header (or for a default amount of time if no header is returned, or its value is incorrect). 
+
 # Version 5.2.0
 
 ### New Features

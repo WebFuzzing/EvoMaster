@@ -66,8 +66,8 @@
     <build>
         <!--
             When we make a release, the client-java must be published on Maven Central.
-            This requires to create jars for sources and javadocs.
-            As the javadocs build might fail, we force its creation at each build,
+            This requires creating jars for sources and Javadocs.
+            As the Javadocs build might fail, we force its creation at each build
             so that any issue can be fixed as soon as it is introduced.
         -->
         <plugins>
@@ -88,7 +88,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.12.0</version>
                 <configuration>
                     <source>8</source>
                 </configuration>

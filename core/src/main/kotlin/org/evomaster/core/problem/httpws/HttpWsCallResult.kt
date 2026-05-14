@@ -164,6 +164,9 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun setTooLargeBody(on: Boolean) = addResultValue(TOO_LARGE_BODY, on.toString())
     fun getTooLargeBody(): Boolean = getResultValue(TOO_LARGE_BODY)?.toBoolean() ?: false
 
+    fun hasBody() : Boolean{
+        return !getBody().isNullOrEmpty() && !getTooLargeBody()
+    }
 
     fun setInfiniteLoop(on: Boolean) = addResultValue(INFINITE_LOOP, on.toString())
     fun getInfiniteLoop(): Boolean = getResultValue(INFINITE_LOOP)?.toBoolean() ?: false

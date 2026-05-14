@@ -31,6 +31,7 @@ public class ReplacementList {
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
                     new CollectionClassReplacement(),
+                    new CqlSessionClassReplacement(),
                     new CursorPreparerClassReplacement(),
                     new DateClassReplacement(),
                     new DateFormatClassReplacement(),
