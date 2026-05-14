@@ -102,6 +102,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         CIUtils.skipIfOnCircleCI();
 
         List<String> args = new ArrayList<>();
+        setOption(args, "blackBox", "false");
         setOption(args, "createTests", "true");
         setOption(args, "seed", "42" );
         setOption(args, "sutControllerPort", "" + controllerPort);
