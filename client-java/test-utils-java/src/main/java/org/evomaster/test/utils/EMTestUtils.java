@@ -313,6 +313,41 @@ public class EMTestUtils {
     }
 
     /**
+     * Inspection helper for assertions on AsyncAPI reply payloads. Returns
+     * true when {@code field} is a top-level property of the JSON object in
+     * {@code reply}. Returns false when reply is null, not JSON, or not an
+     * object. Used by per-field reply assertion oracles (M9-PR5).
+     */
+    public static boolean replyHas(byte[] reply, String field) {
+        if (reply == null) return false;
+        com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
+        return node != null && node.isObject() && node.has(field);
+    }
+
+    /**
+     * Inspection helper: return the textual value of {@code field} in the
+     * JSON object {@code reply}, or null when absent / non-textual / parse
+     * failure. Convenient for {@code assertEquals(Set.of(...), Set.of(...))}-
+     * style assertions against an enum.
+     */
+    public static String replyText(byte[] reply, String field) {
+        if (reply == null) return null;
+        com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
+        if (node == null || !node.isObject()) return null;
+        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        if (v == null || !v.isTextual()) return null;
+        return v.asText();
+    }
+
+    private static com.fasterxml.jackson.databind.JsonNode parseReply(byte[] reply) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(reply);
+        } catch (java.io.IOException e) {
+            return null;
+        }
+    }
+
+    /**
      * Subscribe to {@code topic} and collect the payload bytes of every
      * record that arrives during the next {@code windowMs} millisecond
      * window. Returns an array (possibly empty); never null.

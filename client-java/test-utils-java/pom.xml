@@ -44,6 +44,19 @@
             <artifactId>kafka-clients</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!--
+            jackson-databind backs the EMTestUtils.replyHas / replyText
+            helpers used by generated AsyncAPI assertions (M9-PR5). Kept
+            `provided` for the same reason as kafka-clients: REST/RPC users
+            don't need Jackson on their generated-test classpath unless
+            they opt into AsyncAPI output. Most Spring/Quarkus SUTs already
+            pull Jackson transitively anyway.
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -183,6 +183,105 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
         }
 
         /**
+         * Per-field facet ladder on the *reply* payload. For each declared
+         * property in the matched reply variant, emit one target per facet
+         * the schema declares:
+         *
+         *   - REPLY_FIELD_REQUIRED_PRESENT / _REQUIRED_ABSENT — the field is
+         *     in the variant's `required` array.
+         *   - REPLY_FIELD_ENUM_IN_RANGE   / _OUT_OF_RANGE   — `enum`
+         *     constraint declared.
+         *   - REPLY_FIELD_BOUNDARY_OK     / _VIOLATED       — `minimum` /
+         *     `maximum` declared (numeric only).
+         *   - REPLY_FIELD_FORMAT_OK       / _VIOLATED       — `format`
+         *     declared on a string property.
+         *   - REPLY_FIELD_LENGTH_OK       / _VIOLATED       — `minLength` /
+         *     `maxLength` declared.
+         *
+         * Pure function (no broker, no gene tree). Mirrors PUBLISH-side
+         * facet targets from PRs #10–#12 but applied to the observed reply
+         * payload — so the EA gets a per-field gradient when the reply
+         * "almost" satisfies the schema but misses one facet.
+         */
+        fun replyFieldFacetTargets(
+            action: AsyncAPIAction,
+            variantName: String?,
+            parsedReply: JsonNode,
+            variantSchema: JsonNode
+        ): List<String> {
+            if (!parsedReply.isObject || !variantSchema.isObject) return emptyList()
+            val properties = variantSchema.get("properties") ?: return emptyList()
+            if (!properties.isObject) return emptyList()
+            val required = variantSchema.get("required")?.takeIf { it.isArray }
+                ?.map { it.asText() }?.toSet() ?: emptySet()
+            val variantTag = variantName ?: "default"
+            val prefix = "REPLY_FIELD"
+            val locTail = "${action.channelAddress}:${action.operationName}"
+            val out = mutableListOf<String>()
+            properties.fields().forEach { (fieldName, propSchema) ->
+                if (fieldName in required) {
+                    val key = "$prefix:REQUIRED_${if (parsedReply.has(fieldName)) "PRESENT" else "ABSENT"}:$variantTag:$locTail:$fieldName"
+                    out.add(key)
+                }
+                val value = parsedReply.get(fieldName) ?: return@forEach
+                val enumNode = propSchema.get("enum")
+                if (enumNode != null && enumNode.isArray) {
+                    val allowed = enumNode.map { it.asText() }
+                    val inRange = value.isTextual && value.asText() in allowed
+                    out.add("$prefix:ENUM_${if (inRange) "IN_RANGE" else "OUT_OF_RANGE"}:$variantTag:$locTail:$fieldName")
+                }
+                val min = propSchema.get("minimum")?.takeIf { it.isNumber }?.decimalValue()
+                val max = propSchema.get("maximum")?.takeIf { it.isNumber }?.decimalValue()
+                if ((min != null || max != null) && value.isNumber) {
+                    val v = value.decimalValue()
+                    val ok = (min == null || v >= min) && (max == null || v <= max)
+                    out.add("$prefix:BOUNDARY_${if (ok) "OK" else "VIOLATED"}:$variantTag:$locTail:$fieldName")
+                }
+                val minLen = propSchema.get("minLength")?.takeIf { it.isInt }?.asInt()
+                val maxLen = propSchema.get("maxLength")?.takeIf { it.isInt }?.asInt()
+                if ((minLen != null || maxLen != null) && value.isTextual) {
+                    val len = value.asText().length
+                    val ok = (minLen == null || len >= minLen) && (maxLen == null || len <= maxLen)
+                    out.add("$prefix:LENGTH_${if (ok) "OK" else "VIOLATED"}:$variantTag:$locTail:$fieldName")
+                }
+                val format = propSchema.get("format")?.asText()
+                if (format != null && value.isTextual) {
+                    val ok = matchesFormat(value.asText(), format)
+                    out.add("$prefix:FORMAT_${if (ok) "OK" else "VIOLATED"}:$variantTag:$locTail:$fieldName=$format")
+                }
+            }
+            return out
+        }
+
+        /**
+         * Minimal format validator covering the JSON-Schema formats AsyncAPI
+         * schemas declare most often. Returns true if the input plausibly
+         * matches the named format; conservative, never throws.
+         */
+        private fun matchesFormat(value: String, format: String): Boolean = when (format) {
+            "email" -> EMAIL_REGEX.matches(value)
+            "uuid" -> UUID_REGEX.matches(value)
+            "date" -> DATE_REGEX.matches(value)
+            "date-time" -> DATE_TIME_REGEX.matches(value)
+            "uri", "url" -> try { java.net.URI(value); true } catch (_: Exception) { false }
+            "hostname" -> HOSTNAME_REGEX.matches(value)
+            "ipv4" -> IPV4_REGEX.matches(value)
+            else -> true  // Unknown format → don't penalise; presence of the
+                          // facet still produced a target above.
+        }
+
+        private val EMAIL_REGEX = Regex("""^[^\s@]+@[^\s@]+\.[^\s@]+$""")
+        private val UUID_REGEX = Regex(
+            """^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"""
+        )
+        private val DATE_REGEX = Regex("""^\d{4}-\d{2}-\d{2}$""")
+        private val DATE_TIME_REGEX = Regex(
+            """^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$"""
+        )
+        private val HOSTNAME_REGEX = Regex("""^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$""")
+        private val IPV4_REGEX = Regex("""^(25[0-5]|2[0-4]\d|1?\d{1,2})(\.(25[0-5]|2[0-4]\d|1?\d{1,2})){3}$""")
+
+        /**
          * Output-side mirror of [replyFieldPresenceTargets]. For each declared
          * property in the matched output variant, emit a per-field presence
          * target tagged `present` or `absent` based on the observed payload.
@@ -734,6 +833,13 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             }
             winningMatch.matchedVariantSchema?.let { variantSchema ->
                 AbstractAsyncAPIFitness.replyFieldPresenceTargets(
+                    action, winningMatch.matchedVariantName, parsed, variantSchema
+                ).forEach { coverLocal(fv, it) }
+                // Per-field facet ladder — required / enum / boundary / format /
+                // length on the reply payload. Mirrors the PUBLISH-side facet
+                // ladder from PRs #10–#13 but driven by observation rather than
+                // gene-tree introspection.
+                AbstractAsyncAPIFitness.replyFieldFacetTargets(
                     action, winningMatch.matchedVariantName, parsed, variantSchema
                 ).forEach { coverLocal(fv, it) }
             }

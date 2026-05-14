@@ -60,6 +60,20 @@ The listen window is configured with `--asyncApiOutputObservationWindowMs` (defa
 
 This is an *observational* oracle: the schema doesn't encode causality between a publish and an emitted event, so attribution is window-only. On a dedicated test broker (the engine is the only client) false positives from concurrent traffic are negligible.
 
+### Per-field reply assertions (M9-PR5)
+
+When the SUT replies to a `request` operation, the engine now walks the declared reply schema and emits one fitness target per (field × declared facet) pair, on top of the existing binary `REPLY_SCHEMA_VALID` signal:
+
+| Target family | Fires when |
+|---|---|
+| `REPLY_FIELD:REQUIRED_PRESENT:<variant>:<channel>:<op>:<field>` / `_REQUIRED_ABSENT` | required field present / missing |
+| `REPLY_FIELD:ENUM_IN_RANGE:<variant>:<channel>:<op>:<field>` / `_OUT_OF_RANGE` | observed enum value in / not in declared set |
+| `REPLY_FIELD:BOUNDARY_OK:<variant>:<channel>:<op>:<field>` / `_VIOLATED` | numeric value within / outside `minimum`/`maximum` |
+| `REPLY_FIELD:LENGTH_OK:<variant>:<channel>:<op>:<field>` / `_VIOLATED` | string length within / outside `minLength`/`maxLength` |
+| `REPLY_FIELD:FORMAT_OK:<variant>:<channel>:<op>:<field>=<format>` / `_VIOLATED` | string value matches / doesn't match declared format (email, uuid, date, date-time, uri, hostname, ipv4) |
+
+Generated JUnit 5 tests get matching assertions for the most common subset (`required` + `enum`) via `EMTestUtils.replyHas(...)` and `EMTestUtils.replyText(...)`. Bounds / length / format show up as fitness gradients today; per-field test assertions for those families will follow when the validation pass against real products surfaces concrete cases.
+
 ## White-box
 
 White-box requires an EvoMaster driver in the SUT's repo that returns `AsyncAPIProblem` from `getProblemInfo()`:

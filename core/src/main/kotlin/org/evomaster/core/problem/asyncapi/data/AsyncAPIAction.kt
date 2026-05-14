@@ -42,6 +42,12 @@ class AsyncAPIAction(
     val replyBinding: ReplyBinding? = null,
     /** Header where the correlation id is carried (mirrors the AsyncAPI `correlationId.location`). */
     val correlationHeaderName: String? = null,
+    /**
+     * Pre-computed schema-derived assertions the test-case writer should emit
+     * on the reply payload. Populated by the builder for SUBSCRIBE_REPLY
+     * actions; empty for PUBLISH / SUBSCRIBE_OUTPUT. M9-PR5.
+     */
+    val replyFieldAssertions: List<ReplyFieldAssertion> = emptyList(),
     auth: AuthenticationInfo = AsyncAPINoAuth()
 ) : ApiWsAction(auth, false, parameters) {
 
@@ -79,6 +85,7 @@ class AsyncAPIAction(
             parameters = copies,
             replyBinding = replyBinding,
             correlationHeaderName = correlationHeaderName,
+            replyFieldAssertions = replyFieldAssertions,
             auth = auth
         )
     }
