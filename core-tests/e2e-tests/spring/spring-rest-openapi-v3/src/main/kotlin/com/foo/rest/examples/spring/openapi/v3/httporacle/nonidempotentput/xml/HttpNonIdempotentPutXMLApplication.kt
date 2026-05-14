@@ -44,12 +44,7 @@ open class HttpNonIdempotentPutXMLApplication {
     @XmlRootElement(name = "depositRequest")
     @XmlAccessorType(XmlAccessType.FIELD)
     open class DepositRequest(
-        var amount: Int = 0,
-        // EvoMaster's ObjectGene XML serializer inlines single-field bodies as
-        // <depositRequest>5</depositRequest> instead of <depositRequest><amount>5</amount></depositRequest>,
-        // which JAXB cannot bind (amount falls back to its Kotlin default).
-        // This unused field forces the multi-field path so the random `amount` actually reaches the server.
-        var note: String = ""
+        var amount: Int = 0
     )
 
 
