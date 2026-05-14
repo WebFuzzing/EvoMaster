@@ -89,6 +89,7 @@ object AsyncAPIAccess {
         val servers = parseServers(root.get("servers"))
         val componentMessages = parseComponentMessages(root, defaultContentType)
         val componentSchemas = parseComponentSchemas(root)
+        val securitySchemes = parseSecuritySchemes(root)
         val channels = parseChannels(root.get("channels"))
         val operations = parseOperations(root.get("operations"))
 
@@ -101,7 +102,8 @@ object AsyncAPIAccess {
             messages = componentMessages,
             componentSchemas = componentSchemas,
             defaultContentType = defaultContentType,
-            servers = servers
+            servers = servers,
+            securitySchemes = securitySchemes
         )
     }
 
@@ -178,6 +180,26 @@ object AsyncAPIAccess {
         return out
     }
 
+    private fun parseSecuritySchemes(root: JsonNode): Map<String, AsyncAPISecurityScheme> {
+        val components = root.get("components") ?: return emptyMap()
+        val node = components.get("securitySchemes") ?: return emptyMap()
+        if (!node.isObject) return emptyMap()
+        val out = LinkedHashMap<String, AsyncAPISecurityScheme>()
+        node.fields().forEach { (name, schemeNode) ->
+            val type = schemeNode.get("type")?.asText()?.lowercase()
+                ?: return@forEach // skip malformed entries; the parser is lenient on auth
+            out[name] = AsyncAPISecurityScheme(
+                name = name,
+                type = type,
+                `in` = schemeNode.get("in")?.asText(),
+                scheme = schemeNode.get("scheme")?.asText(),
+                bearerFormat = schemeNode.get("bearerFormat")?.asText(),
+                description = schemeNode.get("description")?.asText()
+            )
+        }
+        return out
+    }
+
     private fun parseChannels(node: JsonNode?): Map<String, AsyncAPIChannel> {
         if (node == null || !node.isObject) return emptyMap()
         val out = LinkedHashMap<String, AsyncAPIChannel>()
@@ -234,13 +256,34 @@ object AsyncAPIAccess {
                 )
             } else null
 
+            // AsyncAPI 3.0 `security` on an Operation is an array of Security
+            // Requirement Objects. Each entry references a scheme defined under
+            // components.securitySchemes (typically by $ref). We capture only
+            // the referenced scheme names; the AND/OR semantics within an
+            // entry are not modelled here (the broker layer applies one auth
+            // configuration anyway).
+            val security = parseOperationSecurity(op.get("security"))
+
             out[key] = AsyncAPIOperation(
                 name = key,
                 action = action,
                 channelName = channelName,
                 messageIds = messageIds,
-                reply = reply
+                reply = reply,
+                security = security
             )
+        }
+        return out
+    }
+
+    private fun parseOperationSecurity(node: JsonNode?): List<String> {
+        if (node == null || !node.isArray) return emptyList()
+        val out = mutableListOf<String>()
+        node.forEach { entry ->
+            val ref = entry?.get("\$ref")?.asText() ?: return@forEach
+            // Expected ref shape: #/components/securitySchemes/<name>
+            val name = ref.substringAfterLast('/')
+            if (name.isNotBlank()) out.add(name)
         }
         return out
     }

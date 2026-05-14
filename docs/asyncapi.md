@@ -31,6 +31,22 @@ CLI options new for AsyncAPI:
 
 The familiar `--outputFormat`, `--maxTime`, etc. all behave as for REST. `PYTHON_UNITTEST` is rejected for AsyncAPI; pick `JAVA_JUNIT_5` (default) or `KOTLIN_JUNIT_5`.
 
+### Authenticated brokers
+
+Real Kafka deployments usually require SASL or SSL on the connection. The black-box engine supports three families today (M9):
+
+| Flag | Notes |
+|---|---|
+| `--bbBrokerAuthType` | one of `NONE` (default), `SASL_PLAIN`, `SASL_SCRAM_256`, `SSL` |
+| `--bbBrokerUsername` / `--bbBrokerPassword` | required for both SASL variants |
+| `--bbBrokerSaslOverTls` | when true, SASL is wrapped in TLS (`SASL_SSL`); otherwise `SASL_PLAINTEXT` |
+| `--bbBrokerTruststorePath` / `--bbBrokerTruststorePassword` | server cert verification (SSL only) |
+| `--bbBrokerKeystorePath` / `--bbBrokerKeystorePassword` | client cert for mTLS (SSL only; optional) |
+
+SASL/OAUTHBEARER and Kerberos are not yet supported; track the follow-up in the M9 plan.
+
+The AsyncAPI parser also surfaces `components.securitySchemes` and per-operation `security:` references into the in-memory model; the broker-side auth applied at connect time is driven by the CLI flags above (the schema's declared scheme names are advisory). White-box mode will plumb driver-supplied broker auth in a follow-up; for now use the CLI flags in both modes.
+
 ## White-box
 
 White-box requires an EvoMaster driver in the SUT's repo that returns `AsyncAPIProblem` from `getProblemInfo()`:

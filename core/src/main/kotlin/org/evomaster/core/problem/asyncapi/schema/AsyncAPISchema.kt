@@ -28,7 +28,9 @@ data class AsyncAPISchema(
     /** Default contentType declared at top level (or "application/json"). */
     val defaultContentType: String,
     /** Server entries keyed by server name. */
-    val servers: Map<String, AsyncAPIServer>
+    val servers: Map<String, AsyncAPIServer>,
+    /** `components.securitySchemes` (key → scheme). Empty when none declared. */
+    val securitySchemes: Map<String, AsyncAPISecurityScheme> = emptyMap()
 )
 
 data class AsyncAPIServer(
