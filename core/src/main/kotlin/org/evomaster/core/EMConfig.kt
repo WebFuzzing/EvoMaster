@@ -1990,6 +1990,12 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_MONGO = true
 
+    @Experimental
+    @Cfg("Execute instrumentation for method replace with category CASSANDRA." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_CASSANDRA = false
+
     @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
@@ -2952,6 +2958,10 @@ class EMConfig {
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
 
+    @Experimental
+    @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
+    var statusOracles = false
+
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
 
@@ -3135,6 +3145,14 @@ class EMConfig {
             " applying any overlay.")
     var overlayLenient = false
 
+
+    @Min(0.0)
+    @Cfg("A 429 'Too Many Requests' response might not provide info on for how long the rate-limiter is in place." +
+            " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
+            " before attempting again to make any call")
+    var defaultDelayInSecondsFor429 = 10
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -3188,6 +3206,7 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())

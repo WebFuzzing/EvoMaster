@@ -29,7 +29,8 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             outputFolder,
             outputClass,
-            2000
+            2000,
+            true,
         ) { args: MutableList<String> ->
 
 

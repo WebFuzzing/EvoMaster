@@ -4,6 +4,14 @@ Under development in `master` branch.
 
 ### New Features
 
+- EvoMaster is now available on PyPi. Can be installed with a simple "pip install evomaster". 
+- Now EvoMaster will honor 429 responses, by waiting for the provided amount of time in the returned Retry-After header (or for a default amount of time if no header is returned, or its value is incorrect). 
+
+# Version 5.2.0
+
+### New Features
+
+- Several new security oracles have been added, and executed automatically after the main fuzzing session is completed.
 - Each new "phase" (e.g., minimization and security testing) after the search process has now a time-budget which is proportional to the search budget (default 10 percent).
 - Upgraded to WFC 0.4.0, which includes improvements to the Web Report (e.g., "low-code" view), and generation of self-contained index.html file (for whom cannot run a Python HTTP server on their machines, e.g., managers in industry with limited permissions on their corporate laptop).
 

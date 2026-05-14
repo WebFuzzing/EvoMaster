@@ -25,6 +25,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.HttpStatusOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -386,10 +387,31 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(statusId, 1.0, it)
 
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
+                handleHttpStatusOracles(fv, actions[it], result, it)
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
+            }
+    }
+
+    private fun handleHttpStatusOracles(fv: FitnessValue, call: RestCallAction, result: RestCallResult, index: Int) {
+        if(!config.statusOracles){
+            return
+        }
+        if(!callGraphService.isInUse(call.verb, call.path)) {
+            //avoid computing for call outside schema, as it can lead to false-positives
+            return
+        }
+
+        val name = call.getName()
+
+        HttpStatusOracle.checkOracles(call, result, (sampler as AbstractRestSampler).schemaHolder)
+            .filter { config.isEnabledFaultCategory(it) }
+            .forEach {
+                val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(it, name))
+                fv.updateTarget(scenarioId, 1.0, index)
+                result.addFault(DetectedFault(it, name, null))
             }
     }
 
@@ -693,6 +715,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     return false
                 }
 
+                TcpUtils.isInvalidHttpResponse(e) -> {
+                    // this can happen if API sends back an invalid status code.
+                    rcr.setInvalidHTTP(true)
+                    return false
+                }
+
                 config.blackBox && TcpUtils.isRefusedConnection(e) -> {
                     /*
                         This might happen if we have wrong info of API location, eg host/servers in
@@ -723,7 +751,48 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        rcr.setStatusCode(response.status)
+        val statusCode = response.status
+        if(statusCode == 429){
+            /*
+                Very, very tricky to handle.
+                If "Too Many Requests", we need to wait, and retry.
+                If still fails, it becomes a source of flakiness.
+                Also, if there is a rate-limiter, executing final test suite might
+                have very high chances to be flaky if many tests are generated.
+                Currently we do not handle retry in generated tests...
+                TODO is it something worth to add? sounds complicated...
+             */
+            LoggingUtil.getInfoLogger().warn("Hit a rate-limiter. Received a response with 429 'Too Many Requests'.")
+
+            //TODO should add these on warnings for WFC Report
+
+            val retryAfter = response.getHeaderString("Retry-After")
+            val delay = if(retryAfter == null){
+                config.defaultDelayInSecondsFor429
+            } else {
+                val k = TimeUtils.getTimeToWaitInSeconds(retryAfter)
+                if(k < 0){
+                    //invalid value
+                    config.defaultDelayInSecondsFor429
+                } else {
+                    k
+                }
+            }.toLong()
+
+            LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
+            val hasWaited = searchTimeController.waitUpToSeconds(delay)
+
+            if(hasWaited){
+                actionResults.removeLast()
+                //recursion
+                return handleRestCall(a, all, actionResults, chainState, cookies, tokens, fv)
+            } else {
+                return false
+            }
+        }
+
+
+        rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
         rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
@@ -1231,9 +1300,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
-
+    
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
+        }
+        
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+            handlePartialUpdatePut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
+            handleMisleadingCreatePut(individual, actionResults, fv)
         }
     }
 
@@ -1314,6 +1391,40 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handlePartialUpdatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
+        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+
+        val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleMisleadingCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasMisleadingCreatePut(individual, actionResults)) return
+
+        val put = individual.seeMainExecutableActions().last()
+
+        val category = ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

@@ -113,6 +113,12 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         if(hasPhaseTimedOut()) return
         sideEffectsOfFailedModification()
+
+        if(hasPhaseTimedOut()) return
+        partialUpdatePut()
+
+        if(hasPhaseTimedOut()) return
+        misleadingCreatePut()
     }
 
     /**
@@ -392,5 +398,96 @@ class HttpSemanticsService : TimeBoxedPhase{
         prepareEvaluateAndSave(ind)
     }
 
+    /**
+     * HTTP_PARTIAL_UPDATE_PUT oracle: PUT makes a full replacement, not a partial update.
+     * If only some fields should be modified, PATCH must be used instead.
+     *
+     * Sequence checked:
+     *   PUT /X  body=B  ->  2xx
+     *   GET /X          ->  response body must match exactly B
+     *                       (no field from a previous state should bleed through)
+     *
+     * Finds the shortest 2xx PUT individual, slices it to end at that PUT,
+     * then appends a bound GET on the same resolved path to verify the full replacement.
+     */
+    private fun partialUpdatePut() {
 
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: return@forEach
+
+            val successPuts = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+            if (successPuts.isEmpty()) return@forEach
+
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                successPuts.minBy { it.individual.size() },
+                HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+
+            val last = ind.seeMainExecutableActions().last() // the PUT 2xx
+            val getAfter = builder.createBoundActionFor(getDef, last)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+
+    /**
+     * HTTP_MISLEADING_CREATE_PUT oracle: a PUT that returns 201 claims it created a new resource.
+     * If so, a GET on the same path immediately before the PUT should return 404 (or at least
+     * not 2xx), because the resource should not exist yet.
+     *
+     * Sequence checked:
+     *   [...resource creation via POST/PUT...]
+     *   GET /X  -> 2xx  (resource exists)
+     *   PUT /X -> 201  (BUG: claims creation, but resource already existed -> should be 200/204)
+     *
+     * Starts from the smallest individual ending with GET 2xx on the path, then appends a copy of an existing
+     * PUT 201 action (so its body is known valid) rebound to the GET's resolved path and auth.
+     */
+    private fun misleadingCreatePut() {
+
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            if (hasPhaseTimedOut()) return
+
+            // template: an existing PUT 201 on this path (its body is known valid).
+            val putTemplate = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, status = 201
+            ).asSequence().flatMap { ei ->
+                ei.evaluatedMainActions().asSequence().mapNotNull { ea ->
+                    val a = ea.action as? RestCallAction ?: return@mapNotNull null
+                    val r = ea.result as? RestCallResult ?: return@mapNotNull null
+                    if (a.verb == HttpVerb.PUT && a.path.isEquivalent(putOp.path)
+                        && r.getStatusCode() == 201) a else null
+                }
+            }.firstOrNull() ?: return@forEach
+
+            // T: smallest individual ending with GET 2xx (resource exists after creation)
+            val T = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution, HttpVerb.GET, putOp.path, statusGroup = StatusGroup.G_2xx
+            ).minByOrNull { it.size() } ?: return@forEach
+
+            val ind = T.copy() as RestIndividual
+            val getAction = ind.seeMainExecutableActions().last() // the GET 2xx
+
+            // copy the PUT 201 (preserves valid body), rebind to the GET's path and auth
+            val putAction = putTemplate.copy() as RestCallAction
+            putAction.resetLocalIdRecursively()
+            putAction.forceNewTaints()
+            putAction.auth = getAction.auth
+            putAction.bindToSamePathResolution(getAction)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
 }

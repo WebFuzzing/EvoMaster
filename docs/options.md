@@ -92,6 +92,7 @@ There are 3 types of options:
 |`croSynthesisThreshold`| __Double__. CRO: Synthesis KE threshold s_t (molecule can synthesize if KE ≤ s_t). *Constraints*: `min=0.0`. *Default value*: `10.0`.|
 |`customNaming`| __Boolean__. Enable custom naming and sorting criteria. *Default value*: `true`.|
 |`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`defaultDelayInSecondsFor429`| __Int__. A 429 'Too Many Requests' response might not provide info on for how long the rate-limiter is in place. If no info is provided in the response, or it is not valid, then wait for a certain amount of time before attempting again to make any call. *Constraints*: `min=0.0`. *Default value*: `10`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *DEBUG option*. *Default value*: `dependencies.csv`.|
 |`disabledOracleCodes`| __String__. Disable oracles. Provide a comma-separated list of codes to disable. By default, all oracles are enabled. Codes are based on WFC (Web Fuzzing Commons). *Constraints*: `regex (\s*\d{3}\s*(,\s*\d{3}\s*)*)?`. *Default value*: `""`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *DEBUG option*. *Default value*: `false`.|
@@ -292,6 +293,7 @@ There are 3 types of options:
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`instrumentMR_CASSANDRA`| __Boolean__. Execute instrumentation for method replace with category CASSANDRA. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_DYNAMODB`| __Boolean__. Execute instrumentation for method replace with category DYNAMODB. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_OPENSEARCH`| __Boolean__. Execute instrumentation for method replace with category OPENSEARCH. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -329,6 +331,7 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs5xx`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 5xx. *Default value*: `false`.|
 |`skipAIModelUpdateWhenResponseIsNot2xxOr400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 2xx or 400. *Default value*: `false`.|
+|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|

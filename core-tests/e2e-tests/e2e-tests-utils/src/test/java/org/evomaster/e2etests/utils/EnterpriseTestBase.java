@@ -207,7 +207,7 @@ public abstract class EnterpriseTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, null, iterations, createTests, lambda, timeoutMinutes);
+        runTestHandlingFlaky(outputFolderName, fullClassName, null, iterations, createTests, false, lambda, timeoutMinutes);
     }
 
     protected void runTestHandlingFlaky(
@@ -216,6 +216,7 @@ public abstract class EnterpriseTestBase {
             List<String> terminations,
             int iterations,
             boolean createTests,
+            boolean handleFlakyWithTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
         List<ClassName> classNames = new ArrayList<>();
@@ -246,6 +247,9 @@ public abstract class EnterpriseTestBase {
                         List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests, finalSplitType, "FALSE");
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
+
+                        if (createTests && handleFlakyWithTests)
+                            runTests(outputFolderName, fullClassName, terminations);
                     }
             );
         });
@@ -257,7 +261,7 @@ public abstract class EnterpriseTestBase {
             int timeoutMinutes,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, null,  iterations, true, lambda, timeoutMinutes);
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, null,  iterations, true, false, lambda, timeoutMinutes);
     }
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -275,7 +279,17 @@ public abstract class EnterpriseTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, null, iterations, true, lambda, 3);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, null, iterations, true, false, lambda, 3);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            int iterations,
+            boolean handleFlakyWithTests,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, null, iterations, true, handleFlakyWithTests, lambda, 3);
     }
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -285,7 +299,7 @@ public abstract class EnterpriseTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, terminations, iterations, true, lambda, 3);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, terminations, iterations, true, false, lambda, 3);
     }
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -294,24 +308,31 @@ public abstract class EnterpriseTestBase {
             List<String> terminations,
             int iterations,
             boolean createTests,
+            boolean handleFlakyWithTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable {
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests,lambda, timeoutMinutes);
+        runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests, false, lambda, timeoutMinutes);
 
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
-        if (createTests){
-            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+        if (createTests && !handleFlakyWithTests){
+            runTests(outputFolderName, fullClassName, terminations);
+        }
+    }
 
-            for (String termination : terminations) {
-                assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-                    ClassName className = new ClassName(fullClassName + termination);
-                    clearCompiledFiles(className);
-                    //the first one goes through, but for the second generated files appear to not be clean.
-                    compileRunAndVerifyTests(outputFolderName, className);
-                });
-            }
+    protected void runTests(String outputFolderName,
+                            String fullClassName,
+                            List<String> terminations){
+        MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
+        for (String termination : terminations) {
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                ClassName className = new ClassName(fullClassName + termination);
+                clearCompiledFiles(className);
+                //the first one goes through, but for the second generated files appear to not be clean.
+                compileRunAndVerifyTests(outputFolderName, className);
+            });
         }
     }
 
@@ -437,13 +458,11 @@ public abstract class EnterpriseTestBase {
          */
         boolean active = code % 2 == 0;
 
-        return new ArrayList<>(Arrays.asList(
+        List<String> arguments = new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxEvaluations", "" + iterations,
-                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS
@@ -458,6 +477,15 @@ public abstract class EnterpriseTestBase {
                 //still, we have some specific tests to verify this functionality
                 "--maxTestsPerTestSuite","-1"
         ));
+
+        if(iterations >= 0){
+            arguments.add("--maxEvaluations");
+            arguments.add(""+iterations);
+            arguments.add("--stoppingCriterion");
+            arguments.add("ACTION_EVALUATIONS");
+        }
+
+        return arguments;
     }
 
 

@@ -11,6 +11,7 @@ on:
     # An exception is docs/options.md , as created from build
     paths:
       - "**"
+      - '!pypi-distribution/**'
       - '!scripts/**'
       - '!version.py'
       - '!makeExecutable.sh'
@@ -31,7 +32,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 5.1.1
+  evomaster-version: 5.2.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
