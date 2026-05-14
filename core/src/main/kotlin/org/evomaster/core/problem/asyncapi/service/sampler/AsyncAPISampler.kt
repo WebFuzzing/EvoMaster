@@ -34,6 +34,14 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
     /** Operation name → ordered list of paired actions (PUBLISH, optional SUBSCRIBE_REPLY). */
     private val operationTemplates = LinkedHashMap<String, List<AsyncAPIAction>>()
 
+    /**
+     * SUBSCRIBE_OUTPUT templates lifted out of [operationTemplates] so the
+     * sampler can append them once per individual (after the last PUBLISH)
+     * rather than treating them as samplable operations. Built once at
+     * [initialize] time and copied per individual.
+     */
+    private val outputSubscribeTemplates = mutableListOf<AsyncAPIAction>()
+
     var parsedSchema: AsyncAPISchema? = null
         private set
 
@@ -47,7 +55,18 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
         parsedSchema = schema
 
         val built = AsyncAPIActionBuilder(configuration).build(schema)
-        operationTemplates.putAll(built.operations)
+        // Split the builder output: PUBLISH-bearing entries are sampleable
+        // (operationTemplates); bare SUBSCRIBE_OUTPUT entries are appended
+        // once per individual (outputSubscribeTemplates).
+        built.operations.forEach { (key, actions) ->
+            if (actions.any { it.kind == AsyncAPIAction.Kind.PUBLISH }) {
+                operationTemplates[key] = actions
+            } else {
+                outputSubscribeTemplates.addAll(
+                    actions.filter { it.kind == AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT }
+                )
+            }
+        }
 
         // Populate the inherited actionCluster (one entry per PUBLISH action)
         // so search internals that iterate over actionCluster see the AsyncAPI
@@ -63,7 +82,10 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
             )
         }
 
-        log.info("AsyncAPI operation cluster initialised with {} operation(s)", operationTemplates.size)
+        log.info(
+            "AsyncAPI operation cluster initialised with {} operation(s) + {} output-observation channel(s)",
+            operationTemplates.size, outputSubscribeTemplates.size
+        )
     }
 
     /**
@@ -121,6 +143,13 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
                 val sharedPairId = "evm-${randomness.nextInt(0, Int.MAX_VALUE).toString(16)}"
                 pair.forEach { syncPairId(it, sharedPairId, actions) }
             }
+        }
+
+        // Tail of per-individual output-observation actions, one per
+        // SUT-produced channel declared in the schema. Positioned after every
+        // PUBLISH so the listen-window brackets any events the SUT may emit.
+        outputSubscribeTemplates.forEach { template ->
+            actions.add(template.copy() as AsyncAPIAction)
         }
 
         actions.forEach { it.doInitialize(randomness) }

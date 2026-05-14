@@ -155,6 +155,11 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
         timeoutMs: Long
     ) = ensure().awaitFirstMatching(channel, predicate, timeoutMs)
 
+    override fun collectAllWithin(
+        channel: String,
+        windowMs: Long
+    ) = ensure().collectAllWithin(channel, windowMs)
+
     override fun close() {
         delegate?.close()
         delegate = null

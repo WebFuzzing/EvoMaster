@@ -170,6 +170,28 @@ class KafkaBrokerClient(
         return MessageBrokerClient.SubscribeOutcome.Timeout
     }
 
+    override fun collectAllWithin(
+        channel: String,
+        windowMs: Long
+    ): List<MessageBrokerClient.ReceivedMessage> {
+        ensureConnected()
+        ensureSubscribed(channel)
+
+        val collected = mutableListOf<MessageBrokerClient.ReceivedMessage>()
+        val deadline = System.currentTimeMillis() + windowMs
+        while (System.currentTimeMillis() < deadline) {
+            val remaining = (deadline - System.currentTimeMillis()).coerceAtLeast(1)
+            val poll = Duration.ofMillis(remaining.coerceAtMost(consumerPollMs))
+            val records = consumer!!.poll(poll)
+            for (rec in records) {
+                if (rec.topic() != channel) continue
+                val headers = rec.headers().associate { it.key() to it.value() }
+                collected.add(MessageBrokerClient.ReceivedMessage(rec.value(), headers))
+            }
+        }
+        return collected
+    }
+
     override fun close() {
         try {
             producer?.close(Duration.ofSeconds(2))

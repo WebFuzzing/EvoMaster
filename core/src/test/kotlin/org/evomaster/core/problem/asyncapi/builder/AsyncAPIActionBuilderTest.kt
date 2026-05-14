@@ -69,10 +69,12 @@ class AsyncAPIActionBuilderTest {
     }
 
     @Test
-    fun receiveOnlyOperationsAreSkipped() {
+    fun receiveOnlyOperationsProduceSubscribeOutput() {
         // Hand-roll a schema with a single `receive` operation and confirm the
-        // builder skips it: black-box can only directly trigger SUTs via the
-        // channels they consume.
+        // builder emits one SUBSCRIBE_OUTPUT action. RECEIVE describes a
+        // SUT-produced channel (under the codebase's convention) which the
+        // M9-PR4 output-observation oracle subscribes to; previously it was
+        // silently dropped.
         val asyncapi = """
             asyncapi: 3.0.0
             info: { title: t, version: 1 }
@@ -99,12 +101,11 @@ class AsyncAPIActionBuilderTest {
         )
         val built = AsyncAPIActionBuilder(EMConfig()).build(schema)
 
-        // Receive-only operations come back with an empty action list rather
-        // than throwing, so future white-box-with-DLQ work can opt in
-        // without being blocked by an exception here.
         val actions = built.operations["recvOnly"]
         assertNotNull(actions)
-        assertTrue(actions!!.isEmpty(), "receive-only operations should produce no actions")
+        assertEquals(1, actions!!.size, "RECEIVE op should produce one SUBSCRIBE_OUTPUT action")
+        assertEquals(AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT, actions[0].kind)
+        assertEquals("out.topic", actions[0].channelAddress)
     }
 
     @Test

@@ -182,6 +182,33 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
             return out
         }
 
+        /**
+         * Output-side mirror of [replyFieldPresenceTargets]. For each declared
+         * property in the matched output variant, emit a per-field presence
+         * target tagged `present` or `absent` based on the observed payload.
+         *
+         * Pure function, exposed for unit testing the field-presence ladder
+         * without spinning up a broker.
+         */
+        fun outputFieldPresenceTargets(
+            action: AsyncAPIAction,
+            messageId: String,
+            payload: JsonNode,
+            variantSchema: JsonNode
+        ): List<String> {
+            if (!payload.isObject || !variantSchema.isObject) return emptyList()
+            val properties = variantSchema.get("properties") ?: return emptyList()
+            if (!properties.isObject) return emptyList()
+            val out = mutableListOf<String>()
+            properties.fieldNames().forEach { fieldName ->
+                val status = if (payload.has(fieldName)) "present" else "absent"
+                out.add(
+                    "OUTPUT_FIELD_PRESENCE:${action.channelAddress}:$messageId:$fieldName=$status"
+                )
+            }
+            return out
+        }
+
         fun boundaryTargets(action: AsyncAPIAction, payloadGene: Gene): List<String> {
             val out = mutableListOf<String>()
             payloadGene.flatView().forEach { g ->
@@ -278,6 +305,7 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                         }
                     }
                     AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> handleSubscribeReply(action, schema, fv, correlationByPair, result)
+                    AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT -> handleSubscribeOutput(action, schema, fv, result)
                 }
             } catch (e: Exception) {
                 log.warn("AsyncAPI action #{} ({}) failed: {}", index, action.getName(), e.message)
@@ -544,6 +572,99 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
                 result.addResultValue("reply", "timeout")
             }
         }
+    }
+
+    /**
+     * Bracket a fixed-duration listen window on a SUT-produced channel and
+     * attribute schema-derivable targets to whatever messages arrived.
+     *
+     * The schema doesn't encode causality between a publish and an emitted
+     * event, so we never claim "publish X caused output Y" — the window-only
+     * design is documented at §13.4 of the thesis as the proof-of-concept.
+     */
+    private fun handleSubscribeOutput(
+        action: AsyncAPIAction,
+        schema: AsyncAPISchema,
+        fv: FitnessValue,
+        result: ActionResult
+    ) {
+        val windowMs = config.asyncApiOutputObservationWindowMs.toLong()
+        if (windowMs <= 0) {
+            // Observation disabled by flag; nothing to do, no targets emitted.
+            return
+        }
+        val outputChannel = renderChannelAddress(action)
+        val collected = broker.collectAllWithin(outputChannel, windowMs)
+
+        if (collected.isEmpty()) {
+            coverLocal(fv, "OUTPUT_NOTHING:$outputChannel")
+            result.addResultValue("output", "nothing")
+            return
+        }
+        coverLocal(fv, "OUTPUT_RECEIVED:$outputChannel")
+        result.addResultValue("output", "received:${collected.size}")
+
+        if (!config.advancedBlackBoxCoverage) {
+            // The bare OUTPUT_RECEIVED / OUTPUT_NOTHING targets are always
+            // emitted because they're the baseline observation signal; the
+            // richer per-variant / per-field targets sit behind the same
+            // gate as the publish-side advanced families.
+            return
+        }
+
+        val candidateMessageIds = (listOf(action.messageId) + action.additionalReplyMessageIds)
+            .filter { it.isNotBlank() }
+
+        // For each observed message, try every declared variant. The
+        // schema-validity gradient is per-message; the per-variant target
+        // fires on the first matching message of each declared variant.
+        val variantsSeen = mutableSetOf<String>()
+        var anyInvalid = false
+
+        for (received in collected) {
+            val text = received.payload.toString(StandardCharsets.UTF_8)
+            val parsed: JsonNode = try {
+                mapper.readTree(text)
+            } catch (_: Exception) {
+                coverLocal(fv, "OUTPUT_SCHEMA_INVALID:$outputChannel")
+                anyInvalid = true
+                continue
+            }
+
+            var matchedId: String? = null
+            var matchedSchema: JsonNode? = null
+            for (messageId in candidateMessageIds) {
+                val message = schema.messages[messageId] ?: continue
+                val payloadSchema = resolvePayloadNode(message, schema) ?: continue
+                val match = matchVariants(parsed, payloadSchema, schema)
+                if (match.anyValid) {
+                    matchedId = messageId
+                    matchedSchema = match.matchedVariantSchema ?: payloadSchema
+                    break
+                }
+            }
+            if (matchedId != null) {
+                coverLocal(fv, "OUTPUT_SCHEMA_VALID:$outputChannel:$matchedId")
+                if (variantsSeen.add(matchedId)) {
+                    coverLocal(fv, "OUTPUT_MESSAGE_TYPE:$outputChannel=$matchedId")
+                }
+                matchedSchema?.let { variantSchema ->
+                    AbstractAsyncAPIFitness.outputFieldPresenceTargets(action, matchedId, parsed, variantSchema)
+                        .forEach { coverLocal(fv, it) }
+                }
+            } else {
+                if (candidateMessageIds.isEmpty()) {
+                    // Bare channel with no declared messages: count the
+                    // arrival as schema-valid (anything is acceptable).
+                    coverLocal(fv, "OUTPUT_SCHEMA_VALID:$outputChannel:_any")
+                } else {
+                    coverLocal(fv, "OUTPUT_SCHEMA_INVALID:$outputChannel")
+                    anyInvalid = true
+                }
+            }
+        }
+
+        if (anyInvalid) result.addResultValue("outputSchemaInvalid", "true")
     }
 
     private fun evaluateReplyPayload(

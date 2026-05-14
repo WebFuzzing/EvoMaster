@@ -47,6 +47,19 @@ SASL/OAUTHBEARER and Kerberos are not yet supported; track the follow-up in the 
 
 The AsyncAPI parser also surfaces `components.securitySchemes` and per-operation `security:` references into the in-memory model; the broker-side auth applied at connect time is driven by the CLI flags above (the schema's declared scheme names are advisory). White-box mode will plumb driver-supplied broker auth in a follow-up; for now use the CLI flags in both modes.
 
+### Output-channel observation (M9)
+
+For every `action: RECEIVE` operation declared in the schema (= SUT-produced channel), the engine appends one `SUBSCRIBE_OUTPUT` action to each individual. The fitness layer brackets the post-PUBLISH window, collects everything that arrived on the channel, and emits these targets:
+
+- `OUTPUT_RECEIVED:<channel>` / `OUTPUT_NOTHING:<channel>` — whether the SUT emitted anything during the window. Always emitted (not gated by `--advancedBlackBoxCoverage`).
+- `OUTPUT_SCHEMA_VALID:<channel>:<messageId>` / `OUTPUT_SCHEMA_INVALID:<channel>` — per-arrival, per-variant schema match.
+- `OUTPUT_MESSAGE_TYPE:<channel>=<messageId>` — fires the first time each declared variant is observed in a run.
+- `OUTPUT_FIELD_PRESENCE:<channel>:<messageId>:<field>=present|absent` — per declared property of the matched variant; mirrors `FIELD_PRESENCE` on the publish side. Gated by `--advancedBlackBoxCoverage`.
+
+The listen window is configured with `--asyncApiOutputObservationWindowMs` (default `1000`). Set to `0` to disable output observation entirely. Generated JUnit 5 tests include a `kafkaCollectAllWithin(...)` call per output channel so the captured message count is preserved as a debugging aid.
+
+This is an *observational* oracle: the schema doesn't encode causality between a publish and an emitted event, so attribution is window-only. On a dedicated test broker (the engine is the only client) false positives from concurrent traffic are negligible.
+
 ## White-box
 
 White-box requires an EvoMaster driver in the SUT's repo that returns `AsyncAPIProblem` from `getProblemInfo()`:
