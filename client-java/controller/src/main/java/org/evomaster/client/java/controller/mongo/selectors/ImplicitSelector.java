@@ -28,7 +28,7 @@ public class ImplicitSelector extends QuerySelector {
     }
 
     protected List<QueryOperation> parseConditions(Object query) {
-        Set<String> fields = keySet(query);
+        Set<String> fields = documentKeys(query);
         ArrayList<QueryOperation> conditions = new ArrayList<>();
         fields.forEach(fieldName -> {
             Object newQuery = newDocument(query);

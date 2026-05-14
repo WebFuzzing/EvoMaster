@@ -1,14 +1,12 @@
 package org.evomaster.core.output
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.ForeignKey
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -44,7 +42,7 @@ class WriteJsonTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -90,7 +88,7 @@ class WriteJsonTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
@@ -134,7 +132,7 @@ class WriteJsonTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
@@ -178,7 +176,7 @@ class WriteJsonTest : WriterTestBase() {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = RestTestCaseWriter(config, PartialOracles())
+        val writer = RestTestCaseWriter(config)
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 

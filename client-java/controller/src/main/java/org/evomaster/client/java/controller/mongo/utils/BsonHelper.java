@@ -31,14 +31,6 @@ public class BsonHelper {
         }
     }
 
-    public static Set<String> keySet(Object document) {
-        try {
-            return (Set<String>) document.getClass().getMethod("keySet").invoke(document);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static Boolean documentContainsField(Object document, String field) {
         try {
             return (Boolean) document.getClass().getMethod("containsKey", Object.class).invoke(document, field);
@@ -67,7 +59,7 @@ public class BsonHelper {
             Object bsonTypeClassMap = bsonTypeClassMapClass.getDeclaredConstructor().newInstance();
             Method get = bsonTypeClassMapClass.getMethod("get", bsonTypeClass);
             Object type = get.invoke(bsonTypeClassMap, bsonType);
-            return (String) type.getClass().getMethod("getTypeName").invoke(type, null);
+            return (String) type.getClass().getMethod("getTypeName").invoke(type);
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);

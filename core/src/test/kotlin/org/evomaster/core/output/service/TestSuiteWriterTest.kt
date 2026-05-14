@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Provider
-import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
@@ -36,9 +35,6 @@ class TestSuiteWriterTest{
             //point here is to avoid connections to SUT...
             bind(TestCaseWriter::class.java)
                     .to(RestTestCaseWriter::class.java)
-                    .asEagerSingleton()
-
-            bind(PartialOracles::class.java)
                     .asEagerSingleton()
 
             //will crash if methods called on it

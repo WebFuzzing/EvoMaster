@@ -1,6 +1,6 @@
 package org.evomaster.core.utils
 
-class CharacterRange constructor(val start: Char, val end: Char){
+class CharacterRange(val start: Char, val end: Char){
     constructor(a: Int, b: Int) : this(a.toChar(), b.toChar())
 
     init {

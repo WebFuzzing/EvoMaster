@@ -2,7 +2,6 @@ package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.SplitResult
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -111,12 +110,12 @@ object TestSuiteSplitter {
         return splitResult
     }
 
-    private fun <T : Individual> faultIndividuals(sol: Solution<T>, oracles: PartialOracles, config: EMConfig) =
+    private fun <T : Individual> faultIndividuals(sol: Solution<T>, config: EMConfig) =
             sol.individuals.filter { ind ->
                 ind.hasAnyPotentialFault()
             }.toMutableList()
 
-    private fun <T : Individual> successIndividuals(solution: Solution<T>, oracles: PartialOracles, config: EMConfig) =
+    private fun <T : Individual> successIndividuals(solution: Solution<T>, config: EMConfig) =
             solution.individuals.filter { ind ->
                 !ind.hasAnyPotentialFault()
                         &&
@@ -258,9 +257,9 @@ object TestSuiteSplitter {
      * if any further action or investigation is required.
      */
     private fun <T : Individual> splitByFault(solution: Solution<T>, config: EMConfig): List<Solution<T>> {
-        val faults = faultIndividuals(solution, PartialOracles(), config)
+        val faults = faultIndividuals(solution, config)
 
-        val successes = successIndividuals(solution, PartialOracles(), config)
+        val successes = successIndividuals(solution, config)
 
         val remainder = solution.individuals.filter {
             !faults.contains(it) && !successes.contains(it)

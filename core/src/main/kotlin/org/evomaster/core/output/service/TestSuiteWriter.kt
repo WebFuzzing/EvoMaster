@@ -79,9 +79,6 @@ class TestSuiteWriter {
     @Inject
     private lateinit var testCaseWriter: TestCaseWriter
 
-    @Inject
-    private lateinit var partialOracles: PartialOracles
-
     @Inject(optional = true)
     private lateinit var sampler: Sampler<*>
 
@@ -1147,16 +1144,6 @@ class TestSuiteWriter {
     private fun addStatement(statement: String, lines: Lines) {
         lines.addStatement(statement)
     }
-
-
-    /**
-     *  FIXME replace with direct injection
-     */
-    @Deprecated("replace with direct injection")
-    fun getPartialOracles(): PartialOracles {
-        return partialOracles
-    }
-
 
     private fun useRestAssured() = config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL
 

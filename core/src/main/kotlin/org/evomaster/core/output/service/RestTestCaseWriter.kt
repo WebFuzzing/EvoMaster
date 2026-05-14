@@ -36,9 +36,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     @Inject
-    private lateinit var partialOracles: PartialOracles
-
-    @Inject
     private lateinit var callGraphService: CallGraphService
 
 
@@ -47,9 +44,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     /**
      * ONLY for tests
      */
-    constructor(config: EMConfig, partialOracles: PartialOracles) : super() {
+    constructor(config: EMConfig) : super() {
         this.config = config
-        this.partialOracles = partialOracles
     }
 
 
