@@ -31,7 +31,6 @@ import kotlin.io.path.Path
 import kotlin.sequences.filter
 import kotlin.text.contains
 
-
 class SamplerVerifierTest {
 
     companion object {
@@ -400,7 +399,7 @@ class SamplerVerifierTest {
         val controllerInfo = ControllerInfoDto()
 
         val injector = try{
-            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
+            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42","--schema",resourcePath))
         } catch (e: Throwable){
 
             val s = if(e.cause is InvocationTargetException) {
@@ -456,7 +455,7 @@ class SamplerVerifierTest {
             blackBox: Boolean,
             args: List<String> = listOf()): Injector {
 
-        val base = BaseModule(args.toTypedArray())
+        val base = BaseModule(args.toTypedArray().plus("--blackBox").plus("$blackBox"))
         val problemModule = if(blackBox){
             BlackBoxRestModule(false)
         } else {

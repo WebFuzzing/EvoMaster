@@ -12,6 +12,10 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
 
+        operator fun invoke (negated: Boolean, characters: String): MultiCharacterRange {
+            return MultiCharacterRange(negated, characters.map { CharacterRange(it, it) })
+        }
+
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
             if (ranges.isEmpty()) {
                 throw IllegalArgumentException("No defined ranges")
@@ -98,7 +102,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
      * @return The sampled character.
      */
     fun sample(randomness: Randomness): Char {
-        val total = ranges.sumOf { it.size }
+        val total = charCount
         val sampledValue = randomness.nextInt(total)
         var currentRangeMinValue = 0
         for (r in ranges) {
@@ -116,6 +120,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
     }
 
     val size: Int get() = ranges.size
+    val charCount :Int = ranges.sumOf{ it.size }
     operator fun get(index: Int): CharacterRange = ranges[index]
     fun any(predicate: (CharacterRange) -> Boolean): Boolean = ranges.any(predicate)
 }

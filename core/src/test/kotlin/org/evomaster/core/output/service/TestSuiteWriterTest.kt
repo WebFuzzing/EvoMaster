@@ -57,7 +57,7 @@ class TestSuiteWriterTest{
         //        val injector = LifecycleInjector.builder()
 //                .withModules(BaseModule(), ReducedModule())
 //                .build().createInjector()
-        val injector = Guice.createInjector(BaseModule(), ReducedModule())
+        val injector = Guice.createInjector(BaseModule(arrayOf("--blackBox","false")), ReducedModule())
         return injector
     }
 

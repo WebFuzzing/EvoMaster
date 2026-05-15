@@ -9,6 +9,20 @@ private const val EOF_TOKEN = "<EOF>"
  */
 class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
+    private val hexEscapePrefixes = setOf('x', 'u')
+
+    /**
+     * Mappings of various escapes to their matching characters.
+     */
+    private val escapeMap = mapOf(
+        't' to "\u0009",
+        'n' to "\u000A",
+        'v' to "\u000B",
+        'f' to "\u000C",
+        'r' to "\u000D",
+    )
+
+    private val jsCharacterClassEscapeCharacters = setOf('d', 'D', 's', 'S', 'w', 'W')
 
     override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
 
@@ -379,17 +393,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 if (chars.size == 1) PatternCharacterBlockGene(txt, chars[0].toString())
                 else PatternCharacterBlockGene(txt, chars.joinToString("")) // multi-char literal
             }
-            txt[1] in "fnrtv" -> {
-                val escape = when {
-                    txt[1] == 'n' -> "\u000A"
-                    txt[1] == 'v' -> "\u000B"
-                    txt[1] == 'f' -> "\u000C"
-                    txt[1] == 'r' -> "\u000D"
-                    else -> "\u0009"
-                }
+            txt[1] in escapeMap -> {
+                val escape = escapeMap[txt[1]]!!
                 PatternCharacterBlockGene(txt, escape)
             }
-            txt[1] in "xu" -> {
+            txt[1] in hexEscapePrefixes -> {
                 val hexValue =
                     txt.substring(2).toInt(16)
                 PatternCharacterBlockGene(
@@ -404,7 +412,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     octalValue.toChar().toString()
                 )
             }
-            txt[1] in "dDsSwW" -> CharacterClassEscapeRxGene(txt[1].toString())
+            txt[1] in jsCharacterClassEscapeCharacters -> CharacterClassEscapeRxGene(txt[1].toString())
             else -> PatternCharacterBlockGene(txt, txt[1].toString())
         })
     }

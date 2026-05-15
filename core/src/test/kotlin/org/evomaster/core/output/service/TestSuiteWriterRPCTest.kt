@@ -38,7 +38,7 @@ class TestSuiteWriterRPCTest{
     fun testSuiteWithCustomizedRPCExternalService(){
 
         val injector = LifecycleInjector.builder()
-                .withModules(BaseModule(), ReducedModule())
+                .withModules(BaseModule(arrayOf("--blackBox","false")), ReducedModule())
                 .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
@@ -120,7 +120,7 @@ class TestSuiteWriterRPCTest{
     fun testSuiteMaxTestSuiteLimitPerFile(){
 
         val injector = LifecycleInjector.builder()
-            .withModules(BaseModule(), ReducedModule())
+            .withModules(BaseModule(arrayOf("--blackBox","false")), ReducedModule())
             .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
@@ -162,7 +162,7 @@ class TestSuiteWriterRPCTest{
     fun testSuiteTestsByInterface(){
 
         val injector = LifecycleInjector.builder()
-            .withModules(BaseModule(), ReducedModule())
+            .withModules(BaseModule(arrayOf("--blackBox","false")), ReducedModule())
             .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)

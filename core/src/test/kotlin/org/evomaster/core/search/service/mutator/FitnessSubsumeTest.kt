@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions.*
 class FitnessSubsumeTest {
 
     private val injector = LifecycleInjector.builder()
-            .withModules(ManipulatedOneMaxModule(), BaseModule())
+            .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--blackBox","false")))
             .build().createInjector()
 
     private val ff : OneMaxFitness = injector.getInstance(OneMaxFitness::class.java)

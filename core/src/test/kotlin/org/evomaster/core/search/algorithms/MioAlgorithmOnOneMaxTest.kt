@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 class MioAlgorithmOnOneMaxTest {
 
     val injector: Injector = LifecycleInjector.builder()
-                    .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                    .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
                     .build().createInjector()
 
     @Test

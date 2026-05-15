@@ -30,7 +30,7 @@ class MioAlgorithmOnTrackOneMaxTest {
     private fun init(args: Array<String>){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(args)))
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(args.plus(arrayOf("--blackBox","false")))))
                 .build().createInjector()
 
         mio = injector.getInstance(Key.get(
