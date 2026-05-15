@@ -95,9 +95,11 @@ atom
  // capturing and non capturing groups
  | PAREN_open disjunction PAREN_close // capturing
  | PAREN_open QUESTION COLON disjunction PAREN_close // non capturing
+ | NAMED_CAPTURE_GROUP_OPEN disjunction PAREN_close // named capturing
+ ;
 
- //TODO
-// | '(' '?' ':' disjunction ')'
+NAMED_CAPTURE_GROUP_OPEN
+ : '(?<' [a-zA-Z] [a-zA-Z0-9]* '>'
  ;
 
 FLAG_GROUP_OPEN
@@ -139,12 +141,6 @@ CharacterEscape
 
  //| IdentityEscape
  ;
-
-//TODO backreferences
-// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
-// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
-// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
-// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
 // Instead of listing all unicode scripts, blocks, etc. the parser allows anything
 // then we filter by checking if the label is valid when it is used.
@@ -253,9 +249,8 @@ atomEscape
  : CharacterClassEscape
  | CharacterEscape
  | SyntaxEscapes
-// TODO
-// | '\\' DecimalEscape
  | BackReference
+ | NamedBackReference
  ;
 
 //------ LEXER ------------------------------
@@ -332,7 +327,10 @@ fragment OctalDigit:
   : SLASH [1-9] DecimalDigit*
   ;
 
-
+// \k<name>
+NamedBackReference
+ : SLASH 'k<' [a-zA-Z] [a-zA-Z0-9]* '>'
+ ;
 
 
 

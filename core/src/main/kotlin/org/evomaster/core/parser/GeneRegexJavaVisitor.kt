@@ -35,7 +35,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         '/', '-', ',' ,':', '<', '>', '=', '!'
     )
 
+    /**
+     * Capture groups in order of appearance (1-based index -> list index 0).
+     * Populated as the tree is walked. A backreference is only valid if it
+     * appears after the group it references, which Java regex requires anyway.
+     */
     private val captureGroups = mutableListOf<DisjunctionListRxGene>()
+
+    /**
+     * Same as [captureGroups] but for named backreferences, which can be accessed
+     * with their name or number.
+     */
+    private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene>()
 
     /**
      * Tracks the flags active in the current lexical scope.
@@ -314,9 +325,17 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             }
 
             val isCapturingGroup = !ctx.text.startsWith("(?:")
+            val isNamedCaptureGroup = ctx.NAMED_CAPTURE_GROUP_OPEN() != null
 
             if (isCapturingGroup) {
                 captureGroups.add(disjList)
+            }
+            if (isNamedCaptureGroup) {
+                val name = ctx.NAMED_CAPTURE_GROUP_OPEN().text.drop(3).dropLast(1) // strip "(?<" and ")"
+                if (namedCaptureGroups.containsKey(name)) {
+                    throw IllegalStateException("Duplicate capture group name: '$name'")
+                }
+                namedCaptureGroups[name] = disjList
             }
 
             return VisitResult(disjList)
@@ -500,6 +519,16 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 )
             }
             return VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]))
+        }
+
+        // named backreference \k<name>
+        if (ctx.NamedBackReference() != null) {
+            // strip "\k<" and ">"
+            val name = txt.drop(3).dropLast(1)
+            val group = namedCaptureGroups[name]
+                ?: throw IllegalStateException("Named backreference \\k<$name> refers to unknown group '$name'")
+            val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
+            return VisitResult(BackReferenceRxGene(groupIndex, group))
         }
 
         return VisitResult(when (txt[1]) {

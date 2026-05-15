@@ -240,6 +240,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testBackreferences(){
         checkSameAsJava("""(aaa)(?:bbb)\1""")
         checkSameAsJava("""(a|b|c)\1\1""")
+        checkSameAsJava("""(?<randomName>a|b|c)\1\k<randomName>""")
     }
 
     @Test
