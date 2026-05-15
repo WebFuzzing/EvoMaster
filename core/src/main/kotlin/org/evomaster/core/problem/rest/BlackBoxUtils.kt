@@ -18,13 +18,13 @@ object BlackBoxUtils {
     fun targetUrl(config: EMConfig, sampler: Sampler<*>? = null): String {
 
         /*
-            Note: bbTargetUrl and bbSwaggerUrl are already validated
+            Note: base and schema are already validated
             in EMConfig (but they can be blank)
          */
 
-        if (config.bbTargetUrl.isNotBlank()) {
+        if (config.base.isNotBlank()) {
             //this has the priority
-            return config.bbTargetUrl
+            return config.base
         } else {
 
             when (config.problemType) {
@@ -40,17 +40,24 @@ object BlackBoxUtils {
                             So, going to use same location as where the schema was downloaded from,
                             as specified in the specs to do in these cases
                          */
-                        extractTarget(config.bbSwaggerUrl)
+                        extractTarget(config.schema)
                     } else {
                         //OpenAPI specs call it a "url", but it is actually a URI
+                        //TODO should check all 'servers' entries, especially if we get issues in resolving target
                         val uri = schema.servers[0].url
                         if(uri.startsWith("//")){
                             // this can happen if 'scheme' is missing in V2, resulting in an invalid URL in current parser.
                             // this is also a valid value in V3
                             extractTarget("http:$uri")
                         } else if(uri.startsWith("/")){
-                            //this is a relative URI, so get info from schema location
-                            extractTarget(config.bbSwaggerUrl)
+                            //this is a relative URI, so get info from schema location... but only if it is a valid URL
+                            if(!config.schema.startsWith("http")){
+                                throw SutProblemException("Schema has no servers[0] entry with a URL." +
+                                        " As the schema was not downloaded from a URL, EvoMaster cannot infer the" +
+                                        " location of the API." +
+                                        " Use '--base URL' to specify it manually")
+                            }
+                            extractTarget(config.schema)
                         } else {
                             extractTarget(uri)
                         }
