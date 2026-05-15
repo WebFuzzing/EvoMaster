@@ -3,6 +3,7 @@ package org.evomaster.core.output.formatter
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.utils.StringUtils
 import java.io.ByteArrayInputStream
 import java.io.StringWriter
 import java.net.URLDecoder
@@ -12,11 +13,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
-private fun looksLikeNumberOrBoolean(s: String): Boolean {
-    val t = s.trim()
-    if (t == "true" || t == "false") return true
-    return t.toBigDecimalOrNull() != null
-}
+
 
 /**
  * @javatypes: manzhang
@@ -143,7 +140,7 @@ abstract class OutputFormatter (val name: String) {
                             val nodes = doc.getElementsByTagName(field)
                             if (nodes.length == 0) continue
                             val text = nodes.item(0).textContent ?: continue
-                            if (numericAndBooleanOnly && !looksLikeNumberOrBoolean(text)) continue
+                            if (numericAndBooleanOnly && !StringUtils.looksLikeNumberOrBoolean(text)) continue
                             out[field] = text
                         }
                     } else {
@@ -174,7 +171,7 @@ abstract class OutputFormatter (val name: String) {
                 }
                 if (elementChildren.isEmpty()) {
                     val text = element.textContent ?: return
-                    if (numericAndBooleanOnly && !looksLikeNumberOrBoolean(text)) return
+                    if (numericAndBooleanOnly && !StringUtils.looksLikeNumberOrBoolean(text)) return
                     out[element.tagName] = text
                 } else {
                     for (child in elementChildren) {
@@ -204,7 +201,7 @@ abstract class OutputFormatter (val name: String) {
                     val out = mutableMapOf<String, String>()
                     for ((name, value) in parsed) {
                         if (fieldNames != null && name !in fieldNames) continue
-                        if (numericAndBooleanOnly && !looksLikeNumberOrBoolean(value)) continue
+                        if (numericAndBooleanOnly && !StringUtils.looksLikeNumberOrBoolean(value)) continue
                         out[name] = value
                     }
                     out
