@@ -485,7 +485,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     override fun visitClassEscape(ctx: RegexJavaParser.ClassEscapeContext): VisitResult {
 
         val res = VisitResult()
-        res.data = if(ctx.atomEscape() != null) {
+        res.data = if(ctx.atomEscape() != null &&
+            (ctx.atomEscape().BackReference() != null || ctx.atomEscape().NamedBackReference() != null)
+            ) {
+            // In Java using backrefs or named backrefs is illegal within char classes. (i.e.: [\1\k<name>])
+            throw IllegalArgumentException("Illegal/unsupported escape sequence")
+        } else if (ctx.atomEscape() != null) {
             when (val rec = ctx.atomEscape().accept(this).genes[0]) {
                 is CharacterClassEscapeRxGene -> {
                     rec.multiCharRange.ranges
