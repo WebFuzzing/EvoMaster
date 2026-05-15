@@ -329,7 +329,10 @@ object AsyncAPIAccess {
         externalDocs.forEach { (loc, doc) ->
             val prefix = keyPrefixByDoc[loc]
                 ?: throw IllegalStateException("Missing key prefix for $loc")
-            inlineDocComponents(doc, prefix, primarySchemas, primaryMessages, loc, externalDocs, keyPrefixByDoc)
+            inlineDocComponents(
+                doc, prefix, primarySchemas, primaryMessages,
+                loc, externalDocs, keyPrefixByDoc, primaryLocation
+            )
         }
 
         // 3. Rewrite every external $ref in the primary document so it points
@@ -359,6 +362,13 @@ object AsyncAPIAccess {
             if (rawLoc.isBlank()) continue
 
             val absoluteLoc = AsyncAPIRefLocation.resolveAbsolute(rawLoc, source)
+            // Back-reference to the primary doc (e.g. external `a.yaml` has
+            // `$ref: './primary.yaml#/components/schemas/X'`). The target
+            // already lives in the primary's components — no need to re-load
+            // and inline a namespaced duplicate of the primary's own content.
+            // The rewrite phase below detects the same condition and turns
+            // such refs into local `#/components/...` strings.
+            if (absoluteLoc == primaryLocation.location) continue
             if (absoluteLoc in externalDocs) continue
 
             val docText = try {
@@ -390,7 +400,8 @@ object AsyncAPIAccess {
         primaryMessages: ObjectNode,
         sourceLoc: String,
         externalDocs: Map<String, ObjectNode>,
-        keyPrefixByDoc: Map<String, String>
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
     ) {
         val components = doc.get("components") as? ObjectNode ?: return
         val sourceLocation = SchemaLocation(sourceLoc, locationTypeFor(sourceLoc))
@@ -398,14 +409,14 @@ object AsyncAPIAccess {
         (components.get("schemas") as? ObjectNode)?.let { schemas ->
             schemas.fields().forEach { (name, schemaNode) ->
                 val copy = schemaNode.deepCopy<JsonNode>()
-                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc)
+                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc, primaryLocation)
                 primarySchemas.set<JsonNode>("$prefix$name", copy)
             }
         }
         (components.get("messages") as? ObjectNode)?.let { messages ->
             messages.fields().forEach { (name, msgNode) ->
                 val copy = msgNode.deepCopy<JsonNode>()
-                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc)
+                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc, primaryLocation)
                 primaryMessages.set<JsonNode>("$prefix$name", copy)
             }
         }
@@ -423,21 +434,24 @@ object AsyncAPIAccess {
         sourceLocation: SchemaLocation,
         ownPrefix: String,
         externalDocs: Map<String, ObjectNode>,
-        keyPrefixByDoc: Map<String, String>
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
     ) {
         if (node is ObjectNode) {
             val refText = node.get("\$ref")?.asText()
             if (refText != null) {
-                val rewritten = rewriteRefValue(refText, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc)
+                val rewritten = rewriteRefValue(
+                    refText, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation
+                )
                 if (rewritten != null) {
                     node.put("\$ref", rewritten)
                 }
             }
             node.fields().forEach { (_, child) ->
-                rewriteRefsInInlinedNode(child, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc)
+                rewriteRefsInInlinedNode(child, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation)
             }
         } else if (node is ArrayNode) {
-            node.forEach { rewriteRefsInInlinedNode(it, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc) }
+            node.forEach { rewriteRefsInInlinedNode(it, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation) }
         }
     }
 
@@ -451,7 +465,8 @@ object AsyncAPIAccess {
             sourceLocation = primaryLocation,
             ownPrefix = "", // primary's intra-doc refs need no prefixing
             externalDocs = emptyMap(), // unused on this path
-            keyPrefixByDoc = keyPrefixByDoc
+            keyPrefixByDoc = keyPrefixByDoc,
+            primaryLocation = primaryLocation
         )
     }
 
@@ -464,7 +479,8 @@ object AsyncAPIAccess {
         sourceLocation: SchemaLocation,
         ownPrefix: String,
         @Suppress("UNUSED_PARAMETER") externalDocs: Map<String, ObjectNode>,
-        keyPrefixByDoc: Map<String, String>
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
     ): String? {
         if (AsyncAPIRefLocation.isLocalRef(refText)) {
             // Intra-document ref. Inside the *primary* doc (ownPrefix empty),
@@ -473,12 +489,19 @@ object AsyncAPIAccess {
             return rewriteLocalFragment(refText, ownPrefix)
         }
 
-        // External ref: split, resolve, look up the target doc's prefix.
+        // External ref: split, resolve.
         val (rawLoc, fragment) = AsyncAPIRefLocation.split(refText)
         if (rawLoc.isBlank()) {
             return rewriteLocalFragment("#$fragment", ownPrefix)
         }
         val absoluteLoc = AsyncAPIRefLocation.resolveAbsolute(rawLoc, sourceLocation)
+        // Back-reference to the primary doc: the target lives in the primary's
+        // own components, so rewrite to a plain local ref (no prefix). This
+        // pairs with the matching skip in loadExternalDocsTransitively so the
+        // primary is never inlined as a namespaced duplicate of itself.
+        if (absoluteLoc == primaryLocation.location) {
+            return externalRefToLocalKey(fragment, "")
+        }
         val prefix = keyPrefixByDoc[absoluteLoc]
             ?: throw SutProblemException(
                 "External AsyncAPI \$ref '$refText' from '${sourceLocation.location}' " +

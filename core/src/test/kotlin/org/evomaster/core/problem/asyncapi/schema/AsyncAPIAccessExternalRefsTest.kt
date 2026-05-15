@@ -307,6 +307,159 @@ class AsyncAPIAccessExternalRefsTest {
     }
 
     // -----------------------------------------------------------------------
+    // Circular external refs: A.yaml's schema references B.yaml's, and
+    // B.yaml's schema references A.yaml's right back. The load-phase dedup
+    // (`if (absoluteLoc in externalDocs) continue`) MUST break the cycle,
+    // otherwise the parser would loop forever.
+    // -----------------------------------------------------------------------
+    @Test
+    fun circularExternalRefsTerminate(@TempDir tempDir: Path) {
+        Files.writeString(
+            tempDir.resolve("a.yaml"),
+            """
+            components:
+              schemas:
+                AlphaNode:
+                  type: object
+                  properties:
+                    next:
+                      ${'$'}ref: './b.yaml#/components/schemas/BetaNode'
+            """.trimIndent()
+        )
+        Files.writeString(
+            tempDir.resolve("b.yaml"),
+            """
+            components:
+              schemas:
+                BetaNode:
+                  type: object
+                  properties:
+                    back:
+                      ${'$'}ref: './a.yaml#/components/schemas/AlphaNode'
+            """.trimIndent()
+        )
+
+        val primary = tempDir.resolve("primary.yaml")
+        Files.writeString(
+            primary,
+            """
+            asyncapi: 3.0.0
+            info: { title: t, version: '1' }
+            channels:
+              c1:
+                address: topic.a
+                messages:
+                  M: { ${'$'}ref: '#/components/messages/M' }
+            operations:
+              op1:
+                action: send
+                channel: { ${'$'}ref: '#/channels/c1' }
+            components:
+              messages:
+                M:
+                  name: M
+                  payload:
+                    ${'$'}ref: './a.yaml#/components/schemas/AlphaNode'
+            """.trimIndent()
+        )
+
+        // The test passes if this returns within the JUnit default timeout
+        // (i.e., the parser terminates rather than looping). Belt-and-braces:
+        // also check that both schemas were loaded and their cross-doc refs
+        // were rewritten to namespaced local refs.
+        val schema = AsyncAPIAccess.getAsyncAPIFromLocation(primary.toString())
+        val alphaKey = schema.componentSchemas.keys.singleOrNull { it.endsWith("_AlphaNode") }
+        val betaKey = schema.componentSchemas.keys.singleOrNull { it.endsWith("_BetaNode") }
+        assertNotNull(alphaKey, "AlphaNode not inlined; got ${schema.componentSchemas.keys}")
+        assertNotNull(betaKey, "BetaNode not inlined; got ${schema.componentSchemas.keys}")
+
+        // AlphaNode.next.$ref → namespaced BetaNode
+        val nextRef = schema.componentSchemas[alphaKey]!!
+            .get("properties")?.get("next")?.get("\$ref")?.asText()
+        assertEquals("#/components/schemas/$betaKey", nextRef)
+
+        // BetaNode.back.$ref → namespaced AlphaNode (the cycle is closed by
+        // intra-doc refs after the load phase resolves both external sources).
+        val backRef = schema.componentSchemas[betaKey]!!
+            .get("properties")?.get("back")?.get("\$ref")?.asText()
+        assertEquals("#/components/schemas/$alphaKey", backRef)
+    }
+
+    // -----------------------------------------------------------------------
+    // Back-reference to the primary doc: an external doc has a $ref pointing
+    // *back* at the primary. The parser must not re-load+duplicate the
+    // primary's own components; the ref should rewrite to a plain local one.
+    // -----------------------------------------------------------------------
+    @Test
+    fun externalDocBackReferenceToPrimaryRewritesAsLocal(@TempDir tempDir: Path) {
+        Files.writeString(
+            tempDir.resolve("a.yaml"),
+            """
+            components:
+              schemas:
+                Wrapper:
+                  type: object
+                  properties:
+                    inner:
+                      ${'$'}ref: './primary.yaml#/components/schemas/PrimaryOnly'
+            """.trimIndent()
+        )
+
+        val primary = tempDir.resolve("primary.yaml")
+        Files.writeString(
+            primary,
+            """
+            asyncapi: 3.0.0
+            info: { title: t, version: '1' }
+            channels:
+              c1:
+                address: topic.a
+                messages:
+                  M: { ${'$'}ref: '#/components/messages/M' }
+            operations:
+              op1:
+                action: send
+                channel: { ${'$'}ref: '#/channels/c1' }
+            components:
+              messages:
+                M:
+                  name: M
+                  payload:
+                    ${'$'}ref: './a.yaml#/components/schemas/Wrapper'
+              schemas:
+                PrimaryOnly:
+                  type: object
+                  properties:
+                    answer: { type: integer }
+            """.trimIndent()
+        )
+
+        val schema = AsyncAPIAccess.getAsyncAPIFromLocation(primary.toString())
+
+        // Wrapper got inlined under a namespaced key.
+        val wrapperKey = schema.componentSchemas.keys.singleOrNull { it.endsWith("_Wrapper") }
+        assertNotNull(wrapperKey, "Wrapper not inlined; got ${schema.componentSchemas.keys}")
+
+        // PrimaryOnly stayed at its primary-doc key (no namespacing).
+        assertNotNull(
+            schema.componentSchemas["PrimaryOnly"],
+            "primary's own PrimaryOnly schema should still exist under its original key"
+        )
+
+        // The back-reference from Wrapper now resolves to PrimaryOnly's
+        // local key (not an `_ext_<...>_PrimaryOnly` duplicate).
+        val innerRef = schema.componentSchemas[wrapperKey]!!
+            .get("properties")?.get("inner")?.get("\$ref")?.asText()
+        assertEquals("#/components/schemas/PrimaryOnly", innerRef)
+
+        // And no namespaced duplicate of PrimaryOnly was inlined.
+        assertTrue(
+            schema.componentSchemas.keys.none { it.endsWith("_PrimaryOnly") },
+            "primary doc shouldn't be inlined as a namespaced duplicate of itself; got ${schema.componentSchemas.keys}"
+        )
+    }
+
+    // -----------------------------------------------------------------------
     // Missing external file: clear error referencing both ref and source.
     // -----------------------------------------------------------------------
     @Test
