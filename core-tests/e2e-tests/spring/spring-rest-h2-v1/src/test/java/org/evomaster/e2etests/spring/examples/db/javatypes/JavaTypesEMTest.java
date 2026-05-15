@@ -46,6 +46,7 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
 
         handleFlaky(() -> {
             List<String> args = new ArrayList<>();
+            setOption(args, "blackBox", "false");
             setOption(args, "createTests", "true");
             setOption(args, "seed", "" + defaultSeed++);
             setOption(args, "sutControllerPort", "" + controllerPort);

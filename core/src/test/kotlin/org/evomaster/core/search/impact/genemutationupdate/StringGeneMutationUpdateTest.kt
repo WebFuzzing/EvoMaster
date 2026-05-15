@@ -44,7 +44,7 @@ class StringGeneMutationUpdateTest {
     @BeforeEach
     fun init(){
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(PrimitiveTypeMatchModule(), BaseModule()))
+                .withModules(* arrayOf<Module>(PrimitiveTypeMatchModule(), BaseModule(arrayOf("--blackBox","false"))))
                 .build().createInjector()
 
         mio = injector.getInstance(Key.get(

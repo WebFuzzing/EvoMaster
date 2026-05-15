@@ -33,12 +33,10 @@ public class GQLBlackBoxBaseEMTest extends SpringTestBase {
                 ClassName.get("org.foo.BlackBoxConstant"),
                 true);
 
+        setOption(args, "blackBox", "true");
+        setOption(args, "bbTargetUrl", baseUrlOfSut+"/graphql");
         args.add("--problemType");
         args.add("GRAPHQL");
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut+"/graphql");
         args.add("--bbExperiments");
         args.add("" + bbExperiments);
 

@@ -31,7 +31,7 @@ class ExternalHarvesterStrategyTest {
     @BeforeEach
     fun init(){
         val injector: Injector = LifecycleInjector.builder()
-            .withModules(FakeModule(), BaseModule())
+            .withModules(FakeModule(), BaseModule(arrayOf("--blackBox","false")))
             .build().createInjector()
 
 

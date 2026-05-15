@@ -27,6 +27,7 @@ class BaseMaxTimeAttemptEMTest : SpringTestBase() {
     fun testRunEM() {
 
             val args = listOf(
+                    "--blackBox", "false",
                     "--createTests", "false",
                     "--seed", "" + defaultSeed,
                     "--useTimeInFeedbackSampling", "false",

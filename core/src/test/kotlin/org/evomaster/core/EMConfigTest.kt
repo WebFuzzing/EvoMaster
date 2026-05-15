@@ -641,7 +641,7 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        val options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
+        val options = parser.parse("--outputFormat", "PYTHON_UNITTEST", "--blackBox", "false")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
     }
 
