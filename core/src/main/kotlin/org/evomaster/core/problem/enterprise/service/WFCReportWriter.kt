@@ -12,6 +12,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.search.service.WarningsAggregator
 import org.jsoup.Jsoup
 import org.jsoup.nodes.DataNode
 import java.nio.file.Files
@@ -31,6 +32,9 @@ class WFCReportWriter {
 
     @Inject
     private lateinit var sampler: Sampler<*>
+
+    @Inject
+    private lateinit var warningsAggregator: WarningsAggregator
 
     private var lastTestFilePaths: Set<String> = emptySet()
 
@@ -232,6 +236,11 @@ class WFCReportWriter {
             coverage.criteria.add(branches)
 
             report.extra.add(coverage)
+        }
+
+        val warnings = warningsAggregator.getWarnings()
+        if(warnings.isNotEmpty()){
+            report.wa
         }
 
 
