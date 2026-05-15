@@ -101,9 +101,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
                     " then ignore this warning." +
                     " However, to get better results, you will need setup authentication info, eventually." +
                     " More info is currently available at "
-            LoggingUtil.getInfoLogger().warn(
-                AnsiColor.inYellow("WARNING: $msg") + AnsiColor.inBlue(EM_AUTH_LINK)
-            )
+            LoggingUtil.uniqueUserWarn(msg + AnsiColor.inBlue(EM_AUTH_LINK))
             warningsAggregator.addWarning(GeneralWarning(WarningCategory.FUZZER, msg + EM_AUTH_LINK))
 
         }else if(n==1){
@@ -117,9 +115,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
             //TODO if/when in the future we enable dynamic registration of users, likely we will need to update this
             // warning message
-            LoggingUtil.getInfoLogger().warn(
-                AnsiColor.inYellow("WARNING: $msg") + AnsiColor.inBlue(EM_AUTH_LINK)
-            )
+            LoggingUtil.uniqueUserWarn(msg + AnsiColor.inBlue(EM_AUTH_LINK))
             warningsAggregator.addWarning(GeneralWarning(WarningCategory.FUZZER, msg + EM_AUTH_LINK))
         }
     }
