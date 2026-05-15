@@ -27,8 +27,11 @@ class BackReferenceRxGene(
      */
     override fun isMutable(): Boolean = false
 
-    override fun copyContent(): Gene =
-        BackReferenceRxGene(groupIndex, captureGroup)
+    override fun copyContent(): Gene {
+        val copy = BackReferenceRxGene(groupIndex, captureGroup)
+        copy.name = this.name //in case name is changed from its default
+        return copy
+    }
 
     override fun setValueWithRawString(value: String) {
         throw IllegalStateException(
