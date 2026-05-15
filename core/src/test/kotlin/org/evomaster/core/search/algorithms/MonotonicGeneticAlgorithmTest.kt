@@ -26,7 +26,7 @@ class MonotonicGeneticAlgorithmTest {
     @BeforeEach
     fun setUp() {
         injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
     }
 
@@ -250,7 +250,7 @@ private fun createMonotonicGAWithSelection(
     fixedSel: FixedSelectionStrategy
 ): Pair<MonotonicGeneticAlgorithm<OneMaxIndividual>, Injector> {
     val injector = LifecycleInjector.builder()
-        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
         .build().createInjector()
 
     val ga = injector.getInstance(

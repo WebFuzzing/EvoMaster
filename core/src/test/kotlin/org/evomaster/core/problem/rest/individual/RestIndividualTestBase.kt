@@ -276,7 +276,8 @@ abstract class RestIndividualTestBase {
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",
             "--seed=42",
-            "--stoppingCriterion=ACTION_EVALUATIONS"
+            "--stoppingCriterion=ACTION_EVALUATIONS",
+            "--blackBox=false"
         ).plus(config()).toTypedArray()
 
         val modules = listOf(BaseModule(defaultConfigs)).plus(getProblemModule()).plus(FakeModule(

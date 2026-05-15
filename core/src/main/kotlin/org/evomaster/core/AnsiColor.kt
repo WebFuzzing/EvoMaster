@@ -14,7 +14,9 @@ enum class AnsiColor(val code: String) {
     RED("\u001B[31m"),
     GREEN("\u001B[32m"),
     YELLOW("\u001B[33m"),
-    BLUE("\u001B[34m");
+    BLUE("\u001B[34m"),
+    BLINK("\u001B[5m")
+    ;
 
     companion object {
 
@@ -29,5 +31,7 @@ enum class AnsiColor(val code: String) {
         fun inYellow(s: String) = colored(s, YELLOW)
 
         fun inGreen(s: String) = colored(s, GREEN)
+
+        fun blinking(s: String) = colored(s, BLINK)
     }
 }
