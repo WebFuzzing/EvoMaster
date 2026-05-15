@@ -92,7 +92,9 @@ atom
  | atomEscape
  | characterClass
  | FLAG_GROUP_OPEN disjunction PAREN_close
- | PAREN_open disjunction PAREN_close
+ // capturing and non capturing groups
+ | PAREN_open disjunction PAREN_close // capturing
+ | PAREN_open QUESTION COLON disjunction PAREN_close // non capturing
 
  //TODO
 // | '(' '?' ':' disjunction ')'
