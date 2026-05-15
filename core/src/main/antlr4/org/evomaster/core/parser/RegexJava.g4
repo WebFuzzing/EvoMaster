@@ -234,6 +234,7 @@ classAtomNoDash
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
  | COLON
  | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
+ | NAMED_CAPTURE_GROUP_OPEN
  ;
 
 decimalDigits
