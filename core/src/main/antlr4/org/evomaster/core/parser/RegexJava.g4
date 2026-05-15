@@ -233,6 +233,10 @@ classAtomNoDash
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
  | COLON
+ // should be interpreted literally:
+ // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
+ // steps to interpret them correctly given the context.
+ // [(?iu)] -> FLAG_SCOPE_OPEN, each letter of the token should be interpreted literally.
  | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
  | NAMED_CAPTURE_GROUP_OPEN
  ;
@@ -328,7 +332,7 @@ fragment OctalDigit:
   : SLASH [1-9] DecimalDigit*
   ;
 
-// \k<name>
+// \k<name>, first character must be letter, following characters may be letters or digits
 NamedBackReference
  : SLASH 'k<' [a-zA-Z] [a-zA-Z0-9]* '>'
  ;
