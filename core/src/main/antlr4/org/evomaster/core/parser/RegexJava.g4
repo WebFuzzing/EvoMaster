@@ -255,6 +255,7 @@ atomEscape
  | SyntaxEscapes
 // TODO
 // | '\\' DecimalEscape
+ | BackReference
  ;
 
 //------ LEXER ------------------------------
@@ -326,11 +327,10 @@ fragment OctalDigit:
  [0-7]
  ;
 
-//TODO
-//DecimalIntegerLiteral
-// : '0'
-// | [1-9] DecimalDigit*
-// ;
+ // \1, \2, ... \99 etc, distinguished from \0XX octal which starts with 0
+ BackReference
+  : SLASH [1-9] DecimalDigit*
+  ;
 
 
 

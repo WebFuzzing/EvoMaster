@@ -490,6 +490,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val txt = ctx.text
 
+        // unnamed backreference \N (N number)
+        if (ctx.BackReference() != null) {
+            val n = txt.drop(1).toInt()  // strip leading \
+            if (n < 1 || n > captureGroups.size) {
+                throw IllegalStateException(
+                    "Backreference \\$n refers to group $n but only ${captureGroups.size} " +
+                            "capture group(s) have been defined so far"
+                )
+            }
+            return VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]))
+        }
+
         return VisitResult(when (txt[1]) {
             '0' -> {
                 val octalValue = txt.substring(2).toInt(8)

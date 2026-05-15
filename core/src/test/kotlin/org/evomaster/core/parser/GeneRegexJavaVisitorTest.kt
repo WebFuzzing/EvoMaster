@@ -237,6 +237,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testBackreferences(){
+        checkSameAsJava("""(aaa)(?:bbb)\1""")
+        checkSameAsJava("""(a|b|c)\1\1""")
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
