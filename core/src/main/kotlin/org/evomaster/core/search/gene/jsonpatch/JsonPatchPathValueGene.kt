@@ -1,10 +1,8 @@
 package org.evomaster.core.search.gene.jsonpatch
 
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 
 /**
@@ -26,21 +24,6 @@ class JsonPatchPathValueGene(
         require(operationName in listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST)) {
             "JsonPatchPathValueGene only supports 'add', 'replace' or 'test', got: $operationName"
         }
-    }
-
-    override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
-    ): String {
-        val activePair = pathValueChoice.activeGene()
-        return formatOperation(
-            mode,
-            OpField("path", activePair.first.getValueAsRawString()),
-            // value is unquoted in JSON since it can be any type (string, number, boolean, etc.)
-            OpField("value", activePair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck), quoted = false)
-        )
     }
 
     override fun copyContent(): Gene =

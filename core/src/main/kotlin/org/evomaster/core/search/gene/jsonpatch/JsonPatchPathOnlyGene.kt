@@ -1,9 +1,7 @@
 package org.evomaster.core.search.gene.jsonpatch
 
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**
  * JSON Patch operation gene for operations that only require an "op" and "path" field.
@@ -20,13 +18,6 @@ class JsonPatchPathOnlyGene(
             "JsonPatchPathOnlyGene only supports 'remove', got: $operationName"
         }
     }
-
-    override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
-    ): String = formatOperation(mode, OpField("path", pathGene.getValueAsRawString()))
 
     override fun copyContent(): Gene =
         JsonPatchPathOnlyGene(name, operationName, pathGene.copy() as EnumGene<String>)
