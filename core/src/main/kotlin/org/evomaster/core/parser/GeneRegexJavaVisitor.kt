@@ -35,6 +35,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         '/', '-', ',' ,':', '<', '>', '=', '!'
     )
 
+    private val captureGroups = mutableListOf<DisjunctionListRxGene>()
+
     /**
      * Tracks the flags active in the current lexical scope.
      * Updated when entering a flag group, restored on exit.
@@ -309,6 +311,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 gene.extraPostfix = false
                 gene.matchStart = true
                 gene.matchEnd = true
+            }
+
+            val isCapturingGroup = !ctx.text.startsWith("(?:")
+
+            if (isCapturingGroup) {
+                captureGroups.add(disjList)
             }
 
             return VisitResult(disjList)
