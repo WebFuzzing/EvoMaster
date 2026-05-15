@@ -60,8 +60,7 @@ class BackReferenceRxGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is BackReferenceRxGene) return false
-        return captureGroup.getValueAsPrintableString(targetFormat = null) ==
-                other.captureGroup.getValueAsPrintableString(targetFormat = null)
+        return captureGroup == other.captureGroup
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
