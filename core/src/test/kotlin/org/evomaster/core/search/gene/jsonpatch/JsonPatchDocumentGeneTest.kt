@@ -43,10 +43,16 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun testCopyPreservesNonNullResourceSchema() {
-        val original = JsonPatchDocumentGene("patch", StringGene("schema"))
-        val copy = original.copy() as JsonPatchDocumentGene
-        assertNotNull(copy.resourceSchema)
+    fun testSchemaFieldsAreUsedAsPaths() {
+        val schema = ObjectGene("body", listOf(StringGene("name"), IntegerGene("age")))
+        val d = JsonPatchDocumentGene("patch", schema)
+
+        val array = d.getViewOfChildren()[0] as org.evomaster.core.search.gene.collection.ArrayGene<*>
+        val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
+        val paths = removeOp.pathGene.values.map { it.toString() }
+
+        assertTrue(paths.contains("/name"), "Expected /name from schema, got: $paths")
+        assertTrue(paths.contains("/age"),  "Expected /age from schema, got: $paths")
     }
 
     // --- operations property ---
@@ -156,10 +162,28 @@ class JsonPatchDocumentGeneTest {
     // --- XML serialization ---
 
     @Test
+    fun testRemoveOperationJsonFormat() {
+        val op = JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/x")))
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"remove\",\"path\":\"/x\"}", result)
+    }
+
+    @Test
     fun testRemoveOperationXmlFormat() {
         val op = JsonPatchPathOnlyGene(JsonPatchOperationGene.OP_REMOVE, JsonPatchOperationGene.OP_REMOVE, EnumGene("path", listOf("/x")))
         val result = op.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         assertEquals("<operation><op>remove</op><path>/x</path></operation>", result)
+    }
+
+    @Test
+    fun testMoveOperationJsonFormat() {
+        val op = JsonPatchFromPathGene(
+            JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_MOVE,
+            fromGene = EnumGene("from", listOf("/a")),
+            pathGene  = EnumGene("path", listOf("/b"))
+        )
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}", result)
     }
 
     @Test
@@ -220,25 +244,7 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun testContainsSameValueAsTrueWhenBothSchemasAreNull() {
-        val d1 = doc()
-        val d2 = d1.copy() as JsonPatchDocumentGene
-        assertNull(d1.resourceSchema)
-        assertNull(d2.resourceSchema)
-        assertTrue(d1.containsSameValueAs(d2))
-    }
-
-    @Test
-    fun testContainsSameValueAsFalseWhenOneSchemaIsNull() {
-        val withSchema = JsonPatchDocumentGene("patch", ObjectGene("body", listOf(StringGene("name"))))
-        withSchema.doInitialize(Randomness().apply { updateSeed(42) })
-        val withoutSchema = doc()
-        assertFalse(withSchema.containsSameValueAs(withoutSchema))
-        assertFalse(withoutSchema.containsSameValueAs(withSchema))
-    }
-
-    @Test
-    fun testContainsSameValueAsTrueForCopiesWithSchema() {
+    fun testContainsSameValueAsTrueForCopiesBuiltWithSchema() {
         val schema = ObjectGene("body", listOf(StringGene("name"), IntegerGene("age")))
         val d1 = JsonPatchDocumentGene("patch", schema)
         d1.doInitialize(Randomness().apply { updateSeed(1) })
@@ -247,13 +253,14 @@ class JsonPatchDocumentGeneTest {
     }
 
     @Test
-    fun testContainsSameValueAsFalseForDifferentSchemaTypes() {
-        val schemaA = ObjectGene("body", listOf(StringGene("name")))
-        val schemaB = ObjectGene("body", listOf(IntegerGene("count")))
-        val d1 = JsonPatchDocumentGene("patch", schemaA)
-        d1.doInitialize(Randomness().apply { updateSeed(1) })
-        val d2 = JsonPatchDocumentGene("patch", schemaB)
-        d2.doInitialize(Randomness().apply { updateSeed(1) })
+    fun testContainsSameValueAsFalseAfterRandomize() {
+        val d1 = doc(seed = 1L)
+        val d2 = doc(seed = 2L)
+        val rand2 = Randomness().apply { updateSeed(99) }
+        var attempts = 0
+        while (d1.containsSameValueAs(d2) && attempts++ < 20) {
+            d2.randomize(rand2, tryToForceNewValue = true)
+        }
         assertFalse(d1.containsSameValueAs(d2))
     }
 
