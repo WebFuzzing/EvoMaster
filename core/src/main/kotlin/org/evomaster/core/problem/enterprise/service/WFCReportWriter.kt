@@ -182,6 +182,8 @@ class WFCReportWriter {
                 tc.filePath = suite.testSuitePath
                 tc.startLine = test.startLine
                 tc.endLine = test.endLine
+                tc.namedExamples = test.namedExamples?.toList()
+
                 report.testCases.add(tc)
             }
         }
@@ -240,9 +242,14 @@ class WFCReportWriter {
 
         val warnings = warningsAggregator.getWarnings()
         if(warnings.isNotEmpty()){
-            report.wa
+            report.warnings = warnings.map { w ->
+                Warning().apply {
+                    message = w.message
+                    category = w.category.name
+                    displayPriority = w.category.displayPriority
+                }
+            }
         }
-
 
         val jackson = ObjectMapper()
         val json = jackson.writeValueAsString(report)
