@@ -136,6 +136,7 @@ object GeneSamplerForTests {
             PatternCharacterBlockGene::class -> samplePatternCharacterBlock(rand) as T
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
+            BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -404,6 +405,13 @@ object GeneSamplerForTests {
         return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
     }
 
+    fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
+        return BackReferenceRxGene(
+            groupIndex = rand.nextInt(1, 99),
+            captureGroup = sampleDisjunctionListRxGene(rand)
+        )
+    }
+
     fun sampleRegexGene(rand: Randomness): RegexGene {
         return RegexGene(
             name = "rand RegexGene",
@@ -448,7 +456,8 @@ object GeneSamplerForTests {
                 .filter { it.isSubclassOf(RxTerm::class) }
                 //let's avoid huge trees...
                 .filter {
-                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java)
+                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
+                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
                             || rand.nextBoolean()
                 }
 
