@@ -35,14 +35,11 @@ public class BlackBoxConstantEMTest extends SpringTestBase {
                 ClassName.get("org.foo.BlackBoxConstant"),
                 true);
 
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut+"/v2/api-docs");
-        args.add("--bbExperiments");
-        args.add("" + bbExperiments);
+        setOption(args, "blackBox", "true");
+        setOption(args, "bbTargetUrl", baseUrlOfSut);
+        setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+        setOption(args, "bbExperiments", "" + bbExperiments);
+
 
         /*
             Note: here we do not care of actual results.

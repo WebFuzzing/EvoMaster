@@ -31,7 +31,7 @@ class TraceableElementTest {
     @BeforeEach
     fun init(){
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(ManipulatedOneMaxModule(), BaseModule()))
+                .withModules(* arrayOf<Module>(ManipulatedOneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
                 .build().createInjector()
 
         config = injector.getInstance(EMConfig::class.java)

@@ -27,7 +27,7 @@ class MutatorWithOneMaxTest {
     fun init(){
 
         injector = LifecycleInjector.builder()
-                .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--seed=42")))
+                .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--blackBox","false","--seed=42")))
                 .build().createInjector()
 
         manager = injector.getInstance(LifecycleManager::class.java)

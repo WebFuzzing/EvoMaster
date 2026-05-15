@@ -58,16 +58,11 @@ public class DisplayIssueEMTest extends SpringTestBase {
                     5,
                     (args) -> {
 
-                        args.add("--blackBox");
-                        args.add("true");
-                        args.add("--bbTargetUrl");
-                        args.add(baseUrlOfSut);
-                        args.add("--bbSwaggerUrl");
-                        args.add(baseUrlOfSut + "/v2/api-docs");
-                        args.add("--writeStatistics");
-                        args.add("true");
-                        args.add("--statisticsFile");
-                        args.add(statisticsFile);
+                        setOption(args, "blackBox", "true");
+                        setOption(args, "bbTargetUrl", baseUrlOfSut);
+                        setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                        setOption(args, "writeStatistics", "true");
+                        setOption(args, "statisticsFile", statisticsFile);
 
                         ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
                         System.setOut(new PrintStream(byteArrayOutput));

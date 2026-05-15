@@ -73,7 +73,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val action = actions[0]
 
-        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(IntegerGene("integerElement", value = 0))))
+        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(IntegerGene(ObjectGene.contentXMLTag, value = 0))))
         val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.insertionId, computedGenes = listOf(newGene))
 
         val query = "Select * from x"
@@ -104,7 +104,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val action = actions[0]
 
-        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGene("booleanElement", value = false))))
+        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGene(ObjectGene.contentXMLTag, value = false))))
         val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.insertionId, computedGenes = listOf(newGene))
 
         val query = "Select * from x"
@@ -135,7 +135,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val action = actions[0]
 
-        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "Hello World"))))
+        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene(ObjectGene.contentXMLTag, value = "Hello World"))))
         val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.insertionId, computedGenes = listOf(newGene))
 
         val query = "Select * from x"
@@ -166,7 +166,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val action = actions[0]
 
-        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "<xml>This should be escaped</xml>"))))
+        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene(ObjectGene.contentXMLTag, value = "<xml>This should be escaped</xml>"))))
         val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.insertionId, computedGenes = listOf(newGene))
 
         val query = "Select * from x"

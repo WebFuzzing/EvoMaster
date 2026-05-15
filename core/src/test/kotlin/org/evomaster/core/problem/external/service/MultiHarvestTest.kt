@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import java.time.Duration
 import java.util.*
+import kotlin.arrayOf
 
 class MultiHarvestTest {
 
@@ -43,7 +44,7 @@ class MultiHarvestTest {
         val count = 3
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(FakeModule(), BaseModule(arrayOf("--probOfHarvestingResponsesFromActualExternalServices","1.0", "--externalRequestHarvesterNumberOfThreads", "$count")))
+                .withModules(FakeModule(), BaseModule(arrayOf("--probOfHarvestingResponsesFromActualExternalServices","1.0", "--externalRequestHarvesterNumberOfThreads", "$count","--blackBox","false")))
                 .build().createInjector()
 
 
