@@ -311,4 +311,51 @@ public class EMTestUtils {
             throw new RuntimeException("kafkaAwaitReply failed: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Subscribe to {@code topic} and collect the payload bytes of every
+     * record that arrives during the next {@code windowMs} millisecond
+     * window. Returns an array (possibly empty); never null.
+     *
+     * Used by AsyncAPI output-observation tests (M9-PR4) to capture every
+     * event the SUT emits on a SUT-produced channel and assert against
+     * expected shapes. No correlation filtering — the caller filters
+     * payloads itself.
+     */
+    public static byte[][] kafkaCollectAllWithin(
+            String bootstrapServers,
+            String topic,
+            long windowMs
+    ) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.put("bootstrap.servers", bootstrapServers);
+            props.put("group.id", "evm-test-" + java.util.UUID.randomUUID());
+            props.put("auto.offset.reset", "latest");
+            props.put("enable.auto.commit", "false");
+            props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+            try (org.apache.kafka.clients.consumer.KafkaConsumer<String, byte[]> consumer =
+                         new org.apache.kafka.clients.consumer.KafkaConsumer<>(props)) {
+                consumer.subscribe(java.util.Collections.singletonList(topic));
+                java.util.List<byte[]> collected = new java.util.ArrayList<>();
+                long deadline = System.currentTimeMillis() + windowMs;
+                while (System.currentTimeMillis() < deadline) {
+                    long remaining = Math.max(50L, deadline - System.currentTimeMillis());
+                    org.apache.kafka.clients.consumer.ConsumerRecords<String, byte[]> records =
+                            consumer.poll(java.time.Duration.ofMillis(Math.min(remaining, 500L)));
+                    for (org.apache.kafka.clients.consumer.ConsumerRecord<String, byte[]> r : records) {
+                        collected.add(r.value());
+                    }
+                }
+                return collected.toArray(new byte[0][]);
+            }
+        } catch (NoClassDefFoundError nf) {
+            throw new IllegalStateException(
+                    "kafka-clients not on the test classpath; add `org.apache.kafka:kafka-clients` to run AsyncAPI tests",
+                    nf);
+        } catch (Exception e) {
+            throw new RuntimeException("kafkaCollectAllWithin failed: " + e.getMessage(), e);
+        }
+    }
 }

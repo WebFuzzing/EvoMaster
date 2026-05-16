@@ -49,7 +49,15 @@ class AsyncAPIAction(
         /** EvoMaster publishes a message into the SUT's input channel. */
         PUBLISH,
         /** EvoMaster subscribes on a reply channel after a paired PUBLISH. */
-        SUBSCRIBE_REPLY
+        SUBSCRIBE_REPLY,
+        /**
+         * EvoMaster subscribes on a SUT-produced channel (an `action: RECEIVE`
+         * operation under the codebase's convention) and collects whatever the
+         * SUT publishes inside a fixed-duration listen window. Used by the M9-PR4
+         * output-observation oracle to attribute schema-derivable targets to the
+         * SUT's emitted events without requiring a `reply:` binding.
+         */
+        SUBSCRIBE_OUTPUT
     }
 
     override fun getName(): String = "${kind.name}:$operationName:$channelAddress"

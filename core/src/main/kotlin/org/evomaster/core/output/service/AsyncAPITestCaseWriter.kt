@@ -104,6 +104,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         when (action.kind) {
             AsyncAPIAction.Kind.PUBLISH -> emitPublish(action, index, lines, correlationByPair[action.pairId])
             AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> emitSubscribeReply(action, index, lines, correlationByPair[action.pairId])
+            AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT -> emitSubscribeOutput(action, index, lines)
         }
         lines.addEmpty(1)
     }
@@ -149,6 +150,28 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             )
         }
         lines.add("}")
+    }
+
+    private fun emitSubscribeOutput(action: AsyncAPIAction, index: Int, lines: Lines) {
+        // Mirror the engine's listen-window. Use the configured value with
+        // a safety floor so generated tests don't end up with 0-ms windows
+        // that race the broker's first poll.
+        val configuredWindow = config.asyncApiOutputObservationWindowMs.toLong().coerceAtLeast(250L)
+        val rendered = renderChannelAddress(action)
+        val varName = "__evm_output_$index"
+        lines.add(
+            "byte[][] $varName = org.evomaster.test.utils.EMTestUtils.kafkaCollectAllWithin(" +
+                    "__evm_broker, \"${escapeJava(rendered)}\", ${configuredWindow}L);"
+        )
+        // The schema declares this channel as SUT-produced; we don't assert
+        // anything mandatory — a 0-message outcome is a legitimate signal
+        // (the SUT didn't emit). Generated tests therefore log the count and
+        // expose the captured payloads as a debugging aid; downstream
+        // hand-edited assertions can layer on top.
+        lines.add(
+            "// captured ${'$'}{$varName.length} message(s) on '${escapeJava(rendered)}' " +
+                    "during the ${configuredWindow}ms window"
+        )
     }
 
     private fun emitSubscribeReply(action: AsyncAPIAction, index: Int, lines: Lines, correlationId: String?) {

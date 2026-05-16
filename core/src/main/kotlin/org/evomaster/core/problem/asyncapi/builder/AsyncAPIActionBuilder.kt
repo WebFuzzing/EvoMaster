@@ -75,11 +75,37 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     ): Map<String, List<AsyncAPIAction>> {
 
         if (op.action != AsyncAPIOperation.Action.SEND) {
-            // Black-box can only directly trigger SUTs via SEND-from-our-side
-            // (the SUT consumes); RECEIVE operations describe SUT producers we
-            // can only observe, which the M4 fitness layer does not yet model
-            // as standalone actions — they only show up via reply bindings.
-            return mapOf(op.name to emptyList())
+            // RECEIVE operations describe SUT-produced channels. We can't
+            // trigger them directly, but we *can* subscribe and check whether
+            // the SUT publishes anything matching the declared message
+            // shape(s). One SUBSCRIBE_OUTPUT action per RECEIVE operation,
+            // appended by the sampler at the end of each individual.
+            val channel = schema.channels[op.channelName]
+                ?: throw SutProblemException("AsyncAPI operation '${op.name}' references missing channel '${op.channelName}'")
+            val channelAddress = channel.address
+                ?: throw SutProblemException("AsyncAPI channel '${channel.name}' has no address; cannot subscribe")
+            val resolvedIds = resolveMessageIds(op, channel)
+            if (resolvedIds.isEmpty()) {
+                // Receive ops without a declared message shape can still be
+                // listened to ("did anything arrive?"), so fall back to an
+                // empty message-id list rather than rejecting the operation.
+                log.debug("RECEIVE operation '{}' has no resolvable message ids; emitting bare SUBSCRIBE_OUTPUT", op.name)
+            }
+            val primaryId = resolvedIds.firstOrNull() ?: ""
+            val alternativeIds = if (resolvedIds.size > 1) resolvedIds.drop(1) else emptyList()
+            val action = AsyncAPIAction(
+                operationName = op.name,
+                channelAddress = channelAddress,
+                channelName = op.channelName,
+                kind = AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT,
+                pairId = UUID.randomUUID().toString().substring(0, 8),
+                messageId = primaryId,
+                additionalReplyMessageIds = alternativeIds,
+                parameters = mutableListOf(),
+                replyBinding = null,
+                correlationHeaderName = null
+            )
+            return mapOf(op.name to listOf(action))
         }
 
         val channel = schema.channels[op.channelName]

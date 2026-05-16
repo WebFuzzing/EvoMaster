@@ -1333,6 +1333,15 @@ class EMConfig {
     var bbBrokerKeystorePassword: String = ""
 
     @Experimental
+    @Cfg("AsyncAPI: length (in ms) of the post-PUBLISH listen window on SUT-produced (receive) channels." +
+            " The output-observation oracle emits OUTPUT_* fitness targets only for messages collected" +
+            " inside this window, so longer windows surface more attribution at the cost of search throughput." +
+            " Set to 0 to disable output observation entirely.")
+    @Min(0.0)
+    @Max(60_000.0)
+    var asyncApiOutputObservationWindowMs = 1000
+
+    @Experimental
     @Cfg("After publishing on a fire-and-forget AsyncAPI operation (one that does not declare a 'reply'" +
             " channel), how many milliseconds to wait before processing the next action. Gives the" +
             " SUT's consumer handler time to run before per-action coverage is attributed or the" +
