@@ -321,6 +321,7 @@ object GeneSamplerForTests {
                 .filter { !it.isAbstract }
                 .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java }
                 .filter { it.java != ArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+                .filter{ it.java != SqlPrimaryKeyGene::class.java }
         // TODO might filter out some more genes here
     }
 
