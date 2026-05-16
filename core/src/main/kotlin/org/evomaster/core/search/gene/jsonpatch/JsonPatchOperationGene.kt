@@ -37,22 +37,27 @@ abstract class JsonPatchOperationGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        // path/from fields use getValueAsRawString() instead of getValueAsPrintableString() because
+        // EnumGene<String>.getValueAsPrintableString() always wraps the value in quotes regardless of
+        // mode or targetFormat. Using it would produce double-quoting in JSON ("path":""/x"") and
+        // wrong quotes inside XML tags (<path>"/x"</path>). getValueAsRawString() returns the
+        // bare string (e.g. /x), letting us control quoting per format ourselves.
         val fields = when (this) {
             is JsonPatchPathOnlyGene -> {
-                val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                val path = pathGene.getValueAsRawString()
                 if (mode == GeneUtils.EscapeMode.XML) "<path>$path</path>"
                 else "\"path\":\"$path\""
             }
             is JsonPatchFromPathGene -> {
-                val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                val from = fromGene.getValueAsRawString()
+                val path = pathGene.getValueAsRawString()
                 if (mode == GeneUtils.EscapeMode.XML) "<from>$from</from><path>$path</path>"
                 else "\"from\":\"$from\",\"path\":\"$path\""
             }
             is JsonPatchPathValueGene -> {
                 val pair = pathValueChoice.activeGene()
-                val path = pair.first.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                // value is unquoted in JSON since it can be any type (string, number, boolean, etc.)
+                val path = pair.first.getValueAsRawString()
+                // value delegates to the typed gene so it handles its own quoting (string vs number vs boolean)
                 val value = pair.second.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
                 if (mode == GeneUtils.EscapeMode.XML) "<path>$path</path><value>$value</value>"
                 else "\"path\":\"$path\",\"value\":$value"
