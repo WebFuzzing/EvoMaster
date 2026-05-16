@@ -189,6 +189,44 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
                     "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
         )
+        emitReplyFieldAssertions(action, varName, lines)
+    }
+
+    /**
+     * Emit per-field JUnit assertions on the captured reply, driven by the
+     * pre-computed [AsyncAPIAction.replyFieldAssertions] populated at build
+     * time. M9-PR5. Two assertion kinds today:
+     *
+     *  - REQUIRED → assertTrue(EMTestUtils.replyHas(reply, "field"), ...)
+     *  - ENUM     → assertTrue(Set.of(...).contains(EMTestUtils.replyText(reply, "field")), ...)
+     *
+     * Both helpers handle non-JSON replies gracefully (return false / null
+     * respectively) so a malformed payload fails the REQUIRED check before
+     * the ENUM one runs.
+     */
+    private fun emitReplyFieldAssertions(action: AsyncAPIAction, replyVar: String, lines: Lines) {
+        if (action.replyFieldAssertions.isEmpty()) return
+        action.replyFieldAssertions.forEach { spec ->
+            val escapedPath = escapeJava(spec.path)
+            when (spec.kind) {
+                org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.REQUIRED -> {
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyHas($replyVar, \"$escapedPath\"), " +
+                                "\"reply missing required field '$escapedPath'\");"
+                    )
+                }
+                org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.ENUM -> {
+                    val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "java.util.Arrays.asList($literals).contains(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyText($replyVar, \"$escapedPath\")), " +
+                                "\"reply field '$escapedPath' not in declared enum\");"
+                    )
+                }
+            }
+        }
     }
 
     /**

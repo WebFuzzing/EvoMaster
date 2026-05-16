@@ -301,6 +301,12 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             params += AsyncAPIParam(AsyncAPIAction.HEADERS_PARAM, headersObj)
         }
 
+        val replyFieldAssertions = if (kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY) {
+            extractReplyFieldAssertions(message, schema)
+        } else {
+            emptyList()
+        }
+
         return AsyncAPIAction(
             operationName = op.name,
             channelAddress = channelAddress,
@@ -311,8 +317,57 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             additionalReplyMessageIds = additionalReplyMessageIds,
             parameters = params.toMutableList(),
             replyBinding = replyBinding,
-            correlationHeaderName = correlationLocation?.let(::extractHeaderName)
+            correlationHeaderName = correlationLocation?.let(::extractHeaderName),
+            replyFieldAssertions = replyFieldAssertions
         )
+    }
+
+    /**
+     * Walk the reply variant's declared properties and pre-compute the
+     * assertion specs the writer should emit on the captured reply payload.
+     * Captures `required` + `enum` for the starter (PR5); bounds / length /
+     * format are tracked as a follow-up that doesn't change [ReplyFieldAssertion].
+     */
+    private fun extractReplyFieldAssertions(
+        message: AsyncAPIMessage,
+        schema: AsyncAPISchema
+    ): List<org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion> {
+        val node = message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
+            ?: return emptyList()
+        if (!node.isObject) return emptyList()
+        // Variant resolution: for oneOf / anyOf, we'd produce per-variant
+        // assertions in a follow-up; for now, only flat schemas are scanned
+        // (the fitness layer already covers the oneOf case via REPLY_FIELD_*
+        // targets keyed by matched variant name).
+        val properties = node.get("properties")?.takeIf { it.isObject } ?: return emptyList()
+        val required = node.get("required")?.takeIf { it.isArray }
+            ?.map { it.asText() }?.toSet() ?: emptySet()
+
+        val out = mutableListOf<org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion>()
+        properties.fields().forEach { (name, prop) ->
+            if (name in required) {
+                out.add(
+                    org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion(
+                        path = name,
+                        kind = org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.REQUIRED
+                    )
+                )
+            }
+            val enumNode = prop.get("enum")
+            if (enumNode != null && enumNode.isArray) {
+                val values = enumNode.mapNotNull { if (it.isTextual) it.asText() else null }
+                if (values.isNotEmpty()) {
+                    out.add(
+                        org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion(
+                            path = name,
+                            kind = org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.ENUM,
+                            expectedValues = values
+                        )
+                    )
+                }
+            }
+        }
+        return out
     }
 
     private fun resolveHeadersSchema(message: AsyncAPIMessage, schema: AsyncAPISchema): Schema<*>? {
