@@ -2,10 +2,13 @@ package org.evomaster.core.problem.asyncapi.schema
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaLocationType
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.gene.builder.SchemaRefUtils
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
 import java.net.URI
@@ -18,9 +21,16 @@ import javax.ws.rs.core.Response
  * Loads and parses an AsyncAPI 3.0 schema document into the internal
  * [AsyncAPISchema] model.
  *
+ * External `$ref` documents (cross-file, relative paths, remote http(s)) are
+ * resolved eagerly during [parse] by [inlineExternalRefs], which loads each
+ * referenced source, namespaces its `components.schemas` and `components.messages`
+ * under synthetic keys in the primary document, and rewrites the in-place
+ * `$ref` strings to point at those synthetic keys. After the pre-pass the rest
+ * of the parser only sees intra-document refs and downstream code (the gene
+ * builder's [AsyncAPISchemaRefResolver]) stays oblivious to external loading.
+ *
  * Out of scope for the starter slice: AsyncAPI 2.x (rejected explicitly with a
- * clear error so users understand what to do), authenticated schema retrieval,
- * external `$ref` documents.
+ * clear error so users understand what to do), authenticated schema retrieval.
  */
 object AsyncAPIAccess {
 
@@ -69,6 +79,10 @@ object AsyncAPIAccess {
                 "AsyncAPI version $version is not supported in this build; only 3.x is parsed." +
                         " (AsyncAPI 2.x support is planned as a follow-up.)"
             )
+        }
+
+        if (root is ObjectNode) {
+            inlineExternalRefs(root, location)
         }
 
         val defaultContentType = root.get("defaultContentType")?.asText() ?: "application/json"
@@ -282,6 +296,314 @@ object AsyncAPIAccess {
             throw SutProblemException("The provided AsyncAPI file does not exist: $asyncApiLocation")
         }
         return path.toFile().readText()
+    }
+
+    /**
+     * Resolve every external `$ref` reachable from [root]: load the referenced
+     * source document, namespace its `components.schemas` and `components.messages`
+     * under synthetic keys in [root]'s components, rewrite every external ref
+     * (including chained refs in the loaded sources) to those synthetic keys.
+     *
+     * Mutates [root] in place. After this method returns, every `$ref` in the
+     * document is intra-document (`#/...`).
+     */
+    private fun inlineExternalRefs(root: ObjectNode, primaryLocation: SchemaLocation) {
+
+        // absoluteLocation → parsed document root
+        val externalDocs = LinkedHashMap<String, ObjectNode>()
+        // absoluteLocation → synthetic-key prefix (e.g. "_ext_a1b2c3d4_")
+        val keyPrefixByDoc = LinkedHashMap<String, String>()
+
+        // 1. Discover and load every external document, transitively. Mutates
+        //    `externalDocs` and `keyPrefixByDoc`; does NOT yet rewrite anything.
+        loadExternalDocsTransitively(root, primaryLocation, externalDocs, keyPrefixByDoc)
+
+        if (externalDocs.isEmpty()) return
+
+        // 2. Inline each external document's component entries under namespaced
+        //    keys in the primary document, with their own internal $refs already
+        //    rewritten to those namespaced keys.
+        val primaryComponents = ensureObject(root, "components")
+        val primarySchemas = ensureObject(primaryComponents, "schemas")
+        val primaryMessages = ensureObject(primaryComponents, "messages")
+
+        externalDocs.forEach { (loc, doc) ->
+            val prefix = keyPrefixByDoc[loc]
+                ?: throw IllegalStateException("Missing key prefix for $loc")
+            inlineDocComponents(
+                doc, prefix, primarySchemas, primaryMessages,
+                loc, externalDocs, keyPrefixByDoc, primaryLocation
+            )
+        }
+
+        // 3. Rewrite every external $ref in the primary document so it points
+        //    at a namespaced key. (External refs *within* external docs were
+        //    handled in step 2 while inlining their copies.)
+        rewriteExternalRefsInPrimary(root, primaryLocation, keyPrefixByDoc)
+    }
+
+    private fun loadExternalDocsTransitively(
+        root: ObjectNode,
+        primaryLocation: SchemaLocation,
+        externalDocs: MutableMap<String, ObjectNode>,
+        keyPrefixByDoc: MutableMap<String, String>
+    ) {
+        // Worklist of (refValue, sourceLocation) pairs. The sourceLocation is
+        // the doc the ref was found in (primary or some already-loaded external).
+        data class Pending(val refValue: String, val source: SchemaLocation)
+        val queue = ArrayDeque<Pending>()
+
+        collectRefs(root).forEach { queue.add(Pending(it, primaryLocation)) }
+
+        while (queue.isNotEmpty()) {
+            val (refValue, source) = queue.removeFirst()
+            if (SchemaRefUtils.isLocalRef(refValue)) continue
+
+            val (rawLoc, _) = SchemaRefUtils.splitRef(refValue)
+            if (rawLoc.isBlank()) continue
+
+            val absoluteLoc = SchemaRefUtils.resolveRawLocation(rawLoc, source)
+            // Back-reference to the primary doc (e.g. external `a.yaml` has
+            // `$ref: './primary.yaml#/components/schemas/X'`). The target
+            // already lives in the primary's components — no need to re-load
+            // and inline a namespaced duplicate of the primary's own content.
+            // The rewrite phase below detects the same condition and turns
+            // such refs into local `#/components/...` strings.
+            if (absoluteLoc == primaryLocation.location) continue
+            if (absoluteLoc in externalDocs) continue
+
+            val docText = try {
+                fetchExternalDocText(absoluteLoc)
+            } catch (e: Exception) {
+                throw SutProblemException(
+                    "Failed to load external AsyncAPI \$ref source '$absoluteLoc' " +
+                            "(referenced as '$refValue' from '${source.location}'): ${e.message}"
+                )
+            }
+            val docRoot = readTree(docText)
+            if (docRoot !is ObjectNode) {
+                throw SutProblemException(
+                    "External AsyncAPI \$ref source '$absoluteLoc' did not parse as an object"
+                )
+            }
+            externalDocs[absoluteLoc] = docRoot
+            keyPrefixByDoc[absoluteLoc] = AsyncAPIRefLocation.externalKeyPrefix(absoluteLoc)
+
+            val docLocation = SchemaLocation(absoluteLoc, locationTypeFor(absoluteLoc))
+            collectRefs(docRoot).forEach { queue.add(Pending(it, docLocation)) }
+        }
+    }
+
+    private fun inlineDocComponents(
+        doc: ObjectNode,
+        prefix: String,
+        primarySchemas: ObjectNode,
+        primaryMessages: ObjectNode,
+        sourceLoc: String,
+        externalDocs: Map<String, ObjectNode>,
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
+    ) {
+        val components = doc.get("components") as? ObjectNode ?: return
+        val sourceLocation = SchemaLocation(sourceLoc, locationTypeFor(sourceLoc))
+
+        (components.get("schemas") as? ObjectNode)?.let { schemas ->
+            schemas.fields().forEach { (name, schemaNode) ->
+                val copy = schemaNode.deepCopy<JsonNode>()
+                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc, primaryLocation)
+                primarySchemas.set<JsonNode>("$prefix$name", copy)
+            }
+        }
+        (components.get("messages") as? ObjectNode)?.let { messages ->
+            messages.fields().forEach { (name, msgNode) ->
+                val copy = msgNode.deepCopy<JsonNode>()
+                rewriteRefsInInlinedNode(copy, sourceLocation, prefix, externalDocs, keyPrefixByDoc, primaryLocation)
+                primaryMessages.set<JsonNode>("$prefix$name", copy)
+            }
+        }
+    }
+
+    /**
+     * Walk [node] (already copied into the primary document) and rewrite every
+     * `$ref` it contains:
+     *  - Intra-document refs (`#/components/schemas/X`) within the source doc:
+     *    rewrite to `#/components/schemas/<sourcePrefix>X`.
+     *  - External refs to other docs we've loaded: rewrite to that doc's prefix.
+     */
+    private fun rewriteRefsInInlinedNode(
+        node: JsonNode,
+        sourceLocation: SchemaLocation,
+        ownPrefix: String,
+        externalDocs: Map<String, ObjectNode>,
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
+    ) {
+        if (node is ObjectNode) {
+            val refText = node.get("\$ref")?.asText()
+            if (refText != null) {
+                val rewritten = rewriteRefValue(
+                    refText, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation
+                )
+                if (rewritten != null) {
+                    node.put("\$ref", rewritten)
+                }
+            }
+            node.fields().forEach { (_, child) ->
+                rewriteRefsInInlinedNode(child, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation)
+            }
+        } else if (node is ArrayNode) {
+            node.forEach { rewriteRefsInInlinedNode(it, sourceLocation, ownPrefix, externalDocs, keyPrefixByDoc, primaryLocation) }
+        }
+    }
+
+    private fun rewriteExternalRefsInPrimary(
+        root: ObjectNode,
+        primaryLocation: SchemaLocation,
+        keyPrefixByDoc: Map<String, String>
+    ) {
+        rewriteRefsInInlinedNode(
+            node = root,
+            sourceLocation = primaryLocation,
+            ownPrefix = "", // primary's intra-doc refs need no prefixing
+            externalDocs = emptyMap(), // unused on this path
+            keyPrefixByDoc = keyPrefixByDoc,
+            primaryLocation = primaryLocation
+        )
+    }
+
+    /**
+     * Returns the rewritten `$ref` value, or null if the ref should be left
+     * alone (intra-document ref in the *primary* doc).
+     */
+    private fun rewriteRefValue(
+        refText: String,
+        sourceLocation: SchemaLocation,
+        ownPrefix: String,
+        @Suppress("UNUSED_PARAMETER") externalDocs: Map<String, ObjectNode>,
+        keyPrefixByDoc: Map<String, String>,
+        primaryLocation: SchemaLocation
+    ): String? {
+        if (SchemaRefUtils.isLocalRef(refText)) {
+            // Intra-document ref. Inside the *primary* doc (ownPrefix empty),
+            // leave it alone. Inside an inlined external-doc copy, namespace it.
+            if (ownPrefix.isEmpty()) return null
+            return rewriteLocalFragment(refText, ownPrefix)
+        }
+
+        // External ref: split, resolve.
+        val (rawLoc, fragment) = SchemaRefUtils.splitRef(refText)
+        if (rawLoc.isBlank()) {
+            return rewriteLocalFragment("#$fragment", ownPrefix)
+        }
+        val absoluteLoc = SchemaRefUtils.resolveRawLocation(rawLoc, sourceLocation)
+        // Back-reference to the primary doc: the target lives in the primary's
+        // own components, so rewrite to a plain local ref (no prefix). This
+        // pairs with the matching skip in loadExternalDocsTransitively so the
+        // primary is never inlined as a namespaced duplicate of itself.
+        if (absoluteLoc == primaryLocation.location) {
+            return externalRefToLocalKey(fragment, "")
+        }
+        val prefix = keyPrefixByDoc[absoluteLoc]
+            ?: throw SutProblemException(
+                "External AsyncAPI \$ref '$refText' from '${sourceLocation.location}' " +
+                        "resolved to '$absoluteLoc' which was never loaded"
+            )
+        // Determine target component category from the fragment and rewrite.
+        return externalRefToLocalKey(fragment, prefix)
+    }
+
+    private fun rewriteLocalFragment(refText: String, prefix: String): String {
+        // refText is "#/<...>". Apply prefix to the last path segment for the
+        // recognised component categories; leave others alone.
+        val fragment = refText.removePrefix("#")
+        return externalRefToLocalKey(fragment, prefix) ?: refText
+    }
+
+    private fun externalRefToLocalKey(fragment: String, prefix: String): String? {
+        val trimmed = fragment.trimStart('/')
+        return when {
+            trimmed.startsWith("components/schemas/") -> {
+                val name = trimmed.removePrefix("components/schemas/")
+                "#/components/schemas/$prefix$name"
+            }
+            trimmed.startsWith("components/messages/") -> {
+                val name = trimmed.removePrefix("components/messages/")
+                "#/components/messages/$prefix$name"
+            }
+            trimmed.isEmpty() -> {
+                // Whole-file external ref. Uncommon and ambiguous (the target
+                // doc may have many components); not supported in the starter.
+                throw SutProblemException(
+                    "AsyncAPI whole-file external \$ref (no fragment) is not supported " +
+                            "yet; rewrite the ref to point at a specific component " +
+                            "(e.g. '<file>#/components/schemas/<Name>')"
+                )
+            }
+            trimmed.startsWith("channels/") || trimmed.startsWith("operations/") -> {
+                // The parser inlines only schemas and messages today; cross-doc
+                // channel / operation references would require lifting the
+                // structural sections too — out of scope. Fail loudly so the
+                // user knows what to do.
+                throw SutProblemException(
+                    "External AsyncAPI \$ref pointing at '/$trimmed' is not supported yet " +
+                            "(only #/components/schemas/* and #/components/messages/* may " +
+                            "be referenced across files). Inline the target into the primary " +
+                            "document, or reference it via a component schema."
+                )
+            }
+            else -> {
+                // Unknown fragment category — pass through (most likely the
+                // downstream local-ref resolver will surface a clearer error
+                // than we can here).
+                null
+            }
+        }
+    }
+
+    /** Recursively collect every `$ref` string value reachable from [node]. */
+    private fun collectRefs(node: JsonNode): List<String> {
+        val out = mutableListOf<String>()
+        collectRefsInto(node, out)
+        return out
+    }
+
+    private fun collectRefsInto(node: JsonNode, out: MutableList<String>) {
+        when (node) {
+            is ObjectNode -> {
+                node.get("\$ref")?.asText()?.let { out.add(it) }
+                node.fields().forEach { (_, child) -> collectRefsInto(child, out) }
+            }
+            is ArrayNode -> node.forEach { collectRefsInto(it, out) }
+            else -> {}
+        }
+    }
+
+    private fun ensureObject(parent: ObjectNode, fieldName: String): ObjectNode {
+        val existing = parent.get(fieldName)
+        if (existing is ObjectNode) return existing
+        val created = parent.objectNode()
+        parent.set<JsonNode>(fieldName, created)
+        return created
+    }
+
+    private fun locationTypeFor(absoluteLocation: String): SchemaLocationType {
+        return if (absoluteLocation.startsWith("http:", ignoreCase = true) ||
+            absoluteLocation.startsWith("https:", ignoreCase = true)
+        ) {
+            SchemaLocationType.REMOTE
+        } else {
+            SchemaLocationType.LOCAL
+        }
+    }
+
+    private fun fetchExternalDocText(absoluteLocation: String): String {
+        return if (absoluteLocation.startsWith("http:", ignoreCase = true) ||
+            absoluteLocation.startsWith("https:", ignoreCase = true)
+        ) {
+            readFromRemoteServer(absoluteLocation)
+        } else {
+            readFromDisk(absoluteLocation)
+        }
     }
 
     private fun connectToServer(url: String, attempts: Int): Response {

@@ -45,57 +45,21 @@ object SchemaUtils {
      */
 
 
-    fun isLocalRef(sref: String) = sref.startsWith("#")
+    /**
+     * Thin alias for backwards compatibility — the implementation lives in the
+     * shared [org.evomaster.core.search.gene.builder.SchemaRefUtils] so REST
+     * and AsyncAPI use the same `$ref` parsing rules. Both delegations are
+     * kept so existing REST callers don't need to change imports.
+     */
+    fun isLocalRef(sref: String): Boolean =
+        org.evomaster.core.search.gene.builder.SchemaRefUtils.isLocalRef(sref)
 
-    private fun extractLocation(sref: String, messages: MutableList<String>) : String?{
-        if(!sref.contains("#")){
-            messages.add("Not a valid \$ref, as it contains no #: $sref")
-            return null
-        }
-        return sref.substring(0, sref.indexOf("#"))
-    }
-
-
-    fun computeLocation(ref: String, currentSource: SchemaLocation, messages: MutableList<String>) : String?{
-
-        val rawLocation = extractLocation(ref, messages)
-            ?: return null
-
-        if(rawLocation.startsWith("http:",true) || rawLocation.startsWith("https:",true)){
-            //location is absolute, so no need to do anything
-            return rawLocation
-        }
-
-        //TODO does it make any sense to have file:// here???
-
-        if(currentSource.type == SchemaLocationType.MEMORY){
-            throw IllegalArgumentException("Can't handle relative location for memory files: $rawLocation")
-        }
-
-        val csl = currentSource.location
-
-        if(rawLocation.startsWith("//")){
-            //as per specs, use same protocol as source
-            val protocol = csl.substring(0, csl.indexOf(":"))
-            if(protocol.isBlank()){
-                log.warn("No protocol can be inferred for $rawLocation from $csl")
-            }
-            return "$protocol:$rawLocation"
-        }
-
-        //if arrive here, it is a relative path
-        val delimiter = if(csl.endsWith("/")) "" else "/"
-        val parentFolder = "../" // this is based to what discussed in the specs
-
-        val location = "$csl$delimiter$parentFolder$rawLocation"
-
-        //FIXME should not usi URI
-        return try{
-            URI(location).normalize().toString()
-        } catch (e: Exception){
-            location
-        }
-    }
+    /**
+     * Thin alias for backwards compatibility — see
+     * [org.evomaster.core.search.gene.builder.SchemaRefUtils.computeLocation].
+     */
+    fun computeLocation(ref: String, currentSource: SchemaLocation, messages: MutableList<String>): String? =
+        org.evomaster.core.search.gene.builder.SchemaRefUtils.computeLocation(ref, currentSource, messages)
 
 
     private fun extractReferenceName(reference: String, messages: MutableList<String>): String {
