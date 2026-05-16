@@ -20,7 +20,14 @@ data class AsyncAPIOperation(
     /** Message ids the operation can carry on its main channel. */
     val messageIds: List<String>,
     /** Reply binding when the operation declares `reply:`. */
-    val reply: ReplyBinding?
+    val reply: ReplyBinding?,
+    /**
+     * Security-scheme component names referenced from this operation's
+     * `security:` array. Each entry maps to an [AsyncAPISecurityScheme] in
+     * [AsyncAPISchema.securitySchemes]. Empty when the operation declares no
+     * security or when global-only security applies.
+     */
+    val security: List<String> = emptyList()
 ) {
     enum class Action { SEND, RECEIVE }
 }
