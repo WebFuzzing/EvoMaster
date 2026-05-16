@@ -30,11 +30,53 @@ class KafkaBrokerClient(
     private val bootstrapServers: String,
     /** Per-run consumer group id; defaults to a unique one. */
     private val consumerGroupId: String = "evomaster-${UUID.randomUUID()}",
-    private val consumerPollMs: Long = 200
+    private val consumerPollMs: Long = 200,
+    /** Connection auth; null = NoAuth and no security props are applied. */
+    private val auth: AsyncAPIBrokerAuthInfo = AsyncAPIBrokerAuthInfo.NoAuth
 ) : MessageBrokerClient {
 
     companion object {
         private val log = LoggerFactory.getLogger(KafkaBrokerClient::class.java)
+
+        /**
+         * Test-visible: compute the connection security properties for a
+         * given auth config. Kept as a pure function over [auth] so the
+         * mapping can be unit-tested without spinning up a broker.
+         */
+        fun authProps(auth: AsyncAPIBrokerAuthInfo): Properties {
+            val props = Properties()
+            when (auth) {
+                AsyncAPIBrokerAuthInfo.NoAuth -> { /* nothing */ }
+                is AsyncAPIBrokerAuthInfo.SaslPlain -> {
+                    props["security.protocol"] = if (auth.tls) "SASL_SSL" else "SASL_PLAINTEXT"
+                    props["sasl.mechanism"] = "PLAIN"
+                    props["sasl.jaas.config"] =
+                        "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                                "username=\"${escapeJaas(auth.username)}\" " +
+                                "password=\"${escapeJaas(auth.password)}\";"
+                }
+                is AsyncAPIBrokerAuthInfo.SaslScramSha256 -> {
+                    props["security.protocol"] = if (auth.tls) "SASL_SSL" else "SASL_PLAINTEXT"
+                    props["sasl.mechanism"] = "SCRAM-SHA-256"
+                    props["sasl.jaas.config"] =
+                        "org.apache.kafka.common.security.scram.ScramLoginModule required " +
+                                "username=\"${escapeJaas(auth.username)}\" " +
+                                "password=\"${escapeJaas(auth.password)}\";"
+                }
+                is AsyncAPIBrokerAuthInfo.Ssl -> {
+                    props["security.protocol"] = "SSL"
+                    auth.truststorePath?.let { props["ssl.truststore.location"] = it }
+                    auth.truststorePassword?.let { props["ssl.truststore.password"] = it }
+                    auth.keystorePath?.let { props["ssl.keystore.location"] = it }
+                    auth.keystorePassword?.let { props["ssl.keystore.password"] = it }
+                }
+            }
+            return props
+        }
+
+        /** Escape `\` and `"` for inclusion in a JAAS-config inline string. */
+        private fun escapeJaas(value: String): String =
+            value.replace("\\", "\\\\").replace("\"", "\\\"")
     }
 
     private var producer: KafkaProducer<String, ByteArray>? = null
@@ -52,6 +94,7 @@ class KafkaBrokerClient(
             put(ProducerConfig.ACKS_CONFIG, "all")
             put(ProducerConfig.CLIENT_ID_CONFIG, "evomaster-asyncapi-producer")
         }
+        applyAuthProps(producerProps)
         producer = KafkaProducer(producerProps)
 
         val consumerProps = Properties().apply {
@@ -65,9 +108,18 @@ class KafkaBrokerClient(
             put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
             put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
         }
+        applyAuthProps(consumerProps)
         consumer = KafkaConsumer(consumerProps)
 
         connected = true
+    }
+
+    /**
+     * Layer SASL / SSL configuration onto a Kafka client properties bag.
+     * No-op for [AsyncAPIBrokerAuthInfo.NoAuth].
+     */
+    private fun applyAuthProps(props: Properties) {
+        props.putAll(authProps(auth))
     }
 
     override fun publish(
@@ -116,6 +168,28 @@ class KafkaBrokerClient(
             }
         }
         return MessageBrokerClient.SubscribeOutcome.Timeout
+    }
+
+    override fun collectAllWithin(
+        channel: String,
+        windowMs: Long
+    ): List<MessageBrokerClient.ReceivedMessage> {
+        ensureConnected()
+        ensureSubscribed(channel)
+
+        val collected = mutableListOf<MessageBrokerClient.ReceivedMessage>()
+        val deadline = System.currentTimeMillis() + windowMs
+        while (System.currentTimeMillis() < deadline) {
+            val remaining = (deadline - System.currentTimeMillis()).coerceAtLeast(1)
+            val poll = Duration.ofMillis(remaining.coerceAtMost(consumerPollMs))
+            val records = consumer!!.poll(poll)
+            for (rec in records) {
+                if (rec.topic() != channel) continue
+                val headers = rec.headers().associate { it.key() to it.value() }
+                collected.add(MessageBrokerClient.ReceivedMessage(rec.value(), headers))
+            }
+        }
+        return collected
     }
 
     override fun close() {

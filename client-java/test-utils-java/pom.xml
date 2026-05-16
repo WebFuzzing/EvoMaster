@@ -32,6 +32,31 @@
             <artifactId>testcontainers</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!--
+            kafka-clients is `provided` because it's only needed when
+            generated AsyncAPI tests run; users opting into AsyncAPI
+            output add it themselves.  Keeping it provided here means
+            REST/GraphQL/RPC users don't pull in 30 MB of broker
+            machinery they never touch.
+        -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!--
+            jackson-databind backs the EMTestUtils.replyHas / replyText
+            helpers used by generated AsyncAPI assertions (M9-PR5). Kept
+            `provided` for the same reason as kafka-clients: REST/RPC users
+            don't need Jackson on their generated-test classpath unless
+            they opt into AsyncAPI output. Most Spring/Quarkus SUTs already
+            pull Jackson transitively anyway.
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

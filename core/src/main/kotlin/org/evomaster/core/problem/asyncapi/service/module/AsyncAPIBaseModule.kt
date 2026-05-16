@@ -102,9 +102,42 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
     @Synchronized
     private fun ensure(): KafkaBrokerClient {
         delegate?.let { return it }
-        val client = KafkaBrokerClient(bootstrapServers = resolveBootstrapServers())
+        val client = KafkaBrokerClient(
+            bootstrapServers = resolveBootstrapServers(),
+            auth = resolveAuth()
+        )
         delegate = client
         return client
+    }
+
+    private fun resolveAuth(): org.evomaster.core.problem.asyncapi.broker.AsyncAPIBrokerAuthInfo {
+        // White-box driver-supplied broker auth is a follow-up; black-box reads
+        // CLI flags now. Returning NoAuth when the flag is unset keeps existing
+        // unauthenticated test brokers (Testcontainers, local KRaft) working
+        // without per-test plumbing.
+        return when (config.bbBrokerAuthType) {
+            EMConfig.BrokerAuthType.NONE ->
+                org.evomaster.core.problem.asyncapi.broker.AsyncAPIBrokerAuthInfo.NoAuth
+            EMConfig.BrokerAuthType.SASL_PLAIN ->
+                org.evomaster.core.problem.asyncapi.broker.AsyncAPIBrokerAuthInfo.SaslPlain(
+                    username = config.bbBrokerUsername,
+                    password = config.bbBrokerPassword,
+                    tls = config.bbBrokerSaslOverTls
+                )
+            EMConfig.BrokerAuthType.SASL_SCRAM_256 ->
+                org.evomaster.core.problem.asyncapi.broker.AsyncAPIBrokerAuthInfo.SaslScramSha256(
+                    username = config.bbBrokerUsername,
+                    password = config.bbBrokerPassword,
+                    tls = config.bbBrokerSaslOverTls
+                )
+            EMConfig.BrokerAuthType.SSL ->
+                org.evomaster.core.problem.asyncapi.broker.AsyncAPIBrokerAuthInfo.Ssl(
+                    truststorePath = config.bbBrokerTruststorePath.ifBlank { null },
+                    truststorePassword = config.bbBrokerTruststorePassword.ifBlank { null },
+                    keystorePath = config.bbBrokerKeystorePath.ifBlank { null },
+                    keystorePassword = config.bbBrokerKeystorePassword.ifBlank { null }
+                )
+        }
     }
 
     override fun connect() = ensure().connect()
@@ -121,6 +154,11 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
         predicate: (Map<String, ByteArray>) -> Boolean,
         timeoutMs: Long
     ) = ensure().awaitFirstMatching(channel, predicate, timeoutMs)
+
+    override fun collectAllWithin(
+        channel: String,
+        windowMs: Long
+    ) = ensure().collectAllWithin(channel, windowMs)
 
     override fun close() {
         delegate?.close()

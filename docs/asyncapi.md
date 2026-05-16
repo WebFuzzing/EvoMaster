@@ -31,6 +31,49 @@ CLI options new for AsyncAPI:
 
 The familiar `--outputFormat`, `--maxTime`, etc. all behave as for REST. `PYTHON_UNITTEST` is rejected for AsyncAPI; pick `JAVA_JUNIT_5` (default) or `KOTLIN_JUNIT_5`.
 
+### Authenticated brokers
+
+Real Kafka deployments usually require SASL or SSL on the connection. The black-box engine supports three families today (M9):
+
+| Flag | Notes |
+|---|---|
+| `--bbBrokerAuthType` | one of `NONE` (default), `SASL_PLAIN`, `SASL_SCRAM_256`, `SSL` |
+| `--bbBrokerUsername` / `--bbBrokerPassword` | required for both SASL variants |
+| `--bbBrokerSaslOverTls` | when true, SASL is wrapped in TLS (`SASL_SSL`); otherwise `SASL_PLAINTEXT` |
+| `--bbBrokerTruststorePath` / `--bbBrokerTruststorePassword` | server cert verification (SSL only) |
+| `--bbBrokerKeystorePath` / `--bbBrokerKeystorePassword` | client cert for mTLS (SSL only; optional) |
+
+SASL/OAUTHBEARER and Kerberos are not yet supported; track the follow-up in the M9 plan.
+
+The AsyncAPI parser also surfaces `components.securitySchemes` and per-operation `security:` references into the in-memory model; the broker-side auth applied at connect time is driven by the CLI flags above (the schema's declared scheme names are advisory). White-box mode will plumb driver-supplied broker auth in a follow-up; for now use the CLI flags in both modes.
+
+### Output-channel observation (M9)
+
+For every `action: RECEIVE` operation declared in the schema (= SUT-produced channel), the engine appends one `SUBSCRIBE_OUTPUT` action to each individual. The fitness layer brackets the post-PUBLISH window, collects everything that arrived on the channel, and emits these targets:
+
+- `OUTPUT_RECEIVED:<channel>` / `OUTPUT_NOTHING:<channel>` — whether the SUT emitted anything during the window. Always emitted (not gated by `--advancedBlackBoxCoverage`).
+- `OUTPUT_SCHEMA_VALID:<channel>:<messageId>` / `OUTPUT_SCHEMA_INVALID:<channel>` — per-arrival, per-variant schema match.
+- `OUTPUT_MESSAGE_TYPE:<channel>=<messageId>` — fires the first time each declared variant is observed in a run.
+- `OUTPUT_FIELD_PRESENCE:<channel>:<messageId>:<field>=present|absent` — per declared property of the matched variant; mirrors `FIELD_PRESENCE` on the publish side. Gated by `--advancedBlackBoxCoverage`.
+
+The listen window is configured with `--asyncApiOutputObservationWindowMs` (default `1000`). Set to `0` to disable output observation entirely. Generated JUnit 5 tests include a `kafkaCollectAllWithin(...)` call per output channel so the captured message count is preserved as a debugging aid.
+
+This is an *observational* oracle: the schema doesn't encode causality between a publish and an emitted event, so attribution is window-only. On a dedicated test broker (the engine is the only client) false positives from concurrent traffic are negligible.
+
+### Per-field reply assertions (M9-PR5)
+
+When the SUT replies to a `request` operation, the engine now walks the declared reply schema and emits one fitness target per (field × declared facet) pair, on top of the existing binary `REPLY_SCHEMA_VALID` signal:
+
+| Target family | Fires when |
+|---|---|
+| `REPLY_FIELD:REQUIRED_PRESENT:<variant>:<channel>:<op>:<field>` / `_REQUIRED_ABSENT` | required field present / missing |
+| `REPLY_FIELD:ENUM_IN_RANGE:<variant>:<channel>:<op>:<field>` / `_OUT_OF_RANGE` | observed enum value in / not in declared set |
+| `REPLY_FIELD:BOUNDARY_OK:<variant>:<channel>:<op>:<field>` / `_VIOLATED` | numeric value within / outside `minimum`/`maximum` |
+| `REPLY_FIELD:LENGTH_OK:<variant>:<channel>:<op>:<field>` / `_VIOLATED` | string length within / outside `minLength`/`maxLength` |
+| `REPLY_FIELD:FORMAT_OK:<variant>:<channel>:<op>:<field>=<format>` / `_VIOLATED` | string value matches / doesn't match declared format (email, uuid, date, date-time, uri, hostname, ipv4) |
+
+Generated JUnit 5 tests get matching assertions for the most common subset (`required` + `enum`) via `EMTestUtils.replyHas(...)` and `EMTestUtils.replyText(...)`. Bounds / length / format show up as fitness gradients today; per-field test assertions for those families will follow when the validation pass against real products surfaces concrete cases.
+
 ## White-box
 
 White-box requires an EvoMaster driver in the SUT's repo that returns `AsyncAPIProblem` from `getProblemInfo()`:

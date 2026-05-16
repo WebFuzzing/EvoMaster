@@ -34,6 +34,19 @@ interface MessageBrokerClient : AutoCloseable {
         timeoutMs: Long
     ): SubscribeOutcome
 
+    /**
+     * Subscribe to [channel] and collect every message that arrives during
+     * the [windowMs] millisecond listen window. Returns the collected messages
+     * in arrival order (possibly empty).
+     *
+     * Implementations should not filter by correlation header — the caller
+     * decides what to do with the collected payloads. Used by AsyncAPI
+     * output-observation oracles (M9-PR4) where the schema doesn't encode
+     * causality between a publish and an SUT-emitted event, so the engine
+     * brackets a fixed window after publishing and inspects whatever showed up.
+     */
+    fun collectAllWithin(channel: String, windowMs: Long): List<ReceivedMessage>
+
     /** Close all underlying resources.  Subsequent calls are no-ops. */
     override fun close()
 
@@ -46,4 +59,7 @@ interface MessageBrokerClient : AutoCloseable {
         data class Received(val payload: ByteArray, val headers: Map<String, ByteArray>) : SubscribeOutcome()
         data object Timeout : SubscribeOutcome()
     }
+
+    /** A single message captured by [collectAllWithin]. */
+    data class ReceivedMessage(val payload: ByteArray, val headers: Map<String, ByteArray>)
 }

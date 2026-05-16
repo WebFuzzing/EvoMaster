@@ -639,6 +639,27 @@ class EMConfig {
         if (!blackBox && bbBrokerUrl.isNotBlank()) {
             throw ConfigProblemException("'bbBrokerUrl' should be set only in black-box mode")
         }
+        if (!blackBox && bbBrokerAuthType != BrokerAuthType.NONE) {
+            throw ConfigProblemException("'bbBrokerAuthType' should be set only in black-box mode")
+        }
+        if (blackBox && problemType == ProblemType.ASYNCAPI) {
+            when (bbBrokerAuthType) {
+                BrokerAuthType.SASL_PLAIN, BrokerAuthType.SASL_SCRAM_256 -> {
+                    if (bbBrokerUsername.isBlank() || bbBrokerPassword.isBlank()) {
+                        throw ConfigProblemException(
+                            "Black-box AsyncAPI with --bbBrokerAuthType=$bbBrokerAuthType " +
+                                    "requires --bbBrokerUsername and --bbBrokerPassword"
+                        )
+                    }
+                }
+                BrokerAuthType.SSL -> {
+                    // Truststore is optional (server may chain to a JVM-default CA),
+                    // so no required-flag check; keystore is also optional (server-only
+                    // TLS, no mTLS).
+                }
+                BrokerAuthType.NONE -> { /* nothing */ }
+            }
+        }
 
         if (!endpointFocus.isNullOrBlank() && !endpointPrefix.isNullOrBlank()) {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
@@ -1265,6 +1286,60 @@ class EMConfig {
             " to publish requests and observe replies. For Kafka this is the bootstrap-servers value," +
             " e.g. 'localhost:9092'.")
     var bbBrokerUrl: String = ""
+
+    enum class BrokerAuthType {
+        /** Default: no authentication; the broker exposes a plaintext listener. */
+        NONE,
+        /** SASL/PLAIN; pair with --bbBrokerUsername / --bbBrokerPassword. */
+        SASL_PLAIN,
+        /** SASL/SCRAM-SHA-256; same flags as SASL_PLAIN. */
+        SASL_SCRAM_256,
+        /** Plain TLS (no SASL); pair with the truststore / keystore flags. */
+        SSL
+    }
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: how EvoMaster authenticates to the broker. Combine with --bbBrokerUsername" +
+            " / --bbBrokerPassword for SASL, or --bbBrokerTruststorePath / --bbBrokerKeystorePath for SSL.")
+    var bbBrokerAuthType: BrokerAuthType = BrokerAuthType.NONE
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: username for SASL/PLAIN or SASL/SCRAM-SHA-256 authentication.")
+    var bbBrokerUsername: String = ""
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: password for SASL/PLAIN or SASL/SCRAM-SHA-256 authentication.")
+    var bbBrokerPassword: String = ""
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: when SASL is used, wrap it in TLS (SASL_SSL) instead of plaintext" +
+            " (SASL_PLAINTEXT). Ignored when --bbBrokerAuthType is NONE or SSL.")
+    var bbBrokerSaslOverTls: Boolean = false
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: path to the JKS or PKCS12 truststore for SSL-secured brokers.")
+    var bbBrokerTruststorePath: String = ""
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: password for --bbBrokerTruststorePath.")
+    var bbBrokerTruststorePassword: String = ""
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: path to the JKS or PKCS12 keystore for SSL client-cert auth.")
+    var bbBrokerKeystorePath: String = ""
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: password for --bbBrokerKeystorePath.")
+    var bbBrokerKeystorePassword: String = ""
+
+    @Experimental
+    @Cfg("AsyncAPI: length (in ms) of the post-PUBLISH listen window on SUT-produced (receive) channels." +
+            " The output-observation oracle emits OUTPUT_* fitness targets only for messages collected" +
+            " inside this window, so longer windows surface more attribution at the cost of search throughput." +
+            " Set to 0 to disable output observation entirely.")
+    @Min(0.0)
+    @Max(60_000.0)
+    var asyncApiOutputObservationWindowMs = 1000
 
     @Experimental
     @Cfg("After publishing on a fire-and-forget AsyncAPI operation (one that does not declare a 'reply'" +
