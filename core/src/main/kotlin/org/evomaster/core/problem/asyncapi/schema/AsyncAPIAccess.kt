@@ -8,6 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaLocationType
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.gene.builder.SchemaRefUtils
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
 import java.net.URI
@@ -356,12 +357,12 @@ object AsyncAPIAccess {
 
         while (queue.isNotEmpty()) {
             val (refValue, source) = queue.removeFirst()
-            if (AsyncAPIRefLocation.isLocalRef(refValue)) continue
+            if (SchemaRefUtils.isLocalRef(refValue)) continue
 
-            val (rawLoc, _) = AsyncAPIRefLocation.split(refValue)
+            val (rawLoc, _) = SchemaRefUtils.splitRef(refValue)
             if (rawLoc.isBlank()) continue
 
-            val absoluteLoc = AsyncAPIRefLocation.resolveAbsolute(rawLoc, source)
+            val absoluteLoc = SchemaRefUtils.resolveRawLocation(rawLoc, source)
             // Back-reference to the primary doc (e.g. external `a.yaml` has
             // `$ref: './primary.yaml#/components/schemas/X'`). The target
             // already lives in the primary's components — no need to re-load
@@ -482,7 +483,7 @@ object AsyncAPIAccess {
         keyPrefixByDoc: Map<String, String>,
         primaryLocation: SchemaLocation
     ): String? {
-        if (AsyncAPIRefLocation.isLocalRef(refText)) {
+        if (SchemaRefUtils.isLocalRef(refText)) {
             // Intra-document ref. Inside the *primary* doc (ownPrefix empty),
             // leave it alone. Inside an inlined external-doc copy, namespace it.
             if (ownPrefix.isEmpty()) return null
@@ -490,11 +491,11 @@ object AsyncAPIAccess {
         }
 
         // External ref: split, resolve.
-        val (rawLoc, fragment) = AsyncAPIRefLocation.split(refText)
+        val (rawLoc, fragment) = SchemaRefUtils.splitRef(refText)
         if (rawLoc.isBlank()) {
             return rewriteLocalFragment("#$fragment", ownPrefix)
         }
-        val absoluteLoc = AsyncAPIRefLocation.resolveAbsolute(rawLoc, sourceLocation)
+        val absoluteLoc = SchemaRefUtils.resolveRawLocation(rawLoc, sourceLocation)
         // Back-reference to the primary doc: the target lives in the primary's
         // own components, so rewrite to a plain local ref (no prefix). This
         // pairs with the matching skip in loadExternalDocsTransitively so the
