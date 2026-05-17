@@ -116,10 +116,12 @@ class SamplerVerifierTest {
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
-                System.gc()
+                //System.gc()
+                println("RUNNING: $it")
                 assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
+                println("DONE WITH: $it")
             }
         }.toList()
     }
