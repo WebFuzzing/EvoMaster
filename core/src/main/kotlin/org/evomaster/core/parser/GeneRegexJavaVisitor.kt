@@ -40,7 +40,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
      * Populated as the tree is walked. A backreference is only valid if it
      * appears after the group it references, which Java regex requires anyway.
      */
-    private val captureGroups = mutableListOf<DisjunctionListRxGene>()
+    private val captureGroups = mutableListOf<DisjunctionListRxGene?>()
 
     /**
      * Same as [captureGroups] but for named backreferences, which can be accessed
@@ -312,6 +312,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         if(ctx.disjunction() != null){
 
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupIndex = captureGroups.size
+            captureGroups.add(null) // add placeholder for the gene
+
             val res = ctx.disjunction().accept(this)
 
             val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
@@ -328,7 +332,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val isNamedCaptureGroup = ctx.NAMED_CAPTURE_GROUP_OPEN() != null
 
             if (isCapturingGroup) {
-                captureGroups.add(disjList)
+                captureGroups[groupIndex] = disjList
             }
             if (isNamedCaptureGroup) {
                 val name = ctx.NAMED_CAPTURE_GROUP_OPEN().text.drop(3).dropLast(1) // strip "(?<" and ")"
@@ -524,7 +528,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                             "capture group(s) have been defined so far"
                 )
             }
-            return VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]))
+            return VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]!!))
         }
 
         // named backreference \k<name>

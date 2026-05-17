@@ -243,6 +243,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""(?<randomName>a|b|c)\1\k<randomName>""")
         checkSameAsJava("""<>[(?<notAName>abc)]""")
         checkCanSample("""[(?<notAName>abc)]""", "N", 100)
+        checkSameAsJava("""((A)(B(C)))\1\2\3\4""")
     }
 
     @Test
