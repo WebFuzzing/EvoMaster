@@ -82,7 +82,7 @@ object JsonPatchDocumentGeneBuilder {
 
     private fun generateRandomPaths(randomness: Randomness): List<String> =
         generateSequence { "/${randomness.nextWordString(2, 6)}" }
-            .take(RANDOM_PATH_COUNT * 2)
+            .take(RANDOM_PATH_COUNT * 2) // generate extra candidates so that after deduplication we still have RANDOM_PATH_COUNT distinct paths
             .distinct()
             .take(RANDOM_PATH_COUNT)
             .toList()

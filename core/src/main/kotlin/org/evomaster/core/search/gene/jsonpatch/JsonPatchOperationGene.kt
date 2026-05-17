@@ -76,6 +76,8 @@ abstract class JsonPatchOperationGene(
         children.filter { it.isMutable() }.forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
+    // Set to false due that for patch operation genes, all variation is already delegated to children (the path/value
+    // sub-genes and, at the document level, ArrayGene and ChoiceGene, that selects which operation is active).
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,
