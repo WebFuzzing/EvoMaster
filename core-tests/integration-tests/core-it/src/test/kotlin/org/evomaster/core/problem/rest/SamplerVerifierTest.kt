@@ -116,8 +116,14 @@ class SamplerVerifierTest {
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
+                /*
+                    These tests are expensive... and once upon a time they were a source of timeouts due
+                    to some bottlenecks. For that reason, we were forcing a GC before each test outside of the
+                    timeout, hoping it would help. But it looks like nowadays this is creating a deadlock on GA :(
+                    so we had to remove it
+                 */
                 //System.gc()
-                println("RUNNING: $it")
+                println("RUNNING: $it") // Surefire sucks at providing info for @TestFactory
                 assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
