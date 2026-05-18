@@ -30,12 +30,12 @@ class AsyncAPISecuritySchemeParserTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               postOrder:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/orders' }
                 security:
                   - { ${'$'}ref: '#/components/securitySchemes/kafkaScram' }
               cancelOrder:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/orders' }
                 security:
                   - { ${'$'}ref: '#/components/securitySchemes/kafkaScram' }
@@ -94,7 +94,7 @@ class AsyncAPISecuritySchemeParserTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c' }
             components:
               messages:
@@ -122,7 +122,7 @@ class AsyncAPISecuritySchemeParserTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c' }
             components:
               messages:

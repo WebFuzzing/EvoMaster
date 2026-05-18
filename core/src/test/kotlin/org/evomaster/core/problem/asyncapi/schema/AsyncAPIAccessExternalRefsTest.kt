@@ -59,7 +59,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -115,7 +115,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -166,7 +166,7 @@ class AsyncAPIAccessExternalRefsTest {
                       M: { ${'$'}ref: '#/components/messages/M' }
                 operations:
                   op1:
-                    action: send
+                    action: receive
                     channel: { ${'$'}ref: '#/channels/c1' }
                 components:
                   messages:
@@ -235,7 +235,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -289,7 +289,7 @@ class AsyncAPIAccessExternalRefsTest {
                 ${'$'}ref: './other.yaml#/channels/other'
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -352,7 +352,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -418,7 +418,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:
@@ -477,7 +477,7 @@ class AsyncAPIAccessExternalRefsTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op1:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c1' }
             components:
               messages:

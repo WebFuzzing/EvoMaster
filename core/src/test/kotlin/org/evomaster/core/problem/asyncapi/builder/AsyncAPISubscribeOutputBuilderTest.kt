@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * Confirms M9-PR4: every `action: RECEIVE` operation produces one
- * SUBSCRIBE_OUTPUT action (previously RECEIVE ops were silently dropped).
+ * SUBSCRIBE_OUTPUT action (previously SEND ops were silently dropped).
  */
 class AsyncAPISubscribeOutputBuilderTest {
 
@@ -32,10 +32,10 @@ class AsyncAPISubscribeOutputBuilderTest {
                   Created: { ${'$'}ref: '#/components/messages/Created' }
             operations:
               consume:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/inbound' }
               emit:
-                action: receive
+                action: send
                 channel: { ${'$'}ref: '#/channels/outbound' }
                 messages:
                   - { ${'$'}ref: '#/channels/outbound/messages/Created' }
@@ -60,8 +60,8 @@ class AsyncAPISubscribeOutputBuilderTest {
         assertEquals(AsyncAPIAction.Kind.PUBLISH, publish.kind)
 
         val subscribeOutputs = built.operations["emit"]
-        assertNotNull(subscribeOutputs, "RECEIVE operation should produce at least one action")
-        assertEquals(1, subscribeOutputs!!.size, "RECEIVE op should produce exactly one SUBSCRIBE_OUTPUT")
+        assertNotNull(subscribeOutputs, "SEND operation should produce at least one action")
+        assertEquals(1, subscribeOutputs!!.size, "SEND op should produce exactly one SUBSCRIBE_OUTPUT")
         val subOut = subscribeOutputs.first()
         assertEquals(AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT, subOut.kind)
         assertEquals("orders.events", subOut.channelAddress)
@@ -90,10 +90,10 @@ class AsyncAPISubscribeOutputBuilderTest {
                   Updated: { ${'$'}ref: '#/components/messages/Updated' }
             operations:
               feed:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/inbound' }
               emit:
-                action: receive
+                action: send
                 channel: { ${'$'}ref: '#/channels/events' }
             components:
               messages:
@@ -116,9 +116,10 @@ class AsyncAPISubscribeOutputBuilderTest {
     }
 
     @Test
-    fun receiveOnlySchemaProducesNoPublishOnlyOutput() {
-        // RECEIVE-only schemas (no SEND op) are still parseable; the sampler
-        // refuses to start a search but the builder shouldn't blow up.
+    fun sendOnlySchemaProducesNoPublishOnlyOutput() {
+        // SEND-only schemas (no RECEIVE op = SUT consumes nothing) are still
+        // parseable; the sampler refuses to start a search (no triggerable
+        // operations) but the builder shouldn't blow up.
         val asyncapi = """
             asyncapi: 3.0.0
             info: { title: t, version: '1' }
@@ -129,7 +130,7 @@ class AsyncAPISubscribeOutputBuilderTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               emit:
-                action: receive
+                action: send
                 channel: { ${'$'}ref: '#/channels/events' }
             components:
               messages:

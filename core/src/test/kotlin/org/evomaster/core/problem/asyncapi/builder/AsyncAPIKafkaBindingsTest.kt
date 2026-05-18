@@ -30,7 +30,7 @@ class AsyncAPIKafkaBindingsTest {
                 ${'$'}ref: '#/components/messages/M'
         operations:
           publishOrder:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/inbound' }
             messages:
               - ${'$'}ref: '#/channels/inbound/messages/M'

@@ -42,7 +42,7 @@ class AsyncAPICompositionTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/orders' }
             components:
               messages:
@@ -109,7 +109,7 @@ class AsyncAPICompositionTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/n' }
             components:
               messages:
@@ -163,7 +163,7 @@ class AsyncAPICompositionTest {
                   M: { ${'$'}ref: '#/components/messages/M' }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c' }
             components:
               messages:
@@ -230,7 +230,7 @@ class AsyncAPICompositionTest {
                   RepMsg: { ${'$'}ref: '#/components/messages/RepMsg' }
             operations:
               call:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/req' }
                 reply:
                   channel: { ${'$'}ref: '#/channels/rep' }

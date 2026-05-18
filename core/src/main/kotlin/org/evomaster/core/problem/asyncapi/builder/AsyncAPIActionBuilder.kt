@@ -74,22 +74,32 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         converter: JsonSchemaToGeneConverter
     ): Map<String, List<AsyncAPIAction>> {
 
-        if (op.action != AsyncAPIOperation.Action.SEND) {
-            // RECEIVE operations describe SUT-produced channels. We can't
-            // trigger them directly, but we *can* subscribe and check whether
-            // the SUT publishes anything matching the declared message
-            // shape(s). One SUBSCRIBE_OUTPUT action per RECEIVE operation,
-            // appended by the sampler at the end of each individual.
+        if (op.action != AsyncAPIOperation.Action.RECEIVE) {
+            // SEND operations describe channels the SUT (= the application
+            // defined by this AsyncAPI doc) publishes onto. From the testing
+            // tool's perspective these are observation-only — the SUT
+            // produces messages here as a side effect of its own work, and
+            // we can't trigger them directly. Emit one SUBSCRIBE_OUTPUT
+            // action per SEND operation, appended by the sampler at the
+            // end of each individual.
+            //
+            // (Pre-M10 the SEND/RECEIVE polarity was inverted here — the
+            // builder treated SEND as the engine-publishable channel.
+            // That was inconsistent with AsyncAPI 3.0 §4.5: `action: send`
+            // means "the application sends", i.e. the SUT publishes; and
+            // `action: receive` means "the application receives", i.e. the
+            // SUT consumes. The Meridian + Microcks real-schema validation
+            // pass surfaced the inversion; this branch now follows the spec.)
             val channel = schema.channels[op.channelName]
                 ?: throw SutProblemException("AsyncAPI operation '${op.name}' references missing channel '${op.channelName}'")
             val channelAddress = channel.address
                 ?: throw SutProblemException("AsyncAPI channel '${channel.name}' has no address; cannot subscribe")
             val resolvedIds = resolveMessageIds(op, channel)
             if (resolvedIds.isEmpty()) {
-                // Receive ops without a declared message shape can still be
-                // listened to ("did anything arrive?"), so fall back to an
-                // empty message-id list rather than rejecting the operation.
-                log.debug("RECEIVE operation '{}' has no resolvable message ids; emitting bare SUBSCRIBE_OUTPUT", op.name)
+                // Bare SEND channels (no declared message shape) can still
+                // be listened to ("did anything arrive?"), so fall back to
+                // an empty message-id list rather than rejecting the op.
+                log.debug("SEND operation '{}' has no resolvable message ids; emitting bare SUBSCRIBE_OUTPUT", op.name)
             }
             val primaryId = resolvedIds.firstOrNull() ?: ""
             val alternativeIds = if (resolvedIds.size > 1) resolvedIds.drop(1) else emptyList()
@@ -107,6 +117,11 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             )
             return mapOf(op.name to listOf(action))
         }
+        // Falls through to the SEND-as-PUBLISH path → flipped: RECEIVE-as-PUBLISH.
+        // The SUT receives on this channel, so the engine publishes here to
+        // trigger SUT consumer code. Variable names retain "publish*" prefix
+        // since the engine's behaviour is unchanged; only the schema label
+        // that drives this branch flipped.
 
         val channel = schema.channels[op.channelName]
             ?: throw SutProblemException("AsyncAPI operation '${op.name}' references missing channel '${op.channelName}'")

@@ -33,7 +33,7 @@ channels:
 
 operations:
   sendNcsRequest:
-    action: send
+    action: receive
     channel:
       $ref: '#/channels/requestsNcs'
     messages:

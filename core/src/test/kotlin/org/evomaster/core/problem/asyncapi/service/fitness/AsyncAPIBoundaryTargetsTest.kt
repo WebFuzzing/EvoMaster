@@ -31,7 +31,7 @@ class AsyncAPIBoundaryTargetsTest {
                 ${'$'}ref: '#/components/messages/M'
         operations:
           publishCommand:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/inbound' }
             messages:
               - ${'$'}ref: '#/channels/inbound/messages/M'
@@ -93,7 +93,7 @@ class AsyncAPIBoundaryTargetsTest {
                 messages: { M: { ${'$'}ref: '#/components/messages/M' } }
             operations:
               op:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/c' }
                 messages: [ { ${'$'}ref: '#/channels/c/messages/M' } ]
             components:
