@@ -35,7 +35,7 @@ class AsyncAPIHeadersBuilderTest {
                     ${'$'}ref: '#/components/messages/M'
             operations:
               publishEvent:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/inbound' }
                 messages:
                   - ${'$'}ref: '#/channels/inbound/messages/M'

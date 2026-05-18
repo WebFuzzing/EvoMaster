@@ -30,7 +30,7 @@ class AsyncAPIFieldPresenceTargetsTest {
                 ${'$'}ref: '#/components/messages/M'
         operations:
           publishCommand:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/inbound' }
             messages:
               - ${'$'}ref: '#/channels/inbound/messages/M'

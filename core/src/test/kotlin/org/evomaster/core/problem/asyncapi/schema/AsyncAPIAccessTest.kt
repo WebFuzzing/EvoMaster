@@ -28,10 +28,10 @@ class AsyncAPIAccessTest {
         assertEquals("requests.ncs", channels["requestsNcs"]!!.address)
         assertEquals(listOf("RequestMessage"), channels["requestsNcs"]!!.messageIds)
 
-        // operations: send + reply binding
+        // operations: receive (SUT consumes from the request channel) + reply binding
         val send = schema.operations["sendNcsRequest"]
         assertNotNull(send)
-        assertEquals(AsyncAPIOperation.Action.SEND, send!!.action)
+        assertEquals(AsyncAPIOperation.Action.RECEIVE, send!!.action)
         assertEquals("requestsNcs", send.channelName)
         assertNotNull(send.reply)
         assertEquals(listOf("responsesNcs"), send.reply!!.channelNames)

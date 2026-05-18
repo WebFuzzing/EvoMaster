@@ -30,7 +30,7 @@ class AsyncAPIMultiMessageTest {
               OrderCancelled: { ${'$'}ref: '#/components/messages/OrderCancelled' }
         operations:
           publishOrderEvent:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/inbound' }
             messages:
               - ${'$'}ref: '#/channels/inbound/messages/OrderCreated'

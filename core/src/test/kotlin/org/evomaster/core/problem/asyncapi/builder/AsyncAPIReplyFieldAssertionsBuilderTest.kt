@@ -33,7 +33,7 @@ class AsyncAPIReplyFieldAssertionsBuilderTest {
                   RepMsg: { ${'$'}ref: '#/components/messages/RepMsg' }
             operations:
               callOrder:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/req' }
                 reply:
                   channel: { ${'$'}ref: '#/channels/rep' }
@@ -92,7 +92,7 @@ class AsyncAPIReplyFieldAssertionsBuilderTest {
                   RepMsg: { ${'$'}ref: '#/components/messages/RepMsg' }
             operations:
               call:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/req' }
                 reply:
                   channel: { ${'$'}ref: '#/channels/rep' }

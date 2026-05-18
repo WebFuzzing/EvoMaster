@@ -36,7 +36,7 @@ class AsyncAPIChannelParametersTest {
                   enum: [acme, globex, initech]
         operations:
           publishOrder:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/tenantOrders' }
             messages:
               - ${'$'}ref: '#/channels/tenantOrders/messages/M'

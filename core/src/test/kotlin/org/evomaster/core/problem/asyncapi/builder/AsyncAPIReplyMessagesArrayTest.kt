@@ -33,7 +33,7 @@ class AsyncAPIReplyMessagesArrayTest {
               Queued:    { ${'$'}ref: '#/components/messages/Queued' }
         operations:
           submit:
-            action: send
+            action: receive
             channel: { ${'$'}ref: '#/channels/inbound' }
             messages:
               - ${'$'}ref: '#/channels/inbound/messages/Request'

@@ -69,12 +69,13 @@ class AsyncAPIActionBuilderTest {
     }
 
     @Test
-    fun receiveOnlyOperationsProduceSubscribeOutput() {
-        // Hand-roll a schema with a single `receive` operation and confirm the
-        // builder emits one SUBSCRIBE_OUTPUT action. RECEIVE describes a
-        // SUT-produced channel (under the codebase's convention) which the
-        // M9-PR4 output-observation oracle subscribes to; previously it was
-        // silently dropped.
+    fun sendOnlyOperationsProduceSubscribeOutput() {
+        // Hand-roll a schema with a single `send` operation and confirm the
+        // builder emits one SUBSCRIBE_OUTPUT action. Per AsyncAPI 3.0
+        // §4.5, `action: send` means the application (= SUT) sends — i.e.
+        // the channel is SUT-produced and the testing tool can only
+        // observe it. The M9-PR4 output-observation oracle picks these
+        // up; previously they were silently dropped.
         val asyncapi = """
             asyncapi: 3.0.0
             info: { title: t, version: 1 }
@@ -86,7 +87,7 @@ class AsyncAPIActionBuilderTest {
                     ${'$'}ref: '#/components/messages/M'
             operations:
               recvOnly:
-                action: receive
+                action: send
                 channel: { ${'$'}ref: '#/channels/outbound' }
             components:
               messages:
@@ -103,7 +104,7 @@ class AsyncAPIActionBuilderTest {
 
         val actions = built.operations["recvOnly"]
         assertNotNull(actions)
-        assertEquals(1, actions!!.size, "RECEIVE op should produce one SUBSCRIBE_OUTPUT action")
+        assertEquals(1, actions!!.size, "SEND op should produce one SUBSCRIBE_OUTPUT action")
         assertEquals(AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT, actions[0].kind)
         assertEquals("out.topic", actions[0].channelAddress)
     }
@@ -122,7 +123,7 @@ class AsyncAPIActionBuilderTest {
                     ${'$'}ref: '#/components/messages/M'
             operations:
               fireAndForget:
-                action: send
+                action: receive
                 channel: { ${'$'}ref: '#/channels/inbound' }
             components:
               messages:
