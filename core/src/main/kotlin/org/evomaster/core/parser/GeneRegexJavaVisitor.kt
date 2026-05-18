@@ -140,7 +140,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 val remainingGenes = mutableListOf<Gene>()
                 for (j in i + 1 until ctx.term().size) {
                     val resTerm = ctx.term()[j].accept(this)
-                    resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                    remainingGenes.addAll(resTerm.genes)
                 }
 
                 currentFlags = previous
@@ -150,10 +150,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             }
 
             val resTerm = ctx.term()[i].accept(this)
-            val gene = resTerm.genes.firstOrNull()
 
-            if(gene != null) {
-                res.genes.add(gene)
+            if(resTerm.genes.isNotEmpty()) {
+                res.genes.addAll(resTerm.genes)
             } else {
 
                 val assertion = resTerm.data as String
@@ -187,18 +186,28 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         val resAtom = ctx.atom().accept(this)
-        val atom = resAtom.genes.firstOrNull()
-                ?: return res
+
+        if (resAtom.genes.isEmpty()) {
+            return res
+        }
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
-            val q = QuantifierRxGene("q", atom, limits.first, limits.second)
+
+            // this is done so that visits that result in multiple genes (like a backref that interprets some
+            // digits literally) work as expected, only applying quantifier to last gene
+
+            // add all genes to result, except for last gene
+            res.genes.addAll(resAtom.genes.dropLast(1))
+
+            // the last gene gets wrapped with the quantifier gene, then that gets added to result
+            val q = QuantifierRxGene("q", resAtom.genes.last(), limits.first, limits.second)
 
             res.genes.add(q)
 
         } else {
-            res.genes.add(atom)
+            res.genes.addAll(resAtom.genes)
         }
 
         return res
@@ -521,14 +530,33 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         // unnamed backreference \N (N number)
         if (ctx.BackReference() != null) {
-            val n = txt.drop(1).toInt()  // strip leading \
-            if (n < 1 || n > captureGroups.size) {
-                throw IllegalStateException(
-                    "Backreference \\$n refers to group $n but only ${captureGroups.size} " +
+            val allDigits = txt.drop(1)
+            val maxDigits = captureGroups.size.toString().length
+
+            // In Java, multi-digit back references interprets trailing digits literally, see more:
+            // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#groupname:~:text=the%20parser%20will-,drop%20digits,-until%20the%20number
+            val backRefDigitCount = when {
+                maxDigits > allDigits.length -> allDigits.length
+                allDigits.take(maxDigits).toInt() <= captureGroups.size -> maxDigits
+                maxDigits > 1 -> maxDigits - 1
+                else -> throw IllegalStateException(
+                    "Backreference ${txt.take(2)} refers to group ${allDigits[0]} but only ${captureGroups.size} " +
                             "capture group(s) have been defined so far"
                 )
             }
-            return VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]!!))
+
+            val n = allDigits.take(backRefDigitCount).toInt()
+
+            val result = VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]!!))
+
+            val remainingChars = allDigits.drop(backRefDigitCount)
+
+            for (char in remainingChars) {
+                // we add the remaining digits as pattern genes to result as these should be interpreted literally
+                result.genes.add(PatternCharacterBlockGene(char.toString(), char.toString()))
+            }
+
+            return result
         }
 
         // named backreference \k<name>
