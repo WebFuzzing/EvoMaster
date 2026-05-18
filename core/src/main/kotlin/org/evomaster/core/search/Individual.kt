@@ -12,6 +12,7 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -231,6 +232,12 @@ abstract class Individual(
      */
     fun seeFullTreeGenes(filter: ActionFilter = ActionFilter.ALL) : List<Gene>{
         return seeTopGenes(filter).flatMap { it.flatView() }
+    }
+
+    fun getAllActiveUsedExamples() : List<Gene>  {
+        return seeFullTreeGenes()
+            .filter { it is UserExamplesGene && it.isUsedForExamples() }
+            .filter { it.staticCheckIfImpactPhenotype() }
     }
 
     /**
