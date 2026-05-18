@@ -77,8 +77,14 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
 
         if (operationTemplates.isEmpty()) {
             throw SutProblemException(
-                "No usable AsyncAPI operations found in schema at $schemaUrl." +
-                        " Only `send`/`request` operations are exercisable."
+                "No triggerable AsyncAPI operations found in schema at $schemaUrl." +
+                        " The engine drives the SUT via `action: receive` operations" +
+                        " (= channels the SUT consumes from); this schema only declares" +
+                        " `action: send` operations, which are observation-only and produce" +
+                        " SUBSCRIBE_OUTPUT actions without PUBLISH counterparts." +
+                        " Pick a schema that declares at least one `action: receive`" +
+                        " operation, or extend the SUT's contract to declare its input" +
+                        " channels."
             )
         }
 
