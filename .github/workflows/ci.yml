@@ -43,7 +43,7 @@ env:
   build-jdk: 17
   java-distribution: temurin
   retention-days: 5
-  debug: false  # put to true if need to debug a specific test
+  debug: true  # put to true if need to debug a specific test
   debugTestName: "SamplerVerifierTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
