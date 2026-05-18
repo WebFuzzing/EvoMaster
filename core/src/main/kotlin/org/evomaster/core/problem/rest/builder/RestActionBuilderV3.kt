@@ -1427,8 +1427,7 @@ object RestActionBuilderV3 {
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
-            messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle allOf and oneOf at same time for a schema with name $name")
         }
 
         val oneOf = schema.oneOf?.map { s->
@@ -1436,8 +1435,7 @@ object RestActionBuilderV3 {
         }
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
-            messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
         }
 
         if (!allOf.isNullOrEmpty()){
