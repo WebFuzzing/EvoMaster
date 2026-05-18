@@ -28,46 +28,53 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
     @Disabled
     @Test
     fun testRunDeterministic(){
-        testRunEM("DETERMINISTIC")
+        testRunEM(AIResponseClassifierModel.DETERMINISTIC)
     }
 
     @Disabled
     @Test
     fun testRunGaussian(){
-        testRunEM("GAUSSIAN")
+        testRunEM(AIResponseClassifierModel.GAUSSIAN)
     }
 
     @Disabled
     @Test
     fun testRunGLM(){
-        testRunEM("GLM")
+        testRunEM(AIResponseClassifierModel.GLM)
     }
 
     @Disabled
     @Test
     fun testRunKDE(){
-        testRunEM("KDE")
+        testRunEM(AIResponseClassifierModel.KDE)
     }
 
     @Disabled
     @Test
     fun testRunKNN(){
-        testRunEM("KNN")
+        testRunEM(AIResponseClassifierModel.KNN)
     }
 
     @Disabled
     @Test
     fun testRunNN(){
-        testRunEM("NN")
+        testRunEM(AIResponseClassifierModel.NN)
     }
-
 
     @Test
     fun testRunEnsemble(){
-        testRunEM("GAUSSIAN,GLM,KDE,KNN,NN")
+        testRunEM(
+            AIResponseClassifierModel.GAUSSIAN,
+            AIResponseClassifierModel.GLM,
+            AIResponseClassifierModel.KDE,
+            AIResponseClassifierModel.KNN,
+            AIResponseClassifierModel.NN
+        )
     }
 
-    private fun testRunEM(model: String) {
+    private fun testRunEM(vararg models: AIResponseClassifierModel) {
+
+        val modelString = models.joinToString(",") { it.name }
 
         runTestHandlingFlakyAndCompilation(
             "ACRequiredEM",
@@ -75,7 +82,7 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
-            args.add("$model")
+            args.add(modelString)
 
             val (injector, solution) = initAndDebug(args)
 
