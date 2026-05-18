@@ -87,11 +87,19 @@ object AsyncAPIAccess {
 
         val defaultContentType = root.get("defaultContentType")?.asText() ?: "application/json"
         val servers = parseServers(root.get("servers"))
-        val componentMessages = parseComponentMessages(root, defaultContentType)
+        val componentMessagesFromComponents = parseComponentMessages(root, defaultContentType)
         val componentSchemas = parseComponentSchemas(root)
         val securitySchemes = parseSecuritySchemes(root)
-        val channels = parseChannels(root.get("channels"))
-        val operations = parseOperations(root.get("operations"))
+
+        // parseChannels populates channel.messageKeyMap (channel-local key →
+        // component message id) and surfaces inline message bodies as
+        // synthetic component messages so AsyncAPISchema.messages stays the
+        // single source of truth downstream.
+        val syntheticInlineMessages = LinkedHashMap<String, AsyncAPIMessage>()
+        val channels = parseChannels(root.get("channels"), defaultContentType, syntheticInlineMessages)
+        val componentMessages = componentMessagesFromComponents + syntheticInlineMessages
+
+        val operations = parseOperations(root.get("operations"), channels)
 
         return AsyncAPISchema(
             rawText = schemaText,
@@ -200,37 +208,105 @@ object AsyncAPIAccess {
         return out
     }
 
-    private fun parseChannels(node: JsonNode?): Map<String, AsyncAPIChannel> {
+    private fun parseChannels(
+        node: JsonNode?,
+        defaultContentType: String,
+        syntheticInlineMessages: MutableMap<String, AsyncAPIMessage>
+    ): Map<String, AsyncAPIChannel> {
         if (node == null || !node.isObject) return emptyMap()
         val out = LinkedHashMap<String, AsyncAPIChannel>()
-        node.fields().forEach { (key, channel) ->
+        node.fields().forEach { (channelKey, channel) ->
             // AsyncAPI 3.0 §4.4.4: `address` is optional. When omitted, the
             // channel-key name is the de-facto address (e.g. Microcks's
             // `service-changes` channel has no explicit address but the Kafka
             // topic name is `service-changes`). Defaulting here keeps every
             // downstream consumer of `AsyncAPIChannel.address` simple — the
             // model invariant is "address is always non-null".
-            val address = channel.get("address")?.asText()?.takeIf { it.isNotBlank() } ?: key
-            val messages = channel.get("messages")
+            val address = channel.get("address")?.asText()?.takeIf { it.isNotBlank() } ?: channelKey
             val messageIds = mutableListOf<String>()
-            messages?.fields()?.forEach { (_, ref) ->
-                resolveLocalRef(ref, LOCAL_MESSAGE_REF_PREFIX)?.let { messageIds.add(it) }
+            // Local message key (the channel-scoped key like `error`) →
+            // component message id (which may differ, e.g. `errorMessage`).
+            // Operations reference messages as `#/channels/<chan>/messages/<localKey>`;
+            // we resolve the local key through this map to find the actual
+            // component message id during operation parsing.
+            val messageKeyMap = LinkedHashMap<String, String>()
+            channel.get("messages")?.fields()?.forEach { (localKey, msgNode) ->
+                val refTarget = resolveLocalRef(msgNode, LOCAL_MESSAGE_REF_PREFIX)
+                if (refTarget != null) {
+                    // Component-message reference: channel-local key may
+                    // differ from the component id.
+                    if (refTarget !in messageIds) messageIds.add(refTarget)
+                    messageKeyMap[localKey] = refTarget
+                } else if (msgNode != null && msgNode.isObject && msgNode.get("\$ref") == null) {
+                    // Inline message body — promote to a synthetic component
+                    // message so AsyncAPISchema.messages stays the single
+                    // source of truth. Synthetic id is `<channelKey>__<localKey>`
+                    // (double-underscore is not used in any real-world message
+                    // id pattern observed in the May-2026 corpus, so the
+                    // mangling is collision-safe in practice).
+                    val syntheticId = "${channelKey}__${localKey}"
+                    if (syntheticId !in syntheticInlineMessages) {
+                        syntheticInlineMessages[syntheticId] = inlineMessageToModel(syntheticId, msgNode, defaultContentType)
+                    }
+                    if (syntheticId !in messageIds) messageIds.add(syntheticId)
+                    messageKeyMap[localKey] = syntheticId
+                }
             }
             val parameters = LinkedHashMap<String, JsonNode>()
             channel.get("parameters")?.takeIf { it.isObject }?.fields()?.forEach { (paramName, paramNode) ->
                 parameters[paramName] = paramNode
             }
-            out[key] = AsyncAPIChannel(
-                name = key,
+            out[channelKey] = AsyncAPIChannel(
+                name = channelKey,
                 address = address,
                 messageIds = messageIds,
-                parameters = parameters
+                parameters = parameters,
+                messageKeyMap = messageKeyMap
             )
         }
         return out
     }
 
-    private fun parseOperations(node: JsonNode?): Map<String, AsyncAPIOperation> {
+    /**
+     * Convert an inline message definition (the `payload`/`headers`/`bindings`/
+     * `correlationId` object that AsyncAPI 3.0 lets channels declare directly,
+     * without a `$ref` indirection) into the same internal [AsyncAPIMessage]
+     * model produced for `components.messages` entries. Lets downstream code
+     * (the gene builder, the fitness layer, the writer) stay agnostic to where
+     * the message was authored.
+     */
+    private fun inlineMessageToModel(
+        syntheticId: String,
+        message: JsonNode,
+        defaultContentType: String
+    ): AsyncAPIMessage {
+        val payload = message.get("payload")
+        val payloadRefRaw = payload?.get("\$ref")?.asText()
+        val payloadRef = payloadRefRaw?.removePrefix(LOCAL_SCHEMA_REF_PREFIX)?.takeIf { it != payloadRefRaw }
+        val payloadInline = if (payload != null && payloadRef == null) payload else null
+        val correlationLocation = message.get("correlationId")?.get("location")?.asText()
+        val headers = message.get("headers")
+        val headersRefRaw = headers?.get("\$ref")?.asText()
+        val headersRef = headersRefRaw?.removePrefix(LOCAL_SCHEMA_REF_PREFIX)?.takeIf { it != headersRefRaw }
+        val headersInline = if (headers != null && headersRef == null) headers else null
+        val kafkaKey = message.get("bindings")?.get("kafka")?.get("key")
+        return AsyncAPIMessage(
+            id = syntheticId,
+            name = message.get("name")?.asText() ?: syntheticId,
+            contentType = message.get("contentType")?.asText() ?: defaultContentType,
+            correlationLocation = correlationLocation,
+            payloadSchemaRef = payloadRef,
+            payloadInline = payloadInline,
+            headersSchemaRef = headersRef,
+            headersInline = headersInline,
+            kafkaKeyInline = kafkaKey
+        )
+    }
+
+    private fun parseOperations(
+        node: JsonNode?,
+        channels: Map<String, AsyncAPIChannel>
+    ): Map<String, AsyncAPIOperation> {
         if (node == null || !node.isObject) return emptyMap()
         val out = LinkedHashMap<String, AsyncAPIOperation>()
         node.fields().forEach { (key, op) ->
@@ -249,7 +325,13 @@ object AsyncAPIAccess {
             val channelName = resolveLocalRef(channelRef, LOCAL_CHANNEL_REF_PREFIX)
                 ?: throw SutProblemException("AsyncAPI operation '$key' has unresolved channel reference")
 
-            val messageIds = collectOperationMessageIds(op.get("messages"))
+            // Resolve operation-level message refs through the channel's
+            // local-key → component-id map. Operations may reference messages
+            // either by their channel-local key (the AsyncAPI 3.0 form
+            // `#/channels/<chan>/messages/<localKey>`) or by their component
+            // id; both forms now work.
+            val opChannel = channels[channelName]
+            val messageIds = collectOperationMessageIds(op.get("messages"), opChannel)
 
             val replyNode = op.get("reply")
             val reply = if (replyNode != null) {
@@ -258,7 +340,7 @@ object AsyncAPIAccess {
                     ?: throw SutProblemException("AsyncAPI operation '$key' has reply with no/unresolved channel")
                 ReplyBinding(
                     channelNames = listOf(replyChannel),
-                    messageIds = collectOperationMessageIds(replyNode.get("messages"))
+                    messageIds = collectOperationMessageIds(replyNode.get("messages"), channels[replyChannel])
                 )
             } else null
 
@@ -294,19 +376,25 @@ object AsyncAPIAccess {
         return out
     }
 
-    private fun collectOperationMessageIds(messagesNode: JsonNode?): List<String> {
+    private fun collectOperationMessageIds(
+        messagesNode: JsonNode?,
+        channel: AsyncAPIChannel?
+    ): List<String> {
         if (messagesNode == null || !messagesNode.isArray) return emptyList()
         val out = mutableListOf<String>()
         messagesNode.forEach { entry ->
             // Operation-level messages reference channel-level message keys, e.g.
             //   #/channels/<channelKey>/messages/<messageKey>
-            // We resolve the trailing path segment and, where possible, map it to
-            // the component-level message id by walking back through the parser.
+            // The trailing path segment is the *channel-local* key, which may
+            // differ from the component-level message id (e.g. Binance's
+            // `error` local key → `errorMessage` component id). Translate
+            // through the channel's messageKeyMap when available; fall back
+            // to the bare tail otherwise so component-id refs still work.
             val ref = entry.get("\$ref")?.asText() ?: return@forEach
-            val tail = ref.substringAfterLast('/')
-            if (tail.isNotEmpty()) {
-                out.add(tail)
-            }
+            val tail = decodeJsonPointer(ref.substringAfterLast('/'))
+            if (tail.isEmpty()) return@forEach
+            val resolved = channel?.messageKeyMap?.get(tail) ?: tail
+            out.add(resolved)
         }
         return out
     }
@@ -315,8 +403,18 @@ object AsyncAPIAccess {
         if (node == null) return null
         val ref = node.get("\$ref")?.asText() ?: return null
         if (!ref.startsWith(expectedPrefix)) return null
-        return ref.removePrefix(expectedPrefix)
+        return decodeJsonPointer(ref.removePrefix(expectedPrefix))
     }
+
+    /**
+     * Decode JSON-Pointer escapes per RFC 6901: `~1` → `/`, `~0` → `~`.
+     * Spec-conformant schemas use this whenever a path segment contains a
+     * literal `/` (e.g. WhiteBIT's `/ws` channel is referenced as
+     * `#/channels/~1ws`). The replacement order matters — `~0` must run
+     * after `~1` so we don't unescape too eagerly.
+     */
+    private fun decodeJsonPointer(segment: String): String =
+        segment.replace("~1", "/").replace("~0", "~")
 
     private fun readFromRemoteServer(url: String): String {
         val response = connectToServer(url, attempts = 10)
