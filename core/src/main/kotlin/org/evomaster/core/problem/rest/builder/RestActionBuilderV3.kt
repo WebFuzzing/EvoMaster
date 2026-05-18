@@ -1369,12 +1369,11 @@ object RestActionBuilderV3 {
     }
 
     /**
-     *
      * handled constraints include
      *      - allOf
      *      - anyOf
      *      - oneOf
-     *      - not (OpenAPI not support this yet)
+     *      - not
      */
     private fun assembleObjectGeneWithConstraints(
         name: String,
@@ -1394,16 +1393,36 @@ object RestActionBuilderV3 {
             https://spec.openapis.org/oas/latest.html#discriminator-object
          */
 
-        if (!options.enableConstraintHandling)
+        if (!options.enableConstraintHandling){
             return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+        }
+
+        /*
+            THIS IS VERY TRICKY
+            in theory, the use of allOf/anyOf/oneOf/not provides a rich language where many different kinds of
+            constraints can be specified.
+            this is the case when "const" is used in schemas to specify particular values, e.g., oneOf could be then
+            used to specify only particular combinations of field values.
+            the use of "const" is also quite tricky with "not", as can use to say some specific value combinations are not valid.
+            furthermore, those keywords are NOT mutually exclusive.
+
+            support all possible constraint would be a GIGANTIC piece of work... yet, these kinds of constraints do
+            not seem so common, apart for allOf on merging fields.
+            TODO we should have full support, but not high priority task
+         */
+
+        /*
+            A further complication is how to use, and interpret, "examples" values (if any).
+            Eg. what to nested referenced $ref objects that have on examples?
+            should those be merged/hanled like the fields?
+            TODO possibly something to handle (but again, not high priority)
+         */
 
         val allOf = schema.allOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         val anyOf = schema.anyOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
@@ -1413,7 +1432,6 @@ object RestActionBuilderV3 {
         }
 
         val oneOf = schema.oneOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options = options, messages = messages)
         }
 
@@ -1423,8 +1441,15 @@ object RestActionBuilderV3 {
         }
 
         if (!allOf.isNullOrEmpty()){
+
+            if(allOf.size == 1){
+                //just use it as it is
+                return allOf[0]
+            }
+
             val allFields = allOf.mapNotNull {
                 when (it) {
+                    is ChoiceGene<*> -> extractOriginalObject(it)?.fields
                     is ObjectGene -> it.fields
                     else -> null
                 }
@@ -1493,6 +1518,19 @@ object RestActionBuilderV3 {
         return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         //TODO not
+    }
+
+    private fun extractOriginalObject(choice: ChoiceGene<*>): ObjectGene? {
+        /*
+            this only makes sense if we are in this case:
+            Choice( Choice(examples), Object)
+            in which we would return Object, null otherwise
+         */
+        val children = choice.getViewOfChildren()
+        if(children.size != 2 || children.none { it is UserExamplesGene && it.isUsedForExamples() }){
+            return null
+        }
+        return children.find { it is ObjectGene } as ObjectGene?
     }
 
     /**
