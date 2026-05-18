@@ -22,6 +22,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertTrue
 import java.io.File
@@ -43,7 +44,7 @@ class SamplerVerifierTest {
     fun debugIssue(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
             //NOTE: can replace with a folder to debug
-            "./src/test/resources/APIs_guru/asuarez.dev/searchly/1.0",
+            "./src/test/resources/APIs_guru/asana.com/1.0",
             "APIs_guru",
             false)
         assertTrue(tests.isNotEmpty())
@@ -134,6 +135,9 @@ class SamplerVerifierTest {
                     so we had to remove it
                  */
                 //System.gc()
+
+                EnumGene.cleanCache() //due to this, these tests cannot be run in parallel
+
                 println("RUNNING: $it") // Surefire sucks at providing info for @TestFactory
                 assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)

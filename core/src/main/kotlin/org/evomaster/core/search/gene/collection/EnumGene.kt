@@ -55,6 +55,14 @@ class EnumGene<T : Comparable<T>>(
 
         private val log: Logger = LoggerFactory.getLogger(EnumGene::class.java)
 
+        /**
+         * This was potential issue in IT where we parse thousands of specs...
+         */
+        fun cleanCache(){
+            synchronized(cache){
+                cache.clear()
+            }
+        }
     }
 
     val values: List<T>
@@ -83,23 +91,23 @@ class EnumGene<T : Comparable<T>>(
             val list = elements
                 .toList() // need ordering to specify index of selection, so Set would not do
                 .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
-                .sorted() //FIXME replace. only for debugging
-//                .run {
-//                    if(valueNames == null){
-//                        sorted() // sort, to make meaningful list comparisons, but only if examples are not named.
-//                                 // otherwise we lose vector alignment
-//                    } else {
-//                        this
-//                    }
-//                }
+                .run {
+                    if(valueNames == null){
+                        sorted() // sort, to make meaningful list comparisons, but only if examples are not named.
+                                 // otherwise we lose vector alignment
+                    } else {
+                        this
+                    }
+                }
 
             /*
                we need to make sure that, if we are adding a list that has content equal to
                an already present list in the cache, we only use this latter
              */
             synchronized(cache) {
-                values = if (cache.contains(list)) {
-                    cache.find { it == list }!! as List<T> // equality based on content, not reference
+                val x = cache.find { it == list } // equality based on content, not reference
+                values = if (x != null) {
+                    x as List<T>
                 } else {
                     cache.add(list)
                     list
