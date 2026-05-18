@@ -12,6 +12,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.WarningsAggregator
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.sql.schema.TableId
@@ -26,6 +27,10 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
 
     @Inject(optional = true)
     protected lateinit var rc: RemoteController
+
+    @Inject
+    protected lateinit var warningsAggregator: WarningsAggregator
+
 
     protected val derivedParamHandler = DerivedParamHandler()
 

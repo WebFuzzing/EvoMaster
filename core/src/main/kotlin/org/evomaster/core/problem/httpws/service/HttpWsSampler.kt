@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.httpws.service
 
+import com.google.inject.Inject
 import com.webfuzzing.commons.auth.Header
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -12,6 +13,9 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.search.warning.GeneralWarning
+import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -24,6 +28,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
     }
+
 
     //TODO move up to Enterprise
     val authentications = AuthSettings()
@@ -90,27 +95,28 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     private fun checkAuthSettings(){
         val n = authentications.size()
         if(n==0){
-            LoggingUtil.uniqueUserWarn(
-                "No authentication info was provided." +
+            val msg = "No authentication info was provided." +
                     " Unless you are testing an example API, you should setup some authentication info for different users." +
                     " If this is the first time you are using EvoMaster, and you just want to get a feeling of how it works," +
                     " then ignore this warning." +
                     " However, to get better results, you will need setup authentication info, eventually." +
-                    " More info is currently available at " + AnsiColor.inBlue(EM_AUTH_LINK)
-            )
-        }
-        if(n==1){
+                    " More info is currently available at "
+            LoggingUtil.uniqueUserWarn(msg + AnsiColor.inBlue(EM_AUTH_LINK))
+            warningsAggregator.addWarning(GeneralWarning(WarningCategory.FUZZER, msg + EM_AUTH_LINK))
+
+        }else if(n==1){
+            val msg = "You have provided authentication information only for a single user." +
+                    " Many of the automatic checks done by EvoMaster for access policy validation are based on the" +
+                    " interactions of 2 or more users." +
+                    " To get better results, you are strongly recommended to provide more user authentication info," +
+                    " at the very minimum 2 in total, but better if at least 1 for each different access role you have in your system" +
+                    " that you are testing." +
+                    " More info is currently available at "
+
             //TODO if/when in the future we enable dynamic registration of users, likely we will need to update this
             // warning message
-            LoggingUtil.uniqueUserWarn(
-                "You have provided authentication information only for a single user." +
-                        " Many of the automatic checks done by EvoMaster for access policy validation are based on the" +
-                        " interactions of 2 or more users." +
-                        " To get better results, you are strongly recommended to provide more user authentication info," +
-                        " at the very minimum 2 in total, but better if at least 1 for each different access role you have in your system" +
-                        " that you are testing." +
-                        " More info is currently available at " + AnsiColor.inBlue(EM_AUTH_LINK)
-            )
+            LoggingUtil.uniqueUserWarn(msg + AnsiColor.inBlue(EM_AUTH_LINK))
+            warningsAggregator.addWarning(GeneralWarning(WarningCategory.FUZZER, msg + EM_AUTH_LINK))
         }
     }
 

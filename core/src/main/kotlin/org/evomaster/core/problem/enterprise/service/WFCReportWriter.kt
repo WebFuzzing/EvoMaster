@@ -12,6 +12,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.search.service.WarningsAggregator
 import org.jsoup.Jsoup
 import org.jsoup.nodes.DataNode
 import java.nio.file.Files
@@ -31,6 +32,9 @@ class WFCReportWriter {
 
     @Inject
     private lateinit var sampler: Sampler<*>
+
+    @Inject
+    private lateinit var warningsAggregator: WarningsAggregator
 
     private var lastTestFilePaths: Set<String> = emptySet()
 
@@ -178,6 +182,8 @@ class WFCReportWriter {
                 tc.filePath = suite.testSuitePath
                 tc.startLine = test.startLine
                 tc.endLine = test.endLine
+                tc.namedExamples = test.namedExamples?.toList()
+
                 report.testCases.add(tc)
             }
         }
@@ -234,6 +240,16 @@ class WFCReportWriter {
             report.extra.add(coverage)
         }
 
+        val warnings = warningsAggregator.getWarnings()
+        if(warnings.isNotEmpty()){
+            report.warnings = warnings.map { w ->
+                Warning().apply {
+                    message = w.message
+                    category = w.category.name
+                    displayPriority = w.category.displayPriority
+                }
+            }
+        }
 
         val jackson = ObjectMapper()
         val json = jackson.writeValueAsString(report)
