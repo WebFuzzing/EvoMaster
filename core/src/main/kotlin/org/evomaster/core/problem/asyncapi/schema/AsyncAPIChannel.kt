@@ -24,5 +24,15 @@ data class AsyncAPIChannel(
      * placeholders `{paramName}` reference these.  Empty when the channel
      * has no parameters (the common case).
      */
-    val parameters: Map<String, JsonNode> = emptyMap()
+    val parameters: Map<String, JsonNode> = emptyMap(),
+    /**
+     * Channel-local message key → component-level message id.  AsyncAPI 3.0
+     * lets operations reference messages by their channel-local key
+     * (e.g. `#/channels/spot/messages/error`) where the local key (`error`)
+     * may differ from the underlying component message id (`errorMessage`).
+     * Inline channel messages also live here — their value is the synthetic
+     * component id under which the inline definition was promoted into
+     * [AsyncAPISchema.messages].
+     */
+    val messageKeyMap: Map<String, String> = emptyMap()
 )
