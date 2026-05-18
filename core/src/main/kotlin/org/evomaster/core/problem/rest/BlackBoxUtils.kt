@@ -57,11 +57,28 @@ object BlackBoxUtils {
                     }
                 }
                 EMConfig.ProblemType.ASYNCAPI -> {
-                    // For AsyncAPI black-box, the broker URL is the operational
-                    // target, but the test scaffold's "base URL" string is only
-                    // used for display.  The schema URL is the closest analog
-                    // we have when --bbTargetUrl wasn't specified.
-                    return extractTarget(config.bbAsyncApiUrl)
+                    // For AsyncAPI black-box the broker URL is the only
+                    // operational target the engine needs; the "base URL"
+                    // returned here is just metadata stamped onto generated
+                    // tests for display. Prefer the broker URL whenever the
+                    // schema URL has no usable host:port (e.g. `file://`
+                    // schema), so users can point --bbAsyncApiUrl at a local
+                    // YAML file without also having to set --bbTargetUrl.
+                    val schemaUrl = config.bbAsyncApiUrl
+                    val schemaHasHost = !schemaUrl.startsWith("file:", ignoreCase = true)
+                            && schemaUrl.isNotBlank()
+                    if (schemaHasHost) {
+                        return extractTarget(schemaUrl)
+                    }
+                    // bbBrokerUrl is required for AsyncAPI black-box by
+                    // EMConfig.validateOptions, so it is always non-blank
+                    // here. Return it directly — Kafka's bare `host:port`
+                    // bootstrap format doesn't parse as a URL via java.net.URL,
+                    // and the return value here is only stamped onto the
+                    // generated test scaffold for display, never operationally
+                    // used. The actual broker connection still goes through
+                    // KafkaBrokerClient, which understands bootstrap-servers.
+                    return config.bbBrokerUrl
                 }
                 else -> throw IllegalStateException("Black-box testing is currently not supported for ${config.problemType}")
             }
