@@ -204,7 +204,13 @@ object AsyncAPIAccess {
         if (node == null || !node.isObject) return emptyMap()
         val out = LinkedHashMap<String, AsyncAPIChannel>()
         node.fields().forEach { (key, channel) ->
-            val address = channel.get("address")?.asText()
+            // AsyncAPI 3.0 §4.4.4: `address` is optional. When omitted, the
+            // channel-key name is the de-facto address (e.g. Microcks's
+            // `service-changes` channel has no explicit address but the Kafka
+            // topic name is `service-changes`). Defaulting here keeps every
+            // downstream consumer of `AsyncAPIChannel.address` simple — the
+            // model invariant is "address is always non-null".
+            val address = channel.get("address")?.asText()?.takeIf { it.isNotBlank() } ?: key
             val messages = channel.get("messages")
             val messageIds = mutableListOf<String>()
             messages?.fields()?.forEach { (_, ref) ->
