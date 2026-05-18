@@ -687,6 +687,12 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
                     Key.get(object : TypeLiteral<LIPSAlgorithm<GraphQLIndividual>>() {})
 
@@ -728,6 +734,15 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
 
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
 
@@ -736,6 +751,7 @@ class Main {
 
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
 
@@ -769,6 +785,15 @@ class Main {
 
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<WebIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
@@ -814,13 +839,13 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.StandardGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.MonotonicGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.SteadyStateGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
