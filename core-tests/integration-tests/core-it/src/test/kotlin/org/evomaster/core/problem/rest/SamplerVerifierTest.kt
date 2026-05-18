@@ -43,7 +43,7 @@ class SamplerVerifierTest {
     fun debugIssue(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
             //NOTE: can replace with a folder to debug
-            "./src/test/resources/APIs_guru/velopayments.com/2.26.127",
+            "./src/test/resources/APIs_guru/asuarez.dev/searchly/1.0",
             "APIs_guru",
             false)
         assertTrue(tests.isNotEmpty())

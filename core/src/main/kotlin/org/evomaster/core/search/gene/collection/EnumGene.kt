@@ -83,14 +83,15 @@ class EnumGene<T : Comparable<T>>(
             val list = elements
                 .toList() // need ordering to specify index of selection, so Set would not do
                 .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
-                .run {
-                    if(valueNames == null){
-                        sorted() // sort, to make meaningful list comparisons, but only if examples are not named.
-                                 // otherwise we lose vector alignment
-                    } else {
-                        this
-                    }
-                }
+                .sorted() //FIXME replace. only for debugging
+//                .run {
+//                    if(valueNames == null){
+//                        sorted() // sort, to make meaningful list comparisons, but only if examples are not named.
+//                                 // otherwise we lose vector alignment
+//                    } else {
+//                        this
+//                    }
+//                }
 
             /*
                we need to make sure that, if we are adding a list that has content equal to
