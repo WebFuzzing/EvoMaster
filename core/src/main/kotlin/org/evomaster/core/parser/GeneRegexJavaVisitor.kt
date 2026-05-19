@@ -419,12 +419,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
             val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
-        } else if (ctx.classAtom()[0]?.classAtomNoDash() != null &&
-            (
-                    ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
-                    || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
-                    || ctx.classAtom()[0]?.classAtomNoDash()?.NAMED_CAPTURE_GROUP_OPEN() != null
-                    )
+        } else if (
+                ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
+                || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
+                || ctx.classAtom()[0]?.classAtomNoDash()?.NAMED_CAPTURE_GROUP_OPEN() != null
             ) {
             // these should be interpreted literally within a charclass.
             val ranges = ctx.text.map { ch -> CharacterRange(ch, ch) }
