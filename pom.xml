@@ -1015,8 +1015,6 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
-                        <!-- Issues with memory on GitHub Actions-->
-                        <useDaemon>false</useDaemon>
                     </configuration>
                     <executions>
                         <execution>
