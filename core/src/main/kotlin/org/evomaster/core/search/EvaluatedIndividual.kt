@@ -110,14 +110,25 @@ class EvaluatedIndividual<T>(
                 trackOperator = trackOperator,
                 index = index,
                 impactInfo = if ((config.isEnabledImpactCollection())) {
-                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class }.keys.toList()
+                    val initActionTypes = individual.seeInitializingActions()
+                        .map { Class.forName(it.getActionGroupKey()).kotlin }
+                        .distinct()
                     if (individual is RestIndividual && config.isEnabledResourceDependency())
                         ResourceImpactOfIndividual(individual, initActionTypes, config.abstractInitializationGeneToMutate, fitness)
                     else
-                        ImpactsOfIndividual(individual, initActionTypes , config.abstractInitializationGeneToMutate, fitness)
+                        ImpactsOfIndividual(individual, initActionTypes, config.abstractInitializationGeneToMutate, fitness)
                 } else
                     null
             )
+
+    /**
+     * Returns the impact group key for this action, used to look up entries in [ImpactsOfIndividual.initActionImpacts].
+     * For [EnvironmentAction] subclasses, this delegates to [EnvironmentAction.getActionGroupKey], which allows
+     * abstract base classes (e.g., RedisDbAction) to group all their concrete subtypes under a single key.
+     * For all other actions, falls back to the actual class name.
+     */
+    private fun Action.getInitActionClassName(): String =
+        if (this is EnvironmentAction) this.getActionGroupKey() else this::class.java.name
 
     fun copy(): EvaluatedIndividual<T> {
 
@@ -609,7 +620,9 @@ class EvaluatedIndividual<T>(
     }
 
     /**
-     * sync impact info based on [mutated]
+     * sync impact info based on [mutated].
+     * Uses [Action.getInitActionClassName] to resolve the impact group key, so that
+     * abstract base classes (e.g., RedisDbAction) correctly map all their concrete subtypes.
      */
     private fun syncImpact(previous: Individual, mutated: Individual) {
         // db action
@@ -625,7 +638,7 @@ class EvaluatedIndividual<T>(
                     if (p != null){
                         impactInfo!!.getGene(
                             actionName = action.getName(),
-                            initActionClassName = action::class.java.name,
+                            initActionClassName = action.getInitActionClassName(),
                             geneId = rootGeneId,
                             actionIndex = index,
                             localId = action.getLocalId(),
@@ -751,7 +764,7 @@ class EvaluatedIndividual<T>(
                 action as Action
                 return impactInfo.getGene(
                     actionName = action!!.getName(),
-                    initActionClassName = action!!::class.java.name,
+                    initActionClassName = action!!.getInitActionClassName(),
                     geneId = id,
                     actionIndex = actionList.indexOf(action),
                     localId = null,
@@ -920,14 +933,17 @@ class EvaluatedIndividual<T>(
         impactInfo ?: return null
         if(fromInitialization){
             val initAction = individual.seeInitializingActions()[actionIndex]
-            val relativeIndex = individual.seeInitializingActions().filter { it::class.java.name == initAction::class.java.name }.indexOf(initAction)
+            val impactKey = initAction.getInitActionClassName()
+            val relativeIndex = individual.seeInitializingActions()
+                .filter { it.getInitActionClassName() == impactKey }
+                .indexOf(initAction)
             return impactInfo.findImpactsByAction(
                 actionName = initAction.getName(),
                 actionIndex = relativeIndex,
                 localId = null,
                 fixedIndexedAction = true,
                 fromInitialization = fromInitialization,
-                initActionClass = initAction::class.java.name
+                initActionClass = impactKey
             )
         }
 
@@ -989,6 +1005,7 @@ class EvaluatedIndividual<T>(
         }
         return !invalid
     }
+
     private fun initializingActionClasses(): List<KClass<*>> {
         return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, ScheduleTaskAction::class)
     }

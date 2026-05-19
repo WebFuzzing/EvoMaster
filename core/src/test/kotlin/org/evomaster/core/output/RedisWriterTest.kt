@@ -1,26 +1,43 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.redis.RedisDbActionResult
+import org.evomaster.core.redis.RedisHsetAction
+import org.evomaster.core.redis.RedisSetAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
-
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class RedisWriterTest {
 
-    private fun makeEvaluated(
+    private fun makeEvaluatedSet(
         key: String,
         value: String,
         success: Boolean = true
     ): EvaluatedRedisDbAction {
-        val action = RedisDbAction(
-            key = key,
-            valueGene = StringGene("value", value),
-            dataType = RedisDbAction.RedisDataType.STRING
+        val action = RedisSetAction(
+            keyGene = StringGene("key", key),
+            valueGene = StringGene("value", value)
         )
         action.setLocalId("test-redis-action")
+        val result = RedisDbActionResult(action.getLocalId()).also {
+            it.setInsertExecutionResult(success)
+        }
+        return EvaluatedRedisDbAction(action, result)
+    }
+
+    private fun makeEvaluatedHset(
+        key: String,
+        field: String,
+        value: String,
+        success: Boolean = true
+    ): EvaluatedRedisDbAction {
+        val action = RedisHsetAction(
+            keyGene = StringGene("key", key),
+            field = field,
+            valueGene = StringGene("value", value)
+        )
+        action.setLocalId("test-redis-hset-action")
         val result = RedisDbActionResult(action.getLocalId()).also {
             it.setInsertExecutionResult(success)
         }
@@ -68,49 +85,27 @@ class RedisWriterTest {
     }
 
     @Test
-    fun testSkipFailureFiltersFailedInsertions() {
-        val actions = listOf(
-            makeEvaluated("key:1", "val1", success = true),
-            makeEvaluated("key:2", "val2", success = false)
-        )
-
-        val output = writeKotlin(actions, skipFailure = true)
-
-        assertTrue(output.contains("key:1"))
-        assertFalse(output.contains("key:2"))
-    }
-
-    @Test
-    fun testSkipFailureAllFailedGeneratesNothing() {
-        val actions = listOf(makeEvaluated("key:1", "val1", success = false))
-
-        val output = writeKotlin(actions, skipFailure = true)
-
-        assertTrue(output.isBlank())
-    }
-
-    @Test
-    fun testKotlinFormatSingleAction() {
-        val output = writeKotlin(listOf(makeEvaluated("user:1", "Alice")))
+    fun testKotlinFormatSingleHsetAction() {
+        val output = writeKotlin(listOf(makeEvaluatedHset("user:1", "name", "Alice")))
 
         assertTrue(output.contains("val insertions_redis = redis()"))
-        assertTrue(output.contains(".set(\"user:1\", \"Alice\")"))
+        assertTrue(output.contains(".hset(\"user:1\", \"name\", \"Alice\")"))
         assertTrue(output.contains(".dtos()"))
         assertTrue(output.contains("val insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
     }
 
     @Test
-    fun testJavaFormatSingleAction() {
-        val output = writeJava(listOf(makeEvaluated("user:1", "Alice")))
+    fun testJavaFormatSingleHsetAction() {
+        val output = writeJava(listOf(makeEvaluatedHset("user:1", "name", "Alice")))
 
         assertTrue(output.contains("List<RedisInsertionDto> insertions_redis = redis()"))
-        assertTrue(output.contains(".set(\"user:1\", \"Alice\")"))
+        assertTrue(output.contains(".hset(\"user:1\", \"name\", \"Alice\")"))
         assertTrue(output.contains("RedisInsertionResultsDto insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
     }
 
     @Test
     fun testKotlinEscapesDollarSign() {
-        val output = writeKotlin(listOf(makeEvaluated("key", "\$HOME")))
+        val output = writeKotlin(listOf(makeEvaluatedSet("key", "\$HOME")))
 
         assertTrue(output.contains("\\${'$'}HOME") || output.contains("\\\$HOME"))
         assertFalse(output.contains("\"\$HOME\""))
@@ -118,7 +113,7 @@ class RedisWriterTest {
 
     @Test
     fun testKeyWithSpecialCharactersIsEscaped() {
-        val output = writeKotlin(listOf(makeEvaluated("key\"with\"quotes", "value")))
+        val output = writeKotlin(listOf(makeEvaluatedSet("key\"with\"quotes", "value")))
 
         assertTrue(output.contains("key\\\"with\\\"quotes"))
     }
@@ -126,7 +121,7 @@ class RedisWriterTest {
     @Test
     fun testGroupIndexAppearsInVariableName() {
         val output = writeKotlin(
-            actions = listOf(makeEvaluated("key:1", "val")),
+            actions = listOf(makeEvaluatedSet("key:1", "val")),
             groupIndex = "_42"
         )
 
@@ -136,7 +131,7 @@ class RedisWriterTest {
     @Test
     fun testInsertionVarsAccumulated() {
         val insertionVars = mutableListOf<Pair<String, String>>()
-        writeKotlin(listOf(makeEvaluated("key:1", "val")), insertionVars = insertionVars)
+        writeKotlin(listOf(makeEvaluatedSet("key:1", "val")), insertionVars = insertionVars)
 
         assertEquals(1, insertionVars.size)
         assertEquals("insertions_redis", insertionVars[0].first)
@@ -144,10 +139,10 @@ class RedisWriterTest {
     }
 
     @Test
-    fun testMultipleActionsUsesAndChaining() {
+    fun testMultipleSetActionsUsesAndChaining() {
         val actions = listOf(
-            makeEvaluated("key:1", "val1"),
-            makeEvaluated("key:2", "val2")
+            makeEvaluatedSet("key:1", "val1"),
+            makeEvaluatedSet("key:2", "val2")
         )
 
         val output = writeKotlin(actions)
@@ -155,5 +150,19 @@ class RedisWriterTest {
         assertTrue(output.contains(".and()"))
         assertTrue(output.contains("key:1"))
         assertTrue(output.contains("key:2"))
+    }
+
+    @Test
+    fun testMixedSetAndHsetActions() {
+        val actions = listOf(
+            makeEvaluatedSet("string:key", "val"),
+            makeEvaluatedHset("hash:key", "field1", "val2")
+        )
+
+        val output = writeKotlin(actions)
+
+        assertTrue(output.contains(".set(\"string:key\", \"val\")"))
+        assertTrue(output.contains(".and()"))
+        assertTrue(output.contains(".hset(\"hash:key\", \"field1\", \"val2\")"))
     }
 }

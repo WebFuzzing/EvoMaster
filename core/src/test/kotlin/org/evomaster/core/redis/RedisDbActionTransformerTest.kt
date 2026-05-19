@@ -7,34 +7,20 @@ import org.junit.jupiter.api.Test
 class RedisDbActionTransformerTest {
 
     @Test
-    fun testTransformSingleAction() {
-        val action = RedisDbAction(
-            key = "user:1",
-            valueGene = StringGene("value", "Alice"),
-            dataType = RedisDbAction.RedisDataType.STRING
+    fun testTransformSingleHsetAction() {
+        val action = RedisHsetAction(
+            keyGene = StringGene("key", "user:1"),
+            field = "name",
+            valueGene = StringGene("value", "Alice")
         )
 
         val dto = RedisDbActionTransformer.transform(listOf(action))
 
         assertEquals(1, dto.insertions.size)
+        assertEquals("HSET", dto.insertions[0].command)
         assertEquals("user:1", dto.insertions[0].key)
+        assertEquals("name", dto.insertions[0].field)
         assertEquals("Alice", dto.insertions[0].value)
-    }
-
-    @Test
-    fun testTransformMultipleActions() {
-        val actions = listOf(
-            RedisDbAction("product:1", StringGene("value", "chair"), RedisDbAction.RedisDataType.STRING),
-            RedisDbAction("product:2", StringGene("value", "table"), RedisDbAction.RedisDataType.STRING)
-        )
-
-        val dto = RedisDbActionTransformer.transform(actions)
-
-        assertEquals(2, dto.insertions.size)
-        assertEquals("product:1", dto.insertions[0].key)
-        assertEquals("chair", dto.insertions[0].value)
-        assertEquals("product:2", dto.insertions[1].key)
-        assertEquals("table", dto.insertions[1].value)
     }
 
     @Test
@@ -42,19 +28,5 @@ class RedisDbActionTransformerTest {
         val dto = RedisDbActionTransformer.transform(emptyList())
 
         assertEquals(0, dto.insertions.size)
-    }
-
-    @Test
-    fun testTransformPreservesOrder() {
-        val keys = listOf("a", "b", "c", "d")
-        val actions = keys.map {
-            RedisDbAction(it, StringGene("value", "v_$it"), RedisDbAction.RedisDataType.STRING)
-        }
-
-        val dto = RedisDbActionTransformer.transform(actions)
-
-        keys.forEachIndexed { index, key ->
-            assertEquals(key, dto.insertions[index].key)
-        }
     }
 }

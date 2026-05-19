@@ -8,13 +8,20 @@ import org.evomaster.client.java.controller.api.dto.database.operations.*
 object RedisDbActionTransformer {
 
     fun transform(actions: List<RedisDbAction>): RedisDatabaseCommandsDto {
-        val dto =
-            RedisDatabaseCommandsDto()
+        val dto = RedisDatabaseCommandsDto()
         dto.insertions = actions.map { action ->
-            // Current version supports only GET to SET commands. Command keyword is not included at the moment.
-            RedisInsertionDto().also {
-                it.key = action.key
-                it.value = action.valueGene.value
+            when (action) {
+                is RedisSetAction -> RedisInsertionDto().also {
+                    it.command = "SET"
+                    it.key = action.keyGene.value
+                    it.value = action.valueGene.value
+                }
+                is RedisHsetAction -> RedisInsertionDto().also {
+                    it.command = "HSET"
+                    it.key = action.keyGene.value
+                    it.field = action.field
+                    it.value = action.valueGene.value
+                }
             }
         }
         return dto
