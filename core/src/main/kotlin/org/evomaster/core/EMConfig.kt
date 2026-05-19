@@ -19,6 +19,7 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
+import java.lang.reflect.ParameterizedType
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -235,17 +236,27 @@ class EMConfig {
                 }
             }
 
-            var experimentalValues = ""
-            var validValues = ""
-            val returnType = m.returnType.javaType as Class<*>
+            val returnType = m.returnType.javaType
 
-            if (returnType.isEnum) {
-                val elements = returnType.getDeclaredMethod("values")
-                        .invoke(null) as Array<*>
-                val experimentElements = elements.filter { it is WithExperimentalOptions && it.isExperimental() }
-                val validElements = elements.filter { it !is WithExperimentalOptions || !it.isExperimental() }
-                experimentalValues = experimentElements.joinToString(", ")
-                validValues = validElements.joinToString(", ")
+            val (validValues, experimentalValues) = when (returnType) {
+                is Class<*> if returnType.isEnum -> {
+                    getValidAndExperimentalEnumValues(returnType)
+                }
+
+                is ParameterizedType -> {
+                    if (!Collection::class.java.isAssignableFrom(returnType.rawType as Class<*>)) {
+                        throw IllegalStateException("Configuration '${m.name}' is parameterized, but not a collection")
+                    }
+                    if (returnType.actualTypeArguments.size != 1) {
+                        throw IllegalStateException("Configuration '${m.name}' has more than 1 generic type in a collection")
+                    }
+                    val generic = returnType.actualTypeArguments[0] as Class<*>
+                    getValidAndExperimentalEnumValues(generic)
+                }
+
+                else -> {
+                    Pair("", "")
+                }
             }
 
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
@@ -266,6 +277,17 @@ class EMConfig {
             )
         }
 
+        private fun getValidAndExperimentalEnumValues(enumClass: Class<*>) : Pair<String,String>{
+            assert(enumClass.isEnum)
+            val elements = enumClass.getDeclaredMethod("values")
+                .invoke(null) as Array<*>
+            val experimentElements = elements.filter { it is WithExperimentalOptions && it.isExperimental() }
+            val validElements = elements.filter { it !is WithExperimentalOptions || !it.isExperimental() }
+
+            val experimentalValues = experimentElements.joinToString(", ")
+            val validValues = validElements.joinToString(", ")
+            return Pair(validValues,experimentalValues)
+        }
 
         fun getConfigurationProperties(): List<KMutableProperty<*>> {
             return EMConfig::class.members
@@ -452,39 +474,71 @@ class EMConfig {
 
     private fun updateValue(optionValue: String, m: KMutableProperty<*>) {
 
-        val returnType = m.returnType.javaType as Class<*>
+        val returnType = m.returnType.javaType
 
-        /*
+        if(returnType is Class<*>) {
+            /*
                 TODO: ugly checks. But not sure yet if can be made better in Kotlin.
                 Could be improved with isSubtypeOf from 1.1?
                 http://stackoverflow.com/questions/41553647/kotlin-isassignablefrom-and-reflection-type-checks
              */
-        try {
-            if (Integer.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, Integer.parseInt(optionValue))
+            try {
+                if (Integer.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, Integer.parseInt(optionValue))
 
-            } else if (java.lang.Long.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Long.parseLong(optionValue))
+                } else if (java.lang.Long.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, java.lang.Long.parseLong(optionValue))
 
-            } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Double.parseDouble(optionValue))
+                } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, java.lang.Double.parseDouble(optionValue))
 
-            } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, parseBooleanStrict(optionValue))
+                } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, parseBooleanStrict(optionValue))
 
-            } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
-                m.setter.call(this, optionValue)
+                } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
+                    m.setter.call(this, optionValue)
 
-            } else if (returnType.isEnum) {
-                val valueOfMethod = returnType.getDeclaredMethod("valueOf",
-                    java.lang.String::class.java)
-                m.setter.call(this, valueOfMethod.invoke(null, optionValue))
+                } else if (returnType.isEnum) {
+                    val valueOfMethod = returnType.getDeclaredMethod("valueOf", java.lang.String::class.java)
+                    m.setter.call(this, valueOfMethod.invoke(null, optionValue))
 
-            } else {
-                throw IllegalStateException("BUG: cannot handle type $returnType")
+                } else {
+                    throw IllegalStateException("BUG: cannot handle type $returnType")
+                }
+            } catch (e: Exception) {
+                throw ConfigProblemException("Failed to handle property '${m.name}': ${e.message}")
             }
-        } catch (e: Exception) {
-            throw ConfigProblemException("Failed to handle property '${m.name}': ${e.message}")
+        } else if(returnType is ParameterizedType) {
+
+            if (!Collection::class.java.isAssignableFrom(returnType.rawType as Class<*>)) {
+                throw IllegalStateException("Configuration '${m.name}' is parameterized, but not a collection")
+            }
+            if (returnType.actualTypeArguments.size != 1) {
+                throw IllegalStateException("Configuration '${m.name}' has more than 1 generic type in a collection")
+            }
+            val generic = returnType.actualTypeArguments[0] as Class<*>
+            if(!generic.isEnum){
+                throw IllegalStateException("Content for configuration '${m.name}' is not an enumeration: ${generic.name}")
+            }
+
+            val valueOfMethod = generic.getDeclaredMethod("valueOf", java.lang.String::class.java)
+
+            val collection = optionValue.split(",")
+                .map {
+                    try {
+                        valueOfMethod.invoke(null, it)
+                    }catch (e: Exception){
+                        throw  ConfigProblemException("Failed to handle property '${m.name}': ${e.message}")
+                    }
+                }
+                .run {
+                    if(Set::class.java.isAssignableFrom(returnType.rawType as Class<*>)){
+                        toSet()
+                    } else {
+                        this
+                    }
+                }
+            m.setter.call(this, collection)
         }
     }
 
@@ -1551,7 +1605,7 @@ class EMConfig {
     @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
             "Supports both single-model and ensemble configurations. " +
             "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
-    var aiModelForResponseClassification: String = "NONE"
+    var aiModelForResponseClassification: Set<AIResponseClassifierModel> = setOf(AIResponseClassifierModel.NONE)
 
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
@@ -3382,8 +3436,7 @@ class EMConfig {
 
     // Sets the AI response classification models programmatically.
     fun setAIModels(vararg models: AIResponseClassifierModel) {
-        aiModelForResponseClassification =
-            models.joinToString(",") { it.name }
+        aiModelForResponseClassification = models.toSet()
     }
 
     /**
@@ -3394,17 +3447,7 @@ class EMConfig {
      */
     fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
         val models = aiModelForResponseClassification
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .map {
-                try {
-                    AIResponseClassifierModel.valueOf(it)
-                } catch (e: Exception) {
-                    throw ConfigProblemException("Invalid AI model: $it")
-                }
-            }
-            .distinct()
+            .toList()
             .sorted()
 
         // EvoMaster accept NONE or a combination of the AI models and not both
