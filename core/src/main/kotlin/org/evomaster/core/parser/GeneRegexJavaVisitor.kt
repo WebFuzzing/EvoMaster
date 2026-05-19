@@ -141,6 +141,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 for (j in i + 1 until ctx.term().size) {
                     val resTerm = ctx.term()[j].accept(this)
 
+                    // this condition isolates the back ref case, preserving original behavior otherwise.
                     if (ctx.term()[j].atom()?.atomEscape()?.BackReference() != null){
                         // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                         remainingGenes.addAll(resTerm.genes)
@@ -159,6 +160,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
 
+            // this condition isolates the back ref case, preserving original behavior otherwise.
             if (ctx.term()[i].atom()?.atomEscape()?.BackReference() != null){
                 // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resTerm.genes)
@@ -209,6 +211,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             // if atom is not a back ref then we use the default behavior, results may only have one gene
             var template: Gene = atom
 
+            // this condition isolates the back ref case, preserving original behavior otherwise.
             if(ctx.atom()?.atomEscape()?.BackReference() != null){
                 // this is done so that visits that result in multiple genes (like a backref that interprets some
                 // digits literally) work as expected, only applying quantifier to last gene
@@ -225,6 +228,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             res.genes.add(q)
 
         } else {
+            // this condition isolates the back ref case, preserving original behavior otherwise.
             if (ctx.atom()?.atomEscape()?.BackReference() != null){
                 // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resAtom.genes)
