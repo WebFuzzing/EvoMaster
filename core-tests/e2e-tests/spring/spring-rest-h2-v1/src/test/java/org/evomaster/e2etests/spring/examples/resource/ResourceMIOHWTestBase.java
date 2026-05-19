@@ -75,6 +75,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
     protected List<String> generalArgs(int budget, int seed){
         return new ArrayList<>(
                 Arrays.asList(
+                        "--blackBox", "false",
                         "--createTests", "false",
                         "--seed", ""+seed,
                         "--useTimeInFeedbackSampling", "false",

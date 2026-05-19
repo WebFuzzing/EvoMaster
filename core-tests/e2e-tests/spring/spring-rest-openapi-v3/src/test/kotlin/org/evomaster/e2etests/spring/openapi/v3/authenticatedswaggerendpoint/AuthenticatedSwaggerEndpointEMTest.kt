@@ -42,12 +42,10 @@ class AuthenticatedSwaggerEndpointEMTest : SpringTestBase(){
             20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
+            setOption(args, "blackBox", "true")
+            setOption(args, "bbTargetUrl", baseUrlOfSut)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
+
             args.add("--bbExperiments")
             args.add("false")
 

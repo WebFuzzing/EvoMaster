@@ -57,6 +57,9 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.search.warning.GeneralWarning
+import org.evomaster.core.search.warning.WarningCategory
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
@@ -103,6 +106,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var securityOracle: RestSecurityOracle
+
+    @Inject
+    protected lateinit var warningsAggregator: WarningsAggregator
 
     //TODO refactor
     private lateinit var schemaOracle: RestSchemaOracle
@@ -208,6 +214,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 But the other way round should not really happen
              */
             log.warn("Length mismatch between ${individual.seeAllActions().size} actions and ${additionalInfoList.size} info data")
+            return
+        }
+
+        /*
+            actionResults contains only the REST calls that were executed on the client side,
+            collected one by one during the test run. If execution was stopped early (e.g.,
+            due to a stopping condition or timeout), fewer results are recorded here than
+            the number of additional info entries the SUT reports back. This guard avoids
+            an index-out-of-bounds when iterating below.
+         */
+        if (actionResults.size < additionalInfoList.size) {
+            log.warn("Length mismatch between ${actionResults.size} action results and ${additionalInfoList.size} info data")
             return
         }
 
@@ -389,7 +407,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
                 handleHttpStatusOracles(fv, actions[it], result, it)
 
-                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                val location5xx: String? = if (it < additionalInfoList.size)
+                    getlocation5xx(status, additionalInfoList, it, result, name)
+                else null
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
             }
@@ -764,7 +784,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
              */
             LoggingUtil.getInfoLogger().warn("Hit a rate-limiter. Received a response with 429 'Too Many Requests'.")
 
-            //TODO should add these on warnings for WFC Report
+            val detailedMessage = "A 429 'Too Many Requests' was encountered." +
+                    " If you are fuzzing an API, it is strongly recommended to disable the rate limiter, if possible," +
+                    " as it hinders how many test cases the fuzzer can evaluate in the same amount of time."
+            warningsAggregator.addWarning(GeneralWarning(WarningCategory.SUT,detailedMessage))
 
             val retryAfter = response.getHeaderString("Retry-After")
             val delay = if(retryAfter == null){

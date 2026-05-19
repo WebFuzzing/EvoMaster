@@ -27,6 +27,7 @@ class SkipEMTest : SpringTestBase() {
     @Test
     fun testSkippedExternalServicesEntry() {
         val args = arrayOf(
+            "--blackBox", "false",
             "--createTests", "false",
             "--seed", "42",
             "--sutControllerPort", "" + controllerPort,

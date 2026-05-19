@@ -44,13 +44,9 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                 1000,
                 (args) -> {
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
 
@@ -115,15 +111,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                 (args) -> {
                     String endpointFocus = "/api/pet";
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointFocus");
-                    args.add(endpointFocus);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointFocus", endpointFocus);
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
 
@@ -158,15 +149,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                     String endpointFocus = "/api/pet/{petId}";
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointFocus");
-                    args.add(endpointFocus);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointFocus", endpointFocus);
                     setOption(args, "advancedBlackBoxCoverage", "false");
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
@@ -201,15 +187,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                     String endpointFocus = "/api/store/inventory";
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointFocus");
-                    args.add(endpointFocus);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointFocus", endpointFocus);
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
 
@@ -243,15 +224,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                     String endpointPrefix = "/api/user";
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointPrefix");
-                    args.add(endpointPrefix);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointPrefix", endpointPrefix);
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
 
@@ -286,14 +262,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     String endpointPrefix = "/api/pet/{petId}";
 
                     // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointPrefix");
-                    args.add(endpointPrefix);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointPrefix", endpointPrefix);
                     setOption(args, "advancedBlackBoxCoverage", "false");
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
@@ -328,15 +300,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                     String endpointPrefix = "/api/store";
 
-                    // program arguments for EvoMaster
-                    args.add("--blackBox");
-                    args.add("true");
-                    args.add("--bbTargetUrl");
-                    args.add(baseUrlOfSut);
-                    args.add("--bbSwaggerUrl");
-                    args.add(baseUrlOfSut + "/v2/api-docs");
-                    args.add("--endpointPrefix");
-                    args.add(endpointPrefix);
+                    setOption(args, "blackBox", "true");
+                    setOption(args, "bbTargetUrl", baseUrlOfSut);
+                    setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                    setOption(args, "endpointPrefix", endpointPrefix);
                     setOption(args, "advancedBlackBoxCoverage", "false");
                     setOption(args, "security", "false");
                     setOption(args, "httpOracles", "false");
@@ -374,14 +341,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                             String endpointFocus = "/api/store";
 
                             // program arguments for EvoMaster
-                            args.add("--blackBox");
-                            args.add("true");
-                            args.add("--bbTargetUrl");
-                            args.add(baseUrlOfSut);
-                            args.add("--bbSwaggerUrl");
-                            args.add(baseUrlOfSut + "/v2/api-docs");
-                            args.add("--endpointFocus");
-                            args.add(endpointFocus);
+                            setOption(args, "blackBox", "true");
+                            setOption(args, "bbTargetUrl", baseUrlOfSut);
+                            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                            setOption(args, "endpointFocus", endpointFocus);
 
                             // run EvoMaster
                             initAndRun(args);
@@ -408,14 +371,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                             String endpointPrefix = "/api/ab/s1";
 
                             // program arguments for EvoMaster
-                            args.add("--blackBox");
-                            args.add("true");
-                            args.add("--bbTargetUrl");
-                            args.add(baseUrlOfSut);
-                            args.add("--bbSwaggerUrl");
-                            args.add(baseUrlOfSut + "/v2/api-docs");
-                            args.add("--endpointPrefix");
-                            args.add(endpointPrefix);
+                            setOption(args, "blackBox", "true");
+                            setOption(args, "bbTargetUrl", baseUrlOfSut);
+                            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                            setOption(args, "endpointPrefix", endpointPrefix);
 
                             // run EvoMaster
                             initAndRun(args);
@@ -441,15 +400,10 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                             String endpointPrefix = "/api/store/inventory/in";
 
-                            // program arguments for EvoMaster
-                            args.add("--blackBox");
-                            args.add("true");
-                            args.add("--bbTargetUrl");
-                            args.add(baseUrlOfSut);
-                            args.add("--bbSwaggerUrl");
-                            args.add(baseUrlOfSut + "/v2/api-docs");
-                            args.add("--endpointPrefix");
-                            args.add(endpointPrefix);
+                            setOption(args, "blackBox", "true");
+                            setOption(args, "bbTargetUrl", baseUrlOfSut);
+                            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                            setOption(args, "endpointPrefix", endpointPrefix);
 
                             // run EvoMaster
                             initAndRun(args);
@@ -476,17 +430,11 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
                             String endpoint = "/api/store/order";
 
-                            // program arguments for EvoMaster
-                            args.add("--blackBox");
-                            args.add("true");
-                            args.add("--bbTargetUrl");
-                            args.add(baseUrlOfSut);
-                            args.add("--bbSwaggerUrl");
-                            args.add(baseUrlOfSut + "/v2/api-docs");
-                            args.add("--endpointPrefix");
-                            args.add(endpoint);
-                            args.add("--endpointFocus");
-                            args.add(endpoint);
+                            setOption(args, "blackBox", "true");
+                            setOption(args, "bbTargetUrl", baseUrlOfSut);
+                            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
+                            setOption(args, "endpointPrefix", endpoint);
+                            setOption(args, "endpointFocus", endpoint);
 
                             // run EvoMaster
                             initAndRun(args);

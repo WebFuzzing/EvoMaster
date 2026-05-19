@@ -25,6 +25,7 @@ class IndividualGeneImpactTest {
     @Test
     fun testCompleteInitializationImpactUpdate(){
         val simulatedMutator = SimulatedMutator()
+        simulatedMutator.config.blackBox = false
         simulatedMutator.config.abstractInitializationGeneToMutate = false
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
         val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
@@ -194,6 +195,7 @@ class IndividualGeneImpactTest {
             config.enableTrackEvaluatedIndividual = true
             //config.probOfArchiveMutation = 0.5
             config.doCollectImpact = true
+            config.blackBox = false
         }
 
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{

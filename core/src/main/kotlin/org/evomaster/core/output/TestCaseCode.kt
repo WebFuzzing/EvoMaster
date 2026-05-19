@@ -10,7 +10,8 @@ class TestCaseCode(
     val evaluatedIndividual: EvaluatedIndividual<*>,
     val code: String,
     val startLine: Int,
-    val endLine: Int
+    val endLine: Int,
+    val namedExamples: Set<String>?
 ) {
 
     init {
