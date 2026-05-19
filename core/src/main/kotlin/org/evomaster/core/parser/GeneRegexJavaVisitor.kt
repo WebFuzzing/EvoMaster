@@ -142,9 +142,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                     val resTerm = ctx.term()[j].accept(this)
 
                     if (ctx.term()[j].atom()?.atomEscape()?.BackReference() != null){
-                        // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                        // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                         remainingGenes.addAll(resTerm.genes)
                     } else {
+                        // term is not a back ref, hence there is at most one gene in its visit result.
                         resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
                     }
                 }
@@ -159,9 +160,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val gene = resTerm.genes.firstOrNull()
 
             if (ctx.term()[i].atom()?.atomEscape()?.BackReference() != null){
-                // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resTerm.genes)
             } else if (gene != null) {
+                // term is not a back ref: we use the default behavior, term results may only have 0-1 genes
+                // if there is a gene, we add it to result
                 res.genes.add(gene)
             } else {
 
@@ -203,6 +206,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
 
+            // if atom is not a back ref then we use the default behavior, results may only have one gene
             var template: Gene = atom
 
             if(ctx.atom()?.atomEscape()?.BackReference() != null){
@@ -225,6 +229,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resAtom.genes)
             } else {
+                // if atom is not a back ref we fall back to the default behavior, results only have one gene
                 res.genes.add(atom)
             }
         }
