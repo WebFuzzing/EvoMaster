@@ -12,6 +12,9 @@
     <artifactId>evomaster-e2e-tests-spring-graphql</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipGraphQL}</skipTests>
+    </properties>
 
     <dependencies>
 

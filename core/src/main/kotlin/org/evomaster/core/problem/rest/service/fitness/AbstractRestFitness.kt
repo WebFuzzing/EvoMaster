@@ -57,6 +57,9 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.search.warning.GeneralWarning
+import org.evomaster.core.search.warning.WarningCategory
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
@@ -103,6 +106,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var securityOracle: RestSecurityOracle
+
+    @Inject
+    protected lateinit var warningsAggregator: WarningsAggregator
 
     //TODO refactor
     private lateinit var schemaOracle: RestSchemaOracle
@@ -778,7 +784,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
              */
             LoggingUtil.getInfoLogger().warn("Hit a rate-limiter. Received a response with 429 'Too Many Requests'.")
 
-            //TODO should add these on warnings for WFC Report
+            val detailedMessage = "A 429 'Too Many Requests' was encountered." +
+                    " If you are fuzzing an API, it is strongly recommended to disable the rate limiter, if possible," +
+                    " as it hinders how many test cases the fuzzer can evaluate in the same amount of time."
+            warningsAggregator.addWarning(GeneralWarning(WarningCategory.SUT,detailedMessage))
 
             val retryAfter = response.getHeaderString("Retry-After")
             val delay = if(retryAfter == null){
@@ -1326,6 +1335,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
             handleMisleadingCreatePut(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
+            handleNonIdempotentPut(individual, actionResults, fv)
+        }
     }
 
     private fun handleFailedModification(
@@ -1438,6 +1451,25 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
         ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleNonIdempotentPut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasNonIdempotentPut(individual, actionResults)) return
+
+        val actions = individual.seeMainExecutableActions()
+        // sequence ends with: PUT, GET, PUT, GET — flag the 2nd PUT as the offending action
+        val secondPut = actions[actions.size - 2]
+
+        val category = ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, secondPut.getName()))
+        fv.updateTarget(scenarioId, 1.0, actions.size - 2)
+
+        val ar = actionResults.find { it.sourceLocalId == secondPut.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, secondPut.getName(), null))
     }
 
 
