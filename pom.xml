@@ -76,6 +76,8 @@
         <profile>
             <id>BaseTests</id>
             <properties>
+                <skipTests>false</skipTests> <!-- false -->
+                <!-- Specific modules -->
                 <skipCore>true</skipCore>
                 <skipCoreIT>true</skipCoreIT>
                 <skipOAV3>true</skipOAV3>
@@ -88,50 +90,99 @@
         <profile>
             <id>CoreTests</id>
             <properties>
-                <skipCore>false</skipCore>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>false</skipCore> <!-- false -->
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>CoreITTests</id>
             <properties>
-                <skipCoreIT>false</skipCoreIT>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>false</skipCoreIT> <!-- false -->
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>OAV3Tests</id>
             <properties>
-                <skipOAV3>false</skipOAV3>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>false</skipOAV3> <!-- false -->
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>OAV2Tests</id>
             <properties>
-                <skipOAV2>false</skipOAV2>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>false</skipOAV2> <!-- false -->
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>GraphQLTests</id>
             <properties>
-                <skipGraphQL>false</skipGraphQL>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>false</skipGraphQL> <!-- false -->
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>MongoTests</id>
             <properties>
-                <skipMongo>false</skipMongo>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>false</skipMongo> <!-- false -->
+                <skipH2V1>true</skipH2V1>
             </properties>
         </profile>
         <profile>
             <id>H2V1Tests</id>
             <properties>
-                <skipH2V1>false</skipH2V1>
                 <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>false</skipH2V1> <!-- false -->
             </properties>
         </profile>
     </profiles>
