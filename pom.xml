@@ -89,49 +89,49 @@
             <id>CoreTests</id>
             <properties>
                 <skipCore>false</skipCore>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>CoreITTests</id>
             <properties>
                 <skipCoreIT>false</skipCoreIT>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>OAV3Tests</id>
             <properties>
                 <skipOAV3>false</skipOAV3>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>OAV2Tests</id>
             <properties>
                 <skipOAV2>false</skipOAV2>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>GraphQLTests</id>
             <properties>
                 <skipGraphQL>false</skipGraphQL>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>MongoTests</id>
             <properties>
                 <skipMongo>false</skipMongo>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
         <profile>
             <id>H2V1Tests</id>
             <properties>
                 <skipH2V1>false</skipH2V1>
-                <maven.test.skip>true</maven.test.skip>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
     </profiles>
