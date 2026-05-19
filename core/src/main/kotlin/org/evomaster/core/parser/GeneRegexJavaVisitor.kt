@@ -140,7 +140,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 val remainingGenes = mutableListOf<Gene>()
                 for (j in i + 1 until ctx.term().size) {
                     val resTerm = ctx.term()[j].accept(this)
-                    remainingGenes.addAll(resTerm.genes)
+
+                    if (ctx.term()[j].atom()?.atomEscape()?.BackReference() != null){
+                        // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                        remainingGenes.addAll(resTerm.genes)
+                    } else {
+                        resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                    }
                 }
 
                 currentFlags = previous
@@ -150,9 +156,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             }
 
             val resTerm = ctx.term()[i].accept(this)
+            val gene = resTerm.genes.firstOrNull()
 
-            if(resTerm.genes.isNotEmpty()) {
+            if (ctx.term()[i].atom()?.atomEscape()?.BackReference() != null){
+                // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resTerm.genes)
+            } else if (gene != null) {
+                res.genes.add(gene)
             } else {
 
                 val assertion = resTerm.data as String
@@ -186,28 +196,37 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         val resAtom = ctx.atom().accept(this)
-
-        if (resAtom.genes.isEmpty()) {
-            return res
-        }
+        val atom = resAtom.genes.firstOrNull()
+            ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
 
-            // this is done so that visits that result in multiple genes (like a backref that interprets some
-            // digits literally) work as expected, only applying quantifier to last gene
+            var template: Gene = atom
 
-            // add all genes to result, except for last gene
-            res.genes.addAll(resAtom.genes.dropLast(1))
+            if(ctx.atom()?.atomEscape()?.BackReference() != null){
+                // this is done so that visits that result in multiple genes (like a backref that interprets some
+                // digits literally) work as expected, only applying quantifier to last gene
 
-            // the last gene gets wrapped with the quantifier gene, then that gets added to result
-            val q = QuantifierRxGene("q", resAtom.genes.last(), limits.first, limits.second)
+                // add all genes to result, except for last gene
+                res.genes.addAll(resAtom.genes.dropLast(1))
+
+                // the last gene gets wrapped with the quantifier gene, then that gets added to result
+                template = resAtom.genes.last()
+            }
+
+            val q = QuantifierRxGene("q", template, limits.first, limits.second)
 
             res.genes.add(q)
 
         } else {
-            res.genes.addAll(resAtom.genes)
+            if (ctx.atom()?.atomEscape()?.BackReference() != null){
+                // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                res.genes.addAll(resAtom.genes)
+            } else {
+                res.genes.add(atom)
+            }
         }
 
         return res
