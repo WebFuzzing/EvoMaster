@@ -135,13 +135,14 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
       # Make test report accessible from GitHub Actions (as Maven logs are long)
-      - name: Publish Test Report
-        if: success() || failure()
-        uses: mikepenz/action-junit-report@v6
-        env:
-          NODE_OPTIONS: "--max_old_space_size=9000"
-        with:
-          report_paths: '**/target/*-reports/TEST-*.xml'
+      # Remove? we skipping tests here
+#      - name: Publish Test Report
+#        if: success() || failure()
+#        uses: mikepenz/action-junit-report@v6
+#        env:
+#          NODE_OPTIONS: "--max_old_space_size=9000"
+#        with:
+#          report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results
       # As of 2024, looks like a rate limiter is breaking the build.
       # As such, now we only upload from master branch, hoping it is enough.
@@ -427,7 +428,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
         run:
-          mvn -P ${{ matrix.profile }} clean verify --fae
+          mvn -P default-build,${{ matrix.profile }} clean verify --fae
         env:
           CI_env: GithubAction
       - name: Publish Test Report
@@ -436,4 +437,5 @@ jobs:
         env:
           NODE_OPTIONS: "--max_old_space_size=9000"
         with:
+          check_name: JUnit ${{ matrix.profile }}
           report_paths: '**/target/*-reports/TEST-*.xml'
