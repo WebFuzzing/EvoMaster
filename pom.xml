@@ -1017,7 +1017,6 @@
                         <jvmTarget>${java.version}</jvmTarget>
                         <!-- Issues with memory on GitHub Actions-->
                         <useDaemon>false</useDaemon>
-                        <nowarn>true</nowarn>
                     </configuration>
                     <executions>
                         <execution>
