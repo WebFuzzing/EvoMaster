@@ -71,6 +71,120 @@
                 </plugins>
             </build>
         </profile>
+
+        <!--  GitHub Action split tests profiles -->
+        <profile>
+            <id>BaseTests</id>
+            <properties>
+                <skipTests>false</skipTests> <!-- false -->
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>false</skipCore> <!-- false -->
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreITTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>false</skipCoreIT> <!-- false -->
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV3Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>false</skipOAV3> <!-- false -->
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV2Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>false</skipOAV2> <!-- false -->
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>GraphQLTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>false</skipGraphQL> <!-- false -->
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>MongoTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>false</skipMongo> <!-- false -->
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>H2V1Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>false</skipH2V1> <!-- false -->
+            </properties>
+        </profile>
     </profiles>
 
     <developers>
@@ -103,7 +217,7 @@
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.5.0</wfc.version>
+        <wfc.version>0.5.1</wfc.version>
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
@@ -161,6 +275,15 @@
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
         <software.amazon.awssdk.dynamodb.version>2.25.10</software.amazon.awssdk.dynamodb.version>
+
+        <!--   Properties used to control the running of expensive tests in modules  -->
+        <skipCore>false</skipCore>
+        <skipCoreIT>false</skipCoreIT>
+        <skipOAV3>false</skipOAV3>
+        <skipOAV2>false</skipOAV2>
+        <skipGraphQL>false</skipGraphQL>
+        <skipMongo>false</skipMongo>
+        <skipH2V1>false</skipH2V1>
     </properties>
 
 

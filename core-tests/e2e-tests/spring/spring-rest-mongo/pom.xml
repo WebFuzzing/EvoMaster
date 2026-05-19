@@ -13,6 +13,10 @@
     <artifactId>evomaster-e2e-tests-spring-rest-mongo</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipMongo}</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>

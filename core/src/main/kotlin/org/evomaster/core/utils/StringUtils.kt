@@ -155,4 +155,16 @@ object StringUtils {
         'Ɍ' to "R",  'ɍ' to "r",    // R with stroke
         'Ɏ' to "Y",  'ɏ' to "y",    // Y with stroke
     )
+
+    /**
+     * Checks whether the given string looks like a number or a boolean value.
+     *
+     * The function trims leading and trailing whitespace, then returns true if the
+     * resulting value is either "true", "false", or a valid decimal number.
+     */
+    fun looksLikeNumberOrBoolean(s: String): Boolean {
+        val t = s.trim()
+        if (t == "true" || t == "false") return true
+        return t.toBigDecimalOrNull() != null
+    }
 }

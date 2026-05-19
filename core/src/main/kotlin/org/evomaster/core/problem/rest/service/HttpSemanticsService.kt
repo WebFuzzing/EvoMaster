@@ -119,6 +119,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         if(hasPhaseTimedOut()) return
         misleadingCreatePut()
+
+        if(hasPhaseTimedOut()) return
+        nonIdempotentPut()
     }
 
     /**
@@ -486,6 +489,65 @@ class HttpSemanticsService : TimeBoxedPhase{
             putAction.auth = getAction.auth
             putAction.bindToSamePathResolution(getAction)
             ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+    /**
+     * HTTP_NON_IDEMPOTENT_PUT oracle: PUT must be idempotent — applying it once or N times must
+     * leave the resource in the same state. Calling the same PUT twice and observing different
+     * resource state in two GET responses indicates a bug (e.g. a "deposit" that accumulates).
+     *
+     * Sequence checked:
+     *   [...resource creation...]
+     *   PUT  /X       -> 2xx        (the 1st PUT, already in T)
+     *   GET  /X (or ancestor) -> 2xx  (state after 1st PUT)
+     *   PUT  /X       → 2xx        (a COPY of the 1st PUT, same body)
+     *   GET  /X (or ancestor) -> 2xx  (state after 2nd PUT)
+     *
+     * The two GETs must observe identical state; if any number/boolean leaf field differs,
+     * idempotency is broken. Strings are intentionally ignored to avoid flakiness from
+     * timestamps/UUIDs etc.
+     *
+     * For endpoints like PUT /accounts/{id}/deposit, the GET is taken on the closest ancestor
+     * (e.g. GET /accounts/{id}) so the resource state can be observed.
+     */
+    private fun nonIdempotentPut() {
+
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            if (hasPhaseTimedOut()) return
+
+            // GET on the same path, or longest ancestor with a GET
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: actionDefinitions
+                    .filter { it.verb == HttpVerb.GET && it.path.isSameOrAncestorOf(putOp.path) }
+                    .maxByOrNull { it.path.levels() }
+                ?: return@forEach
+
+            // T: smallest individual ending with PUT 2xx on this path
+            val ind = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            ).minByOrNull { it.size() } ?: return@forEach
+
+            val firstPut = ind.seeMainExecutableActions().last() // PUT 2xx (1st)
+
+            // GET after the 1st PUT: bound to firstPut's resolved path and auth
+            val get1 = builder.createBoundActionFor(getDef, firstPut)
+
+            // 2nd PUT: exact copy of the 1st PUT (same body) to test idempotency of that request
+            val secondPut = firstPut.copy() as RestCallAction
+            secondPut.resetLocalIdRecursively()
+
+            // GET after the 2nd PUT
+            val get2 = builder.createBoundActionFor(getDef, firstPut)
+
+            ind.addMainActionInEmptyEnterpriseGroup(-1, get1)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, get2)
 
             prepareEvaluateAndSave(ind)
         }

@@ -33,7 +33,7 @@ class DtoWriterTest {
         val outputFormat = OutputFormat.JAVA_JUNIT_4
 
         val config = EMConfig().apply {
-            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.GLM
+            setAIModels(EMConfig.AIResponseClassifierModel.GLM)
             enableSchemaConstraintHandling = true
             allowInvalidData = false
             probRestDefault = 0.0
