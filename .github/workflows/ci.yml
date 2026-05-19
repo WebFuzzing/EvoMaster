@@ -116,7 +116,7 @@ jobs:
         # the set command makes the build fail if mvn command fails (no change in behavior)
         run: |
           set -o pipefail
-          mvn -P BaseTests clean verify --fae 2>&1 | tee full-build-base.log
+          mvn clean verify -DskipTests --fae 2>&1 | tee full-build-base.log
         env:
           CI_env: GithubAction
       - name: Upload full-build-base log for metrics job
@@ -411,7 +411,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [ CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests ]
+        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests ]
     steps:
       - uses: actions/checkout@v6
       - name: Setup JDK ${{env.build-jdk}}
