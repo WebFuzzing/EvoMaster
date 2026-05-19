@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 
 abstract class CompositeFixedGene(
         name: String,
-        children: List<out Gene>
+        children: List<Gene>
 ) : CompositeConditionalFixedGene(name, true, children.toMutableList()) {
 
     constructor(name: String, child: Gene) : this(name, mutableListOf(child))

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACRequiredRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -28,7 +28,7 @@ class ACRequiredRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACRequiredDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACRequiredDto) : ResponseEntity<String> {
 
         if(body.b == null){
             return ResponseEntity.status(400).build()
@@ -39,7 +39,7 @@ class ACRequiredRest {
 
 
     @PutMapping
-    open fun put(@RequestBody(required = true) body : ACRequiredDto,
+    fun put(@RequestBody(required = true) body : ACRequiredDto,
                  @RequestParam("x") x: String?
     ) : ResponseEntity<String> {
 

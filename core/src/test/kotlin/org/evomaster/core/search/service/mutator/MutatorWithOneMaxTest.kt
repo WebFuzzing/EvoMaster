@@ -9,11 +9,10 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.onemax.*
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -28,7 +27,7 @@ class MutatorWithOneMaxTest {
     fun init(){
 
         injector = LifecycleInjector.builder()
-                .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--seed=42")))
+                .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--blackBox","false","--seed=42")))
                 .build().createInjector()
 
         manager = injector.getInstance(LifecycleManager::class.java)
@@ -63,7 +62,7 @@ class MutatorWithOneMaxTest {
         Files.deleteIfExists(Paths.get(config.mutatedGeneFile))
 
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
-        epc.startSearch()
+        epc.markStartingSearch()
 
 
         val mio = injector.getInstance(Key.get(

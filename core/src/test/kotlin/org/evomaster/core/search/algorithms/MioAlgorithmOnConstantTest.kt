@@ -9,7 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.algorithms.constant.ConstantModule
-import org.evomaster.core.search.service.ExecutionPhaseController
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
 class MioAlgorithmOnConstantTest {
 
     val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
 
     @Test
@@ -36,7 +36,7 @@ class MioAlgorithmOnConstantTest {
         config.maxEvaluations = 200
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         val epc = injector.getInstance(ExecutionPhaseController::class.java)
-        epc.startSearch()
+        epc.markStartingSearch()
 
         val solution = mio.search()
 

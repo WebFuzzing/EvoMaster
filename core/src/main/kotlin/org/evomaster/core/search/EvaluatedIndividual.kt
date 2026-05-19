@@ -41,7 +41,7 @@ class EvaluatedIndividual<T>(
      * prematurely stopped, there might be fewer
      * results than actions
      */
-    private val results: List<out ActionResult>,
+    private val results: List<ActionResult>,
 
     // for tracking its history
     @ProcessMonitorExcludeField
@@ -100,7 +100,7 @@ class EvaluatedIndividual<T>(
     constructor(
         fitness: FitnessValue,
         individual: T,
-        results: List<out ActionResult>,
+        results: List<ActionResult>,
         trackOperator: TrackOperator? = null,
         index: Int = -1,
         config: EMConfig

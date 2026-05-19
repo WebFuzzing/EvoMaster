@@ -51,10 +51,14 @@ class GraphQLModule : EnterpriseModule() {
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
 
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
+
         bind(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+                .to(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})

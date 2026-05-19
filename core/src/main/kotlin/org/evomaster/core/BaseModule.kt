@@ -9,6 +9,9 @@ import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchStatusUpdater
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackService
 import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
@@ -87,6 +90,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
             .asEagerSingleton()
 
         bind(ExecutionStats::class.java)
+            .asEagerSingleton()
+
+        bind(WarningsAggregator::class.java)
             .asEagerSingleton()
 
         //no longer needed if TestSuiteWriter is moved out?

@@ -77,7 +77,7 @@ object TestUtils {
 
         val fkColumName = "fkId"
         val fkId = Column(fkColumName, ColumnDataType.INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val foreignKeyGene = SqlForeignKeyGene(fkColumName, bId, TableId(aTable), false, uniqueIdOfPrimaryKey = aUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumName, bId, TableId(aTable), "id", false, uniqueIdOfPrimaryKey = aUniqueId)
 
         val barInsertion = generateFakeDbAction(bId, bUniqueId,  bTable, bValue, fkId, foreignKeyGene)
 

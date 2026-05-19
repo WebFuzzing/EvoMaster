@@ -166,7 +166,7 @@ open class RestResourceNode(
     /**
      * @return mutable genes in [dbactions] and they do not bind with rest actions.
      */
-    fun getMutableSQLGenes(dbactions: List<SqlAction>, template: String, is2POST : Boolean) : List<out Gene>{
+    fun getMutableSQLGenes(dbactions: List<SqlAction>, template: String, is2POST : Boolean) : List<Gene>{
 
         val related = getPossiblyBoundParams(template, is2POST, null).map {
             resourceToTable.paramToTable[it.key]
@@ -182,7 +182,7 @@ open class RestResourceNode(
      * @return mutable genes in [actions] which perform action on current [this] resource node
      *          with [callsTemplate] template, e.g., POST-GET
      */
-    private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<out Gene>{
+    private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<Gene>{
 
         if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeTopGenes).filter(Gene::isMutable)
 

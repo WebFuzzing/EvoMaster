@@ -282,7 +282,7 @@ public class DbCleaner {
             if (doDropTable) {
                 dropTableIfExists(statement, ts);
             } else {
-                truncateTable(statement, ts, restartIdentityWhenTruncating);
+                truncateTable(statement, ts, restartIdentityWhenTruncating, type);
             }
         } else {
             //note: if one at a time, need to make sure to first disable FK checks
@@ -300,7 +300,7 @@ public class DbCleaner {
                     if (type == DatabaseType.MS_SQL_SERVER)
                         deleteTables(statement, t, schema, tablesHaveIdentifies);
                     else
-                        truncateTable(statement, t, restartIdentityWhenTruncating);
+                        truncateTable(statement, t, restartIdentityWhenTruncating, type);
                 }
             }
         }
@@ -327,12 +327,15 @@ public class DbCleaner {
             statement.executeUpdate("DBCC CHECKIDENT ('" + tableWithSchema + "', RESEED, 0)");
     }
 
-    private static void truncateTable(Statement statement, String table, boolean restartIdentityWhenTruncating) throws SQLException {
+    private static void truncateTable(Statement statement, String table, boolean restartIdentityWhenTruncating, DatabaseType type) throws SQLException {
+        String sql = "TRUNCATE TABLE " + table;
         if (restartIdentityWhenTruncating) {
-            statement.executeUpdate("TRUNCATE TABLE " + table + " RESTART IDENTITY");
-        } else {
-            statement.executeUpdate("TRUNCATE TABLE " + table);
+            sql += " RESTART IDENTITY";
         }
+        if (type == DatabaseType.POSTGRES) {
+            sql += " CASCADE";
+        }
+        statement.executeUpdate(sql);
     }
 
     private static void resetSequences(Statement s, DatabaseType type, String schemaName, List<String> sequenceToClean) throws SQLException {

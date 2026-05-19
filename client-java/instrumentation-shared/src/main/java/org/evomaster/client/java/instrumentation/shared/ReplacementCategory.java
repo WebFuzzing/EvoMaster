@@ -38,6 +38,11 @@ public enum ReplacementCategory {
     MONGO,
 
     /**
+     * Replacements to handle CASSANDRA command intereception
+     */
+    CASSANDRA,
+
+    /**
      * Replacements to handle OPENSEARCH command interceptions
      */
     OPENSEARCH,
@@ -50,6 +55,11 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle NEO4J command interceptions
      */
-    NEO4J
+    NEO4J,
+
+    /**
+     * Replacements to handle DYNAMODB command interceptions
+     */
+    DYNAMODB
 }
 

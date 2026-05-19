@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.oracledisable
 
 import com.foo.rest.examples.spring.openapi.v3.security.stacktrace.StackTraceJSONController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -30,14 +31,14 @@ class StackTraceDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.LEAKED_STACK_TRACES.code.toString())
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES.code.toString())
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertFalse(ExperimentalFaultCategory.LEAKED_STACK_TRACES in faults)
+            assertFalse(DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES in faults)
 
         }
     }

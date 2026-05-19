@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 class TaintCaseRest {
 
     @GetMapping(path = ["/check/{a}/{b}"])
-    open fun check(@PathVariable("a") a: String, @PathVariable("b") b: String) : ResponseEntity<String> {
+    fun check(@PathVariable("a") a: String, @PathVariable("b") b: String) : ResponseEntity<String> {
         return if (a.lowercase().equals("hello") && b.uppercase().equals("THERE")){
 //            return if (a.equals("hello") && b.equals("THERE")){
             ResponseEntity.ok("OK")

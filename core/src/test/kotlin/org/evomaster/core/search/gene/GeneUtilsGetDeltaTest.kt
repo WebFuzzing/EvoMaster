@@ -8,7 +8,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertThrows
@@ -30,7 +30,7 @@ class GeneUtilsGetDeltaTest {
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
+            .withModules(* arrayOf<Module>(BaseModule(arrayOf("--blackBox","false"), true)))
             .build().createInjector()
 
 

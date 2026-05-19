@@ -41,6 +41,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -69,11 +70,6 @@ import kotlin.math.max
 object RestActionBuilderV3 {
 
     private val log: Logger = LoggerFactory.getLogger(RestActionBuilderV3::class.java)
-
-    /**
-     * Name given to enum genes representing data examples coming from OpenAPI schema
-     */
-    const val EXAMPLES_NAME = "SCHEMA_EXAMPLES"
 
     private val refCache = mutableMapOf<String, Gene>()
 
@@ -1373,12 +1369,11 @@ object RestActionBuilderV3 {
     }
 
     /**
-     *
      * handled constraints include
      *      - allOf
      *      - anyOf
      *      - oneOf
-     *      - not (OpenAPI not support this yet)
+     *      - not
      */
     private fun assembleObjectGeneWithConstraints(
         name: String,
@@ -1398,37 +1393,61 @@ object RestActionBuilderV3 {
             https://spec.openapis.org/oas/latest.html#discriminator-object
          */
 
-        if (!options.enableConstraintHandling)
+        if (!options.enableConstraintHandling){
             return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+        }
+
+        /*
+            THIS IS VERY TRICKY
+            in theory, the use of allOf/anyOf/oneOf/not provides a rich language where many different kinds of
+            constraints can be specified.
+            this is the case when "const" is used in schemas to specify particular values, e.g., oneOf could be then
+            used to specify only particular combinations of field values.
+            the use of "const" is also quite tricky with "not", as can use to say some specific value combinations are not valid.
+            furthermore, those keywords are NOT mutually exclusive.
+
+            support all possible constraint would be a GIGANTIC piece of work... yet, these kinds of constraints do
+            not seem so common, apart for allOf on merging fields.
+            TODO we should have full support, but not high priority task
+         */
+
+        /*
+            A further complication is how to use, and interpret, "examples" values (if any).
+            Eg. what to nested referenced $ref objects that have on examples?
+            should those be merged/hanled like the fields?
+            TODO possibly something to handle (but again, not high priority)
+         */
 
         val allOf = schema.allOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         val anyOf = schema.anyOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
-            messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle allOf and oneOf at same time for a schema with name $name")
         }
 
         val oneOf = schema.oneOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options = options, messages = messages)
         }
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
-            messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
         }
 
         if (!allOf.isNullOrEmpty()){
+
+            if(allOf.size == 1 && fields.isEmpty()){
+                //just use it as it is
+                return allOf[0]
+            }
+
             val allFields = allOf.mapNotNull {
                 when (it) {
+                    is ChoiceGene<*> -> extractOriginalObject(it)?.fields
                     is ObjectGene -> it.fields
                     else -> null
                 }
@@ -1499,6 +1518,19 @@ object RestActionBuilderV3 {
         //TODO not
     }
 
+    private fun extractOriginalObject(choice: ChoiceGene<*>): ObjectGene? {
+        /*
+            this only makes sense if we are in this case:
+            Choice( Choice(examples), Object)
+            in which we would return Object, null otherwise
+         */
+        val children = choice.getViewOfChildren()
+        if(children.size != 2 || children.none { it is UserExamplesGene && it.isUsedForExamples() }){
+            return null
+        }
+        return children.find { it is ObjectGene } as ObjectGene?
+    }
+
     /**
      * assemble ObjectGene based on [fields] and [additionalFieldTemplate]
      */
@@ -1563,7 +1595,7 @@ object RestActionBuilderV3 {
         val n = examples.map{it.second} // names
 
         val exampleGene = if(examples.isNotEmpty()){
-            ChoiceGene(EXAMPLES_NAME, v, valueNames = n)
+            ChoiceGene(UserExamplesGene.EXAMPLES_NAME, v, valueNames = n)
         } else null
         val defaultGene = if(defaultValue != null){
             duplicateObjectWithExampleFields("default", mainGene, defaultValue)
@@ -1769,12 +1801,12 @@ object RestActionBuilderV3 {
         val exampleGene = if(examples.isNotEmpty()){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                    -> EnumGene(EXAMPLES_NAME, v,0,true, n)
+                    -> EnumGene(UserExamplesGene.EXAMPLES_NAME, v,0,true, n)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                    -> EnumGene<String>(EXAMPLES_NAME, v,0,false, n)
+                    -> EnumGene<String>(UserExamplesGene.EXAMPLES_NAME, v,0,false, n)
 
                 //TODO Arrays
                 else -> {

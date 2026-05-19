@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +29,7 @@ abstract class IntegrationTestRestBase : RestTestBase() {
 
     protected fun recreateInjectorForWhite(extraArgs: List<String> = listOf()) {
         val args = listOf(
+            "--blackBox", "false",
             "--sutControllerPort", "" + controllerPort,
             "--createConfigPathIfMissing", "false",
             "--seed", "42"
@@ -48,17 +50,21 @@ abstract class IntegrationTestRestBase : RestTestBase() {
         injector = init(args)
     }
 
-    fun getPirToRest() = injector.getInstance(PirToRest::class.java)
+    fun getPirToRest() = injector.getInstance(PirToRest::class.java)!!
 
     fun getArchive() = injector.getInstance(Archive::class.java) as Archive<RestIndividual>
 
     fun getSecurityRest() = injector.getInstance(RestSecurityBuilder::class.java) as RestSecurityBuilder
 
-    fun getEMConfig() = injector.getInstance(EMConfig::class.java)
+    fun getEMConfig() = injector.getInstance(EMConfig::class.java)!!
 
-    fun getBuilder() = injector.getInstance(RestIndividualBuilder::class.java)
+    fun getBuilder() = injector.getInstance(RestIndividualBuilder::class.java)!!
 
-    fun getSecurityOracle() = injector.getInstance(RestSecurityOracle::class.java)
+    fun getSecurityOracle() = injector.getInstance(RestSecurityOracle::class.java)!!
+
+    fun getExecutionPhaseController() = injector.getInstance(ExecutionPhaseController::class.java)!!
+
+    fun getFitnessFunction() = injector.getInstance(AbstractRestFitness::class.java)!!
 
     /**
      * Create and evaluate an individual
@@ -76,7 +82,7 @@ abstract class IntegrationTestRestBase : RestTestBase() {
          */
         val ind = sampler.createIndividual(sampleT, actions.toMutableList())
 
-        val ff = injector.getInstance(AbstractRestFitness::class.java)
+        val ff = getFitnessFunction()
         val ei = ff.calculateCoverage(ind)!!
 
         return ei

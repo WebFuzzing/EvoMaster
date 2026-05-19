@@ -246,7 +246,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
-            TableId(tableDto.id.name) , //TODO other info, eg schema
+            TableId.fromDto(schema.databaseType, tableDto.id),
             findColumns(schema,tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )

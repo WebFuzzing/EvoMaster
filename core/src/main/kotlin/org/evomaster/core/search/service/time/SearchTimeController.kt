@@ -1,11 +1,13 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.time
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.IncrementalAverage
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Queue
 import kotlin.math.ceil
 
 /**
@@ -15,43 +17,15 @@ import kotlin.math.ceil
  */
 class SearchTimeController {
 
+    companion object{
+        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+    }
+
     @Inject
     private lateinit var configuration: EMConfig
 
-    companion object{
-        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
-
-        /**
-         * Invoke the [function] lambda, which will return some result of generic type [T].
-         * Once this is completed, the [loggingFunction] will be automatically called with,
-         * as input, the execution time expressed in milliseconds, as well as the [function]'s result
-         * of type [T].
-         *
-         * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
-         */
-        inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
-                                         function: () -> T): T {
-
-            val startTime = System.currentTimeMillis()
-            val result: T = function.invoke()
-            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-            return result
-        }
-
-        fun getElapsedTime(totalInSeconds: Long) : String{
-
-            val seconds = totalInSeconds
-            val minutes = seconds / 60.0
-            val hours = minutes / 60.0
-
-            val ps = "%d".format(seconds % 60)
-            val pm = "%d".format(minutes.toInt() % 60)
-            val ph = "%d".format(hours.toInt())
-
-            return "${ph}h ${pm}m ${ps}s"
-        }
-    }
+    @Inject
+    private lateinit var ssu: SearchStatusUpdater
 
 
     var evaluatedIndividuals = 0
@@ -91,6 +65,13 @@ class SearchTimeController {
     private var startTime = 0L
 
     /**
+     * If we get a 429 Too Many Requests, we need to wait.
+     * But what if the wait is longer than what is left in budget?
+     * Then no point in continuing...
+     */
+    private var tooLongWait = false
+
+    /**
      * Once the search is finished, we do not want to keep recording new events.
      * The problem is with phases after the search, like minimization and security, which
      * might end up calling methods here through the archive
@@ -102,7 +83,7 @@ class SearchTimeController {
      * Time expressed in ms (Long).
      * Also keeping track of number of actions (Int)
      */
-    private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
+    private val executedIndividualTime : Queue<Pair<Long, Int>> = ArrayDeque(100)
 
     private val listeners = mutableListOf<SearchListener>()
 
@@ -123,6 +104,7 @@ class SearchTimeController {
 
     fun doStopRecording(){
         recording = false
+        ssu.finished()
     }
 
     /**
@@ -155,6 +137,25 @@ class SearchTimeController {
         val toWait = delta - passed
         Thread.sleep(toWait)
         lastActionTimestamp = System.currentTimeMillis()
+    }
+
+    fun waitUpToSeconds(seconds: Long) : Boolean{
+        if(seconds < 0){
+            throw IllegalArgumentException("Input seconds cannot be negative")
+        }
+        if(seconds == 0L){
+            //nothing to do... but still we "waited" for 0 seconds...
+            return true
+        }
+
+        if(seconds > getSecondsLeftForSearch()){
+            log.warn("The wait of $seconds seconds would be too long. Stopping the search instead.")
+            tooLongWait = true
+            return false
+        } else {
+            Thread.sleep(seconds * 1000)
+            return true
+        }
     }
 
     fun startSearch(){
@@ -229,9 +230,13 @@ class SearchTimeController {
     }
 
     fun newActionEvaluation(n: Int = 1) {
-        if(!recording) return
+
+        listeners.forEach{it.newActionsEvaluated(n)}
+
+        if(!recording){
+            return
+        }
         evaluatedActions += n
-        listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){
@@ -256,17 +261,17 @@ class SearchTimeController {
     }
 
     fun getElapsedTime() : String{
-        return getElapsedTime(getElapsedSeconds().toLong())
+        return TimeUtils.getElapsedTime(getElapsedSeconds().toLong())
     }
 
     fun shouldContinueSearch(): Boolean{
 
-        return percentageUsedBudget() < 1.0 && !isImprovementTimeout()
+        return percentageUsedBudget() < 1.0 && !isImprovementTimeout() && !tooLongWait
     }
 
     fun isImprovementTimeout() : Boolean{
 
-        if(configuration.prematureStop.isNullOrBlank()){
+        if(configuration.prematureStop.isBlank()){
             return false
         }
 
@@ -306,6 +311,27 @@ class SearchTimeController {
             else ->
                 throw IllegalStateException("Not supported stopping criterion")
         }
+    }
+
+    /**
+     * Return a meaningful value only if using time as stopping criterion and the search has started.
+     * Otherwise return a negative value
+     */
+    fun getSecondsLeftForSearch() : Long{
+
+        if(!searchStarted){
+            return -1
+        }
+
+        if(configuration.stoppingCriterion != EMConfig.StoppingCriterion.TIME){
+            return -1
+        }
+
+        val passed = (System.currentTimeMillis() - startTime) / 1000
+        val budget = configuration.timeLimitInSeconds()
+        val left = budget - passed
+
+        return left
     }
 
     fun getStartTime() : Long {

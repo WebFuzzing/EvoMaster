@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class TimeoutRest {
 
     @GetMapping
-    open fun getData() : ResponseEntity<String> {
+    fun getData() : ResponseEntity<String> {
 
         Thread.sleep(10_000)
 

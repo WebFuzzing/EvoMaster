@@ -26,7 +26,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
 
 
     @PostConstruct
-    open fun initialize() {
+    fun initialize() {
 
         log.debug("Initializing {}", WebSampler::class.simpleName)
 

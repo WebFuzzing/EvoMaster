@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest
 class ExtraHeaderRest {
 
     @GetMapping()
-    open fun getHeader(@RequestHeader(name="x-a", required = true) a : String): String {
+    fun getHeader(@RequestHeader(name="x-a", required = true) a : String): String {
 
         return if (a == null) {
             "FALSE"

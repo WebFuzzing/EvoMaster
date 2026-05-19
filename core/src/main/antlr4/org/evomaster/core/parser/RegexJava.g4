@@ -38,6 +38,7 @@ alternative
 
 term
  : assertion
+ | FLAG_SCOPE_OPEN
  | atom
  | atom quantifier
  ;
@@ -88,17 +89,23 @@ atom
  : quote
  | patternCharacter+
  | DOT
- | AtomEscape
+ | atomEscape
  | characterClass
+ | FLAG_GROUP_OPEN disjunction PAREN_close
  | PAREN_open disjunction PAREN_close
- // These two rules are added to handle the . and + symbols in emails
- // A more general solution is needed for escaped control symbols in Java
- // regular expressions
- | ESCAPED_DOT
- | ESCAPED_PLUS
 
  //TODO
 // | '(' '?' ':' disjunction ')'
+ ;
+
+FLAG_GROUP_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [idmsuxU]+)? COLON
+ | PAREN_open QUESTION MINUS [idmsuxU]+ COLON
+ ;
+
+FLAG_SCOPE_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [iumdsx]+)? PAREN_close
+ | PAREN_open QUESTION MINUS [idmsuxU]+ PAREN_close
  ;
 
 // Special for Java
@@ -119,33 +126,35 @@ quoteChar
 ;
 
 //TODO
-fragment CharacterEscape
- : ControlEscape
- | 'c' ControlLetter
- | HexEscapeSequence
- | UnicodeEscapeSequence
- | OctalEscapeSequence
- | 'p' BRACE_open PosixCharacterClassLabel BRACE_close // this is only implemented in Java at the moment as on JS this
-                                                       // is allowed only while certain flags are enabled
+CharacterEscape
+ : SLASH ControlEscape
+ | SLASH 'c' ControlLetter
+ | SLASH HexEscapeSequence
+ | SLASH UnicodeEscapeSequence
+ | SLASH OctalEscapeSequence
+ | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
+                                                        // as on JS this is allowed only while certain flags are enabled
+
  //| IdentityEscape
  ;
 
-// basic US-ASCII only predefined POSIX character classes
+//TODO backreferences
+// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
+// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
+// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
+// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
+
+// Instead of listing all unicode scripts, blocks, etc. the parser allows anything
+// then we filter by checking if the label is valid when it is used.
+fragment PCharacterClassEscapeLabel
+ : [0-9a-zA-Z_=]+
+// posix character classes, java.lang.Character methods and Unicode scripts, blocks, categories and binary properties.
 // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#:~:text=character%3A%20%5B%5E%5Cw%5D-,POSIX,-character%20classes%20(US
-fragment PosixCharacterClassLabel
- : 'Lower'
- | 'Upper'
- | 'ASCII'
- | 'Alpha'
- | 'Digit'
- | 'Alnum'
- | 'Punct'
- | 'Graph'
- | 'Print'
- | 'Blank'
- | 'Cntrl'
- | 'XDigit'
- | 'Space'
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#jcc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#usc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ucc
+// https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#ubpc
  ;
 
 fragment ControlEscape
@@ -174,9 +183,14 @@ patternCharacter
  // SourceCharacter but not one of ^ $ \ . * + ? ( ) [ ] { } |
  //: ~[^$\\.*+?()[\]{}|]
  : BaseChar
+ | COMMA
  | MINUS
  | DecimalDigit
  | E | Q
+ // These are also allowed as literals when no matching pair exists
+ | BRACE_close
+ | BRACKET_close
+ | COLON
  ;
 
 
@@ -215,27 +229,31 @@ classAtomNoDash
  //SourceCharacter but not one of \ or ] or -
  //TODO
  //: ~[-\]\\]
-// | '\\' ClassEscape
- : BaseChar
+ : classEscape
+ | BaseChar
  | DecimalDigit
- | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
+ | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
- | ESCAPED_DOT | ESCAPED_PLUS;
-
-
-//TODO
-//ClassEscape
-// : CharacterClassEscape
-//// | DecimalEscape
-//// | 'b'
-// //| CharacterEscape
-// ;
+ | COLON
+ | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
+ ;
 
 decimalDigits
  : DecimalDigit+
  ;
 
+classEscape
+ : atomEscape
+// | SLASH 'b'
+ ;
 
+atomEscape
+ : CharacterClassEscape
+ | CharacterEscape
+ | SyntaxEscapes
+// TODO
+// | '\\' DecimalEscape
+ ;
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
@@ -244,24 +262,18 @@ DecimalDigit
  : [0-9]
  ;
 
-
-AtomEscape
- : '\\' CharacterClassEscape
- //TODO
-// | '\\' DecimalEscape
- | '\\' CharacterEscape
- ;
-
-fragment CharacterClassEscape
+CharacterClassEscape
  //one of d D s S w W v V h H
- // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
- // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
- : [dDsSwWvVhH]
+  // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
+  // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
+  : SLASH [dDsSwWvVhH]
  ;
 
 
-ESCAPED_PLUS               : '\\+'; // Recognize \+
-ESCAPED_DOT                : '\\.'; // Recognize \-
+SyntaxEscapes
+ : SLASH [^$\\.*+?()[\]{}|/\-,:<>=!]
+ ;
+
 CARET                      : '^';
 DOLLAR                     : '$';
 SLASH                      : '\\';
@@ -278,6 +290,7 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+COLON                      : ':';
 
 Q: 'Q';
 E: 'E';
@@ -285,7 +298,7 @@ E: 'E';
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9,^$\\.*+?()[\]{}|-]
+ : ~[0-9:,^$\\.*+?()[\]{}|-]
  ;
 
 fragment OctalEscapeSequence

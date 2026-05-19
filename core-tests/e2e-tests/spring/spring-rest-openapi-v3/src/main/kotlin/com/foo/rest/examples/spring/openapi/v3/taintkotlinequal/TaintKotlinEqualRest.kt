@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 class TaintKotlinEqualRest {
 
     @GetMapping(path = ["/{a}"])
-    open fun check(@PathVariable("a") a: String) : ResponseEntity<String> {
+    fun check(@PathVariable("a") a: String) : ResponseEntity<String> {
         return if (a == "hellotheremyfriend"){
             ResponseEntity.ok("OK")
         } else{

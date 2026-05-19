@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.Gene
 abstract class CompositeConditionalFixedGene(
         name: String,
         val isFixed: Boolean,
-        children: List<out Gene>
+        children: List<Gene>
 ) : CompositeGene(name, children.toMutableList()) {
 
     constructor(name: String, isFixed: Boolean, child: Gene) : this(name, isFixed, mutableListOf(child))
@@ -61,7 +61,7 @@ abstract class CompositeConditionalFixedGene(
         super.killChildren(predicate)
     }
 
-    override fun killChildren(toKill: List<out StructuralElement>){
+    override fun killChildren(toKill: List<StructuralElement>){
         if (isFixed) throw IllegalStateException(errorChildMsg)
         super.killChildren(toKill)
     }

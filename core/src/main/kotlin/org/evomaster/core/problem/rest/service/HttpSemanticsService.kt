@@ -18,6 +18,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -25,7 +27,7 @@ import javax.annotation.PostConstruct
 /**
  * Service class used to verify HTTP semantics properties.
  */
-class HttpSemanticsService {
+class HttpSemanticsService : TimeBoxedPhase{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpSemanticsService::class.java)
@@ -52,6 +54,9 @@ class HttpSemanticsService {
     @Inject
     private lateinit var builder: RestIndividualBuilder
 
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -72,7 +77,13 @@ class HttpSemanticsService {
 
     }
 
+    override fun applyPhase() {
+        applyHttpSemanticsPhase()
+    }
 
+    override fun hasPhaseTimedOut(): Boolean {
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.ADDITIONAL_ORACLES)
+    }
 
     fun applyHttpSemanticsPhase(): Solution<RestIndividual>{
 
@@ -92,13 +103,25 @@ class HttpSemanticsService {
 //        – JSON-Merge-Patch: partial update should not impact other fields. Can have GET, PATCH, and GET to verify it
 
 
+        if(hasPhaseTimedOut()) return
         // – 2xx GET on K : follow by success 2xx DELETE, should then give 404 on GET k (adding up to 2 calls)
         deleteShouldDelete()
 
+        if(hasPhaseTimedOut()) return
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
 
+        if(hasPhaseTimedOut()) return
         sideEffectsOfFailedModification()
+
+        if(hasPhaseTimedOut()) return
+        partialUpdatePut()
+
+        if(hasPhaseTimedOut()) return
+        misleadingCreatePut()
+
+        if(hasPhaseTimedOut()) return
+        nonIdempotentPut()
     }
 
     /**
@@ -113,6 +136,8 @@ class HttpSemanticsService {
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
         putOperations.forEach { put ->
+
+            if(hasPhaseTimedOut()) return
 
             val creates = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -159,6 +184,8 @@ class HttpSemanticsService {
         val deleteOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.DELETE)
 
         deleteOperations.forEach { del ->
+
+            if(hasPhaseTimedOut()) return
 
             val successDelete = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -226,6 +253,8 @@ class HttpSemanticsService {
             val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
 
             modifyOperations.forEach { modOp ->
+
+                if(hasPhaseTimedOut()) return
 
                 val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
                     ?: return@forEach
@@ -372,5 +401,155 @@ class HttpSemanticsService {
         prepareEvaluateAndSave(ind)
     }
 
+    /**
+     * HTTP_PARTIAL_UPDATE_PUT oracle: PUT makes a full replacement, not a partial update.
+     * If only some fields should be modified, PATCH must be used instead.
+     *
+     * Sequence checked:
+     *   PUT /X  body=B  ->  2xx
+     *   GET /X          ->  response body must match exactly B
+     *                       (no field from a previous state should bleed through)
+     *
+     * Finds the shortest 2xx PUT individual, slices it to end at that PUT,
+     * then appends a bound GET on the same resolved path to verify the full replacement.
+     */
+    private fun partialUpdatePut() {
 
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: return@forEach
+
+            val successPuts = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+            if (successPuts.isEmpty()) return@forEach
+
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                successPuts.minBy { it.individual.size() },
+                HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+
+            val last = ind.seeMainExecutableActions().last() // the PUT 2xx
+            val getAfter = builder.createBoundActionFor(getDef, last)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+
+    /**
+     * HTTP_MISLEADING_CREATE_PUT oracle: a PUT that returns 201 claims it created a new resource.
+     * If so, a GET on the same path immediately before the PUT should return 404 (or at least
+     * not 2xx), because the resource should not exist yet.
+     *
+     * Sequence checked:
+     *   [...resource creation via POST/PUT...]
+     *   GET /X  -> 2xx  (resource exists)
+     *   PUT /X -> 201  (BUG: claims creation, but resource already existed -> should be 200/204)
+     *
+     * Starts from the smallest individual ending with GET 2xx on the path, then appends a copy of an existing
+     * PUT 201 action (so its body is known valid) rebound to the GET's resolved path and auth.
+     */
+    private fun misleadingCreatePut() {
+
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            if (hasPhaseTimedOut()) return
+
+            // template: an existing PUT 201 on this path (its body is known valid).
+            val putTemplate = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, status = 201
+            ).asSequence().flatMap { ei ->
+                ei.evaluatedMainActions().asSequence().mapNotNull { ea ->
+                    val a = ea.action as? RestCallAction ?: return@mapNotNull null
+                    val r = ea.result as? RestCallResult ?: return@mapNotNull null
+                    if (a.verb == HttpVerb.PUT && a.path.isEquivalent(putOp.path)
+                        && r.getStatusCode() == 201) a else null
+                }
+            }.firstOrNull() ?: return@forEach
+
+            // T: smallest individual ending with GET 2xx (resource exists after creation)
+            val T = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution, HttpVerb.GET, putOp.path, statusGroup = StatusGroup.G_2xx
+            ).minByOrNull { it.size() } ?: return@forEach
+
+            val ind = T.copy() as RestIndividual
+            val getAction = ind.seeMainExecutableActions().last() // the GET 2xx
+
+            // copy the PUT 201 (preserves valid body), rebind to the GET's path and auth
+            val putAction = putTemplate.copy() as RestCallAction
+            putAction.resetLocalIdRecursively()
+            putAction.forceNewTaints()
+            putAction.auth = getAction.auth
+            putAction.bindToSamePathResolution(getAction)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+    /**
+     * HTTP_NON_IDEMPOTENT_PUT oracle: PUT must be idempotent — applying it once or N times must
+     * leave the resource in the same state. Calling the same PUT twice and observing different
+     * resource state in two GET responses indicates a bug (e.g. a "deposit" that accumulates).
+     *
+     * Sequence checked:
+     *   [...resource creation...]
+     *   PUT  /X       -> 2xx        (the 1st PUT, already in T)
+     *   GET  /X (or ancestor) -> 2xx  (state after 1st PUT)
+     *   PUT  /X       → 2xx        (a COPY of the 1st PUT, same body)
+     *   GET  /X (or ancestor) -> 2xx  (state after 2nd PUT)
+     *
+     * The two GETs must observe identical state; if any number/boolean leaf field differs,
+     * idempotency is broken. Strings are intentionally ignored to avoid flakiness from
+     * timestamps/UUIDs etc.
+     *
+     * For endpoints like PUT /accounts/{id}/deposit, the GET is taken on the closest ancestor
+     * (e.g. GET /accounts/{id}) so the resource state can be observed.
+     */
+    private fun nonIdempotentPut() {
+
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            if (hasPhaseTimedOut()) return
+
+            // GET on the same path, or longest ancestor with a GET
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: actionDefinitions
+                    .filter { it.verb == HttpVerb.GET && it.path.isSameOrAncestorOf(putOp.path) }
+                    .maxByOrNull { it.path.levels() }
+                ?: return@forEach
+
+            // T: smallest individual ending with PUT 2xx on this path
+            val ind = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            ).minByOrNull { it.size() } ?: return@forEach
+
+            val firstPut = ind.seeMainExecutableActions().last() // PUT 2xx (1st)
+
+            // GET after the 1st PUT: bound to firstPut's resolved path and auth
+            val get1 = builder.createBoundActionFor(getDef, firstPut)
+
+            // 2nd PUT: exact copy of the 1st PUT (same body) to test idempotency of that request
+            val secondPut = firstPut.copy() as RestCallAction
+            secondPut.resetLocalIdRecursively()
+
+            // GET after the 2nd PUT
+            val get2 = builder.createBoundActionFor(getDef, firstPut)
+
+            ind.addMainActionInEmptyEnterpriseGroup(-1, get1)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, get2)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
 }

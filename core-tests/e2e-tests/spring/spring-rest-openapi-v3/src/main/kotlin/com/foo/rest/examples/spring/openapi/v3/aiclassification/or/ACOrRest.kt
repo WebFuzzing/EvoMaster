@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class ACOrRest {
 
     @GetMapping
-    open fun get(
+    fun get(
         @RequestParam("x") x: String?,
         @RequestParam("y") y: Int?,
         @RequestParam("z" )z: Boolean?
@@ -28,7 +28,7 @@ class ACOrRest {
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACOrDto) : ResponseEntity<String> {
+    fun post(@RequestBody(required = true) body : ACOrDto) : ResponseEntity<String> {
 
         // a=true or b
         if(! (body.a == true || body.b != null )){

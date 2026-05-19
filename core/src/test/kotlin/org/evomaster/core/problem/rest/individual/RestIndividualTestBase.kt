@@ -42,7 +42,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -276,7 +276,8 @@ abstract class RestIndividualTestBase {
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",
             "--seed=42",
-            "--stoppingCriterion=ACTION_EVALUATIONS"
+            "--stoppingCriterion=ACTION_EVALUATIONS",
+            "--blackBox=false"
         ).plus(config()).toTypedArray()
 
         val modules = listOf(BaseModule(defaultConfigs)).plus(getProblemModule()).plus(FakeModule(

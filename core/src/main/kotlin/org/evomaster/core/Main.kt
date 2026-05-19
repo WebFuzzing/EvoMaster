@@ -43,6 +43,8 @@ import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.evomaster.core.search.service.time.SearchTimeController
 import java.lang.reflect.InvocationTargetException
 import java.util.Locale
 import kotlin.system.exitProcess
@@ -251,32 +253,36 @@ class Main {
             val idMapper = injector.getInstance(IdMapper::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
 
-            var solution = run(injector, controllerInfo)
+            run(injector, controllerInfo)
 
             //save data regarding the search phase
             writeOverallProcessData(injector)
             writeDependencies(injector)
-            writeImpacts(injector, solution)
+            writeImpacts(injector)
             writeExecuteInfo(injector)
-
             logTimeSearchInfo(injector, config)
 
+
+            //-----------------------------------------------------------
             //apply new phases
+            phaseMinimizer(injector, config, epc)
             // 403 are usually not found during search, but created on purpose during security phase by
             // mixing different users in the same test. as some http oracles might depend on 403s,
             // we make sure to run security phase first
-            solution = phaseSecurity(injector, config, epc, solution)
-            solution = phaseHttpOracle(injector, config, epc, solution)
-            solution = phaseFlaky(injector, config, epc, solution)
+            phaseSecurity(injector, config, epc)
+            phaseHttpOracle(injector, config, epc)
+            phaseFlaky(injector, config, epc)
+            //-----------------------------------------------------------
 
-            epc.startWriteOutput()
+            val solution = extractSolution(injector)
+
+            epc.markStartingWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
             writeCoveredTargets(injector, solution)
             //NOTE: the WRITE_OUTPUT phase here would be not computed, as it is not finished yet...
             writeStatistics(injector, solution)
-            //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
             // Stop the WM before test execution
@@ -298,7 +304,7 @@ class Main {
 
             solution.statistics = data.toMutableList()
 
-            epc.finishSearch()
+            epc.markFinishedSession()
 
             return solution
         }
@@ -410,32 +416,46 @@ class Main {
             }
         }
 
+        private fun extractSolution(injector: Injector): Solution<*> {
+            val archive = injector.getInstance(Archive::class.java)
+            return archive.extractSolution()
+        }
+
+        private fun phaseMinimizer(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+        ){
+            if(!config.minimize){
+                return
+            }
+            epc.markStartingMinimization()
+
+            val minimizer = injector.getInstance(Key.get(object : TypeLiteral<Minimizer<*>>() {}))
+            minimizer.applyPhase()
+        }
+
         private fun phaseFlaky(
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+        ) {
             if (!config.handleFlakiness){
-                return solution
+                return
             }
 
-            return when (config.problemType) {
+            when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
-                    epc.startFlakiness()
+                    epc.markStartingFlakiness()
 
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
                     flakinessDetector.reexecuteToDetectFlakiness()
                 } else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
-                    solution
                 }
             }
-
-
-
         }
 
 
@@ -443,18 +463,16 @@ class Main {
             injector: Injector,
             config: EMConfig,
             epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+        ) {
             if (!config.security) {
-                return solution
+                return
             }
             //apply security testing phase
-            LoggingUtil.getInfoLogger().info("Starting to apply security testing")
-            epc.startSecurity()
+            epc.markStartingSecurity()
 
             //TODO might need to reset stc, and print some updated info again
 
-            return when (config.problemType) {
+            when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(RestSecurityBuilder::class.java)
                     securityRest.applySecurityPhase()
@@ -463,7 +481,6 @@ class Main {
                 else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Security phase currently not handled for problem type: ${config.problemType}")
-                    solution
                 }
             }
         }
@@ -471,18 +488,15 @@ class Main {
         private fun phaseHttpOracle(
             injector: Injector,
             config: EMConfig,
-            epc: ExecutionPhaseController,
-            solution: Solution<*>
-        ): Solution<*> {
+            epc: ExecutionPhaseController
+        ) {
 
-            return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
-                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
-                epc.startHttpOracles()
+            if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP oracle detection")
+                epc.markStartingAdditionalOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
-            } else {
-                solution
             }
         }
 
@@ -673,13 +687,21 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<GraphQLIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
 
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
 
@@ -712,15 +734,26 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
 
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RPCIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<RPCIndividual>>() {})
 
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
@@ -730,6 +763,7 @@ class Main {
 
                 EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
                     Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RPCIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -752,15 +786,26 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
 
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<WebIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<WebIndividual>>() {})
 
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
@@ -770,6 +815,7 @@ class Main {
 
                 EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
                     Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<WebIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -793,22 +839,25 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.StandardGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.MonotonicGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.SteadyStateGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
@@ -830,7 +879,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            epc.startSearch()
+            epc.markStartingSearch()
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)
@@ -1054,13 +1103,15 @@ class Main {
          * save derived impacts of genes of actions.
          * info is designed for experiment analysis
          */
-        private fun writeImpacts(injector: Injector, solution: Solution<*>) {
+        private fun writeImpacts(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.exportImpacts) {
                 return
             }
+
+            val solution = extractSolution(injector)
 
             val am = injector.getInstance(ArchiveImpactSelector::class.java)
             am.exportImpacts(solution)

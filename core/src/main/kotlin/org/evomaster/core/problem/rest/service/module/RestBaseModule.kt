@@ -39,6 +39,7 @@ open class RestBaseModule : EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<RestIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})

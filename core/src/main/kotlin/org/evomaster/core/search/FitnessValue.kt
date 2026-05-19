@@ -1,7 +1,6 @@
 package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
@@ -164,7 +163,19 @@ class FitnessValue(
 
         aggregatedFailedWhereQueries.clear()
         aggregatedFailedWhereQueries.addAll(
-            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+            databaseExecutions.values
+                .filter { it.failedWhere.isNotEmpty() }
+                .flatMap { exec ->
+                    // executionInfo contains ALL commands for this execution, not just the ones
+                    // whose WHERE failed. Use table-name substring matching as a heuristic to keep
+                    // only commands that reference a table with a failed WHERE clause.
+                    val failedTables = exec.failedWhere.keys.map { it.name.lowercase() }.toSet()
+                    exec.executionInfo.filter { info ->
+                        failedTables.any { table -> info.sqlCommand.lowercase().contains(table) }
+                    }
+                }
+                .map { it.sqlCommand }
+                .filter { it.isNotBlank() }
         )
     }
 
@@ -224,11 +235,18 @@ class FitnessValue(
         return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.score }.sum()
     }
 
-    fun coveredTargets(): Int {
+    fun coveredTargets() : Set<Int> {
+        return targets.entries
+            .filter { it.value.score == MAX_VALUE }
+            .map { it.key }
+            .toSet()
+    }
+
+    fun numberOfCoveredTargets(): Int {
         return targets.values.count { t -> t.score == MAX_VALUE }
     }
 
-    fun coveredTargets(prefix: String, idMapper: IdMapper) : Int{
+    fun numberOfCoveredTargets(prefix: String, idMapper: IdMapper) : Int{
 
         return targets.entries
                 .filter { it.value.score == MAX_VALUE }
@@ -277,7 +295,7 @@ class FitnessValue(
      */
     fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run {
+            return (if (prefix == null) numberOfCoveredTargets() else numberOfCoveredTargets(prefix, idMapper)).run {
                 TargetStatistic(
                     bootTime = BOOT_TIME_INFO_UNAVAILABLE,
                     searchTime = this - coveredTargetsDuringSeeding(),

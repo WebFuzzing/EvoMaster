@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+paths:
+  /api/namedexample:
+    post:
+      tags:
+        - named-example-application
+      operationId: post
+      parameters:
+        - name: q0
+          in: query
+          required: false
+          schema:
+            type: string
+          examples:
+            foo:
+              value: "fooq0"
+        - name: q1
+          in: query
+          required: false
+          schema:
+            type: string
+          examples:
+            foo:
+              value: "fooq1"
+            a0:
+              value: "X"
+            a1:
+              value: "X"
+            a2:
+              value: "X"
+            a3:
+              value: "X"
+            a4:
+              value: "X"
+            a5:
+              value: "X"
+            a6:
+              value: "X"
+            a7:
+              value: "X"
+            a8:
+              value: "X"
+            a9:
+              value: "X"
+        - name: q2
+          in: query
+          required: false
+          schema:
+            type: string
+          examples:
+            foo:
+              value: "fooq2"
+            b0:
+              value: "X"
+            b1:
+              value: "X"
+            b2:
+              value: "X"
+            b3:
+              value: "X"
+            b4:
+              value: "X"
+            b5:
+              value: "X"
+            b6:
+              value: "X"
+            b7:
+              value: "X"
+            b8:
+              value: "X"
+            b9:
+              value: "X"
+        - name: q3
+          in: query
+          required: false
+          schema:
+            type: string
+          examples:
+            foo:
+              value: "fooq3"
+            c0:
+              value: "X"
+            c1:
+              value: "X"
+            c2:
+              value: "X"
+            c3:
+              value: "X"
+            c4:
+              value: "X"
+            c5:
+              value: "X"
+            c6:
+              value: "X"
+            c7:
+              value: "X"
+            c8:
+              value: "X"
+            c9:
+              value: "X"
+        - name: q4
+          in: query
+          required: false
+          schema:
+            type: string
+          examples:
+            foo:
+              value: "fooq4"
+            a0:
+              value: "X"
+            a1:
+              value: "X"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamedExampleDto'
+            examples:
+              foo:
+                value:
+                  data: "fooBody"
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+components:
+  schemas:
+    NamedExampleDto:
+      type: object
+      properties:
+        data:
+          type: string

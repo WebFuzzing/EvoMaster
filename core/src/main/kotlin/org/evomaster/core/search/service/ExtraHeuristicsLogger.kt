@@ -7,6 +7,7 @@ import net.sf.jsqlparser.util.deparser.SelectDeParser
 import net.sf.jsqlparser.util.deparser.StatementDeParser
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.ReplaceValuesDeParser
 import java.nio.file.Files
 import java.nio.file.Path

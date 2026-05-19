@@ -3,10 +3,18 @@ package org.evomaster.core.utils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.LoggerFactory
 
-class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) {
+class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
+
+    init {
+        require(ranges.isNotEmpty()) { "MultiCharacterRange cannot be created with an empty list" }
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
+
+        operator fun invoke (negated: Boolean, characters: String): MultiCharacterRange {
+            return MultiCharacterRange(negated, characters.map { CharacterRange(it, it) })
+        }
 
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
             if (ranges.isEmpty()) {
@@ -24,10 +32,6 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
                 } else {
                     add(internalRanges, CharacterRange(range.start, range.end))
                 }
-            }
-
-            if (internalRanges.isEmpty()) {
-                throw IllegalArgumentException("No defined ranges")
             }
 
             return MultiCharacterRange(internalRanges)
@@ -48,8 +52,8 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
 
             for ((start, end) in internalRanges.sortedBy { it.start }) {
                 when {
-                    end < currentStart - 1 -> newInternalRanges += CharacterRange(start, end)
-                    start > currentEnd + 1 -> {
+                    end.code < currentStart.code - 1 -> newInternalRanges += CharacterRange(start, end)
+                    start.code > currentEnd.code + 1 -> {
                         if (!merged) {
                             newInternalRanges += CharacterRange(currentStart, currentEnd)
                             merged = true
@@ -98,7 +102,7 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
      * @return The sampled character.
      */
     fun sample(randomness: Randomness): Char {
-        val total = ranges.sumOf { it.size }
+        val total = charCount
         val sampledValue = randomness.nextInt(total)
         var currentRangeMinValue = 0
         for (r in ranges) {
@@ -116,6 +120,7 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
     }
 
     val size: Int get() = ranges.size
+    val charCount :Int = ranges.sumOf{ it.size }
     operator fun get(index: Int): CharacterRange = ranges[index]
     fun any(predicate: (CharacterRange) -> Boolean): Boolean = ranges.any(predicate)
 }

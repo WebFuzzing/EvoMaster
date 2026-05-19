@@ -6,10 +6,13 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 object HttpSemanticsOracle {
 
@@ -248,23 +251,226 @@ object HttpSemanticsOracle {
     }
 
     /**
+     * Checks the PUT full-replacement oracle.
+     *
+     * Sequence:
+     *   PUT /path  -> 2xx   (full replacement with body B)
+     *   GET /path  -> 2xx   (must reflect B exactly, excluding fields outside the PUT schema)
+     *
+     * Two independent checks are performed:
+     *
+     *  1. Sent fields (fields actually included in the PUT body) must come back
+     *     in the GET with the same value. Differences are bugs (partial update).
+     *
+     *  2. Wiped fields (fields that are part of the PUT schema but were not
+     *     included in this request) must be absent or null in the GET. PUT is a
+     *     full replacement, so the server should have cleared them. Any leftover
+     *     value is also a partial-update bug.
+     *
+     * Fields that exist in the GET response schema but are NOT in the PUT schema
+     * (e.g. server-managed `id`, `createdAt`) are ignored: PUT cannot control them.
+
+     */
+    fun hasMismatchedPutResponse(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        schema: RestSchema? = null
+    ): Boolean {
+
+        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return false
+
+        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
+        // if put returned 2xx but entity does not exist afterwards
+        if (resGet.getStatusCode() == 404) return true
+        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
+
+        val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
+
+        //for now we only deal with JSON/XML/FORM
+        if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
+            return false
+        }
+
+        val putBody = extractRequestBody(put)
+        val getBody = resGet.getBody()
+
+        // PUT sent content but GET body is empty -> sent fields definitely missing
+        if (getBody.isNullOrEmpty()) {
+            return !putBody.isNullOrEmpty()
+        }
+
+
+        val sentFields = extractSentFieldNames(put)
+        val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
+            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) } ?: emptySet()
+        }
+        if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
+            // no information to verify against; flag only when PUT sent nothing either
+            return putBody.isNullOrEmpty()
+        }
+
+        val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
+
+        return hasMismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+    }
+
+    private data class PutGetPair(
+        val put: RestCallAction,
+        val get: RestCallAction,
+        val resPut: RestCallResult,
+        val resGet: RestCallResult
+    )
+
+    /**
+     * Validates and extracts the trailing PUT/GET pair from the individual.
+     * Returns null if any structural or authorization precondition fails.
+     */
+    private fun findPutGetPair(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): PutGetPair? {
+        if (individual.size() < 2) return null
+
+        val actions = individual.seeMainExecutableActions()
+        val put = actions[actions.size - 2]
+        val get = actions[actions.size - 1]
+
+        if (put.verb != HttpVerb.PUT) return null
+        if (get.verb != HttpVerb.GET) return null
+        if (!put.usingSameResolvedPath(get)) return null
+        if (put.auth.isDifferentFrom(get.auth)) return null
+
+        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return null
+        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
+            ?: return null
+
+        return PutGetPair(put, get, resPut, resGet)
+    }
+
+    /**
+     * Wiped candidates are restricted to fields the GET schema actually exposes, otherwise
+     * write-only fields (e.g. passwords) would cause false positives.
+     */
+    private fun computeWipedFields(
+        candidates: Set<String>,
+        schema: RestSchema?,
+        get: RestCallAction
+    ): Set<String> {
+        if (candidates.isEmpty() || schema == null) return emptySet()
+        val getSchemaFields = SchemaUtils.extractResponseSchemaFields(
+            schema, get.path.toString(), HttpVerb.GET,
+            statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx)
+        )
+        if (getSchemaFields.isEmpty()) return emptySet()
+        return candidates intersect getSchemaFields
+    }
+
+    /**
+     * Unified field-level comparison for JSON, XML and form-encoded PUT bodies.
+     *
+     * @param sentFields  fields whose values must match between PUT and GET
+     * @param wipedFields fields that must be absent (or null) in the GET response
+     */
+    internal fun hasMismatchedPutFields(
+        putBody: String,
+        getBody: String,
+        sentFields: Set<String>,
+        wipedFields: Set<String>,
+        bodyParam: BodyParam? = null
+    ): Boolean {
+
+        // sent fields: PUT value must equal GET value
+        if (sentFields.isNotEmpty()) {
+            val fieldsPut = readPutFields(putBody, bodyParam, sentFields) ?: return false
+            if (fieldsPut.isNotEmpty()) {
+                val fieldsGet = readGetFields(getBody, fieldsPut.keys) ?: return true
+                for ((field, valuePut) in fieldsPut) {
+                    val valueGet = fieldsGet[field] ?: return true
+                    if (valuePut != valueGet) return true
+                }
+            }
+        }
+
+        // wiped fields: must be absent or null in GET
+        if (wipedFields.isNotEmpty()) {
+            val getWiped = readGetFields(getBody, wipedFields) ?: return false
+            for (field in wipedFields) {
+                if (!getWiped[field].isNullOrEmpty()) return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Extracts field values from a PUT request body according to its content type.
+     * Returns null if the body cannot be parsed by the chosen reader.
+     */
+    private fun readPutFields(
+        putBody: String,
+        bodyParam: BodyParam?,
+        fieldNames: Set<String>
+    ): Map<String, String>? = when {
+        bodyParam == null || bodyParam.isJson() ->
+            OutputFormatter.JSON_FORMATTER.readFields(putBody, fieldNames)
+        bodyParam.isXml() ->
+            OutputFormatter.XML_FORMATTER.readFields(putBody, fieldNames)
+        bodyParam.isForm() -> {
+            val parsed = parseFormBody(putBody)
+            if (parsed.isEmpty()) null
+            else fieldNames.mapNotNull { f -> parsed[f]?.let { f to it } }.toMap()
+        }
+        else -> null
+    }
+
+    /**
+     * Extracts field values from a GET response body, auto-detecting JSON or XML.
+     * Returns null if neither formatter can parse the body.
+     */
+    private fun readGetFields(
+        getBody: String,
+        fieldNames: Set<String>
+    ): Map<String, String>? {
+        return OutputFormatter.JSON_FORMATTER.readFields(getBody, fieldNames)
+            ?: OutputFormatter.XML_FORMATTER.readFields(getBody, fieldNames)
+    }
+
+    /**
      * Extract field names from the PUT/PATCH request body.
      * These are the fields that the client attempted to modify.
      */
     private fun extractModifiedFieldNames(modify: RestCallAction): Set<String> {
 
-        val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
-            ?: return emptySet()
-
-        val gene = bodyParam.primaryGene()
-        val objectGene = gene.getWrappedGene(ObjectGene::class.java) as ObjectGene?
-            ?: if (gene is ObjectGene) gene else null
-
-        if(objectGene == null){
-            return emptySet()
-        }
+        val objectGene = extractBodyObjectGene(modify) ?: return emptySet()
 
         return objectGene.fields.map { it.name }.toSet()
+    }
+
+    /**
+    *  Extract only the field names that were actually sent in the request body.
+    */
+    private fun extractSentFieldNames(modify: RestCallAction): Set<String> {
+
+        val objectGene = extractBodyObjectGene(modify) ?: return emptySet()
+
+        return objectGene.fields
+            .filter { f -> (f as? OptionalGene)?.isActive ?: true }
+            .map { it.name }
+            .toSet()
+    }
+
+    private fun extractBodyObjectGene(modify: RestCallAction): ObjectGene? {
+        val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
+            ?: return null
+
+        val gene = bodyParam.primaryGene()
+        // an optional body that is not active means nothing is sent, so there
+        // are no fields to extract regardless of the underlying ObjectGene.
+        if (gene is OptionalGene && !gene.isActive) return null
+
+        return gene.getWrappedGene(ObjectGene::class.java) as ObjectGene?
+            ?: if (gene is ObjectGene) gene else null
     }
 
     /**
@@ -359,6 +565,119 @@ object HttpSemanticsOracle {
                 // checking valueModify==valueAfter (not just valueAfter!=valueBefore) is done to
                 // deal with possible flakiness issues (e.g. timestamps changing between the two GETs)
                 if (valueBefore != valueAfter && valueModify == valueAfter) return true
+            }
+            return false
+        }
+        return false
+    }
+
+    /**
+     * Checks the misleading-create PUT oracle:
+     *
+     *   GET /path -> ???  (should be 404 if PUT truly creates)
+     *   PUT /path -> 201  (claims resource was created)
+     *
+     * Returns true if the GET before the PUT returns 2xx, meaning the resource already
+     * existed and the 201 is misleading (should be 200 or 204 for an update).
+     */
+    fun hasMisleadingCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 2) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val get = actions[actions.size - 2]
+        val put = actions[actions.size - 1]
+
+        if (get.verb != HttpVerb.GET) return false
+        if (put.verb != HttpVerb.PUT) return false
+
+        if (!get.usingSameResolvedPath(put)) return false
+
+        if (get.auth.isDifferentFrom(put.auth)) return false
+
+        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
+            ?: return false
+        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // PUT must have returned 201 (claiming creation)
+        if (resPut.getStatusCode() != 201) return false
+
+        // If GET before PUT returned 2xx, the resource already existed -> misleading 201
+        return StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())
+    }
+
+    /**
+     * Checks the non-idempotent PUT oracle:
+     *
+     *   PUT /X         -> 2xx
+     *   GET /X (or ancestor) -> 2xx  (state after 1st PUT)
+     *   PUT /X        -> 2xx        (same body)
+     *   GET /X (or ancestor) -> 2xx  (state after 2nd PUT)
+     *
+     * Returns true if any numeric or boolean field differs between the two GET responses.
+     * String fields are intentionally ignored (timestamps/UUIDs etc. cause flakiness).
+     */
+    fun hasNonIdempotentPut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 4) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val put1 = actions[actions.size - 4]
+        val get1 = actions[actions.size - 3]
+        val put2 = actions[actions.size - 2]
+        val get2 = actions[actions.size - 1]
+
+        if (put1.verb != HttpVerb.PUT || put2.verb != HttpVerb.PUT) return false
+        if (get1.verb != HttpVerb.GET || get2.verb != HttpVerb.GET) return false
+
+        // both PUTs on same resolved path with same auth
+        if (!put1.usingSameResolvedPath(put2)) return false
+        if (put1.auth.isDifferentFrom(put2.auth)) return false
+
+        // both GETs on same resolved path with same auth
+        if (!get1.usingSameResolvedPath(get2)) return false
+        if (get1.auth.isDifferentFrom(get2.auth)) return false
+
+        val resPut1 = actionResults.find { it.sourceLocalId == put1.getLocalId() } as RestCallResult?
+            ?: return false
+        val resGet1 = actionResults.find { it.sourceLocalId == get1.getLocalId() } as RestCallResult?
+            ?: return false
+        val resPut2 = actionResults.find { it.sourceLocalId == put2.getLocalId() } as RestCallResult?
+            ?: return false
+        val resGet2 = actionResults.find { it.sourceLocalId == get2.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // all four must be 2xx for the oracle to apply
+        if (!StatusGroup.G_2xx.isInGroup(resPut1.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resGet1.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPut2.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resGet2.getStatusCode())) return false
+
+        val body1 = resGet1.getBody() ?: return false
+        val body2 = resGet2.getBody() ?: return false
+        if (body1.isEmpty() || body2.isEmpty()) return false
+
+        val formatters = listOf(
+            OutputFormatter.JSON_FORMATTER,
+            OutputFormatter.XML_FORMATTER,
+            OutputFormatter.FORM_FORMATTER
+        )
+        for (formatter in formatters) {
+            val fields1 = formatter.readFields(body1, numericAndBooleanOnly = true) ?: continue
+            val fields2 = formatter.readFields(body2, numericAndBooleanOnly = true) ?: continue
+
+            if (fields1.isEmpty() && fields2.isEmpty()) continue
+
+            for ((name, v1) in fields1) {
+                val v2 = fields2[name] ?: continue
+                if (v1 != v2) return true
             }
             return false
         }

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 class AlgorithmsRest {
 
     @GetMapping(path = ["/int/{x}"])
-    open fun getInt( @PathVariable("x") x: Int) : ResponseEntity<String> {
+    fun getInt( @PathVariable("x") x: Int) : ResponseEntity<String> {
 
         if(x >= 0){
             return ResponseEntity.ok("OK")
@@ -21,7 +21,7 @@ class AlgorithmsRest {
     }
 
     @GetMapping(path = ["/double/{x}"])
-    open fun getDouble( @PathVariable("x") x: Double) : ResponseEntity<String> {
+    fun getDouble( @PathVariable("x") x: Double) : ResponseEntity<String> {
 
         if(x >= 0){
             return ResponseEntity.ok("OK")

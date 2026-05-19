@@ -21,10 +21,6 @@ Also, some of these papers provides full replication packages, which are linked 
   *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*. 
   [[arxiv](https://arxiv.org/abs/2604.00702)]
 
-* M. Zhang, T. Yue, A. Arcuri.
-  *Fuzzing Microservices in Face of Intrinsic Uncertainties*.
-  [[arxiv](https://arxiv.org/abs/2603.02551)]
-
 * H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
   *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
   [[arxiv](https://arxiv.org/abs/2505.19625)]
@@ -42,20 +38,26 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2026
 
+* M. Zhang, T. Yue, A. Arcuri.
+  *Fuzzing Microservices in Face of Intrinsic Uncertainties*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2026_tosem_uncert.pdf)]
+
+
 * H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
   *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
   ACM/IEEE International Conference on Automation of Software Test (AST).
-  (To appear)
+  [[PDF](publications/2026_ast.pdf)]
 
 * A. Arcuri, M. Zhang, S. Seran, J. P. Galeotti, A. Golmohammadi, P. Garrett, O. Sahin, M. Shalmani, F. Castagna, I. Kertusha, F. Susilo, G. Bhandari, G. Assres, J. Molléri.
   *EvoMaster at REST League 2026 Tool Competition*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
-  (To appear)
+  [[PDF](publications/2026_sbft_competition.pdf)]
 
 * S. Seran, G. Bhandari, A. Arcuri. 
   *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
-  (To appear)
+  [[PDF](publications/2026_sbft_ssrf.pdf)]
 
 ### 2025
 

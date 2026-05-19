@@ -20,7 +20,7 @@ public class EndpointFilterEMTest extends SpringTestBase {
     }
 
     @Test
-    public void testRunEM() throws Throwable {
+    public void testRunEM_EndpointFilter() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "EndpointFilterEM",
@@ -28,8 +28,11 @@ public class EndpointFilterEMTest extends SpringTestBase {
                 50,
                 (args) -> {
 
-                    args.add("--endpointTagFilter");
-                    args.add("Foo");
+                    setOption(args, "endpointTagFilter", "Foo");
+
+                    setOption(args, "security", "false");
+                    setOption(args, "schemaOracles", "false");
+                    setOption(args, "httpOracles", "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

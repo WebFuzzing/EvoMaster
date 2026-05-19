@@ -12,7 +12,7 @@ class SleepRest {
 
 
     @GetMapping
-    open fun sleep() : ResponseEntity<String> {
+    fun sleep() : ResponseEntity<String> {
 
         try {
             Thread.sleep(1_000_000_000)

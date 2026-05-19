@@ -6,7 +6,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 class StoppingCriterionTest {
 
     val injector: Injector = LifecycleInjector.builder()
-        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
         .build().createInjector()
 
 

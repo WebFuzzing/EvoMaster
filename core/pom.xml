@@ -5,12 +5,16 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-core-parent</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
         <relativePath>../core-parent</relativePath>
     </parent>
 
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <skipTests>${skipCore}</skipTests>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -170,7 +174,7 @@
             <artifactId>javax.el</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
         </dependency>
         <dependency>
@@ -416,7 +420,7 @@
                                         <Specification-Title>${project.name}</Specification-Title>
                                         <Specification-Version>${project.version}</Specification-Version>
                                         <Specification-Vendor>${project.organization.name}</Specification-Vendor>
-                                        <!-- Keep this in sync with JdkIssue -->
+                                        <!-- Keep this in sync with JdkIssue and makeExecutable.sh -->
                                         <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>
                                     </manifestEntries>
                                 </transformer>

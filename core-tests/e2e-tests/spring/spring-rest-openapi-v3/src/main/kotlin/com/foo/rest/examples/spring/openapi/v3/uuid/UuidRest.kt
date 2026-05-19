@@ -12,7 +12,7 @@ import java.util.*
 class UuidRest {
 
     @GetMapping(path = ["/{a}"])
-    open fun check(@PathVariable("a") a: String) : ResponseEntity<String> {
+    fun check(@PathVariable("a") a: String) : ResponseEntity<String> {
 
         val x = UUID.fromString(a)
 

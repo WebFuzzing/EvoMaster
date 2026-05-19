@@ -16,6 +16,9 @@ public class ClassesToExclude {
 
     private static final String EM_REPRESENTATIVE_CLASS = "org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer";
     private static final String EM_CLASS_LOAD_ERROR_MSG = "Fail to load "+ EM_REPRESENTATIVE_CLASS;
+    //Adding a couple of known class loaders that are not able to load EM classes to avoid the above warning on every e2e test
+    private static final String PLATFORM_CLASS_LOADER = "jdk.internal.loader.ClassLoaders$PlatformClassLoader";
+    private static final String EXT_CLASS_LOADER = "sun.misc.Launcher$ExtClassLoader";
 
     static  {
 
@@ -62,7 +65,7 @@ public class ClassesToExclude {
 
     /**
      *
-     * @param loader
+     * @param loader class loader to check
      * @return if the loader could load EM class
      */
     private static boolean canLoadEMClass(ClassLoader loader){
@@ -70,6 +73,11 @@ public class ClassesToExclude {
             loader.loadClass(EM_REPRESENTATIVE_CLASS);
             return true;
         } catch (ClassNotFoundException e) {
+            //New logic to avoid logging an unnecessary warning on every test
+            String loaderName = loader.getClass().getName();
+            if (PLATFORM_CLASS_LOADER.equals(loaderName) || EXT_CLASS_LOADER.equals(loaderName)) {
+                return false;
+            }
             // reduce string concatenation, then only print the msg as EM_CLASS_LOAD_ERROR_MSG
             SimpleLogger.uniqueWarn(EM_CLASS_LOAD_ERROR_MSG);
             return false;
@@ -77,12 +85,6 @@ public class ClassesToExclude {
     }
 
     public static boolean checkIfCanInstrument(ClassLoader loader, ClassName cn) {
-
-        /*
-            if the loader cannot load EM classes, we skip instrumentation for the class, ie, cn
-         */
-        if (loader != null && !canLoadEMClass(loader))
-            return false;
 
         String className = cn.getFullNameWithDots();
 
@@ -99,6 +101,9 @@ public class ClassesToExclude {
             }
         }
 
-        return true;
+        /*
+            if the loader cannot load EM classes, we skip instrumentation for the class, i.e., cn
+         */
+        return loader == null || canLoadEMClass(loader);
     }
 }

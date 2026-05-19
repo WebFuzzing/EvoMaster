@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.junit.jupiter.api.BeforeEach
@@ -34,7 +34,7 @@ class MutationWeightControlTest {
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
+                .withModules(* arrayOf<Module>(BaseModule(arrayOf("--blackBox","false"), true)))
                 .build().createInjector()
         randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)

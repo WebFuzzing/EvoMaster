@@ -16,7 +16,7 @@ class SqlCompositeGene(
         // the name of the column
         name: String,
         // the ordered components of the column
-        val fields: List<out Gene>,
+        val fields: List<Gene>,
         // the name of the composite type
         val compositeTypeName: String? = null
 ) : CompositeFixedGene(name, fields.toMutableList()) {

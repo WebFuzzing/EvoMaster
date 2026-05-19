@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -117,6 +118,10 @@ public abstract class DbCleanerTestBase {
         assertEquals(0, res.seeRows().size());
         res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;");
         assertEquals(0, res.seeRows().size());
+
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (42)");
+        clearDatabase(Collections.singletonList("foo"));
+
     }
 
     @Test

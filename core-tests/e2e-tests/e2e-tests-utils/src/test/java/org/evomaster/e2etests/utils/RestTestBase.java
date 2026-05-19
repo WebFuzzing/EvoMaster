@@ -45,6 +45,7 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         SimpleLogger.setThreshold(SimpleLogger.Level.OFF);
 
         List<String> args =  new ArrayList<>(Arrays.asList(
+                "--blackBox", "false",
                 "--createTests", "false",
                 "--seed", "42",
                 "--showProgress", "false",

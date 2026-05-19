@@ -46,6 +46,7 @@ class WebModule: EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<WebIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<WebIndividual>>(){})
@@ -69,12 +70,8 @@ class WebModule: EnterpriseModule() {
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
-        bind(object : TypeLiteral<Minimizer<WebIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
-
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
         bind(RemoteController::class.java)
             .to(RemoteControllerImplementation::class.java)

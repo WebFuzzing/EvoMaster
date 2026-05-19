@@ -86,7 +86,7 @@ bracketQuantifierRange
 atom
  : patternCharacter+
  | DOT
- | AtomEscape
+ | atomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
  //TODO
@@ -94,14 +94,28 @@ atom
  ;
 
 
-
 //TODO
-fragment CharacterEscape
- : ControlEscape
- | 'c' ControlLetter
- | HexEscapeSequence
- | UnicodeEscapeSequence
- //| IdentityEscape
+CharacterEscape
+ : SLASH ControlEscape
+ | SLASH HexEscapeSequence
+ | SLASH UnicodeEscapeSequence
+ | SLASH OctalEscapeSequence // legacy octal escapes are deprecated, but this also works for null escape (\u0000)
+ | SLASH IdentityEscape
+ ;
+
+//TODO backreferences
+// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
+// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
+// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
+// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
+
+ControlLetterExtendedEscape
+ // This handles both control letter escapes (\ca, \cZ, etc.) and literal interpretations of \c.
+ // As in JS: "\c" + [^a-zA-Z]? is taken literally as "\c" + [^a-zA-Z]? outside charclasses
+ // while "\c" + [^a-zA-Z0-9_]? is taken literally as "\c" + [^a-zA-Z0-9_]? within charclasses.
+ // Therefore, as all characters following "\c" (or none) are permitted we accept "\c" + .? here
+ // and handle each case in visitor.
+ : SLASH 'c' .?   // matches \c, \c<anything>
  ;
 
 fragment ControlEscape
@@ -109,16 +123,12 @@ fragment ControlEscape
  : [fnrtv]
  ;
 
-fragment ControlLetter
- : [a-zA-Z]
+fragment IdentityEscape
+ // In JS escape sequences that are not one of the above (excluding backreferences) become identity escapes:
+ // they represent the character that follows the backslash. (e.g.: "\a" becomes "a")
+ // see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_escape#:~:text=identity%20escapes
+ : ~[dDsSwWfnrtvxuc0-9bB]
  ;
-
-
-//TODO
-//fragment IdentityEscape ::
-//SourceCharacter but not IdentifierPart
-//<ZWJ>
-//<ZWNJ>
 
 //TODO
 //DecimalEscape
@@ -130,8 +140,12 @@ patternCharacter
  // SourceCharacter but not one of ^ $ \ . * + ? ( ) [ ] { } |
  //: ~[^$\\.*+?()[\]{}|]
  : BaseChar
+ | COMMA
  | MINUS
  | DecimalDigit
+ // These are also allowed as literals when no matching pair exists
+ | BRACE_close
+ | BRACKET_close
  ;
 
 
@@ -170,26 +184,36 @@ classAtomNoDash
  //SourceCharacter but not one of \ or ] or -
  //TODO
  //: ~[-\]\\]
-// | '\\' ClassEscape
- : BaseChar
+ : classEscape
+ | BaseChar
  | DecimalDigit
- | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
+ | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
 
-//TODO
-//ClassEscape
-// : CharacterClassEscape
-//// | DecimalEscape
-//// | 'b'
-// //| CharacterEscape
-// ;
+classEscape
+ : controlLetterExtendedEscape // this needs to be first so that we can accept things like \c and \c0 within charclasses
+ | atomEscape
+ | LowerCaseBEscape
+ ;
+
+atomEscape
+ : CharacterClassEscape
+ //TODO
+// | '\\' DecimalEscape
+ | CharacterEscape
+ | controlLetterExtendedEscape
+ ;
 
 decimalDigits
  : DecimalDigit+
  ;
 
-
+controlLetterExtendedEscape
+ // we need this as a parser rule because differentiating between being inside a charclass or outside is important
+ // as behavior changes in each case
+ : ControlLetterExtendedEscape
+ ;
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
@@ -198,20 +222,15 @@ DecimalDigit
  : [0-9]
  ;
 
-
-AtomEscape
- : '\\' CharacterClassEscape
- //TODO
-// | '\\' DecimalEscape
- | '\\' CharacterEscape
- ;
-
-fragment CharacterClassEscape
+CharacterClassEscape
  //one of d D s S w W
- : [dDsSwW]
+ : SLASH [dDsSwW]
  ;
 
-
+LowerCaseBEscape
+ // In JS, within charclass this is interpreted as backspace, outside it is a word boundary assert
+ : SLASH 'b'
+ ;
 
 CARET                      : '^';
 DOLLAR                     : '$';
@@ -236,6 +255,12 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
+fragment OctalEscapeSequence
+ : OctalDigit
+ | OctalDigit OctalDigit
+ | [0-3] OctalDigit OctalDigit
+;
+
 fragment UnicodeEscapeSequence
  : 'u' HexDigit HexDigit HexDigit HexDigit
  ;
@@ -246,6 +271,10 @@ fragment HexEscapeSequence
 
 fragment HexDigit:
  [a-fA-F0-9]
+ ;
+
+fragment OctalDigit:
+ [0-7]
  ;
 
 //TODO

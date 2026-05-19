@@ -45,6 +45,7 @@ class RPCModule : EnterpriseModule(){
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .to(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
@@ -68,11 +69,8 @@ class RPCModule : EnterpriseModule(){
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
-        bind(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
         bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)

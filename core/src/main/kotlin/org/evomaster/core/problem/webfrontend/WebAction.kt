@@ -57,8 +57,8 @@ class WebAction(
         return "${x.userActionType}:${x.cssSelector}"
     }
 
-    override fun seeTopGenes(): List<out Gene> {
-        return  children as List<out Gene>
+    override fun seeTopGenes(): List<Gene> {
+        return  children as List<Gene>
     }
 
 

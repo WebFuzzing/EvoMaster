@@ -32,6 +32,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
     @Test
     public void externalServiceSuccessTest() throws Throwable {
         String[] args = new String[]{
+                "--blackBox", "false",
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,

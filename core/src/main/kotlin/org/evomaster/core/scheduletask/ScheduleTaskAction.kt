@@ -38,7 +38,7 @@ class ScheduleTaskAction(
         return taskId
     }
 
-    override fun seeTopGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 

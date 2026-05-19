@@ -626,10 +626,10 @@ class EMConfig {
             algorithm = if(blackBox) defaultAlgorithmForBlackBox else defaultAlgorithmForWhiteBox
         }
 
-
-        if (!blackBox && bbSwaggerUrl.isNotBlank()) {
-            throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
-        }
+        //no longer the case, once we got default value
+//        if (!blackBox && bbSwaggerUrl.isNotBlank()) {
+//            throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
+//        }
         if (!blackBox && bbTargetUrl.isNotBlank()) {
             throw ConfigProblemException("'bbTargetUrl' should be set only in black-box mode")
         }
@@ -640,10 +640,20 @@ class EMConfig {
 
         if (blackBox && !bbExperiments) {
 
-            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw ConfigProblemException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
+            if(problemType == ProblemType.REST && schema == defaultSchema && !Files.exists(Paths.get(defaultSchema))){
+                LoggingUtil.uniqueUserInfo(
+                    AnsiColor.blinking(AnsiColor.inBlue("[IMPORTANT]")) +
+                        AnsiColor.inYellow(" When doing black-box testing, you need to specify the location of the schema" +
+                    " via a URL or local file path using '--schema' option." +
+                    " If not, default is checking for file $defaultSchema," +
+                    " which seems not currently existing on your machine."))
             }
-            if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()) {
+
+            if (problemType == ProblemType.REST && schema.isBlank()) {
+                throw ConfigProblemException("In black-box mode for REST APIs, you must set the 'schema' option." +
+                        " If instead you were going to do white-box testing, recall to use '--blackBox false'.")
+            }
+            if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
         }
@@ -659,11 +669,14 @@ class EMConfig {
         if (blackBox && ratePerMinute <= 0) {
             LoggingUtil.uniqueUserWarn("You have not setup 'ratePerMinute'. If you are doing testing of" +
                     " a remote service which you do not own, you might want to put a rate-limiter to prevent" +
-                    " EvoMaster from bombarding such service with HTTP requests.")
+                    " EvoMaster from bombarding such service with HTTP requests." +
+                    " EvoMaster automatically honors 429 responses, and waits accordingly based on the returned" +
+                    " Retry-After header. Still, you might also want to use 'ratePerMinute' if you are just" +
+                    " testing EvoMaster out on some public APIs.")
         }
 
-        if (!blackBox && outputFormat == OutputFormat.PYTHON_UNITTEST) {
-            throw ConfigProblemException("Python output is used only for black-box testing")
+        if (!blackBox && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJavaOrKotlin()) {
+            throw ConfigProblemException("$outputFormat output is used only for black-box testing")
         }
 
         when (stoppingCriterion) {
@@ -721,21 +734,13 @@ class EMConfig {
         }
 
         if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
-                && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+                && outputFormat.isJavaOrKotlin()) {
             throw ConfigProblemException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
-        if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
+        if (seedTestCases && seedTestCasesPath.isBlank()) {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
-
-        // Clustering constraints: the executive summary is not really meaningful without the clustering
-//        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
-//            executiveSummary = false
-//            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
-//                    "The option has been deactivated for this run, to prevent a crash.")
-//            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
-//        }
 
         if (problemType == ProblemType.RPC
                 && createTests
@@ -1221,30 +1226,44 @@ class EMConfig {
 
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
-    var blackBox = false
+    var blackBox = true
+
+    val defaultSchema = "openapi.json"
 
     @Important(3.2)
     @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
             " If the schema is on the local machine, you can use a URL starting with 'file://'." +
             " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
-    var bbSwaggerUrl: String = ""
+    var schema: String = defaultSchema
+
+    @Deprecated("Rather use 'schema'")
+    @Cfg("Old, deprecated parameter for 'schema'.")
+    var bbSwaggerUrl: String
+        get() = schema
+        set(value){ schema = value }
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached, e.g.," +
+    @Cfg("When in black-box mode, specify the base URL of where the SUT can be reached, e.g.," +
             " http://localhost:8080 ." +
             " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " Otherwise, it should not contain any path elements (e.g., '/api'), as it will be inferred from the schema." +
             " In GraphQL, this must point to the entry point of the API, e.g.," +
             " http://localhost:8080/graphql .")
-    var bbTargetUrl: String = ""
+    var base: String = ""
 
+    @Deprecated("Rather use 'base'")
+    @Cfg("Old, deprecated parameter for 'base'.")
+    var bbTargetUrl: String = ""
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
             " an external service, might want to limit the number of calls to avoid bombarding such service" +
             " (which could end up becoming equivalent to a DoS attack)." +
             " A value of zero or negative means that no limiter is applied." +
-            " This is needed only for black-box testing of remote services.")
+            " This is needed only for black-box testing of remote services." +
+            " Note that, evan without this parameter, EvoMaster will still respect the Retry-After given back" +
+            " in 429 responses.")
     var ratePerMinute = 0
 
     @Important(4.0)
@@ -1528,11 +1547,11 @@ class EMConfig {
         DETERMINISTIC
     }
 
-
-
     @Experimental
-    @Cfg("Model used to learn input constraints and infer response status before making request.")
-    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+    @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
+            "Supports both single-model and ensemble configurations. " +
+            "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
+    var aiModelForResponseClassification: String = "NONE"
 
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
@@ -1578,7 +1597,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.RAW
+    var aiEncoderType = EncoderType.NORMAL
 
 
     @Experimental
@@ -1598,7 +1617,7 @@ class EMConfig {
     @PercentageAsProbability(false)
     @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
             " All classifications with probability equal or above such threshold value will be accepted.")
-    var classificationRepairThreshold = 0.8
+    var classificationRepairThreshold = 0.5
 
     @Experimental
     @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
@@ -1637,7 +1656,7 @@ class EMConfig {
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
             "whether to send a request as-is or attempt a repair.")
-    var aIResponseClassifierWeaknessThreshold = 0.4
+    var aIResponseClassifierWeaknessThreshold = 0.8
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -1989,6 +2008,18 @@ class EMConfig {
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
     var instrumentMR_MONGO = true
+
+    @Experimental
+    @Cfg("Execute instrumentation for method replace with category CASSANDRA." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_CASSANDRA = false
+
+    @Cfg("Execute instrumentation for method replace with category DYNAMODB." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_DYNAMODB = false
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
@@ -2616,6 +2647,17 @@ class EMConfig {
     var minimize: Boolean = true
 
 
+    @Cfg("When the main fuzzing session is over, there are several following phases in which test cases can be created" +
+            " and evaluated (e.g., for minimization, flakiness and security checks)." +
+            " Each of these follow up phases takes some time, which is not included in 'maxTime'." +
+            " All those phases are time-bounded, based on the main search budget." +
+            " For example, with a default of 10% and main budget of 1 hour, then each phase will take" +
+            " at most 6 minutes each after the 1 hour search." +
+            " Phases will be preemptively stopped if they reach their timeouts.")
+    @PercentageAsProbability
+    var extraPhaseBudgetPercentage: Double = 0.10
+
+    @Deprecated("No longer in use, replaced by 'extraPhaseBudgetPercentage'")
     @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
             " A negative number mean no timeout is considered." +
             " A value of 0 means minimization will be skipped, even if minimize=true.")
@@ -2836,6 +2878,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
+    @Cfg("If any action contains any named example, make sure, with a given probability, that ALL fields for that example" +
+            " are using the provided values by the user")
+    @Probability(false)
+    var probNamedExamples = 0.50
+
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
@@ -2850,27 +2897,22 @@ class EMConfig {
     var security = true
 
 
-    @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var ssrf = false
+    var ssrf = true
 
-    @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var xss = false
+    var xss = true
 
-    @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
     @DependsOnTrueFor("security")
-    var sqli = false
+    var sqli = true
 
-    @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
     @DependsOnTrueFor("sqli")
     var sqliInjectedSleepDurationMs = 5000
 
-    @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
     @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
@@ -2934,6 +2976,10 @@ class EMConfig {
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
+
+    @Experimental
+    @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
+    var statusOracles = false
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3118,6 +3164,14 @@ class EMConfig {
             " applying any overlay.")
     var overlayLenient = false
 
+
+    @Min(0.0)
+    @Cfg("A 429 'Too Many Requests' response might not provide info on for how long the rate-limiter is in place." +
+            " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
+            " before attempting again to make any call")
+    var defaultDelayInSecondsFor429 = 10
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -3171,8 +3225,10 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
 
@@ -3220,7 +3276,8 @@ class EMConfig {
 
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
-    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+    fun isEnabledAIModelForResponseClassification() = getAIModelForResponseClassification().any { it != AIResponseClassifierModel.NONE }
+
 
     /**
      * Source to build the final GA solution when evolving full test suites (not single tests).
@@ -3321,6 +3378,43 @@ class EMConfig {
 
         disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
+    }
+
+    // Sets the AI response classification models programmatically.
+    fun setAIModels(vararg models: AIResponseClassifierModel) {
+        aiModelForResponseClassification =
+            models.joinToString(",") { it.name }
+    }
+
+    /**
+     * Parses and validates the configured AI response classification models.
+     * The configuration may contain a single model (e.g., "GLM") or
+     * multiple models separated by commas for ensemble usage (e.g., "GLM, NN, KDE")
+     * The value "NONE" to disable AI-based response classification.
+     */
+    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
+        val models = aiModelForResponseClassification
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map {
+                try {
+                    AIResponseClassifierModel.valueOf(it)
+                } catch (e: Exception) {
+                    throw ConfigProblemException("Invalid AI model: $it")
+                }
+            }
+            .distinct()
+            .sorted()
+
+        // EvoMaster accept NONE or a combination of the AI models and not both
+        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
+            throw ConfigProblemException(
+                "Invalid configuration: NONE cannot be combined with other AI models"
+            )
+        }
+
+        return models
     }
 
 }

@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.hiddenaccessible
 
 import com.foo.rest.examples.spring.openapi.v3.security.hiddenaccessible.HiddenAccessibleController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -46,7 +47,7 @@ class HiddenAccessibleEMTest : SpringTestBase(){
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
             assertTrue(faults.size >= 2)
 
-            val hidden = faults.filter{it.category == ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT}
+            val hidden = faults.filter{it.category == DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT}
             assertEquals(2, hidden.size)
 
             assertNotNull(hidden.find { it.operationId == "GET:/api/resources" })
