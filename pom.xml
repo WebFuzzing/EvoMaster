@@ -1015,11 +1015,9 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
-                        <args>
-                        <!--  This seems wrong, as args to compiler but not the JVM itself -->
-<!--                            <arg>&#45;&#45;add-opens=java.base/java.io=ALL-UNNAMED</arg>-->
-<!--                            <arg>&#45;&#45;add-opens=java.base/java.lang=ALL-UNNAMED</arg>-->
-                        </args>
+                        <!-- Issues with memory on GitHub Actions-->
+                        <useDaemon>false</useDaemon>
+                        <nowarn>true</nowarn>
                     </configuration>
                     <executions>
                         <execution>
