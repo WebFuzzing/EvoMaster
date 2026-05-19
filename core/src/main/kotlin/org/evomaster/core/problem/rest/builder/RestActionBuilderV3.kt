@@ -1440,7 +1440,7 @@ object RestActionBuilderV3 {
 
         if (!allOf.isNullOrEmpty()){
 
-            if(allOf.size == 1){
+            if(allOf.size == 1 && fields.isEmpty()){
                 //just use it as it is
                 return allOf[0]
             }
