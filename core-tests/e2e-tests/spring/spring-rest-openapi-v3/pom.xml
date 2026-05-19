@@ -11,6 +11,9 @@
     <artifactId>evomaster-e2e-tests-spring-rest-openapi-v3</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <maven.test.skip>${skipOAV3}</maven.test.skip>
+    </properties>
 
     <dependencies>
 

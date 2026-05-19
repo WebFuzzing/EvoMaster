@@ -12,6 +12,9 @@
     <artifactId>evomaster-core-it</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <maven.test.skip>${skipCoreIT}</maven.test.skip>
+    </properties>
 
     <dependencies>
         <dependency>

@@ -71,6 +71,69 @@
                 </plugins>
             </build>
         </profile>
+
+        <!--  GitHub Action split tests profiles -->
+        <profile>
+            <id>BaseTests</id>
+            <properties>
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreTests</id>
+            <properties>
+                <skipCore>false</skipCore>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreITTests</id>
+            <properties>
+                <skipCoreIT>false</skipCoreIT>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV3Tests</id>
+            <properties>
+                <skipOAV3>false</skipOAV3>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV2Tests</id>
+            <properties>
+                <skipOAV2>false</skipOAV2>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>GraphQLTests</id>
+            <properties>
+                <skipGraphQL>false</skipGraphQL>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>MongoTests</id>
+            <properties>
+                <skipMongo>false</skipMongo>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>H2V1Tests</id>
+            <properties>
+                <skipH2V1>false</skipH2V1>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
     </profiles>
 
     <developers>
@@ -161,6 +224,15 @@
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
         <software.amazon.awssdk.dynamodb.version>2.25.10</software.amazon.awssdk.dynamodb.version>
+
+        <!--   Properties used to control the running of expensive tests in modules  -->
+        <skipCore>false</skipCore>
+        <skipCoreIT>false</skipCoreIT>
+        <skipOAV3>false</skipOAV3>
+        <skipOAV2>false</skipOAV2>
+        <skipGraphQL>false</skipGraphQL>
+        <skipMongo>false</skipMongo>
+        <skipH2V1>false</skipH2V1>
     </properties>
 
 

@@ -11,6 +11,9 @@
     <artifactId>evomaster-e2e-tests-spring-rest-h2-v1</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <maven.test.skip>${skipH2V1}</maven.test.skip>
+    </properties>
 
     <dependencies>
 
