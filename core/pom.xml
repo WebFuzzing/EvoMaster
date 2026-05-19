@@ -12,6 +12,10 @@
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipCore}</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
