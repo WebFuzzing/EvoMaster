@@ -17,10 +17,10 @@ class RedisSetAction(
 
     override fun getTargetKey() = keyGene.value
 
-    override fun seeTopGenes(): List<Gene> = listOf(valueGene)
+    override fun seeTopGenes(): List<Gene> = listOf(keyGene, valueGene)
 
     override fun copyContent(): Action =
         RedisSetAction(keyGene, valueGene.copy() as StringGene)
 
-    override fun getName() = "Redis_SET_$keyGene"
+    override fun getName() = "Redis_SET_${keyGene.value}"
 }

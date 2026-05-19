@@ -22,10 +22,10 @@ class RedisHsetAction(
 
     override fun getTargetKey() = keyGene.value
 
-    override fun seeTopGenes(): List<Gene> = listOf(valueGene)
+    override fun seeTopGenes(): List<Gene> = listOf(keyGene, valueGene)
 
     override fun copyContent(): Action =
         RedisHsetAction(keyGene, field, valueGene.copy() as StringGene)
 
-    override fun getName() = "Redis_HSET_${keyGene}_$field"
+    override fun getName() = "Redis_HSET_${keyGene.value}_$field"
 }
