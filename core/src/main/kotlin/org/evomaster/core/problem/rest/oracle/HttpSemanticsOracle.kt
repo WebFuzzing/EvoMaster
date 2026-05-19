@@ -610,6 +610,80 @@ object HttpSemanticsOracle {
         return StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())
     }
 
+    /**
+     * Checks the non-idempotent PUT oracle:
+     *
+     *   PUT /X         -> 2xx
+     *   GET /X (or ancestor) -> 2xx  (state after 1st PUT)
+     *   PUT /X        -> 2xx        (same body)
+     *   GET /X (or ancestor) -> 2xx  (state after 2nd PUT)
+     *
+     * Returns true if any numeric or boolean field differs between the two GET responses.
+     * String fields are intentionally ignored (timestamps/UUIDs etc. cause flakiness).
+     */
+    fun hasNonIdempotentPut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 4) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val put1 = actions[actions.size - 4]
+        val get1 = actions[actions.size - 3]
+        val put2 = actions[actions.size - 2]
+        val get2 = actions[actions.size - 1]
+
+        if (put1.verb != HttpVerb.PUT || put2.verb != HttpVerb.PUT) return false
+        if (get1.verb != HttpVerb.GET || get2.verb != HttpVerb.GET) return false
+
+        // both PUTs on same resolved path with same auth
+        if (!put1.usingSameResolvedPath(put2)) return false
+        if (put1.auth.isDifferentFrom(put2.auth)) return false
+
+        // both GETs on same resolved path with same auth
+        if (!get1.usingSameResolvedPath(get2)) return false
+        if (get1.auth.isDifferentFrom(get2.auth)) return false
+
+        val resPut1 = actionResults.find { it.sourceLocalId == put1.getLocalId() } as RestCallResult?
+            ?: return false
+        val resGet1 = actionResults.find { it.sourceLocalId == get1.getLocalId() } as RestCallResult?
+            ?: return false
+        val resPut2 = actionResults.find { it.sourceLocalId == put2.getLocalId() } as RestCallResult?
+            ?: return false
+        val resGet2 = actionResults.find { it.sourceLocalId == get2.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // all four must be 2xx for the oracle to apply
+        if (!StatusGroup.G_2xx.isInGroup(resPut1.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resGet1.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPut2.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resGet2.getStatusCode())) return false
+
+        val body1 = resGet1.getBody() ?: return false
+        val body2 = resGet2.getBody() ?: return false
+        if (body1.isEmpty() || body2.isEmpty()) return false
+
+        val formatters = listOf(
+            OutputFormatter.JSON_FORMATTER,
+            OutputFormatter.XML_FORMATTER,
+            OutputFormatter.FORM_FORMATTER
+        )
+        for (formatter in formatters) {
+            val fields1 = formatter.readFields(body1, numericAndBooleanOnly = true) ?: continue
+            val fields2 = formatter.readFields(body2, numericAndBooleanOnly = true) ?: continue
+
+            if (fields1.isEmpty() && fields2.isEmpty()) continue
+
+            for ((name, v1) in fields1) {
+                val v2 = fields2[name] ?: continue
+                if (v1 != v2) return true
+            }
+            return false
+        }
+        return false
+    }
+
     private fun parseFormBody(body: String): Map<String, String> {
         return body.split("&").mapNotNull { pair ->
             val parts = pair.split("=", limit = 2)

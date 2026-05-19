@@ -2289,4 +2289,62 @@ class RestActionBuilderV3Test{
         assertTrue(withFooAgain.contains("xfoo"), withFooAgain)
         assertTrue(withFooAgain.contains("ybar"), withFooAgain)
     }
+
+
+    @Test
+    fun testSingleAllOf() {
+
+        val path = "/swagger/artificial/defaultandexamples/constraints/single_allof.yaml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        val found = mutableSetOf<String>()
+
+        for (i in 0..100) {
+            a.randomize(rand, false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            found.add(s)
+            if(found.size == 2){
+                break
+            }
+        }
+
+        //both examples must be there
+        assertEquals(2, found.size)
+        assertTrue(found.any{it.contains("Foo")})
+        assertTrue(found.any{it.contains("Bar")})
+    }
+
+
+    @Test
+    fun testMultiAllOf() {
+
+        val path = "/swagger/artificial/defaultandexamples/constraints/multi_allof.yaml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        val found = mutableSetOf<String>()
+
+        for (i in 0..100) {
+            a.randomize(rand, false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            found.add(s)
+        }
+
+        /*
+            Only 1 example should be there, the one declared at top level.
+            TODO: maybe in future we merge examples as well... in that case, then
+            would need to update this test
+         */
+        assertTrue(found.any{it.contains("Foo")})
+        assertEquals(1, found.size)
+    }
 }

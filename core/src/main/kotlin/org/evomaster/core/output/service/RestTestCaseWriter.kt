@@ -550,9 +550,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
-        return ind.seeFullTreeGenes()
-            .filter { it is UserExamplesGene && it.isUsedForExamples() }
-            .filter { it.staticCheckIfImpactPhenotype() }
+        return ind.getAllActiveUsedExamples()
             .map {
                 val name = if(it is UserExamplesGene){
                     //always true

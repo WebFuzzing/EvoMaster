@@ -1547,11 +1547,11 @@ class EMConfig {
         DETERMINISTIC
     }
 
-
-
     @Experimental
-    @Cfg("Model used to learn input constraints and infer response status before making request.")
-    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+    @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
+            "Supports both single-model and ensemble configurations. " +
+            "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
+    var aiModelForResponseClassification: String = "NONE"
 
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
@@ -1597,7 +1597,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.RAW
+    var aiEncoderType = EncoderType.NORMAL
 
 
     @Experimental
@@ -1617,7 +1617,7 @@ class EMConfig {
     @PercentageAsProbability(false)
     @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
             " All classifications with probability equal or above such threshold value will be accepted.")
-    var classificationRepairThreshold = 0.8
+    var classificationRepairThreshold = 0.5
 
     @Experimental
     @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
@@ -1656,7 +1656,7 @@ class EMConfig {
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
             "whether to send a request as-is or attempt a repair.")
-    var aIResponseClassifierWeaknessThreshold = 0.4
+    var aIResponseClassifierWeaknessThreshold = 0.8
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -3276,7 +3276,8 @@ class EMConfig {
 
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
-    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+    fun isEnabledAIModelForResponseClassification() = getAIModelForResponseClassification().any { it != AIResponseClassifierModel.NONE }
+
 
     /**
      * Source to build the final GA solution when evolving full test suites (not single tests).
@@ -3377,6 +3378,43 @@ class EMConfig {
 
         disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
+    }
+
+    // Sets the AI response classification models programmatically.
+    fun setAIModels(vararg models: AIResponseClassifierModel) {
+        aiModelForResponseClassification =
+            models.joinToString(",") { it.name }
+    }
+
+    /**
+     * Parses and validates the configured AI response classification models.
+     * The configuration may contain a single model (e.g., "GLM") or
+     * multiple models separated by commas for ensemble usage (e.g., "GLM, NN, KDE")
+     * The value "NONE" to disable AI-based response classification.
+     */
+    fun getAIModelForResponseClassification(): List<AIResponseClassifierModel> {
+        val models = aiModelForResponseClassification
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map {
+                try {
+                    AIResponseClassifierModel.valueOf(it)
+                } catch (e: Exception) {
+                    throw ConfigProblemException("Invalid AI model: $it")
+                }
+            }
+            .distinct()
+            .sorted()
+
+        // EvoMaster accept NONE or a combination of the AI models and not both
+        if (models.contains(AIResponseClassifierModel.NONE) && models.size > 1) {
+            throw ConfigProblemException(
+                "Invalid configuration: NONE cannot be combined with other AI models"
+            )
+        }
+
+        return models
     }
 
 }
