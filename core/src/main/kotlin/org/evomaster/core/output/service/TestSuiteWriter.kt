@@ -459,6 +459,20 @@ class TestSuiteWriter {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
             addImport("java.util.Arrays", lines)
+            // M11-PR4 items 1+5: imports for AsyncAPI writer's de-qualified
+            // emissions. LinkedHashMap is constructed inline; UTF_8 is the
+            // most common charset literal in payload bytes; Set is used by
+            // the rewritten enum / discriminator assertions.
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI) {
+                addImport("java.util.LinkedHashMap", lines)
+                addImport("java.util.Set", lines)
+                addImport("java.nio.charset.StandardCharsets.UTF_8", lines, true)
+                if (format.isJUnit5()) {
+                    addImport("org.junit.jupiter.api.DisplayName", lines)
+                    addImport("org.junit.jupiter.api.Disabled", lines)
+                    addImport("org.junit.jupiter.api.Tag", lines)
+                }
+            }
         }
 
         if (format.isJavaOrKotlin()) {
@@ -691,7 +705,15 @@ class TestSuiteWriter {
                         lines.add("org.testcontainers.utility.DockerImageName.parse(\"confluentinc/cp-kafka:7.5.0\"));")
                     }
                 }
+                // The bootstrap URL is set in @BeforeAll once the container
+                // has started; can't be final because we assign it at runtime.
                 lines.add("private static String $baseUrlOfSut;")
+            } else if (config.problemType == EMConfig.ProblemType.ASYNCAPI) {
+                // M11-PR4 fix #8: when the broker URL is a literal pinned at
+                // generation time (the default black-box path for AsyncAPI),
+                // emit a `final` static. Users who want broker re-targeting
+                // override the field via the editor, not at runtime.
+                lines.add("private static final String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
