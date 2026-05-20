@@ -1254,7 +1254,9 @@ class EMConfig {
 
     @Deprecated("Rather use 'base'")
     @Cfg("Old, deprecated parameter for 'base'.")
-    var bbTargetUrl: String = ""
+    var bbTargetUrl: String
+        get() = base
+        set(value) { base = value }
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +

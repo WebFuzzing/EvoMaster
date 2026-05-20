@@ -4,10 +4,11 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.SearchTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class NeighborhoodTest {
+class NeighborhoodTest : SearchTestBase(){
 
     private fun populationOf(size: Int): List<WtsEvalIndividual<OneMaxIndividual>> {
         val pop = mutableListOf<WtsEvalIndividual<OneMaxIndividual>>()
