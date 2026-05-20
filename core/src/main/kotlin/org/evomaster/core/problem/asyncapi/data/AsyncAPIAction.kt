@@ -48,8 +48,29 @@ class AsyncAPIAction(
      * actions; empty for PUBLISH / SUBSCRIBE_OUTPUT. M9-PR5.
      */
     val replyFieldAssertions: List<ReplyFieldAssertion> = emptyList(),
+    /**
+     * When the reply schema is a `oneOf` / `anyOf` composition, this carries
+     * each variant's per-field assertion set keyed by variant name and (if
+     * declared) the discriminator property used to dispatch. The writer can
+     * then emit an `if (discriminator == "VariantA") { … } else if (…) { … }`
+     * runtime dispatch instead of relying on the intersection of facets.
+     * Empty when the schema isn't a composition. M11-PR3 fix #9.
+     */
+    val perVariantReplyAssertions: VariantReplyAssertions? = null,
     auth: AuthenticationInfo = AsyncAPINoAuth()
 ) : ApiWsAction(auth, false, parameters) {
+
+    /**
+     * Pre-computed per-variant assertion dispatch table. Built once at parse
+     * time; the writer reads it to emit a discriminator-keyed `if/else if`
+     * chain so the strongest applicable facet set fires per runtime payload.
+     */
+    data class VariantReplyAssertions(
+        /** Name of the discriminator property (e.g. `messageType`). Empty when no discriminator declared. */
+        val discriminatorProperty: String,
+        /** Per-variant assertion set, keyed by the discriminator value naming that variant. */
+        val byVariant: Map<String, List<ReplyFieldAssertion>>
+    )
 
     enum class Kind {
         /** EvoMaster publishes a message into the SUT's input channel. */
@@ -86,6 +107,7 @@ class AsyncAPIAction(
             replyBinding = replyBinding,
             correlationHeaderName = correlationHeaderName,
             replyFieldAssertions = replyFieldAssertions,
+            perVariantReplyAssertions = perVariantReplyAssertions,
             auth = auth
         )
     }
