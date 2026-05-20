@@ -268,6 +268,78 @@ public class EMTestUtils {
      * Returns {@code null} on timeout — the caller decides whether that's a
      * test failure or an expected fire-and-forget outcome.
      */
+    /**
+     * Lightweight DTO returned by {@link #kafkaAwaitReplyEnvelope}. The
+     * payload field is the consumed message body; correlationId is the
+     * value of the configured correlation header, or null when the schema
+     * doesn't declare a correlation header or the message lacks one.
+     *
+     * Used by generated tests (M11-PR2 fix E) that want to assert the
+     * correlation id on the actual reply rather than rely on the
+     * upstream consumer to silently drop wrong-correlation messages.
+     */
+    public static final class ReplyEnvelope {
+        public final byte[] payload;
+        public final String correlationId;
+        public ReplyEnvelope(byte[] payload, String correlationId) {
+            this.payload = payload;
+            this.correlationId = correlationId;
+        }
+    }
+
+    /**
+     * Subscribe to {@code topic} and return the first message that arrives
+     * during the {@code timeoutMs} window, *regardless of correlation
+     * header*, packaged with whatever correlation value the message carries
+     * (or null when the message has no correlation header).
+     *
+     * Differs from {@link #kafkaAwaitReply} in that the latter silently
+     * filters out messages with mismatching correlation; this method returns
+     * whatever arrives first so the caller can assert correlation
+     * explicitly. Returns null only when no message arrived at all.
+     */
+    public static ReplyEnvelope kafkaAwaitReplyEnvelope(
+            String bootstrapServers,
+            String topic,
+            String correlationHeaderName,
+            long timeoutMs
+    ) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.put("bootstrap.servers", bootstrapServers);
+            props.put("group.id", "evm-test-" + java.util.UUID.randomUUID());
+            props.put("auto.offset.reset", "latest");
+            props.put("enable.auto.commit", "false");
+            props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+            try (org.apache.kafka.clients.consumer.KafkaConsumer<String, byte[]> consumer =
+                         new org.apache.kafka.clients.consumer.KafkaConsumer<>(props)) {
+                consumer.subscribe(java.util.Collections.singletonList(topic));
+                long deadline = System.currentTimeMillis() + timeoutMs;
+                while (System.currentTimeMillis() < deadline) {
+                    long remaining = Math.max(50L, deadline - System.currentTimeMillis());
+                    org.apache.kafka.clients.consumer.ConsumerRecords<String, byte[]> records =
+                            consumer.poll(java.time.Duration.ofMillis(Math.min(remaining, 500L)));
+                    for (org.apache.kafka.clients.consumer.ConsumerRecord<String, byte[]> r : records) {
+                        String corr = null;
+                        if (correlationHeaderName != null && !correlationHeaderName.isEmpty()) {
+                            org.apache.kafka.common.header.Header h = r.headers().lastHeader(correlationHeaderName);
+                            if (h != null) corr = new String(h.value(), java.nio.charset.StandardCharsets.UTF_8);
+                        }
+                        return new ReplyEnvelope(r.value(), corr);
+                    }
+                }
+                return null;
+            }
+        } catch (NoClassDefFoundError nf) {
+            throw new IllegalStateException(
+                    "kafka-clients not on the test classpath; add `org.apache.kafka:kafka-clients` to run AsyncAPI tests",
+                    nf);
+        } catch (Exception e) {
+            throw new RuntimeException("kafkaAwaitReplyEnvelope failed: " + e.getMessage(), e);
+        }
+    }
+
     public static byte[] kafkaAwaitReply(
             String bootstrapServers,
             String topic,
@@ -321,7 +393,31 @@ public class EMTestUtils {
     public static boolean replyHas(byte[] reply, String field) {
         if (reply == null) return false;
         com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
-        return node != null && node.isObject() && node.has(field);
+        if (node == null) return false;
+        com.fasterxml.jackson.databind.JsonNode walked = walkDottedPath(node, field);
+        return walked != null && !walked.isMissingNode() && !walked.isNull();
+    }
+
+    /**
+     * Walk a dotted path (`comment.author.name`) into a JSON node, returning
+     * null when any intermediate hop is missing or not an object. Used by
+     * the path-aware reply / output assertion helpers (M11-PR2 fix A).
+     */
+    private static com.fasterxml.jackson.databind.JsonNode walkDottedPath(
+            com.fasterxml.jackson.databind.JsonNode root,
+            String path
+    ) {
+        if (root == null || path == null) return null;
+        com.fasterxml.jackson.databind.JsonNode cur = root;
+        for (String segment : path.split("\\.")) {
+            if (cur == null) return null;
+            if (cur.isObject()) {
+                cur = cur.get(segment);
+            } else {
+                return null;
+            }
+        }
+        return cur;
     }
 
     /**
@@ -333,8 +429,8 @@ public class EMTestUtils {
     public static String replyText(byte[] reply, String field) {
         if (reply == null) return null;
         com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
-        if (node == null || !node.isObject()) return null;
-        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        if (node == null) return null;
+        com.fasterxml.jackson.databind.JsonNode v = walkDottedPath(node, field);
         if (v == null || !v.isTextual()) return null;
         return v.asText();
     }
@@ -355,10 +451,76 @@ public class EMTestUtils {
     public static Double replyNumber(byte[] reply, String field) {
         if (reply == null) return null;
         com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
-        if (node == null || !node.isObject()) return null;
-        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        if (node == null) return null;
+        com.fasterxml.jackson.databind.JsonNode v = walkDottedPath(node, field);
         if (v == null || !v.isNumber()) return null;
         return v.asDouble();
+    }
+
+    /**
+     * Inspection helper: return the array-length of {@code field} in the
+     * JSON object {@code reply}, or -1 when absent / non-array / parse
+     * failure. Used by ARRAY_MIN_ITEMS / ARRAY_MAX_ITEMS assertions
+     * (M11-PR2 fix B).
+     */
+    public static int replyArrayLength(byte[] reply, String field) {
+        if (reply == null) return -1;
+        com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
+        if (node == null) return -1;
+        com.fasterxml.jackson.databind.JsonNode v = walkDottedPath(node, field);
+        if (v == null || !v.isArray()) return -1;
+        return v.size();
+    }
+
+    /**
+     * Inspection helper: check whether the array {@code field} in the JSON
+     * object {@code reply} contains only distinct elements (compared by
+     * Jackson's textual representation). Returns true when the field is
+     * absent or not an array (fail-open). Used by ARRAY_UNIQUE assertions.
+     */
+    public static boolean replyArrayUnique(byte[] reply, String field) {
+        if (reply == null) return true;
+        com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
+        if (node == null) return true;
+        com.fasterxml.jackson.databind.JsonNode v = walkDottedPath(node, field);
+        if (v == null || !v.isArray()) return true;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (com.fasterxml.jackson.databind.JsonNode e : v) {
+            if (!seen.add(e.toString())) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Inspection helper: check whether the textual value of {@code field}
+     * matches the regex {@code pattern}. Returns true when the field is
+     * absent (fail-open). Returns false on pattern compile errors so
+     * the caller surfaces a clear assertion failure rather than silently
+     * passing on a malformed schema-supplied regex. Used by PATTERN
+     * assertions (M11-PR2 fix B).
+     */
+    public static boolean replyPatternMatches(byte[] reply, String field, String pattern) {
+        String s = replyText(reply, field);
+        if (s == null) return true;
+        if (pattern == null) return true;
+        try {
+            return java.util.regex.Pattern.compile(pattern).matcher(s).find();
+        } catch (java.util.regex.PatternSyntaxException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Inspection helper: check whether {@code field}'s numeric value is a
+     * multiple of {@code divisor} (within a small epsilon for IEEE 754
+     * imprecision). Returns true when the field is absent (fail-open).
+     */
+    public static boolean replyMultipleOf(byte[] reply, String field, double divisor) {
+        Double v = replyNumber(reply, field);
+        if (v == null) return true;
+        if (divisor == 0.0) return false;
+        double remainder = Math.IEEEremainder(v, divisor);
+        return Math.abs(remainder) < 1e-9;
     }
 
     /**

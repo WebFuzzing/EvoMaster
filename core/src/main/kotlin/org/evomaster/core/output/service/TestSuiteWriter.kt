@@ -347,6 +347,20 @@ class TestSuiteWriter {
         lines.addBlockCommentLine(" ${solution.termination.comment}")
         classDescriptionEmptyLine(lines)
 
+        // M11-PR2 fix M: surface reproducibility hints (seed + schema URL)
+        // so reviewers can rerun the engine with identical inputs to verify
+        // why a specific test method was generated. The seed is what made
+        // the run deterministic; the AsyncAPI schema URL is the document
+        // the engine read (or "<no schema URL>" if EvoMaster was driven
+        // from an in-memory schema, e.g. white-box mode).
+        if (config.problemType == EMConfig.ProblemType.ASYNCAPI && config.blackBox) {
+            lines.addBlockCommentLine(" Reproducibility: --seed=${config.seed}")
+            classDescriptionEmptyLine(lines)
+            val schemaUrl = config.bbAsyncApiUrl.ifBlank { "<no schema URL>" }
+            lines.addBlockCommentLine(" AsyncAPI schema: $schemaUrl")
+            classDescriptionEmptyLine(lines)
+        }
+
         if(config.couldSupportDtoForPayload() && !config.dtoForRequestPayload){
             lines.addBlockCommentLine(" ******************************** IMPORTANT ********************************")
             lines.addBlockCommentLine(" * If you are planning to modify these test cases manually, you might")
@@ -661,6 +675,23 @@ class TestSuiteWriter {
                 lines.append(getJavaCommand())
                 lines.append(";")
                 lines.add("private static String $baseUrlOfSut;")
+            } else if (config.problemType == EMConfig.ProblemType.ASYNCAPI && config.asyncApiEmbedBroker) {
+                // M11-PR2 fix I: embed a Testcontainers KafkaContainer so the
+                // generated suite is self-contained. The container's
+                // bootstrap-servers URL replaces the literal --bbBrokerUrl
+                // value at test-class load time. The user must have
+                // org.testcontainers:kafka on their test classpath; without
+                // it the @Container static field fails to load and the suite
+                // reports the missing dependency clearly.
+                lines.add("@org.testcontainers.junit.jupiter.Container")
+                lines.add("private static final org.testcontainers.containers.KafkaContainer __evm_kafka =")
+                lines.indented {
+                    lines.add("new org.testcontainers.containers.KafkaContainer(")
+                    lines.indented {
+                        lines.add("org.testcontainers.utility.DockerImageName.parse(\"confluentinc/cp-kafka:7.5.0\"));")
+                    }
+                }
+                lines.add("private static String $baseUrlOfSut;")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
@@ -824,6 +855,19 @@ class TestSuiteWriter {
                         addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, ChromeOptions())", lines)
                     }
                 }
+            }
+
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                && config.blackBox
+                && config.asyncApiEmbedBroker
+                && format.isJava()
+            ) {
+                // M11-PR2 fix I: when the suite embeds a Testcontainers
+                // Kafka, capture its bootstrap-servers URL once the
+                // container has started. The @Container annotation handles
+                // container lifecycle automatically when the class is also
+                // annotated with @Testcontainers (added in header()).
+                addStatement("$baseUrlOfSut = __evm_kafka.getBootstrapServers()", lines)
             }
 
             if (config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL) {
@@ -1107,6 +1151,18 @@ class TestSuiteWriter {
 
         if (format.isKotlin() && format.isJUnit5() && config.useTestMethodOrder) {
             lines.add("@TestMethodOrder(MethodOrderer.MethodName::class)")
+        }
+
+        // M11-PR2 fix I: @Testcontainers wires the per-class container
+        // lifecycle (start in @BeforeAll, stop in @AfterAll). Without it,
+        // the @Container static field declared in staticVariables() is
+        // inert and the embedded broker never starts.
+        if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+            && config.blackBox
+            && config.asyncApiEmbedBroker
+            && format.isJava()
+        ) {
+            lines.add("@org.testcontainers.junit.jupiter.Testcontainers")
         }
 
         when {

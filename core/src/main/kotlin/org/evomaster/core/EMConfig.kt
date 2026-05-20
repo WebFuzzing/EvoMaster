@@ -1333,6 +1333,14 @@ class EMConfig {
     var bbBrokerKeystorePassword: String = ""
 
     @Experimental
+    @Cfg("AsyncAPI: when true, generated JUnit 5 test suites declare a Testcontainers" +
+            " KafkaContainer as a `@Container` static field and resolve the broker URL at" +
+            " test-class load time. Removes the requirement to run a separate Kafka broker" +
+            " when executing the generated tests. Adds a build-time dependency on" +
+            " `org.testcontainers:kafka` for the consuming project. M11-PR2 fix I.")
+    var asyncApiEmbedBroker = false
+
+    @Experimental
     @Cfg("AsyncAPI: length (in ms) of the post-PUBLISH listen window on SUT-produced (receive) channels." +
             " The output-observation oracle emits OUTPUT_* fitness targets only for messages collected" +
             " inside this window, so longer windows surface more attribution at the cost of search throughput." +
