@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIAction
+import org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -64,6 +65,25 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         // PUBLISH; SUBSCRIBE_REPLY actions read it so the consumer-side filter
         // matches the producer-side header value.
         val correlationByPair = mutableMapOf<String, String>()
+        // Coalesce trailing skipped actions into a single summary line rather
+        // than emitting one `// Action #N (KIND) — no result captured ...`
+        // comment per action. A long PUBLISH-fail chain (voiceblender hit 47
+        // SUBSCRIBE_OUTPUT tails on one test) produced an unreadable wall of
+        // comments otherwise.
+        var skipRunStart = -1
+        var skipRunCount = 0
+        fun flushSkipRun() {
+            if (skipRunCount == 0) return
+            val lastIndex = skipRunStart + skipRunCount - 1
+            val label = if (skipRunCount == 1) {
+                "Action #$skipRunStart — no result captured (action chain stopped early)"
+            } else {
+                "Actions #$skipRunStart–#$lastIndex ($skipRunCount actions) — no results captured (action chain stopped early)"
+            }
+            lines.addSingleCommentLine(label)
+            skipRunStart = -1
+            skipRunCount = 0
+        }
         for ((i, action) in actions.withIndex()) {
             val result = ind.seeResult(action.getLocalId())
             val async = action as? AsyncAPIAction
@@ -71,11 +91,14 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 correlationByPair[async.pairId] = "evm-${UUID.randomUUID()}"
             }
             if (result == null) {
-                lines.addSingleCommentLine("Action #$i (${async?.kind ?: "?"}) — no result captured (action chain stopped early)")
+                if (skipRunCount == 0) skipRunStart = i
+                skipRunCount++
                 continue
             }
+            flushSkipRun()
             addAsyncAPIAction(async, i, lines, result, correlationByPair)
         }
+        flushSkipRun()
     }
 
     private fun addAsyncAPIAction(
@@ -163,15 +186,31 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             "byte[][] $varName = org.evomaster.test.utils.EMTestUtils.kafkaCollectAllWithin(" +
                     "__evm_broker, \"${escapeJava(rendered)}\", ${configuredWindow}L);"
         )
-        // The schema declares this channel as SUT-produced; we don't assert
-        // anything mandatory — a 0-message outcome is a legitimate signal
-        // (the SUT didn't emit). Generated tests therefore log the count and
-        // expose the captured payloads as a debugging aid; downstream
-        // hand-edited assertions can layer on top.
+        // The schema declares this channel as SUT-produced; we don't require
+        // a particular message count — a 0-message outcome is a legitimate
+        // signal (the SUT didn't emit during the window). Each captured
+        // message, however, MUST conform to the channel's declared schema:
+        // we loop over the buffer and apply the same per-field facet
+        // assertions used by SUBSCRIBE_REPLY (required / enum / bounds /
+        // length / format). Skipping the loop when no messages arrived is
+        // intentional — see the comment above.
         lines.add(
-            "// captured ${'$'}{$varName.length} message(s) on '${escapeJava(rendered)}' " +
-                    "during the ${configuredWindow}ms window"
+            "// $varName holds every message captured on '${escapeJava(rendered)}' " +
+                    "during the ${configuredWindow}ms listen window"
         )
+        if (action.replyFieldAssertions.isNotEmpty()) {
+            val loopVar = "__evm_msg_$index"
+            lines.add("for (byte[] $loopVar : $varName) {")
+            lines.indented {
+                emitFieldAssertionsOver(
+                    specs = action.replyFieldAssertions,
+                    valueVar = loopVar,
+                    label = "output on '${escapeJava(rendered)}'",
+                    lines = lines
+                )
+            }
+            lines.add("}")
+        }
     }
 
     private fun emitSubscribeReply(action: AsyncAPIAction, index: Int, lines: Lines, correlationId: String?) {
@@ -195,34 +234,86 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
     /**
      * Emit per-field JUnit assertions on the captured reply, driven by the
      * pre-computed [AsyncAPIAction.replyFieldAssertions] populated at build
-     * time. M9-PR5. Two assertion kinds today:
+     * time. M9-PR5. Six assertion kinds:
      *
-     *  - REQUIRED → assertTrue(EMTestUtils.replyHas(reply, "field"), ...)
-     *  - ENUM     → assertTrue(Set.of(...).contains(EMTestUtils.replyText(reply, "field")), ...)
+     *  - REQUIRED        → assertTrue(EMTestUtils.replyHas(reply, "f"))
+     *  - ENUM            → assertTrue(Arrays.asList(...).contains(EMTestUtils.replyText(reply, "f")))
+     *  - MIN / MAX       → assertTrue(EMTestUtils.replyNumber(reply, "f") >= / <= bound)
+     *  - MIN_LENGTH /
+     *    MAX_LENGTH      → assertTrue(EMTestUtils.replyTextLength(reply, "f") >= / <= bound)
+     *  - FORMAT          → assertTrue(EMTestUtils.replyFormatMatches(reply, "f", "format"))
      *
-     * Both helpers handle non-JSON replies gracefully (return false / null
-     * respectively) so a malformed payload fails the REQUIRED check before
-     * the ENUM one runs.
+     * The EMTestUtils helpers fail-open on missing fields (numeric / length /
+     * format checks pass when the field is absent — REQUIRED separately
+     * catches the presence violation) so a single missing field surfaces as
+     * exactly one assertion failure rather than a cascade.
      */
     private fun emitReplyFieldAssertions(action: AsyncAPIAction, replyVar: String, lines: Lines) {
-        if (action.replyFieldAssertions.isEmpty()) return
-        action.replyFieldAssertions.forEach { spec ->
-            val escapedPath = escapeJava(spec.path)
+        emitFieldAssertionsOver(action.replyFieldAssertions, replyVar, "reply", lines)
+    }
+
+    private fun emitFieldAssertionsOver(
+        specs: List<ReplyFieldAssertion>,
+        valueVar: String,
+        label: String,
+        lines: Lines
+    ) {
+        if (specs.isEmpty()) return
+        specs.forEach { spec ->
+            val p = escapeJava(spec.path)
             when (spec.kind) {
-                org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.REQUIRED -> {
-                    lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
-                                "org.evomaster.test.utils.EMTestUtils.replyHas($replyVar, \"$escapedPath\"), " +
-                                "\"reply missing required field '$escapedPath'\");"
-                    )
-                }
-                org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.ENUM -> {
+                ReplyFieldAssertion.Kind.REQUIRED -> lines.add(
+                    "org.junit.jupiter.api.Assertions.assertTrue(" +
+                            "org.evomaster.test.utils.EMTestUtils.replyHas($valueVar, \"$p\"), " +
+                            "\"$label missing required field '$p'\");"
+                )
+                ReplyFieldAssertion.Kind.ENUM -> {
                     val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
                     lines.add(
                         "org.junit.jupiter.api.Assertions.assertTrue(" +
                                 "java.util.Arrays.asList($literals).contains(" +
-                                "org.evomaster.test.utils.EMTestUtils.replyText($replyVar, \"$escapedPath\")), " +
-                                "\"reply field '$escapedPath' not in declared enum\");"
+                                "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\")), " +
+                                "\"$label field '$p' not in declared enum\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyNumber($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__v == null || __v >= $bound, " +
+                                "\"$label field '$p' below declared minimum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyNumber($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__v == null || __v <= $bound, " +
+                                "\"$label field '$p' above declared maximum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = org.evomaster.test.utils.EMTestUtils.replyTextLength($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__l < 0 || __l >= $bound, " +
+                                "\"$label field '$p' shorter than declared minLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = org.evomaster.test.utils.EMTestUtils.replyTextLength($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__l < 0 || __l <= $bound, " +
+                                "\"$label field '$p' longer than declared maxLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.FORMAT -> {
+                    val f = escapeJava(spec.format!!)
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyFormatMatches($valueVar, \"$p\", \"$f\"), " +
+                                "\"$label field '$p' does not match declared format '$f'\");"
                     )
                 }
             }

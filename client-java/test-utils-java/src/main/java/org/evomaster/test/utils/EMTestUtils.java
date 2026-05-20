@@ -348,6 +348,88 @@ public class EMTestUtils {
     }
 
     /**
+     * Inspection helper: return the numeric value of {@code field} in the
+     * JSON object {@code reply}, or null when absent / non-numeric / parse
+     * failure. Used by generated MIN/MAX assertions.
+     */
+    public static Double replyNumber(byte[] reply, String field) {
+        if (reply == null) return null;
+        com.fasterxml.jackson.databind.JsonNode node = parseReply(reply);
+        if (node == null || !node.isObject()) return null;
+        com.fasterxml.jackson.databind.JsonNode v = node.get(field);
+        if (v == null || !v.isNumber()) return null;
+        return v.asDouble();
+    }
+
+    /**
+     * Inspection helper: return the textual length of {@code field} in the
+     * JSON object {@code reply}, or -1 when absent / non-textual / parse
+     * failure. Used by generated MIN_LENGTH/MAX_LENGTH assertions; the
+     * sentinel value of -1 (rather than null) lets callers compare with
+     * a single primitive predicate.
+     */
+    public static int replyTextLength(byte[] reply, String field) {
+        String s = replyText(reply, field);
+        return s == null ? -1 : s.length();
+    }
+
+    /**
+     * Inspection helper: best-effort check that {@code reply.field} matches
+     * the JSON Schema {@code format} keyword. Returns true when the field
+     * is absent (no constraint to violate), when the format is unknown to
+     * this helper (fail-open), or when the textual value matches the
+     * format's regex/parser. Returns false only on positive mismatch.
+     *
+     * Supported formats: {@code date}, {@code date-time}, {@code email},
+     * {@code uuid}, {@code uri}, {@code ipv4}, {@code ipv6}. Other declared
+     * formats pass through unchecked to avoid spurious test failures on
+     * formats outside this helper's coverage.
+     */
+    public static boolean replyFormatMatches(byte[] reply, String field, String format) {
+        String s = replyText(reply, field);
+        if (s == null) return true;
+        if (format == null) return true;
+        switch (format) {
+            case "date":
+                return s.matches("\\d{4}-\\d{2}-\\d{2}");
+            case "date-time":
+                try {
+                    java.time.OffsetDateTime.parse(s);
+                    return true;
+                } catch (java.time.format.DateTimeParseException e) {
+                    try {
+                        java.time.Instant.parse(s);
+                        return true;
+                    } catch (java.time.format.DateTimeParseException e2) {
+                        return false;
+                    }
+                }
+            case "email":
+                return s.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
+            case "uuid":
+                try {
+                    java.util.UUID.fromString(s);
+                    return true;
+                } catch (IllegalArgumentException e) {
+                    return false;
+                }
+            case "uri":
+                try {
+                    new java.net.URI(s);
+                    return true;
+                } catch (java.net.URISyntaxException e) {
+                    return false;
+                }
+            case "ipv4":
+                return s.matches("(\\d{1,3}\\.){3}\\d{1,3}");
+            case "ipv6":
+                return s.contains(":") && s.length() <= 39;
+            default:
+                return true;
+        }
+    }
+
+    /**
      * Subscribe to {@code topic} and collect the payload bytes of every
      * record that arrives during the next {@code windowMs} millisecond
      * window. Returns an array (possibly empty); never null.

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.asyncapi.builder
 import io.swagger.v3.oas.models.media.Schema
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIAction
+import org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion
 import org.evomaster.core.problem.asyncapi.param.AsyncAPIParam
 import org.evomaster.core.problem.asyncapi.schema.AsyncAPIChannel
 import org.evomaster.core.problem.asyncapi.schema.AsyncAPIMessage
@@ -316,7 +317,15 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             params += AsyncAPIParam(AsyncAPIAction.HEADERS_PARAM, headersObj)
         }
 
-        val replyFieldAssertions = if (kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY) {
+        // SUBSCRIBE_OUTPUT actions reuse the same per-field assertion pipeline
+        // as SUBSCRIBE_REPLY: the schema-derived facets (required / enum /
+        // min / max / minLength / maxLength / format) are pre-computed and
+        // applied to every message captured during the listen window. PUBLISH
+        // actions get an empty list (the engine emits inputs, not outputs).
+        val replyFieldAssertions = if (
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY ||
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT
+        ) {
             extractReplyFieldAssertions(message, schema)
         } else {
             emptyList()
@@ -340,13 +349,12 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     /**
      * Walk the reply variant's declared properties and pre-compute the
      * assertion specs the writer should emit on the captured reply payload.
-     * Captures `required` + `enum` for the starter (PR5); bounds / length /
-     * format are tracked as a follow-up that doesn't change [ReplyFieldAssertion].
+     * Covers `required` + `enum` + numeric bounds + string length + format.
      */
     private fun extractReplyFieldAssertions(
         message: AsyncAPIMessage,
         schema: AsyncAPISchema
-    ): List<org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion> {
+    ): List<ReplyFieldAssertion> {
         val node = message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
             ?: return emptyList()
         if (!node.isObject) return emptyList()
@@ -358,28 +366,44 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         val required = node.get("required")?.takeIf { it.isArray }
             ?.map { it.asText() }?.toSet() ?: emptySet()
 
-        val out = mutableListOf<org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion>()
+        val out = mutableListOf<ReplyFieldAssertion>()
         properties.fields().forEach { (name, prop) ->
             if (name in required) {
-                out.add(
-                    org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion(
-                        path = name,
-                        kind = org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.REQUIRED
-                    )
-                )
+                out.add(ReplyFieldAssertion(path = name, kind = ReplyFieldAssertion.Kind.REQUIRED))
             }
             val enumNode = prop.get("enum")
             if (enumNode != null && enumNode.isArray) {
                 val values = enumNode.mapNotNull { if (it.isTextual) it.asText() else null }
                 if (values.isNotEmpty()) {
-                    out.add(
-                        org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion(
-                            path = name,
-                            kind = org.evomaster.core.problem.asyncapi.data.ReplyFieldAssertion.Kind.ENUM,
-                            expectedValues = values
-                        )
-                    )
+                    out.add(ReplyFieldAssertion(
+                        path = name, kind = ReplyFieldAssertion.Kind.ENUM, expectedValues = values
+                    ))
                 }
+            }
+            prop.get("minimum")?.takeIf { it.isNumber }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = name, kind = ReplyFieldAssertion.Kind.MIN, numericBound = it.asDouble()
+                ))
+            }
+            prop.get("maximum")?.takeIf { it.isNumber }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = name, kind = ReplyFieldAssertion.Kind.MAX, numericBound = it.asDouble()
+                ))
+            }
+            prop.get("minLength")?.takeIf { it.isInt }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = name, kind = ReplyFieldAssertion.Kind.MIN_LENGTH, lengthBound = it.asInt()
+                ))
+            }
+            prop.get("maxLength")?.takeIf { it.isInt }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = name, kind = ReplyFieldAssertion.Kind.MAX_LENGTH, lengthBound = it.asInt()
+                ))
+            }
+            prop.get("format")?.takeIf { it.isTextual }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = name, kind = ReplyFieldAssertion.Kind.FORMAT, format = it.asText()
+                ))
             }
         }
         return out
