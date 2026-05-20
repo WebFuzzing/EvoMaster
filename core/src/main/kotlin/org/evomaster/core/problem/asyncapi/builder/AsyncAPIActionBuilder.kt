@@ -332,6 +332,19 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         } else {
             emptyList()
         }
+        // M11-PR3 fix #9: when the payload schema is a oneOf with a
+        // discriminator, also pre-compute the per-variant facet sets so
+        // the writer can emit a runtime if/else-if chain on the
+        // discriminator value (stronger than the intersection-only
+        // fallback used by M11-PR2 fix G).
+        val perVariantReplyAssertions = if (
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY ||
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT
+        ) {
+            extractPerVariantReplyAssertions(message, schema)
+        } else {
+            null
+        }
 
         return AsyncAPIAction(
             operationName = op.name,
@@ -344,8 +357,50 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             parameters = params.toMutableList(),
             replyBinding = replyBinding,
             correlationHeaderName = correlationLocation?.let(::extractHeaderName),
-            replyFieldAssertions = replyFieldAssertions
+            replyFieldAssertions = replyFieldAssertions,
+            perVariantReplyAssertions = perVariantReplyAssertions
         )
+    }
+
+    /**
+     * Pre-compute the (discriminator, per-variant facets) table used by the
+     * writer's runtime-dispatch oneOf handling (M11-PR3 fix #9). Returns
+     * null when the reply schema isn't a discriminated `oneOf` (or when the
+     * discriminator declaration is incomplete).
+     */
+    private fun extractPerVariantReplyAssertions(
+        message: AsyncAPIMessage,
+        schema: AsyncAPISchema
+    ): AsyncAPIAction.VariantReplyAssertions? {
+        val node = message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
+            ?: return null
+        if (!node.isObject) return null
+        val discriminator = node.get("discriminator")?.takeIf { it.isObject } ?: return null
+        val discriminatorProp = discriminator.get("propertyName")?.takeIf { it.isTextual }?.asText() ?: return null
+        // Composition keyword — try the three in priority order. oneOf is
+        // the typical case; anyOf is treated the same way for dispatch.
+        val variantsArr = listOf("oneOf", "anyOf", "allOf").firstNotNullOfOrNull { node.get(it) }
+            ?.takeIf { it.isArray && it.size() > 0 } ?: return null
+
+        val mapping = discriminator.get("mapping")?.takeIf { it.isObject }
+        val byVariant = linkedMapOf<String, List<ReplyFieldAssertion>>()
+        variantsArr.forEachIndexed { idx, v ->
+            val resolved = resolveSchemaRef(v, schema) ?: return@forEachIndexed
+            val name = if (mapping != null) {
+                // Mapping is value->ref, reverse-lookup the ref to its value.
+                val ref = v.get("\$ref")?.takeIf { it.isTextual }?.asText()
+                mapping.fields().asSequence().firstOrNull {
+                    it.value.isTextual && it.value.asText() == ref
+                }?.key ?: ref?.substringAfterLast("/") ?: "variant_$idx"
+            } else {
+                v.get("\$ref")?.takeIf { it.isTextual }?.asText()?.substringAfterLast("/") ?: "variant_$idx"
+            }
+            val perVariantBatch = mutableListOf<ReplyFieldAssertion>()
+            collectFieldAssertions(resolved, schema, pathPrefix = "", depth = 0, out = perVariantBatch)
+            byVariant[name] = perVariantBatch
+        }
+        if (byVariant.isEmpty()) return null
+        return AsyncAPIAction.VariantReplyAssertions(discriminatorProp, byVariant)
     }
 
     /**

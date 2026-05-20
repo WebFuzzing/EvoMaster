@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -66,6 +67,50 @@ open class AsyncAPIActionTestCaseNamingStrategy(
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // Ambiguity resolution falls back to the parent's numbered suffix.
         return emptyMap()
+    }
+
+    /**
+     * M11-PR3 fix #3 (deterministic ordering): sort the generated test
+     * cases by (channel, operation, delivery-success-first-then-fail) so
+     * the file lays out by channel. Keeps the MIO archive's selection
+     * intact but reorders for reader friendliness.
+     */
+    override fun getTestCases(): List<TestCase> {
+        return super.getTestCases().sortedWith(testCaseComparator)
+    }
+
+    private val testCaseComparator: Comparator<TestCase> = Comparator { a, b ->
+        val ca = primaryChannel(a)
+        val cb = primaryChannel(b)
+        val byChannel = compareValuesBy(a to ca, b to cb) { it.second }
+        if (byChannel != 0) return@Comparator byChannel
+        val oa = primaryOperation(a)
+        val ob = primaryOperation(b)
+        val byOp = compareValuesBy(a to oa, b to ob) { it.second }
+        if (byOp != 0) return@Comparator byOp
+        val fa = anyPublishFailed(a)
+        val fb = anyPublishFailed(b)
+        // success-first-then-fail: fa < fb when fa=false (passing) and fb=true (failing).
+        val byFail = compareValues(if (fa) 1 else 0, if (fb) 1 else 0)
+        if (byFail != 0) return@Comparator byFail
+        compareValues(a.name, b.name)
+    }
+
+    private fun primaryChannel(tc: TestCase): String =
+        (tc.test.individual.seeMainExecutableActions().firstOrNull { it is AsyncAPIAction } as? AsyncAPIAction)
+            ?.channelAddress ?: ""
+
+    private fun primaryOperation(tc: TestCase): String =
+        (tc.test.individual.seeMainExecutableActions().firstOrNull { it is AsyncAPIAction } as? AsyncAPIAction)
+            ?.operationName ?: ""
+
+    private fun anyPublishFailed(tc: TestCase): Boolean {
+        val actions = tc.test.individual.seeMainExecutableActions()
+        return actions.any { a ->
+            val async = a as? AsyncAPIAction ?: return@any false
+            if (async.kind != AsyncAPIAction.Kind.PUBLISH) return@any false
+            tc.test.seeResult(a.getLocalId())?.getResultValue("delivery") == "fail"
+        }
     }
 
     override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>, remainingNameChars: Int): Int {

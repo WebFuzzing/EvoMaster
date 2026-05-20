@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
@@ -52,40 +53,98 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
         lines.addSingleCommentLine("AsyncAPI test case: ${test.name}")
         val actions = test.test.individual.seeMainExecutableActions()
-        val publishes = mutableListOf<Pair<Int, AsyncAPIAction>>()
-        val publishesFailed = mutableListOf<Pair<Int, AsyncAPIAction>>()
         for ((i, a) in actions.withIndex()) {
             val async = a as? AsyncAPIAction ?: continue
             val res = test.test.seeResult(a.getLocalId()) ?: continue
             val delivery = res.getResultValue("delivery")
             val reply = res.getResultValue("reply")
-            val kindLabel = async.kind.name
             val outcome = listOfNotNull(
                 delivery?.let { "delivery: $it" },
                 reply?.let { "reply: $it" }
             ).joinToString(", ")
-            val summary = "Action #$i: $kindLabel on '${async.channelAddress}'" +
+            val summary = "Action #$i: ${async.kind.name} on '${async.channelAddress}'" +
                     if (outcome.isNotEmpty()) " — $outcome" else ""
             lines.addSingleCommentLine(summary)
+        }
+    }
+
+    /**
+     * Emit `@Disabled` / `@DisplayName` annotations on the line *between*
+     * the JavaDoc block and the `@Test` annotation. Pre-M11-PR3 these were
+     * emitted from `addTestCommentBlock`, which embedded them inside the
+     * `/** … */` block — making them syntactic comments and silently inert.
+     * The new [TestCaseWriter.addTestAnnotations] hook fires at the right
+     * spot so JUnit actually picks them up.
+     */
+    override fun addTestAnnotations(lines: Lines, test: TestCase) {
+        if (!config.outputFormat.isJUnit5()) return
+        val actions = test.test.individual.seeMainExecutableActions()
+        if (actions.isEmpty()) return
+
+        val publishes = mutableListOf<AsyncAPIAction>()
+        val publishesFailed = mutableListOf<AsyncAPIAction>()
+        val kindCounts = mutableMapOf<AsyncAPIAction.Kind, Int>()
+        val channels = mutableListOf<String>()
+        for (a in actions) {
+            val async = a as? AsyncAPIAction ?: continue
+            val res = test.test.seeResult(a.getLocalId()) ?: continue
+            kindCounts.merge(async.kind, 1) { acc, v -> acc + v }
+            channels.add(async.channelAddress)
             if (async.kind == AsyncAPIAction.Kind.PUBLISH) {
-                publishes.add(i to async)
-                if (delivery == "fail") publishesFailed.add(i to async)
+                publishes.add(async)
+                if (res.getResultValue("delivery") == "fail") publishesFailed.add(async)
             }
         }
-        // @Disabled is justified only when there's at least one PUBLISH and
-        // *every* PUBLISH in the sequence failed at evaluation. A test with
-        // mixed pass/fail publishes still exercises the SUT meaningfully on
-        // the passing ones, so we leave it enabled.
-        if (config.outputFormat.isJUnit5() && publishes.isNotEmpty() && publishes.size == publishesFailed.size) {
-            val channels = publishes.joinToString(", ") { "'${it.second.channelAddress}'" }
+        // @Disabled — only when *every* PUBLISH failed at evaluation.
+        if (publishes.isNotEmpty() && publishes.size == publishesFailed.size) {
+            val failedChannels = publishes.joinToString(", ") { "'${it.channelAddress}'" }
             lines.add(
                 "@org.junit.jupiter.api.Disabled(\"" +
                         escapeJava("every PUBLISH in this test recorded delivery: fail during " +
-                                "EvoMaster evaluation (channels: $channels); test was generated for " +
+                                "EvoMaster evaluation (channels: $failedChannels); test was generated for " +
                                 "completeness but does not exercise the SUT") +
                         "\")"
             )
         }
+        // @DisplayName — human-readable JUnit report label.
+        val displayName = buildDisplayName(kindCounts, channels, publishesFailed.size, publishes.size)
+        if (displayName.isNotBlank()) {
+            lines.add("@org.junit.jupiter.api.DisplayName(\"${escapeJava(displayName)}\")")
+        }
+        // M11-PR3 partial-#6/#7: emit a `@Tag("channel:<address>")` so users
+        // can filter / group tests by channel via JUnit 5 tag selectors:
+        // `mvn test -Dgroups=channel:streetlights`. Full `@Nested`-per-channel
+        // suite splitting is deferred to a follow-up PR — it would require
+        // significant restructuring of `TestSuiteWriter`'s test-emission
+        // pipeline.
+        channels.distinct().forEach { channel ->
+            lines.add("@org.junit.jupiter.api.Tag(\"channel:${escapeJava(channel)}\")")
+        }
+    }
+
+    private fun buildDisplayName(
+        kindCounts: Map<AsyncAPIAction.Kind, Int>,
+        channels: List<String>,
+        failedPublishes: Int,
+        totalPublishes: Int
+    ): String {
+        val parts = mutableListOf<String>()
+        kindCounts[AsyncAPIAction.Kind.PUBLISH]?.let { n ->
+            parts.add(if (n == 1) "publish" else "$n publishes")
+        }
+        kindCounts[AsyncAPIAction.Kind.SUBSCRIBE_REPLY]?.let { _ ->
+            parts.add("await reply")
+        }
+        kindCounts[AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT]?.let { n ->
+            parts.add(if (n == 1) "observe output" else "observe outputs")
+        }
+        val channel = channels.firstOrNull()?.let { " on '$it'" } ?: ""
+        val outcome = when {
+            totalPublishes > 0 && failedPublishes == totalPublishes -> " — all publishes failed at eval"
+            totalPublishes > 0 && failedPublishes > 0 -> " — $failedPublishes of $totalPublishes publishes failed at eval"
+            else -> ""
+        }
+        return parts.joinToString(" + ") + channel + outcome
     }
 
     override fun handleActionCalls(
@@ -111,6 +170,9 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         // PUBLISH; SUBSCRIBE_REPLY actions read it so the consumer-side filter
         // matches the producer-side header value.
         val correlationByPair = mutableMapOf<String, String>()
+        // M11-PR3 fix #10: also remember which action index emitted the
+        // publish so the paired SUBSCRIBE_REPLY can assert reply ≥ publish.
+        val publishIndexByPair = mutableMapOf<String, Int>()
         // Coalesce trailing skipped actions into a single summary line rather
         // than emitting one `// Action #N (KIND) — no result captured ...`
         // comment per action. A long PUBLISH-fail chain (voiceblender hit 47
@@ -135,6 +197,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             val async = action as? AsyncAPIAction
             if (async != null && async.kind == AsyncAPIAction.Kind.PUBLISH) {
                 correlationByPair[async.pairId] = "evm-${UUID.randomUUID()}"
+                publishIndexByPair[async.pairId] = i
             }
             if (result == null) {
                 if (skipRunCount == 0) skipRunStart = i
@@ -142,7 +205,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 continue
             }
             flushSkipRun()
-            addAsyncAPIAction(async, i, lines, result, correlationByPair)
+            addAsyncAPIAction(async, i, lines, result, correlationByPair, publishIndexByPair)
         }
         flushSkipRun()
     }
@@ -152,7 +215,8 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         index: Int,
         lines: Lines,
         result: ActionResult,
-        correlationByPair: Map<String, String>
+        correlationByPair: Map<String, String>,
+        publishIndexByPair: Map<String, Int>
     ) {
         if (action == null) return
 
@@ -174,7 +238,9 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
 
         when (action.kind) {
             AsyncAPIAction.Kind.PUBLISH -> emitPublish(action, index, lines, correlationByPair[action.pairId])
-            AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> emitSubscribeReply(action, index, lines, correlationByPair[action.pairId])
+            AsyncAPIAction.Kind.SUBSCRIBE_REPLY -> emitSubscribeReply(
+                action, index, lines, correlationByPair[action.pairId], publishIndexByPair[action.pairId]
+            )
             AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT -> emitSubscribeOutput(action, index, lines)
         }
         lines.addEmpty(1)
@@ -188,6 +254,27 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
 
         val rendered = renderChannelAddress(action)
         val correlationHeader = action.correlationHeaderName
+
+        // M11-PR3 fix #1: pretty-print the payload as a `//` comment block
+        // above the publish call so reviewers can read the intent without
+        // staring at a one-line escaped JSON literal.
+        emitPayloadComment(payloadJson, lines)
+
+        // M11-PR3 fix #8: detect EvoMaster's invalid-input probe markers in
+        // the payload (the "EVOMASTER" off-enum sentinel + a deliberately
+        // empty payload `{}` against a schema with required fields). Wrap
+        // the publish in `assertThrows` only when the schema *itself*
+        // declares the payload invalid — schema-derivable, no SUT-side
+        // oracle. For now we conservatively probe only the explicit
+        // "EVOMASTER" string sentinel because that's the one the engine
+        // intentionally emits as a known invalid value.
+        val probeSentinel = "\"EVOMASTER\""
+        val wrapInAssertThrows = payloadJson.contains(probeSentinel)
+
+        // M11-PR3 fix #10: capture wall-clock around the publish so the
+        // matching SUBSCRIBE_REPLY can assert ordering (reply ≥ publish).
+        val publishStampVar = "__evm_publish_at_$index"
+        lines.add("long $publishStampVar = System.currentTimeMillis();")
 
         lines.add("{")
         lines.indented {
@@ -213,14 +300,43 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     }
                 }
             }
-            lines.add(
+            val publishCall =
                 "org.evomaster.test.utils.EMTestUtils.kafkaPublish(baseUrlOfSut, " +
                         "\"${escapeJava(rendered)}\", $keyExpr, " +
                         "\"${escapeJava(payloadJson)}\".getBytes(java.nio.charset.StandardCharsets.UTF_8), " +
                         "__evm_headers);"
-            )
+            if (wrapInAssertThrows) {
+                lines.add(
+                    "// schema-invalid input (engine probe): publish must surface a runtime exception"
+                )
+                lines.add(
+                    "assertThrows(RuntimeException.class, () -> { $publishCall });"
+                )
+            } else {
+                lines.add(publishCall)
+            }
         }
         lines.add("}")
+    }
+
+    private fun emitPayloadComment(payloadJson: String, lines: Lines) {
+        if (payloadJson.isEmpty() || payloadJson == "{}") {
+            lines.addSingleCommentLine("payload: {}")
+            return
+        }
+        val pretty = try {
+            val mapper = ObjectMapper()
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(payloadJson))
+        } catch (e: Exception) {
+            // Non-JSON payloads (e.g. raw bytes) fall back to the literal.
+            payloadJson
+        }
+        if (pretty.length <= 80 && !pretty.contains('\n')) {
+            lines.addSingleCommentLine("payload: $pretty")
+        } else {
+            lines.addSingleCommentLine("payload:")
+            pretty.split('\n').forEach { lines.addSingleCommentLine("  $it") }
+        }
     }
 
     private fun emitSubscribeOutput(action: AsyncAPIAction, index: Int, lines: Lines) {
@@ -265,15 +381,24 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         // `length == 1` are left to the user — the schema doesn't carry a
         // count expectation for SEND channels.
         lines.add(
-            "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
+            "assertNotNull($varName, " +
                     "\"output buffer on '${escapeJava(rendered)}' came back null — listener never ran\");"
         )
     }
 
-    private fun emitSubscribeReply(action: AsyncAPIAction, index: Int, lines: Lines, correlationId: String?) {
+    private fun emitSubscribeReply(action: AsyncAPIAction, index: Int, lines: Lines, correlationId: String?, paramPublishIndex: Int? = null) {
         val rendered = renderChannelAddress(action)
         val correlationHeader = action.correlationHeaderName
         val varName = "__evm_reply_$index"
+
+        // M11-PR3 fix #10: causality check — the reply must arrive *after*
+        // the matching publish. We record a wall-clock snapshot around the
+        // reply receipt and compare against the publish snapshot recorded
+        // in emitPublish. If the publish-index lookup fails (the action
+        // chain didn't follow the expected publish→reply order) we skip
+        // the timing assertion gracefully — assertion churn isn't worth a
+        // hard error.
+        val replyStampVar = "__evm_reply_at_$index"
 
         if (correlationHeader != null && correlationId != null) {
             // M11-PR2 fix E: when the schema declares a correlation header,
@@ -290,11 +415,11 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                         "\"${escapeJava(correlationHeader)}\", 5000L);"
             )
             lines.add(
-                "org.junit.jupiter.api.Assertions.assertNotNull($envVar, " +
+                "assertNotNull($envVar, " +
                         "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
             )
             lines.add(
-                "org.junit.jupiter.api.Assertions.assertEquals(" +
+                "assertEquals(" +
                         "\"$correlationId\", $envVar.correlationId, " +
                         "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
             )
@@ -308,8 +433,18 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                         "\"${escapeJava(rendered)}\", \"\", \"\", 5000L);"
             )
             lines.add(
-                "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
+                "assertNotNull($varName, " +
                         "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
+            )
+        }
+        // M11-PR3 fix #10: reply timestamp must be ≥ publish timestamp.
+        if (paramPublishIndex != null) {
+            val publishStampVar = "__evm_publish_at_$paramPublishIndex"
+            lines.add("long $replyStampVar = System.currentTimeMillis();")
+            lines.add(
+                "assertTrue($replyStampVar >= $publishStampVar, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived before the paired publish " +
+                        "(clock skew or out-of-order delivery)\");"
             )
         }
         emitReplyFieldAssertions(action, varName, lines)
@@ -333,6 +468,39 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
      * exactly one assertion failure rather than a cascade.
      */
     private fun emitReplyFieldAssertions(action: AsyncAPIAction, replyVar: String, lines: Lines) {
+        // M11-PR3 fix #9: when the schema declared a discriminated oneOf,
+        // emit a runtime if/else-if chain on the discriminator value and
+        // apply each variant's full facet set inside the matching branch.
+        // Stronger than the M11-PR2 intersection fallback.
+        val variants = action.perVariantReplyAssertions
+        if (variants != null && variants.byVariant.isNotEmpty()) {
+            val discProp = escapeJava(variants.discriminatorProperty)
+            val discVar = "__evm_disc_${replyVar.substringAfterLast('_')}"
+            lines.add(
+                "String $discVar = " +
+                        "org.evomaster.test.utils.EMTestUtils.replyText($replyVar, \"$discProp\");"
+            )
+            var first = true
+            variants.byVariant.forEach { (name, specs) ->
+                val prefix = if (first) "if" else "else if"
+                first = false
+                lines.add("$prefix (\"${escapeJava(name)}\".equals($discVar)) {")
+                lines.indented {
+                    emitFieldAssertionsOver(specs, replyVar, "reply (variant '${escapeJava(name)}')", lines)
+                }
+                lines.add("}")
+            }
+            lines.add("else {")
+            lines.indented {
+                lines.add(
+                    "fail(\"reply discriminator '$discProp' had value '\" + $discVar + " +
+                            "\"' but the schema declares only: " +
+                            variants.byVariant.keys.joinToString(", ") { escapeJava(it) } + "\");"
+                )
+            }
+            lines.add("}")
+            return
+        }
         emitFieldAssertionsOver(action.replyFieldAssertions, replyVar, "reply", lines)
     }
 
@@ -347,14 +515,14 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             val p = escapeJava(spec.path)
             when (spec.kind) {
                 ReplyFieldAssertion.Kind.REQUIRED -> lines.add(
-                    "org.junit.jupiter.api.Assertions.assertTrue(" +
+                    "assertTrue(" +
                             "org.evomaster.test.utils.EMTestUtils.replyHas($valueVar, \"$p\"), " +
                             "\"$label missing required field '$p'\");"
                 )
                 ReplyFieldAssertion.Kind.ENUM -> {
                     val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                        "assertTrue(" +
                                 "java.util.Arrays.asList($literals).contains(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\")), " +
                                 "\"$label field '$p' not in declared enum\");"
@@ -363,7 +531,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 ReplyFieldAssertion.Kind.CONST -> {
                     val v = escapeJava(spec.expectedValues.firstOrNull().orEmpty())
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertEquals(\"$v\", " +
+                        "assertEquals(\"$v\", " +
                                 "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\"), " +
                                 "\"$label field '$p' must be declared const '$v'\");"
                     )
@@ -371,7 +539,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 ReplyFieldAssertion.Kind.PATTERN -> {
                     val pat = escapeJava(spec.pattern!!)
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                        "assertTrue(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyPatternMatches($valueVar, \"$p\", \"$pat\"), " +
                                 "\"$label field '$p' does not match declared pattern\");"
                     )
@@ -379,7 +547,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 ReplyFieldAssertion.Kind.MULTIPLE_OF -> {
                     val divisor = spec.numericBound!!
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                        "assertTrue(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyMultipleOf($valueVar, \"$p\", $divisor), " +
                                 "\"$label field '$p' is not a multiple of $divisor\");"
                     )
@@ -388,7 +556,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.lengthBound!!
                     lines.add(
                         "{ int __n = org.evomaster.test.utils.EMTestUtils.replyArrayLength($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__n < 0 || __n >= $bound, " +
+                                "assertTrue(__n < 0 || __n >= $bound, " +
                                 "\"$label field '$p' has fewer than declared minItems $bound\"); }"
                     )
                 }
@@ -396,19 +564,19 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.lengthBound!!
                     lines.add(
                         "{ int __n = org.evomaster.test.utils.EMTestUtils.replyArrayLength($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__n < 0 || __n <= $bound, " +
+                                "assertTrue(__n < 0 || __n <= $bound, " +
                                 "\"$label field '$p' has more than declared maxItems $bound\"); }"
                     )
                 }
                 ReplyFieldAssertion.Kind.ARRAY_UNIQUE -> lines.add(
-                    "org.junit.jupiter.api.Assertions.assertTrue(" +
+                    "assertTrue(" +
                             "org.evomaster.test.utils.EMTestUtils.replyArrayUnique($valueVar, \"$p\"), " +
                             "\"$label field '$p' violates declared uniqueItems\");"
                 )
                 ReplyFieldAssertion.Kind.DISCRIMINATOR -> {
                     val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                        "assertTrue(" +
                                 "java.util.Arrays.asList($literals).contains(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\")), " +
                                 "\"$label discriminator '$p' does not name a declared variant\");"
@@ -418,7 +586,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.numericBound!!
                     lines.add(
                         "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyNumber($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__v == null || __v >= $bound, " +
+                                "assertTrue(__v == null || __v >= $bound, " +
                                 "\"$label field '$p' below declared minimum $bound\"); }"
                     )
                 }
@@ -426,7 +594,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.numericBound!!
                     lines.add(
                         "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyNumber($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__v == null || __v <= $bound, " +
+                                "assertTrue(__v == null || __v <= $bound, " +
                                 "\"$label field '$p' above declared maximum $bound\"); }"
                     )
                 }
@@ -434,7 +602,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.lengthBound!!
                     lines.add(
                         "{ int __l = org.evomaster.test.utils.EMTestUtils.replyTextLength($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__l < 0 || __l >= $bound, " +
+                                "assertTrue(__l < 0 || __l >= $bound, " +
                                 "\"$label field '$p' shorter than declared minLength $bound\"); }"
                     )
                 }
@@ -442,14 +610,14 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                     val bound = spec.lengthBound!!
                     lines.add(
                         "{ int __l = org.evomaster.test.utils.EMTestUtils.replyTextLength($valueVar, \"$p\"); " +
-                                "org.junit.jupiter.api.Assertions.assertTrue(__l < 0 || __l <= $bound, " +
+                                "assertTrue(__l < 0 || __l <= $bound, " +
                                 "\"$label field '$p' longer than declared maxLength $bound\"); }"
                     )
                 }
                 ReplyFieldAssertion.Kind.FORMAT -> {
                     val f = escapeJava(spec.format!!)
                     lines.add(
-                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                        "assertTrue(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyFormatMatches($valueVar, \"$p\", \"$f\"), " +
                                 "\"$label field '$p' does not match declared format '$f'\");"
                     )

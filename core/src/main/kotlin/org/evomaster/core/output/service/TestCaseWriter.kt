@@ -72,6 +72,16 @@ abstract class TestCaseWriter {
 
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
+    /**
+     * Hook for problem-specific test-method annotations (e.g.
+     * `@DisplayName`, `@Disabled`) that need to be emitted *outside* the
+     * JavaDoc comment block but *before* the standard `@Test` annotation.
+     * Default: no-op.
+     */
+    protected open fun addTestAnnotations(lines: Lines, test: TestCase) {
+        // No-op by default.
+    }
+
     fun convertToCompilableTestCode(
             test: TestCase,
             baseUrlOfSut: String,
@@ -91,6 +101,8 @@ abstract class TestCaseWriter {
         if(config.addTestComments) {
             addTestComments(lines, test)
         }
+
+        addTestAnnotations(lines, test)
 
         if (format.isJUnit()) {
             if (config.testTimeout <= 0) {
