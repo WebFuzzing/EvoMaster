@@ -43,22 +43,27 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KDE" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
+    val modelName = "GAUSSIAN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val encoderType = "RAW" // Choose "RAW" or "NORMAL"
     val decisionMaking = "THRESHOLD" // Choose "PROBABILITY" or "THRESHOLD"
     val warmUpRep = 10
     val maxAttemptRepair = 100 // i.e., the classifier has 10 times the chances to pick an action with non-400 response
+    val repairThreshold = 0.5
+    val weaknessThreshold = 0.6
 
-    val runIterations = 1000
+    val runIterations = 10000
     val saveReport = false
     val filePathReport = "AIModelsCheckWFDReport.txt"
 
     val baseUrlOfSut = "http://localhost:8080"
 //    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
-    val swaggerUrl ="../WFD_Dataset/openapi-swagger/youtube-mock.yaml"
-//    val swaggerUrl ="../WFD_Dataset/openapi-swagger/languagetool.json"
-//    val swaggerUrl = "../WFD_Dataset/openapi-swagger/rest-ncs.json"
+
+//    val swaggerUrl ="../dataset/openapi-swagger/youtube-mock.yaml"
+    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
+//    val swaggerUrl ="../dataset/openapi-swagger/blogapi.json"
+//    val swaggerUrl ="../dataset/openapi-swagger/languagetool.json"
+//    val swaggerUrl = "../dataset/openapi-swagger/rest-ncs.json"
 
     @Inject
     lateinit var randomness: Randomness
@@ -91,6 +96,9 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         config.aiClassifierRepairActivation = EMConfig.AIClassificationRepairActivation.valueOf(decisionMaking)
         config.aiResponseClassifierWarmup = warmUpRep
         config.maxRepairAttemptsInResponseClassification = maxAttemptRepair
+        config.classificationRepairThreshold = repairThreshold
+        config.aIResponseClassifierWeaknessThreshold = weaknessThreshold
+        config.blackBox = false
     }
 
     @Inject
@@ -148,8 +156,13 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             println("Input vector size: ${inputVector.size}")
 
             // Warm-up
-            val innerModel = aiGlobalClassifier.viewInnerModels()
-            println("innerModel is ${innerModel.javaClass.simpleName ?: "Unknown"}")
+            val innerModels = aiGlobalClassifier.viewInnerModels()
+
+            val innerModel = innerModels.firstOrNull()
+                ?: throw IllegalStateException("No inner models found")
+
+            println("innerModel is ${innerModel.javaClass.simpleName}")
+
             val endpointModel = when(innerModel) {
                 is Gaussian400Classifier -> innerModel.getModel(endPoint)
                 is GLM400Classifier      -> innerModel.getModel(endPoint)
@@ -166,7 +179,11 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
             //Execute the action if the classifier is still weak
-            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.0 && metrics.mcc > 0.0)){
+            val deltaW = config.aIResponseClassifierWeaknessThreshold
+            if(metrics.precision400 < deltaW
+                || metrics.sensitivity400 < deltaW
+                || metrics.specificity < deltaW
+                || metrics.npv < deltaW) {
 
                 println("The classifier is weak for $endPoint")
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
@@ -244,11 +261,11 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
 
         val overAllMetrics = aiGlobalClassifier.estimateOverallMetrics()
-        println("Overall Accuracy: ${overAllMetrics.accuracy}")
-        println("Overall Precision400: ${overAllMetrics.precision400}")
-        println("Overall Recall400: ${overAllMetrics.sensitivity400}")
-        println("Overall F1Score400: ${overAllMetrics.f1Score400}")
-        println("Overall MCC: ${overAllMetrics.mcc}")
+        println("Overall Accuracy:       ${overAllMetrics.accuracy}")
+        println("Overall Precision400:   ${overAllMetrics.precision400}")
+        println("Overall Sensitivity400: ${overAllMetrics.sensitivity400}")
+        println("Overall Specificity:    ${overAllMetrics.specificity}")
+        println("Overall NPV:            ${overAllMetrics.npv}")
 
         // Save the final result as a .txt file
         if (saveReport){
