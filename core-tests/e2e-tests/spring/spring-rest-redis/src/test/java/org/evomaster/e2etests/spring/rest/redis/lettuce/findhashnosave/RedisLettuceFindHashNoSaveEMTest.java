@@ -43,7 +43,7 @@ public class RedisLettuceFindHashNoSaveEMTest extends RestTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/redislettucefindhashnosave/findHashAllFields", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/redislettucefindhashnosave/findHashAllFields", null);
                },
-                3);
+                6);
 
     }
 }

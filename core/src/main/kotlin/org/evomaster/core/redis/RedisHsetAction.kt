@@ -17,15 +17,20 @@ import org.evomaster.core.search.gene.string.StringGene
 class RedisHsetAction(
     val keyGene: StringGene,
     val field: String,
-    val valueGene: StringGene
+    val valueGene: StringGene,
+    private val nameKey: String = keyGene.value
 ) : RedisDbAction() {
+
+    init {
+        addChildren(listOf(keyGene, valueGene))
+    }
 
     override fun getTargetKey() = keyGene.value
 
     override fun seeTopGenes(): List<Gene> = listOf(keyGene, valueGene)
 
     override fun copyContent(): Action =
-        RedisHsetAction(keyGene, field, valueGene.copy() as StringGene)
+        RedisHsetAction(keyGene.copy() as StringGene, field, valueGene.copy() as StringGene, nameKey)
 
-    override fun getName() = "Redis_HSET_${keyGene.value}_$field"
+    override fun getName() = "Redis_HSET_${nameKey}_$field"
 }
