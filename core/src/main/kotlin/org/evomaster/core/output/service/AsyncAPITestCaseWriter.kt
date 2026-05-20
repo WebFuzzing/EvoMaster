@@ -32,8 +32,60 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
     @Inject
     private lateinit var emConfig: EMConfig
 
+    /**
+     * Emit the JavaDoc / single-line comment block that precedes the
+     * generated `@Test` method.
+     *
+     * M11-PR2 fix L upgrades this from a one-line stub
+     * (`// AsyncAPI test case: test_0`) to a multi-line summary listing each
+     * action's kind, channel, and observed delivery / reply outcome. Useful
+     * when grepping a 60+ test file for "what does this test exercise?".
+     *
+     * M11-PR2 fix C additionally emits `@Disabled` for tests whose action
+     * chain stalled at evaluation time (every PUBLISH recorded
+     * `delivery: fail`). Those tests still publish the same bytes at
+     * replay time, but with the original broker rejection now invisible
+     * — running them passes vacuously and pollutes CI output. JUnit 5
+     * picks up `@Disabled` regardless of whether it precedes or follows
+     * `@Test`, so we emit it here as part of the comment block.
+     */
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
         lines.addSingleCommentLine("AsyncAPI test case: ${test.name}")
+        val actions = test.test.individual.seeMainExecutableActions()
+        val publishes = mutableListOf<Pair<Int, AsyncAPIAction>>()
+        val publishesFailed = mutableListOf<Pair<Int, AsyncAPIAction>>()
+        for ((i, a) in actions.withIndex()) {
+            val async = a as? AsyncAPIAction ?: continue
+            val res = test.test.seeResult(a.getLocalId()) ?: continue
+            val delivery = res.getResultValue("delivery")
+            val reply = res.getResultValue("reply")
+            val kindLabel = async.kind.name
+            val outcome = listOfNotNull(
+                delivery?.let { "delivery: $it" },
+                reply?.let { "reply: $it" }
+            ).joinToString(", ")
+            val summary = "Action #$i: $kindLabel on '${async.channelAddress}'" +
+                    if (outcome.isNotEmpty()) " — $outcome" else ""
+            lines.addSingleCommentLine(summary)
+            if (async.kind == AsyncAPIAction.Kind.PUBLISH) {
+                publishes.add(i to async)
+                if (delivery == "fail") publishesFailed.add(i to async)
+            }
+        }
+        // @Disabled is justified only when there's at least one PUBLISH and
+        // *every* PUBLISH in the sequence failed at evaluation. A test with
+        // mixed pass/fail publishes still exercises the SUT meaningfully on
+        // the passing ones, so we leave it enabled.
+        if (config.outputFormat.isJUnit5() && publishes.isNotEmpty() && publishes.size == publishesFailed.size) {
+            val channels = publishes.joinToString(", ") { "'${it.second.channelAddress}'" }
+            lines.add(
+                "@org.junit.jupiter.api.Disabled(\"" +
+                        escapeJava("every PUBLISH in this test recorded delivery: fail during " +
+                                "EvoMaster evaluation (channels: $channels); test was generated for " +
+                                "completeness but does not exercise the SUT") +
+                        "\")"
+            )
+        }
     }
 
     override fun handleActionCalls(
@@ -49,18 +101,12 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             lines.addSingleCommentLine("(no AsyncAPI actions in this individual)")
             return
         }
-        if (config.outputFormat.isJava()) {
-            // Pin the broker URL into the test so it can be re-run without
-            // re-running the EvoMaster search.  When --bbBrokerUrl is empty
-            // (white-box runs read it from the EM Driver at search time),
-            // fall back to the standard env var that most Kafka tests use.
-            val broker = emConfig.bbBrokerUrl
-            lines.add(
-                "final String __evm_broker = !\"$broker\".isEmpty() ? \"$broker\" : " +
-                        "java.util.Optional.ofNullable(System.getenv(\"KAFKA_BOOTSTRAP_SERVERS\")).orElse(\"localhost:9092\");"
-            )
-            lines.addEmpty(1)
-        }
+        // Per-test broker resolution used to be emitted as the first line of
+        // every test method; pulled up to the class-level static field
+        // `baseUrlOfSut` (declared by TestSuiteWriter for black-box runs).
+        // The `KAFKA_BOOTSTRAP_SERVERS` env-var fallback that was inlined in
+        // each test method was dropped — users who need broker re-targeting
+        // can override the static field directly. M11-PR2 fix D.
         // Map from pairId to the correlation id we synthesised for the matching
         // PUBLISH; SUBSCRIBE_REPLY actions read it so the consumer-side filter
         // matches the producer-side header value.
@@ -110,13 +156,15 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
     ) {
         if (action == null) return
 
+        // Per-action evaluation outcome (delivery / reply / variant) was
+        // previously duplicated in the test body. M11-PR2 fix L lifted that
+        // summary into the JavaDoc above the method; the body now stays
+        // focused on the action sequence itself. The single-line method
+        // header below is still useful inside the body because navigators
+        // jump to here, not the JavaDoc.
         lines.addSingleCommentLine(
             "Action #$index: ${action.kind} on '${action.channelAddress}' (operation '${action.operationName}')"
         )
-        result.getResultValue("delivery")?.let { lines.addSingleCommentLine("delivery: $it") }
-        result.getResultValue("reply")?.let { lines.addSingleCommentLine("reply:    $it") }
-        result.getResultValue("schemaValid")?.let { lines.addSingleCommentLine("schema-valid: $it") }
-        result.getResultValue("variant")?.let { lines.addSingleCommentLine("matched reply variant: $it") }
 
         if (!config.outputFormat.isJava()) {
             lines.addSingleCommentLine("TODO Kotlin/Python AsyncAPI emission not implemented yet")
@@ -166,7 +214,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 }
             }
             lines.add(
-                "org.evomaster.test.utils.EMTestUtils.kafkaPublish(__evm_broker, " +
+                "org.evomaster.test.utils.EMTestUtils.kafkaPublish(baseUrlOfSut, " +
                         "\"${escapeJava(rendered)}\", $keyExpr, " +
                         "\"${escapeJava(payloadJson)}\".getBytes(java.nio.charset.StandardCharsets.UTF_8), " +
                         "__evm_headers);"
@@ -184,7 +232,7 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         val varName = "__evm_output_$index"
         lines.add(
             "byte[][] $varName = org.evomaster.test.utils.EMTestUtils.kafkaCollectAllWithin(" +
-                    "__evm_broker, \"${escapeJava(rendered)}\", ${configuredWindow}L);"
+                    "baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L);"
         )
         // The schema declares this channel as SUT-produced; we don't require
         // a particular message count — a 0-message outcome is a legitimate
@@ -211,23 +259,59 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             }
             lines.add("}")
         }
+        // M11-PR2 fix N: soft assertion that the buffer is non-null and the
+        // window finished collecting (the helper returns a zero-length array
+        // when the SUT didn't emit, never null). Hard count assertions like
+        // `length == 1` are left to the user — the schema doesn't carry a
+        // count expectation for SEND channels.
+        lines.add(
+            "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
+                    "\"output buffer on '${escapeJava(rendered)}' came back null — listener never ran\");"
+        )
     }
 
     private fun emitSubscribeReply(action: AsyncAPIAction, index: Int, lines: Lines, correlationId: String?) {
         val rendered = renderChannelAddress(action)
-        val correlationHeader = action.correlationHeaderName ?: ""
-        val correlationValue = correlationId ?: ""
+        val correlationHeader = action.correlationHeaderName
         val varName = "__evm_reply_$index"
-        lines.add(
-            "byte[] $varName = " +
-                    "org.evomaster.test.utils.EMTestUtils.kafkaAwaitReply(__evm_broker, " +
-                    "\"${escapeJava(rendered)}\", " +
-                    "\"${escapeJava(correlationHeader)}\", \"${escapeJava(correlationValue)}\", 5000L);"
-        )
-        lines.add(
-            "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
-                    "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
-        )
+
+        if (correlationHeader != null && correlationId != null) {
+            // M11-PR2 fix E: when the schema declares a correlation header,
+            // fetch the *first* reply unconditionally and assert correlation
+            // explicitly. The older path silently filtered out wrong-correlation
+            // messages and returned null, conflating "no reply" with "wrong
+            // correlation reply". This envelope-returning variant gives the
+            // user a clear failure message in either case.
+            val envVar = "__evm_envelope_$index"
+            lines.add(
+                "org.evomaster.test.utils.EMTestUtils.ReplyEnvelope $envVar = " +
+                        "org.evomaster.test.utils.EMTestUtils.kafkaAwaitReplyEnvelope(" +
+                        "baseUrlOfSut, \"${escapeJava(rendered)}\", " +
+                        "\"${escapeJava(correlationHeader)}\", 5000L);"
+            )
+            lines.add(
+                "org.junit.jupiter.api.Assertions.assertNotNull($envVar, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
+            )
+            lines.add(
+                "org.junit.jupiter.api.Assertions.assertEquals(" +
+                        "\"$correlationId\", $envVar.correlationId, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
+            )
+            lines.add("byte[] $varName = $envVar.payload;")
+        } else {
+            // No correlation header declared — first message wins, no
+            // correlation assertion is meaningful.
+            lines.add(
+                "byte[] $varName = " +
+                        "org.evomaster.test.utils.EMTestUtils.kafkaAwaitReply(baseUrlOfSut, " +
+                        "\"${escapeJava(rendered)}\", \"\", \"\", 5000L);"
+            )
+            lines.add(
+                "org.junit.jupiter.api.Assertions.assertNotNull($varName, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
+            )
+        }
         emitReplyFieldAssertions(action, varName, lines)
     }
 
@@ -274,6 +358,60 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                                 "java.util.Arrays.asList($literals).contains(" +
                                 "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\")), " +
                                 "\"$label field '$p' not in declared enum\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.CONST -> {
+                    val v = escapeJava(spec.expectedValues.firstOrNull().orEmpty())
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertEquals(\"$v\", " +
+                                "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\"), " +
+                                "\"$label field '$p' must be declared const '$v'\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.PATTERN -> {
+                    val pat = escapeJava(spec.pattern!!)
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyPatternMatches($valueVar, \"$p\", \"$pat\"), " +
+                                "\"$label field '$p' does not match declared pattern\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MULTIPLE_OF -> {
+                    val divisor = spec.numericBound!!
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyMultipleOf($valueVar, \"$p\", $divisor), " +
+                                "\"$label field '$p' is not a multiple of $divisor\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.ARRAY_MIN_ITEMS -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __n = org.evomaster.test.utils.EMTestUtils.replyArrayLength($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__n < 0 || __n >= $bound, " +
+                                "\"$label field '$p' has fewer than declared minItems $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.ARRAY_MAX_ITEMS -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __n = org.evomaster.test.utils.EMTestUtils.replyArrayLength($valueVar, \"$p\"); " +
+                                "org.junit.jupiter.api.Assertions.assertTrue(__n < 0 || __n <= $bound, " +
+                                "\"$label field '$p' has more than declared maxItems $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.ARRAY_UNIQUE -> lines.add(
+                    "org.junit.jupiter.api.Assertions.assertTrue(" +
+                            "org.evomaster.test.utils.EMTestUtils.replyArrayUnique($valueVar, \"$p\"), " +
+                            "\"$label field '$p' violates declared uniqueItems\");"
+                )
+                ReplyFieldAssertion.Kind.DISCRIMINATOR -> {
+                    val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
+                    lines.add(
+                        "org.junit.jupiter.api.Assertions.assertTrue(" +
+                                "java.util.Arrays.asList($literals).contains(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyText($valueVar, \"$p\")), " +
+                                "\"$label discriminator '$p' does not name a declared variant\");"
                     )
                 }
                 ReplyFieldAssertion.Kind.MIN -> {

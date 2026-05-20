@@ -34,6 +34,8 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
 
     companion object {
         private val log = LoggerFactory.getLogger(AsyncAPIActionBuilder::class.java)
+        /** Bound recursion so circular $refs / deep schemas don't loop. */
+        private const val MAX_REPLY_ASSERTION_DEPTH = 5
     }
 
     data class Built(
@@ -349,7 +351,23 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     /**
      * Walk the reply variant's declared properties and pre-compute the
      * assertion specs the writer should emit on the captured reply payload.
-     * Covers `required` + `enum` + numeric bounds + string length + format.
+     *
+     * Covers the M9-PR5 starter facets (required + enum), the M11-PR1
+     * extension (numeric bounds, string length, format) and the M11-PR2
+     * additions:
+     *  - **A** nested dotted paths (`a.b.c`) via recursion with depth cap.
+     *  - **B** `pattern`, `const`, `multipleOf`, `minItems`, `maxItems`,
+     *          `uniqueItems`.
+     *  - **G** intersection-of-facets for `oneOf` / `anyOf` reply unions —
+     *          only facets that hold across every variant are emitted, so
+     *          unknown-variant runtime payloads still pass the assertions
+     *          that genuinely apply to the union.
+     *  - **H** discriminator surfacing — if the declared composition carries
+     *          a `discriminator`, the discriminator property's value is
+     *          asserted to be one of the declared variant names.
+     *
+     * Recursion is depth-capped (default 5) to defuse circular-ref schemas
+     * without external-ref work.
      */
     private fun extractReplyFieldAssertions(
         message: AsyncAPIMessage,
@@ -357,57 +375,175 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
     ): List<ReplyFieldAssertion> {
         val node = message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
             ?: return emptyList()
-        if (!node.isObject) return emptyList()
-        // Variant resolution: for oneOf / anyOf, we'd produce per-variant
-        // assertions in a follow-up; for now, only flat schemas are scanned
-        // (the fitness layer already covers the oneOf case via REPLY_FIELD_*
-        // targets keyed by matched variant name).
-        val properties = node.get("properties")?.takeIf { it.isObject } ?: return emptyList()
+        val out = mutableListOf<ReplyFieldAssertion>()
+        collectFieldAssertions(node, schema, pathPrefix = "", depth = 0, out = out)
+        return out
+    }
+
+    private fun collectFieldAssertions(
+        node: com.fasterxml.jackson.databind.JsonNode,
+        schema: AsyncAPISchema,
+        pathPrefix: String,
+        depth: Int,
+        out: MutableList<ReplyFieldAssertion>
+    ) {
+        if (depth > MAX_REPLY_ASSERTION_DEPTH) return
+        if (!node.isObject) return
+
+        // Composition: oneOf / anyOf / allOf. M11-PR2 fix G.
+        val variants = listOf("oneOf", "anyOf", "allOf").firstNotNullOfOrNull { keyword ->
+            node.get(keyword)?.takeIf { it.isArray && it.size() > 0 }?.let { keyword to it }
+        }
+        if (variants != null) {
+            val (compositionKeyword, variantArr) = variants
+            // Discriminator surfacing — emit an ENUM-style assertion on the
+            // discriminator property with the declared variant names.
+            // Tolerant of both inline `mapping` and bare variant `$ref` names.
+            // M11-PR2 fix H.
+            node.get("discriminator")?.takeIf { it.isObject }?.get("propertyName")
+                ?.takeIf { it.isTextual }
+                ?.let { discProp ->
+                    val variantNames = collectVariantNames(node.get("discriminator"), variantArr)
+                    if (variantNames.isNotEmpty()) {
+                        out.add(ReplyFieldAssertion(
+                            path = joinPath(pathPrefix, discProp.asText()),
+                            kind = ReplyFieldAssertion.Kind.DISCRIMINATOR,
+                            expectedValues = variantNames
+                        ))
+                    }
+                }
+            // For oneOf / anyOf / allOf: collect each variant's full assertion
+            // set, then keep only assertions that *every* variant shares.
+            // (`allOf` requires AND, so intersection is the conservative
+            // common-ground anyway.)
+            val perVariantBatches: List<List<ReplyFieldAssertion>> = variantArr.map { v ->
+                val resolved = resolveSchemaRef(v, schema) ?: return@map emptyList()
+                val variantBatch = mutableListOf<ReplyFieldAssertion>()
+                collectFieldAssertions(resolved, schema, pathPrefix, depth + 1, variantBatch)
+                variantBatch
+            }
+            if (perVariantBatches.isNotEmpty()) {
+                val intersection = perVariantBatches.reduce { acc, batch -> acc.intersect(batch.toSet()).toList() }
+                out.addAll(intersection)
+            }
+            return
+        }
+
+        val properties = node.get("properties")?.takeIf { it.isObject }
         val required = node.get("required")?.takeIf { it.isArray }
             ?.map { it.asText() }?.toSet() ?: emptySet()
 
-        val out = mutableListOf<ReplyFieldAssertion>()
-        properties.fields().forEach { (name, prop) ->
+        properties?.fields()?.forEach { (name, prop) ->
+            val fullPath = joinPath(pathPrefix, name)
             if (name in required) {
-                out.add(ReplyFieldAssertion(path = name, kind = ReplyFieldAssertion.Kind.REQUIRED))
+                out.add(ReplyFieldAssertion(path = fullPath, kind = ReplyFieldAssertion.Kind.REQUIRED))
             }
-            val enumNode = prop.get("enum")
-            if (enumNode != null && enumNode.isArray) {
+            // Resolve $ref so nested schema fragments contribute their facets.
+            val resolved = resolveSchemaRef(prop, schema) ?: prop
+
+            // Scalar facets on the property itself.
+            resolved.get("enum")?.takeIf { it.isArray }?.let { enumNode ->
                 val values = enumNode.mapNotNull { if (it.isTextual) it.asText() else null }
                 if (values.isNotEmpty()) {
                     out.add(ReplyFieldAssertion(
-                        path = name, kind = ReplyFieldAssertion.Kind.ENUM, expectedValues = values
+                        path = fullPath, kind = ReplyFieldAssertion.Kind.ENUM, expectedValues = values
                     ))
                 }
             }
-            prop.get("minimum")?.takeIf { it.isNumber }?.let {
+            resolved.get("const")?.takeIf { it.isValueNode }?.let { c ->
                 out.add(ReplyFieldAssertion(
-                    path = name, kind = ReplyFieldAssertion.Kind.MIN, numericBound = it.asDouble()
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.CONST,
+                    expectedValues = listOf(c.asText())
                 ))
             }
-            prop.get("maximum")?.takeIf { it.isNumber }?.let {
+            resolved.get("pattern")?.takeIf { it.isTextual }?.let {
                 out.add(ReplyFieldAssertion(
-                    path = name, kind = ReplyFieldAssertion.Kind.MAX, numericBound = it.asDouble()
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.PATTERN, pattern = it.asText()
                 ))
             }
-            prop.get("minLength")?.takeIf { it.isInt }?.let {
+            resolved.get("minimum")?.takeIf { it.isNumber }?.let {
                 out.add(ReplyFieldAssertion(
-                    path = name, kind = ReplyFieldAssertion.Kind.MIN_LENGTH, lengthBound = it.asInt()
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.MIN, numericBound = it.asDouble()
                 ))
             }
-            prop.get("maxLength")?.takeIf { it.isInt }?.let {
+            resolved.get("maximum")?.takeIf { it.isNumber }?.let {
                 out.add(ReplyFieldAssertion(
-                    path = name, kind = ReplyFieldAssertion.Kind.MAX_LENGTH, lengthBound = it.asInt()
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.MAX, numericBound = it.asDouble()
                 ))
             }
-            prop.get("format")?.takeIf { it.isTextual }?.let {
+            resolved.get("multipleOf")?.takeIf { it.isNumber }?.let {
                 out.add(ReplyFieldAssertion(
-                    path = name, kind = ReplyFieldAssertion.Kind.FORMAT, format = it.asText()
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.MULTIPLE_OF, numericBound = it.asDouble()
                 ))
+            }
+            resolved.get("minLength")?.takeIf { it.isInt }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.MIN_LENGTH, lengthBound = it.asInt()
+                ))
+            }
+            resolved.get("maxLength")?.takeIf { it.isInt }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.MAX_LENGTH, lengthBound = it.asInt()
+                ))
+            }
+            resolved.get("format")?.takeIf { it.isTextual }?.let {
+                out.add(ReplyFieldAssertion(
+                    path = fullPath, kind = ReplyFieldAssertion.Kind.FORMAT, format = it.asText()
+                ))
+            }
+            // Array facets.
+            val typeText = resolved.get("type")?.takeIf { it.isTextual }?.asText()
+            if (typeText == "array") {
+                resolved.get("minItems")?.takeIf { it.isInt }?.let {
+                    out.add(ReplyFieldAssertion(
+                        path = fullPath, kind = ReplyFieldAssertion.Kind.ARRAY_MIN_ITEMS, lengthBound = it.asInt()
+                    ))
+                }
+                resolved.get("maxItems")?.takeIf { it.isInt }?.let {
+                    out.add(ReplyFieldAssertion(
+                        path = fullPath, kind = ReplyFieldAssertion.Kind.ARRAY_MAX_ITEMS, lengthBound = it.asInt()
+                    ))
+                }
+                resolved.get("uniqueItems")?.takeIf { it.isBoolean && it.asBoolean() }?.let {
+                    out.add(ReplyFieldAssertion(
+                        path = fullPath, kind = ReplyFieldAssertion.Kind.ARRAY_UNIQUE
+                    ))
+                }
+            }
+
+            // Recurse into nested objects (depth-capped). M11-PR2 fix A.
+            if (typeText == "object" || resolved.get("properties") != null) {
+                collectFieldAssertions(resolved, schema, fullPath, depth + 1, out)
             }
         }
-        return out
     }
+
+    private fun resolveSchemaRef(
+        node: com.fasterxml.jackson.databind.JsonNode,
+        schema: AsyncAPISchema
+    ): com.fasterxml.jackson.databind.JsonNode? {
+        if (!node.isObject) return node
+        val ref = node.get("\$ref")?.takeIf { it.isTextual }?.asText() ?: return node
+        // Only resolve refs that look like component lookups.
+        val key = ref.substringAfterLast("/")
+        return schema.componentSchemas[key]
+    }
+
+    private fun collectVariantNames(
+        discriminator: com.fasterxml.jackson.databind.JsonNode,
+        variantArr: com.fasterxml.jackson.databind.JsonNode
+    ): List<String> {
+        val mapping = discriminator.get("mapping")
+        if (mapping != null && mapping.isObject) {
+            return mapping.fieldNames().asSequence().toList()
+        }
+        return variantArr.mapNotNull { v ->
+            v.get("\$ref")?.takeIf { it.isTextual }?.asText()?.substringAfterLast("/")
+        }
+    }
+
+    private fun joinPath(prefix: String, segment: String): String =
+        if (prefix.isEmpty()) segment else "$prefix.$segment"
 
     private fun resolveHeadersSchema(message: AsyncAPIMessage, schema: AsyncAPISchema): Schema<*>? {
         val node = when {

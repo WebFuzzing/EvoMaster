@@ -42,10 +42,7 @@ class TestCaseNamingStrategyFactory(
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 return NamingHelperNumberedTestCaseNamingStrategy(solution)
             }
-            individuals.any { it.individual is AsyncAPIIndividual } -> {
-                log.warn("AsyncAPI individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
-                return NamingHelperNumberedTestCaseNamingStrategy(solution)
-            }
+            individuals.any { it.individual is AsyncAPIIndividual } -> return AsyncAPIActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.isEmpty() -> {
                 log.warn("No individuals present in the solution. Defaulting to Numbered strategy.")
                 return NumberedTestCaseNamingStrategy(solution)
