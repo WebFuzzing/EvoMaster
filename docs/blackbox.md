@@ -19,72 +19,26 @@ To do this kind of testing, there is only the need to have an API up and running
 where the schema can be found.
 For example, [https://apis.guru](https://apis.guru/) lists many APIs online. 
 Such website provides an API itself to query info on existing APIs.
-Such small API (only 2 endpoints) can be easily tested by running the following on a command-line: 
+Such small API  can be easily tested by running the following on a command-line: 
 
 ```
-java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/openapi.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
+java -jar core/target/evomaster.jar  --blackBox true --schema https://api.apis.guru/v2/openapi.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
 ```
 
 The command is doing the following:
 
 * `java -jar core/target/evomaster.jar`: execute the _EvoMaster_ core process. 
   The executable `evomaster.jar` must be either [downloaded](download.md) 
-  or [built from source](build.md).
-* `--blackBox true`: by default, _EvoMaster_ does white-box testing. Here, we specify that
-  we do black-box testing instead.
-* `--bbSwaggerUrl ...`: URL of where the OpenAPI/Swagger schema is. The location of the API will be inferred from this schema (e.g., from `host` and `servers` tags). If such info is missing, then the API is assumed to be on same host as the schema. If needed, the API host location can be changed with the optional `--bbTargetUrl` (which overrides what specified in the schema).   
+  or [built from source](build.md) (in which case it will end up under the `core/target/` folder of the cloned repository).
+* `--blackBox true`: technically, a redundant parameter, as black-box testing is the default mode since version 6.0.0. It can be omitted.
+* `--schema ...`: URL of where the OpenAPI/Swagger schema is. The location of the API will be inferred from this schema (e.g., from `host` and `servers` tags). If such info is missing, then the API is assumed to be on same host as the schema. If needed, the API host location can be changed with the optional `--base` (which overrides what specified in the schema).   
 * `--outputFormat JAVA_JUNIT_4`: must specify how the tests will be generated, e.g., in Java
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 
 * `--maxTime 30s`: for how long to run the search, i.e., just 30 seconds in this very simple example.
-* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example. Note: if you are testing an API running on your machine (e.g., on `localhost`) then this parameter is not only __not required__, but also __detrimental__ for performance (i.e., do not use it).
+* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession (especially useful if the tested API has no rate limiter). Limit to max 1 per second (i.e., 60 per minute) in this example. Note: if you are testing an API running on your machine (e.g., on `localhost`) then this parameter is not only __not required__, but also __detrimental__ for performance (i.e., do not use it). Also note that EvoMaster automatically handles 429 responses, by waiting the specified amount of time in the Retry-After header. 
 
-This command will create the following test suite, in which 2 `GET` calls are executed:
-
-```
-public class EvoMasterTest {
-
-    private static String baseUrlOfSut = "https://api.apis.guru";
-    
-    @BeforeClass
-    public static void initClass() {
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        RestAssured.useRelaxedHTTPSValidation();
-        RestAssured.urlEncodingEnabled = false;
-        RestAssured.config = RestAssured.config()
-            .jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
-            .redirect(redirectConfig().followRedirects(false));
-    }
-
-    
-    @Test
-    public void test_0() throws Exception {
-        
-        given().accept("application/json")
-                .get(baseUrlOfSut + "/v2/list.json")
-                .then()
-                .statusCode(200)
-                .assertThat()
-                .contentType("application/json")
-                .body("size()", numberMatches(1605));
-    }
-    
-    
-    @Test
-    public void test_1() throws Exception {
-        
-        given().accept("application/json")
-                .get(baseUrlOfSut + "/v2/metrics.json")
-                .then()
-                .statusCode(200)
-                .assertThat()
-                .contentType("application/json")
-                .body("'numAPIs'", numberMatches(1605.0))
-                .body("'numEndpoints'", numberMatches(46276.0))
-                .body("'numSpecs'", numberMatches(2869.0));
-    }
-}
-```
+This command will create a test suite under  the folder `generated_tests`, including an interactive web report. 
 
 ### CLI Parameters
 
@@ -94,35 +48,15 @@ These for example include options to specify where to store the generated files 
 Since version `3.0.0` these options can be specified in the generated `em.yaml` configuration files (so they do not need to be typed each time). 
 
 
-### Issues with JDKs Above 8 and EvoMaster before version 3.2.0
-
-The previous example run _EvoMaster_ directly from its JAR file, using the command:
-
-```java -jar core/target/evomaster.jar```
-
-To do this, you need to have a JDK installed on your machine, version 8 or later. 
-An easier approach is to download and install _EvoMaster_ through its installer files (e.g., `.msi` for Windows), as those embed a JDK as well, with right configuration.
-Then _EvoMaster_ can be run with for example `evomaster.exe` (for Windows).
-
-If you want to run the JAR file directly with the JDK, you might encounter issues with versions from 17 on, due _integrity constraints_ on the JDK. 
-This is no longer the case since _EvoMaster_ version 3.2.0. 
-If for any reason you need to use an older version (not recommended!) on JDK 17 or later, 
-you will have to manually add `--add-opens` commands like:
-
-```java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -jar core/target/evomaster.jar ```
-
-If you fail to do that, _EvoMaster_ will crash, but at least it will tell you what to do (with the most update requirements, in case more `--add-opens` are required since this documentation was written).
-
-
 ## GraphQL APIs
 
 Black-box fuzzing of GraphQL APIs uses the same options as for RESTful APIs.
-One difference is that `--bbTargetUrl` is used to specify the entry point of the GraphQL API.
+One difference is that `--base` is used to specify the entry point of the GraphQL API.
 Another difference is that we must specify the `--problemType` to be `GRAPHQL`, as the default is `REST`.
-An example on GitLab's API is:
+A working example is:
 
 ```
-evomaster.exe  --problemType GRAPHQL --bbTargetUrl https://gitlab.com/api/graphql --blackBox true --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
+evomaster  --problemType GRAPHQL --base https://rickandmortyapi.com/graphql/ --maxTime 30s --ratePerMinute 60
 ```
 
 
