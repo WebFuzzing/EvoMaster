@@ -39,13 +39,23 @@ building on decades of research in the field of [Search-Based Software Testing](
 
 ### 1-Minute Example 
 
-On a console, copy&paste the following (requires _Docker_ installed).
-It will fuzz the PetClinic example API from Swagger, for 30 seconds, as shown in the following video. 
+Since version 6.0.0, the reccomended way to install EvoMaster is through PyPi:
+
+`pip install evomaster`
+
+You can then run it on the command-line with `evomster <args>`, like for example:
+
+`evomaster --schema https://petstore.swagger.io/v2/swagger.json`
+
+It will fuzz the PetClinic example API from Swagger, for 60 seconds. 
+
+If you prefer, you can rather use Docker, as shown in the following video. 
 
 ```
-docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json
 ```
 
+Note the video is old, using version 3.4.0, with some parameters that are no longer necessary. 
 
 ![](docs/img/evomaster_docker_use.gif)
 
@@ -56,19 +66,19 @@ Note that, depending on which shell and operating system you are using, you migh
 For example, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $.
 
 ```
-docker run -v "/$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+docker run -v "/$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json
 ```
 
 If you are rather using a Command Prompt (Cmd.exe) terminal, you need to use `%CD%` instead of `$(pwd)` to refer to the current folder:
 
 ```
-docker run -v %CD%/generated_tests:/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+docker run -v %CD%/generated_tests:/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json
 ```
 
 On the other hand, on a PowerShell you need `${PWD}`:
 
 ```
-docker run -v ${PWD}/generated_tests:/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+docker run -v ${PWD}/generated_tests:/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json
 ```
 
 #### Troubleshooting
@@ -110,16 +120,13 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
   more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __21__). Might work on other JVM versions, but we provide __NO__ support for it.
   Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they were not in a stable, feature-complete state. The support for those languages for white-box testing has been dropped, at least for the time being. 
 
-* _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),
-  _OSX_ (`.dmg`) and _Linux_ (`.deb`). We also provide an uber-fat JAR file.
-  To download them, see the [Release page](https://github.com/WebFuzzing/EvoMaster/releases).
+* _Installation_: the current recommended way to install EvoMaster is via PyPi, e.g., `pip install evomaster`. We also provide an uber-fat JAR file.
+  To download it, see the [Release page](https://github.com/WebFuzzing/EvoMaster/releases).
   Release notes are present in the file [release_notes.md](https://github.com/WebFuzzing/EvoMaster/blob/master/release_notes.md).
-  If you are using the uber-fat JAR, it should work with any major LTS version (from JDK 8 on).
-   Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
-   If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
-   When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
-   Also keep in mind we have not paid the [Microsoft/Apple Tax](docs/download.md). This means that your operating system by default will block the installation, stating it cannot verify it is not a malware. 
-   But the block [can be bypassed](docs/download.md).
+  If you are using the uber-fat JAR, it should work with any major LTS version (from JDK 17 on).
+   Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while.
+  Note that  we provide as well installers for the main operating systems: _Windows_ (`.msi`), _OSX_ (`.dmg`) and _Linux_ (`.deb`).
+  Unfortunately, due to the  [Microsoft/Apple Tax](docs/download.md), those installers should be considered "deprecated", [see documentation](docs/download.md).
 
 * _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
 
