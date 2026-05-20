@@ -1132,6 +1132,42 @@ class EMConfig {
 
     //----- "Important" options, sorted by priority --------------
 
+
+    val defaultSchema = "openapi.json"
+
+    @Important(0.1)
+    @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
+    var blackBox = true
+
+    @Important(0.2)
+    @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
+            " If the schema is on the local machine, you can use a URL starting with 'file://'." +
+            " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
+    var schema: String = defaultSchema
+
+    @Deprecated("Rather use 'schema'")
+    @Cfg("Old, deprecated parameter for 'schema'.")
+    var bbSwaggerUrl: String
+        get() = schema
+        set(value){ schema = value }
+
+    @Important(0.3)
+    @Url
+    @Cfg("When in black-box mode, specify the base URL of where the SUT can be reached, e.g.," +
+            " http://localhost:8080 ." +
+            " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " Otherwise, it should not contain any path elements (e.g., '/api'), as it will be inferred from the schema." +
+            " In GraphQL, this must point to the entry point of the API, e.g.," +
+            " http://localhost:8080/graphql .")
+    var base: String = ""
+
+    @Deprecated("Rather use 'base'")
+    @Cfg("Old, deprecated parameter for 'base'.")
+    var bbTargetUrl: String
+        get() = base
+        set(value) { base = value }
+
+
     val defaultMaxTime = "60s"
 
     @Important(1.0)
@@ -1224,39 +1260,6 @@ class EMConfig {
             " If 0 or negative, the timeout is not applied.")
     var testTimeout = 60
 
-    @Important(3.0)
-    @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
-    var blackBox = true
-
-    val defaultSchema = "openapi.json"
-
-    @Important(3.2)
-    @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
-            " If the schema is on the local machine, you can use a URL starting with 'file://'." +
-            " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
-    var schema: String = defaultSchema
-
-    @Deprecated("Rather use 'schema'")
-    @Cfg("Old, deprecated parameter for 'schema'.")
-    var bbSwaggerUrl: String
-        get() = schema
-        set(value){ schema = value }
-
-    @Important(3.5)
-    @Url
-    @Cfg("When in black-box mode, specify the base URL of where the SUT can be reached, e.g.," +
-            " http://localhost:8080 ." +
-            " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
-            " Otherwise, it should not contain any path elements (e.g., '/api'), as it will be inferred from the schema." +
-            " In GraphQL, this must point to the entry point of the API, e.g.," +
-            " http://localhost:8080/graphql .")
-    var base: String = ""
-
-    @Deprecated("Rather use 'base'")
-    @Cfg("Old, deprecated parameter for 'base'.")
-    var bbTargetUrl: String
-        get() = base
-        set(value) { base = value }
 
     @Important(3.7)
     @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
