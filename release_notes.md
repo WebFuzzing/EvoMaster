@@ -2,10 +2,21 @@
 
 Under development in `master` branch.
 
+### Breaking Changes
+- Now the default mode for EvoMaster is black-box testing. 
+  If you have workflows where you are running EvoMaster in white-box mode without specifying '--blackBox false', those will break. Now, you will need to explicitly set that option. 
+
 ### New Features
 
-- EvoMaster is now available on PyPi. Can be installed with a simple "pip install evomaster". 
+- EvoMaster is now available on PyPi. Can be installed with a simple "pip install evomaster".
+- To simplify EvoMaster's use, parameters such as '--schema' and '--base' have been introduced, that deprecate the previous '--bbSwaggerUrl' and '--bbTargetUrl'. Those latter still work, to keep backward compatibility.  
 - Now EvoMaster will honor 429 responses, by waiting for the provided amount of time in the returned Retry-After header (or for a default amount of time if no header is returned, or its value is incorrect). 
+- Upgraded to WFC 0.5.1, which includes new tab views for 'Examples' and 'Warnings'.
+
+
+### Fixed Bugs
+- Few issues related to named examples in OpenAPI schemas have been fixed, including name-value mismatches and handling of allOf/anyOf/oneOf constraints. 
+- Fixed bug in handling of XML objects having a single entry.
 
 # Version 5.2.0
 
