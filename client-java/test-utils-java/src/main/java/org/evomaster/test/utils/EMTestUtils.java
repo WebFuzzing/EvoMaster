@@ -637,4 +637,268 @@ public class EMTestUtils {
             throw new RuntimeException("kafkaCollectAllWithin failed: " + e.getMessage(), e);
         }
     }
+
+    // ----- WebSocket helpers (M11-PR8) -----------------------------------
+    //
+    // Mirror the kafka* helpers for WebSocket transport. Implemented via
+    // reflection against `java.net.http.WebSocket` so this file keeps
+    // compiling under JDK 8 (the test-utils-java module's source level);
+    // runtime requires JDK 11+, which is also the minimum for kafka-clients
+    // 3.x so AsyncAPI-generated tests don't gain a new floor.
+    //
+    // Headers are encoded into a JSON envelope `{ "headers": {...},
+    // "payload": "..." }` because raw WebSocket frames have no native
+    // headers. Receive-side decoders detect the envelope shape and fall
+    // back to treating the entire frame as the payload when absent, so
+    // servers that don't know about the envelope still round-trip.
+
+    private static java.net.URI resolveWsUri(String wsBase, String channel) {
+        if (channel.startsWith("ws://") || channel.startsWith("wss://")) {
+            return java.net.URI.create(channel);
+        }
+        String origin = wsBase;
+        while (origin.endsWith("/")) origin = origin.substring(0, origin.length() - 1);
+        String suffix = channel.startsWith("/") ? channel : "/" + channel;
+        return java.net.URI.create(origin + suffix);
+    }
+
+    private static String encodeWsFrame(byte[] payload, java.util.Map<String, byte[]> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return new String(payload, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"headers\":{");
+        boolean first = true;
+        for (java.util.Map.Entry<String, byte[]> e : headers.entrySet()) {
+            if (!first) sb.append(',');
+            first = false;
+            sb.append('"').append(jsonEscape(e.getKey())).append("\":\"")
+                    .append(jsonEscape(new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8)))
+                    .append('"');
+        }
+        sb.append("},\"payload\":\"")
+                .append(jsonEscape(new String(payload, java.nio.charset.StandardCharsets.UTF_8)))
+                .append("\"}");
+        return sb.toString();
+    }
+
+    private static String jsonEscape(String s) {
+        StringBuilder sb = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+                    else sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Result of {@link #webSocketAwaitFrame}: the raw text payload of the
+     * received frame and any headers that were carried in the JSON
+     * envelope. {@code headers} is empty (not null) when the frame is a
+     * bare-text payload that did not use the envelope shape.
+     */
+    public static final class WsFrame {
+        public final byte[] payload;
+        public final java.util.Map<String, String> headers;
+        public WsFrame(byte[] payload, java.util.Map<String, String> headers) {
+            this.payload = payload;
+            this.headers = headers == null ? java.util.Collections.emptyMap() : headers;
+        }
+    }
+
+    private static WsFrame decodeWsFrame(byte[] frame) {
+        try {
+            com.fasterxml.jackson.databind.JsonNode node =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(frame);
+            if (node != null && node.isObject() && node.has("headers") && node.has("payload")) {
+                java.util.Map<String, String> hMap = new java.util.LinkedHashMap<>();
+                node.get("headers").fields().forEachRemaining(e -> {
+                    if (e.getValue().isTextual()) hMap.put(e.getKey(), e.getValue().asText());
+                });
+                byte[] payload = node.get("payload").asText()
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                return new WsFrame(payload, hMap);
+            }
+        } catch (Exception ignored) {
+            // fall through to raw-payload return
+        }
+        return new WsFrame(frame, java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Reflectively obtain `java.net.http.HttpClient.newWebSocketBuilder()
+     * .buildAsync(uri, listener).get()`. Returns the live `WebSocket`
+     * instance opaquely typed as Object. Throws an IllegalStateException
+     * with a clear message when the JDK does not expose
+     * java.net.http.WebSocket (i.e. JDK 8 / 9 / 10 runtime).
+     */
+    private static Object openWebSocket(java.net.URI uri, java.util.Queue<byte[]> incoming) {
+        try {
+            Class<?> wsListenerClass = Class.forName("java.net.http.WebSocket$Listener");
+            // Build a dynamic proxy that captures TEXT frames into `incoming`.
+            final StringBuilder partial = new StringBuilder();
+            java.lang.reflect.InvocationHandler handler = (proxy, method, args) -> {
+                String name = method.getName();
+                if ("onOpen".equals(name)) {
+                    args[0].getClass().getMethod("request", long.class).invoke(args[0], 1L);
+                    return null;
+                }
+                if ("onText".equals(name)) {
+                    Object socket = args[0];
+                    CharSequence data = (CharSequence) args[1];
+                    boolean last = (Boolean) args[2];
+                    partial.append(data);
+                    if (last) {
+                        synchronized (incoming) {
+                            incoming.add(partial.toString()
+                                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            incoming.notifyAll();
+                        }
+                        partial.setLength(0);
+                    }
+                    socket.getClass().getMethod("request", long.class).invoke(socket, 1L);
+                    return null;
+                }
+                if ("onClose".equals(name) || "onError".equals(name)) {
+                    synchronized (incoming) { incoming.notifyAll(); }
+                    return null;
+                }
+                // onPing / onPong / onBinary not used by AsyncAPI helpers;
+                // returning null is the default contract.
+                return null;
+            };
+            Object listener = java.lang.reflect.Proxy.newProxyInstance(
+                    wsListenerClass.getClassLoader(),
+                    new Class<?>[]{wsListenerClass},
+                    handler
+            );
+            Class<?> httpClientClass = Class.forName("java.net.http.HttpClient");
+            Object client = httpClientClass.getMethod("newHttpClient").invoke(null);
+            Object builder = httpClientClass.getMethod("newWebSocketBuilder").invoke(client);
+            Object cf = builder.getClass()
+                    .getMethod("buildAsync", java.net.URI.class, wsListenerClass)
+                    .invoke(builder, uri, listener);
+            return ((java.util.concurrent.CompletableFuture<?>) cf)
+                    .get(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (ClassNotFoundException notFound) {
+            throw new IllegalStateException(
+                    "WebSocket AsyncAPI helpers require JDK 11+ at test runtime; current JDK lacks java.net.http.WebSocket",
+                    notFound
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("WebSocket open to " + uri + " failed: " + e.getMessage(), e);
+        }
+    }
+
+    private static void sendText(Object webSocket, String text) {
+        try {
+            Object cf = webSocket.getClass()
+                    .getMethod("sendText", CharSequence.class, boolean.class)
+                    .invoke(webSocket, text, true);
+            ((java.util.concurrent.CompletableFuture<?>) cf)
+                    .get(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException("WebSocket sendText failed: " + e.getMessage(), e);
+        }
+    }
+
+    private static void closeQuietly(Object webSocket) {
+        if (webSocket == null) return;
+        try {
+            Object cf = webSocket.getClass()
+                    .getMethod("sendClose", int.class, String.class)
+                    .invoke(webSocket, 1000 /* NORMAL_CLOSURE */, "done");
+            ((java.util.concurrent.CompletableFuture<?>) cf)
+                    .get(2, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+            // best-effort close
+        }
+    }
+
+    /**
+     * Open a WebSocket connection, send {@code payload} as a single TEXT
+     * frame, and close. Mirrors {@link #kafkaPublish} so the writer can
+     * target either transport interchangeably. Headers are JSON-enveloped
+     * when present (servers that ignore the envelope still see a
+     * JSON-shaped TEXT frame).
+     */
+    public static void webSocketPublish(
+            String wsBase,
+            String channel,
+            byte[] payload,
+            java.util.Map<String, byte[]> headers
+    ) {
+        java.util.Queue<byte[]> sink = new java.util.LinkedList<>();
+        Object ws = openWebSocket(resolveWsUri(wsBase, channel), sink);
+        try {
+            sendText(ws, encodeWsFrame(payload, headers));
+        } finally {
+            closeQuietly(ws);
+        }
+    }
+
+    /**
+     * Open a WebSocket connection and return the first frame that arrives
+     * within {@code timeoutMs}, or null on timeout. Equivalent contract
+     * to {@link #kafkaAwaitReply} but over WS. Closes the connection on
+     * exit (success or timeout).
+     */
+    public static WsFrame webSocketAwaitFrame(
+            String wsBase,
+            String channel,
+            long timeoutMs
+    ) {
+        java.util.LinkedList<byte[]> queue = new java.util.LinkedList<>();
+        Object ws = openWebSocket(resolveWsUri(wsBase, channel), queue);
+        try {
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            synchronized (queue) {
+                while (queue.isEmpty()) {
+                    long remaining = deadline - System.currentTimeMillis();
+                    if (remaining <= 0) return null;
+                    queue.wait(remaining);
+                }
+                return decodeWsFrame(queue.poll());
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("webSocketAwaitFrame interrupted", ie);
+        } finally {
+            closeQuietly(ws);
+        }
+    }
+
+    /**
+     * Open a WebSocket connection, leave it open for {@code windowMs}, and
+     * return every TEXT frame that arrived during the window (in order).
+     * Equivalent to {@link #kafkaCollectAllWithin}.
+     */
+    public static byte[][] webSocketCollectAllWithin(
+            String wsBase,
+            String channel,
+            long windowMs
+    ) {
+        java.util.LinkedList<byte[]> queue = new java.util.LinkedList<>();
+        Object ws = openWebSocket(resolveWsUri(wsBase, channel), queue);
+        try {
+            Thread.sleep(windowMs);
+            synchronized (queue) {
+                return queue.toArray(new byte[0][]);
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("webSocketCollectAllWithin interrupted", ie);
+        } finally {
+            closeQuietly(ws);
+        }
+    }
 }

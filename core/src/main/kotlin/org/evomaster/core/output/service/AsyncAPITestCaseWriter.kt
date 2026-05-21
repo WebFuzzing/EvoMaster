@@ -288,9 +288,18 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 }
             }
         }
-        val publishCall =
-            "kafkaPublish(baseUrlOfSut, \"${escapeJava(rendered)}\", $keyExpr, " +
-                    "\"${escapeJava(payloadJson)}\".getBytes(UTF_8), $headersVar);"
+        // M11-PR8: route publish through the configured transport. Kafka
+        // takes a routing key; WebSocket has no concept of one, so the
+        // key argument is silently dropped from the ws call. Headers are
+        // honoured by both — Kafka native, WebSocket JSON-enveloped.
+        val publishCall = when (config.bbBrokerTransport) {
+            EMConfig.BrokerTransport.KAFKA ->
+                "kafkaPublish(baseUrlOfSut, \"${escapeJava(rendered)}\", $keyExpr, " +
+                        "\"${escapeJava(payloadJson)}\".getBytes(UTF_8), $headersVar);"
+            EMConfig.BrokerTransport.WEBSOCKET ->
+                "webSocketPublish(baseUrlOfSut, \"${escapeJava(rendered)}\", " +
+                        "\"${escapeJava(payloadJson)}\".getBytes(UTF_8), $headersVar);"
+        }
         if (wrapInAssertThrows) {
             lines.add("// schema-invalid input (engine probe): publish must surface a runtime exception")
             lines.add("assertThrows(RuntimeException.class, () -> { $publishCall });")
@@ -339,10 +348,13 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         val configuredWindow = config.asyncApiOutputObservationWindowMs.toLong().coerceAtLeast(250L)
         val rendered = renderChannelAddress(action)
         val varName = "output$index"
-        lines.add(
-            "byte[][] $varName = kafkaCollectAllWithin(" +
-                    "baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L);"
-        )
+        val collectCall = when (config.bbBrokerTransport) {
+            EMConfig.BrokerTransport.KAFKA ->
+                "kafkaCollectAllWithin(baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L)"
+            EMConfig.BrokerTransport.WEBSOCKET ->
+                "webSocketCollectAllWithin(baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L)"
+        }
+        lines.add("byte[][] $varName = $collectCall;")
         lines.add(
             "// $varName holds every message captured on '${escapeJava(rendered)}' " +
                     "during the ${configuredWindow}ms listen window"
@@ -372,6 +384,39 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         val varName = "reply$index"
         val replyStampVar = "replyAt$index"
 
+        // M11-PR8: route the reply-await call through the configured
+        // transport. WebSocket frames don't have native headers so the
+        // helper returns a `WsFrame` that carries an envelope-decoded
+        // payload + headers map; the correlation header (when declared)
+        // is looked up against `frame.headers` instead of a Kafka header.
+        when (config.bbBrokerTransport) {
+            EMConfig.BrokerTransport.KAFKA -> emitKafkaSubscribeReply(
+                rendered, varName, index, correlationHeader, correlationId, lines
+            )
+            EMConfig.BrokerTransport.WEBSOCKET -> emitWebSocketSubscribeReply(
+                rendered, varName, index, correlationHeader, correlationId, lines
+            )
+        }
+        if (paramPublishIndex != null) {
+            val publishStampVar = "publishAt$paramPublishIndex"
+            lines.add("long $replyStampVar = System.currentTimeMillis();")
+            lines.add(
+                "assertTrue($replyStampVar >= $publishStampVar, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived before the paired publish " +
+                        "(clock skew or out-of-order delivery)\");"
+            )
+        }
+        emitReplyFieldAssertions(action, varName, lines)
+    }
+
+    private fun emitKafkaSubscribeReply(
+        rendered: String,
+        varName: String,
+        index: Int,
+        correlationHeader: String?,
+        correlationId: String?,
+        lines: Lines
+    ) {
         if (correlationHeader != null && correlationId != null) {
             val envVar = "envelope$index"
             lines.add(
@@ -399,16 +444,34 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                         "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
             )
         }
-        if (paramPublishIndex != null) {
-            val publishStampVar = "publishAt$paramPublishIndex"
-            lines.add("long $replyStampVar = System.currentTimeMillis();")
+    }
+
+    private fun emitWebSocketSubscribeReply(
+        rendered: String,
+        varName: String,
+        index: Int,
+        correlationHeader: String?,
+        correlationId: String?,
+        lines: Lines
+    ) {
+        val frameVar = "frame$index"
+        lines.add(
+            "WsFrame $frameVar = webSocketAwaitFrame(" +
+                    "baseUrlOfSut, \"${escapeJava(rendered)}\", 5000L);"
+        )
+        lines.add(
+            "assertNotNull($frameVar, " +
+                    "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
+        )
+        if (correlationHeader != null && correlationId != null) {
+            // Correlation lives in the envelope-decoded headers map for ws.
             lines.add(
-                "assertTrue($replyStampVar >= $publishStampVar, " +
-                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived before the paired publish " +
-                        "(clock skew or out-of-order delivery)\");"
+                "assertEquals(" +
+                        "\"$correlationId\", $frameVar.headers.get(\"${escapeJava(correlationHeader)}\"), " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
             )
         }
-        emitReplyFieldAssertions(action, varName, lines)
+        lines.add("byte[] $varName = $frameVar.payload;")
     }
 
     /**
