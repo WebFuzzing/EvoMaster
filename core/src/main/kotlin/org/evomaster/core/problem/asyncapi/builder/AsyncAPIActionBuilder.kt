@@ -34,8 +34,15 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
 
     companion object {
         private val log = LoggerFactory.getLogger(AsyncAPIActionBuilder::class.java)
-        /** Bound recursion so circular $refs / deep schemas don't loop. */
-        private const val MAX_REPLY_ASSERTION_DEPTH = 5
+        /**
+         * Bound recursion when walking a reply payload's declared schema
+         * to extract per-field assertion facets. Set high enough to cover
+         * real-world nesting (OpenAgents schemas hit 6-7 levels deep in
+         * `comment.author.profile.preferences.notifications.email.enabled`)
+         * while still defusing circular `$ref` cycles. M11-PR7 raised the
+         * cap from 5 to 8; deeper schemas truncate at this depth.
+         */
+        private const val MAX_REPLY_ASSERTION_DEPTH = 8
     }
 
     data class Built(
