@@ -389,14 +389,21 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         val varName = "reply$index"
         val replyStampVar = "replyAt$index"
 
-        // M11-PR8: route the reply-await call through the configured
-        // transport. WebSocket frames don't have native headers so the
-        // helper returns a `WsFrame` that carries an envelope-decoded
-        // payload + headers map; the correlation header (when declared)
-        // is looked up against `frame.headers` instead of a Kafka header.
+        // M11-PR8 + M11-PR10: route the reply-await call through the
+        // configured transport. Each per-transport emit captures the
+        // reply payload into `varName`; the writer also tracks whether
+        // the transport can carry headers reliably so the trailing
+        // per-header assertion block (M11-PR6) knows whether to fire.
+        //
+        // WebSocket falls into the "no" bucket: frames have no native
+        // headers, and PR8's JSON envelope is an EvoMaster-side bridge
+        // that real third-party WS servers don't honour, so the
+        // observed headers map is empty for every reply and REQUIRED
+        // header assertions would fail spuriously. The PR10 gate skips
+        // header emission for WEBSOCKET entirely.
         when (config.bbBrokerTransport) {
             EMConfig.BrokerTransport.KAFKA -> emitKafkaSubscribeReply(
-                rendered, varName, index, correlationHeader, correlationId, lines
+                action, rendered, varName, index, correlationHeader, correlationId, lines
             )
             EMConfig.BrokerTransport.WEBSOCKET -> emitWebSocketSubscribeReply(
                 rendered, varName, index, correlationHeader, correlationId, lines
@@ -415,9 +422,38 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             )
         }
         emitReplyFieldAssertions(action, varName, lines)
+        // M11-PR6 + M11-PR10: per-header facet assertions on transports
+        // that surface a real headers map. Kafka reads native record
+        // headers; AMQP reads BasicProperties.headers; WebSocket would
+        // see an empty map for real-world SUTs (see emit dispatch above)
+        // and is skipped.
+        if (action.headerFieldAssertions.isNotEmpty()) {
+            val headersExpr = when (config.bbBrokerTransport) {
+                EMConfig.BrokerTransport.KAFKA -> "envelope$index.headers"
+                EMConfig.BrokerTransport.AMQP -> "amqpEnv$index.headers"
+                EMConfig.BrokerTransport.WEBSOCKET -> null
+            }
+            if (headersExpr != null) {
+                emitHeaderFieldAssertions(
+                    action.headerFieldAssertions,
+                    headersExpr,
+                    "reply headers on '${escapeJava(rendered)}'",
+                    lines
+                )
+            }
+        }
     }
 
+    /**
+     * Kafka subscribe-reply emit. Uses the envelope-returning helper
+     * whenever a correlation assertion is wired *or* the action carries
+     * per-header facet assertions (M11-PR6) — both situations require
+     * the structured DTO. Bare fire-and-forget replies (no correlation,
+     * no headers schema) keep the simpler byte[]-returning path so the
+     * generated test stays minimal where nothing extra is needed.
+     */
     private fun emitKafkaSubscribeReply(
+        action: AsyncAPIAction,
         rendered: String,
         varName: String,
         index: Int,
@@ -425,22 +461,27 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         correlationId: String?,
         lines: Lines
     ) {
-        if (correlationHeader != null && correlationId != null) {
-            val envVar = "envelope$index"
+        val hasCorrelation = correlationHeader != null && correlationId != null
+        val needsEnvelope = hasCorrelation || action.headerFieldAssertions.isNotEmpty()
+        val envVar = "envelope$index"
+        if (needsEnvelope) {
+            val correlationArg = correlationHeader?.let { "\"${escapeJava(it)}\"" } ?: "\"\""
             lines.add(
                 "ReplyEnvelope $envVar = kafkaAwaitReplyEnvelope(" +
                         "baseUrlOfSut, \"${escapeJava(rendered)}\", " +
-                        "\"${escapeJava(correlationHeader)}\", 5000L);"
+                        "$correlationArg, 5000L);"
             )
             lines.add(
                 "assertNotNull($envVar, " +
                         "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
             )
-            lines.add(
-                "assertEquals(" +
-                        "\"$correlationId\", $envVar.correlationId, " +
-                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
-            )
+            if (hasCorrelation) {
+                lines.add(
+                    "assertEquals(" +
+                            "\"$correlationId\", $envVar.correlationId, " +
+                            "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
+                )
+            }
             lines.add("byte[] $varName = $envVar.payload;")
         } else {
             lines.add(
@@ -482,6 +523,12 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         lines.add("byte[] $varName = $frameVar.payload;")
     }
 
+    /**
+     * AMQP subscribe-reply emit. Always uses the envelope-returning
+     * helper (AMQP messages carry native headers in BasicProperties);
+     * the headers map is therefore real and the per-header assertion
+     * block in `emitSubscribeReply` will reference `amqpEnv$index.headers`.
+     */
     private fun emitAmqpSubscribeReply(
         rendered: String,
         varName: String,
@@ -676,6 +723,111 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                                 "replyFormatMatches($valueVar, \"$p\", \"$f\"), " +
                                 "\"$label field '$p' does not match declared format '$f'\");"
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * M11-PR6: mirror of [emitFieldAssertionsOver] for the captured
+     * `ReplyEnvelope.headers` map. Same facet vocabulary (required / enum /
+     * const / pattern / min / max / length / format) but each helper takes
+     * a `Map<String, String>` instead of `byte[]` because headers are
+     * already decoded by the broker-side helper. Container facets (array /
+     * discriminator / multipleOf) don't apply to flat header maps and are
+     * silently skipped here — the schema is expected to be a flat object
+     * of scalar properties.
+     */
+    private fun emitHeaderFieldAssertions(
+        specs: List<ReplyFieldAssertion>,
+        headersVar: String,
+        label: String,
+        lines: Lines
+    ) {
+        if (specs.isEmpty()) return
+        specs.forEach { spec ->
+            val p = escapeJava(spec.path)
+            when (spec.kind) {
+                ReplyFieldAssertion.Kind.REQUIRED -> lines.add(
+                    "assertTrue(" +
+                            "replyHeaderHas($headersVar, \"$p\"), " +
+                            "\"$label missing required header '$p'\");"
+                )
+                ReplyFieldAssertion.Kind.ENUM -> {
+                    val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
+                    lines.add(
+                        "assertTrue(" +
+                                "Set.of($literals).contains(" +
+                                "replyHeaderText($headersVar, \"$p\")), " +
+                                "\"$label '$p' not in declared enum\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.CONST -> {
+                    val v = escapeJava(spec.expectedValues.firstOrNull().orEmpty())
+                    lines.add(
+                        "assertEquals(\"$v\", " +
+                                "replyHeaderText($headersVar, \"$p\"), " +
+                                "\"$label '$p' must be declared const '$v'\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.PATTERN -> {
+                    val pat = escapeJava(spec.pattern!!)
+                    lines.add(
+                        "assertTrue(" +
+                                "replyHeaderPatternMatches($headersVar, \"$p\", \"$pat\"), " +
+                                "\"$label '$p' does not match declared pattern\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = replyHeaderNumber($headersVar, \"$p\"); " +
+                                "assertTrue(__v == null || __v >= $bound, " +
+                                "\"$label '$p' below declared minimum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = replyHeaderNumber($headersVar, \"$p\"); " +
+                                "assertTrue(__v == null || __v <= $bound, " +
+                                "\"$label '$p' above declared maximum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = replyHeaderTextLength($headersVar, \"$p\"); " +
+                                "assertTrue(__l < 0 || __l >= $bound, " +
+                                "\"$label '$p' shorter than declared minLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = replyHeaderTextLength($headersVar, \"$p\"); " +
+                                "assertTrue(__l < 0 || __l <= $bound, " +
+                                "\"$label '$p' longer than declared maxLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.FORMAT -> {
+                    val f = escapeJava(spec.format!!)
+                    lines.add(
+                        "assertTrue(" +
+                                "replyHeaderFormatMatches($headersVar, \"$p\", \"$f\"), " +
+                                "\"$label '$p' does not match declared format '$f'\");"
+                    )
+                }
+                // Facets that don't apply to a flat header map: array
+                // bounds / uniqueness / multipleOf / discriminator. Skipped
+                // silently — the headers schema for AsyncAPI is by
+                // convention a flat object of scalar properties.
+                ReplyFieldAssertion.Kind.MULTIPLE_OF,
+                ReplyFieldAssertion.Kind.ARRAY_MIN_ITEMS,
+                ReplyFieldAssertion.Kind.ARRAY_MAX_ITEMS,
+                ReplyFieldAssertion.Kind.ARRAY_UNIQUE,
+                ReplyFieldAssertion.Kind.DISCRIMINATOR -> {
+                    // intentionally no-op
                 }
             }
         }
