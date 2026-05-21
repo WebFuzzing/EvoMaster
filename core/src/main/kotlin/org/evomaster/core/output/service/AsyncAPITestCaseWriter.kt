@@ -400,33 +400,36 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
         // hard error.
         val replyStampVar = "__evm_reply_at_$index"
 
-        if (correlationHeader != null && correlationId != null) {
-            // M11-PR2 fix E: when the schema declares a correlation header,
-            // fetch the *first* reply unconditionally and assert correlation
-            // explicitly. The older path silently filtered out wrong-correlation
-            // messages and returned null, conflating "no reply" with "wrong
-            // correlation reply". This envelope-returning variant gives the
-            // user a clear failure message in either case.
-            val envVar = "__evm_envelope_$index"
+        // Use the envelope-returning helper whenever we need the captured
+        // headers map (M11-PR6) OR a correlation assertion. Both situations
+        // require the structured DTO; only the bare fire-and-forget reply
+        // path is left on the byte[]-returning helper for backward compat.
+        val hasCorrelation = correlationHeader != null && correlationId != null
+        val needsEnvelope = hasCorrelation || action.headerFieldAssertions.isNotEmpty()
+        val envVar = "__evm_envelope_$index"
+        if (needsEnvelope) {
+            val correlationArg = correlationHeader?.let { "\"${escapeJava(it)}\"" } ?: "\"\""
             lines.add(
                 "org.evomaster.test.utils.EMTestUtils.ReplyEnvelope $envVar = " +
                         "org.evomaster.test.utils.EMTestUtils.kafkaAwaitReplyEnvelope(" +
                         "baseUrlOfSut, \"${escapeJava(rendered)}\", " +
-                        "\"${escapeJava(correlationHeader)}\", 5000L);"
+                        "$correlationArg, 5000L);"
             )
             lines.add(
                 "assertNotNull($envVar, " +
                         "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
             )
-            lines.add(
-                "assertEquals(" +
-                        "\"$correlationId\", $envVar.correlationId, " +
-                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
-            )
+            if (hasCorrelation) {
+                lines.add(
+                    "assertEquals(" +
+                            "\"$correlationId\", $envVar.correlationId, " +
+                            "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
+                )
+            }
             lines.add("byte[] $varName = $envVar.payload;")
         } else {
-            // No correlation header declared — first message wins, no
-            // correlation assertion is meaningful.
+            // No correlation header declared, no headers schema — first
+            // message wins, no envelope-level assertion is meaningful.
             lines.add(
                 "byte[] $varName = " +
                         "org.evomaster.test.utils.EMTestUtils.kafkaAwaitReply(baseUrlOfSut, " +
@@ -448,6 +451,15 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             )
         }
         emitReplyFieldAssertions(action, varName, lines)
+        // M11-PR6: per-header facet assertions on the captured envelope.
+        if (needsEnvelope && action.headerFieldAssertions.isNotEmpty()) {
+            emitHeaderFieldAssertions(
+                action.headerFieldAssertions,
+                "$envVar.headers",
+                "reply headers on '${escapeJava(rendered)}'",
+                lines
+            )
+        }
     }
 
     /**
@@ -621,6 +633,111 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                                 "org.evomaster.test.utils.EMTestUtils.replyFormatMatches($valueVar, \"$p\", \"$f\"), " +
                                 "\"$label field '$p' does not match declared format '$f'\");"
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * M11-PR6: mirror of [emitFieldAssertionsOver] for the captured
+     * `ReplyEnvelope.headers` map. Same facet vocabulary (required / enum /
+     * const / pattern / min / max / length / format) but each helper takes
+     * a `Map<String, String>` instead of `byte[]` because headers are
+     * already decoded by the broker-side helper. Container facets (array /
+     * discriminator / multipleOf) don't apply to flat header maps and are
+     * silently skipped here — the schema is expected to be a flat object
+     * of scalar properties.
+     */
+    private fun emitHeaderFieldAssertions(
+        specs: List<ReplyFieldAssertion>,
+        headersVar: String,
+        label: String,
+        lines: Lines
+    ) {
+        if (specs.isEmpty()) return
+        specs.forEach { spec ->
+            val p = escapeJava(spec.path)
+            when (spec.kind) {
+                ReplyFieldAssertion.Kind.REQUIRED -> lines.add(
+                    "assertTrue(" +
+                            "org.evomaster.test.utils.EMTestUtils.replyHeaderHas($headersVar, \"$p\"), " +
+                            "\"$label missing required header '$p'\");"
+                )
+                ReplyFieldAssertion.Kind.ENUM -> {
+                    val literals = spec.expectedValues.joinToString(", ") { "\"${escapeJava(it)}\"" }
+                    lines.add(
+                        "assertTrue(" +
+                                "java.util.Arrays.asList($literals).contains(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyHeaderText($headersVar, \"$p\")), " +
+                                "\"$label '$p' not in declared enum\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.CONST -> {
+                    val v = escapeJava(spec.expectedValues.firstOrNull().orEmpty())
+                    lines.add(
+                        "assertEquals(\"$v\", " +
+                                "org.evomaster.test.utils.EMTestUtils.replyHeaderText($headersVar, \"$p\"), " +
+                                "\"$label '$p' must be declared const '$v'\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.PATTERN -> {
+                    val pat = escapeJava(spec.pattern!!)
+                    lines.add(
+                        "assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyHeaderPatternMatches($headersVar, \"$p\", \"$pat\"), " +
+                                "\"$label '$p' does not match declared pattern\");"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyHeaderNumber($headersVar, \"$p\"); " +
+                                "assertTrue(__v == null || __v >= $bound, " +
+                                "\"$label '$p' below declared minimum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX -> {
+                    val bound = spec.numericBound!!
+                    lines.add(
+                        "{ Double __v = org.evomaster.test.utils.EMTestUtils.replyHeaderNumber($headersVar, \"$p\"); " +
+                                "assertTrue(__v == null || __v <= $bound, " +
+                                "\"$label '$p' above declared maximum $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MIN_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = org.evomaster.test.utils.EMTestUtils.replyHeaderTextLength($headersVar, \"$p\"); " +
+                                "assertTrue(__l < 0 || __l >= $bound, " +
+                                "\"$label '$p' shorter than declared minLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.MAX_LENGTH -> {
+                    val bound = spec.lengthBound!!
+                    lines.add(
+                        "{ int __l = org.evomaster.test.utils.EMTestUtils.replyHeaderTextLength($headersVar, \"$p\"); " +
+                                "assertTrue(__l < 0 || __l <= $bound, " +
+                                "\"$label '$p' longer than declared maxLength $bound\"); }"
+                    )
+                }
+                ReplyFieldAssertion.Kind.FORMAT -> {
+                    val f = escapeJava(spec.format!!)
+                    lines.add(
+                        "assertTrue(" +
+                                "org.evomaster.test.utils.EMTestUtils.replyHeaderFormatMatches($headersVar, \"$p\", \"$f\"), " +
+                                "\"$label '$p' does not match declared format '$f'\");"
+                    )
+                }
+                // Facets that don't apply to a flat header map: array
+                // bounds / uniqueness / multipleOf / discriminator. Skipped
+                // silently — the headers schema for AsyncAPI is by
+                // convention a flat object of scalar properties.
+                ReplyFieldAssertion.Kind.MULTIPLE_OF,
+                ReplyFieldAssertion.Kind.ARRAY_MIN_ITEMS,
+                ReplyFieldAssertion.Kind.ARRAY_MAX_ITEMS,
+                ReplyFieldAssertion.Kind.ARRAY_UNIQUE,
+                ReplyFieldAssertion.Kind.DISCRIMINATOR -> {
+                    // intentionally no-op
                 }
             }
         }

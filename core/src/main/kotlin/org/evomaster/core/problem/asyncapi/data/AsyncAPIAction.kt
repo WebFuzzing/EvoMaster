@@ -49,6 +49,14 @@ class AsyncAPIAction(
      */
     val replyFieldAssertions: List<ReplyFieldAssertion> = emptyList(),
     /**
+     * Pre-computed schema-derived assertions to emit on the *headers* of
+     * the captured reply (SUBSCRIBE_REPLY) or output message (SUBSCRIBE_OUTPUT).
+     * Mirrors [replyFieldAssertions] but for the AsyncAPI `headers:` schema
+     * rather than the payload schema. Populated by the builder when the
+     * message declares a `headers` schema; empty otherwise. M11-PR6.
+     */
+    val headerFieldAssertions: List<ReplyFieldAssertion> = emptyList(),
+    /**
      * When the reply schema is a `oneOf` / `anyOf` composition, this carries
      * each variant's per-field assertion set keyed by variant name and (if
      * declared) the discriminator property used to dispatch. The writer can
@@ -107,6 +115,7 @@ class AsyncAPIAction(
             replyBinding = replyBinding,
             correlationHeaderName = correlationHeaderName,
             replyFieldAssertions = replyFieldAssertions,
+            headerFieldAssertions = headerFieldAssertions,
             perVariantReplyAssertions = perVariantReplyAssertions,
             auth = auth
         )
