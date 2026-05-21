@@ -653,6 +653,18 @@ class EMConfig {
                         "must remain NONE when --bbBrokerTransport=WEBSOCKET"
             )
         }
+        if (blackBox && problemType == ProblemType.ASYNCAPI
+            && bbBrokerTransport == BrokerTransport.WEBSOCKET
+            && asyncApiEmbedBroker) {
+            // The embedded-broker emission pins a Kafka Testcontainer at
+            // test-class load time; pairing it with a WebSocket transport
+            // would spin up a Kafka container the test never talks to.
+            throw ConfigProblemException(
+                "--asyncApiEmbedBroker spins up a Kafka Testcontainer at test-class load time, " +
+                        "which is incompatible with --bbBrokerTransport=WEBSOCKET. Disable embedding " +
+                        "(or run a WebSocket SUT under KAFKA transport once it ships ws bindings)."
+            )
+        }
         if (blackBox && problemType == ProblemType.ASYNCAPI) {
             when (bbBrokerAuthType) {
                 BrokerAuthType.SASL_PLAIN, BrokerAuthType.SASL_SCRAM_256 -> {
