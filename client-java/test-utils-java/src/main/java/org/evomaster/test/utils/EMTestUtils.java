@@ -281,9 +281,24 @@ public class EMTestUtils {
     public static final class ReplyEnvelope {
         public final byte[] payload;
         public final String correlationId;
-        public ReplyEnvelope(byte[] payload, String correlationId) {
+        /**
+         * All headers carried on the consumed message, decoded UTF-8.
+         * Empty (not null) when the message had no headers. Populated by
+         * {@link #kafkaAwaitReplyEnvelope} since M11-PR6 so the writer can
+         * assert per-header facets (presence, enum, format, …) declared in
+         * the AsyncAPI `headers:` schema.
+         */
+        public final java.util.Map<String, String> headers;
+        public ReplyEnvelope(byte[] payload, String correlationId,
+                              java.util.Map<String, String> headers) {
             this.payload = payload;
             this.correlationId = correlationId;
+            this.headers = headers == null ? java.util.Collections.emptyMap() : headers;
+        }
+        // Back-compat constructor used by callers that haven't been updated
+        // to pass headers. Will be removed once the writer-side wiring lands.
+        public ReplyEnvelope(byte[] payload, String correlationId) {
+            this(payload, correlationId, java.util.Collections.emptyMap());
         }
     }
 
@@ -321,12 +336,21 @@ public class EMTestUtils {
                     org.apache.kafka.clients.consumer.ConsumerRecords<String, byte[]> records =
                             consumer.poll(java.time.Duration.ofMillis(Math.min(remaining, 500L)));
                     for (org.apache.kafka.clients.consumer.ConsumerRecord<String, byte[]> r : records) {
+                        // Decode every header into a String→String map so
+                        // generated tests can assert facets declared in the
+                        // schema's `headers:` block. UTF-8 mirrors how
+                        // EvoMaster encodes outbound headers in kafkaPublish.
+                        java.util.Map<String, String> hmap = new java.util.LinkedHashMap<>();
+                        for (org.apache.kafka.common.header.Header h : r.headers()) {
+                            if (h.value() != null) {
+                                hmap.put(h.key(), new String(h.value(), java.nio.charset.StandardCharsets.UTF_8));
+                            }
+                        }
                         String corr = null;
                         if (correlationHeaderName != null && !correlationHeaderName.isEmpty()) {
-                            org.apache.kafka.common.header.Header h = r.headers().lastHeader(correlationHeaderName);
-                            if (h != null) corr = new String(h.value(), java.nio.charset.StandardCharsets.UTF_8);
+                            corr = hmap.get(correlationHeaderName);
                         }
-                        return new ReplyEnvelope(r.value(), corr);
+                        return new ReplyEnvelope(r.value(), corr, hmap);
                     }
                 }
                 return null;
@@ -515,41 +539,56 @@ public class EMTestUtils {
      * multiple of {@code divisor} (within a small epsilon for IEEE 754
      * imprecision). Returns true when the field is absent (fail-open).
      */
-    public static boolean replyMultipleOf(byte[] reply, String field, double divisor) {
-        Double v = replyNumber(reply, field);
+    // ----- Header-side assertion helpers (M11-PR6) ----------------------
+    // Mirror the payload assertion helpers but operate on the raw
+    // String→String header map exposed by ReplyEnvelope.headers.
+    // Fail-open on missing headers so a single absent header surfaces as
+    // exactly one REQUIRED-style violation rather than a cascade.
+
+    public static boolean replyHeaderHas(java.util.Map<String, String> headers, String name) {
+        return headers != null && headers.containsKey(name);
+    }
+
+    public static String replyHeaderText(java.util.Map<String, String> headers, String name) {
+        return headers == null ? null : headers.get(name);
+    }
+
+    public static Double replyHeaderNumber(java.util.Map<String, String> headers, String name) {
+        String v = replyHeaderText(headers, name);
+        if (v == null) return null;
+        try { return Double.parseDouble(v); } catch (NumberFormatException e) { return null; }
+    }
+
+    public static int replyHeaderTextLength(java.util.Map<String, String> headers, String name) {
+        String v = replyHeaderText(headers, name);
+        return v == null ? -1 : v.length();
+    }
+
+    public static boolean replyHeaderFormatMatches(java.util.Map<String, String> headers,
+                                                    String name, String format) {
+        String v = replyHeaderText(headers, name);
         if (v == null) return true;
-        if (divisor == 0.0) return false;
-        double remainder = Math.IEEEremainder(v, divisor);
-        return Math.abs(remainder) < 1e-9;
+        // Delegate to the payload-side format checker — same set of formats
+        // supported (date / date-time / email / uuid / uri / ipv4 / ipv6).
+        return formatMatches(v, format);
     }
 
-    /**
-     * Inspection helper: return the textual length of {@code field} in the
-     * JSON object {@code reply}, or -1 when absent / non-textual / parse
-     * failure. Used by generated MIN_LENGTH/MAX_LENGTH assertions; the
-     * sentinel value of -1 (rather than null) lets callers compare with
-     * a single primitive predicate.
-     */
-    public static int replyTextLength(byte[] reply, String field) {
-        String s = replyText(reply, field);
-        return s == null ? -1 : s.length();
+    public static boolean replyHeaderPatternMatches(java.util.Map<String, String> headers,
+                                                     String name, String pattern) {
+        String v = replyHeaderText(headers, name);
+        if (v == null) return true;
+        if (pattern == null) return true;
+        try {
+            return java.util.regex.Pattern.compile(pattern).matcher(v).find();
+        } catch (java.util.regex.PatternSyntaxException e) {
+            return false;
+        }
     }
 
-    /**
-     * Inspection helper: best-effort check that {@code reply.field} matches
-     * the JSON Schema {@code format} keyword. Returns true when the field
-     * is absent (no constraint to violate), when the format is unknown to
-     * this helper (fail-open), or when the textual value matches the
-     * format's regex/parser. Returns false only on positive mismatch.
-     *
-     * Supported formats: {@code date}, {@code date-time}, {@code email},
-     * {@code uuid}, {@code uri}, {@code ipv4}, {@code ipv6}. Other declared
-     * formats pass through unchecked to avoid spurious test failures on
-     * formats outside this helper's coverage.
-     */
-    public static boolean replyFormatMatches(byte[] reply, String field, String format) {
-        String s = replyText(reply, field);
-        if (s == null) return true;
+    private static boolean formatMatches(String s, String format) {
+        // Implementation shared between replyFormatMatches and
+        // replyHeaderFormatMatches. Extracted so the header path doesn't
+        // require parsing the payload as JSON just to validate a header.
         if (format == null) return true;
         switch (format) {
             case "date":
@@ -589,6 +628,44 @@ public class EMTestUtils {
             default:
                 return true;
         }
+    }
+
+    public static boolean replyMultipleOf(byte[] reply, String field, double divisor) {
+        Double v = replyNumber(reply, field);
+        if (v == null) return true;
+        if (divisor == 0.0) return false;
+        double remainder = Math.IEEEremainder(v, divisor);
+        return Math.abs(remainder) < 1e-9;
+    }
+
+    /**
+     * Inspection helper: return the textual length of {@code field} in the
+     * JSON object {@code reply}, or -1 when absent / non-textual / parse
+     * failure. Used by generated MIN_LENGTH/MAX_LENGTH assertions; the
+     * sentinel value of -1 (rather than null) lets callers compare with
+     * a single primitive predicate.
+     */
+    public static int replyTextLength(byte[] reply, String field) {
+        String s = replyText(reply, field);
+        return s == null ? -1 : s.length();
+    }
+
+    /**
+     * Inspection helper: best-effort check that {@code reply.field} matches
+     * the JSON Schema {@code format} keyword. Returns true when the field
+     * is absent (no constraint to violate), when the format is unknown to
+     * this helper (fail-open), or when the textual value matches the
+     * format's regex/parser. Returns false only on positive mismatch.
+     *
+     * Supported formats: {@code date}, {@code date-time}, {@code email},
+     * {@code uuid}, {@code uri}, {@code ipv4}, {@code ipv6}. Other declared
+     * formats pass through unchecked to avoid spurious test failures on
+     * formats outside this helper's coverage.
+     */
+    public static boolean replyFormatMatches(byte[] reply, String field, String format) {
+        String s = replyText(reply, field);
+        if (s == null) return true;
+        return formatMatches(s, format);
     }
 
     /**

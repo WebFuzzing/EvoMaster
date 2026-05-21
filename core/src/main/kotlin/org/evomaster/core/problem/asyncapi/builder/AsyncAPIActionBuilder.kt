@@ -339,6 +339,19 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         } else {
             emptyList()
         }
+        // M11-PR6: also walk the `headers:` schema if declared, surfacing
+        // per-header facets that the writer will emit against the
+        // ReplyEnvelope.headers map at test runtime. Headers are typically
+        // flat key-value pairs (not nested objects), so the same recursive
+        // walker handles them with depth 0.
+        val headerFieldAssertions = if (
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_REPLY ||
+            kind == AsyncAPIAction.Kind.SUBSCRIBE_OUTPUT
+        ) {
+            extractHeaderFieldAssertions(message, schema)
+        } else {
+            emptyList()
+        }
         // M11-PR3 fix #9: when the payload schema is a oneOf with a
         // discriminator, also pre-compute the per-variant facet sets so
         // the writer can emit a runtime if/else-if chain on the
@@ -365,6 +378,7 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
             replyBinding = replyBinding,
             correlationHeaderName = correlationLocation?.let(::extractHeaderName),
             replyFieldAssertions = replyFieldAssertions,
+            headerFieldAssertions = headerFieldAssertions,
             perVariantReplyAssertions = perVariantReplyAssertions
         )
     }
@@ -436,6 +450,25 @@ class AsyncAPIActionBuilder(private val config: EMConfig) {
         schema: AsyncAPISchema
     ): List<ReplyFieldAssertion> {
         val node = message.payloadInline ?: message.payloadSchemaRef?.let { schema.componentSchemas[it] }
+            ?: return emptyList()
+        val out = mutableListOf<ReplyFieldAssertion>()
+        collectFieldAssertions(node, schema, pathPrefix = "", depth = 0, out = out)
+        return out
+    }
+
+    /**
+     * M11-PR6: walk the message's `headers:` schema (inline or referenced) and
+     * emit the same per-field facet vocabulary as for the payload. Headers are
+     * usually flat key/value pairs (auth tokens, tenant ids, tracing ids), so
+     * [collectFieldAssertions] just visits one level, but the depth-capped
+     * recursion still handles the rare nested object case for free.
+     */
+    private fun extractHeaderFieldAssertions(
+        message: AsyncAPIMessage,
+        schema: AsyncAPISchema
+    ): List<ReplyFieldAssertion> {
+        val node = message.headersInline
+            ?: message.headersSchemaRef?.let { schema.componentSchemas[it] }
             ?: return emptyList()
         val out = mutableListOf<ReplyFieldAssertion>()
         collectFieldAssertions(node, schema, pathPrefix = "", depth = 0, out = out)
