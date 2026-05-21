@@ -901,4 +901,215 @@ public class EMTestUtils {
             closeQuietly(ws);
         }
     }
+
+    // ----- AMQP 0-9-1 helpers (M11-PR9) ----------------------------------
+    //
+    // Mirror the kafka* helpers but talk AMQP 0-9-1 via the RabbitMQ
+    // amqp-client. Each call opens a fresh connection + channel,
+    // performs the I/O, and closes them — short-lived sessions keep the
+    // per-test surface as simple as the Kafka helpers do.
+    //
+    // The AsyncAPI binding model is mapped to the simplest AMQP shape:
+    // the channel address is treated as the routing key on the default
+    // exchange (""). Named-exchange routing with declared bindings is a
+    // follow-up; the bookworm-family SUTs in the validation corpus all
+    // use the default-exchange-as-queue pattern.
+    //
+    // `amqpBase` accepts either a full
+    // `amqp://user:pass@host:port/vhost` URI or a bare `host:port`
+    // (treated as `amqp://host:port`).
+
+    private static java.net.URI resolveAmqpUri(String amqpBase) {
+        String trimmed = amqpBase == null ? "" : amqpBase.trim();
+        if (trimmed.startsWith("amqp://") || trimmed.startsWith("amqps://")) {
+            return java.net.URI.create(trimmed);
+        }
+        return java.net.URI.create("amqp://" + trimmed);
+    }
+
+    private static com.rabbitmq.client.Connection openAmqp(String amqpBase) {
+        try {
+            com.rabbitmq.client.ConnectionFactory factory =
+                    new com.rabbitmq.client.ConnectionFactory();
+            factory.setUri(resolveAmqpUri(amqpBase));
+            return factory.newConnection("evomaster-asyncapi-test");
+        } catch (NoClassDefFoundError nf) {
+            throw new IllegalStateException(
+                    "com.rabbitmq:amqp-client not on the test classpath; add it to run AMQP-bound AsyncAPI tests",
+                    nf
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("AMQP openConnection failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Publish a single AMQP message to the default exchange with
+     * {@code channel} as the routing key. Headers go into the message's
+     * header table (UTF-8 strings). Mirrors {@link #kafkaPublish}.
+     */
+    public static void amqpPublish(
+            String amqpBase,
+            String channel,
+            byte[] payload,
+            java.util.Map<String, byte[]> headers
+    ) {
+        com.rabbitmq.client.Connection conn = openAmqp(amqpBase);
+        try (com.rabbitmq.client.Channel ch = conn.createChannel()) {
+            java.util.Map<String, Object> headerTable = new java.util.LinkedHashMap<>();
+            if (headers != null) {
+                for (java.util.Map.Entry<String, byte[]> e : headers.entrySet()) {
+                    headerTable.put(e.getKey(),
+                            new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8));
+                }
+            }
+            com.rabbitmq.client.AMQP.BasicProperties props =
+                    new com.rabbitmq.client.AMQP.BasicProperties.Builder()
+                            .contentType("application/json")
+                            .headers(headerTable)
+                            .build();
+            ch.basicPublish("", channel, props, payload);
+        } catch (Exception e) {
+            throw new RuntimeException("amqpPublish failed: " + e.getMessage(), e);
+        } finally {
+            try { conn.close(2_000); } catch (Exception ignored) { /* best-effort */ }
+        }
+    }
+
+    /**
+     * Lightweight DTO returned by {@link #amqpAwaitReplyEnvelope}.
+     * Mirrors {@link ReplyEnvelope}: payload + correlation id read from
+     * the {@code correlationHeaderName} header (when supplied) + the
+     * full decoded header map.
+     */
+    public static final class AmqpReplyEnvelope {
+        public final byte[] payload;
+        public final String correlationId;
+        public final java.util.Map<String, String> headers;
+        public AmqpReplyEnvelope(byte[] payload, String correlationId,
+                                  java.util.Map<String, String> headers) {
+            this.payload = payload;
+            this.correlationId = correlationId;
+            this.headers = headers == null ? java.util.Collections.emptyMap() : headers;
+        }
+    }
+
+    /**
+     * Subscribe to the queue named {@code channel} (declared on the
+     * default exchange), block up to {@code timeoutMs}, and return the
+     * first message wrapped in an {@link AmqpReplyEnvelope}. Returns
+     * null on timeout. Mirrors {@link #kafkaAwaitReplyEnvelope}.
+     */
+    public static AmqpReplyEnvelope amqpAwaitReplyEnvelope(
+            String amqpBase,
+            String channel,
+            String correlationHeaderName,
+            long timeoutMs
+    ) {
+        com.rabbitmq.client.Connection conn = openAmqp(amqpBase);
+        try (com.rabbitmq.client.Channel ch = conn.createChannel()) {
+            try { ch.queueDeclare(channel, false, false, true, null); }
+            catch (Exception ignored) { /* queue may already exist with different props */ }
+            final java.util.concurrent.BlockingQueue<AmqpReplyEnvelope> queue =
+                    new java.util.concurrent.LinkedBlockingQueue<>();
+            final String consumerTag = ch.basicConsume(channel, true,
+                new com.rabbitmq.client.DefaultConsumer(ch) {
+                    @Override
+                    public void handleDelivery(String tag,
+                                                com.rabbitmq.client.Envelope env,
+                                                com.rabbitmq.client.AMQP.BasicProperties props,
+                                                byte[] body) {
+                        java.util.Map<String, String> hMap = new java.util.LinkedHashMap<>();
+                        if (props.getHeaders() != null) {
+                            for (java.util.Map.Entry<String, Object> e : props.getHeaders().entrySet()) {
+                                if (e.getValue() != null) hMap.put(e.getKey(), e.getValue().toString());
+                            }
+                        }
+                        String corr = (correlationHeaderName != null && !correlationHeaderName.isEmpty())
+                                ? hMap.get(correlationHeaderName)
+                                : null;
+                        queue.offer(new AmqpReplyEnvelope(body, corr, hMap));
+                    }
+                });
+            try {
+                return queue.poll(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } finally {
+                try { ch.basicCancel(consumerTag); } catch (Exception ignored) { /* best-effort */ }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("amqpAwaitReplyEnvelope failed: " + e.getMessage(), e);
+        } finally {
+            try { conn.close(2_000); } catch (Exception ignored) { /* best-effort */ }
+        }
+    }
+
+    /**
+     * Bare-payload version of {@link #amqpAwaitReplyEnvelope}. Returns
+     * the message body (or null on timeout). Mirrors
+     * {@link #kafkaAwaitReply}.
+     */
+    public static byte[] amqpAwaitReply(
+            String amqpBase,
+            String channel,
+            String correlationHeaderName,
+            String expectedCorrelationId,
+            long timeoutMs
+    ) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            long remaining = deadline - System.currentTimeMillis();
+            if (remaining <= 0) return null;
+            AmqpReplyEnvelope env = amqpAwaitReplyEnvelope(amqpBase, channel,
+                    correlationHeaderName, remaining);
+            if (env == null) return null;
+            if (correlationHeaderName == null || correlationHeaderName.isEmpty()
+                    || expectedCorrelationId == null
+                    || expectedCorrelationId.equals(env.correlationId)) {
+                return env.payload;
+            }
+            // wrong correlation; keep polling for the remaining window
+        }
+        return null;
+    }
+
+    /**
+     * Subscribe to the queue named {@code channel} and collect every
+     * message that arrives during the next {@code windowMs} window.
+     * Mirrors {@link #kafkaCollectAllWithin}.
+     */
+    public static byte[][] amqpCollectAllWithin(
+            String amqpBase,
+            String channel,
+            long windowMs
+    ) {
+        com.rabbitmq.client.Connection conn = openAmqp(amqpBase);
+        try (com.rabbitmq.client.Channel ch = conn.createChannel()) {
+            try { ch.queueDeclare(channel, false, false, true, null); }
+            catch (Exception ignored) { /* queue may already exist */ }
+            final java.util.List<byte[]> collected =
+                    java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+            String consumerTag = ch.basicConsume(channel, true,
+                new com.rabbitmq.client.DefaultConsumer(ch) {
+                    @Override
+                    public void handleDelivery(String tag,
+                                                com.rabbitmq.client.Envelope env,
+                                                com.rabbitmq.client.AMQP.BasicProperties props,
+                                                byte[] body) {
+                        collected.add(body);
+                    }
+                });
+            try {
+                Thread.sleep(windowMs);
+                synchronized (collected) {
+                    return collected.toArray(new byte[0][]);
+                }
+            } finally {
+                try { ch.basicCancel(consumerTag); } catch (Exception ignored) { /* best-effort */ }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("amqpCollectAllWithin failed: " + e.getMessage(), e);
+        } finally {
+            try { conn.close(2_000); } catch (Exception ignored) { /* best-effort */ }
+        }
+    }
 }

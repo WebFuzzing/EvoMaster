@@ -665,6 +665,29 @@ class EMConfig {
                         "(or run a WebSocket SUT under KAFKA transport once it ships ws bindings)."
             )
         }
+        if (blackBox && problemType == ProblemType.ASYNCAPI
+            && bbBrokerTransport == BrokerTransport.AMQP
+            && bbBrokerAuthType != BrokerAuthType.NONE) {
+            // AMQP credentials are encoded in the bbBrokerUrl
+            // (amqp://user:pass@host:port/vhost), not via the SASL / SSL
+            // flags meant for Kafka. The shared --bbBrokerAuthType plumbing
+            // doesn't apply.
+            throw ConfigProblemException(
+                "AMQP transport reads credentials from --bbBrokerUrl (amqp://user:pass@host/vhost); " +
+                        "the Kafka-shaped --bbBrokerAuthType flag must remain NONE when " +
+                        "--bbBrokerTransport=AMQP. Encode user/password into the URI instead."
+            )
+        }
+        if (blackBox && problemType == ProblemType.ASYNCAPI
+            && bbBrokerTransport == BrokerTransport.AMQP
+            && asyncApiEmbedBroker) {
+            // Same shape as the ws case: the embed path is Kafka-specific.
+            throw ConfigProblemException(
+                "--asyncApiEmbedBroker spins up a Kafka Testcontainer at test-class load time, " +
+                        "which is incompatible with --bbBrokerTransport=AMQP. Disable embedding " +
+                        "(an AMQP equivalent using a RabbitMQ Testcontainer is a follow-up)."
+            )
+        }
         if (blackBox && problemType == ProblemType.ASYNCAPI) {
             when (bbBrokerAuthType) {
                 BrokerAuthType.SASL_PLAIN, BrokerAuthType.SASL_SCRAM_256 -> {
@@ -1321,14 +1344,29 @@ class EMConfig {
          * carrying the payload, and (for request/reply) waits for the
          * server's first response frame on the same connection.
          */
-        WEBSOCKET
+        WEBSOCKET,
+        /**
+         * AMQP 0-9-1 (RabbitMQ) over `com.rabbitmq:amqp-client`. Channel
+         * address is interpreted as the routing key on the default
+         * exchange `""` — equivalent to "send to the queue with this
+         * name." Publishers call `basicPublish`; subscribers declare an
+         * auto-delete server-named queue, bind it to the channel, and
+         * consume via a `basicConsume` callback that pumps received
+         * deliveries into the same MessageBrokerClient.publish/subscribe
+         * surface used by Kafka. `--bbBrokerUrl` accepts either a full
+         * `amqp://user:pass@host:port/vhost` URI or a bare `host:port`
+         * (treated as `amqp://host:port`). AMQP 1.0 is a different
+         * protocol family and not handled by this transport.
+         */
+        AMQP
     }
 
     @Experimental
     @Cfg("Black-box AsyncAPI: which wire transport to use when publishing / subscribing." +
             " KAFKA (default) drives kafka-clients. WEBSOCKET opens a JDK HttpClient WebSocket" +
-            " connection per channel and exchanges single TEXT frames." +
-            " Other AsyncAPI 3.0 bindings (MQTT, AMQP, Socket.IO) are not yet implemented.")
+            " connection per channel and exchanges single TEXT frames. AMQP drives the" +
+            " RabbitMQ amqp-client (AMQP 0-9-1) where the channel address is used as the" +
+            " default-exchange routing key. MQTT and Socket.IO are not yet implemented.")
     var bbBrokerTransport: BrokerTransport = BrokerTransport.KAFKA
 
     enum class BrokerAuthType {

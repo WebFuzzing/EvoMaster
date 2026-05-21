@@ -45,6 +45,19 @@
             <scope>provided</scope>
         </dependency>
         <!--
+            amqp-client backs the EMTestUtils.amqpPublish / amqpAwaitReply
+            helpers used by generated AsyncAPI tests for AMQP-binding SUTs
+            (M11-PR9). Kept `provided` for the same reason as kafka-clients:
+            only consumers that actually run AMQP-bound tests need it on
+            their classpath; pulling it transitively into REST/RPC suites
+            would waste ~2 MB.
+        -->
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!--
             jackson-databind backs the EMTestUtils.replyHas / replyText
             helpers used by generated AsyncAPI assertions (M9-PR5). Kept
             `provided` for the same reason as kafka-clients: REST/RPC users
