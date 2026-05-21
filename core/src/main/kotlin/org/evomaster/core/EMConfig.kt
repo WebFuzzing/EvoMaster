@@ -642,6 +642,17 @@ class EMConfig {
         if (!blackBox && bbBrokerAuthType != BrokerAuthType.NONE) {
             throw ConfigProblemException("'bbBrokerAuthType' should be set only in black-box mode")
         }
+        if (!blackBox && bbBrokerTransport != BrokerTransport.KAFKA) {
+            throw ConfigProblemException("'bbBrokerTransport' should be set only in black-box mode")
+        }
+        if (blackBox && problemType == ProblemType.ASYNCAPI
+            && bbBrokerTransport == BrokerTransport.WEBSOCKET
+            && bbBrokerAuthType != BrokerAuthType.NONE) {
+            throw ConfigProblemException(
+                "WebSocket transport does not yet plumb broker auth; --bbBrokerAuthType " +
+                        "must remain NONE when --bbBrokerTransport=WEBSOCKET"
+            )
+        }
         if (blackBox && problemType == ProblemType.ASYNCAPI) {
             when (bbBrokerAuthType) {
                 BrokerAuthType.SASL_PLAIN, BrokerAuthType.SASL_SCRAM_256 -> {
@@ -1284,8 +1295,29 @@ class EMConfig {
     @Experimental
     @Cfg("When in black-box mode for AsyncAPI, specify the broker bootstrap URL EvoMaster will use" +
             " to publish requests and observe replies. For Kafka this is the bootstrap-servers value," +
-            " e.g. 'localhost:9092'.")
+            " e.g. 'localhost:9092'. For WebSocket this is the server origin (e.g. 'ws://localhost:8080')" +
+            " that AsyncAPI channel addresses are resolved against.")
     var bbBrokerUrl: String = ""
+
+    enum class BrokerTransport {
+        /** Default: Kafka producer/consumer over `kafka-clients`. Channel = topic. */
+        KAFKA,
+        /**
+         * Raw WebSocket (RFC 6455) using JDK 11+ `java.net.http.HttpClient`.
+         * Channel = endpoint path joined onto `--bbBrokerUrl`. Each
+         * publish opens a fresh connection, sends a single TEXT frame
+         * carrying the payload, and (for request/reply) waits for the
+         * server's first response frame on the same connection.
+         */
+        WEBSOCKET
+    }
+
+    @Experimental
+    @Cfg("Black-box AsyncAPI: which wire transport to use when publishing / subscribing." +
+            " KAFKA (default) drives kafka-clients. WEBSOCKET opens a JDK HttpClient WebSocket" +
+            " connection per channel and exchanges single TEXT frames." +
+            " Other AsyncAPI 3.0 bindings (MQTT, AMQP, Socket.IO) are not yet implemented.")
+    var bbBrokerTransport: BrokerTransport = BrokerTransport.KAFKA
 
     enum class BrokerAuthType {
         /** Default: no authentication; the broker exposes a plaintext listener. */

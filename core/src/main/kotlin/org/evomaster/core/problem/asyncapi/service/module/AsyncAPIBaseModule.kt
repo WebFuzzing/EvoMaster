@@ -7,6 +7,7 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.broker.KafkaBrokerClient
 import org.evomaster.core.problem.asyncapi.broker.MessageBrokerClient
+import org.evomaster.core.problem.asyncapi.broker.WebSocketBrokerClient
 import org.evomaster.core.problem.asyncapi.data.AsyncAPIIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.search.service.Archive
@@ -84,7 +85,7 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
     private var rc: org.evomaster.core.remote.service.RemoteController? = null
 
     @Volatile
-    private var delegate: KafkaBrokerClient? = null
+    private var delegate: MessageBrokerClient? = null
 
     private fun resolveBootstrapServers(): String {
         if (config.bbBrokerUrl.isNotBlank()) {
@@ -100,12 +101,21 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
     }
 
     @Synchronized
-    private fun ensure(): KafkaBrokerClient {
+    private fun ensure(): MessageBrokerClient {
         delegate?.let { return it }
-        val client = KafkaBrokerClient(
-            bootstrapServers = resolveBootstrapServers(),
-            auth = resolveAuth()
-        )
+        // M11-PR8: pick the concrete transport at first-use time so the
+        // (lazy) broker URL is already known. Auth wiring is Kafka-only
+        // for now; WebSocket bypasses it (EMConfig validation forbids
+        // auth + WEBSOCKET).
+        val client: MessageBrokerClient = when (config.bbBrokerTransport) {
+            EMConfig.BrokerTransport.KAFKA -> KafkaBrokerClient(
+                bootstrapServers = resolveBootstrapServers(),
+                auth = resolveAuth()
+            )
+            EMConfig.BrokerTransport.WEBSOCKET -> WebSocketBrokerClient(
+                baseOrigin = resolveBootstrapServers()
+            )
+        }
         delegate = client
         return client
     }
