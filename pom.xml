@@ -160,6 +160,7 @@
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
         <kafka.clients.version>3.7.1</kafka.clients.version>
+        <rabbitmq.amqp.client.version>5.21.0</rabbitmq.amqp.client.version>
     </properties>
 
 
@@ -619,6 +620,13 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.clients.version}</version>
+            </dependency>
+
+            <!-- RabbitMQ AMQP 0-9-1 client (AsyncAPI AMQP transport, M11-PR9) -->
+            <dependency>
+                <groupId>com.rabbitmq</groupId>
+                <artifactId>amqp-client</artifactId>
+                <version>${rabbitmq.amqp.client.version}</version>
             </dependency>
 
             <!-- OpenSearch -->

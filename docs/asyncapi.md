@@ -47,16 +47,19 @@ SASL/OAUTHBEARER and Kerberos are not yet supported; track the follow-up in the 
 
 The AsyncAPI parser also surfaces `components.securitySchemes` and per-operation `security:` references into the in-memory model; the broker-side auth applied at connect time is driven by the CLI flags above (the schema's declared scheme names are advisory). White-box mode will plumb driver-supplied broker auth in a follow-up; for now use the CLI flags in both modes.
 
-### Transports: Kafka and WebSocket (M11-PR8)
+### Transports: Kafka, WebSocket, and AMQP (M11-PR8, M11-PR9)
 
-AsyncAPI 3.0 channels can declare bindings for several wire transports. The black-box engine implements two so far, switched with one flag:
+AsyncAPI 3.0 channels can declare bindings for several wire transports. The black-box engine implements three so far, switched with one flag:
 
 | `--bbBrokerTransport` | `--bbBrokerUrl` shape | Channel address shape |
 |---|---|---|
 | `KAFKA` (default) | `host:port` (Kafka bootstrap servers) | topic name |
 | `WEBSOCKET` | `ws://host:port` or `wss://host:port` origin | endpoint path (joined onto the origin), or a fully-qualified `ws://` / `wss://` URL inline |
+| `AMQP` | `amqp://user:pass@host:port/vhost` URI, or bare `host:port` (normalised to `amqp://host:port`) | routing key on the default exchange (= queue name) |
 
 WebSocket uses JDK 11+ `java.net.http.WebSocket` (no extra runtime dep). Each channel keeps one connection open across publish/await calls so request/reply on the same socket works. Headers are JSON-enveloped into `{ "headers": {...}, "payload": "..." }` because raw WebSocket frames have no native headers; servers that ignore the envelope still see a JSON TEXT frame and round-trip cleanly. Broker auth (`--bbBrokerAuthType`) and the embedded Testcontainers broker (`--asyncApiEmbedBroker`) are rejected with WebSocket — both are Kafka-specific. Socket.IO and MQTT are out of scope for this slice.
+
+AMQP uses the RabbitMQ `com.rabbitmq:amqp-client` (AMQP 0-9-1). The channel address is treated as the routing key on the default exchange (`""`) — equivalent to "publish to the queue with this name." Publishers send via `basicPublish`; subscribers declare the routing-key queue idempotently and consume via `basicConsume` with auto-ack. Headers ride in the message's native AMQP header table (UTF-8 string values). Credentials live in the broker URI (`amqp://user:pass@host:port/vhost`); the Kafka-shaped `--bbBrokerAuthType` flag is rejected because AMQP auth doesn't fit the SASL/SSL model. `--asyncApiEmbedBroker` is also rejected — the embed path is Kafka-specific. AMQP 1.0 is a different protocol family (Azure Service Bus, ActiveMQ Artemis) and not handled by this transport. Named-exchange routing with explicit queue bindings declared in the AsyncAPI `bindings.amqp` block is a follow-up; the starter slice handles default-exchange-as-queue, which is the convention the bookworm-family validation SUTs use.
 
 ### Output-channel observation (M9)
 

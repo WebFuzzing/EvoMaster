@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.AsyncAPITestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.asyncapi.broker.AmqpBrokerClient
 import org.evomaster.core.problem.asyncapi.broker.KafkaBrokerClient
 import org.evomaster.core.problem.asyncapi.broker.MessageBrokerClient
 import org.evomaster.core.problem.asyncapi.broker.WebSocketBrokerClient
@@ -114,6 +115,9 @@ class LazyBrokerClient @com.google.inject.Inject constructor(
             )
             EMConfig.BrokerTransport.WEBSOCKET -> WebSocketBrokerClient(
                 baseOrigin = resolveBootstrapServers()
+            )
+            EMConfig.BrokerTransport.AMQP -> AmqpBrokerClient(
+                bootstrapUri = resolveBootstrapServers()
             )
         }
         delegate = client

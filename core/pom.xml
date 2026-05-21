@@ -168,6 +168,11 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
+            <!-- AsyncAPI AMQP 0-9-1 transport (M11-PR9) -->
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.atlassian.oai</groupId>
             <artifactId>swagger-request-validator-core</artifactId>
         </dependency>

@@ -299,6 +299,9 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             EMConfig.BrokerTransport.WEBSOCKET ->
                 "webSocketPublish(baseUrlOfSut, \"${escapeJava(rendered)}\", " +
                         "\"${escapeJava(payloadJson)}\".getBytes(UTF_8), $headersVar);"
+            EMConfig.BrokerTransport.AMQP ->
+                "amqpPublish(baseUrlOfSut, \"${escapeJava(rendered)}\", " +
+                        "\"${escapeJava(payloadJson)}\".getBytes(UTF_8), $headersVar);"
         }
         if (wrapInAssertThrows) {
             lines.add("// schema-invalid input (engine probe): publish must surface a runtime exception")
@@ -353,6 +356,8 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 "kafkaCollectAllWithin(baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L)"
             EMConfig.BrokerTransport.WEBSOCKET ->
                 "webSocketCollectAllWithin(baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L)"
+            EMConfig.BrokerTransport.AMQP ->
+                "amqpCollectAllWithin(baseUrlOfSut, \"${escapeJava(rendered)}\", ${configuredWindow}L)"
         }
         lines.add("byte[][] $varName = $collectCall;")
         lines.add(
@@ -394,6 +399,9 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
                 rendered, varName, index, correlationHeader, correlationId, lines
             )
             EMConfig.BrokerTransport.WEBSOCKET -> emitWebSocketSubscribeReply(
+                rendered, varName, index, correlationHeader, correlationId, lines
+            )
+            EMConfig.BrokerTransport.AMQP -> emitAmqpSubscribeReply(
                 rendered, varName, index, correlationHeader, correlationId, lines
             )
         }
@@ -472,6 +480,35 @@ class AsyncAPITestCaseWriter : ApiTestCaseWriter() {
             )
         }
         lines.add("byte[] $varName = $frameVar.payload;")
+    }
+
+    private fun emitAmqpSubscribeReply(
+        rendered: String,
+        varName: String,
+        index: Int,
+        correlationHeader: String?,
+        correlationId: String?,
+        lines: Lines
+    ) {
+        val envVar = "amqpEnv$index"
+        val correlationArg = correlationHeader?.let { "\"${escapeJava(it)}\"" } ?: "\"\""
+        lines.add(
+            "AmqpReplyEnvelope $envVar = amqpAwaitReplyEnvelope(" +
+                    "baseUrlOfSut, \"${escapeJava(rendered)}\", " +
+                    "$correlationArg, 5000L);"
+        )
+        lines.add(
+            "assertNotNull($envVar, " +
+                    "\"AsyncAPI reply on ${escapeJava(rendered)} did not arrive within 5s\");"
+        )
+        if (correlationHeader != null && correlationId != null) {
+            lines.add(
+                "assertEquals(" +
+                        "\"$correlationId\", $envVar.correlationId, " +
+                        "\"AsyncAPI reply on ${escapeJava(rendered)} arrived with mismatched correlation id\");"
+            )
+        }
+        lines.add("byte[] $varName = $envVar.payload;")
     }
 
     /**
