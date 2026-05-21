@@ -39,7 +39,7 @@ building on decades of research in the field of [Search-Based Software Testing](
 
 ### 1-Minute Example 
 
-Since version 6.0.0, the reccomended way to install EvoMaster is through PyPi:
+Since version 6.0.0, the recommended way to install EvoMaster is through PyPi:
 
 `pip install evomaster`
 
