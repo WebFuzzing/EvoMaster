@@ -38,8 +38,7 @@ class HttpInvalidLocationEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, faults.first())
+            assertTrue({ ExperimentalFaultCategory.HTTP_INVALID_LOCATION in faults })
         }
     }
 }

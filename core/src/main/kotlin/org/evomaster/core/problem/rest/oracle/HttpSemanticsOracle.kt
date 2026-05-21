@@ -684,6 +684,53 @@ object HttpSemanticsOracle {
         return false
     }
 
+    /**
+     * Checks the invalid-location oracle:
+     *
+     *   POST|PUT /X  -> 2xx with Location header L
+     *   GET      L   -> 404   (BUG: location does not point to an existing resource)
+     *
+     * Sequence checked: the last two main actions of the individual.
+     *  - second-to-last (creator) is POST or PUT, has a 2xx status, and its result has a
+     *    non-blank Location header.
+     *  - last is a GET bound to the creator's saved Location via [RestCallAction.usePreviousLocationId].
+     *  - last action's response is 404.
+     */
+    fun hasInvalidLocation(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 2) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val creator = actions[actions.size - 2]
+        val follow  = actions[actions.size - 1]
+
+        // creator must be a potential resource-creating verb (POST/PUT)
+        if (!creator.isPotentialActionForCreation()) return false
+
+        // follow-up must be a GET, and it must actually be chained to the creator's Location
+        if (follow.verb != HttpVerb.GET) return false
+        val expectedLocId = try { creator.creationLocationId() } catch (e: Exception) { return false }
+        if (follow.usePreviousLocationId != expectedLocId) return false
+
+        // same auth so a 404 cannot be confused with an authorization problem
+        if (creator.auth.isDifferentFrom(follow.auth)) return false
+
+        val resCreator = actionResults.find { it.sourceLocalId == creator.getLocalId() } as RestCallResult?
+            ?: return false
+        val resFollow  = actionResults.find { it.sourceLocalId == follow.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // creator must have succeeded and returned a Location header
+        if (!StatusGroup.G_2xx.isInGroup(resCreator.getStatusCode())) return false
+        if (resCreator.getLocation().isNullOrBlank()) return false
+
+        // BUG: a GET on that Location returns 404
+        return resFollow.getStatusCode() == 404
+    }
+
     private fun parseFormBody(body: String): Map<String, String> {
         return body.split("&").mapNotNull { pair ->
             val parts = pair.split("=", limit = 2)

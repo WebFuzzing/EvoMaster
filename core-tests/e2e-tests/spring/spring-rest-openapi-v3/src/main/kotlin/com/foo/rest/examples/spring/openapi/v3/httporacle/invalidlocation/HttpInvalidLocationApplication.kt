@@ -38,11 +38,14 @@ open class HttpInvalidLocationApplication {
         @PathVariable("id") id: Int
     ): ResponseEntity<Any> {
 
-        data[id] = "Data for $id"
+        val isNew = !data.containsKey(id)
+        data[id] = "$id"
 
         // bug: Location header points to a different id than the one
         // actually stored, so a follow-up GET on it will return 404
-        return ResponseEntity.status(201)
+
+        val status = if (isNew) 201 else 200
+        return ResponseEntity.status(status)
             .header("Location", "/api/resources/${id + 1000}")
             .build()
     }

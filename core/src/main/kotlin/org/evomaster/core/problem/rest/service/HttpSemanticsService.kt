@@ -122,6 +122,10 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         if(hasPhaseTimedOut()) return
         nonIdempotentPut()
+
+        if(hasPhaseTimedOut()) return
+        // – invalid location, leading to a 404 when doing a follow up GET
+        invalidLocation()
     }
 
     /**
@@ -550,6 +554,77 @@ class HttpSemanticsService : TimeBoxedPhase{
             ind.addMainActionInEmptyEnterpriseGroup(-1, get2)
 
             prepareEvaluateAndSave(ind)
+        }
+    }
+
+
+    /**
+     * HTTP_INVALID_LOCATION oracle: a POST/PUT that returns 2xx with a Location header
+     * must point to a resource that actually exists — a follow-up GET on that Location
+     * must not return 404.
+     *
+     * Sequence built:
+     *   [...]
+     *   POST|PUT /X  -> 2xx with Location header L
+     *   GET      L   -> oracle target: must NOT be 404
+     *
+     */
+    private fun invalidLocation() {
+
+        val creatorVerbs = listOf(HttpVerb.POST, HttpVerb.PUT)
+
+        for (verb in creatorVerbs) {
+
+            val creatorOps = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
+
+            creatorOps.forEach { creatorOp ->
+
+                if (hasPhaseTimedOut()) return
+
+                // GET endpoint to follow up on: same path (e.g. PUT /x/{id} -> GET /x/{id})
+                // or the closest descendant (e.g. POST /x -> GET /x/{id})
+                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == creatorOp.path }
+                    ?: actionDefinitions
+                        .filter { it.verb == HttpVerb.GET && creatorOp.path.isSameOrAncestorOf(it.path) }
+                        .minByOrNull { it.path.levels() }
+                    ?: return@forEach
+
+                // pick the smallest individual where this creator returned 2xx AND a Location
+                val candidate = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution, verb, creatorOp.path, statusGroup = StatusGroup.G_2xx
+                ).filter { ei ->
+                    ei.evaluatedMainActions().any { ea ->
+                        val a = ea.action as? RestCallAction ?: return@any false
+                        val r = ea.result as? RestCallResult ?: return@any false
+                        a.verb == verb && a.path.isEquivalent(creatorOp.path)
+                                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())
+                                && !r.getLocation().isNullOrBlank()
+                    }
+                }.minByOrNull { it.individual.size() } ?: return@forEach
+
+                val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    candidate, verb, creatorOp.path, statusGroup = StatusGroup.G_2xx
+                )
+
+                val creator = ind.seeMainExecutableActions().last()
+
+                // Build the follow-up GET and force Location chaining.
+                val getAction = getDef.copy() as RestCallAction
+                getAction.resetLocalIdRecursively()
+                if (getAction.isInitialized()) {
+                    getAction.seeTopGenes().forEach { it.randomize(randomness, false) }
+                } else {
+                    getAction.doInitialize(randomness)
+                }
+                getAction.auth = creator.auth
+                getAction.forceNewTaints()
+
+                creator.saveAndLinkLocationTo(getAction)
+
+                ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
+
+                prepareEvaluateAndSave(ind)
+            }
         }
     }
 }
