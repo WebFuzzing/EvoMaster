@@ -11,6 +11,7 @@ import org.evomaster.core.problem.asyncapi.schema.AsyncAPIAccess
 import org.evomaster.core.problem.asyncapi.schema.AsyncAPISchema
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
@@ -26,6 +27,32 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
 
     companion object {
         private val log = LoggerFactory.getLogger(AsyncAPISampler::class.java)
+
+        /**
+         * M11-PR5 (testable helper): apply the oneOf round-robin floor to a
+         * single freshly-sampled [AsyncAPIAction]. Caller supplies the
+         * per-template `counters` map plus the template key so the cursor
+         * survives across sampler invocations. Returns the cursor value
+         * actually applied (useful for tests).
+         */
+        internal fun applyOneOfFloorForAction(
+            action: AsyncAPIAction,
+            counters: MutableMap<String, Int>,
+            templateKey: String
+        ): Int {
+            val choiceGenes = action.seeTopGenes()
+                .flatMap { it.flatView() }
+                .filterIsInstance<ChoiceGene<*>>()
+            if (choiceGenes.isEmpty()) return -1
+            val cursor = counters.merge(templateKey, 1) { acc, _ -> acc + 1 }!! - 1
+            choiceGenes.forEach { cg ->
+                val size = cg.getViewOfChildren().size
+                if (size > 1 && cursor < size) {
+                    cg.selectActiveGene(cursor % size)
+                }
+            }
+            return cursor
+        }
     }
 
     @Inject
@@ -41,6 +68,20 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
      * [initialize] time and copied per individual.
      */
     private val outputSubscribeTemplates = mutableListOf<AsyncAPIAction>()
+
+    /**
+     * M11-PR5: per-template sample counter used to floor `oneOf` / `anyOf`
+     * coverage. The default `ChoiceGene.randomize()` picks uniformly across
+     * variants, so with K variants and N samples the probability that some
+     * variant is *never* visited is `K * (1 - 1/K)^N` — meaningfully high
+     * when K is small and search budgets are tight (a 3-variant payload at
+     * 20 samples still misses one variant ≈8% of the time). The sampler
+     * overrides the random choice with a deterministic round-robin for the
+     * first K samples of each template, then yields to the EA's mutation +
+     * gene-randomisation pipeline. Keyed by operation key (one entry per
+     * channel-message-id, matching the builder's split granularity).
+     */
+    private val templateSampleCount = HashMap<String, Int>()
 
     var parsedSchema: AsyncAPISchema? = null
         private set
@@ -137,12 +178,17 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
         val maxActions = configuration.maxTestSize.coerceAtLeast(1)
         val length = randomness.nextInt(1, maxActions)
         val actions = mutableListOf<AsyncAPIAction>()
+        // M11-PR5: remember each fresh action's source template so the
+        // round-robin floor can key its counter off the same identifier the
+        // builder uses to split per-message-variant operation templates.
+        val perActionTemplateKey = mutableListOf<String>()
 
         repeat(length) {
             val opKey = randomness.choose(operationTemplates.keys.toList())
             val pair = operationTemplates[opKey]!!.map { it.copy() as AsyncAPIAction }
             // Pair was sampled fresh so gene state is independent.
             actions.addAll(pair)
+            repeat(pair.size) { perActionTemplateKey.add(opKey) }
             // Re-thread pairId through the copies so PUBLISH and SUBSCRIBE_REPLY
             // remain matched after the per-action copy().
             if (pair.size > 1) {
@@ -156,13 +202,41 @@ class AsyncAPISampler : ApiWsSampler<AsyncAPIIndividual>() {
         // PUBLISH so the listen-window brackets any events the SUT may emit.
         outputSubscribeTemplates.forEach { template ->
             actions.add(template.copy() as AsyncAPIAction)
+            perActionTemplateKey.add("__subscribe_output__:${template.channelName}")
         }
 
         actions.forEach { it.doInitialize(randomness) }
+        applyOneOfSamplingFloor(actions, perActionTemplateKey)
 
         val individual = AsyncAPIIndividual(SampleType.RANDOM, actions)
         individual.doGlobalInitialize(searchGlobalState)
         return individual
+    }
+
+    /**
+     * M11-PR5: for each freshly-sampled action whose gene tree contains
+     * `oneOf`/`anyOf` composition (= one or more [ChoiceGene]s), override
+     * the random variant pick with a deterministic round-robin until every
+     * variant has been visited at least once across that template's
+     * lifetime. After the floor is satisfied, the next sample's `randomize`
+     * pass is honoured unchanged.
+     *
+     * Round-robin uses `count % size`, so different ChoiceGenes within the
+     * same action (e.g. nested `oneOf` inside a property of a top-level
+     * `oneOf`) each cycle through their own variant set. Counters survive
+     * across `sampleAtRandom` calls so the structure-mutator's
+     * `appendRandomGroup` (which routes through this same path) keeps
+     * contributing to the floor instead of restarting.
+     */
+    private fun applyOneOfSamplingFloor(
+        actions: List<AsyncAPIAction>,
+        perActionTemplateKey: List<String>
+    ) {
+        actions.forEachIndexed { i, action ->
+            val key = perActionTemplateKey.getOrNull(i)
+                ?: "__unknown__:${action.getName()}"
+            applyOneOfFloorForAction(action, templateSampleCount, key)
+        }
     }
 
     override fun initSeededTests(infoDto: SutInfoDto?) {
