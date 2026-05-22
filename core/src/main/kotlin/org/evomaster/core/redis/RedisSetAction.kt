@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.string.StringGene
 
 /**
  * Represents a SET action, generated from a failed GET command.
+ * (failed meaning GET commands that return no data when executed).
  *
  * @param keyGene the new key to be inserted
  * @param valueGene gene representing the string value to insert

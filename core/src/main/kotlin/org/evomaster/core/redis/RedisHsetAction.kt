@@ -5,7 +5,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
 
 /**
- * Represents an HSET action, generated from a failed HGET or HGETALL command.
+ * Represents an HSET action, generated from a failed HGET or HGETALL command
+ * (failed meaning HGET or HGETALL commands that return no data when executed).
  *
  * <p>For HGET, [field] is the exact field observed in the failed command.
  * For HGETALL, [field] is a placeholder since the expected fields are unknown.

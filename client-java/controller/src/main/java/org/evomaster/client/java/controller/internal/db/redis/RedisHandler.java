@@ -150,7 +150,8 @@ public class RedisHandler {
                         args.get(1));
             }
             default:
-                throw new RuntimeException("Invalid command registering failed redis commands.");
+                throw new RuntimeException(
+                        "Invalid command registering failed redis commands. Type encountered: " + type);
         }
     }
 
