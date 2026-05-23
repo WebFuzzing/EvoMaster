@@ -1,6 +1,10 @@
 package org.evomaster.core.problem.asyncapi.broker
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.rabbitmq.client.AMQP
+import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
@@ -9,8 +13,12 @@ import com.rabbitmq.client.Envelope
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * AMQP 0-9-1 (RabbitMQ) backing for [MessageBrokerClient].
@@ -38,8 +46,50 @@ class AmqpBrokerClient(
     private val connectionFactory: ConnectionFactory = ConnectionFactory()
 ) : MessageBrokerClient {
 
+    /**
+     * Wire-format envelope strategies the AMQP client knows about.
+     *
+     * - [NONE]: AsyncAPI channel is treated as a routing key on the default
+     *   exchange, payload published and received verbatim. The starter slice
+     *   for M11-PR9 and the convention every JSON-Schema-based bookworm-free
+     *   SUT in the corpus is wired against.
+     * - [MASSTRANSIT]: the AsyncAPI channel is treated as a *MassTransit
+     *   fanout exchange name* (per-message-type), and every publish wraps the
+     *   payload in `{messageId, messageType: ["urn:message:<channel>"],
+     *   message: <inner>}` with content-type
+     *   `application/vnd.masstransit+json`. On receive, the envelope is
+     *   unwrapped before being handed back to the caller. Required to drive
+     *   .NET MassTransit consumers (bookworm trio) — without this they
+     *   silently skip every message because the bytes don't match the
+     *   serializer's expected shape.
+     */
+    enum class EnvelopeStrategy {
+        NONE, MASSTRANSIT;
+
+        companion object {
+            /**
+             * Map an AsyncAPI document's `defaultContentType` to an envelope
+             * strategy. Unknown / null content types fall back to [NONE].
+             *
+             * Only the document-level field is consulted today; per-message
+             * content-type overrides are an M12 follow-up if a corpus member
+             * ever mixes envelopes within one schema.
+             */
+            fun fromContentType(contentType: String?): EnvelopeStrategy {
+                val ct = contentType?.trim()?.lowercase() ?: return NONE
+                return when {
+                    ct.startsWith("application/vnd.masstransit+json") -> MASSTRANSIT
+                    else -> NONE
+                }
+            }
+        }
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(AmqpBrokerClient::class.java)
+        private val threadCounter = AtomicLong(0)
+        private val mapper = ObjectMapper()
+        private const val MASSTRANSIT_CONTENT_TYPE = "application/vnd.masstransit+json"
 
         /**
          * Resolve [bootstrapUri] into a `URI` the RabbitMQ client accepts.
@@ -53,6 +103,28 @@ class AmqpBrokerClient(
                 URI.create(trimmed)
             } else {
                 URI.create("amqp://$trimmed")
+            }
+        }
+
+        /**
+         * Build a daemon ThreadFactory. The default amqp-client
+         * threads (the I/O thread, the consumer worker pool, the
+         * heartbeat sender) are non-daemon, which means the JVM
+         * waits for them on shutdown even after `Connection.close()`
+         * has been called and the application's main thread has
+         * returned. EvoMaster's harness sees that as a process
+         * that completes the search successfully but then hangs
+         * indefinitely between SUTs in a sweep.
+         *
+         * Forcing daemon threads lets the JVM exit cleanly as soon
+         * as the main thread is done; the AMQP broker connection
+         * dies with the process. Acceptable for a fuzzer-side
+         * client where reconnects between actions are routed through
+         * a fresh AmqpBrokerClient per fitness evaluation anyway.
+         */
+        private fun daemonThreadFactory(prefix: String): ThreadFactory = ThreadFactory { r ->
+            Thread(r, "$prefix-${threadCounter.incrementAndGet()}").apply {
+                isDaemon = true
             }
         }
     }
@@ -69,10 +141,45 @@ class AmqpBrokerClient(
     private val subscriptions = HashMap<String, Subscription>()
     private var closed = false
 
+    /**
+     * Envelope strategy in effect for publishes and receives. Set once via
+     * [configureContentType] during fitness setup; defaults to [EnvelopeStrategy.NONE]
+     * so unconfigured clients (older tests, runs against non-MassTransit SUTs)
+     * keep the M11-PR9 default-exchange behaviour.
+     *
+     * Public so unit tests can configure the strategy directly without parsing
+     * an AsyncAPI document.
+     */
+    var envelopeStrategy: EnvelopeStrategy = EnvelopeStrategy.NONE
+
+    /**
+     * Adopt the envelope strategy implied by the AsyncAPI document's
+     * `defaultContentType`. Idempotent — calling with the same content type
+     * twice is a no-op; conflicting calls log a warning and keep the last
+     * value (lets per-test overrides win over schema auto-detection).
+     */
+    override fun configureContentType(defaultContentType: String?) {
+        val resolved = EnvelopeStrategy.fromContentType(defaultContentType)
+        if (resolved != envelopeStrategy) {
+            log.debug(
+                "AMQP envelope strategy {} -> {} (defaultContentType={})",
+                envelopeStrategy, resolved, defaultContentType
+            )
+            envelopeStrategy = resolved
+        }
+    }
+
     override fun connect() {
         if (connection != null) return
         val uri = resolveUri(bootstrapUri)
         connectionFactory.setUri(uri)
+        // Force daemon I/O + consumer worker threads so the JVM can
+        // exit cleanly when the engine finishes. See [daemonThreadFactory]
+        // for the rationale.
+        connectionFactory.threadFactory = daemonThreadFactory("evm-amqp-io")
+        connectionFactory.setSharedExecutor(
+            Executors.newCachedThreadPool(daemonThreadFactory("evm-amqp-worker"))
+        )
         connection = connectionFactory.newConnection("evomaster-asyncapi")
         channel = connection!!.createChannel()
     }
@@ -94,19 +201,110 @@ class AmqpBrokerClient(
             // header (e.g. evm-correlation-id) get the same map as
             // for Kafka.
             val headerTable = headers.mapValues { (_, v) -> String(v, StandardCharsets.UTF_8) }
+
+            val (exchange, routingKey, finalPayload, contentType) = when (envelopeStrategy) {
+                EnvelopeStrategy.NONE -> {
+                    // Default exchange ("") + channel as routing key.
+                    PublishWire("", channel, payload, "application/json")
+                }
+                EnvelopeStrategy.MASSTRANSIT -> {
+                    // MassTransit publishes to a per-message-type fanout
+                    // exchange named after the message type (= the AsyncAPI
+                    // channel address). Routing key is unused for fanout.
+                    // The exchange must exist before publishing; we declare
+                    // it idempotently so we don't depend on the SUT having
+                    // booted first.
+                    ensureFanoutExchange(channel)
+                    val envelope = wrapMassTransit(channel, payload)
+                    PublishWire(channel, "", envelope, MASSTRANSIT_CONTENT_TYPE)
+                }
+            }
+
             val props = AMQP.BasicProperties.Builder()
-                .contentType("application/json")
+                .contentType(contentType)
                 .headers(headerTable)
                 .build()
-            // Default exchange ("") + channel as routing key.
-            this.channel!!.basicPublish("", channel, props, payload)
+            this.channel!!.basicPublish(exchange, routingKey, props, finalPayload)
             MessageBrokerClient.PublishOutcome.Sent(
-                mapOf("routingKey" to channel, "bytes" to payload.size.toString())
+                mapOf(
+                    "exchange" to exchange,
+                    "routingKey" to routingKey,
+                    "bytes" to finalPayload.size.toString(),
+                    "envelope" to envelopeStrategy.name
+                )
             )
         } catch (e: Exception) {
             log.warn("AMQP publish to {} failed: {}", channel, e.message)
             MessageBrokerClient.PublishOutcome.Failed(e.message ?: e.javaClass.simpleName)
         }
+    }
+
+    private data class PublishWire(
+        val exchange: String,
+        val routingKey: String,
+        val payload: ByteArray,
+        val contentType: String
+    )
+
+    /**
+     * Wrap [innerPayload] in the MassTransit envelope. The `messageType` URN
+     * is derived from the AsyncAPI channel address: MassTransit's convention
+     * (`urn:message:<Namespace>:<TypeName>`) lines up with the BookWorm
+     * schemas' channel naming (`BookWorm.Contracts:BasketDeletedFailed...`),
+     * so the same string serves both roles.
+     *
+     * The inner payload is parsed as JSON and re-emitted nested. If parsing
+     * fails (caller passed non-JSON bytes), the envelope falls back to a
+     * string field — defensive, the engine shouldn't be doing that.
+     */
+    internal fun wrapMassTransit(channel: String, innerPayload: ByteArray): ByteArray {
+        val envelope: ObjectNode = mapper.createObjectNode().apply {
+            put("messageId", UUID.randomUUID().toString())
+            putArray("messageType").add("urn:message:$channel")
+            val parsed: JsonNode? = try {
+                mapper.readTree(innerPayload)
+            } catch (e: Exception) {
+                log.debug("MassTransit wrap: inner payload not parseable as JSON: {}", e.message)
+                null
+            }
+            if (parsed != null) {
+                set<JsonNode>("message", parsed)
+            } else {
+                put("message", String(innerPayload, StandardCharsets.UTF_8))
+            }
+        }
+        return mapper.writeValueAsBytes(envelope)
+    }
+
+    /**
+     * Unwrap a received MassTransit envelope, returning the inner `message`
+     * payload bytes. If the bytes aren't a recognisable envelope (e.g. the
+     * SUT published a raw payload despite the document declaring MassTransit
+     * content type), the original bytes are returned unchanged. This lets
+     * unit tests assert on observable behaviour rather than crashing.
+     */
+    internal fun unwrapMassTransit(envelope: ByteArray): ByteArray {
+        return try {
+            val node = mapper.readTree(envelope)
+            val message = node.get("message")
+            when {
+                message == null -> envelope
+                message.isTextual -> message.asText().toByteArray(StandardCharsets.UTF_8)
+                else -> mapper.writeValueAsBytes(message)
+            }
+        } catch (e: Exception) {
+            log.debug("MassTransit unwrap: bytes not a JSON envelope: {}", e.message)
+            envelope
+        }
+    }
+
+    private fun ensureFanoutExchange(name: String) {
+        // Declare an exchange that matches MassTransit's defaults: durable,
+        // not auto-delete (MassTransit's consumers re-declare exchanges with
+        // the same args; mismatched declarations fail with 406 PRECONDITION_FAILED).
+        // We use BuiltinExchangeType.FANOUT to mirror MassTransit's per-message-type
+        // exchange topology.
+        this.channel!!.exchangeDeclare(name, BuiltinExchangeType.FANOUT, true, false, null)
     }
 
     override fun awaitFirstMatching(
@@ -157,36 +355,40 @@ class AmqpBrokerClient(
     }
 
     @Synchronized
-    private fun ensureSubscribed(routingKey: String): Subscription {
-        subscriptions[routingKey]?.let { return it }
+    private fun ensureSubscribed(channelAddress: String): Subscription {
+        subscriptions[channelAddress]?.let { return it }
         val ch = channel!!
-        // queueDeclare("", false, true, true, null) → server-named,
-        // non-durable, exclusive, auto-delete. Lives as long as the
-        // connection. Bound to the default exchange by the same name,
-        // so messages published with routingKey=<queueName> land here.
-        val declared = ch.queueDeclare()
-        val serverName = declared.queue
-        // Bind our server-named queue to the routing key the engine
-        // uses. The default exchange auto-binds by queue name, so we
-        // also publish on a queue named after the routing key — to
-        // receive copies of *both* what the SUT publishes (which goes
-        // to a queue named after the same routing key, picked up by
-        // our own queue if we set up a fan-out) AND what we publish
-        // ourselves (so the test can self-observe). The starter slice
-        // accepts that this only catches messages the SUT publishes
-        // to the *default* exchange; named-exchange routing is a
-        // follow-up.
-        // For now: declare the routing-key queue (idempotent) and
-        // consume from it directly. This matches the bookworm SUTs'
-        // convention of using the default exchange.
-        try {
-            ch.queueDeclare(routingKey, false, false, true, null)
-        } catch (e: Exception) {
-            // Queue may already exist with conflicting properties;
-            // fall back to consuming whatever's there.
-            log.debug("AMQP queueDeclare for routing key {} fell back: {}", routingKey, e.message)
+
+        val queueName: String = when (envelopeStrategy) {
+            EnvelopeStrategy.NONE -> {
+                // Default-exchange routing: declare a queue named after the
+                // channel address (idempotent). The default exchange auto-binds
+                // by queue name, so messages published with routingKey=<name>
+                // land here. Matches M11-PR9's starter behaviour.
+                try {
+                    ch.queueDeclare(channelAddress, false, false, true, null)
+                } catch (e: Exception) {
+                    log.debug(
+                        "AMQP queueDeclare for routing key {} fell back: {}",
+                        channelAddress, e.message
+                    )
+                }
+                channelAddress
+            }
+            EnvelopeStrategy.MASSTRANSIT -> {
+                // MassTransit topology: the channel address is a per-message-type
+                // fanout exchange. We need a server-named exclusive queue bound
+                // to that exchange so we receive every message the SUT publishes
+                // to it (and any we publish ourselves for self-observation).
+                ensureFanoutExchange(channelAddress)
+                val declared = ch.queueDeclare("", false, true, true, null)
+                ch.queueBind(declared.queue, channelAddress, "")
+                declared.queue
+            }
         }
+
         val incoming = ConcurrentLinkedQueue<ReceivedDelivery>()
+        val strategy = envelopeStrategy
         val consumer = object : DefaultConsumer(ch) {
             override fun handleDelivery(
                 consumerTag: String,
@@ -197,12 +399,16 @@ class AmqpBrokerClient(
                 val headerBytes = (properties.headers ?: emptyMap()).mapValues { (_, v) ->
                     v?.toString()?.toByteArray(StandardCharsets.UTF_8) ?: ByteArray(0)
                 }
-                incoming.add(ReceivedDelivery(body, headerBytes))
+                val effectiveBody = when (strategy) {
+                    EnvelopeStrategy.NONE -> body
+                    EnvelopeStrategy.MASSTRANSIT -> unwrapMassTransit(body)
+                }
+                incoming.add(ReceivedDelivery(effectiveBody, headerBytes))
             }
         }
-        ch.basicConsume(routingKey, true /* autoAck */, consumer)
-        val sub = Subscription(routingKey, incoming)
-        subscriptions[routingKey] = sub
+        ch.basicConsume(queueName, true /* autoAck */, consumer)
+        val sub = Subscription(queueName, incoming)
+        subscriptions[channelAddress] = sub
         return sub
     }
 

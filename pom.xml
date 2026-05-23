@@ -764,6 +764,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <!-- RabbitMQ via Testcontainers; used by the AsyncAPI AMQP broker IT (M11-PR9) -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>rabbitmq</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-remote-driver</artifactId>
                 <version>${selenium.version}</version>

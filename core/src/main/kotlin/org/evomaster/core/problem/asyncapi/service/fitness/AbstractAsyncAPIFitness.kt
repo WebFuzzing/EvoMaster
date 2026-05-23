@@ -367,6 +367,13 @@ abstract class AbstractAsyncAPIFitness : EnterpriseFitness<AsyncAPIIndividual>()
 
         try {
             broker.connect()
+            // Let the broker opt into transport-specific envelope conventions
+            // implied by the AsyncAPI document's defaultContentType (e.g.
+            // MassTransit's `{messageId, messageType[], message}` wrapping
+            // for `application/vnd.masstransit+json`). No-op for brokers that
+            // don't care about content type. Idempotent: same value twice is
+            // a no-op.
+            broker.configureContentType(schema.defaultContentType)
         } catch (e: Exception) {
             log.warn("Could not connect to broker at runtime: {}", e.message)
             return null

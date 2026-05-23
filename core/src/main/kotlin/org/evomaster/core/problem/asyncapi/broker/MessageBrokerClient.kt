@@ -18,6 +18,20 @@ interface MessageBrokerClient : AutoCloseable {
     fun connect()
 
     /**
+     * Pass the AsyncAPI document's `defaultContentType` so the implementation
+     * can opt into transport-specific envelope conventions tied to the wire
+     * format (e.g. MassTransit's `{messageId, messageType[], message}` wrapping
+     * when the content type is `application/vnd.masstransit+json`).
+     *
+     * Idempotent. Implementations that don't care about the content type leave
+     * this as the default no-op. Called once during fitness setup, before the
+     * first [publish] / [awaitFirstMatching] / [collectAllWithin] call.
+     */
+    fun configureContentType(defaultContentType: String?) {
+        // default: no-op. AMQP overrides to detect MassTransit.
+    }
+
+    /**
      * Publish [payload] (UTF-8 JSON bytes for now) with the given key and
      * headers to [channel].  Returns when the broker has acknowledged delivery.
      */

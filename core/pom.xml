@@ -102,6 +102,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- M11-PR9: RabbitMQ via Testcontainers for AmqpBrokerClient IT -->
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>selenium</artifactId>
             <scope>compile</scope>
