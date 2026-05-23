@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.builder
 
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -14,20 +15,28 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.service.Randomness
 
 /**
  * Builds a JSON Patch document gene (RFC 6902).
  *
  * When [resourceSchema] is provided, paths and value gene types are derived from the schema.
- * Otherwise, random path strings are generated using [randomness] (or a fresh [Randomness]
- * if none is supplied), and both [StringGene] and [IntegerGene] are offered as value choices.
+ * Otherwise, a fixed deterministic default template is used: paths /a, /b, /c, /d with
+ * String, Integer, and Boolean value types.
  */
 object JsonPatchDocumentGeneBuilder {
 
     const val MIN_SIZE = 1
     const val DEFAULT_MAX_SIZE = 10
-    private const val RANDOM_PATH_COUNT = 4
+
+    const val FIELD_PATH = "path"
+    const val FIELD_FROM = "from"
+    const val FIELD_VALUE = "value"
+
+    private const val ENTRY_STRING = "entry_string"
+    private const val ENTRY_INT = "entry_int"
+    private const val ENTRY_BOOL = "entry_bool"
+
+    private val DEFAULT_PATHS = listOf("/a", "/b", "/c", "/d")
 
     /** A single patchable field extracted from a resource schema. */
     internal data class SchemaField(val path: String, val gene: Gene)
@@ -59,12 +68,11 @@ object JsonPatchDocumentGeneBuilder {
      * present in the ChoiceGene template.
      *
      * - If [resourceSchema] yields fields: paths and typed value genes come from the schema.
-     * - Otherwise: paths are generated randomly via [randomness] (a fresh [Randomness] is used
-     *   when none is supplied), and value choices are [StringGene] + [IntegerGene].
+     * - Otherwise: a fixed default set of paths (/a, /b, /c, /d) with String, Integer, and
+     *   Boolean value types is used. This keeps the builder fully deterministic.
      */
     fun buildOperationsArray(
-        resourceSchema: Gene? = null,
-        randomness: Randomness? = null
+        resourceSchema: Gene? = null
     ): ArrayGene<ChoiceGene<JsonPatchOperationGene>> {
 
         val schemaFields = resourceSchema?.let { extractSchemaFields(it) }.orEmpty()
@@ -72,7 +80,7 @@ object JsonPatchDocumentGeneBuilder {
         return if (schemaFields.isNotEmpty()) {
             buildFromSchemaFields(schemaFields)
         } else {
-            buildFromPaths(generateRandomPaths(randomness ?: Randomness()))
+            buildFromPaths(DEFAULT_PATHS)
         }
     }
 
@@ -80,19 +88,11 @@ object JsonPatchDocumentGeneBuilder {
     // private helpers
     // ---------------------------------------------------------------------------
 
-    private fun generateRandomPaths(randomness: Randomness): List<String> =
-        generateSequence { "/${randomness.nextWordString(2, 6)}" }
-            .take(RANDOM_PATH_COUNT * 2) // generate extra candidates so that after deduplication we still have RANDOM_PATH_COUNT distinct paths
-            .distinct()
-            .take(RANDOM_PATH_COUNT)
-            .toList()
-            .ifEmpty { listOf("/field") }
-
     private fun buildFromSchemaFields(
         fields: List<SchemaField>
     ): ArrayGene<ChoiceGene<JsonPatchOperationGene>> {
         val allPaths = fields.map { it.path }
-        val pathEnum = EnumGene<String>("path", allPaths)
+        val pathEnum = EnumGene<String>(FIELD_PATH, allPaths)
 
         val pathValueEntries: List<PairGene<EnumGene<String>, Gene>> =
             fields.groupBy { it.gene::class }
@@ -100,7 +100,7 @@ object JsonPatchDocumentGeneBuilder {
                 .mapIndexed { index, (_, group) ->
                     PairGene(
                         "entry_$index",
-                        EnumGene("path", group.map { it.path }),
+                        EnumGene(FIELD_PATH, group.map { it.path }),
                         group.first().gene.copy()
                     )
                 }
@@ -108,14 +108,15 @@ object JsonPatchDocumentGeneBuilder {
         return assemble(pathEnum, pathValueEntries)
     }
 
-    /** No-schema case: both [StringGene] and [IntegerGene] offered as value choices. */
+    /** No-schema case: String, Integer, and Boolean value types over the default fixed paths. */
     private fun buildFromPaths(
         paths: List<String>
     ): ArrayGene<ChoiceGene<JsonPatchOperationGene>> {
-        val pathEnum = EnumGene<String>("path", paths)
+        val pathEnum = EnumGene<String>(FIELD_PATH, paths)
         val entries = listOf<PairGene<EnumGene<String>, Gene>>(
-            PairGene("entry_string", pathEnum.copy() as EnumGene<String>, StringGene("value")),
-            PairGene("entry_int",    pathEnum.copy() as EnumGene<String>, IntegerGene("value"))
+            PairGene(ENTRY_STRING, pathEnum.copy() as EnumGene<String>, StringGene(FIELD_VALUE)),
+            PairGene(ENTRY_INT,    pathEnum.copy() as EnumGene<String>, IntegerGene(FIELD_VALUE)),
+            PairGene(ENTRY_BOOL,   pathEnum.copy() as EnumGene<String>, BooleanGene(FIELD_VALUE))
         )
         return assemble(pathEnum, entries)
     }

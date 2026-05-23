@@ -1,7 +1,9 @@
 package org.evomaster.core.search.gene.jsonpatch
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**
  * JSON Patch operation gene for operations that require "op", "from", and "path" fields.
@@ -18,6 +20,20 @@ class JsonPatchFromPathGene(
         require(operationName == JsonPatchOperationGene.OP_MOVE || operationName == JsonPatchOperationGene.OP_COPY) {
             "JsonPatchFromPathGene only supports 'move' or 'copy', got: $operationName"
         }
+    }
+
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
+        val from = fromGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+        val path = pathGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+        return if (mode == GeneUtils.EscapeMode.XML)
+            "<operation><op>$operationName</op><from>$from</from><path>$path</path></operation>"
+        else
+            "{\"op\":\"$operationName\",\"from\":$from,\"path\":$path}"
     }
 
     override fun copyContent(): Gene =

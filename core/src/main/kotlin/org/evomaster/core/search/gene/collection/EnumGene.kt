@@ -225,7 +225,7 @@ class EnumGene<T : Comparable<T>>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val res = values[index]
-        if (res is String && !treatAsNotString) {
+        if (res is String && !treatAsNotString && mode != GeneUtils.EscapeMode.XML) {
             return "\"$res\""
         } else {
             return res.toString()

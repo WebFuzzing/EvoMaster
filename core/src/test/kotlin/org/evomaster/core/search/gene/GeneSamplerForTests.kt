@@ -6,8 +6,10 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
+import org.evomaster.core.search.gene.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
@@ -994,26 +996,26 @@ object GeneSamplerForTests {
 
     private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
         val name = "rand JsonPatchPathOnlyGene ${rand.nextInt()}"
-        return JsonPatchPathOnlyGene(name, "remove", EnumGene("path", randomPaths(rand)))
+        return JsonPatchPathOnlyGene(name, JsonPatchOperationGene.OP_REMOVE, EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand)))
     }
 
     private fun sampleJsonPatchFromPathGene(rand: Randomness): JsonPatchFromPathGene {
-        val operationName = rand.choose(listOf("move", "copy"))
+        val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_COPY))
         val name = "rand JsonPatchFromPathGene ${rand.nextInt()}"
         return JsonPatchFromPathGene(
             name, operationName,
-            fromGene = EnumGene("from", randomPaths(rand)),
-            pathGene  = EnumGene("path", randomPaths(rand))
+            fromGene = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_FROM, randomPaths(rand)),
+            pathGene  = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand))
         )
     }
 
     private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
-        val operationName = rand.choose(listOf("add", "replace", "test"))
+        val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST))
         val name = "rand JsonPatchPathValueGene ${rand.nextInt()}"
         val selection = jsonPatchSelection()
         val entry = PairGene(
             "entry_0",
-            EnumGene<String>("path", randomPaths(rand)),
+            EnumGene<String>(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand)),
             samplePrintableTemplate(selection, rand)
         )
         return JsonPatchPathValueGene(name, operationName, ChoiceGene("${operationName}PathValue", listOf(entry)))

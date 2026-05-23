@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.builder
 
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
@@ -12,13 +13,10 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class JsonPatchDocumentGeneBuilderTest {
-
-    private val rand = Randomness().apply { updateSeed(42) }
 
     // -------------------------------------------------------------------------
     // buildOperationsArray — structure
@@ -26,39 +24,39 @@ class JsonPatchDocumentGeneBuilderTest {
 
     @Test
     fun testBuildOperationsArrayDoesNotThrow() {
-        assertDoesNotThrow { JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand) }
+        assertDoesNotThrow { JsonPatchDocumentGeneBuilder.buildOperationsArray() }
     }
 
     @Test
     fun testBuildOperationsArrayProduces6Choices() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(6, array.template.getViewOfChildren().size)
     }
 
     @Test
     fun testBuildOperationsArrayMinSizeIs1() {
         assertEquals(JsonPatchDocumentGeneBuilder.MIN_SIZE,
-            JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand).minSize)
+            JsonPatchDocumentGeneBuilder.buildOperationsArray().minSize)
     }
 
     @Test
     fun testBuildOperationsArrayMaxSizeIs10() {
         assertEquals(JsonPatchDocumentGeneBuilder.DEFAULT_MAX_SIZE,
-            JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand).maxSize)
+            JsonPatchDocumentGeneBuilder.buildOperationsArray().maxSize)
     }
 
     @Test
     fun testBuildOperationsArrayTemplateIsChoiceGene() {
         assertInstanceOf(ChoiceGene::class.java,
-            JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand).template)
+            JsonPatchDocumentGeneBuilder.buildOperationsArray().template)
     }
 
     // -------------------------------------------------------------------------
     // buildOperationsArray — operation order and types
     // -------------------------------------------------------------------------
 
-    private fun children(randomness: Randomness = rand): List<JsonPatchOperationGene> =
-        JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = randomness)
+    private fun children(): List<JsonPatchOperationGene> =
+        JsonPatchDocumentGeneBuilder.buildOperationsArray()
             .template.getViewOfChildren().map { it as JsonPatchOperationGene }
 
     @Test
@@ -104,56 +102,46 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     // -------------------------------------------------------------------------
-    // buildOperationsArray — random paths (no schema)
+    // buildOperationsArray — default paths (no schema)
     // -------------------------------------------------------------------------
 
     @Test
-    fun testRandomPathsAllStartWithSlash() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+    fun testDefaultPathsAllStartWithSlash() {
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
         val paths = (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
         assertTrue(paths.all { it.startsWith("/") }, "All paths must start with '/': $paths")
     }
 
     @Test
-    fun testRandomPathsAreNonEmpty() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+    fun testDefaultPathsAreNonEmpty() {
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
         assertTrue((removeOp.pathGene as EnumGene<*>).values.isNotEmpty())
     }
 
     @Test
-    fun testRandomPathsAreDistinct() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+    fun testDefaultPathsAreDeterministic() {
+        val paths1 = (JsonPatchDocumentGeneBuilder.buildOperationsArray()
+            .template.getViewOfChildren()[0] as JsonPatchPathOnlyGene)
+            .pathGene.values.map { it.toString() }
+        val paths2 = (JsonPatchDocumentGeneBuilder.buildOperationsArray()
+            .template.getViewOfChildren()[0] as JsonPatchPathOnlyGene)
+            .pathGene.values.map { it.toString() }
+        assertEquals(paths1, paths2, "Default paths must be deterministic across calls")
+    }
+
+    @Test
+    fun testDefaultPathsAreDistinct() {
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
         val paths = (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
         assertEquals(paths.size, paths.distinct().size, "Paths must be distinct: $paths")
     }
 
     @Test
-    fun testDifferentSeedsProduceDifferentPaths() {
-        fun paths(seed: Long): List<String> {
-            val r = Randomness().apply { updateSeed(seed) }
-            val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = r)
-            val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
-            return (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
-        }
-        assertNotEquals(paths(1L), paths(999L),
-            "Different seeds should (almost certainly) produce different paths")
-    }
-
-    @Test
-    fun testNoRandomnessArgumentStillProducesValidPaths() {
+    fun testDefaultPathsConsistentAcrossAllOps() {
         val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
-        val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
-        val paths = (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
-        assertTrue(paths.isNotEmpty() && paths.all { it.startsWith("/") },
-            "Paths must be valid even without explicit randomness: $paths")
-    }
-
-    @Test
-    fun testRandomPathsConsistentAcrossAllOps() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
         val removePaths = ((array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene)
             .pathGene as EnumGene<*>).values.map { it.toString() }.sorted()
         val addEntry = (array.template.getViewOfChildren()[3] as JsonPatchPathValueGene)
@@ -163,27 +151,8 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     // -------------------------------------------------------------------------
-    // buildOperationsArray — dual value types (StringGene + IntegerGene)
+    // buildOperationsArray — value types (String + Integer + Boolean)
     // -------------------------------------------------------------------------
-
-    @Test
-    fun testPathValueOperationsHoldTwoPairGeneEntries() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
-        for (idx in 3..5) {
-            val op = array.template.getViewOfChildren()[idx] as JsonPatchPathValueGene
-            assertEquals(2, op.pathValueChoice.getViewOfChildren().size,
-                "Expected StringGene + IntegerGene entries for op at index $idx")
-        }
-    }
-
-    @Test
-    fun testPathValueEntryFirstIsEnumGeneNamedPath() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
-        val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
-        val entry = addOp.pathValueChoice.getViewOfChildren()[0] as PairGene<*, *>
-        assertInstanceOf(EnumGene::class.java, entry.first)
-        assertEquals("path", entry.first.name)
-    }
 
     @Test
     fun testDefaultBuildHasStringGeneEntry() {
@@ -200,14 +169,31 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun testAllPathValueOpsHaveBothValueTypes() {
+    fun testDefaultBuildHasBooleanGeneEntry() {
+        val addOp = children()[3] as JsonPatchPathValueGene
+        val entries = addOp.pathValueChoice.getViewOfChildren().map { it as PairGene<*, *> }
+        assertTrue(entries.any { it.second is BooleanGene }, "Expected at least one BooleanGene value entry")
+    }
+
+    @Test
+    fun testAllPathValueOpsHaveAllThreeValueTypes() {
         val ops = children()
         for (idx in 3..5) {
             val op = ops[idx] as JsonPatchPathValueGene
             val seconds = op.pathValueChoice.getViewOfChildren().map { (it as PairGene<*, *>).second }
             assertTrue(seconds.any { it is StringGene },  "op[$idx] missing StringGene entry")
             assertTrue(seconds.any { it is IntegerGene }, "op[$idx] missing IntegerGene entry")
+            assertTrue(seconds.any { it is BooleanGene }, "op[$idx] missing BooleanGene entry")
         }
+    }
+
+    @Test
+    fun testPathValueEntryFirstIsEnumGeneNamedPath() {
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
+        val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
+        val entry = addOp.pathValueChoice.getViewOfChildren()[0] as PairGene<*, *>
+        assertInstanceOf(EnumGene::class.java, entry.first)
+        assertEquals(JsonPatchDocumentGeneBuilder.FIELD_PATH, entry.first.name)
     }
 
     @Test
@@ -216,7 +202,7 @@ class JsonPatchDocumentGeneBuilderTest {
         val entries = addOp.pathValueChoice.getViewOfChildren().map { it as PairGene<*, *> }
         val pathsFirst  = (entries[0].first as EnumGene<*>).values.map { it.toString() }.sorted()
         val pathsSecond = (entries[1].first as EnumGene<*>).values.map { it.toString() }.sorted()
-        assertEquals(pathsFirst, pathsSecond, "Both entries must cover the same set of paths")
+        assertEquals(pathsFirst, pathsSecond, "All entries must cover the same set of paths")
     }
 
     // -------------------------------------------------------------------------
@@ -327,9 +313,51 @@ class JsonPatchDocumentGeneBuilderTest {
     }
 
     @Test
-    fun testEmptySchemaFallsBackToRandomPaths() {
+    fun testSchemaGroupsMultipleStringPathsIntoOneEntry() {
+        val schema = ObjectGene("body", listOf(
+            StringGene("name"), StringGene("desc"), IntegerGene("age")
+        ))
+        val addOp = schemaChildren(schema)[3] as JsonPatchPathValueGene
+        val entries = addOp.pathValueChoice.getViewOfChildren().map { it as PairGene<*, *> }
+
+        val stringEntry = entries.first { it.second is StringGene }
+        val stringPaths = (stringEntry.first as EnumGene<*>).values.map { it.toString() }
+
+        assertTrue("/name" in stringPaths, "Expected /name in string group: $stringPaths")
+        assertTrue("/desc" in stringPaths, "Expected /desc in string group: $stringPaths")
+        assertFalse("/age" in stringPaths, "Expected /age not in string group: $stringPaths")
+    }
+
+    @Test
+    fun testSchemaMultipleIntegerPathsGroupedIntoOneEntry() {
+        val schema = ObjectGene("body", listOf(
+            IntegerGene("count"), IntegerGene("total"), StringGene("label")
+        ))
+        val addOp = schemaChildren(schema)[3] as JsonPatchPathValueGene
+        val entries = addOp.pathValueChoice.getViewOfChildren().map { it as PairGene<*, *> }
+
+        val intEntry = entries.first { it.second is IntegerGene }
+        val intPaths = (intEntry.first as EnumGene<*>).values.map { it.toString() }
+
+        assertTrue("/count" in intPaths, "Expected /count in integer group: $intPaths")
+        assertTrue("/total" in intPaths, "Expected /total in integer group: $intPaths")
+        assertFalse("/label" in intPaths, "Expected /label not in integer group: $intPaths")
+    }
+
+    @Test
+    fun testSchemaAllPathsInSameTypeProduceOneEntry() {
+        val schema = ObjectGene("body", listOf(
+            StringGene("a"), StringGene("b"), StringGene("c")
+        ))
+        val addOp = schemaChildren(schema)[3] as JsonPatchPathValueGene
+        assertEquals(1, addOp.pathValueChoice.getViewOfChildren().size,
+            "All same-type paths must be grouped into a single entry")
+    }
+
+    @Test
+    fun testEmptySchemaFallsBackToDefaultPaths() {
         val schema = ObjectGene("body", emptyList())
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema = schema, randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema = schema)
         val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
         val paths = (removeOp.pathGene as EnumGene<*>).values.map { it.toString() }
         assertTrue(paths.isNotEmpty() && paths.all { it.startsWith("/") })

@@ -209,6 +209,30 @@ class JsonPatchDocumentGeneTest {
         assertEquals("<operation><op>add</op><path>/name</path><value>Alice</value></operation>", result)
     }
 
+    @Test
+    fun testAddOperationWithIntValueJsonFormat() {
+        val op = JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_ADD,
+            ChoiceGene("addPathValue", listOf(
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/age")), IntegerGene("value", 42))
+            ))
+        )
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"add\",\"path\":\"/age\",\"value\":42}", result)
+    }
+
+    @Test
+    fun testReplaceOperationJsonFormat() {
+        val op = JsonPatchPathValueGene(
+            JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_REPLACE,
+            ChoiceGene("replacePathValue", listOf(
+                PairGene<EnumGene<String>, Gene>("e", EnumGene("path", listOf("/status")), StringGene("value", "active"))
+            ))
+        )
+        val result = op.getValueAsPrintableString()
+        assertEquals("{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"active\"}", result)
+    }
+
     // --- copy ---
 
     @Test
@@ -305,30 +329,6 @@ class JsonPatchDocumentGeneTest {
         assertTrue(seenOps.size > 1, "Expected multiple operation types, got: $seenOps")
     }
 
-    // --- constructor with randomness ---
-
-    @Test
-    fun testRandomnessConstructorProducesValidDoc() {
-        val rand = Randomness().apply { updateSeed(77) }
-        val d = JsonPatchDocumentGene("patch", randomness = rand)
-        d.doInitialize(rand)
-        val result = d.getValueAsPrintableString()
-        assertTrue(result.startsWith("[") && result.endsWith("]"),
-            "Doc built with randomness must still be a valid JSON array: $result")
-    }
-
-    @Test
-    fun testRandomnessConstructorPathsDifferFromDefaults() {
-        val rand = Randomness().apply { updateSeed(77) }
-        val d = JsonPatchDocumentGene("patch", randomness = rand)
-        // inspect the template's remove operation path enum before doInitialize
-        val array = d.getViewOfChildren()[0] as org.evomaster.core.search.gene.collection.ArrayGene<*>
-        val removeOp = array.template.getViewOfChildren()[0] as JsonPatchPathOnlyGene
-        val paths = (removeOp.pathGene as org.evomaster.core.search.gene.collection.EnumGene<*>).values.map { it.toString() }
-        assertTrue(paths.isNotEmpty() && paths.all { it.startsWith("/") },
-            "Random paths must be non-empty and start with '/': $paths")
-    }
-
     // --- full document print (JSON and XML) ---
 
     @Test
@@ -336,18 +336,15 @@ class JsonPatchDocumentGeneTest {
         val d = doc()
         val result = d.getValueAsPrintableString()
 
-        // outer array brackets
         assertTrue(result.startsWith("["), "Expected '[' at start, got: $result")
         assertTrue(result.endsWith("]"), "Expected ']' at end, got: $result")
 
-        // strip brackets and split on operation boundaries to get individual objects
         val inner = result.removeSurrounding("[", "]")
         val opPattern = Regex("""\{"op":"[^"]+"""")
         val matches = opPattern.findAll(inner).toList()
         assertEquals(d.operations.size, matches.size,
             "Number of {\"op\":...} objects should equal operations.size. Got: $result")
 
-        // every element must be a JSON object (starts with { ends with })
         val elementPattern = Regex("""^\[(\{"op":"[^"]+"[^}]*\})(, \{"op":"[^"]+"[^}]*\})*\]$""")
         assertTrue(elementPattern.containsMatchIn(result),
             "Full document JSON should be [ {op1}, {op2}, ... ], got: $result")
@@ -358,17 +355,14 @@ class JsonPatchDocumentGeneTest {
         val d = doc()
         val result = d.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
 
-        // must have a single <patch> root element
         assertTrue(result.startsWith("<patch>"), "XML output must start with '<patch>', got: $result")
         assertTrue(result.endsWith("</patch>"), "XML output must end with '</patch>', got: $result")
 
-        // every operation must be wrapped in <operation>...</operation>
         val tagPattern = Regex("""<operation><op>[^<]+</op>.*?</operation>""", RegexOption.DOT_MATCHES_ALL)
         val matches = tagPattern.findAll(result).toList()
         assertEquals(d.operations.size, matches.size,
             "Number of <operation> tags should equal operations.size. Got: $result")
 
-        // the inner content must be exactly the concatenation of operation tags
         val inner = result.removeSurrounding("<patch>", "</patch>")
         val fullPattern = Regex("""^(<operation><op>[^<]+</op>.*?</operation>)+$""", RegexOption.DOT_MATCHES_ALL)
         assertTrue(fullPattern.containsMatchIn(inner),
@@ -379,20 +373,20 @@ class JsonPatchDocumentGeneTest {
 
     @Test
     fun testTemplateContains6Choices() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(6, array.template.getViewOfChildren().size)
     }
 
     @Test
     fun testTemplateRespectsMinAndMaxSize() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         assertEquals(JsonPatchDocumentGene.MIN_SIZE, array.minSize)
         assertEquals(JsonPatchDocumentGene.DEFAULT_MAX_SIZE, array.maxSize)
     }
 
     @Test
     fun testPathValueOperationsHoldPairGeneEntries() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val children = array.template.getViewOfChildren()
         for (idx in 3..5) {
             val op = children[idx] as JsonPatchPathValueGene
@@ -408,7 +402,7 @@ class JsonPatchDocumentGeneTest {
 
     @Test
     fun testPathValueEntriesIncludeStringAndIntegerGene() {
-        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray(randomness = rand)
+        val array = JsonPatchDocumentGeneBuilder.buildOperationsArray()
         val addOp = array.template.getViewOfChildren()[3] as JsonPatchPathValueGene
         val entries = addOp.pathValueChoice.getViewOfChildren().map { it as PairGene<*, *> }
         assertTrue(entries.any { it.second is StringGene },  "Expected a StringGene value entry")

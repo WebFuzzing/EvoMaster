@@ -28,8 +28,8 @@ class JsonPatchDocumentGene private constructor(
     operationsArr: ArrayGene<ChoiceGene<JsonPatchOperationGene>>
 ) : CompositeFixedGene(name, listOf(operationsArr)) {
 
-    constructor(name: String, resourceSchema: Gene? = null, randomness: Randomness? = null)
-            : this(name, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema, randomness = randomness))
+    constructor(name: String, resourceSchema: Gene? = null)
+            : this(name, JsonPatchDocumentGeneBuilder.buildOperationsArray(resourceSchema))
 
     companion object {
         val MIN_SIZE get() = JsonPatchDocumentGeneBuilder.MIN_SIZE
