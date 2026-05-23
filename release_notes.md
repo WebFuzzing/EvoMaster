@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version 6.0.0
+
 ### Breaking Changes
 - Now the default mode for EvoMaster is black-box testing. 
   If you have workflows where you are running EvoMaster in white-box mode without specifying '--blackBox false', those will break. Now, you will need to explicitly set that option. 

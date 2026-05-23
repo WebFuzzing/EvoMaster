@@ -140,6 +140,7 @@ object GeneSamplerForTests {
             PatternCharacterBlockGene::class -> samplePatternCharacterBlock(rand) as T
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
+            BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -330,6 +331,7 @@ object GeneSamplerForTests {
                 .filter { !it.isAbstract }
                 .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java }
                 .filter { it.java != ArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+                .filter{ it.java != SqlPrimaryKeyGene::class.java }
         // TODO might filter out some more genes here
     }
 
@@ -414,6 +416,16 @@ object GeneSamplerForTests {
         return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
     }
 
+    fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
+        val captureGroup = sampleDisjunctionListRxGene(rand)
+        // as we do not allow to mutate the inner captureGroup gene using the backref gene we must first initialize it
+        captureGroup.doInitialize(rand)
+        return BackReferenceRxGene(
+            groupIndex = rand.nextInt(1, 99),
+            captureGroup = captureGroup
+        )
+    }
+
     fun sampleRegexGene(rand: Randomness): RegexGene {
         return RegexGene(
             name = "rand RegexGene",
@@ -458,7 +470,8 @@ object GeneSamplerForTests {
                 .filter { it.isSubclassOf(RxTerm::class) }
                 //let's avoid huge trees...
                 .filter {
-                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java)
+                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
+                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
                             || rand.nextBoolean()
                 }
 
