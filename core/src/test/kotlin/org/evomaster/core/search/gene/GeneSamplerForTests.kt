@@ -999,7 +999,7 @@ object GeneSamplerForTests {
 
     private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
         val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST))
-        val pathEnum = EnumGene<String>(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        val pathEnum = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
         val entry = PairGene<EnumGene<String>, Gene>(
             JsonPatchDocumentGeneBuilder.ENTRY_STRING,
             pathEnum,
