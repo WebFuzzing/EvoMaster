@@ -32,11 +32,11 @@ object JsonPatchDocumentGeneBuilder {
     const val FIELD_FROM = "from"
     const val FIELD_VALUE = "value"
 
-    private const val ENTRY_STRING = "entry_string"
+    const val ENTRY_STRING = "entry_string"
     private const val ENTRY_INT = "entry_int"
     private const val ENTRY_BOOL = "entry_bool"
 
-    private val DEFAULT_PATHS = listOf("/a", "/b", "/c", "/d")
+    val DEFAULT_PATHS = listOf("/a", "/b", "/c", "/d")
 
     /** A single patchable field extracted from a resource schema. */
     internal data class SchemaField(val path: String, val gene: Gene)

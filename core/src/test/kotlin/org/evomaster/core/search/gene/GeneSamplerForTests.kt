@@ -975,50 +975,41 @@ object GeneSamplerForTests {
         }
     }
 
-    private fun jsonPatchSelection(): List<KClass<out Gene>> {
-        return selectionForArrayTemplate()
-            .filter { it.java != SqlRangeGene::class.java }
-            .filter { it.java != SqlMultiRangeGene::class.java }
-            .filter { it.java != TaintedArrayGene::class.java }
-            .filter { it.java != TaintedMapGene::class.java }
-            .filter { it.java != ChoiceGene::class.java }
-            .filter { it.java.`package`?.name?.contains("jsonpatch") != true }
-    }
-
-    private fun randomPaths(rand: Randomness): List<String> {
-        val n = rand.nextInt(1, 5)
-        return (1..n).map { "/" + rand.nextWordString() }
-    }
-
     private fun sampleJsonPatchDocumentGene(rand: Randomness): JsonPatchDocumentGene {
         return JsonPatchDocumentGene("rand JsonPatchDocumentGene ${rand.nextInt()}")
     }
 
     private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
-        val name = "rand JsonPatchPathOnlyGene ${rand.nextInt()}"
-        return JsonPatchPathOnlyGene(name, JsonPatchOperationGene.OP_REMOVE, EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand)))
+        return JsonPatchPathOnlyGene(
+            "rand JsonPatchPathOnlyGene ${rand.nextInt()}",
+            JsonPatchOperationGene.OP_REMOVE,
+            EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        )
     }
 
     private fun sampleJsonPatchFromPathGene(rand: Randomness): JsonPatchFromPathGene {
         val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_COPY))
-        val name = "rand JsonPatchFromPathGene ${rand.nextInt()}"
         return JsonPatchFromPathGene(
-            name, operationName,
-            fromGene = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_FROM, randomPaths(rand)),
-            pathGene  = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand))
+            "rand JsonPatchFromPathGene ${rand.nextInt()}",
+            operationName,
+            fromGene = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_FROM, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS),
+            pathGene  = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
         )
     }
 
     private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
         val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST))
-        val name = "rand JsonPatchPathValueGene ${rand.nextInt()}"
-        val selection = jsonPatchSelection()
-        val entry = PairGene(
-            "entry_0",
-            EnumGene<String>(JsonPatchDocumentGeneBuilder.FIELD_PATH, randomPaths(rand)),
-            samplePrintableTemplate(selection, rand)
+        val pathEnum = EnumGene<String>(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        val entry = PairGene<EnumGene<String>, Gene>(
+            JsonPatchDocumentGeneBuilder.ENTRY_STRING,
+            pathEnum,
+            StringGene(JsonPatchDocumentGeneBuilder.FIELD_VALUE)
         )
-        return JsonPatchPathValueGene(name, operationName, ChoiceGene("${operationName}PathValue", listOf(entry)))
+        return JsonPatchPathValueGene(
+            "rand JsonPatchPathValueGene ${rand.nextInt()}",
+            operationName,
+            ChoiceGene("${operationName}PathValue", listOf(entry))
+        )
     }
 
     fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {
