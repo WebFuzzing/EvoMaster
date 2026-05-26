@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 
@@ -398,11 +399,44 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+        val innerMultiCharRanges = ctx.classContents().accept(this).data as MultiCharacterRange
 
-        val gene = CharacterRangeRxGene(negated, ranges, currentFlags)
+        val multiCharRanges = MultiCharacterRange(negated, innerMultiCharRanges)
 
-        return VisitResult(gene)
+        return if (ctx.parent is RegexJavaParser.AtomContext){
+            // top level character class, create gene
+            VisitResult(CharacterRangeRxGene(multiCharRanges, currentFlags))
+        } else {
+            // nested char class, apply negation (if necessary)
+            VisitResult(data = multiCharRanges)
+        }
+    }
+
+    override fun visitClassContents(ctx: RegexJavaParser.ClassContentsContext): VisitResult {
+
+        // intersect the unions of ranges
+        val mcr = ctx.classUnion()
+            .map { it.accept(this).data as MultiCharacterRange }
+            .reduce { acc, item -> MultiCharacterRange.intersect(acc, item) }
+
+        return VisitResult(data=mcr)
+    }
+
+    override fun visitClassUnion(ctx: RegexJavaParser.ClassUnionContext): VisitResult {
+
+        return if (ctx.characterClass().isNotEmpty()) {
+            // union of char classes
+            val mcr = ctx.characterClass()
+                .map { it.accept(this).data as MultiCharacterRange }
+                .reduce { acc, item -> MultiCharacterRange.union(acc, item) }
+
+            VisitResult(data=mcr)
+        } else {
+            // single classRanges
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+
+            VisitResult(data=MultiCharacterRange(false, ranges))
+        }
     }
 
     override fun visitClassRanges(ctx: RegexJavaParser.ClassRangesContext): VisitResult {

@@ -251,4 +251,26 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
+
+    @Test
+    fun testIntersection(){
+        checkSameAsJava("&&")
+        checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
+        checkSameAsJava("[a&&a][a&&a&&a]")
+        checkSameAsJava("[a-z&&[aeiou]]")
+        checkSameAsJava("[a-z&&[^aeiou]]")
+        checkSameAsJava("[a-z&&[a-p]&&[f-z]]")
+        checkSameAsJava("[ac-e&&[a-d]]")
+        checkSameAsJava("[\\w&&[a-z]]")
+        checkSameAsJava("[a-z&&[b-y]]")
+        checkSameAsJava("[a-z0-9&&[A-Z0-9]&&[2B4C]]")
+        checkSameAsJava("[[a-c][x-z]&&[b-y]]")
+        checkSameAsJava("[a-c&&[b-d]e-g]")
+        checkSameAsJava("[^a-z&&[^aeiou]]")
+        checkSameAsJava("[\\s&&[^\\n]]")
+        checkSameAsJava("[a-c&&[c-e]]")
+        checkSameAsJava("[a-z&&[a-z]]")
+        checkSameAsJava("[a-ce-g&&[b-f]]")
+        checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
+    }
 }
