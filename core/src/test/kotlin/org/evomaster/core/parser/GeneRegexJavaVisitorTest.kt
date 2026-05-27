@@ -305,5 +305,90 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("\\1|[a&&b]") }
         checkSameAsJava("([a&b])|b\\1")
         assertThrows<IllegalStateException> { checkSameAsJava("([a&&b])|b\\1") }
+        assertThrows<IllegalStateException> { checkSameAsJava("\\k<name>") }
+    }
+
+    @Test
+    fun testEmptyWithFlagGroup() {
+        checkSameAsJava("(?i:)")
+        checkSameAsJava("(?i:)|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?i:[a&&b])") }
+        checkSameAsJava("(?i:[a&&b])|c")
+        checkSameAsJava("(?i:[a&&b]|c)")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?i:(?u:[a&&b]))") }
+        checkSameAsJava("(?i:(?u:[a&&b])|c)")
+    }
+
+    @Test
+    fun testEmptyWithFlagScope() {
+        checkSameAsJava("(?iu)")
+        checkSameAsJava("^(?iu)")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?iu)[a&&b]") }
+        checkSameAsJava("(?iu)[a&&b]|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("^(?iu)[a&&b]$") }
+        checkSameAsJava("^(?iu)[a&&b]$|c")
+    }
+
+    @Test
+    fun testEmptyWithAnchors() {
+        checkSameAsJava("^$")
+        assertThrows<IllegalStateException> { checkSameAsJava("^[a&&b]$") }
+        checkSameAsJava("^[a&&b]$|c")
+        checkSameAsJava("^(?i:abc)$")
+        assertThrows<IllegalStateException> { checkSameAsJava("^([a&&b])$") }
+        checkSameAsJava("^([a&&b]|c)$")
+    }
+
+    @Test
+    fun testEmptyWithQuantifiers() {
+        checkSameAsJava("[a&&b]*")
+        checkSameAsJava("[a&&b]*c")
+        checkSameAsJava("[a&&b]?")
+        checkSameAsJava("[a&&b]?c")
+        checkSameAsJava("[a&&b]{0,}")
+        checkSameAsJava("[a&&b]{0}")
+        checkSameAsJava("([a&&b])*")
+        checkSameAsJava("([a&&b])*c")
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]+") }
+        checkSameAsJava("[a&&b]+|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]{1,}") }
+        checkSameAsJava("[a&&b]{1,}|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]{1}") }
+        checkSameAsJava("[a&&b]{1}|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]{2,4}") }
+        checkSameAsJava("[a&&b]{2,4}|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("([a&&b])+") }
+        checkSameAsJava("([a&&b])+|c")
+        checkSameAsJava("[a&&b]{3}|c")
+        checkSameAsJava("[a&&b]{3,3}|c")
+        checkSameAsJava("[a&&b]{0,0}|c")
+    }
+
+    @Test
+    fun testEmptyWithBackRefsAndQuantifiers() {
+        checkSameAsJava("(a)\\1*")
+        checkSameAsJava("\\1*c")
+        checkSameAsJava("\\1?c")
+        checkSameAsJava("(\\1*)")
+        assertThrows<IllegalStateException> { checkSameAsJava("\\1+") }
+        checkSameAsJava("\\1+|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("(\\1+)") }
+        checkSameAsJava("(\\1+)|c")
+    }
+
+    @Test
+    fun testEmptyNestedGroups() {
+        checkSameAsJava("(?:)")
+        checkSameAsJava("(?:)|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?:[a&&b])") }
+        checkSameAsJava("(?:[a&&b])|c")
+        checkSameAsJava("([a&&b])|c")
+        checkSameAsJava("([a&&b]|[c&&d])|e")
+        checkSameAsJava("(([a&&b])|([c&&d]))|e")
+        checkSameAsJava("((([a&&b]|[c&&d])|[e&&f])|g)")
+        checkSameAsJava("(g|(([a&&b]|[c&&d])|[e&&f]))")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?<name>[a&&b])") }
+        checkSameAsJava("(?<name>[a&&b])|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("(?<name>[a&&b])|c\\k<name>") }
     }
 }
