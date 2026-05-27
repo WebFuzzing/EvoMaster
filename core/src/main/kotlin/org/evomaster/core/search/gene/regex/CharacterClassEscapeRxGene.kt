@@ -82,7 +82,7 @@ class CharacterClassEscapeRxGene(
             // create both normal and negated version for all
             .flatMap { (key, value) ->
                 listOf(
-                    key     to MultiCharacterRange(value),
+                    key     to MultiCharacterRange(false, value),
                     "^$key" to MultiCharacterRange(true,  value)
                 )
             }.toMap()
@@ -130,6 +130,10 @@ class CharacterClassEscapeRxGene(
             else -> //this should never happen due to check in init
                 throw IllegalStateException("Type '\\$type' not supported yet")
         }
+    }
+
+    override fun isMutable(): Boolean {
+        return multiCharRange.isNotEmpty
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -193,6 +197,9 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        if (multiCharRange.isEmpty) {
+            throw IllegalStateException("Cannot get value from empty CharacterClassEscape")
+        }
         return if (!flags.isCaseable(value[0])) {
             value[0].toString()
         }

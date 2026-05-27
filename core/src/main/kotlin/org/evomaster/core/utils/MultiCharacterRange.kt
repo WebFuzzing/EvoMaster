@@ -5,10 +5,6 @@ import org.slf4j.LoggerFactory
 
 class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
 
-    init {
-        require(ranges.isNotEmpty()) { "MultiCharacterRange cannot be created with an empty list" }
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
 
@@ -25,9 +21,6 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
         }
 
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
-            if (ranges.isEmpty()) {
-                throw IllegalArgumentException("No defined ranges")
-            }
 
             var internalRanges = mutableListOf<CharacterRange>()
 
@@ -204,10 +197,11 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
             }
             currentRangeMinValue = currentRangeMaxValue
         }
-        assert(false) // internal ranges being empty should never happen
-        return '0'
+        throw IllegalStateException("Cannot sample characters from an empty char range")
     }
 
+    val isEmpty: Boolean get() = ranges.isEmpty()
+    val isNotEmpty: Boolean get() = ranges.isNotEmpty()
     val size: Int get() = ranges.size
     val charCount :Int = ranges.sumOf{ it.size }
     operator fun get(index: Int): CharacterRange = ranges[index]
