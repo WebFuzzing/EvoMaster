@@ -47,7 +47,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
      * Same as [captureGroups] but for named backreferences, which can be accessed
      * with their name or number.
      */
-    private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene>()
+    private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene?>()
 
     /**
      * Tracks the flags active in the current lexical scope.
@@ -599,15 +599,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 maxDigits > allDigits.length -> allDigits.length
                 allDigits.take(maxDigits).toInt() <= captureGroups.size -> maxDigits
                 maxDigits > 1 -> maxDigits - 1
-                else -> throw IllegalStateException(
-                    "Backreference ${txt.take(2)} refers to group ${allDigits[0]} but only ${captureGroups.size} " +
-                            "capture group(s) have been defined so far"
-                )
+                else -> 1
             }
 
             val n = allDigits.take(backRefDigitCount).toInt()
 
-            val result = VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]!!))
+            val gene = if (captureGroups.size > n-1) {
+                BackReferenceRxGene(n, captureGroups[n - 1])
+            } else {
+                BackReferenceRxGene(n, null)
+            }
+
+            val result = VisitResult(gene)
 
             val remainingChars = allDigits.drop(backRefDigitCount)
 
@@ -624,7 +627,6 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             // strip "\k<" and ">"
             val name = txt.drop(3).dropLast(1)
             val group = namedCaptureGroups[name]
-                ?: throw IllegalStateException("Named backreference \\k<$name> refers to unknown group '$name'")
             val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
             return VisitResult(BackReferenceRxGene(groupIndex, group))
         }

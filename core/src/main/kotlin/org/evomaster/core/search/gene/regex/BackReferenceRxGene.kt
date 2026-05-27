@@ -17,7 +17,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  */
 class BackReferenceRxGene(
     val groupIndex: Int,
-    val captureGroup: DisjunctionListRxGene
+    val captureGroup: DisjunctionListRxGene?
 ) : RxAtom, SimpleGene("\\$groupIndex") {
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
@@ -59,7 +59,12 @@ class BackReferenceRxGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String = captureGroup.getValueAsPrintableString(targetFormat = null)
+    ): String {
+        if (captureGroup == null) {
+            throw IllegalStateException("Cannot get value from invalid backreference \\$groupIndex")
+        }
+        return captureGroup.getValueAsPrintableString(previousGenes, mode, targetFormat)
+    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is BackReferenceRxGene) return false
