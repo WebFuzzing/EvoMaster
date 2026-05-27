@@ -225,7 +225,10 @@ class EnumGene<T : Comparable<T>>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val res = values[index]
-        if (res is String && !treatAsNotString) {
+        // In XML mode, enum string values are emitted as tag text content (e.g. <path>VALUE</path>).
+        // Unlike JSON, XML does not use quotes to delimit string values — the tags are the delimiters.
+        // Adding quotes here would include them as literal characters in the XML output.
+        if (res is String && !treatAsNotString && mode != GeneUtils.EscapeMode.XML) {
             return "\"$res\""
         } else {
             return res.toString()
