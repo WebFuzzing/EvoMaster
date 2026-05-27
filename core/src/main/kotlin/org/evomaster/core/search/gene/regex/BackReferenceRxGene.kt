@@ -20,6 +20,10 @@ class BackReferenceRxGene(
     val captureGroup: DisjunctionListRxGene?
 ) : RxAtom, SimpleGene("\\$groupIndex") {
 
+    override fun isEffectivelyEmpty(): Boolean {
+        return captureGroup == null || captureGroup.isEffectivelyEmpty()
+    }
+
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
     /**

@@ -38,6 +38,8 @@ class CharacterRangeRxGene(
      */
     var useUpperCase: Boolean = false
 
+    override fun isEffectivelyEmpty(): Boolean = validRanges.isEmpty
+
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return validRanges.any {
             value in it ||
