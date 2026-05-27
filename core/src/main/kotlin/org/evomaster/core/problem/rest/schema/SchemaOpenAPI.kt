@@ -48,7 +48,8 @@ class SchemaOpenAPI(
             }
 
             if(res.warnings.isNotEmpty()){
-                val message = "Issues (${res.warnings.size}) with applying Overlay transformation:\n${res.warnings.joinToString("\n")}"
+                val message = "A total of ${res.warnings.size} issues were found when applying the specified Overlay transformations." +
+                        " Details are reported based on their index location:\n${res.warnings.joinToString("\n")}"
                 if(lenient){
                     log.warn(message)
                     //here we do not return, as we still apply the partial transformations
