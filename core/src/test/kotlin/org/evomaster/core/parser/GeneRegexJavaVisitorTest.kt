@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /**
  * Created by arcuri82 on 11-Sep-19.
@@ -272,5 +273,37 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("[a-z&&[a-z]]")
         checkSameAsJava("[a-ce-g&&[b-f]]")
         checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
+        checkSameAsJava("[[a-c&&[d-f]][x-z]]")
+        checkSameAsJava("[a-c&&[b-d]]|[x&&y]")
+    }
+
+    @Test
+    fun testEmptyAlternatives() {
+        assertThrows<IllegalStateException>{ checkSameAsJava("[a&&b]") }
+        checkSameAsJava("[a&&b]|c")
+        checkSameAsJava("0|[a&&b]|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]|[c&&d]") }
+        assertThrows<IllegalStateException> { checkSameAsJava("[a&&b]|[c&&d]|[e&&f]") }
+        checkSameAsJava("a|[b&&c]|d")
+        checkSameAsJava("([a&&b]|c)d")
+    }
+
+    @Test
+    fun testInvalidBackRefs() {
+        assertThrows<IllegalStateException> { checkSameAsJava("\\1") }
+        checkSameAsJava("\\1|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("(a)\\2") }
+        checkSameAsJava("(a)\\2|b")
+        assertThrows<IllegalStateException> { checkSameAsJava("(\\1)") }
+        checkSameAsJava("(\\1|a)")
+        assertThrows<IllegalStateException> { checkSameAsJava("\\1(a)") }
+        checkSameAsJava("\\1(a)|b")
+        checkSameAsJava("(a)(\\1|\\2|c)")
+        assertThrows<IllegalStateException> { checkSameAsJava("\\1|\\2|\\3") }
+        checkSameAsJava("(\\2|a)|b")
+        checkSameAsJava("\\1|[a&&b]|c")
+        assertThrows<IllegalStateException> { checkSameAsJava("\\1|[a&&b]") }
+        checkSameAsJava("([a&b])|b\\1")
+        assertThrows<IllegalStateException> { checkSameAsJava("([a&&b])|b\\1") }
     }
 }
