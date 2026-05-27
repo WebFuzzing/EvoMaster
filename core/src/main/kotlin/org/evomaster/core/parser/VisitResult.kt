@@ -7,7 +7,8 @@ import org.evomaster.core.search.gene.Gene
  */
 class VisitResult(
         val genes: MutableList<Gene> = mutableListOf(),
-        var data: Any? = null
+        var data: Any? = null,
+        var hadFilteredContent: Boolean = false
 ){
 
     constructor(gene: Gene) : this() {
