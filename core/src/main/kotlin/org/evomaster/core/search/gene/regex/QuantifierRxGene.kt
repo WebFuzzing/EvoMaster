@@ -49,8 +49,8 @@ class QuantifierRxGene(
         if (min < 0) {
             throw IllegalArgumentException("Invalid min value '$min': should be positive")
         }
-        if (max < 1) {
-            throw IllegalArgumentException("Invalid max value '$max': should be at least 1")
+        if (max < 0) {
+            throw IllegalArgumentException("Invalid max value '$max': should be positive")
         }
         if (min > max) {
             throw IllegalArgumentException("Invalid min-max values '$min-$max': min is greater than max")
