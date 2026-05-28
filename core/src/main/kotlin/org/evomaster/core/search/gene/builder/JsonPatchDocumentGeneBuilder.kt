@@ -20,7 +20,7 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
  * Builds a JSON Patch document gene (RFC 6902).
  *
  * When [resourceSchema] is provided, paths and value gene types are derived from the schema.
- * Otherwise, a fixed deterministic default template is used: paths /a, /b, /c, /d with
+ * Otherwise, a fixed deterministic default template is used: paths /a, /b, /c, /d with 
  * String, Integer, and Boolean value types.
  */
 object JsonPatchDocumentGeneBuilder {
