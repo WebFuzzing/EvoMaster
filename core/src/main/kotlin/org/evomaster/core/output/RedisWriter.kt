@@ -47,15 +47,15 @@ object RedisWriter {
 
                 val dslCall = when (action) {
                     is RedisSetAction -> {
-                        val key = escape(action.keyGene.getValueAsRawString(), format)
-                        val value = escape(action.valueGene.getValueAsRawString(), format)
-                        ".set(\"$key\", \"$value\")"
+                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".set($key, $value)"
                     }
                     is RedisHsetAction -> {
-                        val key = escape(action.keyGene.getValueAsRawString(), format)
+                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
                         val field = escape(action.field, format)
-                        val value = escape(action.valueGene.getValueAsRawString(), format)
-                        ".hset(\"$key\", \"$field\", \"$value\")"
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".hset($key, \"$field\", $value)"
                     }
                 }
 
