@@ -1018,6 +1018,7 @@ class EMConfig {
 
         val properties = getConfigurationProperties()
                 .filter { it.annotations.find { it is Experimental } != null }
+                .filter{ it.returnType.javaType is Class<*>} // TODO handle Lists of Enum
                 .filter {
                     val returnType = it.returnType.javaType as Class<*>
                     when {
@@ -1029,6 +1030,7 @@ class EMConfig {
                 .map { it.name }
 
         val enums = getConfigurationProperties()
+                .filter{ it.returnType.javaType is Class<*>} // TODO handle Lists of Enum
                 .filter {
                     val returnType = it.returnType.javaType as Class<*>
                     if (returnType.isEnum) {
