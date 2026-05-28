@@ -47,6 +47,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
@@ -254,7 +255,16 @@ object RestActionBuilderV3 {
         if (pathItem.get != null) h(HttpVerb.GET, pathItem.get)
         if (pathItem.post != null) h(HttpVerb.POST, pathItem.post)
         if (pathItem.put != null) h(HttpVerb.PUT, pathItem.put)
-        if (pathItem.patch != null) h(HttpVerb.PATCH, pathItem.patch)
+        if (pathItem.patch != null) {
+            val patchSchema = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schemaHolder, schemaHolder.main, messages)
+            if (endpointsToSkip.any { it.verb == HttpVerb.PATCH && it.path.isEquivalent(rawPath) }) {
+                skipped.add(Endpoint(HttpVerb.PATCH, restPath))
+            } else {
+                handleOperation(actionCluster, HttpVerb.PATCH, restPath, pathItem.patch,
+                    schemaHolder, schemaHolder.main, options, errorEndpoints, messages,
+                    patchResourceSchema = patchSchema)
+            }
+        }
         if (pathItem.options != null) h(HttpVerb.OPTIONS, pathItem.options)
         if (pathItem.delete != null) h(HttpVerb.DELETE, pathItem.delete)
         if (pathItem.trace != null) h(HttpVerb.TRACE, pathItem.trace)
@@ -443,11 +453,12 @@ object RestActionBuilderV3 {
         currentSchema: SchemaOpenAPI,
         options: Options,
         errorEndpoints: MutableList<String>,
-        messages: MutableList<String>
+        messages: MutableList<String>,
+        patchResourceSchema: Schema<*>? = null
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages)
+            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages, patchResourceSchema)
             repairParams(params, restPath, messages)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
@@ -525,7 +536,8 @@ object RestActionBuilderV3 {
         schemaHolder: RestSchema,
         currentSchema: SchemaOpenAPI,
         options: Options,
-        messages: MutableList<String>
+        messages: MutableList<String>,
+        patchResourceSchema: Schema<*>? = null
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -545,7 +557,7 @@ object RestActionBuilderV3 {
                 }
             }
 
-        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages)
+        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages, patchResourceSchema)
 
         return params
     }
@@ -676,7 +688,8 @@ object RestActionBuilderV3 {
         currentSchema: SchemaOpenAPI,
         params: MutableList<Param>,
         options: Options,
-        messages: MutableList<String>
+        messages: MutableList<String>,
+        patchResourceSchema: Schema<*>? = null
     ) {
 
         // Return early if requestBody is missing
@@ -738,11 +751,22 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
-        val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
-        val name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+        val isJsonPatch = verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
 
-        var gene = getGene(name, obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        val name: String
+        var gene: Gene
+        if (isJsonPatch) {
+            name = "body"
+            val resourceGene = patchResourceSchema?.let {
+                getGene(name, it, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages)
+            }
+            gene = JsonPatchDocumentGene(name, resourceGene)
+        } else {
+            // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
+            val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
+            name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            gene = getGene(name, obj.schema, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        }
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
