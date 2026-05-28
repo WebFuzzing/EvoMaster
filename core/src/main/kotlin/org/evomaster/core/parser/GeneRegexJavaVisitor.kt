@@ -36,6 +36,19 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     )
 
     /**
+     * Capture groups in order of appearance (1-based index -> list index 0).
+     * Populated as the tree is walked. A backreference is only valid if it
+     * appears after the group it references, which Java regex requires anyway.
+     */
+    private val captureGroups = mutableListOf<DisjunctionListRxGene?>()
+
+    /**
+     * Same as [captureGroups] but for named backreferences, which can be accessed
+     * with their name or number.
+     */
+    private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene>()
+
+    /**
      * Tracks the flags active in the current lexical scope.
      * Updated when entering a flag group, restored on exit.
      */
@@ -127,7 +140,15 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 val remainingGenes = mutableListOf<Gene>()
                 for (j in i + 1 until ctx.term().size) {
                     val resTerm = ctx.term()[j].accept(this)
-                    resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+
+                    // this condition isolates the back ref case, preserving original behavior otherwise.
+                    if (ctx.term()[j].atom()?.atomEscape()?.BackReference() != null){
+                        // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                        remainingGenes.addAll(resTerm.genes)
+                    } else {
+                        // term is not a back ref, hence there is at most one gene in its visit result.
+                        resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                    }
                 }
 
                 currentFlags = previous
@@ -139,7 +160,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
 
-            if(gene != null) {
+            // this condition isolates the back ref case, preserving original behavior otherwise.
+            if (ctx.term()[i].atom()?.atomEscape()?.BackReference() != null){
+                // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                res.genes.addAll(resTerm.genes)
+            } else if (gene != null) {
+                // term is not a back ref: we use the default behavior, term results may only have 0-1 genes
+                // if there is a gene, we add it to result
                 res.genes.add(gene)
             } else {
 
@@ -175,17 +202,40 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val resAtom = ctx.atom().accept(this)
         val atom = resAtom.genes.firstOrNull()
-                ?: return res
+            ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
-            val q = QuantifierRxGene("q", atom, limits.first, limits.second)
+
+            // if atom is not a back ref then we use the default behavior, results may only have one gene
+            var template: Gene = atom
+
+            // this condition isolates the back ref case, preserving original behavior otherwise.
+            if(ctx.atom()?.atomEscape()?.BackReference() != null){
+                // this is done so that visits that result in multiple genes (like a backref that interprets some
+                // digits literally) work as expected, only applying quantifier to last gene
+
+                // add all genes to result, except for last gene
+                res.genes.addAll(resAtom.genes.dropLast(1))
+
+                // the last gene gets wrapped with the quantifier gene, then that gets added to result
+                template = resAtom.genes.last()
+            }
+
+            val q = QuantifierRxGene("q", template, limits.first, limits.second)
 
             res.genes.add(q)
 
         } else {
-            res.genes.add(atom)
+            // this condition isolates the back ref case, preserving original behavior otherwise.
+            if (ctx.atom()?.atomEscape()?.BackReference() != null){
+                // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
+                res.genes.addAll(resAtom.genes)
+            } else {
+                // if atom is not a back ref we fall back to the default behavior, results only have one gene
+                res.genes.add(atom)
+            }
         }
 
         return res
@@ -299,6 +349,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         if(ctx.disjunction() != null){
 
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupIndex = captureGroups.size
+            captureGroups.add(null) // add placeholder for the gene
+
             val res = ctx.disjunction().accept(this)
 
             val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
@@ -309,6 +363,20 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 gene.extraPostfix = false
                 gene.matchStart = true
                 gene.matchEnd = true
+            }
+
+            val isCapturingGroup = !ctx.text.startsWith("(?:")
+            val isNamedCaptureGroup = ctx.NAMED_CAPTURE_GROUP_OPEN() != null
+
+            if (isCapturingGroup) {
+                captureGroups[groupIndex] = disjList
+            }
+            if (isNamedCaptureGroup) {
+                val name = ctx.NAMED_CAPTURE_GROUP_OPEN().text.drop(3).dropLast(1) // strip "(?<" and ")"
+                if (namedCaptureGroups.containsKey(name)) {
+                    throw IllegalStateException("Duplicate capture group name: '$name'")
+                }
+                namedCaptureGroups[name] = disjList
             }
 
             return VisitResult(disjList)
@@ -360,11 +428,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
             val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
-        } else if (ctx.classAtom()[0]?.classAtomNoDash() != null &&
-            (
-                    ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
-                    || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
-                    )
+        } else if (
+                ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
+                || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
+                || ctx.classAtom()[0]?.classAtomNoDash()?.NAMED_CAPTURE_GROUP_OPEN() != null
             ) {
             // these should be interpreted literally within a charclass.
             val ranges = ctx.text.map { ch -> CharacterRange(ch, ch) }
@@ -457,7 +524,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     override fun visitClassEscape(ctx: RegexJavaParser.ClassEscapeContext): VisitResult {
 
         val res = VisitResult()
-        res.data = if(ctx.atomEscape() != null) {
+        res.data = if(ctx.atomEscape() != null &&
+            (ctx.atomEscape().BackReference() != null || ctx.atomEscape().NamedBackReference() != null)
+            ) {
+            // In Java using backrefs or named backrefs is illegal within char classes. (i.e.: [\1\k<name>])
+            throw IllegalArgumentException("Illegal/unsupported escape sequence")
+        } else if (ctx.atomEscape() != null) {
             when (val rec = ctx.atomEscape().accept(this).genes[0]) {
                 is CharacterClassEscapeRxGene -> {
                     rec.multiCharRange.ranges
@@ -481,6 +553,47 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     override fun visitAtomEscape(ctx: RegexJavaParser.AtomEscapeContext): VisitResult {
 
         val txt = ctx.text
+
+        // unnamed backreference \N (N number)
+        if (ctx.BackReference() != null) {
+            val allDigits = txt.drop(1)
+            val maxDigits = captureGroups.size.toString().length
+
+            // In Java, multi-digit back references interprets trailing digits literally, see more:
+            // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#groupname:~:text=the%20parser%20will-,drop%20digits,-until%20the%20number
+            val backRefDigitCount = when {
+                maxDigits > allDigits.length -> allDigits.length
+                allDigits.take(maxDigits).toInt() <= captureGroups.size -> maxDigits
+                maxDigits > 1 -> maxDigits - 1
+                else -> throw IllegalStateException(
+                    "Backreference ${txt.take(2)} refers to group ${allDigits[0]} but only ${captureGroups.size} " +
+                            "capture group(s) have been defined so far"
+                )
+            }
+
+            val n = allDigits.take(backRefDigitCount).toInt()
+
+            val result = VisitResult(BackReferenceRxGene(n, captureGroups[n - 1]!!))
+
+            val remainingChars = allDigits.drop(backRefDigitCount)
+
+            for (char in remainingChars) {
+                // we add the remaining digits as pattern genes to result as these should be interpreted literally
+                result.genes.add(PatternCharacterBlockGene(char.toString(), char.toString()))
+            }
+
+            return result
+        }
+
+        // named backreference \k<name>
+        if (ctx.NamedBackReference() != null) {
+            // strip "\k<" and ">"
+            val name = txt.drop(3).dropLast(1)
+            val group = namedCaptureGroups[name]
+                ?: throw IllegalStateException("Named backreference \\k<$name> refers to unknown group '$name'")
+            val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
+            return VisitResult(BackReferenceRxGene(groupIndex, group))
+        }
 
         return VisitResult(when (txt[1]) {
             '0' -> {

@@ -23,6 +23,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.remote.service.RemoteControllerImplementation;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.gene.collection.EnumGene;
 import org.evomaster.core.search.service.Statistics;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -117,6 +118,8 @@ public abstract class EnterpriseTestBase {
 
     @BeforeEach
     public void initTest() {
+
+        EnumGene.Companion.cleanCache();
 
         //make sure the search can use all instrumentation, even the ones using non-preserving semantics
         MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
