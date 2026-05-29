@@ -15,12 +15,15 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Collections.singletonList
 
 class SortingHelper {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SortingHelper::class.java)
     }
+
+
 
     /** [maxStatusCode] sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
      *
@@ -120,6 +123,20 @@ class SortingHelper {
     private val availableSortCriteria = listOf(statusCode, minActions, coveredTargets, maxStatusCode, maxActions, dbInitSize)
 
 
+    fun sort(tests: List<TestCase>, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
+        val newSort = when (testCaseSortingStrategy) {
+            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, tests)
+            SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(tests)
+            else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
+        }
+
+        return newSort
+    }
+
+    @Deprecated("Use other version")
+    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy) : List<TestCase> {
+        return sort(namingStrategy.getTestCases(), testCaseSortingStrategy)
+    }
 
     fun getAvailableCriteria(): List<Comparator<EvaluatedIndividual<*>>> {
         return availableSortCriteria
@@ -145,11 +162,29 @@ class SortingHelper {
         }
     }
 
+    private fun getSortedTestCases(tests: List<TestCase>, comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
+        return getSortedTestCases(tests, singletonList(comparator))
+    }
+
+    private fun getSortedTestCases(tests: List<TestCase>, comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
+
+        val copy = tests.toMutableList()
+
+        comparators.asReversed().forEach { comp ->
+            val w = Comparator<TestCase>{a, b -> comp.compare(a.test,b.test)}
+            copy.sortWith(w)
+        }
+
+        return copy
+    }
+
+
+
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
     private fun sortByComparatorList (comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
-                                      namingStrategy: TestCaseNamingStrategy
+                                     tests: List<TestCase>
 
     ): List<TestCase> {
         /**
@@ -169,33 +204,24 @@ class SortingHelper {
          * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
          */
 
-        return namingStrategy.getSortedTestCases(comparators)
+        return getSortedTestCases(tests, comparators)
     }
 
-    private fun sortByTargetIncremental(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
-        val individuals = solution.individuals
+    private fun sortByTargetIncremental(tests: List<TestCase>): List<TestCase> {
+
         val comparator = when {
-            individuals.any { it.individual is RestIndividual } -> restComparator
-            individuals.any { it.individual is GraphQLIndividual } -> graphQLComparator
-            individuals.any { it.individual is RPCIndividual } -> rpcComparator
-            individuals.any { it.individual is WebIndividual } -> {
+            tests.any { it.test.individual is RestIndividual } -> restComparator
+            tests.any { it.test.individual is GraphQLIndividual } -> graphQLComparator
+            tests.any { it.test.individual is RPCIndividual } -> rpcComparator
+            tests.any { it.test.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 statusCode
             }
             else -> throw IllegalStateException("Unrecognized test individuals with no target incremental based sorting strategy set.")
         }
 
-        return namingStrategy.getSortedTestCases(comparator)
+        return getSortedTestCases(tests, comparator)
     }
 
-    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
-        val newSort = when (testCaseSortingStrategy) {
-            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, namingStrategy)
-            SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(solution, namingStrategy)
-            else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
-        }
 
-        Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
-        return newSort
-    }
 }

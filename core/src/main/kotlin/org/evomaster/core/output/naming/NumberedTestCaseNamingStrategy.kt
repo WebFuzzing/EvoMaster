@@ -13,19 +13,7 @@ open class NumberedTestCaseNamingStrategy(
         return generateNames(solution.individuals)
     }
 
-    override fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
-        return getSortedTestCases(singletonList(comparator))
-    }
 
-    override fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
-        val inds = solution.individuals
-
-        comparators.asReversed().forEach {
-            inds.sortWith(it)
-        }
-
-        return generateNames(inds)
-    }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {

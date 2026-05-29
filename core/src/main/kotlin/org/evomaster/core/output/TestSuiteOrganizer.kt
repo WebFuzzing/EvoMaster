@@ -20,9 +20,14 @@ class TestSuiteOrganizer {
     private val sortingHelper = SortingHelper()
 
 
-    fun sortTests(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
-        return sortingHelper.sort(solution, namingStrategy, testCaseSortingStrategy)
+    fun createSortedTestCases(namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
+
+        val tests = namingStrategy.getTestCases()
+
+        return sortingHelper.sort(tests, testCaseSortingStrategy)
     }
+
+
 }
 
 

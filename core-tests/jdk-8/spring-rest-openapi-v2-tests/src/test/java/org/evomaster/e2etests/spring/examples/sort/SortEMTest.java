@@ -47,7 +47,7 @@ public class SortEMTest extends NRTestBase {
 
                     TestCaseNamingStrategy namingStrategy = new NumberedTestCaseNamingStrategy(solution);
 
-                    List<TestCase> tclist = organizer.sortTests(solution, namingStrategy, SortingStrategy.COVERED_TARGETS);
+                    List<TestCase> tclist = organizer.createSortedTestCases(namingStrategy, SortingStrategy.COVERED_TARGETS);
 
                     //Iterator<TestCase> iterator = tclist.iterator();
                     //TestCase current, previous = iterator.next();
