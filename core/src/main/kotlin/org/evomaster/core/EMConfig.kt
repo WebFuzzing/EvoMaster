@@ -783,16 +783,8 @@ class EMConfig {
 
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
-            !languageModelConnector) {
+            !llm) {
             throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
-        }
-
-        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model server URL cannot be empty.")
-        }
-
-        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -2955,21 +2947,17 @@ class EMConfig {
     var callbackURLHostname = "localhost"
 
     @Experimental
-    @Cfg("Enable language model connector")
-    var languageModelConnector = false
+    @Cfg("Enable the use of LLMs.")
+    var llm = false
 
     @Experimental
-    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
-    var languageModelServerURL: String = "http://localhost:11434/"
+    @Cfg("Large-language model external service URL. If not specified, default will be based on the LLM provider.")
+    var llmURL: String? = null
 
     @Experimental
-    @Cfg("Large-language model name as listed in Ollama")
-    var languageModelName: String = "llama3.2:latest"
+    @Cfg("Large-language model name. If not specified, default will be based on the LLM provider.")
+    var llmName: String? = null
 
-    @Experimental
-    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
-    @Min(1.0)
-    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +

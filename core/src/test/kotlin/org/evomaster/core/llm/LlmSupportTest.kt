@@ -1,10 +1,24 @@
 package org.evomaster.core.llm
 
+import org.evomaster.ci.utils.CIUtils
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 
 class LlmSupportTest {
+
+    companion object {
+
+        @BeforeAll
+        @JvmStatic
+        fun initClass() {
+            /*
+                For now, we don't run LLMs on CI
+            */
+            CIUtils.skipIfOnGA()
+        }
+    }
 
 
     @Test
