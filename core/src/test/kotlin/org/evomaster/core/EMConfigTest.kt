@@ -1,6 +1,7 @@
 package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.EMConfig.AIResponseClassifierModel
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
@@ -20,6 +21,27 @@ internal class EMConfigTest{
     private val sqli = "sqli"
     private val blackBox = "blackBox"
     private val generateMongoData = "generateMongoData"
+
+
+    @Test
+    fun testChangeSetEnum(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val opt = parser.recognizedOptions()["aiModelForResponseClassification"] ?:
+        throw Exception("Cannot find option")
+
+        val x = "${AIResponseClassifierModel.DETERMINISTIC},${AIResponseClassifierModel.GAUSSIAN}"
+        val options = parser.parse("--aiModelForResponseClassification", x)
+
+        assertEquals(x, opt.value(options))
+
+        val config = EMConfig()
+        assertTrue("" + config.aiModelForResponseClassification.map { it.name }.sorted().joinToString(",") != x)
+
+        config.updateProperties(options)
+        assertEquals(x, "" + config.aiModelForResponseClassification.map { it.name }.sorted().joinToString(","))
+    }
 
     @Test
     fun testDependsOnTrue(){

@@ -3,6 +3,7 @@ package org.evomaster.core.docs
 import org.evomaster.core.EMConfig
 import org.evomaster.core.utils.StringUtils
 import java.io.File
+import java.lang.reflect.ParameterizedType
 import java.nio.charset.Charset
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
@@ -151,11 +152,15 @@ object ConfigToMarkdown {
         if(default.isBlank()){
             default = "\"\""
         }
-        val type = (opt.returnType.javaType as Class<*>)
-        val typeName = if(type.isEnum){
-            "Enum"
+        val type = opt.returnType.javaType
+        val typeName = if(type is Class<*>) {
+             if (type.isEnum) {
+                "Enum"
+            } else {
+                StringUtils.capitalization(type.simpleName)
+            }
         } else {
-            StringUtils.capitalization(type.simpleName)
+            StringUtils.capitalization(((type as ParameterizedType).rawType as Class<*>).simpleName)
         }
 
         val description = EMConfig.getDescription(opt)
