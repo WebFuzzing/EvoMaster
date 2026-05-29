@@ -36,6 +36,13 @@ object LlmSupport {
         temperature: Double = 0.3,
     ): StreamingChatModel {
 
+        if(timeoutSeconds < 0){
+            throw IllegalArgumentException("Negative timeout: $timeoutSeconds")
+        }
+        if(temperature !in 0.0..2.0){
+            throw IllegalArgumentException("Invalid temperature: $temperature")
+        }
+
         /*
             unfortunately it does not seem these builders share any common superclass :(
             so most of the configurations need to be copy&paste
