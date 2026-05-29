@@ -301,10 +301,13 @@ There are 3 types of options:
 |`instrumentMR_OPENSEARCH`| __Boolean__. Execute instrumentation for method replace with category OPENSEARCH. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_REDIS`| __Boolean__. Execute instrumentation for method replace with category REDIS. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`jdkEnvVarName`| __String__. Specify name of the environment variable that provides the JDK installation path. Note that the executable path will be resolved by appending 'bin/java'. *Default value*: `""`.|
-|`languageModelConnector`| __Boolean__. Enable language model connector. *Default value*: `false`.|
-|`languageModelConnectorNumberOfThreads`| __Int__. Number of threads for language model connector. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
-|`languageModelName`| __String__. Large-language model name as listed in Ollama. *Default value*: `llama3.2:latest`.|
-|`languageModelServerURL`| __String__. Large-language model external service URL. Default is set to Ollama local instance URL. *Default value*: `http://localhost:11434/`.|
+|`llm`| __Boolean__. Enable the use of LLMs. *Default value*: `false`.|
+|`llmApiKey`| __String__. API KEY needed to authenticated toward the chosen LLM provider. *Default value*: `null`.|
+|`llmName`| __String__. LLM name. If not specified, default will be based on the LLM provider. *Default value*: `null`.|
+|`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Valid values*: `OPENAI, DEEPSEEK, OLLAMA, AZURE_OPENAI`. *Default value*: `OLLAMA`.|
+|`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Default value*: `0.3`.|
+|`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Default value*: `60`.|
+|`llmURL`| __String__. LLM external service URL. If not specified, default will be based on the LLM provider. *Default value*: `null`.|
 |`maxRepairAttemptsInResponseClassification`| __Int__. When the Response Classifier determines an action is going to fail, specify how many attempts will be tried at fixing it. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|

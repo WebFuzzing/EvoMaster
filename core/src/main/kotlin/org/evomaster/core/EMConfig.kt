@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
+import org.evomaster.core.llm.LlmProvider
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
@@ -837,16 +838,8 @@ class EMConfig {
 
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
-            !languageModelConnector) {
+            !llm) {
             throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
-        }
-
-        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model server URL cannot be empty.")
-        }
-
-        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -3011,28 +3004,39 @@ class EMConfig {
     var callbackURLHostname = "localhost"
 
     @Experimental
-    @Cfg("Enable language model connector")
-    var languageModelConnector = false
+    @Cfg("Enable the use of LLMs.")
+    var llm = false
 
     @Experimental
-    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
-    var languageModelServerURL: String = "http://localhost:11434/"
+    @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
+    var llmURL: String? = null
 
     @Experimental
-    @Cfg("Large-language model name as listed in Ollama")
-    var languageModelName: String = "llama3.2:latest"
+    @Cfg("LLM name. If not specified, default will be based on the LLM provider.")
+    var llmName: String? = null
 
     @Experimental
-    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
-    @Min(1.0)
-    var languageModelConnectorNumberOfThreads: Int = 2
+    @Cfg("API KEY needed to authenticated toward the chosen LLM provider.")
+    var llmApiKey: String? = null
 
+    @Experimental
+    @Min(0.0) @Max(2.0)
+    @Cfg("Temperature parameter for LLM")
+    var llmTemperature = 0.3
+
+    @Experimental
+    @Min(0.0)
+    @Cfg("How long to wait for LLM's responses")
+    var llmTimeoutSeconds = 60L
+
+    @Experimental
+    @Cfg("Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI")
+    var llmProvider = LlmProvider.OLLAMA
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
             " created.")
     var createConfigPathIfMissing: Boolean = true
-
 
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
