@@ -3,10 +3,13 @@ package org.evomaster.core.output.naming
 enum class NamingStrategy {
 
     NUMBERED,
-    ACTION
+    ACTION,
+    LLM
     ;
 
-    fun isNumbered() = this.name.startsWith("numbered", true)
+    fun isNumbered() = this == NUMBERED
 
-    fun isAction() = this.name.startsWith("action", true)
+    fun isAction() = this == ACTION
+
+    fun isLLM() = this == LLM
 }
