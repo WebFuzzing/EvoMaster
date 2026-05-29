@@ -1,11 +1,14 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.output.naming.TestCaseNamingStrategy
+import org.evomaster.core.EMConfig
+import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.output.sorting.SortingHelper
-import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.search.Solution
 
 
-class TestSuiteOrganizer {
+class TestSuiteOrganizer(
+    private val config: EMConfig
+) {
 
     private val sortingHelper = SortingHelper()
 
@@ -20,14 +23,14 @@ class TestSuiteOrganizer {
      * Furthermore, this class is also responsible for deciding which
      * name each test will have.
      *
-     * <br>
-     * Note that the 'solution' is stored insider the [namingStrategy]
      */
-    fun createSortedTestCases(namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
+    fun createSortedTestCases(solution: Solution<*>): List<TestCase> {
+
+        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
 
         val tests = namingStrategy.getTestCases()
 
-        return sortingHelper.sort(tests, testCaseSortingStrategy)
+        return sortingHelper.sort(tests, config.testCaseSortingStrategy)
     }
 
 

@@ -1,10 +1,6 @@
 package org.evomaster.e2etests.spring.examples.sort;
 
-import org.evomaster.core.output.TestCase;
-import org.evomaster.core.output.TestSuiteOrganizer;
-import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy;
-import org.evomaster.core.output.naming.TestCaseNamingStrategy;
-import org.evomaster.core.output.sorting.SortingStrategy;
+
 import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestCallResult;
 import org.evomaster.core.problem.rest.data.RestIndividual;
@@ -14,7 +10,6 @@ import org.evomaster.e2etests.spring.examples.namedresource.NRTestBase;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,11 +38,11 @@ public class SortEMTest extends NRTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.PUT, 500);
                     assertHasAtLeastOne(solution, HttpVerb.POST, 500);
 
-                    TestSuiteOrganizer organizer = new TestSuiteOrganizer();
-
-                    TestCaseNamingStrategy namingStrategy = new NumberedTestCaseNamingStrategy(solution);
-
-                    List<TestCase> tclist = organizer.createSortedTestCases(namingStrategy, SortingStrategy.COVERED_TARGETS);
+//                    TestSuiteOrganizer organizer = new TestSuiteOrganizer();
+//
+//                    TestCaseNamingStrategy namingStrategy = new NumberedTestCaseNamingStrategy(solution);
+//
+//                    List<TestCase> tclist = organizer.createSortedTestCases(namingStrategy, SortingStrategy.COVERED_TARGETS);
 
                     //Iterator<TestCase> iterator = tclist.iterator();
                     //TestCase current, previous = iterator.next();

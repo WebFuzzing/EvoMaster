@@ -137,8 +137,7 @@ class TestSuiteWriter {
     ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
-        val testSuiteOrganizer = TestSuiteOrganizer()
-        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
+        val testSuiteOrganizer = TestSuiteOrganizer(config)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -153,7 +152,7 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        val tests = testSuiteOrganizer.createSortedTestCases(namingStrategy, config.testCaseSortingStrategy)
+        val tests = testSuiteOrganizer.createSortedTestCases(solution)
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
