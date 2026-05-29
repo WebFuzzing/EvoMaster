@@ -85,9 +85,9 @@ class SortingHelper {
      *  Note that the order of the comparators is the order their importance/priority.
      */
 
-    var comparatorList = listOf(statusCode, coveredTargets)
+    private val comparatorList = listOf(statusCode, coveredTargets)
 
-    val restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+    private val restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         (ind.evaluatedMainActions().last().action as RestCallAction).path.levels()
     }
         .thenBy { ind ->
@@ -100,7 +100,7 @@ class SortingHelper {
             (ind.evaluatedMainActions().last().action as RestCallAction).verb
         }
 
-    val graphQLComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+    private val graphQLComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         (ind.evaluatedMainActions().last().action as GraphQLAction).methodName
     }
         .thenBy { ind ->
@@ -110,7 +110,7 @@ class SortingHelper {
             (ind.evaluatedMainActions().last().action as GraphQLAction).parameters.size
         }
 
-    val rpcComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+    private val rpcComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         (ind.evaluatedMainActions().last().action as RPCCallAction).getSimpleClassName()
     }
         .thenBy { ind ->
@@ -119,8 +119,6 @@ class SortingHelper {
         .thenBy { ind ->
             (ind.evaluatedMainActions().last().action as RPCCallAction).parameters.size
         }
-
-    private val availableSortCriteria = listOf(statusCode, minActions, coveredTargets, maxStatusCode, maxActions, dbInitSize)
 
 
     fun sort(tests: List<TestCase>, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
@@ -138,29 +136,6 @@ class SortingHelper {
         return sort(namingStrategy.getTestCases(), testCaseSortingStrategy)
     }
 
-    fun getAvailableCriteria(): List<Comparator<EvaluatedIndividual<*>>> {
-        return availableSortCriteria
-    }
-
-    fun selectCriteria(selected: List<Comparator<EvaluatedIndividual<*>>>){
-        if (availableSortCriteria.containsAll(selected)){
-            comparatorList = selected
-        }
-        else {
-            throw UnsupportedOperationException("The sorting criteria chosen appear to not be supported at the moment.")
-        }
-    }
-
-    fun selectCriteriaByIndex(selected: List<Int>){
-        if (availableSortCriteria.indices.toList().containsAll(selected)){
-            comparatorList = availableSortCriteria.filterIndexed{ index, _ ->
-                selected.contains(index)
-            }
-        }
-        else {
-            throw UnsupportedOperationException("The sorting criteria chosen appear to not be supported at the moment.")
-        }
-    }
 
     private fun getSortedTestCases(tests: List<TestCase>, comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
         return getSortedTestCases(tests, singletonList(comparator))
