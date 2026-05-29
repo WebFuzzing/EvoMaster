@@ -2952,28 +2952,34 @@ class EMConfig {
     var llm = false
 
     @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
     var llmURL: String? = null
 
     @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("LLM name. If not specified, default will be based on the LLM provider.")
     var llmName: String? = null
 
     @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("API KEY needed to authenticated toward the chosen LLM provider.")
     var llmApiKey: String? = null
 
     @Experimental
     @Min(0.0) @Max(2.0)
+    @DependsOnTrueFor("llm")
     @Cfg("Temperature parameter for LLM")
     var llmTemperature = 0.3
 
     @Experimental
+    @DependsOnTrueFor("llm")
     @Min(0.0)
     @Cfg("How long to wait for LLM's responses")
     var llmTimeoutSeconds = 60L
 
     @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI")
     var llmProvider = LlmProvider.OLLAMA
 
