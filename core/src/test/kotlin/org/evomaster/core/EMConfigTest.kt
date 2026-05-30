@@ -693,7 +693,7 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "true")
+        val options = parser.parse("--namingStrategy", "DETERMINISTIC", "--nameWithQueryParameters", "true")
         config.updateProperties(options)
 
         assertEquals(NamingStrategy.DETERMINISTIC, config.namingStrategy)
@@ -705,7 +705,7 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "false")
+        val options = parser.parse("--namingStrategy", "DETERMINISTIC", "--nameWithQueryParameters", "false")
         config.updateProperties(options)
 
         assertEquals(NamingStrategy.DETERMINISTIC, config.namingStrategy)
