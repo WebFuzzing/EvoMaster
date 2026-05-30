@@ -79,7 +79,7 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
+        private val defaultTestCaseNamingStrategy = NamingStrategy.DETERMINISTIC
 
         private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
@@ -869,6 +869,10 @@ class EMConfig {
                 throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
             if (sutJarEnvVarName.isEmpty())
                 throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
+
+        if(namingStrategy == NamingStrategy.LLM && !llm){
+            throw ConfigProblemException("Naming strategy LLM require the setup and use of an LLM")
         }
     }
 
