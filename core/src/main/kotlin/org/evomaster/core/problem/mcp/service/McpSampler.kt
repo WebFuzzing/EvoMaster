@@ -2,6 +2,7 @@ package org.evomaster.core.problem.mcp.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.mcp.McpAction
@@ -55,7 +56,14 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         resourceActionCluster.clear()
 
         // Discover tools
-        val tools = mcpClient.listTools()
+        val tools = try {
+            mcpClient.listTools()
+        } catch (e: Exception) {
+            throw SutProblemException(
+                "Failed to connect to MCP server at '${config.bbTargetUrl}'. " +
+                "Make sure the server is running and the URL is correct. Cause: ${e.message}"
+            )
+        }
         for (tool in tools) {
             val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
             val action = McpToolCallAction(
