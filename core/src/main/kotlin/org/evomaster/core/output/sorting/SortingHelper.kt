@@ -184,6 +184,10 @@ class SortingHelper {
 
     private fun sortByTargetIncremental(tests: List<TestCase>): List<TestCase> {
 
+        if(tests.isEmpty()){
+            return emptyList()
+        }
+
         val comparator = when {
             tests.any { it.test.individual is RestIndividual } -> restComparator
             tests.any { it.test.individual is GraphQLIndividual } -> graphQLComparator

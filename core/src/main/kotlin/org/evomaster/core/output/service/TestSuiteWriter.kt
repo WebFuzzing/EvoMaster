@@ -152,7 +152,21 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        val tests = testSuiteOrganizer.createSortedTestCases(solution)
+        //FIXME should solve all problems that happen in the EM tests
+        //catch any sorting problems (see NPE is SortingHelper on Trello)
+        val tests = try {
+            // TODO skip to sort RPC for the moment
+            testSuiteOrganizer.createSortedTestCases(solution)
+        } catch (ex: Exception) {
+            log.warn(
+                "A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+            )
+            // fallback to numbered naming strategy upon failure
+            NumberedTestCaseNamingStrategy(solution).getTestCases()
+        }
+
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
