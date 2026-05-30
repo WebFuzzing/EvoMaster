@@ -12,7 +12,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
 
     private fun nextId() = idCounter.getAndIncrement()
 
-    private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?> {
+    private fun openConnection(method: String, params: Map<String, Any?>): Pair<HttpURLConnection, String> {
         val body = mapper.writeValueAsString(
             mapOf(
                 "jsonrpc" to "2.0",
@@ -21,8 +21,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
                 "id" to nextId()
             )
         )
-        val url = URL(baseUrl)
-        val conn = url.openConnection() as HttpURLConnection
+        val conn = URL(baseUrl).openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
         conn.setRequestProperty("Accept", "application/json")
@@ -30,8 +29,19 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         conn.connectTimeout = 10_000
         conn.readTimeout = 30_000
         conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+        return Pair(conn, body)
+    }
+
+    /** Send a JSON-RPC request. Throws on connection errors; throws on 5xx. Returns null on 4xx (method not supported). */
+    @Suppress("UNCHECKED_CAST")
+    private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
+        val (conn, _) = openConnection(method, params)
+        val status = conn.responseCode
+        if (status == 400 || status == 404 || status == 405) {
+            // server does not support this MCP method — treat as empty
+            return null
+        }
         val responseBody = conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
-        @Suppress("UNCHECKED_CAST")
         return mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
     }
 
@@ -41,7 +51,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         var cursor: String? = null
         do {
             val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("tools/list", params)
+            val response = post("tools/list", params) ?: break
             val result = response["result"] as? Map<String, Any?> ?: break
             val items = result["tools"] as? List<*> ?: emptyList<Any>()
             items.filterIsInstance<Map<String, Any?>>().forEach { t ->
@@ -64,7 +74,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         var cursor: String? = null
         do {
             val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("resources/list", params)
+            val response = post("resources/list", params) ?: break
             val result = response["result"] as? Map<String, Any?> ?: break
             val items = result["resources"] as? List<*> ?: emptyList<Any>()
             items.filterIsInstance<Map<String, Any?>>().forEach { r ->
@@ -88,7 +98,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         var cursor: String? = null
         do {
             val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("resources/templates/list", params)
+            val response = post("resources/templates/list", params) ?: break
             val result = response["result"] as? Map<String, Any?> ?: break
             val items = result["resourceTemplates"] as? List<*> ?: emptyList<Any>()
             items.filterIsInstance<Map<String, Any?>>().forEach { t ->
@@ -108,6 +118,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
     @Suppress("UNCHECKED_CAST")
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
         val response = post("tools/call", mapOf("name" to name, "arguments" to arguments))
+            ?: return McpToolResult(isError = true)
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
         val rawContent = result["content"] as? List<*> ?: emptyList<Any>()
         val content = rawContent.filterIsInstance<Map<String, Any?>>().map { c ->
@@ -127,6 +138,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
     @Suppress("UNCHECKED_CAST")
     override fun readResource(uri: String): McpResourceResult {
         val response = post("resources/read", mapOf("uri" to uri))
+            ?: return McpResourceResult()
         val result = response["result"] as? Map<String, Any?> ?: return McpResourceResult()
         val rawContents = result["contents"] as? List<*> ?: emptyList<Any>()
         val contents = rawContents.filterIsInstance<Map<String, Any?>>().map { c ->
