@@ -254,6 +254,29 @@ class RestIndividual(
 
     }
 
+    /**
+     *  If main action at [index] creates a resource, remove references to its location id made by subsequent actions.
+     *
+     *  Used in minimization phase when the main action at [index] will be removed.
+     */
+    fun removeReferencesToResourceIfCreated(index: Int) {
+        val actions = seeMainExecutableActions()
+        val n = actions.size
+
+        if (index == n-1) {
+            return
+        }
+
+        if (actions[index].saveCreatedResourceLocation) {
+            val creationLocationId = actions[index].creationLocationId()
+            for (i in index + 1 until n) {
+                if (actions[i].usePreviousLocationId == creationLocationId) {
+                    actions[i].usePreviousLocationId = null
+                }
+            }
+        }
+    }
+
     //FIXME refactor
     override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
         return SqlActionUtils.isValidActions(
