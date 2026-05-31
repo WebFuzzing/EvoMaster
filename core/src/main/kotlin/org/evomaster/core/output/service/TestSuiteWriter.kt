@@ -539,7 +539,7 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
-//            lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
+            lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
