@@ -9,6 +9,10 @@ open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
 ) : TestCaseNamingStrategy(solution) {
 
+    companion object{
+        const val TEST_NAME_PREFIX = "test_"
+    }
+
     override fun getTestCases(): List<TestCase> {
         return generateNames(solution.individuals)
     }
@@ -26,7 +30,7 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     private fun concatName(counter: Int, expandedName: String): String {
-        return "test_${counter}${expandedName}"
+        return "$TEST_NAME_PREFIX${counter}${expandedName}"
     }
 
     private fun generateNames(individuals: List<EvaluatedIndividual<*>>) : List<TestCase> {
