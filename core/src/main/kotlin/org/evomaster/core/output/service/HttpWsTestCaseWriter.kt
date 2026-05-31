@@ -869,6 +869,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
             }
             appendBodyArgument(call)
+//        lines.append(", verify=False")
         }
     }
 
