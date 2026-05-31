@@ -559,72 +559,80 @@ class HttpSemanticsService : TimeBoxedPhase{
 
 
     /**
-     * HTTP_INVALID_LOCATION oracle: a POST/PUT that returns 2xx with a Location header
-     * must point to a resource that actually exists — a follow-up GET on that Location
-     * must not return 404.
+     * HTTP_INVALID_LOCATION oracle: any response carrying a Location header must point
+     * to a resource that actually exists — a follow-up GET on that Location must not
+     * return 404.
      *
      * Sequence built:
      *   [...]
-     *   POST|PUT /X  -> 2xx with Location header L
-     *   GET      L   -> oracle target: must NOT be 404
+     *   ANY /X  -> response with Location header L
+     *   GET  L  -> oracle target: must NOT be 404
      *
      */
+    private data class LocationCandidate(
+        val individual: EvaluatedIndividual<RestIndividual>,
+        val sourceIndex: Int,
+        val source: RestCallAction
+    )
+
+    /**
+     * Every action in [ei] whose response carried a non-blank Location header,
+     * paired with its index in [RestIndividual.seeMainExecutableActions].
+     */
+    private fun locationCandidatesIn(
+        ei: EvaluatedIndividual<RestIndividual>
+    ): Sequence<LocationCandidate> {
+        val mainActions = ei.individual.seeMainExecutableActions()
+        return ei.evaluatedMainActions().asSequence().mapNotNull { ea ->
+            val a = ea.action as? RestCallAction ?: return@mapNotNull null
+            val r = ea.result as? RestCallResult ?: return@mapNotNull null
+            if (r.getLocation().isNullOrBlank()) return@mapNotNull null
+            val idx = mainActions.indexOfFirst { it.getLocalId() == a.getLocalId() }
+            if (idx < 0) null else LocationCandidate(ei, idx, a)
+        }
+    }
+
     private fun invalidLocation() {
 
-        val creatorVerbs = listOf(HttpVerb.POST, HttpVerb.PUT)
+        val candidates = individualsInSolution.asSequence()
+            .flatMap { ei -> locationCandidatesIn(ei) }
+            .groupBy { it.source.verb to it.source.path }
+            .values
+            .map { group -> group.minBy { it.individual.individual.size() } }
 
-        for (verb in creatorVerbs) {
+        for (candidate in candidates) {
 
-            val creatorOps = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
+            if (hasPhaseTimedOut()) return
 
-            creatorOps.forEach { creatorOp ->
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                candidate.individual.individual, candidate.sourceIndex
+            )
+            val creator = ind.seeMainExecutableActions().last()
 
-                if (hasPhaseTimedOut()) return
+            // runtime URL is resolved from the Location header
+            // (relative/absolute, possibly with query params). We do not bind to a schema
+            // The path here is a structural placeholder; the real URL comes from chainState.
+            val getAction = RestCallAction(
+                id = "GET:LOCATION-FOLLOWUP",
+                verb = HttpVerb.GET,
+                path = RestPath("/"),
+                parameters = mutableListOf(),
+                auth = creator.auth
+            )
+            getAction.doInitialize(randomness)
+            getAction.forceNewTaints()
 
-                // GET endpoint to follow up on: same path (e.g. PUT /x/{id} -> GET /x/{id})
-                // or the closest descendant (e.g. POST /x -> GET /x/{id})
-                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == creatorOp.path }
-                    ?: actionDefinitions
-                        .filter { it.verb == HttpVerb.GET && creatorOp.path.isSameOrAncestorOf(it.path) }
-                        .minByOrNull { it.path.levels() }
-                    ?: return@forEach
-
-                // pick the smallest individual where this creator returned 2xx AND a Location
-                val candidate = RestIndividualSelectorUtils.findIndividuals(
-                    individualsInSolution, verb, creatorOp.path, statusGroup = StatusGroup.G_2xx
-                ).filter { ei ->
-                    ei.evaluatedMainActions().any { ea ->
-                        val a = ea.action as? RestCallAction ?: return@any false
-                        val r = ea.result as? RestCallResult ?: return@any false
-                        a.verb == verb && a.path.isEquivalent(creatorOp.path)
-                                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())
-                                && !r.getLocation().isNullOrBlank()
-                    }
-                }.minByOrNull { it.individual.size() } ?: return@forEach
-
-                val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                    candidate, verb, creatorOp.path, statusGroup = StatusGroup.G_2xx
-                )
-
-                val creator = ind.seeMainExecutableActions().last()
-
-                // Build the follow-up GET and force Location chaining.
-                val getAction = getDef.copy() as RestCallAction
-                getAction.resetLocalIdRecursively()
-                if (getAction.isInitialized()) {
-                    getAction.seeTopGenes().forEach { it.randomize(randomness, false) }
-                } else {
-                    getAction.doInitialize(randomness)
-                }
-                getAction.auth = creator.auth
-                getAction.forceNewTaints()
-
+            // TODO: saveCreatedResourceLocation is restricted to POST/PUT; skip other verbs.
+            //  After refactoring RestCallAction.creationLocationId() we should update here.
+            try {
                 creator.saveAndLinkLocationTo(getAction)
-
-                ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
-
-                prepareEvaluateAndSave(ind)
+            } catch (e: IllegalArgumentException) {
+                continue
             }
+
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
+
+            prepareEvaluateAndSave(ind)
         }
     }
 }

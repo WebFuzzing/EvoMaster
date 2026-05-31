@@ -687,13 +687,12 @@ object HttpSemanticsOracle {
     /**
      * Checks the invalid-location oracle:
      *
-     *   POST|PUT /X  -> 2xx with Location header L
-     *   GET      L   -> 404   (BUG: location does not point to an existing resource)
+     *   ANY /X  -> response with Location header L
+     *   GET  L  -> 404   (BUG: location does not point to an existing resource)
      *
      * Sequence checked: the last two main actions of the individual.
-     *  - second-to-last (creator) is POST or PUT, has a 2xx status, and its result has a
-     *    non-blank Location header.
-     *  - last is a GET bound to the creator's saved Location via [RestCallAction.usePreviousLocationId].
+     *  - second-to-last (previous) — any verb — whose result has a non-blank Location header.
+     *  - last is a GET bound to that Location via [RestCallAction.usePreviousLocationId].
      *  - last action's response is 404.
      */
     fun hasInvalidLocation(
@@ -704,28 +703,29 @@ object HttpSemanticsOracle {
         if (individual.size() < 2) return false
 
         val actions = individual.seeMainExecutableActions()
-        val creator = actions[actions.size - 2]
-        val follow  = actions[actions.size - 1]
+        val previous = actions[actions.size - 2]
+        val follow   = actions[actions.size - 1]
 
-        // creator must be a potential resource-creating verb (POST/PUT)
-        if (!creator.isPotentialActionForCreation()) return false
-
-        // follow-up must be a GET, and it must actually be chained to the creator's Location
+        // follow-up must be a GET, and it must actually be chained to the previous Location
         if (follow.verb != HttpVerb.GET) return false
-        val expectedLocId = try { creator.creationLocationId() } catch (e: Exception) { return false }
+        if (follow.usePreviousLocationId.isNullOrBlank()) return false
+        // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
+        //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
+        //  After that restriction is refactored to allow any verb whose response carried a
+        //  Location header, this catch can be dropped and the oracle will fire for all verbs.
+        val expectedLocId = try { previous.creationLocationId() } catch (e: Exception) { return false }
         if (follow.usePreviousLocationId != expectedLocId) return false
 
         // same auth so a 404 cannot be confused with an authorization problem
-        if (creator.auth.isDifferentFrom(follow.auth)) return false
+        if (previous.auth.isDifferentFrom(follow.auth)) return false
 
-        val resCreator = actionResults.find { it.sourceLocalId == creator.getLocalId() } as RestCallResult?
+        val resPrevious = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
             ?: return false
-        val resFollow  = actionResults.find { it.sourceLocalId == follow.getLocalId() } as RestCallResult?
+        val resFollow   = actionResults.find { it.sourceLocalId == follow.getLocalId() } as RestCallResult?
             ?: return false
 
-        // creator must have succeeded and returned a Location header
-        if (!StatusGroup.G_2xx.isInGroup(resCreator.getStatusCode())) return false
-        if (resCreator.getLocation().isNullOrBlank()) return false
+        // the only structural precondition on the previous response is a non-blank Location header
+        if (resPrevious.getLocation().isNullOrBlank()) return false
 
         // BUG: a GET on that Location returns 404
         return resFollow.getStatusCode() == 404
