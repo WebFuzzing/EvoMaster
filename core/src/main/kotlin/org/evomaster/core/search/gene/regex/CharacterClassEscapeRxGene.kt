@@ -65,19 +65,19 @@ class CharacterClassEscapeRxGene(
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
         private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
-            "lower"  to listOf(CharacterRange('a', 'z')),
-            "upper"  to listOf(CharacterRange('A', 'Z')),
-            "ascii"  to listOf(CharacterRange(0, 0x7f)),
-            "alpha"  to asciiLetterSet,
-            "digit"  to digitSet,
-            "alnum"  to digitSet + asciiLetterSet,
-            "punct"  to punctuationSet,
-            "graph"  to digitSet + asciiLetterSet + punctuationSet,
-            "print"  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
-            "blank"  to stringToListOfCharacterRanges(" \t"),
-            "cntrl"  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
-            "xdigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
-            "space"  to spaceSet,
+            "Lower"  to listOf(CharacterRange('a', 'z')),
+            "Upper"  to listOf(CharacterRange('A', 'Z')),
+            "ASCII"  to listOf(CharacterRange(0, 0x7f)),
+            "Alpha"  to asciiLetterSet,
+            "Digit"  to digitSet,
+            "Alnum"  to digitSet + asciiLetterSet,
+            "Punct"  to punctuationSet,
+            "Graph"  to digitSet + asciiLetterSet + punctuationSet,
+            "Print"  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
+            "Blank"  to stringToListOfCharacterRanges(" \t"),
+            "Cntrl"  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
+            "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
+            "Space"  to spaceSet,
         )
             // create both normal and negated version for all
             .flatMap { (key, value) ->
@@ -106,7 +106,11 @@ class CharacterClassEscapeRxGene(
             throw IllegalArgumentException("Invalid type: $type")
         }
 
-        multiCharRange = if ( flags.unicodeCharacterClass && (type[0] in "wWdDsS" || (type[0] in "pP" && type.substring(2, type.length - 1).lowercase() in posixAsciiMultiCharRange)) ) {
+        val lowercasePosixKeys = posixAsciiMultiCharRange.keys.map{ it.lowercase() }
+
+        multiCharRange = if ( flags.unicodeCharacterClass &&
+            (type[0] in "wWdDsS" ||
+                    (type[0] in "pP" && type.substring(2, type.length - 1).lowercase() in lowercasePosixKeys)) ) {
             // UNICODE_CHARACTER_CLASSES flag is on, so these should now be in conformance with the recommendation of
             // Annex C: Compatibility Properties of Unicode Regular Expression, see:
             // https://www.unicode.org/reports/tr18/#Compatibility_Properties
@@ -133,9 +137,11 @@ class CharacterClassEscapeRxGene(
                 'p', 'P' -> {
                     val pLabel = type.substring(2, type.length - 1)
                     val negated = type[0].isUpperCase()
-                    val lookupKey = (if (negated) "^$pLabel" else pLabel).lowercase()
+                    val lookupKey = if (negated) "^$pLabel" else pLabel
                     if (lookupKey in posixAsciiMultiCharRange) {
                         posixAsciiMultiCharRange[lookupKey]!!
+                    } else if (lookupKey.lowercase() in lowercasePosixKeys) {
+                        throw IllegalStateException("This escape (\\$type) is only valid when the \"U\" flag is on.")
                     } else {
                         unicodeCache.getRanges(pLabel, negated)
                     }

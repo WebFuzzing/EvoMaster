@@ -284,9 +284,10 @@ class UnicodeCache {
             return pEscapeLabel
         }
 
-        // Unicode character class mode: exact match, case-sensitive
-        if (pEscapeLabel in unicodeCharClassModePredicates) {
-            return pEscapeLabel.lowercase()
+        // Unicode character class mode: exact match, case-insensitive
+        val unicodeModeKey = pEscapeLabel.lowercase()
+        if (unicodeModeKey in unicodeCharClassModePredicates) {
+            return unicodeModeKey
         }
 
         // no match found
