@@ -15,6 +15,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.MultiCharacterRange
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -23,9 +24,16 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)
+
+        /** All characters except for line terminators are recognized by "." in regex, see:
+         * https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#COMMENTS:~:text=range%20forming%20metacharacter.-,Line%20terminators,-A%20line%20terminator
+         */
+        val defaultValidRanges = MultiCharacterRange(true,"\n\r\u0085\u2028\u2029")
     }
 
     var value: Char = 'a'
+
+    val validRanges = defaultValidRanges
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
@@ -46,8 +54,13 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        //TODO properly... this is just a tmp hack
-        value = randomness.nextWordChar()
+        val previous = value
+
+        value = validRanges.sample(randomness)
+
+        if (previous == value) {
+            randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
