@@ -95,6 +95,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testPosixCharacterClasses(){
         checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
             |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
+        checkSameAsJava("""(?U)\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
+            |\p{pRINT}\p{BLANK}\p{cNtRl}\p{XdIgIt}\p{space}""".trimMargin())
     }
 
     @Test
@@ -135,6 +137,19 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""\P{Lower}\P{Upper}\P{ASCII}\P{Alpha}\P{Digit}\P{Alnum}\P{Punct}\P{Graph}
             |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
         checkSameAsJava("""\P{Pe}""")
+        checkSameAsJava("""(?U)\P{Lower}""")
+        checkSameAsJava("""(?U)\P{Upper}""")
+        checkSameAsJava("""(?U)\P{ASCII}""")
+        checkSameAsJava("""(?U)\P{Alpha}""")
+        checkSameAsJava("""(?U)\P{Digit}""")
+        checkSameAsJava("""(?U)\P{Alnum}""")
+        checkSameAsJava("""(?U)\P{Punct}""")
+        checkSameAsJava("""(?U)\P{Graph}""")
+        checkSameAsJava("""(?U)\P{Print}""")
+        checkSameAsJava("""(?U)\P{Blank}""")
+        checkSameAsJava("""(?U)\P{Cntrl}""")
+        checkSameAsJava("""(?U)\P{XDigit}""")
+        checkSameAsJava("""(?U)\P{Space}""")
     }
 
     @Test
@@ -234,6 +249,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^((?iu)@.+)$")
         checkSameAsJava("^(?iu)")
         checkSameAsJava("(?iu)")
+        checkSameAsJava("(?s).+")
+        checkSameAsJava("(?d).+")
+        checkSameAsJava("(?ds).+")
     }
 
     @Test
