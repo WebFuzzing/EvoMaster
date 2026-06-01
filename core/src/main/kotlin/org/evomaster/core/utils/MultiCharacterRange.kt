@@ -17,7 +17,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
         }
 
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
-            if (ranges.isEmpty()) {
+            if (ranges.isEmpty() && !negated) {
                 throw IllegalArgumentException("No defined ranges")
             }
 

@@ -383,7 +383,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.DOT() != null){
-            return VisitResult(AnyCharacterRxGene())
+            return VisitResult(AnyCharacterRxGene(currentFlags))
         }
 
         if(ctx.characterClass() != null){

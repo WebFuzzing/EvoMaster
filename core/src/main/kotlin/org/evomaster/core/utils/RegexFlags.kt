@@ -31,9 +31,9 @@ data class RegexFlags(
     // currently implemented
     val caseInsensitive: Boolean = false,        // i
     val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
+    val dotAll: Boolean = false,                 // s
 
     // recognised but not yet implemented, validate() throws on these
-    val dotAll: Boolean = false,                 // s
     val multiline: Boolean = false,              // m
     val unixLines: Boolean = false,              // d
     val unicodeCharacterClass: Boolean = false,  // U
@@ -117,11 +117,10 @@ data class RegexFlags(
      * Call this after merging, before recursing into the flagged disjunction.
      */
     fun validate() {
-        if (dotAll)                throw IllegalStateException("Regex flag 's' (DOTALL) is not yet supported")
         if (multiline)             throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
         if (unixLines)             throw IllegalStateException("Regex flag 'd' (UNIX_LINES) is not yet supported")
         if (unicodeCharacterClass) throw IllegalStateException("Regex flag 'U' (UNICODE_CHARACTER_CLASS) is not yet supported")
-        if (comments) throw IllegalStateException("Regex flag 'x' (COMMENTS) is not yet supported")
+        if (comments)              throw IllegalStateException("Regex flag 'x' (COMMENTS) is not yet supported")
     }
 
     /**

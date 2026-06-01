@@ -16,11 +16,13 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
-class AnyCharacterRxGene : RxAtom, SimpleGene("."){
+class AnyCharacterRxGene(
+    val flags: RegexFlags = RegexFlags()
+) : RxAtom, SimpleGene(".") {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)
@@ -29,18 +31,22 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
          * https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#COMMENTS:~:text=range%20forming%20metacharacter.-,Line%20terminators,-A%20line%20terminator
          */
         val defaultValidRanges = MultiCharacterRange(true,"\n\r\u0085\u2028\u2029")
+        val dotAllValidRanges = MultiCharacterRange(true, "") // all characters accepted
     }
 
     var value: Char = 'a'
 
-    val validRanges = defaultValidRanges
+    val validRanges = when {
+        flags.dotAll -> dotAllValidRanges
+        else -> defaultValidRanges
+    }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
     override fun copyContent(): Gene {
-        val copy = AnyCharacterRxGene()
+        val copy = AnyCharacterRxGene(flags)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
         return copy
