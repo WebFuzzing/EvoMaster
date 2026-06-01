@@ -23,6 +23,9 @@ class TestSuiteOrganizer(
      * Furthermore, this class is also responsible for deciding which
      * name each test will have.
      *
+     * <br>
+     * WARNING: side-effect of sorting tests inside input [solution] object
+     *
      */
     fun createSortedTestCases(solution: Solution<*>): List<TestCase> {
 

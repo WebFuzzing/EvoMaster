@@ -1,6 +1,5 @@
 package org.evomaster.core.output.sorting
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.naming.TestCaseNamingStrategy
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -120,7 +119,7 @@ class SortingHelper {
 
     fun sort(tests: MutableList<out EvaluatedIndividual<*>>, testCaseSortingStrategy: SortingStrategy) {
         when (testCaseSortingStrategy) {
-            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, tests)
+            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(tests, comparatorList)
             SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(tests)
             else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
         }
@@ -137,43 +136,31 @@ class SortingHelper {
     }
 
 
-    private fun getSortedTestCases(tests: MutableList<out EvaluatedIndividual<*>>, comparator: Comparator<EvaluatedIndividual<*>>) {
-         getSortedTestCases(tests, singletonList(comparator))
+    private fun sortByComparator(tests: MutableList<out EvaluatedIndividual<*>>, comparator: Comparator<EvaluatedIndividual<*>>) {
+        sortByComparatorList(tests, singletonList(comparator))
     }
 
-    private fun getSortedTestCases(tests: MutableList<out EvaluatedIndividual<*>>, comparators: List<Comparator<EvaluatedIndividual<*>>>) {
+    /**
+     * Sorting is done according to the comparator list.
+     * Comparisons,  are done as follows:
+     * First, the list is sorted based on the first criterion.
+     * Then, the (now sorted) list, is sorted based on the second criterion.
+     * Where two values have equal priority with respect to the most recent sort, they maintain the order (and, thus,
+     * are still sorted according to the first criterion).
+     *
+     * So, a criterion with more priority overrides most other criteria, unless elements have the same value.
+     * If too many criteria are used, the ones that are lower on the priority list will not really have a chance to manifest.
+     *
+     * An example of how this approach is used:
+     * = first priority (thus, last to be executed and most likely to be observed) is the [statusCode]. Thus, every
+     * test case that contains a 500 code is at the top.
+     * = second priority (thus, second to last to be executed), is the [coveredTargets]. Thus, among those test cases
+     * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
+     */
+    private fun sortByComparatorList(tests: MutableList<out EvaluatedIndividual<*>>, comparators: List<Comparator<EvaluatedIndividual<*>>>) {
         comparators.asReversed().forEach { comp ->
             tests.sortWith(comp)
         }
-    }
-
-
-
-    /**
-     *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
-     */
-    private fun sortByComparatorList (comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
-                                     tests: MutableList<out EvaluatedIndividual<*>>
-
-    ){
-        /**
-         * Comparisons, as far as I understand them, are done as follows:
-         * First, the list is sorted based on the first criterion.
-         * Then, the (now sorted) list, is sorted based on the second criterion.
-         * Where two values have equal priority with respect to the most recent sort, they maintain the order (and, thus,
-         * are still sorted according to the first criterion).
-         *
-         * So, a criterion with more priority overrides most other criteria, unless elements have the same value.
-         * If too many criteria are used, the ones that are lower on the priority list will not really have a chance to manifest.
-         *
-         * An example of how this approach is used:
-         * = first priority (thus, last to be executed and most likely to be observed) is the [statusCode]. Thus, every
-         * test case that contains a 500 code is at the top.
-         * = second priority (thus, second to last to be executed), is the [coveredTargets]. Thus, among those test cases
-         * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
-         */
-
-        return getSortedTestCases(tests, comparators)
     }
 
     private fun sortByTargetIncremental(tests: MutableList<out EvaluatedIndividual<*>>) {
@@ -193,7 +180,7 @@ class SortingHelper {
             else -> throw IllegalStateException("Unrecognized test individuals with no target incremental based sorting strategy set.")
         }
 
-        getSortedTestCases(tests, comparator)
+        sortByComparator(tests, comparator)
     }
 
 
