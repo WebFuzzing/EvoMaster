@@ -39,8 +39,6 @@ class SortingHelper {
      *          - second:   2xx
      *          - third:    4xx
      */
-
-
     private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
         val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
             it.getStatusCode()?.rem(500) ?: 0
@@ -84,7 +82,6 @@ class SortingHelper {
      *  [comparatorList] holds those comparators that are currently selected for sorting
      *  Note that the order of the comparators is the order their importance/priority.
      */
-
     private val comparatorList = listOf(statusCode, coveredTargets)
 
     private val restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
@@ -121,36 +118,33 @@ class SortingHelper {
         }
 
 
-    fun sort(tests: List<TestCase>, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
-        val newSort = when (testCaseSortingStrategy) {
+    fun sort(tests: MutableList<out EvaluatedIndividual<*>>, testCaseSortingStrategy: SortingStrategy) {
+        when (testCaseSortingStrategy) {
             SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, tests)
             SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(tests)
             else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
         }
-
-        return newSort
     }
 
     @Deprecated("Use other version")
-    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy) : List<TestCase> {
-        return sort(namingStrategy.getTestCases(), testCaseSortingStrategy)
+    fun sort(
+        solution: Solution<*>,
+        namingStrategy: TestCaseNamingStrategy,
+        testCaseSortingStrategy: SortingStrategy
+    ) : List<TestCase> {
+        sort(solution.individuals, testCaseSortingStrategy)
+        return namingStrategy.getTestCases()
     }
 
 
-    private fun getSortedTestCases(tests: List<TestCase>, comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
-        return getSortedTestCases(tests, singletonList(comparator))
+    private fun getSortedTestCases(tests: MutableList<out EvaluatedIndividual<*>>, comparator: Comparator<EvaluatedIndividual<*>>) {
+         getSortedTestCases(tests, singletonList(comparator))
     }
 
-    private fun getSortedTestCases(tests: List<TestCase>, comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
-
-        val copy = tests.toMutableList()
-
+    private fun getSortedTestCases(tests: MutableList<out EvaluatedIndividual<*>>, comparators: List<Comparator<EvaluatedIndividual<*>>>) {
         comparators.asReversed().forEach { comp ->
-            val w = Comparator<TestCase>{a, b -> comp.compare(a.test,b.test)}
-            copy.sortWith(w)
+            tests.sortWith(comp)
         }
-
-        return copy
     }
 
 
@@ -159,9 +153,9 @@ class SortingHelper {
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
     private fun sortByComparatorList (comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
-                                     tests: List<TestCase>
+                                     tests: MutableList<out EvaluatedIndividual<*>>
 
-    ): List<TestCase> {
+    ){
         /**
          * Comparisons, as far as I understand them, are done as follows:
          * First, the list is sorted based on the first criterion.
@@ -182,24 +176,24 @@ class SortingHelper {
         return getSortedTestCases(tests, comparators)
     }
 
-    private fun sortByTargetIncremental(tests: List<TestCase>): List<TestCase> {
+    private fun sortByTargetIncremental(tests: MutableList<out EvaluatedIndividual<*>>) {
 
         if(tests.isEmpty()){
-            return emptyList()
+            return
         }
 
         val comparator = when {
-            tests.any { it.test.individual is RestIndividual } -> restComparator
-            tests.any { it.test.individual is GraphQLIndividual } -> graphQLComparator
-            tests.any { it.test.individual is RPCIndividual } -> rpcComparator
-            tests.any { it.test.individual is WebIndividual } -> {
+            tests.any { it.individual is RestIndividual } -> restComparator
+            tests.any { it.individual is GraphQLIndividual } -> graphQLComparator
+            tests.any { it.individual is RPCIndividual } -> rpcComparator
+            tests.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 statusCode
             }
             else -> throw IllegalStateException("Unrecognized test individuals with no target incremental based sorting strategy set.")
         }
 
-        return getSortedTestCases(tests, comparator)
+        getSortedTestCases(tests, comparator)
     }
 
 

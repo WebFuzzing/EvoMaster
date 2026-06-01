@@ -5,12 +5,16 @@ import org.evomaster.core.output.naming.NamingStrategy;
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy;
 import org.evomaster.core.output.naming.TestCaseNamingStrategy;
 import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestCallResult;
 import org.evomaster.core.problem.rest.data.RestIndividual;
+import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.namedresource.NRTestBase;
 import org.junit.jupiter.api.Test;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,48 +70,6 @@ public class SortEMTest extends NRTestBase {
                                 "Wrong numbering." +
                                         " Expected: " + i + ", but found " + index + " for test name " + name);
                     }
-
-                    /*
-                        TODO the check here were wrong, as checking a side-effect on internal list of solution.
-                        but solution can be split in sub-solutions before sorted (and tests are named) and printed.
-                        the sorting is not stored in the solution object, as it is a side-effect.
-                     */
-//                    Iterator<EvaluatedIndividual<RestIndividual>> iterator = solution.getIndividuals().iterator();
-//                    EvaluatedIndividual<RestIndividual> current, previous = iterator.next();
-//
-//                    while(iterator.hasNext()){
-//                        current = iterator.next();
-//
-//                        if (current.seeResults(null).stream()
-//                                .filter(w -> w instanceof RestCallResult)
-//                                .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500)) {
-//
-//                            assertTrue(previous.seeResults(null).stream()
-//                                    .filter(w -> w instanceof RestCallResult)
-//                                    .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500));
-//                        }
-//
-//
-//
-//                        // Check that the current "priority code" is less than the previous priority code
-//
-//                        OptionalInt currentPrioCode = current.seeResults(null).stream()
-//                                .filter(w -> w instanceof RestCallResult)
-//                                .mapToInt(w -> ((RestCallResult) w).getStatusCode())
-//                                .map(w -> w % 500)
-//                                .min();
-//
-//                        OptionalInt previousPrioCode = previous.seeResults(null).stream()
-//                                .filter(w -> w instanceof RestCallResult)
-//                                .mapToInt(w -> ((RestCallResult) w).getStatusCode())
-//                                .map(w -> w % 500)
-//                                .min();
-//
-//                        assertTrue(currentPrioCode.getAsInt() >= previousPrioCode.getAsInt());
-//                        previous = current;
-//
-//                }
-
                 });
     }
 

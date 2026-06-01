@@ -26,11 +26,17 @@ class TestSuiteOrganizer(
      */
     fun createSortedTestCases(solution: Solution<*>): List<TestCase> {
 
+        /*
+            Tests MUST be sorted before they are named, as their position might influence
+            their name (eg, "test_0_...")
+         */
+        sortingHelper.sort(solution.individuals, config.testCaseSortingStrategy)
+
         val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
 
         val tests = namingStrategy.getTestCases()
 
-        return sortingHelper.sort(tests, config.testCaseSortingStrategy)
+        return tests
     }
 
 
