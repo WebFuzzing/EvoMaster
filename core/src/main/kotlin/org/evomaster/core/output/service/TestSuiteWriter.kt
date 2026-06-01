@@ -22,6 +22,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.schema.TableId
@@ -190,10 +191,16 @@ class TestSuiteWriter {
                 null
             } else {
                 lines.addEmpty(2)
+
                 val start = lines.nextLineNumber()
                 lines.add(testLines)
                 val end = lines.nextLineNumber() - 1
-                TestCaseCode(test.name,test.test,testLines.toString(), start, end)
+
+                val examples = test.test.individual.getAllActiveUsedExamples()
+                    .filterIsInstance<UserExamplesGene>()
+                    .mapNotNull { it.getValueName() }
+                    .toSet()
+                TestCaseCode(test.name,test.test,testLines.toString(), start, end, examples)
             }
         }
 

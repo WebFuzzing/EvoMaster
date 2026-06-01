@@ -38,6 +38,7 @@ alternative
 
 term
  : assertion
+ | FLAG_SCOPE_OPEN
  | atom
  | atom quantifier
  ;
@@ -90,10 +91,25 @@ atom
  | DOT
  | atomEscape
  | characterClass
- | PAREN_open disjunction PAREN_close
+ | FLAG_GROUP_OPEN disjunction PAREN_close
+ // capturing and non capturing groups
+ | PAREN_open disjunction PAREN_close // capturing
+ | PAREN_open QUESTION COLON disjunction PAREN_close // non capturing
+ | NAMED_CAPTURE_GROUP_OPEN disjunction PAREN_close // named capturing
+ ;
 
- //TODO
-// | '(' '?' ':' disjunction ')'
+NAMED_CAPTURE_GROUP_OPEN
+ : '(?<' [a-zA-Z] [a-zA-Z0-9]* '>'
+ ;
+
+FLAG_GROUP_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [idmsuxU]+)? COLON
+ | PAREN_open QUESTION MINUS [idmsuxU]+ COLON
+ ;
+
+FLAG_SCOPE_OPEN
+ : PAREN_open QUESTION [idmsuxU]+ (MINUS [iumdsx]+)? PAREN_close
+ | PAREN_open QUESTION MINUS [idmsuxU]+ PAREN_close
  ;
 
 // Special for Java
@@ -125,12 +141,6 @@ CharacterEscape
 
  //| IdentityEscape
  ;
-
-//TODO backreferences
-// In java/js regex, you can form capture groups which capture parts of the input and then use backreferences to
-// match the same thing again, for example "(a|b)\1" only matches "aa" and "bb", backreferences are numbers escaped
-// which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
-// Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
 // Instead of listing all unicode scripts, blocks, etc. the parser allows anything
 // then we filter by checking if the label is valid when it is used.
@@ -178,6 +188,7 @@ patternCharacter
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
+ | COLON
  ;
 
 
@@ -221,6 +232,13 @@ classAtomNoDash
  | DecimalDigit
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
+ | COLON
+ // should be interpreted literally:
+ // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
+ // steps to interpret them correctly given the context.
+ // [(?iu)] -> FLAG_SCOPE_OPEN, each letter of the token should be interpreted literally.
+ | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
+ | NAMED_CAPTURE_GROUP_OPEN
  ;
 
 decimalDigits
@@ -236,8 +254,8 @@ atomEscape
  : CharacterClassEscape
  | CharacterEscape
  | SyntaxEscapes
-// TODO
-// | '\\' DecimalEscape
+ | BackReference
+ | NamedBackReference
  ;
 
 //------ LEXER ------------------------------
@@ -275,6 +293,7 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+COLON                      : ':';
 
 Q: 'Q';
 E: 'E';
@@ -282,7 +301,7 @@ E: 'E';
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9,^$\\.*+?()[\]{}|-]
+ : ~[0-9:,^$\\.*+?()[\]{}|-]
  ;
 
 fragment OctalEscapeSequence
@@ -308,13 +327,15 @@ fragment OctalDigit:
  [0-7]
  ;
 
-//TODO
-//DecimalIntegerLiteral
-// : '0'
-// | [1-9] DecimalDigit*
-// ;
+ // \1, \2, ... \99 etc, distinguished from \0XX octal which starts with 0
+ BackReference
+  : SLASH [1-9] DecimalDigit*
+  ;
 
-
+// \k<name>, first character must be letter, following characters may be letters or digits
+NamedBackReference
+ : SLASH 'k<' [a-zA-Z] [a-zA-Z0-9]* '>'
+ ;
 
 
 

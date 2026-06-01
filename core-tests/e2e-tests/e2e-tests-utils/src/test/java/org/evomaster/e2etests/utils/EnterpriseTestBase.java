@@ -23,6 +23,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.remote.service.RemoteControllerImplementation;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.gene.collection.EnumGene;
 import org.evomaster.core.search.service.Statistics;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -117,6 +118,8 @@ public abstract class EnterpriseTestBase {
 
     @BeforeEach
     public void initTest() {
+
+        EnumGene.Companion.cleanCache();
 
         //make sure the search can use all instrumentation, even the ones using non-preserving semantics
         MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
@@ -458,13 +461,12 @@ public abstract class EnterpriseTestBase {
          */
         boolean active = code % 2 == 0;
 
-        return new ArrayList<>(Arrays.asList(
+        List<String> arguments = new ArrayList<>(Arrays.asList(
+                "--blackBox", "false",
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxEvaluations", "" + iterations,
-                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS
@@ -479,6 +481,15 @@ public abstract class EnterpriseTestBase {
                 //still, we have some specific tests to verify this functionality
                 "--maxTestsPerTestSuite","-1"
         ));
+
+        if(iterations >= 0){
+            arguments.add("--maxEvaluations");
+            arguments.add(""+iterations);
+            arguments.add("--stoppingCriterion");
+            arguments.add("ACTION_EVALUATIONS");
+        }
+
+        return arguments;
     }
 
 

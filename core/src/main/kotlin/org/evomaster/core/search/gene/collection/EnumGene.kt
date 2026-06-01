@@ -55,6 +55,14 @@ class EnumGene<T : Comparable<T>>(
 
         private val log: Logger = LoggerFactory.getLogger(EnumGene::class.java)
 
+        /**
+         * This was potential issue in IT where we parse thousands of specs...
+         */
+        fun cleanCache(){
+            synchronized(cache){
+                cache.clear()
+            }
+        }
     }
 
     val values: List<T>
@@ -82,8 +90,15 @@ class EnumGene<T : Comparable<T>>(
 
             val list = elements
                 .toList() // need ordering to specify index of selection, so Set would not do
-                .sorted() // sort, to make meaningful list comparisons
                 .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
+                .run {
+                    if(valueNames == null){
+                        sorted() // sort, to make meaningful list comparisons, but only if examples are not named.
+                                 // otherwise we lose vector alignment
+                    } else {
+                        this
+                    }
+                }
 
             /*
                we need to make sure that, if we are adding a list that has content equal to
@@ -92,6 +107,20 @@ class EnumGene<T : Comparable<T>>(
             synchronized(cache) {
                 values = if (cache.contains(list)) {
                     cache.find { it == list }!! as List<T> // equality based on content, not reference
+                    /*
+                        What a tricky bug!!!
+                        the following was a major performance issue...
+                        it might sounds weird, as code above makes 2 calls: contains() and find{}
+                        The point is that contains() is O(1), whereas find{} is O(n).
+                        When we have hundreds/thousands of tests, and cache is not reset, most of the access
+                        here would be a miss, and not a hit... so we would do always a linear scan on a
+                        ever increasing cache... this bug alone did add nearly 1 hour to the build!!!
+                        ideally, we should do a cleanCache() on each test... but we do not have a common
+                        testBase in core as we do for E2E...
+                     */
+//                val x = cache.find { it == list }
+//                values = if (x != null) {
+//                    x as List<T>
                 } else {
                     cache.add(list)
                     list
@@ -196,7 +225,10 @@ class EnumGene<T : Comparable<T>>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val res = values[index]
-        if (res is String && !treatAsNotString) {
+        // In XML mode, enum string values are emitted as tag text content (e.g. <path>VALUE</path>).
+        // Unlike JSON, XML does not use quotes to delimit string values — the tags are the delimiters.
+        // Adding quotes here would include them as literal characters in the XML output.
+        if (res is String && !treatAsNotString && mode != GeneUtils.EscapeMode.XML) {
             return "\"$res\""
         } else {
             return res.toString()

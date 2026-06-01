@@ -64,9 +64,9 @@ class ExecutionPhaseController {
 
         if(timeout){
             LoggingUtil.getInfoLogger().warn("Phase '${phase.name}' has timed out after $budget seconds." +
-                    " If you can run the fuzzing for longer, next time you might want to either increase " +
-                    "'maxTime' (${config.maxTime})" +
-                    "or 'extraPhaseBudgetPercentage' (${config.extraPhaseBudgetPercentage})")
+                    " If you can run the fuzzing for longer, next time you might want to either increase" +
+                    " 'maxTime' (${config.maxTime})" +
+                    " or 'extraPhaseBudgetPercentage' (${config.extraPhaseBudgetPercentage})")
             hasTimedOut.add(phase)
         }
 

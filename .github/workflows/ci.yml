@@ -32,7 +32,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 5.2.1
+  evomaster-version: 6.0.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -44,7 +44,7 @@ env:
   java-distribution: temurin
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "GeneRandomizedTest" # replace with test to debug
+  debugTestName: "SamplerVerifierTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -116,7 +116,7 @@ jobs:
         # the set command makes the build fail if mvn command fails (no change in behavior)
         run: |
           set -o pipefail
-          mvn clean verify --fae 2>&1 | tee full-build-base.log
+          mvn clean verify -DskipTests --fae 2>&1 | tee full-build-base.log
         env:
           CI_env: GithubAction
       - name: Upload full-build-base log for metrics job
@@ -135,17 +135,19 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
       # Make test report accessible from GitHub Actions (as Maven logs are long)
-      - name: Publish Test Report
-        if: success() || failure()
-        uses: mikepenz/action-junit-report@v6
-        env:
-          NODE_OPTIONS: "--max_old_space_size=9000"
-        with:
-          report_paths: '**/target/*-reports/TEST-*.xml'
+      # Remove? we skipping tests here
+#      - name: Publish Test Report
+#        if: success() || failure()
+#        uses: mikepenz/action-junit-report@v6
+#        env:
+#          NODE_OPTIONS: "--max_old_space_size=9000"
+#        with:
+#          report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results
       # As of 2024, looks like a rate limiter is breaking the build.
       # As such, now we only upload from master branch, hoping it is enough.
       # If not, might have to remove this
+      ### FIXME this will need updating with other jobs running tests
       - if: github.ref == 'refs/heads/master'
         name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
@@ -371,6 +373,7 @@ jobs:
 
   bb-on-different-os:
     strategy:
+      fail-fast: false
       matrix:
         # main build is already on ubuntu-latest
         os: [windows-latest, macos-latest]
@@ -400,3 +403,39 @@ jobs:
         run:  mvn clean verify --fae
         env:
           CI_env: GithubAction
+
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: full-build-base
+    if: needs.setup.outputs.debug == 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests ]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{env.java-distribution}}
+          java-version: ${{env.build-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run:
+          mvn -P default-build,${{ matrix.profile }} clean verify --fae
+        env:
+          CI_env: GithubAction
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: mikepenz/action-junit-report@v6
+        env:
+          NODE_OPTIONS: "--max_old_space_size=9000"
+        with:
+          check_name: JUnit ${{ matrix.profile }}
+          report_paths: '**/target/*-reports/TEST-*.xml'

@@ -7,6 +7,7 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.SearchTestBase
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.algorithms.constant.ConstantModule
 import org.evomaster.core.search.service.time.ExecutionPhaseController
@@ -17,10 +18,10 @@ import org.junit.jupiter.api.Test
 /**
  * Created by arcuri82 on 20-Feb-17.
  */
-class MioAlgorithmOnConstantTest {
+class MioAlgorithmOnConstantTest : SearchTestBase(){
 
     val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(ConstantModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
 
     @Test

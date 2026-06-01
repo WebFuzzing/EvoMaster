@@ -41,7 +41,7 @@ class ObjectWithAttributesGene(
 
     init {
         // "#text" is reserved for element content and cannot be used as an attribute name
-        if (attributeNames.contains("#text")) {
+        if (attributeNames.contains(contentXMLTag)) {
             throw IllegalArgumentException("Invalid XML schema: '#text' is reserved for element content and cannot be used as an attribute name.")
         }
         // Every attribute name must correspond to an existing field in fixedFields

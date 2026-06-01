@@ -61,6 +61,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
     @Test
     fun manualTest() {
         val args = arrayOf(
+            "--blackBox", "false",
             "--createTests", "false",
             "--seed", "42",
             "--sutControllerPort", "" + controllerPort,

@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>5.2.1-SNAPSHOT</version>
+    <version>6.0.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -71,6 +71,120 @@
                 </plugins>
             </build>
         </profile>
+
+        <!--  GitHub Action split tests profiles -->
+        <profile>
+            <id>BaseTests</id>
+            <properties>
+                <skipTests>false</skipTests> <!-- false -->
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>false</skipCore> <!-- false -->
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>CoreITTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>false</skipCoreIT> <!-- false -->
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV3Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>false</skipOAV3> <!-- false -->
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>OAV2Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>false</skipOAV2> <!-- false -->
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>GraphQLTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>false</skipGraphQL> <!-- false -->
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>MongoTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>false</skipMongo> <!-- false -->
+                <skipH2V1>true</skipH2V1>
+            </properties>
+        </profile>
+        <profile>
+            <id>H2V1Tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>false</skipH2V1> <!-- false -->
+            </properties>
+        </profile>
     </profiles>
 
     <developers>
@@ -103,7 +217,7 @@
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.4.0</wfc.version>
+        <wfc.version>0.5.1</wfc.version>
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
@@ -153,6 +267,7 @@
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
         <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
+        <cassandra.driver.version>4.19.2</cassandra.driver.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
         <org.opensearch.version>3.1.0</org.opensearch.version>
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
@@ -160,6 +275,15 @@
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
         <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
         <software.amazon.awssdk.dynamodb.version>2.25.10</software.amazon.awssdk.dynamodb.version>
+
+        <!--   Properties used to control the running of expensive tests in modules  -->
+        <skipCore>false</skipCore>
+        <skipCoreIT>false</skipCoreIT>
+        <skipOAV3>false</skipOAV3>
+        <skipOAV2>false</skipOAV2>
+        <skipGraphQL>false</skipGraphQL>
+        <skipMongo>false</skipMongo>
+        <skipH2V1>false</skipH2V1>
     </properties>
 
 
@@ -600,6 +724,24 @@
                 <version>${org.mongodb.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-core</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-query-builder</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>java-driver-mapper-runtime</artifactId>
+                <version>${cassandra.driver.version}</version>
+            </dependency>
+
             <!-- Redis/Lettuce -->
             <dependency>
                 <groupId>io.lettuce</groupId>
@@ -996,11 +1138,6 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
-                        <args>
-                        <!--  This seems wrong, as args to compiler but not the JVM itself -->
-<!--                            <arg>&#45;&#45;add-opens=java.base/java.io=ALL-UNNAMED</arg>-->
-<!--                            <arg>&#45;&#45;add-opens=java.base/java.lang=ALL-UNNAMED</arg>-->
-                        </args>
                     </configuration>
                     <executions>
                         <execution>

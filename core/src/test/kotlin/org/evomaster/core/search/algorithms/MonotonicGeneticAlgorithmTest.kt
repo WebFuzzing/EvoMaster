@@ -8,6 +8,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
+import org.evomaster.core.search.SearchTestBase
 import org.evomaster.core.search.algorithms.observer.GARecorder
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
@@ -19,14 +20,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.BeforeEach
 
-class MonotonicGeneticAlgorithmTest {
+class MonotonicGeneticAlgorithmTest : SearchTestBase(){
 
     private lateinit var injector: Injector
 
     @BeforeEach
     fun setUp() {
         injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
             .build().createInjector()
     }
 
@@ -250,7 +251,7 @@ private fun createMonotonicGAWithSelection(
     fixedSel: FixedSelectionStrategy
 ): Pair<MonotonicGeneticAlgorithm<OneMaxIndividual>, Injector> {
     val injector = LifecycleInjector.builder()
-        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
         .build().createInjector()
 
     val ga = injector.getInstance(
