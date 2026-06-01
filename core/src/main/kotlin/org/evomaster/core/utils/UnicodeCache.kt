@@ -182,6 +182,53 @@ class UnicodeCache {
         "javaUpperCase" to { cp -> Character.isUpperCase(cp) },
     )
 
+    // POSIX ESCAPES IN UNICODE CHAR CLASS MODE, case-insensitive, no prefix
+    private val unicodeCharClassModePredicates: Map<String, (Int) -> Boolean> = mapOf(
+        "w" to { cp -> getPredicate("Isalphabetic")(cp)
+                || getPredicate("Isdigit")(cp)
+                || getPredicate("Isjoincontrol")(cp)
+                || getPredicate("gc=M")(cp)
+        },
+        "d" to getPredicate("Isdigit"),
+        "s" to getPredicate("Iswhitespace"),
+
+
+        "lower" to getPredicate("Islowercase"),
+        "upper" to getPredicate("Isuppercase"),
+        "ascii" to { cp -> cp in 0..0x7f },
+        "alpha" to getPredicate("Isalphabetic"),
+        "digit" to getPredicate("Isdigit"),
+
+        "alnum" to { cp -> getPredicate("Isalphabetic")(cp)
+                || getPredicate("Isdigit")(cp) },
+
+        "punct" to getPredicate("Ispunctuation"),
+
+        "graph" to { cp -> !(getPredicate("Iswhitespace")(cp)
+                || getPredicate("gc=Cc")(cp)
+                || getPredicate("gc=Cs")(cp)
+                || getPredicate("gc=Cn")(cp))
+        },
+
+        "blank" to { cp -> getPredicate("Iswhitespace")(cp)
+                && !( getPredicate("gc=Zl")(cp)
+                || getPredicate("gc=Zp")(cp)
+                || cp in 0x0a..0x0d || cp == 0x85 )
+        },
+
+        "cntrl" to getPredicate("gc=Cc"),
+
+        "print" to { cp -> (getPredicate("graph")(cp)
+                || getPredicate("blank")(cp))
+                && !getPredicate("cntrl")(cp)
+        },
+
+        "xdigit" to { cp -> getPredicate("gc=Nd")(cp)
+                || getPredicate("Ishexdigit")(cp) },
+
+        "space" to getPredicate("Iswhitespace"),
+    )
+
     /*
        We need to normalize keys so that "gc=L" and "L" point to the same thing to avoid unnecessary re-computation.
        Keywords are always case-insensitive, prefixes are always case-sensitive. Most properties need either a keyword
@@ -237,8 +284,13 @@ class UnicodeCache {
             return pEscapeLabel
         }
 
+        // Unicode character class mode: exact match, case-sensitive
+        if (pEscapeLabel in unicodeCharClassModePredicates) {
+            return pEscapeLabel.lowercase()
+        }
+
         // no match found
-        throw IllegalArgumentException("Unsupported/illegal category, binary property or java method")
+        throw IllegalArgumentException("Unsupported/illegal category, binary property or java method: $pEscapeLabel")
     }
 
     /*
@@ -292,18 +344,11 @@ class UnicodeCache {
             key
         }
 
-        val predicate = when (key) {
-            in scriptPredicates -> scriptPredicates[key]
-            in blockPredicates -> blockPredicates[key]
-            in generalCategoryPredicates -> generalCategoryPredicates[key]
-            in binaryPropertiesPredicates -> binaryPropertiesPredicates[key]
-            in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]
-            else -> null
-        }
+        val predicate = getPredicate(key)
 
         // first we compute and cache the base key (non-negated)
         cache.computeIfAbsent(key) {
-            computeRanges(key, predicate!!)
+            computeRanges(key, predicate)
         }
 
         // if the base kay was requested just return
@@ -313,5 +358,15 @@ class UnicodeCache {
         return cache.computeIfAbsent(fullKey) {
             MultiCharacterRange(true, cache[key]!!.ranges)
         }
+    }
+
+    private fun getPredicate(key: String): ((Int) -> Boolean) = when (key) {
+        in scriptPredicates -> scriptPredicates[key]!!
+        in blockPredicates -> blockPredicates[key]!!
+        in generalCategoryPredicates -> generalCategoryPredicates[key]!!
+        in binaryPropertiesPredicates -> binaryPropertiesPredicates[key]!!
+        in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]!!
+        in unicodeCharClassModePredicates -> unicodeCharClassModePredicates[key]!!
+        else -> throw IllegalArgumentException("Unsupported/illegal category, binary property or java method")
     }
 }

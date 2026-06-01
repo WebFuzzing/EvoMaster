@@ -82,7 +82,7 @@ class CharacterClassEscapeRxGene(
             // create both normal and negated version for all
             .flatMap { (key, value) ->
                 listOf(
-                    key     to MultiCharacterRange(value),
+                    key     to MultiCharacterRange(false, value),
                     "^$key" to MultiCharacterRange(true,  value)
                 )
             }.toMap()
@@ -106,29 +106,43 @@ class CharacterClassEscapeRxGene(
             throw IllegalArgumentException("Invalid type: $type")
         }
 
-        multiCharRange = when(type[0]){
-            'w' -> wordMultiCharRange
-            'W' -> nonWordMultiCharRange
-            'd' -> digitMultiCharRange
-            'D' -> nonDigitMultiCharRange
-            's' -> spaceMultiCharRange
-            'S' -> nonSpaceMultiCharRange
-            'v' -> verticalSpaceMultiCharRange
-            'V' -> nonVerticalSpaceMultiCharRange
-            'h' -> horizontalSpaceMultiCharRange
-            'H' -> nonHorizontalSpaceMultiCharRange
-            'p', 'P' -> {
-                val pLabel = type.substring(2, type.length - 1)
-                val negated = type[0].isUpperCase()
-                val lookupKey = (if (negated) "^$pLabel" else pLabel).lowercase()
-                if (lookupKey in posixAsciiMultiCharRange) {
-                    posixAsciiMultiCharRange[lookupKey]!!
-                } else {
-                    unicodeCache.getRanges(pLabel, negated)
-                }
+        multiCharRange = if ( flags.unicodeCharacterClass && (type[0] in "wWdDsS" || (type[0] in "pP" && type.substring(2, type.length - 1).lowercase() in posixAsciiMultiCharRange)) ) {
+            // UNICODE_CHARACTER_CLASSES flag is on, so these should now be in conformance with the recommendation of
+            // Annex C: Compatibility Properties of Unicode Regular Expression, see:
+            // https://www.unicode.org/reports/tr18/#Compatibility_Properties
+            val cacheLabel = when (type[0]) {
+                'd', 'D', 's', 'S', 'w', 'W' -> type.lowercase()
+                'p', 'P' -> type.substring(2, type.length - 1)
+                else -> //this should never happen due to check in init
+                    throw IllegalStateException("Type '\\$type' not supported yet")
             }
-            else -> //this should never happen due to check in init
-                throw IllegalStateException("Type '\\$type' not supported yet")
+            unicodeCache.getRanges(cacheLabel, type[0].isUpperCase())
+        } else {
+            // regular predefined character classes
+            when(type[0]){
+                'w' -> wordMultiCharRange
+                'W' -> nonWordMultiCharRange
+                'd' -> digitMultiCharRange
+                'D' -> nonDigitMultiCharRange
+                's' -> spaceMultiCharRange
+                'S' -> nonSpaceMultiCharRange
+                'v' -> verticalSpaceMultiCharRange
+                'V' -> nonVerticalSpaceMultiCharRange
+                'h' -> horizontalSpaceMultiCharRange
+                'H' -> nonHorizontalSpaceMultiCharRange
+                'p', 'P' -> {
+                    val pLabel = type.substring(2, type.length - 1)
+                    val negated = type[0].isUpperCase()
+                    val lookupKey = (if (negated) "^$pLabel" else pLabel).lowercase()
+                    if (lookupKey in posixAsciiMultiCharRange) {
+                        posixAsciiMultiCharRange[lookupKey]!!
+                    } else {
+                        unicodeCache.getRanges(pLabel, negated)
+                    }
+                }
+                else -> //this should never happen due to check in init
+                    throw IllegalStateException("Type '\\$type' not supported yet")
+            }
         }
     }
 
