@@ -193,11 +193,18 @@ patternCharacter
 
 
 characterClass
- //TODO check if lookahead needed, or implicit in rule order resoution
- //[ [lookahead ∉ {^}] ClassRanges ]
- : BRACKET_open CARET classRanges BRACKET_close
- | BRACKET_open classRanges BRACKET_close
- ;
+    : BRACKET_open CARET classContents BRACKET_close
+    | BRACKET_open classContents BRACKET_close
+    ;
+
+classContents
+    : classUnion ('&&' classUnion)*
+    ;
+
+classUnion
+    : characterClass+                          // one or more nested classes = UNION
+    | classRanges                           // bare ranges
+    ;
 
 classRanges
  :
