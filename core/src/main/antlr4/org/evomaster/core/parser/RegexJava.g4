@@ -189,6 +189,7 @@ patternCharacter
  | BRACE_close
  | BRACKET_close
  | COLON
+ | '&&'
  ;
 
 

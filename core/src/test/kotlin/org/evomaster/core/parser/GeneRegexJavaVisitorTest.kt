@@ -272,5 +272,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("[a-ce-g&&[b-f]]")
         checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
         checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
+        checkSameAsJava("&&")
     }
 }
