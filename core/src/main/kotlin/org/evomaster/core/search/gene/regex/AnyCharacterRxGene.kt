@@ -32,12 +32,14 @@ class AnyCharacterRxGene(
          */
         val defaultValidRanges = MultiCharacterRange(true,"\n\r\u0085\u2028\u2029")
         val dotAllValidRanges = MultiCharacterRange(true, "") // all characters accepted
+        val unixLinesValidRanges = MultiCharacterRange(true, "\n")
     }
 
     var value: Char = 'a'
 
     val validRanges = when {
         flags.dotAll -> dotAllValidRanges
+        flags.unixLines -> unixLinesValidRanges
         else -> defaultValidRanges
     }
 

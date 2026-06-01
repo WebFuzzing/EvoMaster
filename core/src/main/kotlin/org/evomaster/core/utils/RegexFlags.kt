@@ -32,10 +32,10 @@ data class RegexFlags(
     val caseInsensitive: Boolean = false,        // i
     val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
     val dotAll: Boolean = false,                 // s
+    val unixLines: Boolean = false,              // d
 
     // recognised but not yet implemented, validate() throws on these
     val multiline: Boolean = false,              // m
-    val unixLines: Boolean = false,              // d
     val unicodeCharacterClass: Boolean = false,  // U
     val comments: Boolean = false,               // x
 ) {
@@ -118,7 +118,6 @@ data class RegexFlags(
      */
     fun validate() {
         if (multiline)             throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
-        if (unixLines)             throw IllegalStateException("Regex flag 'd' (UNIX_LINES) is not yet supported")
         if (unicodeCharacterClass) throw IllegalStateException("Regex flag 'U' (UNICODE_CHARACTER_CLASS) is not yet supported")
         if (comments)              throw IllegalStateException("Regex flag 'x' (COMMENTS) is not yet supported")
     }
