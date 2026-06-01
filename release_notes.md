@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Addressed GitHub Issues
+- #1286: SSL verification error during the execution of generated tests 
+
+
 # Version 6.0.0
 
 ### Breaking Changes
