@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.llm.LlmSupport
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 
@@ -44,7 +45,7 @@ class LlmService {
         }
     }
 
-    fun chatAsync(userMessage: String): CompletableFuture<String>{
+    fun chatAsync(userMessage: String): Future<String> {
         checkUsingLLM()
 
         return LlmSupport.chatAsync(model, userMessage)
