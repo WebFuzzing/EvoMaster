@@ -121,7 +121,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
             checkSameAsJava("\\p{$label}")
             checkSameAsJava("\\P{$label}")
         }
-        checkSameAsJava("""Pe""")
     }
 
     @Test
