@@ -24,7 +24,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         val conn = URL(baseUrl).openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
-        conn.setRequestProperty("Accept", "application/json")
+        conn.setRequestProperty("Accept", "application/json, text/event-stream")
         conn.doOutput = true
         conn.connectTimeout = 10_000
         conn.readTimeout = 30_000
