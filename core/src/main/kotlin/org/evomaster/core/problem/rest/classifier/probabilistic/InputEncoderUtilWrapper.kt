@@ -55,6 +55,7 @@ class InputEncoderUtilWrapper(
 
     data class ParamAndGene(
         val paramName: String,
+        val paramPath: String,
         val gene: Gene
     )
 
@@ -67,6 +68,28 @@ class InputEncoderUtilWrapper(
     fun areAllGenesUnSupported(): Boolean =
         endPointToGeneList().all { !isSupported(it.gene.getLeafGene()) }
 
+    /**
+     * Builds a string representing the gene name and all its parents.
+     */
+    private fun genePath(g: Gene): String {
+
+        val names = mutableListOf<String>()
+
+        var current: Gene? = g
+
+        while (current != null) {
+            names.add(current.name)
+            current = current.parent as? Gene
+        }
+
+        return names.reversed().joinToString("/")
+    }
+
+    /**
+     * Recursively expands the input gene into a list of its leaf genes.
+     * If the input gene is of type [ObjectGene], it will traverse its fixed fields
+     * and additional fields to expand and collect all nested leaf genes.
+     */
     private fun expandGene(g: Gene): List<Gene> {
 
         val gene = g.getLeafGene()
@@ -83,6 +106,20 @@ class InputEncoderUtilWrapper(
         return listOf(gene)
     }
 
+    /** Associate each paramPath to the corresponding encoded numerical value of its parameter.*/
+    fun paramPathToValue(): Map<String, Double> {
+
+
+        val allParamParents = endPointToGeneList().map { it.paramPath }
+        val encodedValues = encode()
+
+        return allParamParents.zip(encodedValues).toMap()
+    }
+
+    /**
+     * Converts the endpoint parameters into a list of `ParamAndGene` objects,
+     * where each entry represents a parameter, its associated gene, and all the gene's parents.
+     */
     fun endPointToGeneList(): List<ParamAndGene> {
         val paramAndGenes = mutableListOf<ParamAndGene>()
 
@@ -96,7 +133,13 @@ class InputEncoderUtilWrapper(
                 val g = p.primaryGene()
                 val expanded = expandGene(g)
                 expanded.forEach { subGene ->
-                    paramAndGenes.add(ParamAndGene(subGene.name, subGene))
+                    paramAndGenes.add(
+                        ParamAndGene(
+                            paramName = subGene.name,
+                            paramPath = genePath(subGene),
+                            gene = subGene
+                        )
+                    )
                 }
             }
 

@@ -51,7 +51,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
     val repairThreshold = 0.5
     val weaknessThreshold = 0.6
 
-    val runIterations = 10000
+    val runIterations = 1000
     val saveReport = false
     val filePathReport = "AIModelsCheckWFDReport.txt"
 
@@ -60,10 +60,11 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
 
 //    val swaggerUrl ="../dataset/openapi-swagger/youtube-mock.yaml"
-    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
+//    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
 //    val swaggerUrl ="../dataset/openapi-swagger/blogapi.json"
 //    val swaggerUrl ="../dataset/openapi-swagger/languagetool.json"
 //    val swaggerUrl = "../dataset/openapi-swagger/rest-ncs.json"
+    val swaggerUrl = "../dataset/openapi-swagger/cwa-verification.json"
 
     @Inject
     lateinit var randomness: Randomness
@@ -146,6 +147,20 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                         .joinToString(", ") { ng ->
                             "${ng.gene.name}:${ng.gene::class.simpleName ?: "Unknown"}" })
 
+            println("Genes full names are: " +
+                    encoder.endPointToGeneList()
+                        .joinToString(", ") { ng ->
+                            "${ng.paramPath}:${ng.gene::class.simpleName ?: "Unknown"}" })
+
+            println(
+                "Gene parents and encoded values are: " +
+                        encoder.paramPathToValue()
+                            .entries
+                            .joinToString(", ") { (name, value) ->
+                                "$name:$value"
+                            }
+            )
+            
             if (encoder.areAllGenesUnSupported()) {
                 println("Skipping classification for $endPoint as all its genes are unsupported.")
                 continue
