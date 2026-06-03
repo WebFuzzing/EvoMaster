@@ -9,23 +9,15 @@ open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
 ) : TestCaseNamingStrategy(solution) {
 
+    companion object{
+        const val TEST_NAME_PREFIX = "test_"
+    }
+
     override fun getTestCases(): List<TestCase> {
         return generateNames(solution.individuals)
     }
 
-    override fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
-        return getSortedTestCases(singletonList(comparator))
-    }
 
-    override fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
-        val inds = solution.individuals
-
-        comparators.asReversed().forEach {
-            inds.sortWith(it)
-        }
-
-        return generateNames(inds)
-    }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
@@ -38,7 +30,7 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     private fun concatName(counter: Int, expandedName: String): String {
-        return "test_${counter}${expandedName}"
+        return "$TEST_NAME_PREFIX${counter}${expandedName}"
     }
 
     private fun generateNames(individuals: List<EvaluatedIndividual<*>>) : List<TestCase> {

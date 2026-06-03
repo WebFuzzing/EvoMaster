@@ -749,7 +749,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     throw SutProblemException(
                         "Failed to connect API with TCP." +
                                 " Is the API up and running at '${getBaseUrl()}' ?" +
-                                " If not, the location can be overridden with --bbTargetUrl"
+                                " If not, the location can be overridden with --base"
+                    )
+                }
+
+                TcpUtils.isNotSupportingSSL(e)  && getBaseUrl().startsWith("https",true)-> {
+                    throw SutProblemException(
+                        "SSL error when connecting to API via HTTPS protocol at '${getBaseUrl()}': ${e.message}" +
+                                "\n Are you sure you were not supposed to use HTTP?" +
+                                " Perhaps you meant '${getBaseUrl().replace("https:", "http:")}' ?" +
+                                "\n Otherwise it might be that SSL is misconfigured in the API."
                     )
                 }
 
