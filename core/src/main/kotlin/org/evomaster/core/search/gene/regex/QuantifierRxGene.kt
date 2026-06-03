@@ -62,7 +62,7 @@ class QuantifierRxGene(
             max
         }
 
-        if(!isTemplateEffectivelyEmpty() && min == limitedMax && !template.isMutable()){
+        if(min == limitedMax && !template.isMutable()){
             /*
                 this means this whole gene is immutable. still need to initialize it
              */
@@ -73,10 +73,6 @@ class QuantifierRxGene(
             }
         }
     }
-
-    private fun isTemplateEffectivelyEmpty() : Boolean = (template as? RxTerm)?.isEffectivelyEmpty() == true
-
-    override fun isEffectivelyEmpty(): Boolean = min > 0 && isTemplateEffectivelyEmpty()
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         val n = getViewOfChildren().size
@@ -120,9 +116,6 @@ class QuantifierRxGene(
     }
 
     override fun isMutable(): Boolean {
-        if (isTemplateEffectivelyEmpty()) {
-            return false
-        }
         return min != limitedMax || template.isMutable()
     }
 
@@ -183,11 +176,6 @@ class QuantifierRxGene(
     }
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean){
-
-        if (isTemplateEffectivelyEmpty()) {
-            return
-        }
-
         val base = template.copy()
         base.resetLocalIdRecursively()
         base.doInitialize(randomness)

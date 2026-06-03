@@ -29,8 +29,6 @@ class DisjunctionListRxGene(
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
-    override fun isEffectivelyEmpty(): Boolean = disjunctions.all { it.isEffectivelyEmpty() }
-
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return activeDisjunction >= 0 && activeDisjunction < disjunctions.size
     }

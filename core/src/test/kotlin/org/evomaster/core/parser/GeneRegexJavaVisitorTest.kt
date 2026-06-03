@@ -255,7 +255,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testIntersection(){
-        checkSameAsJava("&&")
         checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
         checkSameAsJava("[a&&a][a&&a&&a]")
         checkSameAsJava("[a-z&&[aeiou]]")
@@ -273,6 +272,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("[a-z&&[a-z]]")
         checkSameAsJava("[a-ce-g&&[b-f]]")
         checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
+        checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
+        checkSameAsJava("&&")
         checkSameAsJava("[[a-c&&[d-f]][x-z]]")
         checkSameAsJava("[a-c&&[b-d]]|[x&&y]")
     }
@@ -306,6 +307,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("([a&b])|b\\1")
         assertThrows<IllegalStateException> { checkSameAsJava("([a&&b])|b\\1") }
         assertThrows<IllegalStateException> { checkSameAsJava("\\k<name>") }
+        assertThrows<IllegalStateException> { checkSameAsJava("((\\1|\\2)+)") }
+        checkSameAsJava("((\\1|\\2)*)")
     }
 
     @Test
@@ -327,6 +330,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?iu)[a&&b]|c")
         assertThrows<IllegalStateException> { checkSameAsJava("^(?iu)[a&&b]$") }
         checkSameAsJava("^(?iu)[a&&b]$|c")
+        checkSameAsJava("^(?iu)([a&&b]$|c)")
     }
 
     @Test
