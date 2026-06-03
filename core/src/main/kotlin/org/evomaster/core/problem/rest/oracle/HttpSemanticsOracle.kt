@@ -709,12 +709,6 @@ object HttpSemanticsOracle {
         // follow-up must be a GET, and it must actually be chained to the previous Location
         if (follow.verb != HttpVerb.GET) return false
         if (follow.usePreviousLocationId.isNullOrBlank()) return false
-        // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
-        //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
-        //  After that restriction is refactored to allow any verb whose response carried a
-        //  Location header, this catch can be dropped and the oracle will fire for all verbs.
-        val expectedLocId = try { previous.creationLocationId() } catch (e: Exception) { return false }
-        if (follow.usePreviousLocationId != expectedLocId) return false
 
         // same auth so a 404 cannot be confused with an authorization problem
         if (previous.auth.isDifferentFrom(follow.auth)) return false

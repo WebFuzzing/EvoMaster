@@ -622,9 +622,11 @@ class HttpSemanticsService : TimeBoxedPhase{
             getAction.doInitialize(randomness)
             getAction.forceNewTaints()
 
-            // TODO: saveCreatedResourceLocation is restricted to POST/PUT; skip other verbs.
-            //  After refactoring RestCallAction.creationLocationId() we should update here.
             try {
+                // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
+                //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
+                //  After that restriction is refactored to allow any verb whose response carried a
+                //  Location header, this catch can be dropped and the oracle will fire for all verbs.
                 creator.saveAndLinkLocationTo(getAction)
             } catch (e: IllegalArgumentException) {
                 continue
