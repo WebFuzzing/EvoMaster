@@ -77,11 +77,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val res = ctx.accept(this)
         val validDisjunctions = res.genes.map { it as DisjunctionRxGene }
 
-        if (validDisjunctions.isEmpty()) {
+        val nonEmptyDisj = validDisjunctions.filter{ !it.isEffectivelyEmpty() }
+
+        if(nonEmptyDisj.isEmpty()){
             return null
         }
 
-        val disjList = DisjunctionListRxGene(validDisjunctions)
+        val disjList = DisjunctionListRxGene(nonEmptyDisj)
 
         //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
         for (gene in disjList.disjunctions) {
@@ -99,11 +101,11 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        if (res.genes.isEmpty()) {
-            throw IllegalStateException("Regex is unsatisfiable: no valid strings can be generated: $text")
-        }
+        val nonEmptyDisj = res.genes
+            .map { it as DisjunctionRxGene }
+            .filter{ !it.isEffectivelyEmpty() }
 
-        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+        val disjList = DisjunctionListRxGene(nonEmptyDisj)
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
         val gene = RegexGene(
@@ -126,14 +128,17 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val res = VisitResult()
 
-        if (!altRes.hadFilteredContent) {
+        // add disjunction if it has genes, OR if the alternative was purely assertions (^$) or flag scopes
+        // in that case altRes.genes is empty but the alternative is valid (matches "")
+        val hasOnlyAssertionsOrFlagScopes = ctx.alternative().term().isNotEmpty() &&
+                ctx.alternative().term().all { it.assertion() != null || it.FLAG_SCOPE_OPEN() != null }
+
+        if (altRes.genes.isNotEmpty() || hasOnlyAssertionsOrFlagScopes || ctx.alternative().term().isEmpty()) {
             val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
-            // add if genuinely empty (matches "") OR has non-empty terms
-            if (disj.terms.isEmpty() || !disj.isEffectivelyEmpty()) {
-                res.genes.add(disj)
-            }
-            // else: terms exist but all effectively empty ([a&&b], \1 etc), skip
+
+            res.genes.add(disj)
         }
+        // else: had non-assertion terms but all produced nothing (empty char class etc.), skip
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -172,14 +177,6 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 for (j in i + 1 until ctx.term().size) {
                     val resTerm = ctx.term()[j].accept(this)
 
-                    if (resTerm.hadFilteredContent) {
-                        currentFlags = previous
-                        val r = VisitResult()
-                        r.hadFilteredContent = true
-                        r.data = Pair(false, false)
-                        return r
-                    }
-
                     // this condition isolates the back ref case, preserving original behavior otherwise.
                     if (ctx.term()[j].atom()?.atomEscape()?.BackReference() != null){
                         // if term is a BackReference we addAll genes from result as there may be more than one if digits are dropped
@@ -198,13 +195,6 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
-
-            if (resTerm.hadFilteredContent) {
-                val r = VisitResult()
-                r.hadFilteredContent = true
-                r.data = Pair(false, false)
-                return r
-            }
 
             // this condition isolates the back ref case, preserving original behavior otherwise.
             if (ctx.term()[i].atom()?.atomEscape()?.BackReference() != null){
@@ -247,29 +237,22 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         val resAtom = ctx.atom().accept(this)
-
-        if (resAtom.hadFilteredContent) {
-            // check if there's a quantifier that allows zero matches
-            // if so, the term is valid and produces "", don't propagate hadFilteredContent
-            if (ctx.quantifier() != null) {
-                val limits = ctx.quantifier().accept(this).data as Pair<Int, Int>
-                if (limits.first == 0) {
-                    // min=0, so zero matches is valid, term produces "", not unsatisfiable
-                    return res  // empty genes, no hadFilteredContent
-                }
-            }
-            // no quantifier or min>0, propagate
-
-            res.hadFilteredContent = true
-            return res
-        }
-
         val atom = resAtom.genes.firstOrNull()
-            ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
+
+            // if quantified atom is unsatisfiable we must then check the limits
+            if (atom == null || (atom as? RxTerm)?.isEffectivelyEmpty() == true) {
+                return if (limits.first == 0) {
+                    // if 0 appearances is allowed then the regex is satisfiable only with empty string
+                    VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))
+                } else {
+                    // if not then unsatisfiable, return with no genes
+                    res
+                }
+            }
 
             // if atom is not a back ref then we use the default behavior, results may only have one gene
             var template: Gene = atom
@@ -283,7 +266,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 res.genes.addAll(resAtom.genes.dropLast(1))
 
                 // the last gene gets wrapped with the quantifier gene, then that gets added to result
-                template = resAtom.genes.last()
+                if (resAtom.genes.isNotEmpty()) {
+                    template = resAtom.genes.last()
+                }
             }
 
             val q = QuantifierRxGene("q", template, limits.first, limits.second)
@@ -295,7 +280,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             if (ctx.atom()?.atomEscape()?.BackReference() != null){
                 // if atom is a BackReference we addAll genes from result as there may be more than one if digits are dropped
                 res.genes.addAll(resAtom.genes)
-            } else {
+            } else if (atom != null) {
                 // if atom is not a back ref we fall back to the default behavior, results only have one gene
                 res.genes.add(atom)
             }
@@ -375,7 +360,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return if (disjList != null) {
                 VisitResult(disjList)
             } else {
-                VisitResult().also{ it.hadFilteredContent = true }
+                VisitResult()
             }
         }
 
@@ -410,8 +395,6 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val groupIndex = captureGroups.size
             captureGroups.add(null) // add placeholder for the gene
 
-            val res = ctx.disjunction().accept(this)
-
             val disjList = buildDisjunctionList(ctx.disjunction())
 
             val isCapturingGroup = !ctx.text.startsWith("(?:")
@@ -431,9 +414,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return if (disjList != null) {
                 VisitResult(disjList)
             } else {
-                VisitResult().also{
-                    it.hadFilteredContent = true
-                }
+                VisitResult()
             }
         }
 
