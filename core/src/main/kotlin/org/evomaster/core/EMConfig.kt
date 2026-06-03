@@ -2906,6 +2906,10 @@ class EMConfig {
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     var enableSchemaConstraintHandling = true
 
+    @Experimental
+    @Cfg("Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0")
+    var enableAdvancedFormats = false
+
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
     @Probability(activating = true)
     var probOfEnablingSingleInsertionForTable = 0.5
