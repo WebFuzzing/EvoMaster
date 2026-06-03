@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.builder
+package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
@@ -6,14 +6,11 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 /**
@@ -25,17 +22,37 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
  */
 object JsonPatchDocumentGeneBuilder {
 
+    /** Minimum number of patch operations in a document. */
     const val MIN_SIZE = 1
+
+    /** Default maximum number of patch operations in a document. */
     const val DEFAULT_MAX_SIZE = 10
 
+    /**
+     * JSON object field name for the operation path.
+     * Values are JSON Pointers (RFC 6901), e.g. "/address/street".
+     */
     const val FIELD_PATH = "path"
+
+    /**
+     * JSON object field name for the "from" pointer, used by move and copy operations.
+     * Values are JSON Pointers (RFC 6901).
+     */
     const val FIELD_FROM = "from"
+
+    /** JSON object field name for the operation value, used by add, replace, and test operations. */
     const val FIELD_VALUE = "value"
 
+    /** Name tag for PairGene entries whose value gene is a [StringGene]. */
     const val ENTRY_STRING = "entry_string"
-    private const val ENTRY_INT = "entry_int"
-    private const val ENTRY_BOOL = "entry_bool"
 
+    /** Name tag for PairGene entries whose value gene is an [IntegerGene]. */
+    const val ENTRY_INT = "entry_int"
+
+    /** Name tag for PairGene entries whose value gene is a [BooleanGene]. */
+    const val ENTRY_BOOL = "entry_bool"
+
+    /** Default JSON Pointer paths used when no resource schema is available. */
     val DEFAULT_PATHS = listOf("/a", "/b", "/c", "/d")
 
     /** A single patchable field extracted from a resource schema. */
@@ -43,17 +60,20 @@ object JsonPatchDocumentGeneBuilder {
 
     /**
      * Walks [schema] recursively and returns one [SchemaField] per reachable leaf field,
-     * using JSON Pointer notation for paths (e.g. "/name", "/address/street").
+     * using JSON Pointer notation (RFC 6901) for paths (e.g. "/name", "/address/street").
      *
      * - [ObjectGene]: descends into each fixed field.
      * - [OptionalGene]: unwraps and descends using the same path prefix.
+     * - [NullableGene]: unwraps and descends using the same path prefix.
      * - [CycleObjectGene]: skipped to avoid infinite loops.
+     * - [ChoiceGene]: TODO — handle multiple schema alternatives in a future PR with test cases.
      * - Everything else (leaf genes and [ArrayGene]): treated as a patchable target at [prefix].
      */
     internal fun extractSchemaFields(schema: Gene, prefix: String = ""): List<SchemaField> {
         return when (schema) {
             is CycleObjectGene -> emptyList()
             is OptionalGene -> extractSchemaFields(schema.gene, prefix)
+            is NullableGene -> extractSchemaFields(schema.gene, prefix)
             is ObjectGene -> schema.fixedFields.flatMap { field ->
                 extractSchemaFields(field, "$prefix/${field.name}")
             }

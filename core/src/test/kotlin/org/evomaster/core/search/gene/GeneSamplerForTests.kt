@@ -6,7 +6,7 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
-import org.evomaster.core.search.gene.builder.JsonPatchDocumentGeneBuilder
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene

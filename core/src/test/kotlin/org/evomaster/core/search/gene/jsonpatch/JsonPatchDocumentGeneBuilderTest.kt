@@ -1,13 +1,9 @@
-package org.evomaster.core.search.gene.builder
+package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
-import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
