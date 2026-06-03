@@ -31,7 +31,6 @@ object JsonPatchDocumentGeneBuilder {
     /**
      * JSON object field name for the operation path.
      * Values are JSON Pointers (RFC 6901), e.g. "/address/street".
-     * Note: JSON Pointer (RFC 6901) is distinct from JSON Path (Goessner spec) — see JsonUtils.
      */
     const val FIELD_PATH = "path"
 
