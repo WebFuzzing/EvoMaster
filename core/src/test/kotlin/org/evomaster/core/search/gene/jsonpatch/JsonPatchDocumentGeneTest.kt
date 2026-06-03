@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene.jsonpatch
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.builder.JsonPatchDocumentGeneBuilder
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
