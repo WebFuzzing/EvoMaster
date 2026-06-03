@@ -39,6 +39,7 @@ class BBAdvancedFormatsEMTest : SpringTestBase() {
         ){ args: MutableList<String> ->
 
             setOption(args, "schema", "$baseUrlOfSut/openapi-bbadvancedformats.json")
+            setOption(args, "enableAdvancedFormats", "true")
 
             val solution = initAndRun(args)
 
