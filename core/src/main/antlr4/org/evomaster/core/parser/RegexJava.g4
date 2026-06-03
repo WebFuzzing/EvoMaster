@@ -189,11 +189,9 @@ patternCharacter
  | BRACE_close
  | BRACKET_close
  | COLON
- | INTERSECTION
+ | DOUBLE_AMPERSAND
  ;
 
-
-INTERSECTION : '&&' ;
 
 characterClass
     : BRACKET_open CARET classContents BRACKET_close
@@ -201,7 +199,7 @@ characterClass
     ;
 
 classContents
-    : classUnion (INTERSECTION classUnion)*
+    : classUnion (DOUBLE_AMPERSAND classUnion)*
     ;
 
 classUnion
@@ -270,6 +268,10 @@ atomEscape
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
+
+DOUBLE_AMPERSAND
+ : '&&'
+ ;
 
 DecimalDigit
  : [0-9]

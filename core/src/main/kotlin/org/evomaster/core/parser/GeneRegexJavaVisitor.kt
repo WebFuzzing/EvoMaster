@@ -244,7 +244,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
 
             // if quantified atom is unsatisfiable we must then check the limits
-            if (atom == null || (atom as? RxTerm)?.isEffectivelyEmpty() == true) {
+            if (atom == null ||
+                ((atom as? RxTerm)?.isEffectivelyEmpty() == true) && resAtom.genes.size == 1) {
                 return if (limits.first == 0) {
                     // if 0 appearances is allowed then the regex is satisfiable only with empty string
                     VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))

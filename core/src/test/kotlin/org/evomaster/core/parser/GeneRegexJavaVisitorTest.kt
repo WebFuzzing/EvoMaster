@@ -254,7 +254,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
-    fun testIntersection(){
+    fun testCharClassIntersectionSubtractionAndNesting(){
         checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
         checkSameAsJava("[a&&a][a&&a&&a]")
         checkSameAsJava("[a-z&&[aeiou]]")
@@ -309,6 +309,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("\\k<name>") }
         assertThrows<IllegalStateException> { checkSameAsJava("((\\1|\\2)+)") }
         checkSameAsJava("((\\1|\\2)*)")
+        checkSameAsJava("(\\12)*")
+        assertThrows<IllegalStateException> { checkSameAsJava("\\12*") }
     }
 
     @Test
