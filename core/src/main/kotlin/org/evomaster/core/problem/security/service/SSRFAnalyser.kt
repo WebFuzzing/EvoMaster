@@ -3,8 +3,7 @@ package org.evomaster.core.problem.security.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
-import org.evomaster.core.languagemodel.service.LanguageModelConnector
-import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.StatusGroup
@@ -15,7 +14,6 @@ import org.evomaster.core.problem.security.data.ActionFaultMapping
 import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -40,7 +38,7 @@ class SSRFAnalyser {
     private lateinit var archive: Archive<RestIndividual>
 
     @Inject
-    private lateinit var languageModelConnector: LanguageModelConnector
+    private lateinit var languageModelConnector: LlmService
 
     /**
      * [HttpCallbackVerifier] to verify HTTP callbacks for vulnerability classes
@@ -224,22 +222,24 @@ class SSRFAnalyser {
      * using a large language model.
      */
     private fun llmClassifier(name: String, description: String? = null): Boolean {
-        val answer = if (!description.isNullOrBlank()) {
-            languageModelConnector.query(
-                SSRFUtil.getPromptWithNameAndDescription(
-                    name,
-                    description
-                )
-            )
-        } else {
-            languageModelConnector.query(
-                SSRFUtil.getPromptWithNameOnly(
-                    name
-                )
-            )
-        }
+        // TODO update
+        //        val answer = if (!description.isNullOrBlank()) {
+//            languageModelConnector.query(
+//                SSRFUtil.getPromptWithNameAndDescription(
+//                    name,
+//                    description
+//                )
+//            )
+//        } else {
+//            languageModelConnector.query(
+//                SSRFUtil.getPromptWithNameOnly(
+//                    name
+//                )
+//            )
+//        }
 
-        return answer != null && answer.answer == SSRFUtil.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
+//        return answer != null && answer.answer == SSRFUtil.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
+        return false
     }
 
     /**
