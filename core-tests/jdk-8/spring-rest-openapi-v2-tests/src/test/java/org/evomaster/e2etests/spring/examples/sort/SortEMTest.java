@@ -1,10 +1,9 @@
 package org.evomaster.e2etests.spring.examples.sort;
 
-import org.evomaster.core.output.TestCase;
-import org.evomaster.core.output.TestSuiteOrganizer;
+
+import org.evomaster.core.output.naming.NamingStrategy;
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy;
 import org.evomaster.core.output.naming.TestCaseNamingStrategy;
-import org.evomaster.core.output.sorting.SortingStrategy;
 import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestCallResult;
 import org.evomaster.core.problem.rest.data.RestIndividual;
@@ -16,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Iterator;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -29,11 +30,17 @@ public class SortEMTest extends NRTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        String outputFolderName = "SortEM";
+        String className = "org.bar.SortEM";
+
         runTestHandlingFlakyAndCompilation(
-                "SortEM",
-                "org.bar.SortEM",
+                outputFolderName,
+                className,
                 3_000,
                 (args) -> {
+
+                    setOption(args, "namingStrategy", NamingStrategy.DETERMINISTIC.name());
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
@@ -43,64 +50,26 @@ public class SortEMTest extends NRTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.PUT, 500);
                     assertHasAtLeastOne(solution, HttpVerb.POST, 500);
 
-                    TestSuiteOrganizer organizer = new TestSuiteOrganizer();
+                    List<String> functionNames = getFunctionNames(outputFolderName, className);
+                    // 3 initializations (eg @BeforEach), plus 1 per individuals
+                    int expected = 3 + solution.getIndividuals().size();
+                    assertEquals(expected, functionNames.size());
 
-                    TestCaseNamingStrategy namingStrategy = new NumberedTestCaseNamingStrategy(solution);
+                    String prefix = NumberedTestCaseNamingStrategy.TEST_NAME_PREFIX;
+                    List<String> testNames = functionNames.stream()
+                            .filter(it -> it.startsWith(prefix))
+                            .collect(Collectors.toList());
+                    assertEquals(solution.getIndividuals().size(), testNames.size());
 
-                    List<TestCase> tclist = organizer.sortTests(solution, namingStrategy, SortingStrategy.COVERED_TARGETS);
-
-                    //Iterator<TestCase> iterator = tclist.iterator();
-                    //TestCase current, previous = iterator.next();
-                    /*
-                    while(iterator.hasNext()){
-                        current = iterator.next();
-                        // Check that a TC with 500 in the name does not follow a TC without a 500 in the name (500 should be first).
-
-                        if(current.getName().contains("500")){
-                            assertTrue(previous.getName().contains("500"));
-                        }
-                        previous = current;
-                     }
-                     */
-
-                    Iterator<EvaluatedIndividual<RestIndividual>> iterator = solution.getIndividuals().iterator();
-                    EvaluatedIndividual<RestIndividual> current, previous = iterator.next();
-
-
-
-                    while(iterator.hasNext()){
-                        current = iterator.next();
-
-                        if (current.seeResults(null).stream()
-                                .filter(w -> w instanceof RestCallResult)
-                                .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500)) {
-
-                            assertTrue(previous.seeResults(null).stream()
-                                    .filter(w -> w instanceof RestCallResult)
-                                    .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500));
-                        }
-
-
-
-                        // Check that the current "priority code" is less than the previous priority code
-
-                        OptionalInt currentPrioCode = current.seeResults(null).stream()
-                                .filter(w -> w instanceof RestCallResult)
-                                .mapToInt(w -> ((RestCallResult) w).getStatusCode())
-                                .map(w -> w % 500)
-                                .min();
-
-                        OptionalInt previousPrioCode = previous.seeResults(null).stream()
-                                .filter(w -> w instanceof RestCallResult)
-                                .mapToInt(w -> ((RestCallResult) w).getStatusCode())
-                                .map(w -> w % 500)
-                                .min();
-
-                        assertTrue(currentPrioCode.getAsInt() >= previousPrioCode.getAsInt());
-                        previous = current;
-
-                }
-
+                    for(int i=0; i < testNames.size(); i++){
+                        String name = testNames.get(i);
+                        int index = Integer.parseInt(
+                                name.substring(prefix.length(), name.indexOf("_", prefix.length() + 1))
+                        );
+                        assertEquals(i, index,
+                                "Wrong numbering." +
+                                        " Expected: " + i + ", but found " + index + " for test name " + name);
+                    }
                 });
     }
 
