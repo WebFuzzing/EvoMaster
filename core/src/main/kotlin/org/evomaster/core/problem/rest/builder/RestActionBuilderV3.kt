@@ -997,9 +997,11 @@ object RestActionBuilderV3 {
 
             else -> if (format != null) {
 
-                val advanced = createGeneBasedOnAdvancedFormats(format,schema,name, options, messages, isInPath, examples, schemaHolder, currentSchema, history, referenceClassDef)
-                if(advanced != null) {
-                    return advanced
+                if(options.enableAdvancedFormats){
+                    val advanced = createGeneBasedOnAdvancedFormats(format,schema,name, options, messages, isInPath, examples, schemaHolder, currentSchema, history, referenceClassDef)
+                    if(advanced != null) {
+                        return advanced
+                    }
                 }
                 messages.add("Unhandled format '$format' for '$name'")
             }
