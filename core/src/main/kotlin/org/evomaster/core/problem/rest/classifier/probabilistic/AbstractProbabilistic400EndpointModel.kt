@@ -14,12 +14,13 @@ import org.evomaster.core.search.service.Randomness
  * Base class for all probabilistic classifiers working at an endpoint (400 vs. not 400).
  *
  * Provides:
- * - Common properties (endpoint, warmup, encoderType, randomness, dimension, initialized flag)
+ * - Common properties (endpoint, warmup, keys, dimension, encoderType, randomness, initialized flag)
  * - Shared methods for initialization checks and accuracy estimation
  */
 abstract class AbstractProbabilistic400EndpointModel(
     val endpoint: Endpoint,
     var warmup: Int,
+    var modelKeys: List<String>? = null,
     var dimension: Int? = null,
     val encoderType: EMConfig.EncoderType,
     val metricType: EMConfig.AIClassificationMetrics,
@@ -35,24 +36,39 @@ abstract class AbstractProbabilistic400EndpointModel(
     /** Create a metric tracker.*/
     val modelMetrics: ModelMetrics = createModelMetrics(metricType)
 
-    /** Ensure endpoint matches this model */
+    /** Ensure the endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
         if (inputEndpoint != endpoint) {
             throw IllegalArgumentException("Input endpoint $inputEndpoint does not match model endpoint $endpoint")
         }
     }
 
-    /** Initialize dimension once, validate consistency */
-    open fun initializeIfNeeded(inputVector: List<Double>) {
+
+    /**
+     * Initialize dimension and keys once initialized.
+     * The dimension is the number of parameters in the input vector.
+     * The modelKeys are unique identifiers of the parameters defined based on
+     * the unique path of each parameter (including all its parents).
+     */
+    open fun initializeIfNeeded(input: RestCallAction) {
+
         if (dimension == null) {
-            require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
+
+            val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
+            val allParamsPathsAndEncodedValues = encoder.getAllParamsPathsAndEncodedValues()
+
+            val inputVector = allParamsPathsAndEncodedValues.values.toList()
+            val paramPaths = allParamsPathsAndEncodedValues.keys.toList()
+
+            require(inputVector.isNotEmpty()) { "Input vector is empty" }
+            require(paramPaths.isNotEmpty()) { "Parameter paths are empty" }
             require(warmup > 0) { "Warmup must be positive" }
-            dimension = inputVector.size
-        } else {
-            require(inputVector.size == dimension) {
-                "Expected input vector of size $dimension but got ${inputVector.size}"
-            }
+
+            dimension = paramPaths.size
+            modelKeys = paramPaths
+
         }
+
         initialized = true
     }
 
@@ -71,6 +87,39 @@ abstract class AbstractProbabilistic400EndpointModel(
             modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
+    }
+
+    /**
+     * Encodes the input parameters using the model's defined keys and returns the corresponding encoded values.
+     * This method ensures that all expected keys (modelKeys) are present in the encoded input.
+     *
+     * @param input The input action containing required data for parameter encoding.
+     * @return A list of encoded values corresponding to the model's keys.
+     */
+    protected fun encodeUsingModelKeys(
+        input: RestCallAction
+    ): List<Double> {
+
+        val encoder = InputEncoderUtilWrapper(
+            input,
+            encoderType = encoderType
+        )
+
+        val keysAndValues =
+            encoder.getAllParamsPathsAndEncodedValues()
+
+        val initializedKeys = requireNotNull(modelKeys) {
+            "Model keys have not been initialized"
+        }
+
+        println("InitializedKeys Keys: ${initializedKeys?.joinToString(", ")}")
+
+        return initializedKeys.map { key ->
+            keysAndValues[key]
+                ?: throw IllegalArgumentException(
+                    "Missing expected key: $key"
+                )
+        }
     }
 
     /** Default metrics estimates */

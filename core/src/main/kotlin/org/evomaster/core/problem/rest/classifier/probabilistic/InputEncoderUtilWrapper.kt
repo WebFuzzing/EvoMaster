@@ -53,6 +53,13 @@ class InputEncoderUtilWrapper(
         DateTimeGene::class
     )
 
+    /**
+     * Represents a mapping between a parameter (with its name and path)
+     * and its associated gene object.
+     * @property paramName The name of the parameter.
+     * @property paramPath A unique identifier for the parameter, representing its hierarchical path (including all its parents).
+     * @property gene The gene corresponding to the parameter.
+     */
     data class ParamAndGene(
         val paramName: String,
         val paramPath: String,
@@ -106,14 +113,17 @@ class InputEncoderUtilWrapper(
         return listOf(gene)
     }
 
-    /** Associate each paramPath to the corresponding encoded numerical value of its parameter.*/
-    fun paramPathToValue(): Map<String, Double> {
 
+    /**
+     * Associate all parameters' paths with their corresponding encoded numerical values of their parameter.
+     * Note that each endpoint may have multiple parameters, but each parameter has a unique path including all its parents.
+     */
+    fun getAllParamsPathsAndEncodedValues(): Map<String, Double> {
 
-        val allParamParents = endPointToGeneList().map { it.paramPath }
+        val paramPaths = endPointToGeneList().map { it.paramPath }
         val encodedValues = encode()
 
-        return allParamParents.zip(encodedValues).toMap()
+        return paramPaths.zip(encodedValues).toMap()
     }
 
     /**

@@ -20,13 +20,14 @@ import kotlin.math.exp
 class NN400EndpointModel(
     endpoint: Endpoint,
     warmup: Int,
+    modelKeys: List<String>? = null,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType,
     metricType: EMConfig.AIClassificationMetrics,
     private val learningRate: Double = 0.01,
     randomness: Randomness
 ) : AbstractProbabilistic400EndpointModel(
-    endpoint, warmup, dimension, encoderType, metricType, randomness) {
+    endpoint, warmup, modelKeys, dimension, encoderType, metricType, randomness) {
 
 
     // Initialize weights with default values to prevent null
@@ -37,24 +38,14 @@ class NN400EndpointModel(
 
 
     /** Must be called once to initialize the model properties */
-    override fun initializeIfNeeded(inputVector: List<Double>) {
-        if (!initialized || dimension == null) {
-            require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
-            require(warmup > 0) { "Warmup must be positive" }
-            dimension = inputVector.size
-
-            // Initialize with proper dimensions
-            weightsInputHidden = Array(dimension!!) {
-                DoubleArray(hiddenSize) { randomness.nextDouble(-0.1, 0.1) }
-            }
-            weightsHiddenOutput = Array(hiddenSize) {
-                DoubleArray(outputSize) { randomness.nextDouble(-0.1, 0.1) }
-            }
-            initialized = true
-        } else {
-            require(inputVector.size == dimension) {
-                "Expected input vector of size $dimension but got ${inputVector.size}"
-            }
+    override fun initializeIfNeeded(input: RestCallAction) {
+        super.initializeIfNeeded(input)
+        // Initialize with proper dimensions
+        weightsInputHidden = Array(dimension!!) {
+            DoubleArray(hiddenSize) { randomness.nextDouble(-0.1, 0.1) }
+        }
+        weightsHiddenOutput = Array(hiddenSize) {
+            DoubleArray(outputSize) { randomness.nextDouble(-0.1, 0.1) }
         }
     }
 
@@ -69,19 +60,9 @@ class NN400EndpointModel(
             return AIResponseClassification()
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        initializeIfNeeded(input)
 
-        if (encoder.areAllGenesUnSupported()) {
-            // skip classification/training if unsupported
-            return AIResponseClassification(
-                probabilities = mapOf(
-                    NOT_400 to 0.5,
-                    400 to 0.5)
-            )
-        }
-
-        initializeIfNeeded(inputVector)
+        val inputVector = encodeUsingModelKeys(input)
 
         if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
@@ -113,18 +94,9 @@ class NN400EndpointModel(
             return
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        initializeIfNeeded(input)
 
-        if (encoder.areAllGenesUnSupported() || inputVector.isEmpty()) {
-            // Skip training if unsupported or empty
-            val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
-            modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
-            modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
-            return
-        }
-
-        initializeIfNeeded(inputVector)
+        val inputVector = encodeUsingModelKeys(input)
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")

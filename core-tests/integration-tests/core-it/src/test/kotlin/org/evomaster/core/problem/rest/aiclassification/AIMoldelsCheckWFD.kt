@@ -43,7 +43,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "GAUSSIAN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
+    val modelName = "NN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val encoderType = "RAW" // Choose "RAW" or "NORMAL"
     val decisionMaking = "THRESHOLD" // Choose "PROBABILITY" or "THRESHOLD"
     val warmUpRep = 10
@@ -60,11 +60,11 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
 
 //    val swaggerUrl ="../dataset/openapi-swagger/youtube-mock.yaml"
-//    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
+    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
 //    val swaggerUrl ="../dataset/openapi-swagger/blogapi.json"
 //    val swaggerUrl ="../dataset/openapi-swagger/languagetool.json"
 //    val swaggerUrl = "../dataset/openapi-swagger/rest-ncs.json"
-    val swaggerUrl = "../dataset/openapi-swagger/cwa-verification.json"
+//    val swaggerUrl = "../dataset/openapi-swagger/cwa-verification.json"
 
     @Inject
     lateinit var randomness: Randomness
@@ -147,14 +147,9 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                         .joinToString(", ") { ng ->
                             "${ng.gene.name}:${ng.gene::class.simpleName ?: "Unknown"}" })
 
-            println("Genes full names are: " +
-                    encoder.endPointToGeneList()
-                        .joinToString(", ") { ng ->
-                            "${ng.paramPath}:${ng.gene::class.simpleName ?: "Unknown"}" })
-
             println(
-                "Gene parents and encoded values are: " +
-                        encoder.paramPathToValue()
+                "Parameter paths and encoded values are: " +
+                        encoder.getAllParamsPathsAndEncodedValues()
                             .entries
                             .joinToString(", ") { (name, value) ->
                                 "$name:$value"

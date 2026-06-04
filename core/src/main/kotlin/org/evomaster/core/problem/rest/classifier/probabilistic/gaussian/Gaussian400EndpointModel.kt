@@ -2,12 +2,12 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.gaussian
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.service.Randomness
+import kotlin.String
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.ln
@@ -35,12 +35,13 @@ import kotlin.math.ln
 class Gaussian400EndpointModel (
     endpoint: Endpoint,
     warmup: Int,
+    modelKeys: List<String>? = null,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType,
     metricType: EMConfig.AIClassificationMetrics,
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(
-    endpoint, warmup, dimension, encoderType, metricType, randomness) {
+    endpoint, warmup, modelKeys, dimension, encoderType, metricType, randomness) {
 
     var density400: Density? = null
     private set
@@ -51,8 +52,9 @@ class Gaussian400EndpointModel (
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
      */
-    override fun initializeIfNeeded(inputVector: List<Double>) {
-        super.initializeIfNeeded(inputVector)
+    override fun initializeIfNeeded(input: RestCallAction) {
+        super.initializeIfNeeded(input)
+
         if(density400 == null) {
             density400 = Density(dimension!!)
         }
@@ -69,10 +71,7 @@ class Gaussian400EndpointModel (
             return AIResponseClassification()
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
-
-        initializeIfNeeded(inputVector)
+        initializeIfNeeded(input)
 
         if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
@@ -83,6 +82,8 @@ class Gaussian400EndpointModel (
                 )
             )
         }
+
+        val inputVector = encodeUsingModelKeys(input)
 
         if (inputVector.size != dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -128,10 +129,9 @@ class Gaussian400EndpointModel (
             return
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        initializeIfNeeded(input)
 
-        initializeIfNeeded(inputVector)
+        val inputVector = encodeUsingModelKeys(input)
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
