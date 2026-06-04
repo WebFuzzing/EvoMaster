@@ -34,7 +34,7 @@ class SSRFBaseEMTest : SpringTestBase() {
             setOption(args, "ssrf", "true")
             setOption(args, "vulnerableInputClassificationStrategy", "MANUAL")
 
-            setOption(args, "languageModelConnector", "false")
+            setOption(args, "llm", "false")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
