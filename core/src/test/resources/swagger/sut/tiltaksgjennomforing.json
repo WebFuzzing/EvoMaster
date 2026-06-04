@@ -1,0 +1,4652 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Tiltaksgjennomføring API",
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/navikt/tiltaksgjennomforing-api/blob/master/LICENSE.md"
+    }
+  },
+  "externalDocs": {
+    "description": "Avtaleløsning for arbeidstiltak.",
+    "url": "https://github.com/navikt/tiltaksgjennomforing-api"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/tiltaksgjennomforing-api",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/internal/avtaler": {
+      "get": {
+        "tags": [
+          "internal-avtale-controller"
+        ],
+        "operationId": "hentIkkeJournalfoerteAvtaler",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvtaleTilJournalfoering"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "internal-avtale-controller"
+        ],
+        "operationId": "journalfoerAvtaler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hent",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/overta": {
+      "put": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "settNyVeilederPåAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/dry-run": {
+      "put": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreAvtaleDryRun",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/varsler/{varselId}/sett-til-lest": {
+      "post": {
+        "tags": [
+          "varsel-controller"
+        ],
+        "operationId": "settTilLest",
+        "parameters": [
+          {
+            "name": "varselId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/varsler/sett-alle-til-lest": {
+      "post": {
+        "tags": [
+          "varsel-controller"
+        ],
+        "operationId": "settFlereVarslerTilLest",
+        "parameters": [
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/utvikler-admin/reberegn": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "reberegnLønnstilskudd",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/reberegn-ubehandlede-tilskuddsperioder/{avtaleId}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "reberegnUbehandledeTilskuddsperioder",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/reberegn-mangler-dato-for-redusert-prosent/{migreringsDato}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "reberegnVarigLønnstilskuddSomIkkeHarRedusertDato",
+        "parameters": [
+          {
+            "name": "migreringsDato",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/reberegn-mangler-dato-for-redusert-prosent-dry-run/{migreringsDato}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "reberegnVarigLønnstilskuddSomIkkeHarRedusertDatoDryRun",
+        "parameters": [
+          {
+            "name": "migreringsDato",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/lag-tilskuddsperioder-for-en-avtale/{avtaleId}/{migreringsDato}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "lagTilskuddsperioderPåEnAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "migreringsDato",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/finn-avtaler-med-tilskuddsperioder-feil-datoer": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "finnTilskuddsperioderMedFeilDatoer",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/dvh-melding/patchalleavtaler": {
+      "post": {
+        "tags": [
+          "internal-dvh-melding-produsent-controller"
+        ],
+        "operationId": "patchAlleAvtaler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/dvh-melding/patch": {
+      "post": {
+        "tags": [
+          "internal-dvh-melding-produsent-controller"
+        ],
+        "operationId": "patcheAvtale",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/avtale-hendelse/send-melding-en-avtale/{avtaleId}": {
+      "post": {
+        "tags": [
+          "avtale-hendelse-controller"
+        ],
+        "operationId": "sendMeldingForEnAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/avtale-hendelse/send-melding-alle-avtaler": {
+      "post": {
+        "tags": [
+          "avtale-hendelse-controller"
+        ],
+        "operationId": "sendMeldingAlleAvtaler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/avtale-hendelse/dry-send-melding-alle-avtaler": {
+      "post": {
+        "tags": [
+          "avtale-hendelse-controller"
+        ],
+        "operationId": "drySendMeldingAlleAvtaler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/annuller-tilskuddsperiode/{tilskuddsperiodeId}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "annullerTilskuddsperiode",
+        "parameters": [
+          {
+            "name": "tilskuddsperiodeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/annuller-og-resend-tilskuddsperiode/{tilskuddsperiodeId}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "annullerOgResendTilskuddsperiode",
+        "parameters": [
+          {
+            "name": "tilskuddsperiodeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/annuller-og-generer-tilskuddsperiode/{tilskuddsperiodeId}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "annullerOgGenererTilskuddsperiode",
+        "parameters": [
+          {
+            "name": "tilskuddsperiodeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/utvikler-admin/annuller-og-generer-behandlet-i-arena-perioder/{avtaleId}/{dato}": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "annullerOgGenererBehandletIArenaPerioder",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dato",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentAlleAvtalerInnloggetBrukerHarTilgangTil",
+        "parameters": [
+          {
+            "name": "queryParametre",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AvtalePredicate"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          },
+          {
+            "name": "sorteringskolonne",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "sistEndret"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "opprettAvtaleSomVeileder",
+        "parameters": [
+          {
+            "name": "ryddeavtale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpprettAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/slettemerk": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "slettemerk",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/set-om-avtalen-kan-etterregistreres": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "setOmAvtalenKanEtterregistreres",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/send-tilbake-til-beslutter": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "sendTilbakeTilBeslutter",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/opphev-godkjenninger": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "opphevGodkjenninger",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/oppdaterOppfølgingsEnhet": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "oppdaterOppfølgingsEnhet",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/mentorGodkjennTaushetserklæring": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "mentorGodkjennTaushetserklæring",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/juster-arena-migreringsdato": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "justerArenaMigreringsdato",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JusterArenaMigreringsdato"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/juster-arena-migreringsdato/dry-run": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "justerArenaMigreringsdatoDryRun",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JusterArenaMigreringsdato"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjenn",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn-tilskuddsperiode": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjennTilskuddsperiode",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GodkjennTilskuddsperiodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn-paa-vegne-av-deltaker-og-arbeidsgiver": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjennPaVegneAvDeltakerOgArbeidsgiver",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GodkjentPaVegneAvDeltakerOgArbeidsgiverGrunn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn-paa-vegne-av-deltaker": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjennPaVegneAv",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GodkjentPaVegneGrunn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn-paa-vegne-av": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjennPaVegneAv_1",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GodkjentPaVegneGrunn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/godkjenn-paa-vegne-av-arbeidsgiver": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "godkjennPaVegneAvArbeidsgiver",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GodkjentPaVegneAvArbeidsgiverGrunn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/forleng": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "forlengAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForlengAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/forleng-dry-run": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "forlengAvtaleDryRun",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForlengAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/forkort": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "forkortAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForkortAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/forkort-dry-run": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "forkortAvtaleDryRun",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForkortAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-tilskuddsberegning": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreTilskuddsberegning",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreTilskuddsberegning"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-tilskuddsberegning-dry-run": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreTilskuddsberegningDryRun",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreTilskuddsberegning"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-stillingbeskrivelse": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreStillingbeskrivelse",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreStillingsbeskrivelse"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-oppfolging-og-tilrettelegging": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreOppfølgingOgTilrettelegging",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreOppfølgingOgTilrettelegging"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-om-mentor": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreOmMentor",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreOmMentor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-maal": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreMål",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreMål"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-kostnadssted": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreKostnadssted",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreKostnadsstedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-kontaktinfo": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreKontaktinfo",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreKontaktInformasjon"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/endre-inkluderingstilskudd": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "endreInkluderingstilskudd",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndreInkluderingstilskudd"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/del-med-avtalepart": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "delAvtaleMedAvtalepart",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "DELTAKER",
+                  "MENTOR",
+                  "ARBEIDSGIVER",
+                  "VEILEDER",
+                  "BESLUTTER"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/avslag-tilskuddsperiode": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "avslåTilskuddsperiode",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvslagRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/annuller": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "annuller",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Unmodified-Since",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnullertInfo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/avtaler/sok": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentAlleAvtalerInnloggetBrukerHarTilgangTilMedGet",
+        "parameters": [
+          {
+            "name": "sokId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          },
+          {
+            "name": "sorteringskolonne",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "sistEndret"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentAlleAvtalerInnloggetBrukerHarTilgangTilMedPost",
+        "parameters": [
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          },
+          {
+            "name": "sorteringskolonne",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "sistEndret"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvtalePredicate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/opprett-som-arbeidsgiver": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "opprettAvtaleSomArbeidsgiver",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpprettAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/opprett-mentor-avtale": {
+      "post": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "opprettMentorAvtale",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpprettMentorAvtale"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/varsler/oversikt": {
+      "get": {
+        "tags": [
+          "varsel-controller"
+        ],
+        "operationId": "hentVarslerMedBjelleForOversikt",
+        "parameters": [
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Varsel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/varsler/avtale-modal": {
+      "get": {
+        "tags": [
+          "varsel-controller"
+        ],
+        "operationId": "hentVarslerMedBjelleForAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Varsel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/varsler/avtale-logg": {
+      "get": {
+        "tags": [
+          "varsel-controller"
+        ],
+        "operationId": "hentAlleVarslerForAvtale",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Varsel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organisasjoner": {
+      "get": {
+        "tags": [
+          "organisasjon-controller"
+        ],
+        "operationId": "hentVirksomhet",
+        "parameters": [
+          {
+            "name": "bedriftNr",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organisasjon"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kodeverk": {
+      "get": {
+        "tags": [
+          "kodeverk-controller"
+        ],
+        "operationId": "get",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kodeverk/tiltakstyper": {
+      "get": {
+        "tags": [
+          "kodeverk-controller"
+        ],
+        "operationId": "tiltakstyper",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kodeverk/statuser": {
+      "get": {
+        "tags": [
+          "kodeverk-controller"
+        ],
+        "operationId": "statuser",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/healthcheck": {
+      "get": {
+        "tags": [
+          "health-check-controller"
+        ],
+        "operationId": "healthcheck",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/innlogget-bruker": {
+      "get": {
+        "tags": [
+          "innlogget-bruker-controller"
+        ],
+        "operationId": "hentInnloggetBruker",
+        "parameters": [
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InnloggetBruker"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/feature": {
+      "get": {
+        "tags": [
+          "feature-toggle-controller"
+        ],
+        "operationId": "feature",
+        "parameters": [
+          {
+            "name": "feature",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/feature/variant": {
+      "get": {
+        "tags": [
+          "feature-toggle-controller"
+        ],
+        "operationId": "variant",
+        "parameters": [
+          {
+            "name": "feature",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/Variant"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/be-om-altinn-rettighet-urler": {
+      "get": {
+        "tags": [
+          "be-om-altinn-rettighet-urler-controller"
+        ],
+        "operationId": "beOmRettighetUrler",
+        "parameters": [
+          {
+            "name": "orgNr",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/vis-salesforce-dialog": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "visSalesforceDialog",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/versjoner": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentVersjoner",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvtaleInnhold"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/pdf": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentAvtalePdf",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/{avtaleId}/kontonummer-arbeidsgiver": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentBedriftKontonummer",
+        "parameters": [
+          {
+            "name": "avtaleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/min-side-arbeidsgiver": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentAlleAvtalerForMinSideArbeidsgiver",
+        "parameters": [
+          {
+            "name": "bedriftNr",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Avtale"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/deltaker-allerede-paa-tiltak": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "sjekkOmDeltakerAlleredeErRegistrertPaaTiltak",
+        "parameters": [
+          {
+            "name": "deltakerFnr",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tiltakstype",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ARBEIDSTRENING",
+                "MIDLERTIDIG_LONNSTILSKUDD",
+                "VARIG_LONNSTILSKUDD",
+                "MENTOR",
+                "INKLUDERINGSTILSKUDD",
+                "SOMMERJOBB"
+              ]
+            }
+          },
+          {
+            "name": "startDato",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sluttDato",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "avtaleId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlleredeRegistrertAvtale"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/beslutter-liste": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "finnGodkjenteAvtalerMedTilskuddsperiodestatusOgNavEnheterListe",
+        "parameters": [
+          {
+            "name": "queryParametre",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AvtalePredicate"
+            }
+          },
+          {
+            "name": "sorteringskolonne",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "startDato"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "sorteringOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ASC"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/avtaler/avtaleNr/{avtaleNr}": {
+      "get": {
+        "tags": [
+          "avtale-controller"
+        ],
+        "operationId": "hentFraAvtaleNr",
+        "parameters": [
+          {
+            "name": "avtaleNr",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "innlogget-part",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DELTAKER",
+                "MENTOR",
+                "ARBEIDSGIVER",
+                "VEILEDER",
+                "BESLUTTER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avtale"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EndreAvtale": {
+        "type": "object",
+        "properties": {
+          "deltakerFornavn": {
+            "type": "string"
+          },
+          "deltakerEtternavn": {
+            "type": "string"
+          },
+          "deltakerTlf": {
+            "type": "string"
+          },
+          "bedriftNavn": {
+            "type": "string"
+          },
+          "arbeidsgiverFornavn": {
+            "type": "string"
+          },
+          "arbeidsgiverEtternavn": {
+            "type": "string"
+          },
+          "arbeidsgiverTlf": {
+            "type": "string"
+          },
+          "veilederFornavn": {
+            "type": "string"
+          },
+          "veilederEtternavn": {
+            "type": "string"
+          },
+          "veilederTlf": {
+            "type": "string"
+          },
+          "oppfolging": {
+            "type": "string"
+          },
+          "tilrettelegging": {
+            "type": "string"
+          },
+          "startDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "stillingprosent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "arbeidsoppgaver": {
+            "type": "string"
+          },
+          "stillingstittel": {
+            "type": "string"
+          },
+          "stillingStyrk08": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillingKonseptId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "antallDagerPerUke": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refusjonKontaktpersonFornavn": {
+            "type": "string"
+          },
+          "refusjonKontaktpersonEtternavn": {
+            "type": "string"
+          },
+          "refusjonKontaktpersonTlf": {
+            "type": "string"
+          },
+          "ønskerVarslingOmRefusjon": {
+            "type": "boolean"
+          },
+          "maal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Maal"
+            }
+          },
+          "inkluderingstilskuddsutgift": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Inkluderingstilskuddsutgift"
+            }
+          },
+          "inkluderingstilskuddBegrunnelse": {
+            "type": "string"
+          },
+          "arbeidsgiverKontonummer": {
+            "type": "string"
+          },
+          "lonnstilskuddProsent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manedslonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feriepengesats": {
+            "type": "number"
+          },
+          "arbeidsgiveravgift": {
+            "type": "number"
+          },
+          "otpSats": {
+            "type": "number",
+            "format": "double"
+          },
+          "harFamilietilknytning": {
+            "type": "boolean"
+          },
+          "familietilknytningForklaring": {
+            "type": "string"
+          },
+          "stillingstype": {
+            "type": "string",
+            "enum": [
+              "FAST",
+              "MIDLERTIDIG"
+            ]
+          },
+          "mentorFornavn": {
+            "type": "string"
+          },
+          "mentorEtternavn": {
+            "type": "string"
+          },
+          "mentorOppgaver": {
+            "type": "string"
+          },
+          "mentorAntallTimer": {
+            "type": "number",
+            "format": "double"
+          },
+          "mentorTlf": {
+            "type": "string"
+          },
+          "mentorTimelonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refusjonKontaktperson": {
+            "$ref": "#/components/schemas/RefusjonKontaktperson"
+          }
+        }
+      },
+      "Inkluderingstilskuddsutgift": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "beløp": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TILRETTELEGGINGSBEHOV",
+              "TILTAKSPLASS",
+              "UTSTYR",
+              "PROGRAMVARE",
+              "ARBEIDSHJELPEMIDLER",
+              "OPPLÆRING",
+              "FORSIKRING_LISENS_SERTIFISERING"
+            ]
+          }
+        }
+      },
+      "Maal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kategori": {
+            "type": "string",
+            "enum": [
+              "FÅ_JOBB_I_BEDRIFTEN",
+              "ARBEIDSERFARING",
+              "UTPRØVING",
+              "SPRÅKOPPLÆRING",
+              "OPPNÅ_FAGBREV_KOMPETANSEBEVIS",
+              "ANNET"
+            ]
+          },
+          "beskrivelse": {
+            "type": "string"
+          }
+        }
+      },
+      "RefusjonKontaktperson": {
+        "type": "object",
+        "properties": {
+          "refusjonKontaktpersonFornavn": {
+            "type": "string"
+          },
+          "refusjonKontaktpersonEtternavn": {
+            "type": "string"
+          },
+          "refusjonKontaktpersonTlf": {
+            "type": "string"
+          },
+          "ønskerVarslingOmRefusjon": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Avtale": {
+        "type": "object",
+        "properties": {
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "mentorFnr": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "veilederNavIdent": {
+            "type": "string"
+          },
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          },
+          "opprettetTidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "avtaleNr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gjeldendeInnhold": {
+            "$ref": "#/components/schemas/AvtaleInnhold"
+          },
+          "sistEndret": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "annullertTidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "annullertGrunn": {
+            "type": "string"
+          },
+          "avbrutt": {
+            "type": "boolean"
+          },
+          "slettemerket": {
+            "type": "boolean"
+          },
+          "avbruttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "avbruttGrunn": {
+            "type": "string"
+          },
+          "opprettetAvArbeidsgiver": {
+            "type": "boolean"
+          },
+          "enhetGeografisk": {
+            "type": "string"
+          },
+          "enhetsnavnGeografisk": {
+            "type": "string"
+          },
+          "enhetOppfolging": {
+            "type": "string"
+          },
+          "enhetsnavnOppfolging": {
+            "type": "string"
+          },
+          "godkjentForEtterregistrering": {
+            "type": "boolean"
+          },
+          "kvalifiseringsgruppe": {
+            "type": "string",
+            "enum": [
+              "BATT",
+              "BFORM",
+              "VARIG",
+              "BKART",
+              "IKVAL",
+              "IVURD",
+              "KAP11",
+              "OPPFI",
+              "VURDI",
+              "VURDU"
+            ]
+          },
+          "formidlingsgruppe": {
+            "type": "string",
+            "enum": [
+              "ARBS",
+              "IARBS",
+              "IJOBS",
+              "ISERV",
+              "JOBBS",
+              "PARBS",
+              "RARBS"
+            ]
+          },
+          "tilskuddPeriode": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TilskuddPeriode"
+            }
+          },
+          "feilregistrert": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "erGodkjentAvVeileder": {
+            "type": "boolean"
+          },
+          "godkjentAvArbeidsgiver": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statusSomEnum": {
+            "type": "string",
+            "enum": [
+              "ANNULLERT",
+              "AVBRUTT",
+              "PÅBEGYNT",
+              "MANGLER_GODKJENNING",
+              "KLAR_FOR_OPPSTART",
+              "GJENNOMFØRES",
+              "AVSLUTTET"
+            ]
+          },
+          "erAvtaleInngått": {
+            "type": "boolean"
+          },
+          "godkjentPaVegneAvArbeidsgiver": {
+            "type": "boolean"
+          },
+          "avtaleInngått": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvVeileder": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvDeltaker": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentPaVegneAv": {
+            "type": "boolean"
+          },
+          "godkjentAvMentor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erGodkjentTaushetserklæringAvMentor": {
+            "type": "boolean"
+          },
+          "erGodkjentAvArbeidsgiver": {
+            "type": "boolean"
+          },
+          "erGodkjentAvDeltaker": {
+            "type": "boolean"
+          },
+          "gjeldendeTilskuddsperiode": {
+            "$ref": "#/components/schemas/TilskuddPeriode"
+          },
+          "erAnnullertEllerAvbrutt": {
+            "type": "boolean"
+          },
+          "felterSomIkkeErFyltUt": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "godkjentAvBeslutterNavIdent": {
+            "type": "string"
+          },
+          "godkjentAvBeslutter": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentPaVegneGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneGrunn"
+          },
+          "godkjentPaVegneAvArbeidsgiverGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneAvArbeidsgiverGrunn"
+          },
+          "erUfordelt": {
+            "type": "boolean"
+          },
+          "godkjentAvNavIdent": {
+            "type": "string"
+          },
+          "erLaast": {
+            "type": "boolean"
+          },
+          "erRyddeAvtale": {
+            "type": "boolean"
+          },
+          "kanAvbrytes": {
+            "type": "boolean"
+          },
+          "kanGjenopprettes": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AvtaleInnhold": {
+        "type": "object",
+        "properties": {
+          "versjon": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deltakerFornavn": {
+            "type": "string"
+          },
+          "deltakerEtternavn": {
+            "type": "string"
+          },
+          "deltakerTlf": {
+            "type": "string"
+          },
+          "bedriftNavn": {
+            "type": "string"
+          },
+          "arbeidsgiverFornavn": {
+            "type": "string"
+          },
+          "arbeidsgiverEtternavn": {
+            "type": "string"
+          },
+          "arbeidsgiverTlf": {
+            "type": "string"
+          },
+          "veilederFornavn": {
+            "type": "string"
+          },
+          "veilederEtternavn": {
+            "type": "string"
+          },
+          "veilederTlf": {
+            "type": "string"
+          },
+          "oppfolging": {
+            "type": "string"
+          },
+          "tilrettelegging": {
+            "type": "string"
+          },
+          "startDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "stillingprosent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "journalpostId": {
+            "type": "string"
+          },
+          "arbeidsoppgaver": {
+            "type": "string"
+          },
+          "stillingstittel": {
+            "type": "string"
+          },
+          "stillingStyrk08": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillingKonseptId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "antallDagerPerUke": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refusjonKontaktperson": {
+            "$ref": "#/components/schemas/RefusjonKontaktperson"
+          },
+          "mentorFornavn": {
+            "type": "string"
+          },
+          "mentorEtternavn": {
+            "type": "string"
+          },
+          "mentorOppgaver": {
+            "type": "string"
+          },
+          "mentorAntallTimer": {
+            "type": "number",
+            "format": "double"
+          },
+          "mentorTimelonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mentorTlf": {
+            "type": "string"
+          },
+          "arbeidsgiverKontonummer": {
+            "type": "string"
+          },
+          "lonnstilskuddProsent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manedslonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feriepengesats": {
+            "type": "number"
+          },
+          "arbeidsgiveravgift": {
+            "type": "number"
+          },
+          "harFamilietilknytning": {
+            "type": "boolean"
+          },
+          "familietilknytningForklaring": {
+            "type": "string"
+          },
+          "feriepengerBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "otpSats": {
+            "type": "number",
+            "format": "double"
+          },
+          "otpBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "arbeidsgiveravgiftBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumLonnsutgifter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumLonnstilskudd": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manedslonn100pst": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumLønnstilskuddRedusert": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "datoForRedusertProsent": {
+            "type": "string",
+            "format": "date"
+          },
+          "stillingstype": {
+            "type": "string",
+            "enum": [
+              "FAST",
+              "MIDLERTIDIG"
+            ]
+          },
+          "maal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Maal"
+            }
+          },
+          "inkluderingstilskuddsutgift": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Inkluderingstilskuddsutgift"
+            }
+          },
+          "inkluderingstilskuddBegrunnelse": {
+            "type": "string"
+          },
+          "godkjentAvDeltaker": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentTaushetserklæringAvMentor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvArbeidsgiver": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvVeileder": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvBeslutter": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "avtaleInngått": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ikrafttredelsestidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvNavIdent": {
+            "type": "string"
+          },
+          "godkjentAvBeslutterNavIdent": {
+            "type": "string"
+          },
+          "enhetKostnadssted": {
+            "type": "string"
+          },
+          "enhetsnavnKostnadssted": {
+            "type": "string"
+          },
+          "godkjentPaVegneGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneGrunn"
+          },
+          "godkjentPaVegneAv": {
+            "type": "boolean"
+          },
+          "godkjentPaVegneAvArbeidsgiverGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneAvArbeidsgiverGrunn"
+          },
+          "godkjentPaVegneAvArbeidsgiver": {
+            "type": "boolean"
+          },
+          "innholdType": {
+            "type": "string",
+            "enum": [
+              "INNGÅ",
+              "LÅSE_OPP",
+              "FORLENGE",
+              "FORKORTE",
+              "ENDRE_MÅL",
+              "ENDRE_INKLUDERINGSTILSKUDD",
+              "ENDRE_OM_MENTOR",
+              "ENDRE_TILSKUDDSBEREGNING",
+              "ENDRE_STILLING",
+              "ENDRE_KONTAKTINFO",
+              "ENDRE_OPPFØLGING_OG_TILRETTELEGGING",
+              "ANNULLERE"
+            ]
+          },
+          "inkluderingstilskuddTotalBeløp": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GodkjentPaVegneAvArbeidsgiverGrunn": {
+        "type": "object",
+        "properties": {
+          "klarerIkkeGiFaTilgang": {
+            "type": "boolean"
+          },
+          "vetIkkeHvemSomKanGiTilgang": {
+            "type": "boolean"
+          },
+          "farIkkeTilgangPersonvern": {
+            "type": "boolean"
+          },
+          "arenaMigreringArbeidsgiver": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GodkjentPaVegneGrunn": {
+        "type": "object",
+        "properties": {
+          "ikkeBankId": {
+            "type": "boolean"
+          },
+          "reservert": {
+            "type": "boolean"
+          },
+          "digitalKompetanse": {
+            "type": "boolean"
+          },
+          "arenaMigreringDeltaker": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TilskuddPeriode": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "beløp": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "godkjentAvNavIdent": {
+            "type": "string"
+          },
+          "godkjentTidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "enhet": {
+            "type": "string"
+          },
+          "enhetsnavn": {
+            "type": "string"
+          },
+          "lonnstilskuddProsent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "avslagsårsaker": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "FEIL_I_FAKTA",
+                "FEIL_I_REGELFORSTÅELSE",
+                "ANNET",
+                "FEIL_I_PROSENTSATS"
+              ]
+            }
+          },
+          "avslagsforklaring": {
+            "type": "string"
+          },
+          "avslåttAvNavIdent": {
+            "type": "string"
+          },
+          "avslåttTidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "løpenummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ANNULLERT",
+              "GODKJENT",
+              "AVSLÅTT",
+              "UBEHANDLET",
+              "BEHANDLET_I_ARENA"
+            ]
+          },
+          "refusjonStatus": {
+            "type": "string",
+            "enum": [
+              "KLAR_FOR_INNSENDING",
+              "FOR_TIDLIG",
+              "SENDT_KRAV",
+              "UTBETALT",
+              "KORRIGERT",
+              "UTGÅTT",
+              "ANNULLERT",
+              "UTBETALING_FEILET",
+              "GODKJENT_MINUSBELØP",
+              "GODKJENT_NULLBELØP"
+            ]
+          },
+          "aktiv": {
+            "type": "boolean"
+          },
+          "kanBesluttesFom": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PatchRequest": {
+        "type": "object",
+        "properties": {
+          "avtaleIder": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "OpprettAvtale": {
+        "type": "object",
+        "properties": {
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          }
+        }
+      },
+      "JusterArenaMigreringsdato": {
+        "type": "object",
+        "properties": {
+          "migreringsdato": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "GodkjennTilskuddsperiodeRequest": {
+        "type": "object",
+        "properties": {
+          "enhet": {
+            "type": "string"
+          }
+        }
+      },
+      "GodkjentPaVegneAvDeltakerOgArbeidsgiverGrunn": {
+        "type": "object",
+        "properties": {
+          "godkjentPaVegneAvArbeidsgiverGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneAvArbeidsgiverGrunn"
+          },
+          "godkjentPaVegneAvDeltakerGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneGrunn"
+          }
+        }
+      },
+      "ForlengAvtale": {
+        "type": "object",
+        "properties": {
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ForkortAvtale": {
+        "type": "object",
+        "properties": {
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "grunn": {
+            "type": "string"
+          },
+          "annetGrunn": {
+            "type": "string"
+          }
+        }
+      },
+      "EndreTilskuddsberegning": {
+        "type": "object",
+        "properties": {
+          "manedslonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feriepengesats": {
+            "type": "number"
+          },
+          "arbeidsgiveravgift": {
+            "type": "number"
+          },
+          "otpSats": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "EndreStillingsbeskrivelse": {
+        "type": "object",
+        "properties": {
+          "stillingstittel": {
+            "type": "string"
+          },
+          "arbeidsoppgaver": {
+            "type": "string"
+          },
+          "stillingStyrk08": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillingKonseptId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillingprosent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "antallDagerPerUke": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "EndreOppfølgingOgTilrettelegging": {
+        "type": "object",
+        "properties": {
+          "oppfolging": {
+            "type": "string"
+          },
+          "tilrettelegging": {
+            "type": "string"
+          }
+        }
+      },
+      "EndreOmMentor": {
+        "type": "object",
+        "properties": {
+          "mentorFornavn": {
+            "type": "string"
+          },
+          "mentorEtternavn": {
+            "type": "string"
+          },
+          "mentorTlf": {
+            "type": "string"
+          },
+          "mentorOppgaver": {
+            "type": "string"
+          },
+          "mentorAntallTimer": {
+            "type": "number",
+            "format": "double"
+          },
+          "mentorTimelonn": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "EndreMål": {
+        "type": "object",
+        "properties": {
+          "maal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Maal"
+            }
+          }
+        }
+      },
+      "EndreKostnadsstedRequest": {
+        "type": "object",
+        "properties": {
+          "enhet": {
+            "type": "string"
+          }
+        }
+      },
+      "EndreKontaktInformasjon": {
+        "type": "object",
+        "properties": {
+          "deltakerFornavn": {
+            "type": "string"
+          },
+          "deltakerEtternavn": {
+            "type": "string"
+          },
+          "deltakerTlf": {
+            "type": "string"
+          },
+          "veilederFornavn": {
+            "type": "string"
+          },
+          "veilederEtternavn": {
+            "type": "string"
+          },
+          "veilederTlf": {
+            "type": "string"
+          },
+          "arbeidsgiverFornavn": {
+            "type": "string"
+          },
+          "arbeidsgiverEtternavn": {
+            "type": "string"
+          },
+          "arbeidsgiverTlf": {
+            "type": "string"
+          },
+          "refusjonKontaktperson": {
+            "$ref": "#/components/schemas/RefusjonKontaktperson"
+          }
+        }
+      },
+      "EndreInkluderingstilskudd": {
+        "type": "object",
+        "properties": {
+          "inkluderingstilskuddsutgift": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Inkluderingstilskuddsutgift"
+            }
+          }
+        }
+      },
+      "AvslagRequest": {
+        "type": "object",
+        "properties": {
+          "avslagsårsaker": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "FEIL_I_FAKTA",
+                "FEIL_I_REGELFORSTÅELSE",
+                "ANNET",
+                "FEIL_I_PROSENTSATS"
+              ]
+            }
+          },
+          "avslagsforklaring": {
+            "type": "string"
+          }
+        }
+      },
+      "AnnullertInfo": {
+        "type": "object",
+        "properties": {
+          "annullertGrunn": {
+            "type": "string"
+          }
+        }
+      },
+      "AvtalePredicate": {
+        "type": "object",
+        "properties": {
+          "veilederNavIdent": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ANNULLERT",
+              "AVBRUTT",
+              "PÅBEGYNT",
+              "MANGLER_GODKJENNING",
+              "KLAR_FOR_OPPSTART",
+              "GJENNOMFØRES",
+              "AVSLUTTET"
+            ]
+          },
+          "erUfordelt": {
+            "type": "boolean"
+          },
+          "tilskuddPeriodeStatus": {
+            "type": "string",
+            "enum": [
+              "ANNULLERT",
+              "GODKJENT",
+              "AVSLÅTT",
+              "UBEHANDLET",
+              "BEHANDLET_I_ARENA"
+            ]
+          },
+          "navEnhet": {
+            "type": "string"
+          },
+          "avtaleNr": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OpprettMentorAvtale": {
+        "type": "object",
+        "properties": {
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "mentorFnr": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          },
+          "avtalerolle": {
+            "type": "string",
+            "enum": [
+              "DELTAKER",
+              "MENTOR",
+              "ARBEIDSGIVER",
+              "VEILEDER",
+              "BESLUTTER"
+            ]
+          }
+        }
+      },
+      "Varsel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lest": {
+            "type": "boolean"
+          },
+          "identifikator": {
+            "type": "string"
+          },
+          "utførtAvIdentifikator": {
+            "type": "string"
+          },
+          "tekst": {
+            "type": "string"
+          },
+          "hendelseType": {
+            "type": "string",
+            "enum": [
+              "OPPRETTET",
+              "GODKJENT_AV_ARBEIDSGIVER",
+              "GODKJENT_AV_VEILEDER",
+              "GODKJENT_AV_DELTAKER",
+              "SIGNERT_AV_MENTOR",
+              "GODKJENT_PAA_VEGNE_AV",
+              "GODKJENT_PAA_VEGNE_AV_DELTAKER_OG_ARBEIDSGIVER",
+              "GODKJENT_PAA_VEGNE_AV_ARBEIDSGIVER",
+              "GODKJENNINGER_OPPHEVET_AV_ARBEIDSGIVER",
+              "GODKJENNINGER_OPPHEVET_AV_VEILEDER",
+              "DELT_MED_DELTAKER",
+              "DELT_MED_ARBEIDSGIVER",
+              "DELT_MED_MENTOR",
+              "ENDRET",
+              "AVBRUTT",
+              "ANNULLERT",
+              "LÅST_OPP",
+              "GJENOPPRETTET",
+              "OPPRETTET_AV_ARBEIDSGIVER",
+              "NY_VEILEDER",
+              "AVTALE_FORDELT",
+              "TILSKUDDSPERIODE_AVSLATT",
+              "TILSKUDDSPERIODE_GODKJENT",
+              "AVTALE_FORKORTET",
+              "AVTALE_FORLENGET",
+              "MÅL_ENDRET",
+              "INKLUDERINGSTILSKUDD_ENDRET",
+              "OM_MENTOR_ENDRET",
+              "TILSKUDDSBEREGNING_ENDRET",
+              "KONTAKTINFORMASJON_ENDRET",
+              "STILLINGSBESKRIVELSE_ENDRET",
+              "OPPFØLGING_OG_TILRETTELEGGING_ENDRET",
+              "AVTALE_INNGÅTT",
+              "REFUSJON_KLAR",
+              "REFUSJON_KLAR_REVARSEL",
+              "REFUSJON_FRIST_FORLENGET",
+              "REFUSJON_KORRIGERT",
+              "VARSLER_SETT",
+              "AVTALE_SLETTET",
+              "GODKJENT_FOR_ETTERREGISTRERING",
+              "FJERNET_ETTERREGISTRERING",
+              "STATUSENDRING"
+            ]
+          },
+          "bjelle": {
+            "type": "boolean"
+          },
+          "avtaleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tidspunkt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mottaker": {
+            "type": "string",
+            "enum": [
+              "DELTAKER",
+              "MENTOR",
+              "ARBEIDSGIVER",
+              "VEILEDER",
+              "BESLUTTER"
+            ]
+          },
+          "utførtAv": {
+            "type": "string",
+            "enum": [
+              "DELTAKER",
+              "MENTOR",
+              "ARBEIDSGIVER",
+              "VEILEDER",
+              "BESLUTTER"
+            ]
+          }
+        }
+      },
+      "Organisasjon": {
+        "type": "object",
+        "properties": {
+          "bedriftNr": {
+            "type": "string"
+          },
+          "bedriftNavn": {
+            "type": "string"
+          }
+        }
+      },
+      "AvtaleTilJournalfoering": {
+        "type": "object",
+        "properties": {
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          },
+          "avtaleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "avtaleVersjonId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "opprettet": {
+            "type": "string",
+            "format": "date"
+          },
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "mentorFnr": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "veilederNavIdent": {
+            "type": "string"
+          },
+          "deltakerFornavn": {
+            "type": "string"
+          },
+          "deltakerEtternavn": {
+            "type": "string"
+          },
+          "deltakerTlf": {
+            "type": "string"
+          },
+          "bedriftNavn": {
+            "type": "string"
+          },
+          "arbeidsgiverFornavn": {
+            "type": "string"
+          },
+          "arbeidsgiverEtternavn": {
+            "type": "string"
+          },
+          "arbeidsgiverTlf": {
+            "type": "string"
+          },
+          "veilederFornavn": {
+            "type": "string"
+          },
+          "veilederEtternavn": {
+            "type": "string"
+          },
+          "veilederTlf": {
+            "type": "string"
+          },
+          "versjon": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "oppfolging": {
+            "type": "string"
+          },
+          "tilrettelegging": {
+            "type": "string"
+          },
+          "startDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "stillingprosent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillingstittel": {
+            "type": "string"
+          },
+          "stillingstype": {
+            "type": "string",
+            "enum": [
+              "FAST",
+              "MIDLERTIDIG"
+            ]
+          },
+          "arbeidsoppgaver": {
+            "type": "string"
+          },
+          "antallDagerPerUke": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enhetOppfolging": {
+            "type": "string"
+          },
+          "refusjonKontaktperson": {
+            "$ref": "#/components/schemas/RefusjonKontaktperson"
+          },
+          "arbeidsgiverKontonummer": {
+            "type": "string"
+          },
+          "lonnstilskuddProsent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manedslonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feriepengesats": {
+            "type": "number"
+          },
+          "arbeidsgiveravgift": {
+            "type": "number"
+          },
+          "harFamilietilknytning": {
+            "type": "boolean"
+          },
+          "familietilknytningForklaring": {
+            "type": "string"
+          },
+          "feriepengerBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "otpSats": {
+            "type": "number",
+            "format": "double"
+          },
+          "otpBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "arbeidsgiveravgiftBelop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumLonnsutgifter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumLonnstilskudd": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manedslonn100pst": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inkluderingstilskuddsutgift": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Inkluderingstilskuddsutgift"
+            }
+          },
+          "inkluderingstilskuddBegrunnelse": {
+            "type": "string"
+          },
+          "mentorFornavn": {
+            "type": "string"
+          },
+          "mentorEtternavn": {
+            "type": "string"
+          },
+          "mentorOppgaver": {
+            "type": "string"
+          },
+          "mentorAntallTimer": {
+            "type": "number",
+            "format": "double"
+          },
+          "mentorTimelonn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaalTilJournalfoering"
+            }
+          },
+          "oppgaver": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OppgaveTilJournalFoering"
+            }
+          },
+          "godkjentPaVegneGrunn": {
+            "$ref": "#/components/schemas/GodkjentPaVegneGrunnTilJournalfoering"
+          },
+          "godkjentAvDeltaker": {
+            "type": "string",
+            "format": "date"
+          },
+          "godkjentAvArbeidsgiver": {
+            "type": "string",
+            "format": "date"
+          },
+          "godkjentAvVeileder": {
+            "type": "string",
+            "format": "date"
+          },
+          "godkjentTaushetserklæringAvMentor": {
+            "type": "string",
+            "format": "date"
+          },
+          "tilskuddsPerioder": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TilskuddPeriode"
+            }
+          },
+          "godkjentPaVegneAv": {
+            "type": "boolean"
+          },
+          "avtalerolle": {
+            "type": "string",
+            "enum": [
+              "DELTAKER",
+              "MENTOR",
+              "ARBEIDSGIVER",
+              "VEILEDER",
+              "BESLUTTER"
+            ]
+          }
+        }
+      },
+      "GodkjentPaVegneGrunnTilJournalfoering": {
+        "type": "object",
+        "properties": {
+          "ikkeBankId": {
+            "type": "boolean"
+          },
+          "digitalKompetanse": {
+            "type": "boolean"
+          },
+          "reservert": {
+            "type": "boolean"
+          },
+          "arenaMigreringDeltaker": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MaalTilJournalfoering": {
+        "type": "object",
+        "properties": {
+          "kategori": {
+            "type": "string"
+          },
+          "beskrivelse": {
+            "type": "string"
+          }
+        }
+      },
+      "OppgaveTilJournalFoering": {
+        "type": "object",
+        "properties": {
+          "tittel": {
+            "type": "string"
+          },
+          "beskrivelse": {
+            "type": "string"
+          },
+          "opplaering": {
+            "type": "string"
+          }
+        }
+      },
+      "InnloggetBruker": {
+        "type": "object"
+      },
+      "Payload": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "stickiness": {
+            "type": "string"
+          }
+        }
+      },
+      "AlleredeRegistrertAvtale": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "avtaleNr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tiltakstype": {
+            "type": "string",
+            "enum": [
+              "ARBEIDSTRENING",
+              "MIDLERTIDIG_LONNSTILSKUDD",
+              "VARIG_LONNSTILSKUDD",
+              "MENTOR",
+              "INKLUDERINGSTILSKUDD",
+              "SOMMERJOBB"
+            ]
+          },
+          "deltakerFnr": {
+            "type": "string"
+          },
+          "bedriftNr": {
+            "type": "string"
+          },
+          "veilederNavIdent": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ANNULLERT",
+              "AVBRUTT",
+              "PÅBEGYNT",
+              "MANGLER_GODKJENNING",
+              "KLAR_FOR_OPPSTART",
+              "GJENNOMFØRES",
+              "AVSLUTTET"
+            ]
+          },
+          "opprettetAvArbeidsgiver": {
+            "type": "boolean"
+          },
+          "startDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttDato": {
+            "type": "string",
+            "format": "date"
+          },
+          "godkjentAvVeileder": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "godkjentAvBeslutter": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "avtaleInngått": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
