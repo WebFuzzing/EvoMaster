@@ -2,8 +2,14 @@ package org.evomaster.core.utils
 
 object StringUtils {
 
-    private val delimiters = listOf(' ', '\n', '\r', '\t', ',', '.','!','?',';','"','\'','-','_')
+    private val delimiters = listOf(' ', '\n', '\r', '\t', ',', '.','!','?',';','"','\'','-','_','(',')')
 
+    /**
+     * Check if the given [text] contains the specified [word].
+     * This is not a simple "contains" check, as we need to make sure we are not dealing
+     * with any embedding of another word.
+     * eg, 'url' should not match when finding 'curling'.
+     */
     fun hasWord(text: String, word: String): Boolean {
 
         var start = text.indexOf(word, 0, true)
@@ -12,12 +18,12 @@ object StringUtils {
 
             val before = start == 0 || delimiters.contains(text[start-1])
             val end = start + word.length
-            val after = end == text.length || delimiters.contains(text[end-1])
+            val after = end == text.length || delimiters.contains(text[end])
 
             if(before && after){
                 return true
             }
-            start = text.indexOf(word, start, true)
+            start = text.indexOf(word, end, true)
         }
         return false
     }
