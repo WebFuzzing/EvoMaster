@@ -2705,6 +2705,10 @@ class EMConfig {
     var handleFlakiness = false
 
     @Experimental
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests")
+    var execNumForDetectFlaky = 1
+
+    @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
             "This is necessary when the generated tests are executed on the different machine. " +
             "Note that this setting only affects the generated test cases.")
