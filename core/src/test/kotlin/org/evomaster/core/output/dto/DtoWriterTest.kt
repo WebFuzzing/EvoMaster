@@ -9,10 +9,13 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallActio
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.`is`
@@ -93,6 +96,23 @@ class DtoWriterTest {
         dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, noBodyParamSolution)
 
         assertEquals(dtoWriter.getCollectedDtos().size, 0)
+    }
+
+    @Test
+    fun jsonPatchPayloadsAreNotCollectedAsDtos() {
+        val dtoWriter = DtoWriter(outputFormat)
+        val bodyParam = BodyParam(
+            gene = JsonPatchDocumentGene("patch"),
+            typeGene = EnumGene("contentType", listOf("application/json-patch+json")).apply { index = 0 }
+        )
+        val eIndividual = getEvaluatedIndividualWith(
+            getRestCallAction("/pets/{id}", HttpVerb.PATCH, mutableListOf(bodyParam))
+        )
+        val solution = Solution(singletonList(eIndividual), "", "", Termination.NONE, emptyList(), emptyList())
+
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, solution)
+
+        assertTrue(dtoWriter.getCollectedDtos().isEmpty())
     }
 
     // TODO: Migrate tests to integration tests using reflection to assert correct DTO generation

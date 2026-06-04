@@ -22,13 +22,38 @@ class JsonPatchTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "JsonPatchEM",
             "org.foo.JsonPatchEM",
-            200
-        ) { args: MutableList<String> ->
+            2000,
+            true,
+            { args: MutableList<String> ->
 
-            val solution = initAndRun(args)
+                val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}", "patched")
-        }
+                assertTrue(solution.individuals.size >= 1)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}", "patched")
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/add", "add patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/add", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/remove", "remove patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/remove", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/replace", "replace patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/replace", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/move", "move patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/move", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/copy", "copy patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/copy", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/test", "test patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/test", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/sequence", "sequence patched")
+                assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/sequence", null)
+            },
+            3,
+        )
     }
 }
