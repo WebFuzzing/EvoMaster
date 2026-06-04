@@ -189,7 +189,7 @@ patternCharacter
  | BRACE_close
  | BRACKET_close
  | COLON
- | DOUBLE_AMPERSAND
+ | DOUBLE_AMPERSAND // char class intersection not supported by default in JS, only supported if "v" flag is turned on.
  ;
 
 
