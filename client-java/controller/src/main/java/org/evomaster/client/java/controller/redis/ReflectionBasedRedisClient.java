@@ -23,6 +23,7 @@ public class ReflectionBasedRedisClient {
     private static final String HGETALL_METHOD = "hgetall";
     private static final String HSET_METHOD = "hset";
     private static final String KEYS_METHOD = "keys";
+    private static final String SADD_METHOD = "sadd";
     private static final String SELECT_METHOD = "select";
     private static final String SET_METHOD = "set";
     private static final String SHUTDOWN_METHOD = "shutdown";
@@ -115,6 +116,11 @@ public class ReflectionBasedRedisClient {
     /** HSET key field value */
     public void hashSet(String key, String field, String value) {
         invoke(HSET_METHOD, key, field, value);
+    }
+
+    /** SADD key */
+    public void addMember(String key, String member) {
+        invoke(SADD_METHOD, key, member);
     }
 
     /** SMEMBERS key */

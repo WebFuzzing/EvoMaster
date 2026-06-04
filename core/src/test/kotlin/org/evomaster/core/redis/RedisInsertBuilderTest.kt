@@ -11,18 +11,18 @@ class RedisInsertBuilderTest {
     private val randomness = Randomness().apply { updateSeed(42) }
 
     private fun getCommand(key: String) = RedisFailedCommand().also {
-        it.key = key
+        it.keys = listOf(key)
         it.command = "GET"
     }
 
     private fun hgetCommand(key: String, field: String) = RedisFailedCommand().also {
-        it.key = key
+        it.keys = listOf(key)
         it.field = field
         it.command = "HGET"
     }
 
     private fun hgetallCommand(key: String) = RedisFailedCommand().also {
-        it.key = key
+        it.keys = listOf(key)
         it.command = "HGETALL"
     }
 
@@ -151,7 +151,7 @@ class RedisInsertBuilderTest {
     @Test
     fun testUnsupportedCommandSkippedSilently() {
         val unsupported = RedisFailedCommand().also {
-            it.key = "key:1"
+            it.keys = listOf("key:1")
             it.command = "UNKNOWN_CMD"
         }
 

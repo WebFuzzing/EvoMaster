@@ -22,66 +22,80 @@ object RedisInsertBuilder {
         existingKeys: Set<String>,
         randomness: Randomness
     ): List<RedisDbAction> {
+        return failedCommands.flatMap { cmd ->
+            buildActionsForCommand(cmd, existingKeys, randomness)
+        }
+    }
 
-        return failedCommands
-            .filter { it.key == null || it.key !in existingKeys }
-            .mapNotNull { cmd ->
-                when (cmd.command) {
-                    "GET" -> {
-                        val keyGene = StringGene("key", cmd.key)
-                        val valueGene = StringGene("value").also {
-                            it.randomize(randomness, false)
-                        }
-                        RedisSetAction(
-                            keyGene = keyGene,
-                            valueGene = valueGene
-                        )
-                    }
-                    "HGET" -> {
-                        val keyGene = StringGene("key", cmd.key)
-                        val valueGene = StringGene("value").also {
-                            it.randomize(randomness, false)
-                        }
-                        RedisHsetAction(
-                            keyGene = keyGene,
-                            field = cmd.field,
-                            valueGene = valueGene
-                        )
-                    }
-                    "HGETALL" -> {
-                        val keyGene = StringGene("key", cmd.key)
-                        val valueGene = StringGene("value").also {
-                            it.randomize(randomness, false)
-                        }
-                        // field is unknown — using a placeholder so the key exists in Redis
-                        RedisHsetAction(
-                            keyGene = keyGene,
-                            field = "field",
-                            valueGene = valueGene
-                        )
-                    }
-                    "KEYS" -> {
-                        val keyGene = StringGene("key").also {
-                            it.addSpecializations("key",
-                                listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, cmd.pattern)),
-                                randomness,
-                                updateGlobalInfo = false,  // should this be false?
-                                enableConstraintHandling = false)
-                            it.doInitialize(randomness)
-                        }
-                        val valueGene = StringGene("value").also {
-                            it.randomize(randomness, false)
-                        }
-                        RedisSetAction(
-                            keyGene = keyGene,
-                            valueGene = valueGene
-                        )
-                    }
-                    else -> {
-                        // unsupported command
-                        null
-                    }
+    private fun buildActionsForCommand(
+        cmd: RedisFailedCommand,
+        existingKeys: Set<String>,
+        randomness: Randomness
+    ): List<RedisDbAction> {
+        val keys = cmd.keys ?: emptyList()
+
+        return when (cmd.command) {
+            "GET" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(RedisSetAction(
+                    keyGene = StringGene("key", key),
+                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
+                ))
+            }
+            "HGET" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(RedisHsetAction(
+                    keyGene = StringGene("key", key),
+                    field = cmd.field ?: "field",
+                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
+                ))
+            }
+            "HGETALL" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(RedisHsetAction(
+                    keyGene = StringGene("key", key),
+                    field = "field",
+                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
+                ))
+            }
+            "KEYS" -> {
+                val keyGene = StringGene("key").also {
+                    it.addSpecializations(
+                        "key",
+                        listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, cmd.pattern)),
+                        randomness,
+                        updateGlobalInfo = false,
+                        enableConstraintHandling = false
+                    )
+                    it.doInitialize(randomness)
+                }
+                listOf(RedisSetAction(
+                    keyGene = keyGene,
+                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
+                ))
+            }
+            "SMEMBERS" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(RedisSaddAction(
+                    keyGene = StringGene("key", key),
+                    memberGene = StringGene("member").also { it.randomize(randomness, false) }
+                ))
+            }
+            "SINTER" -> {
+                if (keys.isEmpty()) return emptyList()
+                val sharedElement = StringGene("member").also { it.randomize(randomness, false) }
+                keys.map { key ->
+                    RedisSaddAction(
+                        keyGene = StringGene("key", key),
+                        memberGene = sharedElement.copy() as StringGene
+                    )
                 }
             }
+            else -> emptyList()
+        }
     }
 }

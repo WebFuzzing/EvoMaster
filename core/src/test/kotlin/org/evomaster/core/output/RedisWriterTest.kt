@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.redis.RedisDbActionResult
 import org.evomaster.core.redis.RedisHsetAction
+import org.evomaster.core.redis.RedisSaddAction
 import org.evomaster.core.redis.RedisSetAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.string.StringGene
@@ -38,6 +39,22 @@ class RedisWriterTest {
             valueGene = StringGene("value", value)
         )
         action.setLocalId("test-redis-hset-action")
+        val result = RedisDbActionResult(action.getLocalId()).also {
+            it.setInsertExecutionResult(success)
+        }
+        return EvaluatedRedisDbAction(action, result)
+    }
+
+    private fun makeEvaluatedSadd(
+        key: String,
+        member: String,
+        success: Boolean = true
+    ): EvaluatedRedisDbAction {
+        val action = RedisSaddAction(
+            keyGene = StringGene("key", key),
+            memberGene = StringGene("value", member)
+        )
+        action.setLocalId("test-redis-sadd-action")
         val result = RedisDbActionResult(action.getLocalId()).also {
             it.setInsertExecutionResult(success)
         }
@@ -104,6 +121,25 @@ class RedisWriterTest {
     }
 
     @Test
+    fun testKotlinFormatSingleSaddAction() {
+        val output = writeKotlin(listOf(makeEvaluatedSadd("set:1", "member")))
+
+        assertTrue(output.contains("val insertions_redis = redis()"))
+        assertTrue(output.contains(".sadd(\"set:1\", \"member\")"))
+        assertTrue(output.contains(".dtos()"))
+        assertTrue(output.contains("val insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
+    }
+
+    @Test
+    fun testJavaFormatSingleSaddAction() {
+        val output = writeJava(listOf(makeEvaluatedSadd("set:1", "member")))
+
+        assertTrue(output.contains("List<RedisInsertionDto> insertions_redis = redis()"))
+        assertTrue(output.contains(".sadd(\"set:1\", \"member\")"))
+        assertTrue(output.contains("RedisInsertionResultsDto insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
+    }
+
+    @Test
     fun testKotlinEscapesDollarSign() {
         val output = writeKotlin(listOf(makeEvaluatedSet("key", "\$HOME")))
 
@@ -153,10 +189,11 @@ class RedisWriterTest {
     }
 
     @Test
-    fun testMixedSetAndHsetActions() {
+    fun testMixedActions() {
         val actions = listOf(
             makeEvaluatedSet("string:key", "val"),
-            makeEvaluatedHset("hash:key", "field1", "val2")
+            makeEvaluatedHset("hash:key", "field1", "val2"),
+            makeEvaluatedSadd("set:key", "member")
         )
 
         val output = writeKotlin(actions)
@@ -164,5 +201,6 @@ class RedisWriterTest {
         assertTrue(output.contains(".set(\"string:key\", \"val\")"))
         assertTrue(output.contains(".and()"))
         assertTrue(output.contains(".hset(\"hash:key\", \"field1\", \"val2\")"))
+        assertTrue(output.contains(".sadd(\"set:key\", \"member\")"))
     }
 }

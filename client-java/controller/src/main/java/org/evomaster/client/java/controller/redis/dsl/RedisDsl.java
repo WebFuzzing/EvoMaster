@@ -72,6 +72,23 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
     }
 
     @Override
+    public RedisStatementDsl sadd(String key, String member) {
+        checkDsl();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified key");
+        }
+        if (member == null || member.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified member");
+        }
+        RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = "SADD";
+        dto.key = key;
+        dto.value = member;
+        list.add(dto);
+        return this;
+    }
+
+    @Override
     public RedisSequenceDsl and() {
         return this;
     }

@@ -92,12 +92,12 @@ public class RedisHandler {
 
     public List<RedisCommandEvaluation> getEvaluatedRedisCommands() {
         operations.stream()
-            .filter(command -> command.getType().shouldCalculateHeuristic())
-            .forEach(redisCommand -> {
-                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
-                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
-                registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
-            });
+                .filter(command -> command.getType().shouldCalculateHeuristic())
+                .forEach(redisCommand -> {
+                    RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                    evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
+                    registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+                });
         operations.clear();
 
         return evaluatedRedisCommands;
@@ -105,9 +105,15 @@ public class RedisHandler {
 
     private void registerFailedCommand(RedisCommand redisCommand, double distance) {
         RedisCommand.RedisCommandType type = redisCommand.getType();
-        if (distance > 0 &&
-                type.equals(GET) || type.equals(KEYS) || type.equals(HGET) || type.equals(HGETALL)) {
-            //For this first iteration we'll only work on GET commands.
+        if (distance > 0 && (
+            type.equals(GET) ||
+            type.equals(HGET) ||
+            type.equals(HGETALL) ||
+            type.equals(KEYS) ||
+            type.equals(SINTER) ||
+            type.equals(SMEMBERS))
+        ) {
+            // Further commands will be registered in future iterations.
             failedCommands.add(createFailedCommand(redisCommand));
         }
     }
@@ -117,13 +123,15 @@ public class RedisHandler {
         List<String> args = redisCommand.extractArgs();
         switch (type) {
             case GET:
-            case HGETALL: {
+            case HGETALL:
+            case SINTER:
+            case SMEMBERS: {
                 if (args.isEmpty()) {
                     throw new IllegalArgumentException("Command " + type.getLabel() + " has invalid arguments.");
                 }
                 return new RedisFailedCommand(
                         type.getLabel().toUpperCase(),
-                        args.get(0),
+                        args,
                         null,
                         null);
             }
@@ -134,7 +142,7 @@ public class RedisHandler {
                 }
                 return new RedisFailedCommand(
                         type.getLabel().toUpperCase(),
-                        null,
+                        Collections.emptyList(),
                         RedisUtils.redisPatternToRegex(args.get(0)),
                         null);
             }
@@ -145,7 +153,7 @@ public class RedisHandler {
                 }
                 return new RedisFailedCommand(
                         type.getLabel().toUpperCase(),
-                        args.get(0),
+                        Collections.singletonList((args.get(0))),
                         null,
                         args.get(1));
             }
@@ -208,7 +216,7 @@ public class RedisHandler {
         Map<String, RedisValueData> redisData = new HashMap<>();
         keySet.forEach(
                 key -> redisData.put(key, new RedisValueData(redisClient.getSetMembers(key))
-        ));
+                ));
         return new RedisKeyValueStore(redisData);
     }
 

@@ -57,6 +57,11 @@ object RedisWriter {
                         val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
                         ".hset($key, \"$field\", $value)"
                     }
+                    is RedisSaddAction -> {
+                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
+                        val member = action.memberGene.getValueAsPrintableString(targetFormat = format)
+                        ".sadd($key, $member)"
+                    }
                 }
 
                 lines.add(

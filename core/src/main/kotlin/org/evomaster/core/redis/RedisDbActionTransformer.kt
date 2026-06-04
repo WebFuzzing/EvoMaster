@@ -22,6 +22,11 @@ object RedisDbActionTransformer {
                     it.field = action.field
                     it.value = action.valueGene.value
                 }
+                is RedisSaddAction -> RedisInsertionDto().also {
+                    it.command = "SADD"
+                    it.key = action.keyGene.value
+                    it.value = action.memberGene.value
+                }
             }
         }
         return dto
