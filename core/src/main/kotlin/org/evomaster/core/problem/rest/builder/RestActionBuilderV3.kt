@@ -1051,7 +1051,7 @@ object RestActionBuilderV3 {
                         messages = messages
                     ) //StringGene(name)
 
-                    if(options.inferFormatFromNames){ 
+                    if(options.inferFormatFromNames){
                         heuristicInferFormatFromName(gene, name, schema.description)
                     } else {
                         gene
@@ -1262,6 +1262,7 @@ object RestActionBuilderV3 {
         return when{
             rfc3339 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.RFC3339)}
             iso8601 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL)}
+            StringUtils.hasWord(description,"uuid") -> handleDescriptionMatch(name,gene){n -> UUIDGene(n) }
             StringUtils.hasWord(description,"date") -> handleDescriptionMatch(name,gene){n -> DateGene(n) }
             StringUtils.hasWord(description,"uri") -> handleDescriptionMatch(name,gene){n -> UriGene(n)}
             StringUtils.hasWord(description,"url") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
@@ -1389,7 +1390,7 @@ object RestActionBuilderV3 {
             After all, here we just need to sample valid emails, and not verify
             if a string is a valid email.
          */
-        return RegexHandler.createGeneForJVM("[A-Za-z0-9]{2,}@[A-Za-z0-9]+.[A-Za-z]{2,}")
+        return RegexHandler.createGeneForJVM("[A-Za-z0-9]{2,}@[A-Za-z0-9]+\\.[A-Za-z]{2,}")
             .apply { this.name = name }
     }
 
