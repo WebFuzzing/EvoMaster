@@ -53,7 +53,6 @@ import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
-import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.utils.StringUtils
@@ -113,6 +112,8 @@ object RestActionBuilderV3 {
         val usingWhiteBox: Boolean = true,
 
         val enableAdvancedFormats: Boolean = true,
+
+        val inferFormatFromNames: Boolean = true,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -120,7 +121,8 @@ object RestActionBuilderV3 {
             probUseDefault = config.probRestDefault,
             probUseExamples = config.probRestExamples,
             usingWhiteBox = !config.blackBox,
-            enableAdvancedFormats = config.enableAdvancedFormats
+            enableAdvancedFormats = config.enableAdvancedFormats,
+            inferFormatFromNames = config.inferFormatFromNames
         )
 
         init {
@@ -1049,7 +1051,7 @@ object RestActionBuilderV3 {
                         messages = messages
                     ) //StringGene(name)
 
-                    if(true){ //TODO inferFormatFromNames
+                    if(options.inferFormatFromNames){ 
                         heuristicInferFormatFromName(gene, name, schema.description)
                     } else {
                         gene
@@ -1236,7 +1238,7 @@ object RestActionBuilderV3 {
         val iso8601 = description!=null && description.contains("iso",true) && description.contains("8601",true)
 
         handleNameMatch("uuid",name,gene){n -> UUIDGene(n)}?.let { return it }
-        //handleNameMatch("email",name,gene){n ->} //TODO
+        handleNameMatch("email",name,gene){n -> createEmailGene(n)}?.let { return it }
         handleNameMatch("uri", name, gene){n -> UriGene(n) }?.let { return it }
         handleNameMatch("url", name, gene){n -> UrlHttpGene(n) }?.let { return it }
         handleNameMatch("website", name, gene){n -> UrlHttpGene(n) }?.let { return it }
@@ -1266,7 +1268,7 @@ object RestActionBuilderV3 {
             StringUtils.hasWord(description,"urls") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
             StringUtils.hasWord(description,"website") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
             StringUtils.hasWord(description,"href") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
-            //StringUtils.hasWord(description,"email") -> handleDescriptionMatch(name,gene){n ->  } //TODO
+            StringUtils.hasWord(description,"email") -> handleDescriptionMatch(name,gene){n ->  createEmailGene(n)}
             else -> gene
         }
     }
@@ -1377,7 +1379,7 @@ object RestActionBuilderV3 {
 
     private fun createEmailGene(
         name: String,
-        options: Options
+        options: Options? = null
     ): Gene {
 
         /*
