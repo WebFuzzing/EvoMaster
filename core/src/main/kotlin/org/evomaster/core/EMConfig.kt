@@ -2706,7 +2706,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify the number of re-executions for detecting flakiness in tests")
-    var execNumForDetectFlaky = 1
+    var execNumForDetectFlakiness = 0
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
