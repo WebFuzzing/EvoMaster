@@ -255,16 +255,7 @@ object RestActionBuilderV3 {
         if (pathItem.get != null) h(HttpVerb.GET, pathItem.get)
         if (pathItem.post != null) h(HttpVerb.POST, pathItem.post)
         if (pathItem.put != null) h(HttpVerb.PUT, pathItem.put)
-        if (pathItem.patch != null) {
-            val patchSchema = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schemaHolder, schemaHolder.main, messages)
-            if (endpointsToSkip.any { it.verb == HttpVerb.PATCH && it.path.isEquivalent(rawPath) }) {
-                skipped.add(Endpoint(HttpVerb.PATCH, restPath))
-            } else {
-                handleOperation(actionCluster, HttpVerb.PATCH, restPath, pathItem.patch,
-                    schemaHolder, schemaHolder.main, options, errorEndpoints, messages,
-                    patchResourceSchema = patchSchema)
-            }
-        }
+        if (pathItem.patch != null) h(HttpVerb.PATCH, pathItem.patch)
         if (pathItem.options != null) h(HttpVerb.OPTIONS, pathItem.options)
         if (pathItem.delete != null) h(HttpVerb.DELETE, pathItem.delete)
         if (pathItem.trace != null) h(HttpVerb.TRACE, pathItem.trace)
@@ -453,12 +444,11 @@ object RestActionBuilderV3 {
         currentSchema: SchemaOpenAPI,
         options: Options,
         errorEndpoints: MutableList<String>,
-        messages: MutableList<String>,
-        patchResourceSchema: Schema<*>? = null
+        messages: MutableList<String>
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages, patchResourceSchema)
+            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages)
             repairParams(params, restPath, messages)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
@@ -536,8 +526,7 @@ object RestActionBuilderV3 {
         schemaHolder: RestSchema,
         currentSchema: SchemaOpenAPI,
         options: Options,
-        messages: MutableList<String>,
-        patchResourceSchema: Schema<*>? = null
+        messages: MutableList<String>
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -557,7 +546,7 @@ object RestActionBuilderV3 {
                 }
             }
 
-        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages, patchResourceSchema)
+        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages)
 
         return params
     }
@@ -688,8 +677,7 @@ object RestActionBuilderV3 {
         currentSchema: SchemaOpenAPI,
         params: MutableList<Param>,
         options: Options,
-        messages: MutableList<String>,
-        patchResourceSchema: Schema<*>? = null
+        messages: MutableList<String>
     ) {
 
         // Return early if requestBody is missing
@@ -757,6 +745,13 @@ object RestActionBuilderV3 {
         var gene: Gene
         if (isJsonPatch) {
             name = "body"
+            val patchResourceSchema = JsonPatchSchemaResolver.resolveResourceSchema(
+                operation,
+                verb,
+                schemaHolder,
+                currentSchema,
+                messages
+            )
             val resourceGene = patchResourceSchema?.let {
                 getGene(name, it, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages)
             }

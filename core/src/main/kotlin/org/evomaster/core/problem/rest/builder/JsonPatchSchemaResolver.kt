@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.schema.SchemaUtils
@@ -27,6 +28,51 @@ object JsonPatchSchemaResolver {
         fromGetResponse(pathItem, schemaHolder, currentSchema, messages)
             ?: fromRequestBody(pathItem.put, schemaHolder, currentSchema, messages)
             ?: fromRequestBody(pathItem.post, schemaHolder, currentSchema, messages)
+
+    fun resolveResourceSchema(
+        operation: Operation,
+        verb: HttpVerb,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        messages: MutableList<String>
+    ): Schema<*>? {
+        val pathItem = findPathItemForOperation(operation, verb, schemaHolder, currentSchema, messages)
+            ?: return null
+
+        return resolveResourceSchema(pathItem, schemaHolder, currentSchema, messages)
+    }
+
+    private fun findPathItemForOperation(
+        operation: Operation,
+        verb: HttpVerb,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        messages: MutableList<String>
+    ): PathItem? {
+        return schemaHolder.main.schemaParsed.paths
+            ?.values
+            ?.firstNotNullOfOrNull { pathItemOrRef ->
+                val pathItem = if (pathItemOrRef.`$ref` != null) {
+                    SchemaUtils.getReferencePathItem(schemaHolder, currentSchema, pathItemOrRef.`$ref`, messages)
+                } else {
+                    pathItemOrRef
+                }
+
+                pathItem?.takeIf { getOperation(it, verb) === operation }
+            }
+    }
+
+    private fun getOperation(pathItem: PathItem, verb: HttpVerb): Operation? =
+        when (verb) {
+            HttpVerb.GET -> pathItem.get
+            HttpVerb.POST -> pathItem.post
+            HttpVerb.PUT -> pathItem.put
+            HttpVerb.DELETE -> pathItem.delete
+            HttpVerb.OPTIONS -> pathItem.options
+            HttpVerb.PATCH -> pathItem.patch
+            HttpVerb.TRACE -> pathItem.trace
+            HttpVerb.HEAD -> pathItem.head
+        }
 
     private fun fromGetResponse(
         pathItem: PathItem,
