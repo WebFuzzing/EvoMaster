@@ -4,7 +4,6 @@ import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
-import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.schema.SchemaUtils
@@ -31,20 +30,18 @@ object JsonPatchSchemaResolver {
 
     fun resolveResourceSchema(
         operation: Operation,
-        verb: HttpVerb,
         schemaHolder: RestSchema,
         currentSchema: SchemaOpenAPI,
         messages: MutableList<String>
     ): Schema<*>? {
-        val pathItem = findPathItemForOperation(operation, verb, schemaHolder, currentSchema, messages)
+        val pathItem = findPathItemForPatchOperation(operation, schemaHolder, currentSchema, messages)
             ?: return null
 
         return resolveResourceSchema(pathItem, schemaHolder, currentSchema, messages)
     }
 
-    private fun findPathItemForOperation(
+    private fun findPathItemForPatchOperation(
         operation: Operation,
-        verb: HttpVerb,
         schemaHolder: RestSchema,
         currentSchema: SchemaOpenAPI,
         messages: MutableList<String>
@@ -58,21 +55,9 @@ object JsonPatchSchemaResolver {
                     pathItemOrRef
                 }
 
-                pathItem?.takeIf { getOperation(it, verb) === operation }
+                pathItem?.takeIf { it.patch === operation }
             }
     }
-
-    private fun getOperation(pathItem: PathItem, verb: HttpVerb): Operation? =
-        when (verb) {
-            HttpVerb.GET -> pathItem.get
-            HttpVerb.POST -> pathItem.post
-            HttpVerb.PUT -> pathItem.put
-            HttpVerb.DELETE -> pathItem.delete
-            HttpVerb.OPTIONS -> pathItem.options
-            HttpVerb.PATCH -> pathItem.patch
-            HttpVerb.TRACE -> pathItem.trace
-            HttpVerb.HEAD -> pathItem.head
-        }
 
     private fun fromGetResponse(
         pathItem: PathItem,

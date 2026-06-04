@@ -747,7 +747,6 @@ object RestActionBuilderV3 {
             name = "body"
             val patchResourceSchema = JsonPatchSchemaResolver.resolveResourceSchema(
                 operation,
-                verb,
                 schemaHolder,
                 currentSchema,
                 messages
