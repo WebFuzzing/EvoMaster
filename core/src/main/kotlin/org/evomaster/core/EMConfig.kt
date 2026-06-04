@@ -2906,6 +2906,10 @@ class EMConfig {
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     var enableSchemaConstraintHandling = true
 
+    @Experimental
+    @Cfg("Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0")
+    var enableAdvancedFormats = false
+
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
     @Probability(activating = true)
     var probOfEnablingSingleInsertionForTable = 0.5
@@ -3245,6 +3249,15 @@ class EMConfig {
             " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
             " before attempting again to make any call")
     var defaultDelayInSecondsFor429 = 10
+
+
+    @Experimental
+    @Cfg("When dealing with string data, infer constraints based on the name or description." +
+            " For example, a string field called 'uuid' likely is going to represent an UUID." +
+            " A string property referring to 'ISO 8601' in its description might be a date." +
+            " And so on." +
+            " This is just an heuristics though, and unrestricted strings would still be sampled with a given probability.")
+    var inferFormatFromNames = false
 
 
     fun getProbabilityUseDataPool() : Double{
