@@ -14,7 +14,6 @@ import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.responses.ApiResponse
-import org.checkerframework.checker.units.qual.g
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -54,6 +53,7 @@ import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
+import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.utils.StringUtils
@@ -110,21 +110,24 @@ object RestActionBuilderV3 {
         which might impact how we design the chromosome.
         but, for black-box, they would not be useful
          */
-        val usingWhiteBox: Boolean = true
+        val usingWhiteBox: Boolean = true,
+
+        val enableAdvancedFormats: Boolean = true,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
             invalidData = config.allowInvalidData,
             probUseDefault = config.probRestDefault,
             probUseExamples = config.probRestExamples,
-            usingWhiteBox = !config.blackBox
+            usingWhiteBox = !config.blackBox,
+            enableAdvancedFormats = config.enableAdvancedFormats
         )
 
         init {
-            if(probUseDefault < 0 || probUseDefault > 1){
+            if(probUseDefault !in 0.0..1.0){
                 throw IllegalArgumentException("Invalid probUseDefault: $probUseDefault")
             }
-            if(probUseExamples < 0 || probUseExamples > 1){
+            if(probUseExamples !in 0.0..1.0){
                 throw IllegalArgumentException("Invalid probUseExamples: $probUseExamples")
             }
         }
@@ -982,7 +985,7 @@ object RestActionBuilderV3 {
             )//Base64StringGene(name)
             "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time", "local-date-time" -> {
-                val f = if (format?.lowercase() == "date-time") {
+                val f = if (format.lowercase() == "date-time") {
                     FormatForDatesAndTimes.RFC3339
                 } else {
                     FormatForDatesAndTimes.ISO_LOCAL
@@ -996,6 +999,13 @@ object RestActionBuilderV3 {
             }
 
             else -> if (format != null) {
+
+                if(options.enableAdvancedFormats){
+                    val advanced = createGeneBasedOnAdvancedFormats(format,schema,name, options, messages, isInPath, examples, schemaHolder, currentSchema, history, referenceClassDef)
+                    if(advanced != null) {
+                        return advanced
+                    }
+                }
                 messages.add("Unhandled format '$format' for '$name'")
             }
         }
@@ -1014,7 +1024,7 @@ object RestActionBuilderV3 {
                 isInPath,
                 examples,
                 messages = messages
-            )//IntegerGene(name)
+            )
             "number" -> return createNonObjectGeneWithSchemaConstraints(
                 schema,
                 name,
@@ -1180,7 +1190,7 @@ object RestActionBuilderV3 {
                 isInPath,
                 examples,
                 messages = messages
-            ) //StringGene(name)
+            )
         }
 
         if ((name == "body" || referenceClassDef != null) && schema.properties?.isNotEmpty() == true) {
@@ -1281,6 +1291,104 @@ object RestActionBuilderV3 {
         }
 
         return null
+    }
+
+    private fun createGeneBasedOnAdvancedFormats(
+        format: String,
+        schema: Schema<*>,
+        name: String,
+        options: Options,
+        messages: MutableList<String>,
+        isInPath: Boolean,
+        examples: List<Pair<Any, String?>>,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        history: Deque<String>,
+        referenceClassDef: String?
+    ) : Gene? {
+
+        /*
+        https://spec.openapis.org/registry/format/
+
+        The (YES) are new, whereas (NO) are already supported since 3.0
+
+        Value 	Description 	JSON Data Type 	Source 	Deprecated
+        (YES) base64url 	Binary data encoded as a url-safe string as defined in RFC4648 	string 	  	Yes
+        (NO)  binary 	any sequence of octets 	string 	OAS 	Yes
+        (NO)  byte 	base64 encoded data as defined in RFC4648 	string 	OAS 	Yes
+        (YES) char 	A single character 	string 	  	No
+        (YES) commonmark 	commonmark-formatted text 	string 	OAS 	No
+        (YES) date-time-local 	RFC3339 date-time without the timezone component 	string 	RFC 3339 	No
+        (NO)  date-time 	date and time as defined by date-time - RFC3339 	string 	JSON Schema 	No
+        (NO)  date 	date as defined by full-date - RFC3339 	string 	JSON Schema 	No
+        (YES) decimal 	A fixed point decimal number of unspecified precision and range 	string, number 	  	No
+        (YES) decimal128 	A decimal floating-point number with 34 significant decimal digits 	string, number 	  	No
+        (YES) double-int 	an integer that can be stored in an IEEE 754 double-precision number without loss of precision 	number 	  	No
+        (NO)  double 	double precision floating point number 	number 	OAS 	No
+        (YES) duration 	duration as defined by duration - RFC3339 	string 	JSON Schema 	No
+        (YES) email 	An email address as defined as Mailbox in RFC5321 	string 	JSON Schema 	No
+        (NO)  float 	single precision floating point number 	number 	OAS 	No
+        (YES) hostname 	A host name as defined by RFC1123 	string 	JSON Schema 	No
+        (YES) html 	HTML-formatted text 	string 	OAS 	No
+        (YES) http-date 	date and time as defined by HTTP-date - RFC7231 	string 	  	No
+        (YES) idn-email 	An email address as defined as Mailbox in RFC6531 	string 	JSON Schema 	No
+        (YES) idn-hostname 	An internationalized host name as defined by RFC5890 	string 	JSON Schema 	No
+        (YES) int16 	signed 16-bit integer 	number 	  	No
+        (NO)  int32 	signed 32-bit integer 	number 	OAS 	No
+        (NO)  int64 	signed 64-bit integer 	number, string 	OAS 	No
+        (YES) int8 	signed 8-bit integer 	number 	OAS 	No
+        (YES) ipv4 	An IPv4 address as defined as dotted-quad by RFC2673 	string 	JSON Schema 	No
+        (YES) ipv6 	An IPv6 address as defined by RFC4673 	string 	JSON Schema 	No
+        (YES) iri-reference 	A Internationalized Resource Identifier as defined in RFC3987 	string 	JSON Schema 	No
+        (YES) iri 	A Internationalized Resource Identifier as defined in RFC3987 	string 	JSON Schema 	No
+        (YES) json-pointer 	A JSON string representation of a JSON Pointer as defined in RFC6901 	string 	JSON Schema 	No
+        (YES) media-range 	A media type as defined by the media-range ABNF production in RFC9110. 	string 	OpenAPI 	No
+        (NO)  password 	a string that hints to obscure the value. 	string 	OAS 	No
+        (YES) regex 	A regular expression as defined in ECMA-262 	string 	JSON Schema 	No
+        (YES) relative-json-pointer 	A JSON string representation of a relative JSON Pointer as defined in draft RFC 01 	string 	JSON Schema 	No
+        (YES) sf-binary 	structured fields byte sequence as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-boolean 	structured fields boolean as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-decimal 	structured fields decimal as defined in [RFC8941] 	number 	RFC 8941 	No
+        (YES) sf-integer 	structured fields integer as defined in [RFC8941] 	number 	RFC 8941 	No
+        (YES) sf-string 	structured fields string as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-token 	structured fields token as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) time-local 	RFC3339 time without the timezone component 	string 	RFC 3339 	No
+        (YES) time 	time as defined by full-time - RFC3339 	string 	JSON Schema 	No
+        (YES) uint16 	unsigned 16-bit integer 	number 	OAS 	No
+        (YES) uint32 	unsigned 32-bit integer 	number 	OAS 	No
+        (YES) uint64 	unsigned 64-bit integer 	number, string 	OAS 	No
+        (YES) uint8 	unsigned 8-bit integer 	number 	OAS 	No
+        (YES) unixtime 	seconds since Jan 1st 1970 - IEEE1003.1-2024/POSIX.1-2024 	number, string 	IEEE1003.1-2024 	No
+        (YES) uri-reference 	A URI reference as defined in RFC3986 	string 	JSON Schema 	No
+        (YES) uri-template 	A URI Template as defined in RFC6570 	string 	JSON Schema 	No
+        (YES) uri 	A Uniform Resource Identifier as defined in RFC3986 	string 	JSON Schema 	No
+        (YES) uuid 	A Universally Unique IDentifier as defined in RFC4122 	string 	JSON Schema 	No
+         */
+
+        when(format){
+            "uuid" -> return UUIDGene(name)
+            "uri" -> return UriGene(name)
+            "email" -> return createEmailGene(name, options)
+            //TODO all the other cases, and update BBAdvancedFormatsEMTest accordingly
+        }
+
+        return null
+    }
+
+    private fun createEmailGene(
+        name: String,
+        options: Options
+    ): Gene {
+
+        /*
+            A new EmailGene might be on overkill if we can just use a regex.
+            However, RFC5321 is quite complex.
+            This regex is quite simple, but should do.
+            After all, here we just need to sample valid emails, and not verify
+            if a string is a valid email.
+         */
+        return RegexHandler.createGeneForJVM("[A-Za-z0-9]{2,}@[A-Za-z0-9]+.[A-Za-z]{2,}")
+            .apply { this.name = name }
     }
 
     /**
