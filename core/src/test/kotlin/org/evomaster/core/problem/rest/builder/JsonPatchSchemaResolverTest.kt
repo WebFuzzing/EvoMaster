@@ -19,6 +19,17 @@ class JsonPatchSchemaResolverTest {
         }
     """.trimIndent()
 
+    private fun resolveForPatch(
+        schema: RestSchema,
+        path: String,
+        messages: MutableList<String> = mutableListOf()
+    ) = JsonPatchSchemaResolver.resolveResourceSchema(
+        schema.main.schemaParsed.paths[path]!!.patch,
+        schema,
+        schema.main,
+        messages
+    )
+
     @Test
     fun testResolveFromGetResponse() {
         val schema = parse(minimalSpec("""
@@ -53,10 +64,9 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/pets/{id}"]!!
         val messages = mutableListOf<String>()
 
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, messages)
+        val result = resolveForPatch(schema, "/pets/{id}", messages)
 
         assertNotNull(result)
         assertTrue(messages.isEmpty(), "Unexpected messages: $messages")
@@ -95,8 +105,7 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/x/{id}"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/x/{id}")
 
         assertNotNull(result)
         val props = result!!.properties
@@ -125,8 +134,7 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/orders/{id}"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/orders/{id}")
 
         assertNotNull(result)
         val props = result!!.properties
@@ -153,8 +161,7 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/users"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/users")
 
         assertNotNull(result)
         assertTrue(result!!.properties.containsKey("email"))
@@ -174,8 +181,7 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/items/{id}"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/items/{id}")
 
         assertNull(result, "Expected null when no sibling operations define a JSON schema")
     }
@@ -206,8 +212,7 @@ class JsonPatchSchemaResolverTest {
             }
         """))
 
-        val pathItem = schema.main.schemaParsed.paths["/docs/{id}"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/docs/{id}")
 
         assertNull(result, "Should not use json-patch content type as resource schema")
     }
@@ -255,8 +260,7 @@ class JsonPatchSchemaResolverTest {
             }
         """.trimIndent())
 
-        val pathItem = schema.main.schemaParsed.paths["/cats/{id}"]!!
-        val result = JsonPatchSchemaResolver.resolveResourceSchema(pathItem, schema, schema.main, mutableListOf())
+        val result = resolveForPatch(schema, "/cats/{id}")
 
         assertNotNull(result)
         val props = result!!.properties

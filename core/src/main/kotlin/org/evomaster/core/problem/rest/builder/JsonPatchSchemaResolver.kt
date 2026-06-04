@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.schema.SchemaUtils
 
 /**
- * Resolves the target resource schema for a JSON Patch PATCH endpoint by inspecting
+ * Resolves the target resource schema for a JSON Patch endpoint by inspecting
  * sibling operations on the same path item.
  *
  * Priority: GET 2xx response → PUT requestBody → POST requestBody.
@@ -17,16 +17,6 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
 object JsonPatchSchemaResolver {
 
     private const val JSON_PATCH_MEDIA_TYPE = "json-patch"
-
-    fun resolveResourceSchema(
-        pathItem: PathItem,
-        schemaHolder: RestSchema,
-        currentSchema: SchemaOpenAPI,
-        messages: MutableList<String>
-    ): Schema<*>? =
-        fromGetResponse(pathItem, schemaHolder, currentSchema, messages)
-            ?: fromRequestBody(pathItem.put, schemaHolder, currentSchema, messages)
-            ?: fromRequestBody(pathItem.post, schemaHolder, currentSchema, messages)
 
     fun resolveResourceSchema(
         operation: Operation,
@@ -37,9 +27,12 @@ object JsonPatchSchemaResolver {
         val pathItem = findPathItemForPatchOperation(operation, schemaHolder, currentSchema, messages)
             ?: return null
 
-        return resolveResourceSchema(pathItem, schemaHolder, currentSchema, messages)
+        return fromGetResponse(pathItem, schemaHolder, currentSchema, messages)
+            ?: fromRequestBody(pathItem.put, schemaHolder, currentSchema, messages)
+            ?: fromRequestBody(pathItem.post, schemaHolder, currentSchema, messages)
     }
 
+    //handleBodyPayload does not have the path of the operation, we need to find it, only if it is patch
     private fun findPathItemForPatchOperation(
         operation: Operation,
         schemaHolder: RestSchema,
@@ -59,6 +52,7 @@ object JsonPatchSchemaResolver {
             }
     }
 
+    // For get, the resource is in the response
     private fun fromGetResponse(
         pathItem: PathItem,
         schemaHolder: RestSchema,
@@ -78,6 +72,7 @@ object JsonPatchSchemaResolver {
             }
     }
 
+    // For put and post, the resource is in the requestBody
     private fun fromRequestBody(
         operation: Operation?,
         schemaHolder: RestSchema,
