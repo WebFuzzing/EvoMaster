@@ -14,6 +14,7 @@ import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.responses.ApiResponse
+import org.checkerframework.checker.units.qual.g
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -51,8 +52,11 @@ import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.uri.UriGene
+import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -1024,7 +1028,7 @@ object RestActionBuilderV3 {
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    createNonObjectGeneWithSchemaConstraints(
+                    val gene = createNonObjectGeneWithSchemaConstraints(
                         schema,
                         name,
                         StringGene::class.java,
@@ -1034,6 +1038,12 @@ object RestActionBuilderV3 {
                         examples,
                         messages = messages
                     ) //StringGene(name)
+
+                    if(true){ //TODO inferFormatFromNames
+                        heuristicInferFormatFromName(gene, name, schema.description)
+                    } else {
+                        gene
+                    }
                 } else {
                     try {
                         createNonObjectGeneWithSchemaConstraints(
@@ -1200,6 +1210,77 @@ object RestActionBuilderV3 {
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
+    }
+
+    private fun heuristicInferFormatFromName(
+        gene: Gene,
+        name: String,
+        description: String?
+    ): Gene {
+
+        //TODO should handle min/max length constraint, if any
+
+        //RFC 3339, RFC-3339, RFC3339
+        //ISO 8601, ISO-8601, ISO8601
+        val rfc3339 = description!=null && description.contains("rfc",true) && description.contains("3339",true)
+        val iso8601 = description!=null && description.contains("iso",true) && description.contains("8601",true)
+
+        handleNameMatch("uuid",name,gene){n -> UUIDGene(n)}?.let { return it }
+        //handleNameMatch("email",name,gene){n ->} //TODO
+        handleNameMatch("uri", name, gene){n -> UriGene(n) }?.let { return it }
+        handleNameMatch("url", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("website", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("href", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("date", name, gene){n ->
+            if(rfc3339) {
+                DateTimeGene(n, format = FormatForDatesAndTimes.RFC3339)
+            } else if(iso8601){
+                DateTimeGene(n, format = FormatForDatesAndTimes.ISO_LOCAL)
+            } else {
+                DateGene(n)
+            }
+        }?.let { return it }
+
+        if(description == null){
+            //nothing we can infer further
+            return gene
+        }
+
+        //if no name match, look at description, if any
+        return when{
+            rfc3339 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.RFC3339)}
+            iso8601 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL)}
+            StringUtils.hasWord(description,"date") -> handleDescriptionMatch(name,gene){n -> DateGene(n) }
+            StringUtils.hasWord(description,"uri") -> handleDescriptionMatch(name,gene){n -> UriGene(n)}
+            StringUtils.hasWord(description,"url") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"urls") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"website") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"href") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            //StringUtils.hasWord(description,"email") -> handleDescriptionMatch(name,gene){n ->  } //TODO
+            else -> gene
+        }
+    }
+
+    private fun handleDescriptionMatch(
+        name: String,
+        gene: Gene,
+        producer: (String) -> Gene): Gene {
+
+        val pDescriptionMatch = 0.5
+
+        return ChoiceGene(name, listOf(producer(name), gene), probabilities = listOf(pDescriptionMatch, 1-pDescriptionMatch))
+    }
+
+    private fun handleNameMatch(format: String, name: String, gene: Gene, producer: (String) -> Gene) : Gene?{
+
+        val pNameMatch = 0.8
+
+        if(name.startsWith(format,true) || name.endsWith(format, true)) {
+            val choice = ChoiceGene(name, listOf(producer(name),gene), probabilities = listOf(pNameMatch,1.0-pNameMatch))
+            return choice
+        }
+
+        return null
     }
 
     /**

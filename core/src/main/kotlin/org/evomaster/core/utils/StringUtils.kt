@@ -2,6 +2,26 @@ package org.evomaster.core.utils
 
 object StringUtils {
 
+    private val delimiters = listOf(' ', '\n', '\r', '\t', ',', '.','!','?',';','"','\'','-','_')
+
+    fun hasWord(text: String, word: String): Boolean {
+
+        var start = text.indexOf(word, 0, true)
+
+        while(start >= 0){
+
+            val before = start == 0 || delimiters.contains(text[start-1])
+            val end = start + word.length
+            val after = end == text.length || delimiters.contains(text[end-1])
+
+            if(before && after){
+                return true
+            }
+            start = text.indexOf(word, start, true)
+        }
+        return false
+    }
+
     /**
      * Capitalizes a word, lowercasing the rest of the word. For example, stringProperty would be modified into
      * Stringproperty.

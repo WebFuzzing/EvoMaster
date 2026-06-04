@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.datetime
 enum class FormatForDatesAndTimes {
 
     // YYYY-MM-DDTHH:MM:SS
+    // ISO 8601
     ISO_LOCAL,
 
 

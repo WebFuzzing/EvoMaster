@@ -3247,6 +3247,13 @@ class EMConfig {
     var defaultDelayInSecondsFor429 = 10
 
 
+    @Experimental
+    @Cfg("When dealing with string data, infer constraints based on the name." +
+            " For example, a string field called 'uuid' likely is going to represent an UUID." +
+            " This is an heuristics, and unrestricted strings would still be sampled with a given probability.")
+    var inferFormatFromNames = false
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
