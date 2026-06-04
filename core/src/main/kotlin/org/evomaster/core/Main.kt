@@ -450,7 +450,7 @@ class Main {
                     epc.markStartingFlakiness()
 
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
-                    flakinessDetector.reexecuteToDetectFlakiness()
+                    flakinessDetector.reexecuteToDetectFlakiness(config.execNumForDetectFlakiness)
                 } else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")

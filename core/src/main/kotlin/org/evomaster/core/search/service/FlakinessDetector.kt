@@ -37,7 +37,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     private lateinit var epc: ExecutionPhaseController
 
     override fun applyPhase() {
-        reexecuteToDetectFlakiness()
+        reexecuteToDetectFlakiness(config.execNumForDetectFlakiness)
     }
 
     override fun hasPhaseTimedOut(): Boolean {
@@ -47,7 +47,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     /**
      * re-execute individuals in archive for identifying flakiness
      */
-    fun reexecuteToDetectFlakiness() : Solution<T>{
+    fun reexecuteToDetectFlakiness(execNum : Int) : Solution<T>{
         /*
             here we rely on extractSolution returning actual references of individuals in the archive, and not copies
          */
@@ -59,11 +59,13 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
             if(hasPhaseTimedOut()) break
 
-            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
-            if(ei == null){
-                log.warn("Failed to re-evaluate individual during flakiness analysis.")
-            }else{
-                checkAndMarkConsistency(ei, ci)
+            for (execIndex in 1..execNum){
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
+                if(ei == null){
+                    log.warn("Failed to re-evaluate individual at index ($execIndex) during flakiness analysis.")
+                }else{
+                    checkAndMarkConsistency(ei, ci, execIndex)
+                }
             }
         }
 
@@ -74,8 +76,9 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
      * This might have side-effects will be applied in the archive
      * compare [inArchive] with [other] to check if the action results are same, the inconsistent info will be saved in [inArchive] evaluated individual
      * @param inArchive the evaluated individual which saves info of flakiness
+     * @param indexExecN the index of execution times, eg, 1st, 2nd
      */
-    fun checkAndMarkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>){
+    fun checkAndMarkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>, indexExecN: Int){
         val previousActions = other.evaluatedMainActions()
         val currentActions = inArchive.evaluatedMainActions()
 
@@ -89,7 +92,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
             val action = it.action
             if(action is HttpWsAction){
                 if (it.result is HttpWsCallResult){
-                    handleFlakinessInActionResult(it.result, previousActions[index].result as HttpWsCallResult)
+                    handleFlakinessInActionResult(it.result, previousActions[index].result as HttpWsCallResult, indexExecN)
                 }
 
             }
@@ -98,8 +101,12 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
     private fun handleFlakinessInActionResult(
         resultToUpdate: HttpWsCallResult,
-        other: HttpWsCallResult
+        other: HttpWsCallResult,
+        indexExecN: Int
     ) {
+
+        // set execution index
+        resultToUpdate.setFlakyDetectionTimes(indexExecN)
 
         // handle status code
         val rStatus = resultToUpdate.getStatusCode()
@@ -114,11 +121,11 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
         val oBody = other.getBody()
 
         if (oBody != null) {
-            if (rBody != oBody) {
+            if (rBody != oBody && !resultToUpdate.containFlakyBody(oBody)) {
                 resultToUpdate.setFlakyBody(oBody)
             } else {
                 val normO = derive(oBody)
-                if (rBody != normO) {
+                if (rBody != normO && !resultToUpdate.containFlakyBody(oBody)) {
                     resultToUpdate.setFlakyBody(oBody)
                 }
             }

@@ -37,6 +37,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val FLAKY_BODY = "FLAKY_BODY"
         const val FLAKY_BODY_TYPE = "FLAKY_BODY_TYPE"
         const val FLAKY_ERROR_MESSAGE = "FLAKY_ERROR_MESSAGE"
+        const val FLAKY_DETECTION_TIMES = "FLAKY_DETECTION_TIMES"
     }
 
     /**
@@ -176,20 +177,32 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun setFlakyStatusCode(code: Int) = addResultValue(FLAKY_STATUS_CODE, code.toString())
     fun getFlakyStatusCode() : Int? = getResultValue(FLAKY_STATUS_CODE)?.toInt()
 
-    fun setFlakyBody(body: String) = addResultValue(FLAKY_BODY, body)
-    fun getFlakyBody() : String? = getResultValue(FLAKY_BODY)
+    fun setFlakyBody(body: String, execIndex : Int?=null) = addResultValue(flakyInfoKey(FLAKY_BODY, execIndex), body)
+    fun getFlakyBody(execIndex : Int? = null) : String? = getResultValue(flakyInfoKey(FLAKY_BODY, execIndex))
+    fun getFlakyBodies() : List<String>? = getMultipleFlakyInfo(FLAKY_BODY)
+    fun containFlakyBody(flakyBody: String) : Boolean {
+        if (getFlakyBodies() == null) return false
+        return getFlakyBodies()!!.contains(flakyBody)
+    }
 
     fun setFlakyBodyType(type: MediaType) = addResultValue(FLAKY_BODY_TYPE, type.toString())
     fun getFlakyBodyType() : MediaType? = getResultValue(FLAKY_BODY_TYPE)?.let { MediaType.valueOf(it) }
 
-    fun setFlakiness(previous: HttpWsCallResult){
+    fun setFlakyDetectionTimes(times: Int) {
+        if (getFlakyDetectionTimes() == null || getFlakyDetectionTimes()!! < times) addResultValue(FLAKY_DETECTION_TIMES, times.toString())
+    }
+    fun getFlakyDetectionTimes() : Int? = getResultValue(FLAKY_DETECTION_TIMES)?.toInt()
+
+    fun setFlakiness(previous: HttpWsCallResult, execIndex: Int){
+        setFlakyDetectionTimes(execIndex)
+
         val pStatusCode = previous.getStatusCode()
         if (pStatusCode != null && pStatusCode != getStatusCode()) {
             setFlakyStatusCode(pStatusCode)
         }
 
         val pBody = previous.getBody()
-        if (pBody != null && pBody != getBody()) {
+        if (pBody != null && pBody != getBody() && !containFlakyBody(pBody)) {
             setFlakyBody(pBody)
         }
 
@@ -202,5 +215,20 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         if (pMessage != null && pMessage != getErrorMessage()) {
             setFlakyErrorMessage(pMessage)
         }
+    }
+
+    private fun flakyInfoKey(infoKey: String, execIndex : Int? = null): String = "${infoKey}_${execIndex?.toString() ?: ""}"
+
+    private fun getMultipleFlakyInfo(infoKey: String): List<String>?{
+        val repeat = getFlakyDetectionTimes()
+
+        if (repeat != null && repeat > 0) {
+            return (1..repeat).map {
+                getResultValue(flakyInfoKey(infoKey, it))
+            }.plus(getResultValue(infoKey)).filterNotNull().run {
+                ifEmpty { null }
+            }
+        }
+        return null
     }
 }
