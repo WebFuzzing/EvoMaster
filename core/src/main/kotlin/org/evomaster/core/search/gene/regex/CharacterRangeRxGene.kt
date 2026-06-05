@@ -15,7 +15,7 @@ import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.RegexFlags
 import org.slf4j.LoggerFactory
 
-class CharacterRangeRxGene private constructor(
+class CharacterRangeRxGene(
     /**
      * this represents the valid ranges for a character class, removing overlaps and applying negation
      */
