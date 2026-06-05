@@ -479,8 +479,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedActions = RedisInsertBuilder.buildInsertActions(
             failedCommands,
-            existingKeys,
-            randomness
+            existingKeys
         )
 
         if (addedActions.isNotEmpty()) {

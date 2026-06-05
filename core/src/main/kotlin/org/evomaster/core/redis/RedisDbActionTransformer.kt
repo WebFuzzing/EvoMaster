@@ -11,15 +11,20 @@ object RedisDbActionTransformer {
         val dto = RedisDatabaseCommandsDto()
         dto.insertions = actions.map { action ->
             when (action) {
-                is RedisSetAction -> RedisInsertionDto().also {
-                    it.command = "SET"
-                    it.key = action.keyGene.value
-                    it.value = action.valueGene.value
-                }
                 is RedisHsetAction -> RedisInsertionDto().also {
                     it.command = "HSET"
-                    it.key = action.keyGene.value
+                    it.key = action.key
                     it.field = action.field
+                    it.value = action.valueGene.value
+                }
+                is RedisSetAction -> RedisInsertionDto().also {
+                    it.command = "SET"
+                    it.key = action.key
+                    it.value = action.valueGene.value
+                }
+                is RedisSetFromPatternAction -> RedisInsertionDto().also {
+                    it.command = "SET"
+                    it.key = action.keyGene.getValueAsRawString()
                     it.value = action.valueGene.value
                 }
             }

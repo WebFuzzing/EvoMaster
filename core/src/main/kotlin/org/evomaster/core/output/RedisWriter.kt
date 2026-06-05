@@ -1,14 +1,19 @@
 package org.evomaster.core.output
 
 import org.apache.commons.text.StringEscapeUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.redis.*
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Class used to generate the code in the test dealing with insertion of
  * data into Redis databases.
  */
 object RedisWriter {
+
+    private val log: Logger = LoggerFactory.getLogger(RedisWriter::class.java)
 
     /**
      * Generate Redis SET actions into a test case based on [redisDbInitialization].
@@ -45,14 +50,19 @@ object RedisWriter {
 
                 val action = evaluated.redisAction
 
-                val dslCall = when (action) {
+                val dslCall: String = when (action) {
                     is RedisSetAction -> {
+                        val key = "\"${escape(action.key, format)}\""
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".set($key, $value)"
+                    }
+                    is RedisSetFromPatternAction -> {
                         val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
                         val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
                         ".set($key, $value)"
                     }
                     is RedisHsetAction -> {
-                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
+                        val key = "\"${escape(action.key, format)}\""
                         val field = escape(action.field, format)
                         val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
                         ".hset($key, \"$field\", $value)"

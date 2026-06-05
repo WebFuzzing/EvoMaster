@@ -11,27 +11,26 @@ import org.evomaster.core.search.gene.string.StringGene
  * <p>For HGET, [field] is the exact field observed in the failed command.
  * For HGETALL, [field] is a placeholder since the expected fields are unknown.
  *
- * @param keyGene the new key to be inserted.
+ * @param key the new key to be inserted.
  * @param field the hash field to insert.
  * @param valueGene gene representing the field value to insert.
  */
 class RedisHsetAction(
-    val keyGene: StringGene,
+    val key: String,
     val field: String,
-    val valueGene: StringGene,
-    private val nameKey: String = keyGene.value
+    val valueGene: StringGene
 ) : RedisDbAction() {
 
     init {
-        addChildren(listOf(keyGene, valueGene))
+        addChildren(listOf(valueGene))
     }
 
-    override fun getTargetKey() = keyGene.value
+    override fun getTargetKey() = key
 
-    override fun seeTopGenes(): List<Gene> = listOf(keyGene, valueGene)
+    override fun seeTopGenes(): List<Gene> = listOf(valueGene)
 
     override fun copyContent(): Action =
-        RedisHsetAction(keyGene.copy() as StringGene, field, valueGene.copy() as StringGene, nameKey)
+        RedisHsetAction(key, field, valueGene.copy() as StringGene)
 
-    override fun getName() = "Redis_HSET_${nameKey}_$field"
+    override fun getName() = "Redis_HSET_${key}_$field"
 }

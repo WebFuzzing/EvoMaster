@@ -8,25 +8,24 @@ import org.evomaster.core.search.gene.string.StringGene
  * Represents a SET action, generated from a failed GET command.
  * (failed meaning GET commands that return no data when executed).
  *
- * @param keyGene the new key to be inserted
+ * @param key the new key to be inserted
  * @param valueGene gene representing the string value to insert
  */
 class RedisSetAction(
-    val keyGene: StringGene,
-    val valueGene: StringGene,
-    private val nameKey: String = keyGene.value
+    val key: String,
+    val valueGene: StringGene
 ) : RedisDbAction() {
 
     init {
-        addChildren(listOf(keyGene, valueGene))
+        addChildren(listOf(valueGene))
     }
 
-    override fun getTargetKey() = keyGene.value
+    override fun getTargetKey() = key
 
-    override fun seeTopGenes(): List<Gene> = listOf(keyGene, valueGene)
+    override fun seeTopGenes(): List<Gene> = listOf(valueGene)
 
     override fun copyContent(): Action =
-        RedisSetAction(keyGene.copy() as StringGene, valueGene.copy() as StringGene, nameKey)
+        RedisSetAction(key, valueGene.copy() as StringGene)
 
-    override fun getName() = "Redis_SET_${nameKey}"
+    override fun getName() = "Redis_SET_${key}"
 }
