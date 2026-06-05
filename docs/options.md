@@ -164,6 +164,7 @@ There are 3 types of options:
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
 |`maxResponseByteSize`| __Int__. Maximum size (in bytes) that EM handles response payloads in the HTTP responses. If larger than that, a response will not be stored internally in EM during the test generation. This is needed to avoid running out of memory. *Default value*: `1000000`.|
 |`maxSearchSuiteSize`| __Int__. Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS. *Constraints*: `min=1.0`. *Default value*: `50`.|
+|`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Depends on*: `blackBox=false`. *Default value*: `1`.|
 |`maxTestCaseNameLength`| __Int__. Specify the hard limit for test case name length. *Default value*: `120`.|
 |`maxTestSize`| __Int__. Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test. *Constraints*: `min=1.0`. *Default value*: `10`.|
@@ -236,6 +237,7 @@ There are 3 types of options:
 |`testCaseSortingStrategy`| __Enum__. Specify the test case sorting strategy. *Valid values*: `COVERED_TARGETS, TARGET_INCREMENTAL`. *Default value*: `TARGET_INCREMENTAL`.|
 |`testSuiteFileName`| __String__. DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_. *Default value*: `""`.|
 |`testSuiteSplitType`| __Enum__. Instead of generating a single test file, it could be split in several files, according to different strategies. *Valid values*: `NONE, FAULTS`. *Default value*: `FAULTS`.|
+|`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`tournamentSize`| __Int__. Number of elements to consider in a Tournament Selection (if any is used in the search algorithm). *Constraints*: `min=1.0`. *Default value*: `10`.|
 |`treeDepth`| __Int__. Maximum tree depth in mutations/queries to be evaluated. This is to avoid issues when dealing with huge graphs in GraphQL. *Constraints*: `min=1.0`. *Default value*: `4`.|
 |`useExperimentalOracles`| __Boolean__. Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. When false, all experimental oracles are disabled. *Default value*: `false`.|
@@ -309,11 +311,11 @@ There are 3 types of options:
 |`llmName`| __String__. LLM name. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Depends on*: `llm=true`. *Valid values*: `OPENAI, DEEPSEEK, OLLAMA, AZURE_OPENAI`. *Default value*: `OLLAMA`.|
 |`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.3`.|
+|`llmThreads`| __Int__. The number of threads to use when making calls towards an LLM, in configured. If connecting to Ollama, this value is ignored, and only 1 thread is used. *Depends on*: `llm=true`. *Default value*: `4`.|
 |`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Depends on*: `llm=true`. *Default value*: `60`.|
 |`llmURL`| __String__. LLM external service URL. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`maxRepairAttemptsInResponseClassification`| __Int__. When the Response Classifier determines an action is going to fail, specify how many attempts will be tried at fixing it. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
-|`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeOfMutatingInitAction`| __Int__. Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
@@ -347,7 +349,6 @@ There are 3 types of options:
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
 |`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
-|`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`useDictionaryDataPool`| __Boolean__. Specify if should use the pre-existing dictionary of values when sampling random string. If so, those will be added to the data pool. *Default value*: `false`.|
 |`useEnvVarsForPathInTests`| __Boolean__. Use environment variables to define the paths required by External Drivers. This is necessary when the generated tests are executed on the different machine. Note that this setting only affects the generated test cases. *Default value*: `false`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
