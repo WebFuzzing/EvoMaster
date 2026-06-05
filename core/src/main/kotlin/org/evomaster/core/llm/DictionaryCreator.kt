@@ -29,7 +29,7 @@ object DictionaryCreator {
         val API_KEY = ""
 
         val file = File("src/main/resources/llm_dictionary.jsonl")
-        val errors = 17 //could had handled them, but too late
+        val errors = 33 //could had handled them, but too late
         val alreadyHandled = errors + file.bufferedReader().use { it.lineSequence().count() }
 
 //        val modelName = "deepseek-v4-pro"
@@ -48,7 +48,7 @@ object DictionaryCreator {
                 val futures = data.entries
                     .sortedBy { it.key }
                     .drop(alreadyHandled)
-                    .take(1000) //TODO use for incremental job
+                    .take(2000) //TODO use for incremental job
                     .map { entry ->
                         executor.submit { handleEntry(entry, model, list) }
                     }
