@@ -10,6 +10,7 @@ import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.AuthenticationRequiredException
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -196,7 +197,7 @@ object OpenApiAccess {
         for (i in 0 until attempts) {
             try {
 
-                 val client = ClientBuilder.newClient()
+                 val client = HttpClientFactory.createTrustingJerseyClient()
                  val builder = client.target(openApiUrl)
                      .request("*/*") //cannot assume it is in JSON... could be YAML as well
 
