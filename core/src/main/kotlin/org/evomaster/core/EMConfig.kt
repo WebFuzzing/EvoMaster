@@ -3121,17 +3121,20 @@ class EMConfig {
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
     var useResponseDataPool = true
 
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for black-box (bb) mode")
     var bbProbabilityUseDataPool = 0.8
 
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Experimental
+    @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
+            " If so, those will be added to the data pool.")
+    var useDictionaryDataPool = false
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy

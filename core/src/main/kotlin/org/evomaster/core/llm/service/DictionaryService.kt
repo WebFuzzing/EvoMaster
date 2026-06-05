@@ -2,9 +2,13 @@ package org.evomaster.core.llm.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.EMConfig
 import org.evomaster.core.llm.DictionarySearchResult
+import org.evomaster.core.search.service.DataPool
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
+import javax.inject.Inject
 
 
 class DictionaryService {
@@ -31,6 +35,11 @@ class DictionaryService {
         }
 
 
+        /**
+         * Load the dictionary from file, and scan it for the given name entries.
+         * Considering the large size of the dictionary, this functions tries to be efficient.
+         * Still, it can be quite expensive, and should be called ideally only once.
+         */
         fun searchForNames(names: Collection<String>): DictionarySearchResult {
 
             if(names.isEmpty()) {
@@ -109,4 +118,35 @@ class DictionaryService {
 
 
 
+    @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var llmService: LlmService
+
+    @Inject
+    private lateinit var dataPool : DataPool
+
+
+    fun updatePoolFromDictionary(names: Collection<String>) {
+        if(!isActive()){
+            throw IllegalStateException("Dictionary service is not active")
+        }
+
+        //TODO check how expensive this is... put on thread if too expensive
+
+        val result = searchForNames(names)
+        result.data.entries.forEach { entry ->
+            entry.value.forEach { exm ->  dataPool.addValue(entry.key, exm) }
+        }
+
+        if(config.llm && result.missing.isNotEmpty()) {
+            //TODO defenetively this needs to be on thread
+        }
+    }
+
+
+    fun isActive() : Boolean {
+        return config.useDictionaryDataPool
+    }
 }
