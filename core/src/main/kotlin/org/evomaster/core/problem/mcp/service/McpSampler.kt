@@ -24,7 +24,7 @@ import javax.annotation.PostConstruct
 /**
  * Sampler for MCP blackbox testing.
  *
- * On initialization, connects to the MCP server at [config.bbTargetUrl], discovers
+ * On initialization, connects to the MCP server, discovers
  * tools and resources, and builds an action cluster. Follows the pattern of GraphQLSampler
  * (blackbox init) and RPCSampler (dual cluster + adHoc individuals).
  */
@@ -47,13 +47,25 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
     @PostConstruct
     fun initialize() {
-        log.debug("Initializing {}", McpSampler::class.simpleName)
+        val name = McpSampler::class.simpleName
+        val url = config.bbTargetUrl
+        log.debug("Initializing {}", name)
 
-        mcpClient = HttpMcpClient(config.bbTargetUrl)
+
+        mcpClient = HttpMcpClient(url)
 
         actionCluster.clear()
         toolActionCluster.clear()
         resourceActionCluster.clear()
+
+        // MCP requires initialize handshake before any other call
+        try {
+            mcpClient.initialize()
+        } catch (e: Exception) {
+            throw SutProblemException(
+                "Failed to initialize MCP session at '${config.bbTargetUrl}'. Cause: ${e.message}"
+            )
+        }
 
         // Discover tools
         val tools = try {
@@ -97,8 +109,11 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
         customizeAdHocInitialIndividuals()
 
+        val toolQuantity = toolActionCluster.size
+        val resourceQuantity = resourceActionCluster.size
+
         log.debug("Done initializing {} — {} tools, {} resources",
-            McpSampler::class.simpleName, toolActionCluster.size, resourceActionCluster.size)
+            name, toolQuantity, resourceQuantity)
     }
 
     // -------------------------------------------------------------------------

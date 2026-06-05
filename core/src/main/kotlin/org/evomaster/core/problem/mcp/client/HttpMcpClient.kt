@@ -24,7 +24,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         val conn = URL(baseUrl).openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
-        conn.setRequestProperty("Accept", "application/json, text/event-stream")
+        conn.setRequestProperty("Accept", "application/json")
         conn.doOutput = true
         conn.connectTimeout = 10_000
         conn.readTimeout = 30_000
@@ -32,9 +32,56 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return Pair(conn, body)
     }
 
+    /**
+     * Perform the MCP initialization handshake (initialize + notifications/initialized).
+     * Must be called once before any other method.
+     */
+    fun initialize() {
+        val initResponse = postRaw(
+            "initialize",
+            mapOf(
+                "protocolVersion" to "2024-11-05",
+                "capabilities" to emptyMap<String, Any>(),
+                "clientInfo" to mapOf("name" to "EvoMaster", "version" to "1.0.0")
+            )
+        )
+        if (initResponse == null) {
+            throw IllegalStateException("MCP initialize handshake failed")
+        }
+        // Send the required follow-up notification (fire-and-forget, response is empty/204)
+        postNotification("notifications/initialized", emptyMap())
+    }
+
+    /** Send a JSON-RPC notification (no response expected). */
+    private fun postNotification(method: String, params: Map<String, Any?>) {
+        val body = mapper.writeValueAsString(
+            mapOf(
+                "jsonrpc" to "2.0",
+                "method" to method,
+                "params" to params
+                // notifications have no "id"
+            )
+        )
+        val conn = URL(baseUrl).openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("Accept", "application/json")
+        conn.doOutput = true
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+        // Read (and discard) the response to complete the HTTP exchange
+        try { conn.inputStream.close() } catch (_: Exception) {}
+    }
+
     /** Send a JSON-RPC request. Throws on connection errors; throws on 5xx. Returns null on 4xx (method not supported). */
     @Suppress("UNCHECKED_CAST")
     private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
+        return postRaw(method, params)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun postRaw(method: String, params: Map<String, Any?>): Map<String, Any?>? {
         val (conn, _) = openConnection(method, params)
         val status = conn.responseCode
         if (status == 400 || status == 404 || status == 405) {
