@@ -1,0 +1,773 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "ERC-20 token standard RESTful service",
+    "title": "ERC-20 API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "controller",
+      "description": "Controller"
+    }
+  ],
+  "paths": {
+    "/config": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Application configuration",
+        "operationId": "configUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/NodeConfiguration"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/deploy": {
+      "post": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Deploy new ERC-20 token",
+        "description": "Returns hex encoded contract address",
+        "operationId": "deployUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "contractSpecification",
+            "description": "contractSpecification",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ContractSpecification"
+            }
+          },
+          {
+            "name": "privateFor",
+            "in": "header",
+            "description": "Comma separated list of public keys of enclave nodes that transaction is private for",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/allowance": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get quantity of tokens you can transfer on another token holder's behalf",
+        "operationId": "allowanceUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerAddress",
+            "in": "query",
+            "description": "ownerAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "spenderAddress",
+            "in": "query",
+            "description": "spenderAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/approve": {
+      "post": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Approve transfers by a specific address up to the provided total quantity",
+        "description": "Returns hex encoded transaction hash, and Approval event if called",
+        "operationId": "approveUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "approveRequest",
+            "description": "approveRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApproveRequest"
+            }
+          },
+          {
+            "name": "privateFor",
+            "in": "header",
+            "description": "Comma separated list of public keys of enclave nodes that transaction is private for",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TransactionResponse«ApprovalEventResponse»"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/approveAndCall": {
+      "post": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Approve transfers by a specific contract address up to the provided total quantity, and notify that contract address of the approval",
+        "description": "Returns hex encoded transaction hash, and Approval event if called",
+        "operationId": "approveAndCallUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "approveAndCallRequest",
+            "description": "approveAndCallRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApproveAndCallRequest"
+            }
+          },
+          {
+            "name": "privateFor",
+            "in": "header",
+            "description": "Comma separated list of public keys of enclave nodes that transaction is private for",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TransactionResponse«ApprovalEventResponse»"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/balanceOf/{ownerAddress}": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get token balance for address",
+        "operationId": "balanceOfUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ownerAddress",
+            "in": "path",
+            "description": "ownerAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/decimals": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get decimal precision of tokens",
+        "operationId": "decimalsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/name": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get token name",
+        "operationId": "nameUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/symbol": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get token symbol",
+        "operationId": "symbolUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/totalSupply": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get total supply of tokens",
+        "operationId": "totalSupplyUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/transfer": {
+      "post": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Transfer tokens you own to another address",
+        "description": "Returns hex encoded transaction hash, and Transfer event if called",
+        "operationId": "transferUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "transferRequest",
+            "description": "transferRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TransferRequest"
+            }
+          },
+          {
+            "name": "privateFor",
+            "in": "header",
+            "description": "Comma separated list of public keys of enclave nodes that transaction is private for",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TransactionResponse«TransferEventResponse»"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/transferFrom": {
+      "post": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Transfer tokens between addresses (must already be approved)",
+        "description": "Returns hex encoded transaction hash, and Transfer event if called",
+        "operationId": "transferFromUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "transferFromRequest",
+            "description": "transferFromRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TransferFromRequest"
+            }
+          },
+          {
+            "name": "privateFor",
+            "in": "header",
+            "description": "Comma separated list of public keys of enclave nodes that transaction is private for",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TransactionResponse«TransferEventResponse»"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{contractAddress}/version": {
+      "get": {
+        "tags": [
+          "controller"
+        ],
+        "summary": "Get contract version",
+        "operationId": "versionUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "description": "contractAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ApprovalEventResponse": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "spender": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "ApproveAndCallRequest": {
+      "type": "object"
+    },
+    "ApproveRequest": {
+      "type": "object",
+      "properties": {
+        "spender": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      }
+    },
+    "ContractSpecification": {
+      "type": "object",
+      "properties": {
+        "decimalUnits": {
+          "type": "integer"
+        },
+        "initialAmount": {
+          "type": "integer"
+        },
+        "tokenName": {
+          "type": "string"
+        },
+        "tokenSymbol": {
+          "type": "string"
+        }
+      }
+    },
+    "NodeConfiguration": {
+      "type": "object",
+      "properties": {
+        "fromAddress": {
+          "type": "string"
+        },
+        "nodeEndpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "TransactionResponse«ApprovalEventResponse»": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/ApprovalEventResponse"
+        },
+        "transactionHash": {
+          "type": "string"
+        }
+      }
+    },
+    "TransactionResponse«TransferEventResponse»": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/TransferEventResponse"
+        },
+        "transactionHash": {
+          "type": "string"
+        }
+      }
+    },
+    "TransferEventResponse": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "TransferFromRequest": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      }
+    },
+    "TransferRequest": {
+      "type": "object",
+      "properties": {
+        "to": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
