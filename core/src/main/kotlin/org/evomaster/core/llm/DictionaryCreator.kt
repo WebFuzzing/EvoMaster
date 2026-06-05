@@ -1,14 +1,18 @@
 package org.evomaster.core.llm
 
-import org.evomaster.core.problem.rest.schema.OpenApiAccess
-import java.io.File
-import kotlin.io.path.Path
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import dev.langchain4j.model.chat.ChatModel
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
-import org.evomaster.core.docs.ConfigToMarkdown.saveToDocs
-import org.evomaster.core.docs.ConfigToMarkdown.toMarkdown
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.utils.TimeUtils
+import java.io.File
+import java.util.Collections
+import java.util.concurrent.Executors
+import kotlin.io.path.Path
 
 
 object DictionaryCreator {
@@ -20,7 +24,63 @@ object DictionaryCreator {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        createNameDescriptions()
+
+        val API_KEY = ""
+
+        val file = File("src/main/resources/llm_dictionary.jsonl")
+
+//        val modelName = "deepseek-v4-pro"
+        val modelName = "deepseek-v4-flash"
+        val model = LlmSupport.createModel(LlmProvider.DEEPSEEK, modelName = modelName, apiKey = API_KEY)
+
+        val data = createNameDescriptions()
+
+        TimeUtils.measureTimeMillis(
+            {ms, res -> println("Took ${ms/1000}s")},
+            {
+                val executor = Executors.newFixedThreadPool(10)
+                val list = Collections.synchronizedList(mutableListOf<String>())
+
+                val futures = data.entries
+                    .sortedBy { it.key }
+                    //.drop(1) //TODO for debugging
+                    .take(10) //TODO for debugging
+                    .map { entry ->
+                        executor.submit { handleEntry(entry, model, list) }
+                    }
+                futures.forEach { it.get() }
+                executor.shutdown()
+
+                list.sorted().forEach {
+                    file.appendText("$it\n")
+                }
+            })
+    }
+
+    private fun handleEntry(
+        entry: Map.Entry<String, Set<String>>,
+        model: ChatModel,
+        buffer: MutableList<String>
+    ) {
+        val mapper = ObjectMapper()
+        val name = entry.key
+        val description = entry.value.maxByOrNull { it.length }
+        val prompt = Prompts.getPromptForNameDescription(name, description)
+        var result = LlmSupport.chat(model, prompt.first, prompt.second)
+        val list = try {
+            mapper.readValue(result, object : TypeReference<List<String>>() {})
+        } catch (e: Exception) {
+            val failed = Prompts.getPromptForFailedName(e.toString())
+            result = LlmSupport.chat(model, failed.first, failed.second)
+            mapper.readValue(result, object : TypeReference<List<String>>() {})
+        } catch (e: Exception) {
+            print("Failed handling response: $result")
+            throw e
+        }
+
+        val row = "{ \"$name\": $result }"
+        println(row)
+        buffer.add(row)
     }
 
     fun createNameDescriptions() : Map<String, Set<String>> {
@@ -28,7 +88,8 @@ object DictionaryCreator {
         val data = mutableMapOf<String, MutableSet<String>>()
 
         val locations = scanForSchemas("./src/test/resources/swagger")
-            //TODO plus "../core-tests/integration-tests/core-it/src/test/resources/APIs_guru"
+            //TODO put back once rest finished
+            //.plus(scanForSchemas("../core-tests/integration-tests/core-it/src/test/resources/APIs_guru"))
 
         for(l in locations){
             println("Analyzing: $l")
@@ -41,7 +102,7 @@ object DictionaryCreator {
 
             val params = extractStringFieldInfo(schema.schemaParsed)
             for(p in params){
-                val descriptions = data.getOrPut(p.name) { mutableSetOf() }
+                val descriptions = data.getOrPut(p.name.lowercase()) { mutableSetOf() }
                 if(p.description != null){
                     descriptions.add(p.description)
                 }
@@ -49,6 +110,9 @@ object DictionaryCreator {
         }
 
         println("Obtained ${data.size} field info")
+        println("Total number of descriptions: ${data.values.sumOf { it.size }}")
+        val maxDsc = data.maxBy { it.value.size }
+        println("Most descriptions are for '${maxDsc.key}' with ${maxDsc.value.size} distinct entries")
         return data
     }
 

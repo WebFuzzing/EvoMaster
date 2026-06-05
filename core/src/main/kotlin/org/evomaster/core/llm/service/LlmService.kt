@@ -1,11 +1,10 @@
 package org.evomaster.core.llm.service
 
+import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler
 import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.llm.LlmSupport
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import javax.annotation.PostConstruct
 import javax.inject.Inject
@@ -15,7 +14,9 @@ class LlmService {
     @Inject
     private lateinit var config: EMConfig
 
-    private lateinit var model: StreamingChatModel
+    private lateinit var streamingModel: StreamingChatModel
+
+    private lateinit var syncModel: ChatModel
 
     @PostConstruct
     private fun initService() {
@@ -26,7 +27,16 @@ class LlmService {
         }
 
         try {
-            model = LlmSupport.createModel(
+            syncModel = LlmSupport.createModel(
+                config.llmProvider,
+                config.llmApiKey,
+                config.llmURL,
+                config.llmName,
+                config.llmTimeoutSeconds,
+                config.llmTemperature
+            )
+
+            streamingModel = LlmSupport.createStreamingModel(
                 config.llmProvider,
                 config.llmApiKey,
                 config.llmURL,
@@ -48,10 +58,10 @@ class LlmService {
     fun chatAsync(userMessage: String): Future<String> {
         checkUsingLLM()
 
-        return LlmSupport.chatAsync(model, userMessage)
+        return LlmSupport.chatAsync(streamingModel, userMessage)
     }
 
     fun chat(userMessage: String) : String{
-        return chatAsync(userMessage).get()
+        return LlmSupport.chat(syncModel, "", userMessage)
     }
 }
