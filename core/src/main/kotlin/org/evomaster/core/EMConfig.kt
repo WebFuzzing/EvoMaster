@@ -3017,6 +3017,12 @@ class EMConfig {
 
     @Experimental
     @DependsOnTrueFor("llm")
+    @Cfg("The number of threads to use when making calls towards an LLM, in configured." +
+            " If connecting to Ollama, this value is ignored, and only 1 thread is used.")
+    var llmThreads = 4
+
+    @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
     var llmURL: String? = null
 

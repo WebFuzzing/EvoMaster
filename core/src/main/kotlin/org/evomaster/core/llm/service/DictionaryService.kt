@@ -4,10 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.EMConfig
 import org.evomaster.core.llm.DictionarySearchResult
+import org.evomaster.core.llm.FieldInfo
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.DataPool
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.annotation.PostConstruct
 import javax.inject.Inject
 
 
@@ -128,20 +129,33 @@ class DictionaryService {
     private lateinit var dataPool : DataPool
 
 
-    fun updatePoolFromDictionary(names: Collection<String>) {
+    /**
+     * Update the data pool with all the info from dictionary based on the input field's names.
+     * If some names are not in the dictionary, if LLM is enabled then it will be queried,
+     * including using the names' descriptions (if any is provided)
+     */
+    fun updatePoolFromDictionary(fields: Collection<FieldInfo>) {
         if(!isActive()){
             throw IllegalStateException("Dictionary service is not active")
         }
 
         //TODO check how expensive this is... put on thread if too expensive
 
-        val result = searchForNames(names)
+        val result = searchForNames(fields.map { it.name })
+
         result.data.entries.forEach { entry ->
             entry.value.forEach { exm ->  dataPool.addValue(entry.key, exm) }
         }
 
         if(config.llm && result.missing.isNotEmpty()) {
-            //TODO defenetively this needs to be on thread
+            LoggingUtil.getInfoLogger().info("Going to make ${result.missing.size} calls to LLM to obtain new input data" +
+                    " based on field names and descriptions")
+
+            val toInfer = fields.filter{ result.missing.contains(it.name)}
+
+            llmService.askForNewExamples(toInfer){ name, examples ->
+                examples.forEach { ex -> dataPool.addValue(name, ex) }
+            }
         }
     }
 
