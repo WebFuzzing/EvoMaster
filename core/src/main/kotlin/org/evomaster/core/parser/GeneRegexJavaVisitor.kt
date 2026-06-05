@@ -443,7 +443,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             // top level character class, create gene
             VisitResult(CharacterRangeRxGene(multiCharRanges, currentFlags))
         } else {
-            // nested char class, apply negation (if necessary)
+            // nested char class, set MultiCharacterRange as data
             VisitResult(data = multiCharRanges)
         }
     }

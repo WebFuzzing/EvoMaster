@@ -27,7 +27,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
             if (negated) {
                 internalRanges.add(CharacterRange(Character.MIN_VALUE, Character.MAX_VALUE))
             }
-            for (range in ranges.sortedBy { it.start.code }) {
+            for (range in ranges) {
                 internalRanges = if (negated) {
                     remove(internalRanges, CharacterRange(range.start, range.end))
                 } else {
