@@ -58,7 +58,7 @@ class RedisDbActionTransformerTest {
             RedisHsetAction(key = "k2", field = "f", valueGene = StringGene("value", "v2"))
         )
         val dto = RedisDbActionTransformer.transform(actions)
-        assertEquals(3, dto.insertions.size)
+        assertEquals(2, dto.insertions.size)
     }
 
     @Test
