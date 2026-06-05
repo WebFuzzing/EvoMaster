@@ -12,6 +12,7 @@ import org.evomaster.core.utils.TimeUtils
 import java.io.File
 import java.util.Collections
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 
 
@@ -28,6 +29,7 @@ object DictionaryCreator {
         val API_KEY = ""
 
         val file = File("src/main/resources/llm_dictionary.jsonl")
+        val alreadyHandled = file.bufferedReader().use { it.lineSequence().count() }
 
 //        val modelName = "deepseek-v4-pro"
         val modelName = "deepseek-v4-flash"
@@ -38,17 +40,24 @@ object DictionaryCreator {
         TimeUtils.measureTimeMillis(
             {ms, res -> println("Took ${ms/1000}s")},
             {
-                val executor = Executors.newFixedThreadPool(10)
+                val parallelism = 20
+                val executor = Executors.newFixedThreadPool(parallelism)
                 val list = Collections.synchronizedList(mutableListOf<String>())
 
                 val futures = data.entries
                     .sortedBy { it.key }
-                    //.drop(1) //TODO for debugging
-                    .take(10) //TODO for debugging
+                    .drop(alreadyHandled)
+                    .take(500) //TODO use for incremental job
                     .map { entry ->
                         executor.submit { handleEntry(entry, model, list) }
                     }
-                futures.forEach { it.get() }
+                futures.forEach {
+                    try {
+                        it.get(120, TimeUnit.SECONDS)
+                    }catch (e: Exception) {
+                        println("ERROR. Failed to wait for job: ${e.message}")
+                    }
+                }
                 executor.shutdown()
 
                 list.sorted().forEach {
@@ -67,15 +76,18 @@ object DictionaryCreator {
         val description = entry.value.maxByOrNull { it.length }
         val prompt = Prompts.getPromptForNameDescription(name, description)
         var result = LlmSupport.chat(model, prompt.first, prompt.second)
-        val list = try {
+        try {
             mapper.readValue(result, object : TypeReference<List<String>>() {})
         } catch (e: Exception) {
-            val failed = Prompts.getPromptForFailedName(e.toString())
-            result = LlmSupport.chat(model, failed.first, failed.second)
-            mapper.readValue(result, object : TypeReference<List<String>>() {})
-        } catch (e: Exception) {
-            print("Failed handling response: $result")
-            throw e
+            print("ERROR. Failed handling response: $result")
+            try {
+                val failed = Prompts.getPromptForFailedName(e.toString())
+                result = LlmSupport.chat(model, failed.first, failed.second)
+                mapper.readValue(result, object : TypeReference<List<String>>() {})
+            } catch (e: Exception) {
+                print("ERROR. Failed again handling response: $result")
+                throw e
+            }
         }
 
         val row = "{ \"$name\": $result }"
@@ -88,8 +100,7 @@ object DictionaryCreator {
         val data = mutableMapOf<String, MutableSet<String>>()
 
         val locations = scanForSchemas("./src/test/resources/swagger")
-            //TODO put back once rest finished
-            //.plus(scanForSchemas("../core-tests/integration-tests/core-it/src/test/resources/APIs_guru"))
+            .plus(scanForSchemas("../core-tests/integration-tests/core-it/src/test/resources/APIs_guru"))
 
         for(l in locations){
             println("Analyzing: $l")
