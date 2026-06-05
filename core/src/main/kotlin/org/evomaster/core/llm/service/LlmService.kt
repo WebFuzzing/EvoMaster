@@ -25,6 +25,12 @@ class LlmService {
 
     private lateinit var syncModel: ChatModel
 
+    /**
+     * We can make several requests in parallel toward an LLM.
+     * In the end, these are I/O bound, and could take fews seconds each.
+     * So make sense to do in parallel and asynchronously, especially when we do not need to wait
+     * for the responses.
+     */
     private lateinit var executor: ExecutorService
 
     @PostConstruct
@@ -81,6 +87,11 @@ class LlmService {
         return LlmSupport.chat(syncModel, "", userMessage)
     }
 
+    /**
+     * Query the LLM for input data examples, based on parameter name and optional description.
+     * These calls will be made in parallel, for each [fields] entry.
+     * When a task is completed, the [callback] is executed with the collected examples.
+     */
     fun askForNewExamples(fields: Collection<FieldInfo>, callback: (name: String, examples: Collection<String>) -> Unit){
 
         fields.toList()
@@ -96,6 +107,9 @@ class LlmService {
         description: String?,
         callback: (name: String, examples: Collection<String>) -> Unit
     ){
+        /*
+            Note: this is the same approach used to build the dictionary
+         */
         val mapper = ObjectMapper()
         val prompt = Prompts.getPromptForNameDescription(name, description)
         var result = LlmSupport.chat(syncModel, prompt.first, prompt.second)
