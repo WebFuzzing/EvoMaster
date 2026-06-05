@@ -29,7 +29,8 @@ object DictionaryCreator {
         val API_KEY = ""
 
         val file = File("src/main/resources/llm_dictionary.jsonl")
-        val alreadyHandled = file.bufferedReader().use { it.lineSequence().count() }
+        val errors = 2 //could had handled them, but too late
+        val alreadyHandled = errors + file.bufferedReader().use { it.lineSequence().count() }
 
 //        val modelName = "deepseek-v4-pro"
         val modelName = "deepseek-v4-flash"
@@ -90,7 +91,8 @@ object DictionaryCreator {
             }
         }
 
-        val row = "{ \"$name\": $result }"
+        //must be a single row, and we have it in the prompt, but sometimes it is ignored
+        val row = "{ \"$name\": $result }".replace('\n',' ')
         println(row)
         buffer.add(row)
     }
