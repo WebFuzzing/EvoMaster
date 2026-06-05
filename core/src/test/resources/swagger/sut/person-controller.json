@@ -1,0 +1,2086 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:27519",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/persons": {
+      "get": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "getPersons",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "putPerson",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PersonDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "postPersons",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PersonDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "deletePersons",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/person": {
+      "put": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "putPerson_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "postPerson",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/persons/{ids}": {
+      "get": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "getPersons_1",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "deletePersons_1",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/persons/count": {
+      "get": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "getCount",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/persons/averageAge": {
+      "get": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "averageAge",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/person/{id}": {
+      "get": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "getPerson",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "person-controller"
+        ],
+        "operationId": "deletePerson",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cause": {
+                      "type": "object",
+                      "properties": {
+                        "stackTrace": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "classLoaderName": {
+                                "type": "string"
+                              },
+                              "moduleName": {
+                                "type": "string"
+                              },
+                              "moduleVersion": {
+                                "type": "string"
+                              },
+                              "methodName": {
+                                "type": "string"
+                              },
+                              "fileName": {
+                                "type": "string"
+                              },
+                              "lineNumber": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "className": {
+                                "type": "string"
+                              },
+                              "nativeMethod": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "localizedMessage": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "stackTrace": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classLoaderName": {
+                            "type": "string"
+                          },
+                          "moduleName": {
+                            "type": "string"
+                          },
+                          "moduleVersion": {
+                            "type": "string"
+                          },
+                          "methodName": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "lineNumber": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "className": {
+                            "type": "string"
+                          },
+                          "nativeMethod": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suppressed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stackTrace": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "classLoaderName": {
+                                  "type": "string"
+                                },
+                                "moduleName": {
+                                  "type": "string"
+                                },
+                                "moduleVersion": {
+                                  "type": "string"
+                                },
+                                "methodName": {
+                                  "type": "string"
+                                },
+                                "fileName": {
+                                  "type": "string"
+                                },
+                                "lineNumber": {
+                                  "type": "integer",
+                                  "format": "int32"
+                                },
+                                "className": {
+                                  "type": "string"
+                                },
+                                "nativeMethod": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "localizedMessage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "localizedMessage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddressDTO": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "street": {
+            "type": "string"
+          },
+          "postcode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        }
+      },
+      "CarDTO": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "maxSpeedKmH": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "PersonDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDTO"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "insurance": {
+            "type": "boolean"
+          },
+          "cars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CarDTO"
+            }
+          }
+        }
+      }
+    }
+  }
+}
