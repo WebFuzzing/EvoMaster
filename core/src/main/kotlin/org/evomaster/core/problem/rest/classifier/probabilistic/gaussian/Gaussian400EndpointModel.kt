@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.service.Randomness
-import kotlin.String
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.ln
