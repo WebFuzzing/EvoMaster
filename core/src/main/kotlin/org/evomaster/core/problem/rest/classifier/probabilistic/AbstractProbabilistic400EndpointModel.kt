@@ -112,6 +112,11 @@ abstract class AbstractProbabilistic400EndpointModel(
         val keysAndValues =
             encoder.getAllParamsPathsAndEncodedValues()
 
+        // TODO: initializedKeys are based on the model keys that are fixed.
+        //  In fact we ignore new hidden genes added during the search which are not available in the schema.
+        //  A more principled solution would be to support dynamic feature spaces,
+        //  where the classifier can adapt its dimension and feature mapping as
+        //  new parameter structures are discovered during the search.
         val initializedKeys = requireNotNull(modelKeys) {
             "Model keys have not been initialized"
         }
@@ -120,23 +125,26 @@ abstract class AbstractProbabilistic400EndpointModel(
 
             val value = keysAndValues[key]
 
+            /**
+             * The encoder never returns null values.
+             * Therefore, a null means that the encoder provided a new key which is not identical to the model key.
+             * Hypothetically, this only happens if the parameter path (representing the key)
+             * changes during the search due to adding an intermediate gene (e.g., the path for
+             * the parameter b changes from 'GET:/a/b' to 'GET:/a/foo/b').
+             * Thus, the encoder returns a different key for the parameter from what is expected.
+             * In such cases we consider the encoded value as neutral (i.e., 0.0) to avoid errors.
+             */
             if (value == null) {
+                log.warn("Missing key while encoding endpoint: {}", endpoint)
+                log.warn("Model keys: {}", initializedKeys)
+                log.warn("Current keys: {}", keysAndValues.keys)
+                log.warn("Missing key: {}", key)
 
-                log.error("Endpoint: {}", endpoint)
-                log.error("Missing expected key: {}", key)
-                log.error("Model keys: {}", initializedKeys)
-                log.error("Current keys: {}", keysAndValues.keys)
-
-                val missing = initializedKeys.filter { it !in keysAndValues.keys }
-                log.error("Missing keys: {}", missing)
-
-                throw IllegalArgumentException(
-                    "The encoded value cannot be null as the encoder set nulls to the sentinel (e.g., 10^6)." +
-                            " So there is a missing key as: $key"
-                )
+                0.0
+            } else {
+                value
             }
 
-            value
         }
     }
 

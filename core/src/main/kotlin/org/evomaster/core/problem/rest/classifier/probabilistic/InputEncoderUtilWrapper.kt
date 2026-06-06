@@ -90,10 +90,12 @@ class InputEncoderUtilWrapper(
             current = current.parent as? Gene
         }
 
-        return names
-            .reversed()
-            .dropLast(1) //ignore the last name, which is the repetition of gene itself as its own parent
-            .joinToString("/")
+        val path = names.reversed()
+        
+        return if (path.size > 1)
+            path.dropLast(1).joinToString("/") //ignore the last name, which is the repetition of gene itself as its own parent
+        else
+            path.joinToString("/")
 
     }
 
