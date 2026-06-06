@@ -43,7 +43,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "NN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
+    val modelName = "GAUSSIAN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val encoderType = "RAW" // Choose "RAW" or "NORMAL"
     val decisionMaking = "THRESHOLD" // Choose "PROBABILITY" or "THRESHOLD"
     val warmUpRep = 10
@@ -81,6 +81,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 
         injector = init(args)
     }
+
 
     fun initializeTest() {
         recreateInjectorForBlackBox(listOf("--aiModelForResponseClassification", "$modelName"))

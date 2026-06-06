@@ -77,6 +77,7 @@ class InputEncoderUtilWrapper(
 
     /**
      * Builds a string representing the gene name and all its parents.
+     * This string is used as a unique identifier for the gene in the AI models.
      */
     private fun genePath(g: Gene): String {
 
@@ -89,7 +90,11 @@ class InputEncoderUtilWrapper(
             current = current.parent as? Gene
         }
 
-        return names.reversed().joinToString("/")
+        return names
+            .reversed()
+            .dropLast(1) //ignore the last name, which is the repetition of gene itself as its own parent
+            .joinToString("/")
+
     }
 
     /**

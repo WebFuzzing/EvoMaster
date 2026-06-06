@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.LoggerFactory
 
 /**
  * Base class for all probabilistic classifiers working at an endpoint (400 vs. not 400).
@@ -30,6 +31,9 @@ abstract class AbstractProbabilistic400EndpointModel(
     protected var initialized: Boolean = false
 
     companion object {
+
+        private val log = LoggerFactory.getLogger(AbstractProbabilistic400EndpointModel::class.java)
+
         const val NOT_400 = 200
     }
 
@@ -113,10 +117,26 @@ abstract class AbstractProbabilistic400EndpointModel(
         }
 
         return initializedKeys.map { key ->
-            keysAndValues[key]
-                ?: throw IllegalArgumentException(
-                    "Missing expected key: $key"
+
+            val value = keysAndValues[key]
+
+            if (value == null) {
+
+                log.error("Endpoint: {}", endpoint)
+                log.error("Missing expected key: {}", key)
+                log.error("Model keys: {}", initializedKeys)
+                log.error("Current keys: {}", keysAndValues.keys)
+
+                val missing = initializedKeys.filter { it !in keysAndValues.keys }
+                log.error("Missing keys: {}", missing)
+
+                throw IllegalArgumentException(
+                    "The encoded value cannot be null as the encoder set nulls to the sentinel (e.g., 10^6)." +
+                            " So there is a missing key as: $key"
                 )
+            }
+
+            value
         }
     }
 
