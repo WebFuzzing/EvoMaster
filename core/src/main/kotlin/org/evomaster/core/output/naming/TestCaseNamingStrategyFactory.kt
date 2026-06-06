@@ -30,7 +30,7 @@ class TestCaseNamingStrategyFactory(
         return when(namingStrategy) {
             NamingStrategy.NUMBERED -> NamingHelperNumberedTestCaseNamingStrategy(solution)
             NamingStrategy.DETERMINISTIC -> deterministicActionBasedNamingStrategy(solution)
-            NamingStrategy.LLM -> LLMServiceTestCaseNamingStrategy(solution, outputFormat, LlmService())
+            NamingStrategy.LLM -> LLMServiceTestCaseNamingStrategy(solution, outputFormat, LlmService(), maxTestCaseNameLength)
             else -> throw IllegalStateException("Unrecognized naming strategy $namingStrategy")
         }
     }
