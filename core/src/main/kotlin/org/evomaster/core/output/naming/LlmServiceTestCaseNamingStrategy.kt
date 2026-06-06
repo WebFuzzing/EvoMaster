@@ -1,10 +1,10 @@
 package org.evomaster.core.output.naming
 
-import com.google.inject.Inject
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.EvaluatedIndividual
@@ -12,53 +12,47 @@ import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class LLMServiceTestCaseNamingStrategy(
+class LlmServiceTestCaseNamingStrategy(
     solution: Solution<*>,
     private val outputFormat: OutputFormat,
     private val llmService: LlmService,
-    private val maxTestCaseNameLength: Int
+    maxTestCaseNameLength: Int,
+    private val testCaseWriter: TestCaseWriter
 ) : NumberedTestCaseNamingStrategy(solution) {
 
-    private val validNameRegex = Regex("[A-Za-z0-9_]+")
-
-    @Inject
-    private lateinit var testCaseWriter: TestCaseWriter
-
     private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+    private val generatedNames = mutableSetOf<String>()
 
     private val baseUrlOfSut = "baseUrlOfSut"
     private val fixture = "_fixture"
     private val remainingNameChars = maxTestCaseNameLength - namePrefixChars()
-
-    override fun getTestCases(): List<TestCase> {
-        val testCases = super.getTestCases()
-        return generateLlmNames(testCases)
-    }
 
     override fun expandName(
         individual: EvaluatedIndividual<*>,
         nameTokens: MutableList<String>,
         ambiguitySolvers: List<AmbiguitySolver>
     ): String {
-        return super.expandName(individual, nameTokens, ambiguitySolvers)
-    }
-
-    override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
-        return super.resolveAmbiguities(duplicatedIndividuals)
-    }
-
-    private fun generateLlmNames(tests: List<TestCase>): List<TestCase> {
-        return tests.map { test ->
-            return solution.individuals.map { TestCase(it, generateLlmName(test)) }
-        }
+        val newName = generateLlmName(TestCase(individual, "test"))
+        return if (newName.isNotEmpty()) "_$newName" else ""
     }
 
     private fun generateLlmName(test: TestCase): String {
-        var newName = getNewName(test)
+        var newName = sanitizeName(getNewName(test))
         while (!isValidSuffix(newName)) {
-            newName = promptReIterateName()
+            newName = sanitizeName(promptReIterateName())
         }
+        generatedNames.add(newName)
         return newName
+    }
+
+    // LLM is sometimes returning names as "\n\ntheNewName" so we need to fix that.
+    // Also, some tests were ending as "200__" so we remove any trailing underscores.
+    private fun sanitizeName(testName: String): String {
+        var safeName = TestWriterUtils.safeVariableName(testName.trim().replace("\n", ""))
+        while (safeName.endsWith("_")) {
+            safeName = safeName.substringBeforeLast("_")
+        }
+        return safeName
     }
 
     private fun getNewName(test: TestCase): String {
@@ -78,6 +72,7 @@ class LLMServiceTestCaseNamingStrategy(
             - Be specific: prefer `createUser_duplicateEmail_throwsConflict` over `createUser_fails`.
             - Do not include words like "test", "check", "verify", or "ensure" in the suffix.
             - The suffix must not exceed $remainingNameChars characters.
+            - The suffix must not match any of the already assigned names listed below.
             - Output only the suffix, nothing else.
 
             ## Language
@@ -88,6 +83,10 @@ class LLMServiceTestCaseNamingStrategy(
 
             $remainingNameChars characters
 
+            ## Already assigned names
+
+            $generatedNames
+
             ## Test case
 
             $testLines
@@ -95,6 +94,7 @@ class LLMServiceTestCaseNamingStrategy(
         """.trimIndent())
     }
 
+    // Just in case the LLM did not follow the directive of just giving the new name as output.
     private fun promptReIterateName(): String {
         return llmService.chat("Your previous response contained more than just the suffix. Output only the suffix, nothing else. No explanation, no punctuation, no extra text.")
     }
@@ -106,7 +106,7 @@ class LLMServiceTestCaseNamingStrategy(
     //  4. Length check — if the output exceeds it, it's invalid regardless of format.
     private fun isValidSuffix(output: String): Boolean {
         val stripped = output.trim()
-        return stripped.matches(validNameRegex) && stripped.length <= remainingNameChars
+        return stripped.matches(Regex("[A-Za-z0-9_]+")) && stripped.length <= remainingNameChars
     }
 
     private fun getTargetLanguage(): String {
@@ -127,7 +127,7 @@ class LLMServiceTestCaseNamingStrategy(
                 testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut, null)
         } catch (ex: Exception) {
             log.warn(
-                "A failure has occurred in writing test ${test.name}. \n "
+                "A failure has occurred in generating test code ${test.name} for LLM naming strategy. \n "
                         + "Exception: ${ex.localizedMessage} \n"
                         + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
             )

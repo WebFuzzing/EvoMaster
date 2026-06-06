@@ -10,6 +10,7 @@ import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
@@ -95,6 +96,9 @@ class TestSuiteWriter {
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
+    @Inject
+    private lateinit var llmService: LlmService
+
 
     fun writeTests(testSuiteCode: TestSuiteCode){
         saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
@@ -137,7 +141,7 @@ class TestSuiteWriter {
     ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
-        val testSuiteOrganizer = TestSuiteOrganizer(config)
+        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -156,7 +160,7 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            testSuiteOrganizer.createSortedTestCases(solution)
+            testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"

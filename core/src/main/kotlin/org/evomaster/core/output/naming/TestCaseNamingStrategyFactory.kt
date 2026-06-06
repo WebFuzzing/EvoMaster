@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -17,10 +18,12 @@ class TestCaseNamingStrategyFactory(
     private val languageConventionFormatter: LanguageConventionFormatter,
     private val nameWithQueryParameters: Boolean,
     private val maxTestCaseNameLength: Int,
-    private val outputFormat: OutputFormat
+    private val outputFormat: OutputFormat,
+    private val testCaseWriter: TestCaseWriter,
+    private val llmService: LlmService
 ) {
 
-    constructor(config: EMConfig): this(config.namingStrategy, LanguageConventionFormatter(config.outputFormat), config.nameWithQueryParameters, config.maxTestCaseNameLength, config.outputFormat)
+    constructor(config: EMConfig, testCaseWriter: TestCaseWriter, llmService: LlmService): this(config.namingStrategy, LanguageConventionFormatter(config.outputFormat), config.nameWithQueryParameters, config.maxTestCaseNameLength, config.outputFormat, testCaseWriter, llmService)
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TestCaseNamingStrategyFactory::class.java)
@@ -30,7 +33,7 @@ class TestCaseNamingStrategyFactory(
         return when(namingStrategy) {
             NamingStrategy.NUMBERED -> NamingHelperNumberedTestCaseNamingStrategy(solution)
             NamingStrategy.DETERMINISTIC -> deterministicActionBasedNamingStrategy(solution)
-            NamingStrategy.LLM -> LLMServiceTestCaseNamingStrategy(solution, outputFormat, LlmService(), maxTestCaseNameLength)
+            NamingStrategy.LLM -> LlmServiceTestCaseNamingStrategy(solution, outputFormat, llmService, maxTestCaseNameLength, testCaseWriter)
             else -> throw IllegalStateException("Unrecognized naming strategy $namingStrategy")
         }
     }
