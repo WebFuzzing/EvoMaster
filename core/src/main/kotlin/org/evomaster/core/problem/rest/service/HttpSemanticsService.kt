@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
@@ -400,7 +401,7 @@ class HttpSemanticsService : TimeBoxedPhase{
         ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
 
         ind.ensureFlattenedStructure()
-        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        Lazy.assert { ind.verifyValidity(); true }
 
         prepareEvaluateAndSave(ind)
     }
@@ -571,8 +572,7 @@ class HttpSemanticsService : TimeBoxedPhase{
      */
     private data class LocationCandidate(
         val individual: EvaluatedIndividual<RestIndividual>,
-        val sourceIndex: Int,
-        val source: RestCallAction
+        val sourceIndex: Int
     )
 
     /**
@@ -581,22 +581,27 @@ class HttpSemanticsService : TimeBoxedPhase{
      */
     private fun locationCandidatesIn(
         ei: EvaluatedIndividual<RestIndividual>
-    ): Sequence<LocationCandidate> {
-        val mainActions = ei.individual.seeMainExecutableActions()
-        return ei.evaluatedMainActions().asSequence().mapNotNull { ea ->
-            val a = ea.action as? RestCallAction ?: return@mapNotNull null
-            val r = ea.result as? RestCallResult ?: return@mapNotNull null
-            if (r.getLocation().isNullOrBlank()) return@mapNotNull null
-            val idx = mainActions.indexOfFirst { it.getLocalId() == a.getLocalId() }
-            if (idx < 0) null else LocationCandidate(ei, idx, a)
+    ): List<LocationCandidate> {
+        val evaluated = ei.evaluatedMainActions()
+        val candidates = mutableListOf<LocationCandidate>()
+        for (idx in evaluated.indices) {
+            val ea = evaluated[idx]
+            ea.action as? RestCallAction ?: continue
+            val r = ea.result as? RestCallResult ?: continue
+            if (r.getLocation().isNullOrBlank()) continue
+            candidates.add(LocationCandidate(ei, idx))
         }
+        return candidates
     }
 
     private fun invalidLocation() {
 
         val candidates = individualsInSolution.asSequence()
             .flatMap { ei -> locationCandidatesIn(ei) }
-            .groupBy { it.source.verb to it.source.path }
+            .groupBy {
+                val source = it.individual.individual.seeMainExecutableActions()[it.sourceIndex]
+                source.verb to source.path
+            }
             .values
             .map { group -> group.minBy { it.individual.individual.size() } }
 
@@ -632,6 +637,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 continue
             }
 
+            // add getAction as a last operation
             ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
 
             prepareEvaluateAndSave(ind)
