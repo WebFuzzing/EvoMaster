@@ -105,6 +105,10 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             .map { it as DisjunctionRxGene }
             .filter{ !it.isEffectivelyEmpty() }
 
+        if (nonEmptyDisj.isEmpty()) {
+            throw IllegalStateException("Regex is unsatisfiable.")
+        }
+
         val disjList = DisjunctionListRxGene(nonEmptyDisj)
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
