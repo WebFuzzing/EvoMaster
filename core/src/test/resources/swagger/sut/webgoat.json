@@ -1,0 +1,6345 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/WebGoat",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/HttpProxies/intercept-request": {
+      "get": {
+        "tags": [
+          "http-basics-intercept-request"
+        ],
+        "operationId": "completed",
+        "parameters": [
+          {
+            "name": "x-request-intercepted",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "changeMe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "http-basics-intercept-request"
+        ],
+        "operationId": "completed_1",
+        "parameters": [
+          {
+            "name": "x-request-intercepted",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "changeMe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/logo": {
+      "get": {
+        "tags": [
+          "image-servlet"
+        ],
+        "operationId": "logo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "image-servlet"
+        ],
+        "operationId": "logo_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionAdvanced/challenge": {
+      "put": {
+        "tags": [
+          "sql-injection-challenge"
+        ],
+        "operationId": "registerNewUser",
+        "parameters": [
+          {
+            "name": "username_reg",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email_reg",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password_reg",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/IDOR/profile/{userId}": {
+      "get": {
+        "tags": [
+          "idor-view-other-profile"
+        ],
+        "operationId": "completed_61",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "idor-edit-other-profile"
+        ],
+        "operationId": "completed_2",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/xxe/simple": {
+      "post": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "createNewComment",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/xxe/content-type": {
+      "post": {
+        "tags": [
+          "content-type-assignment"
+        ],
+        "operationId": "createNewUser",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/xxe/blind": {
+      "post": {
+        "tags": [
+          "blind-send-file-assignment"
+        ],
+        "operationId": "addComment",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lesson-template/sample-attack": {
+      "post": {
+        "tags": [
+          "sample-attack"
+        ],
+        "operationId": "completed_3",
+        "parameters": [
+          {
+            "name": "param1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "param2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/review": {
+      "get": {
+        "tags": [
+          "forged-reviews"
+        ],
+        "operationId": "retrieveReviews",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Review"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "forged-reviews"
+        ],
+        "operationId": "createNewReview",
+        "parameters": [
+          {
+            "name": "reviewText",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stars",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "validateReq",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/login": {
+      "post": {
+        "tags": [
+          "csrf-login"
+        ],
+        "operationId": "completed_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/feedback": {
+      "post": {
+        "tags": [
+          "csrf-feedback"
+        ],
+        "operationId": "flag",
+        "parameters": [
+          {
+            "name": "confirmFlagVal",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/feedback/message": {
+      "post": {
+        "tags": [
+          "csrf-feedback"
+        ],
+        "operationId": "completed_5",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/confirm-flag-1": {
+      "post": {
+        "tags": [
+          "csrf-confirm-flag-1"
+        ],
+        "operationId": "completed_6",
+        "parameters": [
+          {
+            "name": "confirmFlagVal",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/csrf/basic-get-flag": {
+      "post": {
+        "tags": [
+          "csrf-get-flag"
+        ],
+        "operationId": "invoke",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/signing/verify": {
+      "post": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "completed_7",
+        "parameters": [
+          {
+            "name": "modulus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/secure/defaults": {
+      "post": {
+        "tags": [
+          "secure-defaults-assignment"
+        ],
+        "operationId": "completed_8",
+        "parameters": [
+          {
+            "name": "secretFileName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "secretText",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/hashing": {
+      "post": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "completed_9",
+        "parameters": [
+          {
+            "name": "answer_pwd1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answer_pwd2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/encoding/xor": {
+      "post": {
+        "tags": [
+          "xor-encoding-assignment"
+        ],
+        "operationId": "completed_10",
+        "parameters": [
+          {
+            "name": "answer_pwd1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/encoding/basic-auth": {
+      "post": {
+        "tags": [
+          "encoding-assignment"
+        ],
+        "operationId": "completed_11",
+        "parameters": [
+          {
+            "name": "answer_user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answer_pwd",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientSideFiltering/getItForFree": {
+      "post": {
+        "tags": [
+          "client-side-filtering-free-assignment"
+        ],
+        "operationId": "completed_12",
+        "parameters": [
+          {
+            "name": "checkoutCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientSideFiltering/attack1": {
+      "post": {
+        "tags": [
+          "client-side-filtering-assignment"
+        ],
+        "operationId": "completed_13",
+        "parameters": [
+          {
+            "name": "answer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cia/quiz": {
+      "get": {
+        "tags": [
+          "cia-quiz"
+        ],
+        "operationId": "getResults",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cia-quiz"
+        ],
+        "operationId": "completed_14",
+        "parameters": [
+          {
+            "name": "question_0_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_1_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_2_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_3_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/flag/{flagNumber}": {
+      "post": {
+        "tags": [
+          "flag-controller"
+        ],
+        "operationId": "postFlag",
+        "parameters": [
+          {
+            "name": "flagNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "flag",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/7": {
+      "post": {
+        "tags": [
+          "assignment-7"
+        ],
+        "operationId": "sendPasswordResetLink",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/5": {
+      "post": {
+        "tags": [
+          "assignment-5"
+        ],
+        "operationId": "login",
+        "parameters": [
+          {
+            "name": "username_login",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password_login",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/1": {
+      "post": {
+        "tags": [
+          "assignment-1"
+        ],
+        "operationId": "completed_15",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth-bypass/verify-account": {
+      "post": {
+        "tags": [
+          "verify-account"
+        ],
+        "operationId": "completed_16",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verifyMethod",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/access-control/users-admin-fix": {
+      "get": {
+        "tags": [
+          "missing-function-ac-users"
+        ],
+        "operationId": "usersFixed",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DisplayUser"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "missing-function-ac-users"
+        ],
+        "operationId": "addUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/access-control/users": {
+      "get": {
+        "tags": [
+          "missing-function-ac-users"
+        ],
+        "operationId": "usersService",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DisplayUser"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "missing-function-ac-users"
+        ],
+        "operationId": "addUser_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/access-control/user-hash": {
+      "post": {
+        "tags": [
+          "missing-function-ac-your-hash"
+        ],
+        "operationId": "simple",
+        "parameters": [
+          {
+            "name": "userHash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/access-control/user-hash-fix": {
+      "post": {
+        "tags": [
+          "missing-function-ac-your-hash-admin"
+        ],
+        "operationId": "admin",
+        "parameters": [
+          {
+            "name": "userHash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/access-control/hidden-menu": {
+      "post": {
+        "tags": [
+          "missing-function-ac-hidden-menus"
+        ],
+        "operationId": "completed_17",
+        "parameters": [
+          {
+            "name": "hiddenMenu1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hiddenMenu2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WebWolf/mail": {
+      "post": {
+        "tags": [
+          "mail-assignment"
+        ],
+        "operationId": "completed_18",
+        "parameters": [
+          {
+            "name": "uniqueCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WebWolf/mail/send": {
+      "post": {
+        "tags": [
+          "mail-assignment"
+        ],
+        "operationId": "sendEmail",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WebWolf/landing": {
+      "post": {
+        "tags": [
+          "landing-assignment"
+        ],
+        "operationId": "click",
+        "parameters": [
+          {
+            "name": "uniqueCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/VulnerableComponents/attack1": {
+      "post": {
+        "tags": [
+          "vulnerable-components-lesson"
+        ],
+        "operationId": "completed_19",
+        "parameters": [
+          {
+            "name": "payload",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlOnlyInputValidationOnKeywords/attack": {
+      "post": {
+        "tags": [
+          "sql-only-input-validation-on-keywords"
+        ],
+        "operationId": "attack",
+        "parameters": [
+          {
+            "name": "userid_sql_only_input_validation_on_keywords",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlOnlyInputValidation/attack": {
+      "post": {
+        "tags": [
+          "sql-only-input-validation"
+        ],
+        "operationId": "attack_1",
+        "parameters": [
+          {
+            "name": "userid_sql_only_input_validation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionMitigations/attack12a": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-13"
+        ],
+        "operationId": "completed_20",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionMitigations/attack10b": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-10b"
+        ],
+        "operationId": "completed_21",
+        "parameters": [
+          {
+            "name": "editor",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionMitigations/attack10a": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-10a"
+        ],
+        "operationId": "completed_22",
+        "parameters": [
+          {
+            "name": "field1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field3",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field4",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field5",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field6",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field7",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionAdvanced/quiz": {
+      "get": {
+        "tags": [
+          "sql-injection-quiz"
+        ],
+        "operationId": "getResults_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sql-injection-quiz"
+        ],
+        "operationId": "completed_23",
+        "parameters": [
+          {
+            "name": "question_0_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_1_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_2_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_3_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_4_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionAdvanced/challenge_Login": {
+      "post": {
+        "tags": [
+          "sql-injection-challenge-login"
+        ],
+        "operationId": "login_1",
+        "parameters": [
+          {
+            "name": "username_login",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password_login",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionAdvanced/attack6b": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-6b"
+        ],
+        "operationId": "completed_24",
+        "parameters": [
+          {
+            "name": "userid_6b",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionAdvanced/attack6a": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-6a"
+        ],
+        "operationId": "completed_25",
+        "parameters": [
+          {
+            "name": "userid_6a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack9": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-9"
+        ],
+        "operationId": "completed_26",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auth_tan",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack8": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-8"
+        ],
+        "operationId": "completed_27",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "auth_tan",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack5": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-5"
+        ],
+        "operationId": "completed_28",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack4": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-4"
+        ],
+        "operationId": "completed_29",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack3": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-3"
+        ],
+        "operationId": "completed_30",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack2": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-2"
+        ],
+        "operationId": "completed_31",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/attack10": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-10"
+        ],
+        "operationId": "completed_32",
+        "parameters": [
+          {
+            "name": "action_string",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/assignment5b": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-5b"
+        ],
+        "operationId": "completed_33",
+        "parameters": [
+          {
+            "name": "userid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "login_count",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjection/assignment5a": {
+      "post": {
+        "tags": [
+          "sql-injection-lesson-5a"
+        ],
+        "operationId": "completed_34",
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operator",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "injection",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SpoofCookie/login": {
+      "post": {
+        "tags": [
+          "spoof-cookie-assignment"
+        ],
+        "operationId": "login_2",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "spoof_auth",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SecurePasswords/assignment": {
+      "post": {
+        "tags": [
+          "secure-passwords-assignment"
+        ],
+        "operationId": "completed_35",
+        "parameters": [
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SSRF/task2": {
+      "post": {
+        "tags": [
+          "ssrf-task-2"
+        ],
+        "operationId": "completed_36",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SSRF/task1": {
+      "post": {
+        "tags": [
+          "ssrf-task-1"
+        ],
+        "operationId": "completed_37",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/zip-slip": {
+      "post": {
+        "tags": [
+          "profile-zip-slip"
+        ],
+        "operationId": "uploadFileHandler",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "required": [
+                  "uploadedFileZipSlip"
+                ],
+                "type": "object",
+                "properties": {
+                  "uploadedFileZipSlip": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/random": {
+      "post": {
+        "tags": [
+          "profile-upload-retrieval"
+        ],
+        "operationId": "execute",
+        "parameters": [
+          {
+            "name": "secret",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/profile-upload": {
+      "post": {
+        "tags": [
+          "profile-upload"
+        ],
+        "operationId": "uploadFileHandler_1",
+        "parameters": [
+          {
+            "name": "fullName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "required": [
+                  "uploadedFile"
+                ],
+                "type": "object",
+                "properties": {
+                  "uploadedFile": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/profile-upload-remove-user-input": {
+      "post": {
+        "tags": [
+          "profile-upload-remove-user-input"
+        ],
+        "operationId": "uploadFileHandler_2",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "required": [
+                  "uploadedFileRemoveUserInput"
+                ],
+                "type": "object",
+                "properties": {
+                  "uploadedFileRemoveUserInput": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/profile-upload-fix": {
+      "post": {
+        "tags": [
+          "profile-upload-fix"
+        ],
+        "operationId": "uploadFileHandler_3",
+        "parameters": [
+          {
+            "name": "fullNameFix",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "required": [
+                  "uploadedFileFix"
+                ],
+                "type": "object",
+                "properties": {
+                  "uploadedFileFix": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/simple-mail": {
+      "post": {
+        "tags": [
+          "simple-mail-assignment"
+        ],
+        "operationId": "login_3",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/simple-mail/reset": {
+      "post": {
+        "tags": [
+          "simple-mail-assignment"
+        ],
+        "operationId": "resetPassword",
+        "parameters": [
+          {
+            "name": "emailReset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/reset/login": {
+      "post": {
+        "tags": [
+          "reset-link-assignment"
+        ],
+        "operationId": "login_4",
+        "parameters": [
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/questions": {
+      "post": {
+        "tags": [
+          "questions-assignment"
+        ],
+        "operationId": "passwordReset",
+        "parameters": [
+          {
+            "name": "json",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/SecurityQuestions": {
+      "post": {
+        "tags": [
+          "security-question-assignment"
+        ],
+        "operationId": "completed_38",
+        "parameters": [
+          {
+            "name": "question",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasswordReset/ForgotPassword/create-password-reset-link": {
+      "post": {
+        "tags": [
+          "reset-link-assignment-forgot-password"
+        ],
+        "operationId": "sendPasswordResetLink_1",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/LogSpoofing/log-spoofing": {
+      "post": {
+        "tags": [
+          "log-spoofing-task"
+        ],
+        "operationId": "completed_39",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/LogSpoofing/log-bleeding": {
+      "post": {
+        "tags": [
+          "log-bleeding-task"
+        ],
+        "operationId": "completed_40",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/votings": {
+      "get": {
+        "tags": [
+          "jwt-votes-endpoint"
+        ],
+        "operationId": "getVotes_1",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingJacksonValue"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jwt-votes-endpoint"
+        ],
+        "operationId": "resetVotes",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/votings/{title}": {
+      "post": {
+        "tags": [
+          "jwt-votes-endpoint"
+        ],
+        "operationId": "vote",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/secret": {
+      "post": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "login_5",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/refresh/newToken": {
+      "post": {
+        "tags": [
+          "jwt-refresh-endpoint"
+        ],
+        "operationId": "newToken",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/refresh/login": {
+      "post": {
+        "tags": [
+          "jwt-refresh-endpoint"
+        ],
+        "operationId": "follow",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/refresh/checkout": {
+      "post": {
+        "tags": [
+          "jwt-refresh-endpoint"
+        ],
+        "operationId": "checkout",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/quiz": {
+      "get": {
+        "tags": [
+          "jwt-quiz"
+        ],
+        "operationId": "getResults_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jwt-quiz"
+        ],
+        "operationId": "completed_41",
+        "parameters": [
+          {
+            "name": "question_0_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_1_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/kid/follow/{user}": {
+      "post": {
+        "tags": [
+          "jwt-header-kid-endpoint"
+        ],
+        "operationId": "follow_1",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/kid/delete": {
+      "post": {
+        "tags": [
+          "jwt-header-kid-endpoint"
+        ],
+        "operationId": "resetVotes_1",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/jku/follow/{user}": {
+      "post": {
+        "tags": [
+          "jwt-header-jku-endpoint"
+        ],
+        "operationId": "follow_2",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/jku/delete": {
+      "post": {
+        "tags": [
+          "jwt-header-jku-endpoint"
+        ],
+        "operationId": "resetVotes_2",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/decode": {
+      "post": {
+        "tags": [
+          "jwt-decode-endpoint"
+        ],
+        "operationId": "decode",
+        "parameters": [
+          {
+            "name": "jwt-encode-user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/InsecureLogin/task": {
+      "post": {
+        "tags": [
+          "insecure-login-task"
+        ],
+        "operationId": "completed_42",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/InsecureLogin/login": {
+      "post": {
+        "tags": [
+          "insecure-login-task"
+        ],
+        "operationId": "login_6",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "/InsecureDeserialization/task": {
+      "post": {
+        "tags": [
+          "insecure-deserialization-task"
+        ],
+        "operationId": "completed_43",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/IDOR/profile/alt-path": {
+      "post": {
+        "tags": [
+          "idor-view-own-profile-alt-url"
+        ],
+        "operationId": "completed_44",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/IDOR/login": {
+      "post": {
+        "tags": [
+          "idor-login"
+        ],
+        "operationId": "completed_45",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/IDOR/diff-attributes": {
+      "post": {
+        "tags": [
+          "idor-diff-attributes"
+        ],
+        "operationId": "completed_46",
+        "parameters": [
+          {
+            "name": "attributes",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/HttpBasics/attack2": {
+      "post": {
+        "tags": [
+          "http-basics-quiz"
+        ],
+        "operationId": "completed_47",
+        "parameters": [
+          {
+            "name": "answer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "magic_answer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "magic_num",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/HttpBasics/attack1": {
+      "post": {
+        "tags": [
+          "http-basics-lesson"
+        ],
+        "operationId": "completed_48",
+        "parameters": [
+          {
+            "name": "person",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/HtmlTampering/task": {
+      "post": {
+        "tags": [
+          "html-tampering-task"
+        ],
+        "operationId": "completed_49",
+        "parameters": [
+          {
+            "name": "QTY",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Total",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/HijackSession/login": {
+      "post": {
+        "tags": [
+          "hijack-session-assignment"
+        ],
+        "operationId": "login_7",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hijack_cookie",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScriptingStored/stored-xss": {
+      "get": {
+        "tags": [
+          "stored-xss-comments"
+        ],
+        "operationId": "retrieveComments_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stored-xss-comments"
+        ],
+        "operationId": "createNewComment_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScriptingStored/stored-xss-follow-up": {
+      "post": {
+        "tags": [
+          "stored-cross-site-scripting-verifier"
+        ],
+        "operationId": "completed_50",
+        "parameters": [
+          {
+            "name": "successMessage",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/quiz": {
+      "get": {
+        "tags": [
+          "cross-site-scripting-quiz"
+        ],
+        "operationId": "getResults_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cross-site-scripting-quiz"
+        ],
+        "operationId": "completed_51",
+        "parameters": [
+          {
+            "name": "question_0_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_1_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_2_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_3_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "question_4_solution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/phone-home-xss": {
+      "post": {
+        "tags": [
+          "dom-cross-site-scripting"
+        ],
+        "operationId": "completed_52",
+        "parameters": [
+          {
+            "name": "param1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "param2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/dom-follow-up": {
+      "post": {
+        "tags": [
+          "dom-cross-site-scripting-verifier"
+        ],
+        "operationId": "completed_53",
+        "parameters": [
+          {
+            "name": "successMessage",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/attack6a": {
+      "post": {
+        "tags": [
+          "cross-site-scripting-lesson-6a"
+        ],
+        "operationId": "completed_54",
+        "parameters": [
+          {
+            "name": "DOMTestRoute",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/attack4": {
+      "post": {
+        "tags": [
+          "cross-site-scripting-lesson-4"
+        ],
+        "operationId": "completed_55",
+        "parameters": [
+          {
+            "name": "editor2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/attack3": {
+      "post": {
+        "tags": [
+          "cross-site-scripting-lesson-3"
+        ],
+        "operationId": "completed_56",
+        "parameters": [
+          {
+            "name": "editor",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/attack1": {
+      "post": {
+        "tags": [
+          "cross-site-scripting-lesson-1"
+        ],
+        "operationId": "completed_57",
+        "parameters": [
+          {
+            "name": "checkboxAttack1",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ChromeDevTools/network": {
+      "post": {
+        "tags": [
+          "network-lesson"
+        ],
+        "operationId": "completed_58_1",
+        "parameters": [
+          {
+            "name": "network_num",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "networkNum",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AttackResult"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ChromeDevTools/dummy": {
+      "post": {
+        "tags": [
+          "network-dummy"
+        ],
+        "operationId": "completed_58",
+        "parameters": [
+          {
+            "name": "successMessage",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/BypassRestrictions/frontendValidation": {
+      "post": {
+        "tags": [
+          "bypass-restrictions-frontend-validation"
+        ],
+        "operationId": "completed_59",
+        "parameters": [
+          {
+            "name": "field1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field3",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field4",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field5",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field6",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field7",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/BypassRestrictions/FieldRestrictions": {
+      "post": {
+        "tags": [
+          "bypass-restrictions-field-restrictions"
+        ],
+        "operationId": "completed_60",
+        "parameters": [
+          {
+            "name": "select",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "radio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkbox",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "shortInput",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "readOnlyInput",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/xxe/comments": {
+      "get": {
+        "tags": [
+          "comments-endpoint"
+        ],
+        "operationId": "retrieveComments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/reportcard.mvc": {
+      "get": {
+        "tags": [
+          "report-card-controller"
+        ],
+        "operationId": "reportCard",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/lessonoverview.mvc/{lesson}": {
+      "get": {
+        "tags": [
+          "lesson-progress-service"
+        ],
+        "operationId": "lessonOverview",
+        "parameters": [
+          {
+            "name": "lesson",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LessonName"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonOverview"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/lessoninfo.mvc/{lesson}": {
+      "get": {
+        "tags": [
+          "lesson-info-service"
+        ],
+        "operationId": "getLessonInfo",
+        "parameters": [
+          {
+            "name": "lesson",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LessonName"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonInfoModel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/labels.mvc": {
+      "get": {
+        "tags": [
+          "label-service"
+        ],
+        "operationId": "fetchLabels",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/hint.mvc": {
+      "get": {
+        "tags": [
+          "hint-service"
+        ],
+        "operationId": "getHints",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Hint"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server-directory": {
+      "get": {
+        "tags": [
+          "environment-service"
+        ],
+        "operationId": "homeDirectory",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scoreboard-data": {
+      "get": {
+        "tags": [
+          "scoreboard"
+        ],
+        "operationId": "getRankings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ranking"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lesson-template/shop/{user}": {
+      "get": {
+        "tags": [
+          "sample-attack"
+        ],
+        "operationId": "getItemsInBasket",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/encoding/basic": {
+      "get": {
+        "tags": [
+          "encoding-assignment"
+        ],
+        "operationId": "getBasicAuth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientSideFiltering/salaries": {
+      "get": {
+        "tags": [
+          "salaries"
+        ],
+        "operationId": "invoke_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientSideFiltering/challenge-store/coupons": {
+      "get": {
+        "tags": [
+          "shop-endpoint"
+        ],
+        "operationId": "all",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutCodes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientSideFiltering/challenge-store/coupons/{code}": {
+      "get": {
+        "tags": [
+          "shop-endpoint"
+        ],
+        "operationId": "getDiscountCode",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutCode"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/8/votes/average": {
+      "get": {
+        "tags": [
+          "assignment-8"
+        ],
+        "operationId": "average",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/8/votes/": {
+      "get": {
+        "tags": [
+          "assignment-8"
+        ],
+        "operationId": "getVotes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/8/vote/{stars}": {
+      "get": {
+        "tags": [
+          "assignment-8"
+        ],
+        "operationId": "vote_1",
+        "parameters": [
+          {
+            "name": "stars",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/8/notUsed": {
+      "get": {
+        "tags": [
+          "assignment-8"
+        ],
+        "operationId": "notUsed",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/7/reset-password/{link}": {
+      "get": {
+        "tags": [
+          "assignment-7"
+        ],
+        "operationId": "resetPassword_1",
+        "parameters": [
+          {
+            "name": "link",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge/7/.git": {
+      "get": {
+        "tags": [
+          "assignment-7"
+        ],
+        "operationId": "git",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SqlInjectionMitigations/servers": {
+      "get": {
+        "tags": [
+          "servers"
+        ],
+        "operationId": "sort",
+        "parameters": [
+          {
+            "name": "column",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Server"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SpoofCookie/cleanup": {
+      "get": {
+        "tags": [
+          "spoof-cookie-assignment"
+        ],
+        "operationId": "cleanup",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/PathTraversal/zip-slip/profile-image/{username}": {
+      "get": {
+        "tags": [
+          "profile-zip-slip"
+        ],
+        "operationId": "getProfileImage",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/zip-slip/": {
+      "get": {
+        "tags": [
+          "profile-zip-slip"
+        ],
+        "operationId": "getProfilePicture",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/random-picture": {
+      "get": {
+        "tags": [
+          "profile-upload-retrieval"
+        ],
+        "operationId": "getProfilePicture_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/profile-picture": {
+      "get": {
+        "tags": [
+          "profile-upload"
+        ],
+        "operationId": "getProfilePicture_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PathTraversal/profile-picture-fix": {
+      "get": {
+        "tags": [
+          "profile-upload-fix"
+        ],
+        "operationId": "getProfilePicture_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/votings/login": {
+      "get": {
+        "tags": [
+          "jwt-votes-endpoint"
+        ],
+        "operationId": "login_8",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/IDOR/own": {
+      "get": {
+        "tags": [
+          "idor-view-own-profile"
+        ],
+        "operationId": "invoke_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/IDOR/profile": {
+      "get": {
+        "tags": [
+          "idor-view-own-profile"
+        ],
+        "operationId": "invoke_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CrossSiteScripting/attack5a": {
+      "get": {
+        "tags": [
+          "cross-site-scripting-lesson-5a"
+        ],
+        "operationId": "completed_62",
+        "parameters": [
+          {
+            "name": "QTY1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "QTY2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "QTY3",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "QTY4",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "field1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/xxe/sampledtd": {
+      "get": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "simple-xxe"
+        ],
+        "operationId": "getSampleDTDFile_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/lessonmenu.mvc": {
+      "get": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "lesson-menu-service"
+        ],
+        "operationId": "showLeftNav_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonMenuItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/enable-security.mvc": {
+      "get": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "session-service"
+        ],
+        "operationId": "applySecurity_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service/debug/labels.mvc": {
+      "get": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_7",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_3_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_2_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_5_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_6_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_1_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "label-debug-service"
+        ],
+        "operationId": "checkDebuggingStatus_4_1",
+        "parameters": [
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/signing/getprivate": {
+      "get": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "signing-assignment"
+        ],
+        "operationId": "getPrivateKey_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/hashing/sha256": {
+      "get": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getSha256_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/hashing/md5": {
+      "get": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "hashing-assignment"
+        ],
+        "operationId": "getMd5_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/JWT/secret/gettoken": {
+      "get": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_5",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "jwt-secret-key-endpoint"
+        ],
+        "operationId": "getSecretToken_4",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AttackResult": {
+        "type": "object",
+        "properties": {
+          "lessonCompleted": {
+            "type": "boolean"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "feedbackArgs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "output": {
+            "type": "string"
+          },
+          "outputArgs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "assignment": {
+            "type": "string"
+          },
+          "attemptWasMade": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "role": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "profileFromId": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "admin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string"
+          },
+          "dateTime": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "xml": {
+          "name": "comment"
+        }
+      },
+      "LessonStatistics": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "solved": {
+            "type": "boolean"
+          },
+          "numberOfAttempts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReportCard": {
+        "type": "object",
+        "properties": {
+          "totalNumberOfLessons": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalNumberOfAssignments": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfAssignmentsSolved": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numberOfLessonsSolved": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lessonStatistics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonStatistics"
+            }
+          }
+        }
+      },
+      "LessonName": {
+        "type": "object",
+        "properties": {
+          "lessonName": {
+            "type": "string"
+          }
+        }
+      },
+      "Assignment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "solved": {
+            "type": "boolean"
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LessonOverview": {
+        "type": "object",
+        "properties": {
+          "assignment": {
+            "$ref": "#/components/schemas/Assignment"
+          },
+          "solved": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LessonInfoModel": {
+        "type": "object",
+        "properties": {
+          "lessonTitle": {
+            "type": "string"
+          },
+          "hasSource": {
+            "type": "boolean"
+          },
+          "hasSolution": {
+            "type": "boolean"
+          },
+          "hasPlan": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Hint": {
+        "type": "object",
+        "properties": {
+          "hint": {
+            "type": "string"
+          },
+          "assignmentPath": {
+            "type": "string"
+          }
+        }
+      },
+      "Ranking": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "flagsCaptured": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Item": {
+        "type": "object"
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string"
+          },
+          "dateTime": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CheckoutCode": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "discount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CheckoutCodes": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckoutCode"
+            }
+          }
+        }
+      },
+      "DisplayUser": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "boolean"
+          },
+          "userHash": {
+            "type": "string"
+          }
+        }
+      },
+      "Server": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "mac": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "FilterProvider": {
+        "type": "object"
+      },
+      "MappingJacksonValue": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/FilterProvider"
+          }
+        }
+      },
+      "LessonMenuItem": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CATEGORY",
+              "LESSON"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonMenuItem"
+            }
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "link": {
+            "type": "string"
+          },
+          "ranking": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  }
+}

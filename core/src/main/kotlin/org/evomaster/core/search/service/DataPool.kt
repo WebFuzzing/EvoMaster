@@ -9,6 +9,8 @@ import org.evomaster.core.problem.rest.RestResponseFeeder
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
  * Service to keep track of data values associated with a string key.
@@ -43,9 +45,8 @@ class DataPool() {
     private lateinit var randomness: Randomness
 
 
-    private val pool : MutableMap<String, ArrayDeque<String>> = mutableMapOf()
+    private val pool : ConcurrentHashMap<String, ConcurrentLinkedDeque<String>> = ConcurrentHashMap()
 
-    private val stemmer = PorterStemmer()
 
     internal constructor(_config: EMConfig, _randomness: Randomness) : this(){
         config = _config
@@ -60,8 +61,7 @@ class DataPool() {
     }
 
     private fun stem(s: String) : String{
-        stemmer.reset()
-        return stemmer.stem(s)
+        return PorterStemmer().stem(s)
     }
 
     fun applyTo(gene: Gene) : Boolean{
@@ -96,16 +96,18 @@ class DataPool() {
 
     fun addValue(key: String, data: String){
 
-        val queue = pool.getOrPut(normalize(key)) { ArrayDeque() }
+        synchronized(pool) {
+            val queue = pool.getOrPut(normalize(key)) { ConcurrentLinkedDeque() }
 
-        if(queue.contains(data)){
-            return // already there
-        }
+            if (queue.contains(data)) {
+                return // already there
+            }
 
-        if(queue.size == config.maxSizeDataPool){
-            queue.removeFirst()
+            if (queue.size == config.maxSizeDataPool) {
+                queue.removeFirst()
+            }
+            queue.addLast(data)
         }
-        queue.addLast(data)
     }
 
     /**
@@ -125,6 +127,10 @@ class DataPool() {
      * @param [objectName] qualifier name of the object context, if any. Mainly needed to deal with "id" keys.
      */
     fun extractValue(key: String, objectName: String? = null) : String?{
+
+        //We synchronized insertions, as that might lead to inconsistencies... but read operation should be (hopefully)
+        //fine, concurrent as anyway the pool is
+        //synchronized(pool)
 
         if(pool.isEmpty()){
             return null
