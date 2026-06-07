@@ -27,4 +27,22 @@ class LlmSupportMockTest {
         assertEquals("YES", LlmSupport.chat(model, firstPrompt))
         assertEquals("NO", LlmSupport.chat(model, secondPrompt))
     }
+
+    @Test
+    fun testResponseProducer(){
+        val model = LlmSupport.createModel(LlmProvider.MOCK)
+
+        val prompt = "Give me a random value"
+        val x = arrayOf(0)
+
+        MockChatModel.reset()
+        MockChatModel.mockResponse({_ -> "${x[0]++}"}){it.contains("random")}
+
+        val n = 10
+        repeat(n){
+            LlmSupport.chat(model, prompt)
+        }
+
+        assertEquals(n, x[0])
+    }
 }

@@ -33,7 +33,16 @@ class MockChatModel : ChatModel {
          * decides whether this response should be returned
          */
         fun mockResponse(response: String, matcher: (String) -> Boolean){
-            responses.add(LlmMockResponse(response, matcher))
+            responses.add(LlmMockResponse({req -> response}, matcher))
+        }
+
+        /**
+         * Specify a producer of responses if the text of the query from user does match the matcher.
+         * Input for both lambdas is such text.
+         * This is useful when the response for same query might be different
+         */
+        fun mockResponse(responseProducer: (String) -> String, matcher: (String) -> Boolean){
+            responses.add(LlmMockResponse(responseProducer, matcher))
         }
     }
 
@@ -45,7 +54,7 @@ class MockChatModel : ChatModel {
 
         val text = chatRequest.messages().joinToString { it.toString() }
 
-        val res = responses.find { mock -> mock.matcher(text) }?.response
+        val res = responses.find { mock -> mock.matcher(text) }?.responseProducer(text)
             ?: "Hei! You forgot to setup the mock for me"
 
         return ChatResponse.builder().aiMessage(AiMessage.from(res)).build()
