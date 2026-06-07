@@ -17,11 +17,6 @@ import kotlin.io.path.Path
 
 object DictionaryCreator {
 
-    private data class FieldInfo(
-        val name: String,
-        val description: String?
-    )
-
     @JvmStatic
     fun main(args: Array<String>) {
 
