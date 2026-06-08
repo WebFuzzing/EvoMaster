@@ -68,7 +68,7 @@ class DictionaryService {
                     val x = line.substring(startQuote+1, endQuote)
 
                     if(x != "" && x <= previous) {
-                        throw IllegalStateException("Not sorted: $x")
+                        throw IllegalStateException("Not sorted: $x should be before $previous")
                     }
                     previous = x
 
