@@ -1,0 +1,13 @@
+auth:
+  - name: "CreatedUser"
+    loginEndpointAuth:
+      endpoint: "/api/logintokenheader/login"
+      verb: "POST"
+      contentType: "application/json"
+      payloadRaw: '{"email": "{email}", "password": "123456", "username": "{username}"}'
+      token:
+        extractFrom: "body"
+        extractSelector: "/token/authToken"
+        sendIn: "header"
+        sendName: "Authorization"
+        sendTemplate: "Bearer {token}"
