@@ -753,6 +753,15 @@ object RestActionBuilderV3 {
         val name: String
         var gene: Gene
         if (isJsonPatch) {
+            /*
+                The body is a JSON Patch document (RFC 6902), not a regular object, so it is not built
+                from the media type schema. resolveResourceSchema returns the OpenAPI Schema of the resource
+                being patched, found by inspecting sibling operations on the same path (GET 2xx response,
+                else PUT/POST requestBody). We turn that schema into a gene via getGene so the patch
+                operations reference real fields/paths of the resource, and use it to seed the
+                JsonPatchDocumentGene. If no resource schema is found, the gene is still built with
+                resourceGene == null and emits generic, structurally valid operations.
+            */
             name = "body"
             val patchResourceSchema = JsonPatchSchemaResolver.resolveResourceSchema(
                 operation,

@@ -119,6 +119,10 @@ class DtoWriter(
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
             gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
+            // TODO: a JsonPatchDocumentGene is currently skipped from DTO collection. Once we decide
+            //  how a JSON Patch document should be rendered when a test case is written (it is not a
+            //  regular object/array DTO but an RFC 6902 array of operations), this should build and
+            //  emit the corresponding DTO instead of returning.
             gene is JsonPatchDocumentGene -> return
             isPrimitiveGene(gene) -> return
             else -> {
