@@ -26,10 +26,12 @@ object DictionaryCreator {
     @JvmStatic
     fun main(args: Array<String>) {
 
+        // TODO need to add manually
+        // WARNING: make sure you do NOT commit it
         val API_KEY = ""
 
         val file = File("src/main/resources/llm_dictionary.jsonl")
-        val errors = 33 //could had handled them, but too late
+        val errors = 75 //could had handled them, but too late
         val alreadyHandled = errors + file.bufferedReader().use { it.lineSequence().count() }
 
 //        val modelName = "deepseek-v4-pro"
