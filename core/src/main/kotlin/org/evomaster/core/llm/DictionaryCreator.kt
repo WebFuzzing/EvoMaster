@@ -31,6 +31,7 @@ object DictionaryCreator {
             111M tokens
             deepseek-v4-flash
             cost: ~$19
+            size: 25.3Mb
          */
 
         // TODO need to add manually
