@@ -14,12 +14,6 @@ abstract class EnterpriseModule : AbstractModule() {
         bind(WFCReportWriter::class.java)
             .asEagerSingleton()
 
-        bind(LlmService::class.java)
-            .asEagerSingleton()
-
-        bind(DictionaryService::class.java)
-            .asEagerSingleton()
-
         bind(SSRFAnalyser::class.java)
             .asEagerSingleton()
 

@@ -14,6 +14,8 @@ import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel
 import dev.langchain4j.model.openai.OpenAiChatModel
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel
+import org.evomaster.core.llm.mock.MockChatModel
+import org.evomaster.core.llm.mock.MockStreamingChatModel
 import java.util.concurrent.CompletableFuture
 
 
@@ -33,6 +35,13 @@ object LlmSupport {
         })
         return future
 
+    }
+
+    fun chat(model: ChatModel, userMessage: String): String {
+
+        val u = UserMessage.userMessage(userMessage)
+
+        return model.chat(listOf(u)).aiMessage().text()
     }
 
     fun chat(model: ChatModel, systemMessage: String, userMessage: String): String {
@@ -76,6 +85,8 @@ object LlmSupport {
          */
 
         return when (provider) {
+            LlmProvider.MOCK -> MockChatModel()
+
             LlmProvider.OPENAI -> OpenAiChatModel.builder()
                 .apiKey(apiKey ?: error("API key required for OpenAI"))
                 .baseUrl(url ?: "https://api.openai.com/v1")
@@ -138,6 +149,8 @@ object LlmSupport {
          */
 
         return when (provider) {
+            LlmProvider.MOCK -> MockStreamingChatModel()
+
             LlmProvider.OPENAI -> OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey ?: error("API key required for OpenAI"))
                 .baseUrl(url ?: "https://api.openai.com/v1")
