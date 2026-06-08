@@ -27,6 +27,10 @@ class LoginCreateUsersRest {
             return ResponseEntity.status(400).build()
         }
 
+        if(user.password != user.repeatPassword) {
+            return ResponseEntity.status(400).build()
+        }
+
         if(users.containsKey(user.email)){
             return ResponseEntity.status(403).build()
         }

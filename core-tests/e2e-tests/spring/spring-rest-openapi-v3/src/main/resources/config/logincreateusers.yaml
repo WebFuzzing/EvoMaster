@@ -1,10 +1,22 @@
 auth:
   - name: "CreatedUser"
+    createUser:
+      endpoint: "/api/logintokenheader/users"
+      verb: "POST"
+      payloadRaw: '{"email": "{email}", "password": "123456", "repeatPassword": "123456", "username": "{username}"}'
+      generators:
+        - placeHolder: "{email}"
+          min: 6
+          max: 30
+          pattern: "[A-Za-z0-9]{2,}@[A-Za-z0-9]+\.[A-Za-z]{2,}"
+        - placeHolder: "{username}"
+          min: 2
+          max: 30
     loginEndpointAuth:
       endpoint: "/api/logintokenheader/login"
       verb: "POST"
       contentType: "application/json"
-      payloadRaw: '{"email": "{email}", "password": "123456", "username": "{username}"}'
+      payloadRaw: '{"email": "{email}", "password": "123456"}'
       token:
         extractFrom: "body"
         extractSelector: "/token/authToken"
