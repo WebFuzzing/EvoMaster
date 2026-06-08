@@ -396,5 +396,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("(?<name>[a&&b])") }
         checkSameAsJava("(?<name>[a&&b])|c")
         assertThrows<IllegalStateException> { checkSameAsJava("(?<name>[a&&b])|c\\k<name>") }
+        assertThrows<IllegalStateException> { checkSameAsJava("a([b&&c])d") }
+        assertThrows<IllegalStateException> { checkSameAsJava("abc|\\k<name>") }
     }
 }

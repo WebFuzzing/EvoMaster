@@ -223,6 +223,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                      */
                     throw IllegalStateException("Cannot support $assertion at position $i")
                 }
+            } else {
+                // unsatisfiable term, return with no genes
+                return VisitResult(data=Pair(false, false))
             }
         }
 
@@ -271,9 +274,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 res.genes.addAll(resAtom.genes.dropLast(1))
 
                 // the last gene gets wrapped with the quantifier gene, then that gets added to result
-                if (resAtom.genes.isNotEmpty()) {
-                    template = resAtom.genes.last()
-                }
+                template = resAtom.genes.last()
             }
 
             val q = QuantifierRxGene("q", template, limits.first, limits.second)
@@ -289,6 +290,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                 // if atom is not a back ref we fall back to the default behavior, results only have one gene
                 res.genes.add(atom)
             }
+            // else atom is unsatisfiable, return no genes
         }
 
         return res
@@ -644,13 +646,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val n = allDigits.take(backRefDigitCount).toInt()
 
-            val gene = if (captureGroups.size > n-1) {
-                BackReferenceRxGene(n, captureGroups[n - 1])
-            } else {
-                BackReferenceRxGene(n, null)
-            }
-
-            val result = VisitResult(gene)
+            val result = VisitResult(BackReferenceRxGene(n, captureGroups.getOrNull(n - 1)))
 
             val remainingChars = allDigits.drop(backRefDigitCount)
 
@@ -666,6 +662,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         if (ctx.NamedBackReference() != null) {
             // strip "\k<" and ">"
             val name = txt.drop(3).dropLast(1)
+            if(name !in namedCaptureGroups){
+                throw IllegalStateException("Named backreference \\k<$name> refers to unknown group '$name'")
+            }
             val group = namedCaptureGroups[name]
             val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
             return VisitResult(BackReferenceRxGene(groupIndex, group))
