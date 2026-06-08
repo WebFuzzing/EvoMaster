@@ -55,6 +55,10 @@ class MockChatModel : ChatModel {
         val text = chatRequest.messages().joinToString { it.toString() }
 
         val res = responses.find { mock -> mock.matcher(text) }?.responseProducer(text)
+            /*
+               TODO we could also have a boolen parameter to decide what to do in case of no match
+                (eg response as now or throw exception), to make the mock more configurable
+             */
             ?: "Hei! You forgot to setup the mock for me"
 
         return ChatResponse.builder().aiMessage(AiMessage.from(res)).build()
