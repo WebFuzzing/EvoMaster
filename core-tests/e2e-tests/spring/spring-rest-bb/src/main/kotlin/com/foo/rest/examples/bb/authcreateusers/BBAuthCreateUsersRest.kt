@@ -1,13 +1,13 @@
-package com.foo.rest.examples.spring.openapi.v3.logincreateuser
+package com.foo.rest.examples.bb.authcreateusers
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.UserDto
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping(path = ["/api/logincreateusers"])
-class LoginCreateUsersRest {
+@RequestMapping(path = ["/api/authcreateusers"])
+class BBAuthCreateUsersRest {
 
     private val SECRET = "a complex secret - "
 
@@ -63,6 +63,7 @@ class LoginCreateUsersRest {
         val secret = authorization!!.substring("Bearer ".length)
 
         if(tokens.containsKey(secret)){
+            CoveredTargets.cover("CHECK")
             return ResponseEntity.ok("OK")
         }
 

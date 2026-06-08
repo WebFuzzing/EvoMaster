@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.logincreateuser
+package com.foo.rest.examples.bb.authcreateusers
 
 class CreateUserDto(
     var email: String? = null,

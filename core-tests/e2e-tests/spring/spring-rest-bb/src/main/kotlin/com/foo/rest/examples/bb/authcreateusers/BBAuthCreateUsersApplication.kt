@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.logincreateuser
+package com.foo.rest.examples.bb.authcreateusers
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -6,12 +6,12 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
-open class LoginCreateUsersApplication {
+open class BBAuthCreateUsersApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(LoginCreateUsersApplication::class.java, *args)
+            SpringApplication.run(BBAuthCreateUsersApplication::class.java, *args)
         }
     }
 }
