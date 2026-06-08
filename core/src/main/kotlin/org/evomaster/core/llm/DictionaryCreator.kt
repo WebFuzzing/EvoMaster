@@ -26,12 +26,19 @@ object DictionaryCreator {
     @JvmStatic
     fun main(args: Array<String>) {
 
+        /*
+            June 2026
+            111M tokens
+            deepseek-v4-flash
+            cost: ~$19
+         */
+
         // TODO need to add manually
         // WARNING: make sure you do NOT commit it
         val API_KEY = ""
 
         val file = File("src/main/resources/llm_dictionary.jsonl")
-        val errors = 75 //could had handled them, but too late
+        val errors = 0
         val alreadyHandled = errors + file.bufferedReader().use { it.lineSequence().count() }
 
 //        val modelName = "deepseek-v4-pro"
