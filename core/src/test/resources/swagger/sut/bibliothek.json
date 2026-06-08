@@ -1,0 +1,698 @@
+{
+  "openapi": "3.0.1",
+  "info": {},
+  "servers": [
+    {
+      "url": "http://localhost:12080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/v2/projects": {
+      "get": {
+        "tags": [
+          "projects-controller"
+        ],
+        "summary": "Gets a list of all available projects.",
+        "operationId": "projects",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}": {
+      "get": {
+        "tags": [
+          "project-controller"
+        ],
+        "summary": "Gets information about a project.",
+        "operationId": "project",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/versions/{version}": {
+      "get": {
+        "tags": [
+          "version-controller"
+        ],
+        "summary": "Gets information about a version.",
+        "operationId": "version",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "A version of the project.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/versions/{version}/builds": {
+      "get": {
+        "tags": [
+          "version-builds-controller"
+        ],
+        "summary": "Gets all available builds for a project's version.",
+        "operationId": "builds",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "A version of the project.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/versions/{version}/builds/{build}": {
+      "get": {
+        "tags": [
+          "version-build-controller"
+        ],
+        "summary": "Gets information related to a specific build.",
+        "operationId": "build",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "A version of the project.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          },
+          {
+            "name": "build",
+            "in": "path",
+            "description": "A build of the version.",
+            "required": true,
+            "schema": {
+              "pattern": "\\d+",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/versions/{version}/builds/{build}/downloads/{download}": {
+      "get": {
+        "tags": [
+          "download-controller"
+        ],
+        "summary": "Downloads the given file from a build's data.",
+        "operationId": "download",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "A version of the project.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          },
+          {
+            "name": "build",
+            "in": "path",
+            "description": "A build of the version.",
+            "required": true,
+            "schema": {
+              "pattern": "\\d+",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "download",
+            "in": "path",
+            "description": "A download of the build.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-zA-Z0-9._-]+",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "description": "An identifier for a specific version of a resource. It lets caches be more efficient and save bandwidth, as a web server does not need to resend a full response if the content has not changed.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Disposition": {
+                "description": "A header indicating that the content is expected to be displayed as an attachment, that is downloaded and saved locally.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Last-Modified": {
+                "description": "The date and time at which the origin server believes the resource was last modified.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "application/java-archive": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/version_group/{family}": {
+      "get": {
+        "tags": [
+          "version-family-controller"
+        ],
+        "summary": "Gets information about a project's version group.",
+        "operationId": "family",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "family",
+            "in": "path",
+            "description": "The version group name.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionFamilyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/projects/{project}/version_group/{family}/builds": {
+      "get": {
+        "tags": [
+          "version-family-builds-controller"
+        ],
+        "summary": "Gets all available builds for a project's version group.",
+        "operationId": "familyBuilds",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "The project identifier.",
+            "required": true,
+            "schema": {
+              "pattern": "[a-z]+",
+              "type": "string"
+            },
+            "example": "paper"
+          },
+          {
+            "name": "family",
+            "in": "path",
+            "description": "The version group name.",
+            "required": true,
+            "schema": {
+              "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionFamilyBuildsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BuildResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "build": {
+            "pattern": "\\d+",
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "default",
+              "experimental"
+            ]
+          },
+          "promoted": {
+            "type": "boolean"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          },
+          "downloads": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Download"
+            }
+          }
+        }
+      },
+      "BuildsResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "builds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionBuild"
+            }
+          }
+        }
+      },
+      "Change": {
+        "type": "object",
+        "properties": {
+          "commit": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Download": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "pattern": "[a-z0-9._-]+",
+            "type": "string",
+            "example": "paper-1.18-10.jar"
+          },
+          "sha256": {
+            "pattern": "[a-f0-9]{64}",
+            "type": "string",
+            "example": "f065e2d345d9d772d5cf2a1ce5c495c4cc56eb2fcd6820e82856485fa19414c8"
+          }
+        }
+      },
+      "ProjectResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version_groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ProjectsResponse": {
+        "type": "object",
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "VersionBuild": {
+        "type": "object",
+        "properties": {
+          "build": {
+            "pattern": "\\d+",
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "default",
+              "experimental"
+            ]
+          },
+          "promoted": {
+            "type": "boolean"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          },
+          "downloads": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Download"
+            }
+          }
+        }
+      },
+      "VersionFamilyBuild": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "build": {
+            "pattern": "\\d+",
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "default",
+              "experimental"
+            ]
+          },
+          "promoted": {
+            "type": "boolean"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          },
+          "downloads": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Download"
+            }
+          }
+        }
+      },
+      "VersionFamilyBuildsResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version_group": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "builds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionFamilyBuild"
+            }
+          }
+        }
+      },
+      "VersionFamilyResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version_group": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "VersionResponse": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "pattern": "[a-z]+",
+            "type": "string",
+            "example": "paper"
+          },
+          "project_name": {
+            "type": "string",
+            "example": "Paper"
+          },
+          "version": {
+            "pattern": "[0-9.]+-?(?:pre|SNAPSHOT)?(?:[0-9.]+)?",
+            "type": "string",
+            "example": "1.18"
+          },
+          "builds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      }
+    }
+  }
+}
