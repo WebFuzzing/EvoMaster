@@ -8,6 +8,8 @@ import java.net.URL
 
 class CreateUsers(
 
+    val name: String,
+
     val endpoint: String?,
 
     val externalEndpointURL: String?,
@@ -40,11 +42,19 @@ class CreateUsers(
                 throw IllegalArgumentException("'externalEndpointURL' is not a valid URL: ${e.message}")
             }
         }
+
+        for (generator in generators) {
+            val placeholder = generator.placeHolder
+            if(!payload.contains(placeholder)) {
+                throw IllegalArgumentException("Payload does not contain the placeholder '$placeholder': $payload")
+            }
+        }
     }
 
     companion object {
-        fun fromDto(dto: CreateUsers) : org.evomaster.core.problem.httpws.auth.CreateUsers{
+        fun fromDto(name: String, dto: CreateUsers) : org.evomaster.core.problem.httpws.auth.CreateUsers{
             return CreateUsers(
+                name = name,
                 endpoint = dto.endpoint,
                 externalEndpointURL = dto.externalEndpointURL,
                 payload = dto.payloadRaw,

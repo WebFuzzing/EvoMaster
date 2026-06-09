@@ -77,7 +77,7 @@ open class HttpWsAuthenticationInfo(
 
             val createUsers = if (dto.createUsers != null){
                 try {
-                    CreateUsers.fromDto(dto.createUsers)
+                    CreateUsers.fromDto(dto.name, dto.createUsers)
                 }catch (e: Exception){
                     throw IllegalArgumentException("Issue when parsing auth info for '${dto.name}': ${e.message}")
                 }

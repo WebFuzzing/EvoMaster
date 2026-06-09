@@ -24,6 +24,21 @@ public class EMTestUtils {
 
     /**
      *
+     * @param minLength Optional minimum length of the generated string
+     * @param maxLength Optional maximum length of the generated string
+     * @param prefix    Optional fixed prefix shared by all generated strings
+     * @param postfix   Optional fixed postfix shared by all generated strings
+     * @return
+     */
+    public static String createString(Integer minLength, Integer maxLength, String prefix, String postfix){
+
+        TODO
+        return null;
+    }
+
+
+    /**
+     *
      * @param locationHeader a URI-reference, coming from a "location" header. See RFC 7231.
      *                       Note: it can be a relative reference
      * @param expectedTemplate a full URI of the target resource, but with some path elements

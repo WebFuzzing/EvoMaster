@@ -155,18 +155,7 @@ class EndpointCallLogin(
     fun expectsCookie() = token == null
 
     fun getUrl(baseUrl: String): String {
-        val s = baseUrl.trim()
-        if (externalEndpointURL != null) return externalEndpointURL
-
-        if (!s.startsWith("http://", true) && !s.startsWith("https://")) {
-            throw IllegalArgumentException("baseUrl should use HTTP(S): $baseUrl")
-        }
-        Lazy.assert { endpoint != null && endpoint.startsWith("/") }
-        return if (s.endsWith("/")) {
-            s.substring(0, s.length - 1) + endpoint
-        } else {
-            s + endpoint
-        }
+        return AuthUtils.constructUrl(baseUrl, endpoint, externalEndpointURL)
     }
 
 
