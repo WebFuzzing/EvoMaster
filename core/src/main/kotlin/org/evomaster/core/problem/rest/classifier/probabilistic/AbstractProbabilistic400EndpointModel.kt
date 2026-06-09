@@ -14,21 +14,38 @@ import org.slf4j.LoggerFactory
 /**
  * Base class for all probabilistic classifiers working at an endpoint (400 vs. not 400).
  *
- * Provides:
- * - Common properties (endpoint, warmup, keys, dimension, encoderType, randomness, initialized flag)
- * - Shared methods for initialization checks and accuracy estimation
+ * This class provides:
+ * - Common endpoint-specific state (endpoint, warmup, modelKeys, dimension, encoderType, randomness, initialized flag)
+ * - A fixed feature-space definition via `modelKeys`
+ * - Shared initialization logic
+ * - Common performance tracking and metric estimation
+ *
+ * The classifier assumes a fixed input representation. Each feature is uniquely identified
+ * (by e.g., a parameter path) and stored in `modelKeys`, where:
+ *
+ *     modelKeys[i] <-> inputVector[i]
+ *
+ * The ordering of `modelKeys` is important and must remain stable
+ * throughout the lifetime of the model. This guarantees that the same parameter
+ * is always encoded into the same feature dimension.
  */
 abstract class AbstractProbabilistic400EndpointModel(
     val endpoint: Endpoint,
     var warmup: Int,
+    /**
+     * Ordered list of model keys in correspondence with the encoded features i.e.,
+     *
+     *          modelKeys[i] <-> inputVector[i]
+     */
     var modelKeys: List<String>? = null,
+    /**
+     * Represents the dimension of the feature space (i.e., the length of the input vector)
+     */
     var dimension: Int? = null,
     val encoderType: EMConfig.EncoderType,
     val metricType: EMConfig.AIClassificationMetrics,
     val randomness: Randomness
 ) : AIModel {
-
-    protected var initialized: Boolean = false
 
     companion object {
 
@@ -36,6 +53,8 @@ abstract class AbstractProbabilistic400EndpointModel(
 
         const val NOT_400 = 200
     }
+
+    protected var initialized: Boolean = false
 
     /** Create a metric tracker.*/
     val modelMetrics: ModelMetrics = createModelMetrics(metricType)
@@ -49,31 +68,33 @@ abstract class AbstractProbabilistic400EndpointModel(
 
 
     /**
-     * Initialize dimension and keys once initialized.
+     * Initialize the model's feature space (including the dimension and modelKeys) if it has not been initialized yet.
      * The dimension is the number of parameters in the input vector.
      * The modelKeys are unique identifiers of the parameters defined based on
      * the unique path of each parameter (including all its parents).
      */
     open fun initializeIfNeeded(input: RestCallAction) {
 
-        if (dimension == null) {
-
-            val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-            val allParamsPathsAndEncodedValues = encoder.getAllParamsPathsAndEncodedValues()
-
-            val inputVector = allParamsPathsAndEncodedValues.values.toList()
-            val paramPaths = allParamsPathsAndEncodedValues.keys.toList()
-
-            require(inputVector.isNotEmpty()) { "Input vector is empty" }
-            require(paramPaths.isNotEmpty()) { "Parameter paths are empty" }
-            require(warmup > 0) { "Warmup must be positive" }
-
-            dimension = paramPaths.size
-            modelKeys = paramPaths
-
+        if (initialized) {
+            // already initialized. nothing to do
+            return
         }
 
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
+        val allParamsPathsAndEncodedValues = encoder.getAllParamsPathsAndEncodedValues()
+
+        val inputVector = allParamsPathsAndEncodedValues.values.toList()
+        val paramPaths = allParamsPathsAndEncodedValues.keys.toList()
+
+        require(inputVector.isNotEmpty()) { "Input vector is empty" }
+        require(paramPaths.isNotEmpty()) { "Parameter paths are empty" }
+        require(warmup > 0) { "Warmup must be positive" }
+
+        dimension = paramPaths.size
+        modelKeys = paramPaths
+
         initialized = true
+
     }
 
     /**
@@ -109,8 +130,7 @@ abstract class AbstractProbabilistic400EndpointModel(
             encoderType = encoderType
         )
 
-        val keysAndValues =
-            encoder.getAllParamsPathsAndEncodedValues()
+        val keysAndValues = encoder.getAllParamsPathsAndEncodedValues()
 
         // TODO: initializedKeys are based on the model keys that are fixed.
         //  In fact we ignore new hidden genes added during the search which are not available in the schema.
