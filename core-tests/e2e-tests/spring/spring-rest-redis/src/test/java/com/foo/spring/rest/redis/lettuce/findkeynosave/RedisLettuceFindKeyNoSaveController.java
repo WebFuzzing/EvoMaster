@@ -1,4 +1,4 @@
-package com.foo.spring.rest.redis.lettuce.findkeynosave.findkey;
+package com.foo.spring.rest.redis.lettuce.findkeynosave;
 
 import com.foo.spring.rest.redis.RedisController;
 import com.redis.lettuce.findkeynosave.findkey.RedisLettuceFindKeyNoSaveApp;
