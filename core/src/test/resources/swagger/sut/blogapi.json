@@ -1,0 +1,3239 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "url": "http://localhost:30120"
+    }
+  ],
+  "info": {
+    "title": "REST API",
+    "version": "",
+    "description": "REST API"
+  },
+  "paths": {
+    "/api/albums": {
+      "get": {
+        "description": "New endpoint",
+        "responses": {
+          "200": {
+            "description": "New response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "": ""
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em0",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Album"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "photo": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  },
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 8,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/albums/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Album"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.AlbumResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "photo": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  },
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 8,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/albums/{id}/photos": {
+      "get": {
+        "description": "",
+        "operationId": "em5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "description": "",
+        "operationId": "em8",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em9",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Category"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em12",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em10",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Category"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em11",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Category"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos": {
+      "get": {
+        "description": "",
+        "operationId": "em18",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em19",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PhotoResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "albumId": {
+                    "type": "integer"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 4,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photos/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em22",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em20",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PhotoResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em21",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PhotoResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "albumId": {
+                    "type": "integer"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 4,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts": {
+      "get": {
+        "description": "",
+        "operationId": "em23",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em26",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PostResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "categoryId": {
+                    "type": "integer"
+                  },
+                  "tags": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 4,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/category/{id}": {
+      "get": {
+        "description": "",
+        "operationId": "em24",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/posts/tag/{id}": {
+      "get": {
+        "description": "",
+        "operationId": "em25",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/posts/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em29",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em27",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Post"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em28",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Post"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "categoryId": {
+                    "type": "integer"
+                  },
+                  "tags": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 4,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/{postId}/comments": {
+      "get": {
+        "description": "",
+        "operationId": "em13",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em14",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Comment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 1,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/{postId}/comments/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em17",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BAD_REQUEST",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em15",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Comment"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em16",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Comment"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 1,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tags": {
+      "get": {
+        "description": "",
+        "operationId": "em30",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em31",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Tag"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tags/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em34",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em32",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Tag"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em33",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Tag"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todos": {
+      "get": {
+        "description": "",
+        "operationId": "em35",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "operationId": "em36",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Todo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "completed": {
+                    "type": "boolean"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  },
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 8,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todos/{id}": {
+      "delete": {
+        "description": "",
+        "operationId": "em39",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "operationId": "em37",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Todo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em38",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Todo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "completed": {
+                    "type": "boolean"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "type": "integer"
+                  },
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 8,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todos/{id}/complete": {
+      "put": {
+        "description": "",
+        "operationId": "em40",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Todo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "authorities": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todos/{id}/unComplete": {
+      "put": {
+        "description": "",
+        "operationId": "em41",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.Todo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "authorities": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "post": {
+        "description": "",
+        "operationId": "em48",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.user.User"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "albums": {
+                    "type": "string"
+                  },
+                  "comments": {
+                    "type": "string"
+                  },
+                  "company": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "roles": {
+                    "type": "string"
+                  },
+                  "todos": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 17,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/checkEmailAvailability": {
+      "get": {
+        "description": "",
+        "operationId": "em44",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.UserIdentityAvailability"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/checkUsernameAvailability": {
+      "get": {
+        "description": "",
+        "operationId": "em43",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.UserIdentityAvailability"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "description": "",
+        "operationId": "em42",
+        "parameters": [
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.UserSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/setOrUpdateInfo": {
+      "put": {
+        "description": "",
+        "operationId": "em53",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.UserProfile"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "authorities": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 7,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{username}": {
+      "delete": {
+        "description": "",
+        "operationId": "em50",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "firstName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "operationId": "em49",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.model.user.User"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "albums": {
+                    "type": "string"
+                  },
+                  "comments": {
+                    "type": "string"
+                  },
+                  "company": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "posts": {
+                    "type": "string"
+                  },
+                  "roles": {
+                    "type": "string"
+                  },
+                  "todos": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                },
+                "maxProperties": 17,
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{username}/albums": {
+      "get": {
+        "description": "",
+        "operationId": "em47",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/{username}/giveAdmin": {
+      "put": {
+        "description": "",
+        "operationId": "em51",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/{username}/posts": {
+      "get": {
+        "description": "",
+        "operationId": "em46",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30,
+              "maximum": 30,
+              "exclusiveMaximum": false,
+              "minimum": 0,
+              "exclusiveMinimum": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.PagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_SERVER_ERROR"
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/{username}/profile": {
+      "get": {
+        "description": "",
+        "operationId": "em45",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.UserProfile"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    },
+    "/api/users/{username}/takeAdmin": {
+      "put": {
+        "description": "",
+        "operationId": "em52",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "com.sopromadze.blogapi.payload.ApiResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "others"
+          }
+        }
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
+import org.evomaster.core.llm.LlmProvider
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
@@ -78,7 +79,7 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
+        private val defaultTestCaseNamingStrategy = NamingStrategy.DETERMINISTIC
 
         private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
@@ -837,16 +838,8 @@ class EMConfig {
 
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
-            !languageModelConnector) {
+            !llm) {
             throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
-        }
-
-        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model server URL cannot be empty.")
-        }
-
-        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
-            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -876,6 +869,10 @@ class EMConfig {
                 throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
             if (sutJarEnvVarName.isEmpty())
                 throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
+
+        if(namingStrategy == NamingStrategy.LLM && !llm){
+            throw ConfigProblemException("Naming strategy LLM require the setup and use of an LLM")
         }
     }
 
@@ -2909,6 +2906,10 @@ class EMConfig {
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     var enableSchemaConstraintHandling = true
 
+    @Experimental
+    @Cfg("Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0")
+    var enableAdvancedFormats = false
+
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
     @Probability(activating = true)
     var probOfEnablingSingleInsertionForTable = 0.5
@@ -3011,28 +3012,51 @@ class EMConfig {
     var callbackURLHostname = "localhost"
 
     @Experimental
-    @Cfg("Enable language model connector")
-    var languageModelConnector = false
+    @Cfg("Enable the use of LLMs.")
+    var llm = false
 
     @Experimental
-    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
-    var languageModelServerURL: String = "http://localhost:11434/"
+    @DependsOnTrueFor("llm")
+    @Cfg("The number of threads to use when making calls towards an LLM, in configured." +
+            " If connecting to Ollama, this value is ignored, and only 1 thread is used.")
+    var llmThreads = 4
 
     @Experimental
-    @Cfg("Large-language model name as listed in Ollama")
-    var languageModelName: String = "llama3.2:latest"
+    @DependsOnTrueFor("llm")
+    @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
+    var llmURL: String? = null
 
     @Experimental
-    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
-    @Min(1.0)
-    var languageModelConnectorNumberOfThreads: Int = 2
+    @DependsOnTrueFor("llm")
+    @Cfg("LLM name. If not specified, default will be based on the LLM provider.")
+    var llmName: String? = null
 
+    @Experimental
+    @DependsOnTrueFor("llm")
+    @Cfg("API KEY needed to authenticated toward the chosen LLM provider.")
+    var llmApiKey: String? = null
+
+    @Experimental
+    @Min(0.0) @Max(2.0)
+    @DependsOnTrueFor("llm")
+    @Cfg("Temperature parameter for LLM")
+    var llmTemperature = 0.3
+
+    @Experimental
+    @DependsOnTrueFor("llm")
+    @Min(0.0)
+    @Cfg("How long to wait for LLM's responses")
+    var llmTimeoutSeconds = 60L
+
+    @Experimental
+    @DependsOnTrueFor("llm")
+    @Cfg("Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI")
+    var llmProvider = LlmProvider.OLLAMA
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
             " created.")
     var createConfigPathIfMissing: Boolean = true
-
 
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
@@ -3089,31 +3113,32 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    @Experimental
+    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
+    var useResponseDataPool = true
+
     @Cfg("How much data elements, per key, can be stored in the Data Pool." +
             " Once limit is reached, new old will replace old data. ")
     @Min(1.0)
     var maxSizeDataPool = 100
 
-    @Experimental
     @Cfg("Threshold of Levenshtein Distance for key-matching in Data Pool")
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = true
-
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for black-box (bb) mode")
     var bbProbabilityUseDataPool = 0.8
 
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Experimental
+    @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
+            " If so, those will be added to the data pool.")
+    var useDictionaryDataPool = false
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
@@ -3231,6 +3256,15 @@ class EMConfig {
             " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
             " before attempting again to make any call")
     var defaultDelayInSecondsFor429 = 10
+
+
+    @Experimental
+    @Cfg("When dealing with string data, infer constraints based on the name or description." +
+            " For example, a string field called 'uuid' likely is going to represent an UUID." +
+            " A string property referring to 'ISO 8601' in its description might be a date." +
+            " And so on." +
+            " This is just an heuristics though, and unrestricted strings would still be sampled with a given probability.")
+    var inferFormatFromNames = false
 
 
     fun getProbabilityUseDataPool() : Double{
