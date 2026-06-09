@@ -40,14 +40,20 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
      * Capture groups in order of appearance (1-based index -> list index 0).
      * Populated as the tree is walked. A backreference is only valid if it
      * appears after the group it references, which Java regex requires anyway.
-     * Nullable DisjunctionListRxGene to represent unsatisfiable backreference.
+     * The value is nullable to represent a captured group that is unsatisfiable,
+     * for example when the group contains an empty character class like `([a&&b])`.
+     * In that case the map holds null instead of a DisjunctionListRxGene.
+     * @see buildDisjunctionList
      */
     private val captureGroups = mutableListOf<DisjunctionListRxGene?>()
 
     /**
      * Same as [captureGroups] but for named backreferences, which can be accessed
      * with their name or number.
-     * Nullable DisjunctionListRxGene to represent unsatisfiable backreference.
+     * The value is nullable to represent a captured group that is unsatisfiable,
+     * for example when the group contains an empty character class like `([a&&b])`.
+     * In that case the map holds null instead of a DisjunctionListRxGene.
+     * @see buildDisjunctionList
      */
     private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene?>()
 
