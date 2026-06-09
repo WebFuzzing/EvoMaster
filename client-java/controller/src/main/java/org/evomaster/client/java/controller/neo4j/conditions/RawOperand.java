@@ -3,8 +3,8 @@ package org.evomaster.client.java.controller.neo4j.conditions;
 import java.util.Objects;
 
 /**
- * An operand kept unchanged because the model does not decompose it: arithmetic such as
- * 25 + 5, a function call, or a list. Carries the original text so nothing is dropped.
+ * An operand kept unchanged because the model does not decompose it: a function call, a parameter,
+ * or string concatenation. Carries the original text so nothing is dropped.
  */
 public final class RawOperand implements Operand {
 

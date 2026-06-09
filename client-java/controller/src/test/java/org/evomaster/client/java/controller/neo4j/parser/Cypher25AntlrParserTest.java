@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.neo4j.conditions.*;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
 import org.evomaster.client.java.controller.neo4j.operations.QuantifiedPathPattern;
-import org.junit.jupiter.api.Test;
 import org.evomaster.client.java.controller.neo4j.parser.cypher25.Cypher25AntlrParser;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,6 +34,13 @@ class Cypher25AntlrParserTest {
 
     private <T extends CypherCondition> long countOf(MatchOperation op, Class<T> type) {
         return op.getConditions().stream().filter(type::isInstance).count();
+    }
+
+    private ComparisonCondition comparison(MatchOperation op) {
+        return (ComparisonCondition) op.getConditions().stream()
+                .filter(ComparisonCondition.class::isInstance)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no ComparisonCondition found"));
     }
 
     @Test
@@ -799,10 +806,4 @@ class Cypher25AntlrParserTest {
         assertFails("MATCH (n:Person RETURN n"); // missing closing paren
     }
 
-    private ComparisonCondition comparison(MatchOperation op) {
-        return (ComparisonCondition) op.getConditions().stream()
-                .filter(ComparisonCondition.class::isInstance)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("no ComparisonCondition found"));
-    }
 }
