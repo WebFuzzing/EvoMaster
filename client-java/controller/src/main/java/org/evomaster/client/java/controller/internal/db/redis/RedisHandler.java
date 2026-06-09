@@ -3,16 +3,14 @@ package org.evomaster.client.java.controller.internal.db.redis;
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
-import org.evomaster.client.java.controller.redis.RedisKeyValueStore;
-import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
-import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
-import org.evomaster.client.java.controller.redis.RedisValueData;
+import org.evomaster.client.java.controller.redis.*;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
 import static org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator.MAX_REDIS_DISTANCE;
+import static org.evomaster.client.java.instrumentation.RedisCommand.RedisCommandType.*;
 
 /**
  * Class used to act upon Redis commands executed by the SUT
@@ -106,18 +104,55 @@ public class RedisHandler {
     }
 
     private void registerFailedCommand(RedisCommand redisCommand, double distance) {
+        RedisCommand.RedisCommandType type = redisCommand.getType();
         if (distance > 0 &&
-            redisCommand.getType().equals(RedisCommand.RedisCommandType.GET)) {
+                type.equals(GET) || type.equals(KEYS) || type.equals(HGET) || type.equals(HGETALL)) {
             //For this first iteration we'll only work on GET commands.
             failedCommands.add(createFailedCommand(redisCommand));
         }
     }
 
     private RedisFailedCommand createFailedCommand(RedisCommand redisCommand) {
-        return new RedisFailedCommand(
-                redisCommand.getType().getLabel().toUpperCase(),
-                redisCommand.extractArgs().get(0),
-                redisCommand.getType().getDataType());
+        RedisCommand.RedisCommandType type = redisCommand.getType();
+        List<String> args = redisCommand.extractArgs();
+        switch (type) {
+            case GET:
+            case HGETALL: {
+                if (args.isEmpty()) {
+                    throw new IllegalArgumentException("Command " + type.getLabel() + " has invalid arguments.");
+                }
+                return new RedisFailedCommand(
+                        type.getLabel().toUpperCase(),
+                        args.get(0),
+                        null,
+                        null);
+            }
+
+            case KEYS: {
+                if (args.isEmpty()) {
+                    throw new IllegalArgumentException("Command KEYS has invalid arguments.");
+                }
+                return new RedisFailedCommand(
+                        type.getLabel().toUpperCase(),
+                        null,
+                        RedisUtils.redisPatternToRegex(args.get(0)),
+                        null);
+            }
+
+            case HGET: {
+                if (args.size() < 2) {
+                    throw new IllegalArgumentException("Command HGET has invalid arguments.");
+                }
+                return new RedisFailedCommand(
+                        type.getLabel().toUpperCase(),
+                        args.get(0),
+                        null,
+                        args.get(1));
+            }
+            default:
+                throw new RuntimeException(
+                        "Invalid command registering failed redis commands. Type encountered: " + type);
+        }
     }
 
     private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, ReflectionBasedRedisClient redisClient) {

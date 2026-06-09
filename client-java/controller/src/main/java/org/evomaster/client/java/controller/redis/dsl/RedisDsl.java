@@ -46,7 +46,26 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
             throw new IllegalArgumentException("Unspecified key");
         }
         RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = "SET";
         dto.key = key;
+        dto.value = value;
+        list.add(dto);
+        return this;
+    }
+
+    @Override
+    public RedisStatementDsl hset(String key, String field, String value) {
+        checkDsl();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified key");
+        }
+        if (field == null || field.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified field");
+        }
+        RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = "HSET";
+        dto.key = key;
+        dto.field = field;
         dto.value = value;
         list.add(dto);
         return this;

@@ -238,9 +238,9 @@ open class ImpactsOfIndividual(
      */
     fun syncBasedOnIndividual(individual: Individual, initializingActionClasses: List<KClass<*>>?) {
         individual.seeInitializingActions()
-            .filter { initializingActionClasses == null || initializingActionClasses.any { k->k.isInstance(it) } }.groupBy { it::class.java.name }.forEach {g->
-            syncInitActionsBasedOnIndividual(individual, g.key, g.value)
-        }
+            .filter { initializingActionClasses == null || initializingActionClasses.any { k->k.isInstance(it) } }
+            .groupBy { it.getActionGroupKey() }
+            .forEach { g -> syncInitActionsBasedOnIndividual(individual, g.key, g.value) }
 
         //for fixed action
         val fixed = individual.seeFixedMainActions()

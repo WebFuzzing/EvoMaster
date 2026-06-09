@@ -31,6 +31,8 @@ public abstract class RedisController extends EmbeddedSutController {
     private String host;
     private int port;
 
+    private ReflectionBasedRedisClient reflectionRedisClient;
+
     protected RedisController(String databaseName, Class<?> redisAppClass) {
         this.databaseName  = databaseName;
         this.redisAppClass = redisAppClass;
@@ -50,15 +52,14 @@ public abstract class RedisController extends EmbeddedSutController {
         this.port = port;
 
         redisClient = new Jedis(host, port);
+        reflectionRedisClient = new ReflectionBasedRedisClient(host, port, 0);
 
         SpringApplicationBuilder app = new SpringApplicationBuilder(redisAppClass);
-
         app.properties(
                 "--server.port=0",
                 "spring.data.redis.host=" + host,
                 "spring.data.redis.port=" + port
         );
-
         ctx = app.run();
         resetStateOfSUT();
 
@@ -67,9 +68,9 @@ public abstract class RedisController extends EmbeddedSutController {
 
     @Override
     public void stopSut() {
-        redisContainer.stop();
         ctx.stop();
         ctx.close();
+        redisContainer.stop();
     }
 
     @Override
@@ -113,6 +114,6 @@ public abstract class RedisController extends EmbeddedSutController {
 
     @Override
     public ReflectionBasedRedisClient getRedisConnection() {
-        return new ReflectionBasedRedisClient(this.host, this.port, 0);
+        return reflectionRedisClient; // ← instancia cacheada, no new
     }
 }
