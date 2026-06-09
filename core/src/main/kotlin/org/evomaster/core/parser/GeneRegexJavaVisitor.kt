@@ -40,12 +40,14 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
      * Capture groups in order of appearance (1-based index -> list index 0).
      * Populated as the tree is walked. A backreference is only valid if it
      * appears after the group it references, which Java regex requires anyway.
+     * Nullable DisjunctionListRxGene to represent unsatisfiable backreference.
      */
     private val captureGroups = mutableListOf<DisjunctionListRxGene?>()
 
     /**
      * Same as [captureGroups] but for named backreferences, which can be accessed
      * with their name or number.
+     * Nullable DisjunctionListRxGene to represent unsatisfiable backreference.
      */
     private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene?>()
 
@@ -73,6 +75,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         )
     }
 
+    /**
+     * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
+     */
     private fun buildDisjunctionList(ctx: RegexJavaParser.DisjunctionContext): DisjunctionListRxGene? {
         val res = ctx.accept(this)
         val validDisjunctions = res.genes.map { it as DisjunctionRxGene }
@@ -367,6 +372,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return if (disjList != null) {
                 VisitResult(disjList)
             } else {
+                // unsatisfiable, return with no genes.
                 VisitResult()
             }
         }
@@ -421,6 +427,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return if (disjList != null) {
                 VisitResult(disjList)
             } else {
+                // unsatisfiable, return with no genes.
                 VisitResult()
             }
         }

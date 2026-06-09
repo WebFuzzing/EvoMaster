@@ -14,6 +14,8 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * Represents a backreference \N in a regex (N being a number).
  * Its value is always identical to the current value of its [captureGroup].
  * It has no independent state and is therefore immutable.
+ * If capture group is null then the referenced group was unsatisfiable,
+ * in which case the same is true for the backreference to it.
  */
 class BackReferenceRxGene(
     val groupIndex: Int,
