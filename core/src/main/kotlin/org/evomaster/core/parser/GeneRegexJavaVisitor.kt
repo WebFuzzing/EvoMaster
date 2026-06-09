@@ -85,6 +85,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val nonEmptyDisj = validDisjunctions.filter{ !it.isEffectivelyEmpty() }
 
         if(nonEmptyDisj.isEmpty()){
+            // As DisjunctionListRxGene extends CompositeFixedGene, its disjunctions list cannot be empty.
+            // In this case we return null to represent an unsatisfiable DisjunctionListRxGene.
             return null
         }
 
