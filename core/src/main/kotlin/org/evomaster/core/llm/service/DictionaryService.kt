@@ -56,6 +56,7 @@ class DictionaryService {
 
             val toFind = names.toList().sorted()
             var index = 0
+            var previous = ""
 
             reader.lineSequence()
                 .takeWhile { index < toFind.size }
@@ -65,6 +66,11 @@ class DictionaryService {
                     val startQuote = line.indexOf('"')
                     val endQuote = line.indexOf('"', startQuote+1)
                     val x = line.substring(startQuote+1, endQuote)
+
+                    if(x != "" && x <= previous) {
+                        throw IllegalStateException("Not sorted: $x should be before $previous")
+                    }
+                    previous = x
 
                     var handled = false
 
@@ -104,12 +110,15 @@ class DictionaryService {
         ) {
             val node = mapper.readTree(line)
             if (!node.isObject) {
-                log.warn("Not an object: $line")
+                throw IllegalStateException("Not an object: $line")
             } else {
                 node.fields().forEach { field ->
                     if (!field.value.isArray) {
-                        log.warn("Not containing an array: $line")
+                        throw IllegalStateException("Not containing an array: $line")
                     } else {
+                        if(found.containsKey(field.key)) {
+                            throw IllegalStateException("Already handled: ${field.key}")
+                        }
                         found[field.key] = mapper.convertValue(field.value, object : TypeReference<Set<String>>() {})
                     }
                 }

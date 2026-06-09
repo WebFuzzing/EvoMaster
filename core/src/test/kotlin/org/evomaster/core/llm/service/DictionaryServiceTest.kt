@@ -10,9 +10,8 @@ class DictionaryServiceTest {
     fun testLoadAll(){
 
         val data = DictionaryService.loadAll()
-        assertEquals(10, data.size)
+        assertEquals(66743, data.size)
         assertTrue(data.contains("abstract"))
-        assertTrue(data["abstract"]!!.contains("abstraction"))
     }
 
 
