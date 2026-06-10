@@ -12,7 +12,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
     @PostConstruct
     fun initialize() {
-        mcpClient = HttpMcpClient(config.bbTargetUrl)
+        mcpClient = HttpMcpClient(config.base)
         throw UnsupportedOperationException("MCP server analysis is not yet supported")
     }
 

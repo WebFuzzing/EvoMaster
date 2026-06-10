@@ -36,7 +36,7 @@ class McpIndividual(
     }
 
     fun removeMcpActionAt(relativePosition: Int) {
-        killChildByIndex(relativePosition)
+        removeMainActionGroupAt(relativePosition)
     }
 
     override fun seeMainExecutableActions(): List<McpAction> {

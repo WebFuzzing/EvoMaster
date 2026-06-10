@@ -9,10 +9,10 @@ abstract class McpAction(
     parameters: MutableList<Param>
 ) : MainAction(false, parameters) {
 
-    val parameters: List<Param>
+    val actionParameters: List<Param>
         get() = children as List<Param>
 
     override fun getName(): String = id
 
-    override fun seeTopGenes(): List<Gene> = parameters.flatMap { it.seeGenes() }
+    override fun seeTopGenes(): List<Gene> = actionParameters.flatMap { it.seeGenes() }
 }
