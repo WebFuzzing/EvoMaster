@@ -5,5 +5,6 @@ enum class LlmProvider {
     OPENAI,
     DEEPSEEK,   // OpenAI-compatible
     OLLAMA,
-    AZURE_OPENAI
+    AZURE_OPENAI,
+    MOCK
 }

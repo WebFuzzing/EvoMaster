@@ -1332,11 +1332,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
-    
+
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
         }
-        
+
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
             handlePartialUpdatePut(individual, actionResults, fv)
         }
@@ -1347,6 +1347,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
             handleNonIdempotentPut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
+            handleInvalidLocation(individual, actionResults, fv)
         }
     }
 
@@ -1479,6 +1483,24 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == secondPut.getLocalId() } as RestCallResult? ?: return
         ar.addFault(DetectedFault(category, secondPut.getName(), null))
+    }
+
+    private fun handleInvalidLocation(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasInvalidLocation(individual, actionResults)) return
+
+        val actions = individual.seeMainExecutableActions()
+        val creator = actions[actions.size - 2]
+
+        val category = ExperimentalFaultCategory.HTTP_INVALID_LOCATION
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, creator.getName()))
+        fv.updateTarget(scenarioId, 1.0, actions.size - 2)
+
+        val ar = actionResults.find { it.sourceLocalId == creator.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, creator.getName(), null))
     }
 
 

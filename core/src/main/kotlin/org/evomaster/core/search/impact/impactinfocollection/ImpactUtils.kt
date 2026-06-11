@@ -170,7 +170,7 @@ class ImpactUtils {
                             action is ApiExternalServiceAction,
                             previous,
                             mutatedGenes.size,
-                            actionTypeClass = action::class.java.name
+                            actionTypeClass = action.getActionGroupKey()
                         ))
                     }
                 }
@@ -224,7 +224,7 @@ class ImpactUtils {
                             isDynamicAction = index == null,
                             previous = previous,
                             numOfMutatedGene = num,
-                            actionTypeClass = a::class.java.name
+                            actionTypeClass = a.getActionGroupKey()
                         ))
                     }
                 }
