@@ -110,6 +110,14 @@ object SqlWriter {
                 //TODO already escaped???
                 return x.replace("\"","\\\"")
             }
+            if (format.isKotlin()) {
+                // Applying escapeJava on top would corrupt Kotlin escapes, e.g. \$ -> \\$
+                // so remove the kotlin specific escapes ($), apply the java escapes and then reapply the kotlin escapes
+                val unescapedKotlin = x.replace("\\\$", "$")
+                val escapedJava = StringEscapeUtils.escapeJava(unescapedKotlin)
+                val escapedKotlin = escapedJava.replace("$", "\\\$")
+                return escapedKotlin
+            }
             return StringEscapeUtils.escapeJava(x)
             //TODO this is an atypical treatment of escapes. Should we run all escapes through the same procedure?
             // or is this special enough to be justified?
