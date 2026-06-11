@@ -35,6 +35,7 @@ public class RedisCommandExecutorTest {
     @Test
     public void testInsertSingleKey() {
         RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = "SET";
         dto.key = "user:1";
         dto.value = "Alice";
 
@@ -48,10 +49,12 @@ public class RedisCommandExecutorTest {
     @Test
     public void testInsertMultipleKeys() {
         RedisInsertionDto dto1 = new RedisInsertionDto();
+        dto1.command = "SET";
         dto1.key = "product:1";
         dto1.value = "chair";
 
         RedisInsertionDto dto2 = new RedisInsertionDto();
+        dto2.command = "SET";
         dto2.key = "product:2";
         dto2.value = "table";
 
@@ -79,15 +82,74 @@ public class RedisCommandExecutorTest {
     @Test
     public void testOverwritesExistingKey() {
         RedisInsertionDto first = new RedisInsertionDto();
+        first.command = "SET";
         first.key = "overwrite:key";
         first.value = "old";
         RedisCommandExecutor.executeInsert(client, Collections.singletonList(first));
 
         RedisInsertionDto second = new RedisInsertionDto();
+        second.command = "SET";
         second.key = "overwrite:key";
         second.value = "new";
         RedisCommandExecutor.executeInsert(client, Collections.singletonList(second));
 
         assertEquals("new", client.getValue("overwrite:key"));
+    }
+
+    @Test
+    public void testInsertHset() {
+        RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = "HSET";
+        dto.key = "user:1";
+        dto.field = "name";
+        dto.value = "Alice";
+
+        RedisInsertionResultsDto results =
+                RedisCommandExecutor.executeInsert(client, Collections.singletonList(dto));
+
+        assertTrue(results.executionResults.get(0));
+        assertEquals("Alice", client.getHashValue("user:1", "name"));
+    }
+
+    @Test
+    public void testInsertMultipleHset() {
+        RedisInsertionDto dto1 = new RedisInsertionDto();
+        dto1.command = "HSET";
+        dto1.key = "product:1";
+        dto1.field = "name";
+        dto1.value = "chair";
+
+        RedisInsertionDto dto2 = new RedisInsertionDto();
+        dto2.command = "HSET";
+        dto2.key = "product:1";
+        dto2.field = "color";
+        dto2.value = "red";
+
+        RedisInsertionResultsDto results =
+                RedisCommandExecutor.executeInsert(client, Arrays.asList(dto1, dto2));
+
+        assertTrue(results.executionResults.get(0));
+        assertTrue(results.executionResults.get(1));
+        assertEquals("chair", client.getHashValue("product:1", "name"));
+        assertEquals("red", client.getHashValue("product:1", "color"));
+    }
+
+    @Test
+    public void testOverwritesExistingHsetField() {
+        RedisInsertionDto first = new RedisInsertionDto();
+        first.command = "HSET";
+        first.key = "overwrite:key";
+        first.field = "field";
+        first.value = "old";
+        RedisCommandExecutor.executeInsert(client, Collections.singletonList(first));
+
+        RedisInsertionDto second = new RedisInsertionDto();
+        second.command = "HSET";
+        second.key = "overwrite:key";
+        second.field = "field";
+        second.value = "new";
+        RedisCommandExecutor.executeInsert(client, Collections.singletonList(second));
+
+        assertEquals("new", client.getHashValue("overwrite:key", "field"));
     }
 }

@@ -229,6 +229,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
         val results = rc.executeRedisDatabaseInsertions(dto)
         results?.executionResults?.forEachIndexed { index, b ->
+            if (!b) println("FAILED insertion $index: ${allRedisActions[index].getName()}")
             redisResults[index].setInsertExecutionResult(b)
         }
 

@@ -684,6 +684,47 @@ object HttpSemanticsOracle {
         return false
     }
 
+    /**
+     * Checks the invalid-location oracle:
+     *
+     *   ANY /X  -> response with Location header L
+     *   GET  L  -> 404   (BUG: location does not point to an existing resource)
+     *
+     * Sequence checked: the last two main actions of the individual.
+     *  - second-to-last (previous) — any verb — whose result has a non-blank Location header.
+     *  - last is a GET bound to that Location via [RestCallAction.usePreviousLocationId].
+     *  - last action's response is 404.
+     */
+    fun hasInvalidLocation(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 2) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val previous = actions[actions.size - 2]
+        val follow   = actions[actions.size - 1]
+
+        // follow-up must be a GET, and it must actually be chained to the previous Location
+        if (follow.verb != HttpVerb.GET) return false
+        if (follow.usePreviousLocationId.isNullOrBlank()) return false
+
+        // same auth so a 404 cannot be confused with an authorization problem
+        if (previous.auth.isDifferentFrom(follow.auth)) return false
+
+        val resPrevious = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
+            ?: return false
+        val resFollow   = actionResults.find { it.sourceLocalId == follow.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // the only structural precondition on the previous response is a non-blank Location header
+        if (resPrevious.getLocation().isNullOrBlank()) return false
+
+        // BUG: a GET on that Location returns 404
+        return resFollow.getStatusCode() == 404
+    }
+
     private fun parseFormBody(body: String): Map<String, String> {
         return body.split("&").mapNotNull { pair ->
             val parts = pair.split("=", limit = 2)
