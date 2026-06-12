@@ -605,4 +605,19 @@ internal class RestPathTest{
         assertEquals(y, resolvedY)
     }
 
+    @Test
+    fun testPathParamWithNonAscii() {
+        // Non-ASCII characters (e.g. from AnyCharacterRxGene sampling the full
+        // Unicode range) must also be percent-encoded in path parameters. These
+        // are not encoded by URI(null, null, s, null, null) in path parameters,
+        // causing them to appear raw in the generated URL.
+        val key = PathParam("key", CustomMutationRateGene("d_", StringGene("key", "key-聚"), 1.0))
+
+        val resolved = RestPath("/api/{key}").resolveOnlyPath(listOf(key))
+
+        assertFalse(resolved.contains("聚"),
+            "Resolved path must not contain a raw non-ASCII character, got: $resolved")
+        assertTrue(resolved.contains("%E8%81%9A"),
+            "Resolved path must percent-encode non-ASCII characters, got: $resolved")
+    }
 }
