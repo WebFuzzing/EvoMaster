@@ -1,13 +1,19 @@
 package org.evomaster.core.output
 
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.redis.*
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Class used to generate the code in the test dealing with insertion of
  * data into Redis databases.
  */
 object RedisWriter {
+
+    private val log: Logger = LoggerFactory.getLogger(RedisWriter::class.java)
 
     /**
      * Generate Redis SET actions into a test case based on [redisDbInitialization].
@@ -40,15 +46,27 @@ object RedisWriter {
 
         redisDbInitialization
             .filter { !skipFailure || it.redisResult.getInsertExecutionResult() }
-            .forEachIndexed { index, evaluatedRedisDbAction ->
+            .forEachIndexed { index, evaluated ->
 
-                val escapedKey = StringEscapeUtils.escapeJava(
-                    evaluatedRedisDbAction.redisAction.key
-                )
-                val rawValue = evaluatedRedisDbAction.redisAction.valueGene.getValueAsRawString()
-                val escapedValue = StringEscapeUtils.escapeJava(rawValue).let { escaped ->
-                    // In Kotlin generated tests, dollar signs in string literals must be escaped
-                    if (format.isKotlin()) escaped.replace("$", "\\$") else escaped
+                val action = evaluated.redisAction
+
+                val dslCall: String = when (action) {
+                    is RedisSetAction -> {
+                        val key = "\"${escape(action.key, format)}\""
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".set($key, $value)"
+                    }
+                    is RedisSetFromPatternAction -> {
+                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".set($key, $value)"
+                    }
+                    is RedisHsetAction -> {
+                        val key = "\"${escape(action.key, format)}\""
+                        val field = escape(action.field, format)
+                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                        ".hset($key, \"$field\", $value)"
+                    }
                 }
 
                 lines.add(
@@ -58,12 +76,10 @@ object RedisWriter {
                         index == 0 && format.isKotlin() ->
                             "val $insertionVar = redis($previousVar)"
                         else -> ".and()"
-                    } + ".set(\"$escapedKey\", \"$escapedValue\")"
+                    } + dslCall
                 )
 
-                if (index == 0) {
-                    lines.indent()
-                }
+                if (index == 0) lines.indent()
             }
 
         lines.add(".dtos()")
@@ -82,5 +98,11 @@ object RedisWriter {
         lines.appendSemicolon()
 
         insertionVars.add(insertionVar to insertionVarResult)
+    }
+
+    private fun escape(value: String, format: OutputFormat): String {
+        return StringEscapeUtils.escapeJava(value).let {
+            if (format.isKotlin()) it.replace("$", "\\$") else it
+        }
     }
 }

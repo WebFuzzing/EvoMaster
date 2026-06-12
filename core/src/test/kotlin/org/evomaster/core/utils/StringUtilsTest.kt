@@ -5,6 +5,24 @@ import org.junit.jupiter.api.Test
 
 class StringUtilsTest{
 
+    @Test
+    fun testHasWord(){
+
+        assertTrue(StringUtils.hasWord("Hello World!", "hello"))
+        assertTrue(StringUtils.hasWord("This is a date in ISO 8601 format", "date"))
+        assertTrue(StringUtils.hasWord("Date, data, datum!", "DATE"))
+        assertTrue(StringUtils.hasWord("URL!", "url"))
+        assertTrue(StringUtils.hasWord("Dashes '-' should still work, eg., link-url", "url"))
+        assertTrue(StringUtils.hasWord("The link (URL) to the page", "url"))
+        assertTrue(StringUtils.hasWord("it was\nurl\nall along", "url"))
+        assertTrue(StringUtils.hasWord("xdate, ydate.zdate- date\tdatum", "date"))
+
+
+        assertFalse(StringUtils.hasWord("The joys of curling", "url"))
+        assertFalse(StringUtils.hasWord("The linkURL to the page", "url"))
+        assertFalse(StringUtils.hasWord("xdate, ydate.zdate- dat\te\tdatum", "date"))
+    }
+
 
     @Test
     fun testLinesWithMaxLength(){

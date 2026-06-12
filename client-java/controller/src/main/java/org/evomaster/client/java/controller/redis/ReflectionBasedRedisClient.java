@@ -19,6 +19,7 @@ public class ReflectionBasedRedisClient {
     private static final String CREATE_METHOD = "create";
     private static final String FLUSHALL_METHOD = "flushall";
     private static final String GET_METHOD = "get";
+    private static final String HGET_METHOD = "hget";
     private static final String HGETALL_METHOD = "hgetall";
     private static final String HSET_METHOD = "hset";
     private static final String KEYS_METHOD = "keys";
@@ -90,6 +91,11 @@ public class ReflectionBasedRedisClient {
     /** Equivalent to GET key */
     public String getValue(String key) {
         return (String) invoke(GET_METHOD, key);
+    }
+
+    /** Equivalent to HGET key field */
+    public String getHashValue(String key, String field) {
+        return (String) invoke(HGET_METHOD, key, field);
     }
 
     /** Equivalent to KEYS * */

@@ -1,0 +1,549 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "RESTful API to access cBioPortal/cbioportal sessions in MongoDB.",
+    "version": "1.0 (beta)",
+    "title": "cBioPortal session-service API",
+    "termsOfService": "www.cbioportal.org",
+    "contact": {
+      "name": "cbioportal@googlegroups.com"
+    },
+    "license": {
+      "name": "License",
+      "url": "https://github.com/cBioPortal/cbioportal/blob/master/LICENSE"
+    }
+  },
+  "host": "localhost:27505",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "info-controller",
+      "description": "Info Controller"
+    },
+    {
+      "name": "session-service-controller",
+      "description": "Session Service Controller"
+    }
+  ],
+  "paths": {
+    "/api/sessions/{source}/{type}": {
+      "get": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "getSessions",
+        "operationId": "getSessionsUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Iterable«Session»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "addSession",
+        "operationId": "addSessionUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "description": "data",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Session"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/sessions/{source}/{type}/query": {
+      "get": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "getSessionsByQuery",
+        "operationId": "getSessionsByQueryUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "name": "field",
+            "in": "query",
+            "description": "field",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "description": "value",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Iterable«Session»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/sessions/{source}/{type}/query/fetch": {
+      "post": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "fetchSessionsByQuery",
+        "operationId": "fetchSessionsByQueryUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "in": "body",
+            "name": "query",
+            "description": "selection filter similar to mongo filter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Iterable«Session»"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/sessions/{source}/{type}/{id}": {
+      "get": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "getSession",
+        "operationId": "getSessionUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Session"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "updateSession",
+        "operationId": "updateSessionUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "description": "data",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "session-service-controller"
+        ],
+        "summary": "deleteSession",
+        "operationId": "deleteSessionUsingDELETE",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "description": "source",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "main_session",
+              "virtual_study",
+              "group",
+              "comparison_session",
+              "settings",
+              "custom_data",
+              "genomic_chart",
+              "custom_gene_list"
+            ]
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "tags": [
+          "info-controller"
+        ],
+        "summary": "getInfo",
+        "operationId": "getInfoUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Iterable«Session»": {
+      "type": "object",
+      "title": "Iterable«Session»"
+    },
+    "Session": {
+      "type": "object",
+      "properties": {
+        "checksum": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "main_session",
+            "virtual_study",
+            "group",
+            "comparison_session",
+            "settings",
+            "custom_data",
+            "genomic_chart",
+            "custom_gene_list"
+          ]
+        }
+      },
+      "title": "Session"
+    }
+  }
+}

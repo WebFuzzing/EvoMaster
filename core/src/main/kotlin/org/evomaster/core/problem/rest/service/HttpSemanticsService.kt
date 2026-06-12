@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
@@ -122,6 +123,10 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         if(hasPhaseTimedOut()) return
         nonIdempotentPut()
+
+        if(hasPhaseTimedOut()) return
+        // – invalid location, leading to a 404 when doing a follow up GET
+        invalidLocation()
     }
 
     /**
@@ -396,7 +401,7 @@ class HttpSemanticsService : TimeBoxedPhase{
         ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
 
         ind.ensureFlattenedStructure()
-        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        Lazy.assert { ind.verifyValidity(); true }
 
         prepareEvaluateAndSave(ind)
     }
@@ -548,6 +553,92 @@ class HttpSemanticsService : TimeBoxedPhase{
             ind.addMainActionInEmptyEnterpriseGroup(-1, get1)
             ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)
             ind.addMainActionInEmptyEnterpriseGroup(-1, get2)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+
+    /**
+     * HTTP_INVALID_LOCATION oracle: any response carrying a Location header must point
+     * to a resource that actually exists — a follow-up GET on that Location must not
+     * return 404.
+     *
+     * Sequence built:
+     *   [...]
+     *   ANY /X  -> response with Location header L
+     *   GET  L  -> oracle target: must NOT be 404
+     *
+     */
+    private data class LocationCandidate(
+        val individual: EvaluatedIndividual<RestIndividual>,
+        val sourceIndex: Int
+    )
+
+    /**
+     * Every action in [ei] whose response carried a non-blank Location header,
+     * paired with its index in [RestIndividual.seeMainExecutableActions].
+     */
+    private fun locationCandidatesIn(
+        ei: EvaluatedIndividual<RestIndividual>
+    ): List<LocationCandidate> {
+        val evaluated = ei.evaluatedMainActions()
+        val candidates = mutableListOf<LocationCandidate>()
+        for (idx in evaluated.indices) {
+            val ea = evaluated[idx]
+            ea.action as? RestCallAction ?: continue
+            val r = ea.result as? RestCallResult ?: continue
+            if (r.getLocation().isNullOrBlank()) continue
+            candidates.add(LocationCandidate(ei, idx))
+        }
+        return candidates
+    }
+
+    private fun invalidLocation() {
+
+        val candidates = individualsInSolution.asSequence()
+            .flatMap { ei -> locationCandidatesIn(ei) }
+            .groupBy {
+                val source = it.individual.individual.seeMainExecutableActions()[it.sourceIndex]
+                source.verb to source.path
+            }
+            .values
+            .map { group -> group.minBy { it.individual.individual.size() } }
+
+        for (candidate in candidates) {
+
+            if (hasPhaseTimedOut()) return
+
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                candidate.individual.individual, candidate.sourceIndex
+            )
+            val creator = ind.seeMainExecutableActions().last()
+
+            // runtime URL is resolved from the Location header
+            // (relative/absolute, possibly with query params). We do not bind to a schema
+            // The path here is a structural placeholder; the real URL comes from chainState.
+            val getAction = RestCallAction(
+                id = "GET:LOCATION-FOLLOWUP",
+                verb = HttpVerb.GET,
+                path = RestPath("/"),
+                parameters = mutableListOf(),
+                auth = creator.auth
+            )
+            getAction.doInitialize(randomness)
+            getAction.forceNewTaints()
+
+            try {
+                // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
+                //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
+                //  After that restriction is refactored to allow any verb whose response carried a
+                //  Location header, this catch can be dropped and the oracle will fire for all verbs.
+                creator.saveAndLinkLocationTo(getAction)
+            } catch (e: IllegalArgumentException) {
+                continue
+            }
+
+            // add getAction as a last operation
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
 
             prepareEvaluateAndSave(ind)
         }
