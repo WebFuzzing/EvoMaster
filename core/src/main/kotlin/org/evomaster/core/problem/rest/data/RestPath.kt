@@ -354,7 +354,15 @@ class RestPath(path: String) {
         val data = dynamicResolutionOnlyPathData(params, mapOf())
         assert(data.size == 1)
         assert(!data[0].second)
-        return data[0].first
+        return data[0].first.map { c ->
+        // The URI calls in dynamicResolutionOnlyPathData do not encode non-ASCII characters in path segments.
+            if (c.code > 127) {
+                // non-ASCII
+                encode(c.toString())
+            } else {
+                c.toString()
+            }
+        }.joinToString( "")
     }
 
 
