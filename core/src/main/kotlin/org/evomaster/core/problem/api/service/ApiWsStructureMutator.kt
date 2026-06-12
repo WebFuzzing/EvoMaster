@@ -474,13 +474,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val existingKeys = ind.seeInitializingActions()
             .filterIsInstance<RedisDbAction>()
-            .map { it.key }
+            .mapNotNull { it.getTargetKey() }
             .toSet()
 
         val addedActions = RedisInsertBuilder.buildInsertActions(
             failedCommands,
-            existingKeys,
-            randomness
+            existingKeys
         )
 
         if (addedActions.isNotEmpty()) {

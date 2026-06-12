@@ -3021,6 +3021,12 @@ class EMConfig {
 
     @Experimental
     @DependsOnTrueFor("llm")
+    @Cfg("The number of threads to use when making calls towards an LLM, in configured." +
+            " If connecting to Ollama, this value is ignored, and only 1 thread is used.")
+    var llmThreads = 4
+
+    @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
     var llmURL: String? = null
 
@@ -3111,31 +3117,32 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    @Experimental
+    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
+    var useResponseDataPool = true
+
     @Cfg("How much data elements, per key, can be stored in the Data Pool." +
             " Once limit is reached, new old will replace old data. ")
     @Min(1.0)
     var maxSizeDataPool = 100
 
-    @Experimental
     @Cfg("Threshold of Levenshtein Distance for key-matching in Data Pool")
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = true
-
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for black-box (bb) mode")
     var bbProbabilityUseDataPool = 0.8
 
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Experimental
+    @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
+            " If so, those will be added to the data pool.")
+    var useDictionaryDataPool = false
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy

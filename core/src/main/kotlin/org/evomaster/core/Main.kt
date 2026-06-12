@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
 import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
@@ -906,9 +907,16 @@ class Main {
                                 snapshotTimestamp: String ->
                 writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
             }.also {
+                /*
+                    TODO should have a better way to specify that some services need to be shutdown
+                 */
                 if (config.isEnabledHarvestingActualResponse()) {
                     val hp = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
                     hp.shutdown()
+                }
+                if(config.llm){
+                    val llm = injector.getInstance(LlmService::class.java)
+                    llm.shutdown()
                 }
             }
         }
