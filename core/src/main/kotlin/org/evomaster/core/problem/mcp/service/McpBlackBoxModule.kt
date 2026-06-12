@@ -14,12 +14,6 @@ import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 
-/**
- * Guice module wiring the MCP blackbox testing components.
- *
- * Mirrors [GraphQLBlackBoxModule] but for the MCP problem domain.
- * No TestCaseWriter is bound yet (MCP test output not implemented in Phase 4).
- */
 class McpBlackBoxModule(
     val usingRemoteController: Boolean
 ) : AbstractModule() {

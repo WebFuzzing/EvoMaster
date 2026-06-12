@@ -28,9 +28,7 @@ class McpIndividual(
         return McpIndividual(
             sampleType,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
-            mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-            sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
-            mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO)
+            mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN)
         )
     }
 
@@ -39,7 +37,7 @@ class McpIndividual(
     }
 
     fun removeMcpActionAt(relativePosition: Int) {
-        killChildByIndex(relativePosition)
+        removeMainActionGroupAt(relativePosition)
     }
 
     override fun seeMainExecutableActions(): List<McpAction> {
