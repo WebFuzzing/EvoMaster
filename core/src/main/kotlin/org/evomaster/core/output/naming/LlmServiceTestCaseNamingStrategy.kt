@@ -45,14 +45,9 @@ class LlmServiceTestCaseNamingStrategy(
         return newName
     }
 
-    // LLM is sometimes returning names as "\n\ntheNewName" so we need to fix that.
-    // Also, some tests were ending as "200__" so we remove any trailing underscores.
+    // LLM is sometimes returning names as "\n\ntheNewName_" so we need to fix that and return "theNewName".
     private fun sanitizeName(testName: String): String {
-        var safeName = TestWriterUtils.safeVariableName(testName.trim().replace("\n", ""))
-        while (safeName.endsWith("_")) {
-            safeName = safeName.substringBeforeLast("_")
-        }
-        return safeName
+        return TestWriterUtils.safeVariableName(testName.trim().replace("\n", ""), "")
     }
 
     private fun getNewName(test: TestCase): String {

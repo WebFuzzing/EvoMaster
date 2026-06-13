@@ -99,6 +99,15 @@ object Prompts {
         return Pair(VALUE_BASED_ON_NAME_FAILURE, error)
     }
 
+    /**
+     * Used for prompting an LLM to return a new test case name
+     * @param targetLanguage the target language of the test case, used by the LLM to return a name following naming conventions of the language
+     * @param remainingNameChars the maximum amount of chars the returned test case name should have
+     * @param generatedNames set of already returned names from the LLM to avoid duplication of names
+     * @param testLines test case content to feed the LLM context for generating a test case name
+     *
+     * @return [Pair] containing the system prompt with all the scaffolding and rules as first and the user message with the current test information as second.
+     */
     fun getPromptForTestCaseName(targetLanguage: String, remainingNameChars: Int, generatedNames: MutableSet<String>, testLines: String): Pair<String,String>{
         val userMessage = """Your input is
             [targetLanguage]:$targetLanguage"
