@@ -8,19 +8,16 @@ import org.junit.jupiter.api.Test
 
 class JsonPatchSchemaResolverTest {
 
-    private fun parse(json: String): RestSchema =
-        RestSchema(OpenApiAccess.parseOpenApi(json.trimIndent(), SchemaLocation.MEMORY))
-
-    private fun minimalSpec(pathsBlock: String) = """
-        {
-          "openapi": "3.0.0",
-          "info": {"title": "t", "version": "1"},
-          "paths": { $pathsBlock }
+    companion object {
+        private val schema: RestSchema by lazy {
+            val json = JsonPatchSchemaResolverTest::class.java
+                .getResourceAsStream("/swagger/artificial/jsonpatch/json-patch-schema-resolver.json")!!
+                .bufferedReader().readText()
+            RestSchema(OpenApiAccess.parseOpenApi(json, SchemaLocation.MEMORY))
         }
-    """.trimIndent()
+    }
 
     private fun resolveForPatch(
-        schema: RestSchema,
         path: String,
         messages: MutableList<String> = mutableListOf()
     ) = JsonPatchSchemaResolver.resolveResourceSchema(
@@ -32,41 +29,9 @@ class JsonPatchSchemaResolverTest {
 
     @Test
     fun testResolveFromGetResponse() {
-        val schema = parse(minimalSpec("""
-            "/pets/{id}": {
-              "get": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "responses": {
-                  "200": {
-                    "description": "ok",
-                    "content": {
-                      "application/json": {
-                        "schema": {
-                          "type": "object",
-                          "properties": {
-                            "name": {"type": "string"},
-                            "age":  {"type": "integer"}
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "patch": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "required": true,
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
         val messages = mutableListOf<String>()
 
-        val result = resolveForPatch(schema, "/pets/{id}", messages)
+        val result = resolveForPatch("/pets/{id}", messages)
 
         assertNotNull(result)
         assertTrue(messages.isEmpty(), "Unexpected messages: $messages")
@@ -78,34 +43,7 @@ class JsonPatchSchemaResolverTest {
 
     @Test
     fun testPreferGetOverPut() {
-        val schema = parse(minimalSpec("""
-            "/x/{id}": {
-              "get": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "responses": {
-                  "200": {
-                    "content": {"application/json": {"schema": {"type": "object", "properties": {"fromGet": {"type": "string"}}}}}
-                  }
-                }
-              },
-              "put": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json": {"schema": {"type": "object", "properties": {"fromPut": {"type": "string"}}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              },
-              "patch": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
-        val result = resolveForPatch(schema, "/x/{id}")
+        val result = resolveForPatch("/x/{id}")
 
         assertNotNull(result)
         val props = result!!.properties
@@ -115,26 +53,7 @@ class JsonPatchSchemaResolverTest {
 
     @Test
     fun testFallbackToPut() {
-        val schema = parse(minimalSpec("""
-            "/orders/{id}": {
-              "put": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json": {"schema": {"type": "object", "properties": {"product": {"type": "string"}, "quantity": {"type": "integer"}}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              },
-              "patch": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
-        val result = resolveForPatch(schema, "/orders/{id}")
+        val result = resolveForPatch("/orders/{id}")
 
         assertNotNull(result)
         val props = result!!.properties
@@ -144,24 +63,7 @@ class JsonPatchSchemaResolverTest {
 
     @Test
     fun testFallbackToPost() {
-        val schema = parse(minimalSpec("""
-            "/users": {
-              "post": {
-                "requestBody": {
-                  "content": {"application/json": {"schema": {"type": "object", "properties": {"email": {"type": "string"}}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              },
-              "patch": {
-                "requestBody": {
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
-        val result = resolveForPatch(schema, "/users")
+        val result = resolveForPatch("/users")
 
         assertNotNull(result)
         assertTrue(result!!.properties.containsKey("email"))
@@ -169,98 +71,21 @@ class JsonPatchSchemaResolverTest {
 
     @Test
     fun testReturnsNullWhenNoSiblings() {
-        val schema = parse(minimalSpec("""
-            "/items/{id}": {
-              "patch": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
-        val result = resolveForPatch(schema, "/items/{id}")
+        val result = resolveForPatch("/items/{id}")
 
         assertNull(result, "Expected null when no sibling operations define a JSON schema")
     }
 
     @Test
     fun testIgnoresJsonPatchContentTypeInGetResponse() {
-        val schema = parse(minimalSpec("""
-            "/docs/{id}": {
-              "get": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "responses": {
-                  "200": {
-                    "content": {
-                      "application/json-patch+json": {
-                        "schema": {"type": "array", "items": {"type": "object"}}
-                      }
-                    }
-                  }
-                }
-              },
-              "patch": {
-                "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                "requestBody": {
-                  "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                },
-                "responses": {"200": {"description": "ok"}}
-              }
-            }
-        """))
-
-        val result = resolveForPatch(schema, "/docs/{id}")
+        val result = resolveForPatch("/docs/{id}")
 
         assertNull(result, "Should not use json-patch content type as resource schema")
     }
 
     @Test
     fun testResolveFromGetResponseViaRef() {
-        val schema = parse("""
-            {
-              "openapi": "3.0.0",
-              "info": {"title": "t", "version": "1"},
-              "paths": {
-                "/cats/{id}": {
-                  "get": {
-                    "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                    "responses": {
-                      "200": {
-                        "content": {
-                          "application/json": {
-                            "schema": {"${'$'}ref": "#/components/schemas/Cat"}
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "patch": {
-                    "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],
-                    "requestBody": {
-                      "content": {"application/json-patch+json": {"schema": {"type": "array", "items": {"type": "object"}}}}
-                    },
-                    "responses": {"200": {"description": "ok"}}
-                  }
-                }
-              },
-              "components": {
-                "schemas": {
-                  "Cat": {
-                    "type": "object",
-                    "properties": {
-                      "breed": {"type": "string"},
-                      "indoor": {"type": "boolean"}
-                    }
-                  }
-                }
-              }
-            }
-        """.trimIndent())
-
-        val result = resolveForPatch(schema, "/cats/{id}")
+        val result = resolveForPatch("/cats/{id}")
 
         assertNotNull(result)
         val props = result!!.properties
