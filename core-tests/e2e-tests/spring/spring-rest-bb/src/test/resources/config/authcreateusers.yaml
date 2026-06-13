@@ -1,7 +1,7 @@
 auth:
   - name: "CreatedUser"
     createUsers:
-      endpoint: "/api/logintokenheader/users"
+      endpoint: "/api/authcreateusers/users"
       contentType: "application/json"
       verb: "POST"
       payloadRaw: '{"email": "{$username}@example.com", "password": "123456", "repeatPassword": "123456", "username": "{$username}"}'
@@ -12,7 +12,7 @@ auth:
           prefix: "user_"
           postfix: ""
     loginEndpointAuth:
-      endpoint: "/api/logintokenheader/login"
+      endpoint: "/api/authcreateusers/users/login"
       verb: "POST"
       contentType: "application/json"
       payloadRaw: '{"email": "{$username}@example.com", "password": "123456"}'
