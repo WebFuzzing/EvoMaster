@@ -43,8 +43,8 @@ class LlmServiceTestCaseNamingStrategyTest {
         val graphTestCaseWriter = getTestCaseWriter(baseModule.getEMConfig())
 
         MockChatModel.reset()
-        MockChatModel.mockResponse("this_test_name_was_llm_generated") { it.contains("The suffix must follow the naming conventions of Python") }
-        MockChatModel.mockResponse("thisTestNameWasLlmGenerated") { it.contains("The suffix must follow the naming conventions of Java") }
+        MockChatModel.mockResponse("this_test_name_was_llm_generated") { it.contains("[targetLanguage]:Python") }
+        MockChatModel.mockResponse("thisTestNameWasLlmGenerated") { it.contains("[targetLanguage]:Java") }
 
         val testCases = generateTestCases(outputFormat, llmService, graphTestCaseWriter)
 
@@ -60,8 +60,8 @@ class LlmServiceTestCaseNamingStrategyTest {
         val graphTestCaseWriter = getTestCaseWriter(baseModule.getEMConfig())
 
         MockChatModel.reset()
-        MockChatModel.mockResponse("this_test_name_was_llm_generated") { it.contains("The suffix must follow the naming conventions of Python") }
-        MockChatModel.mockResponse("thisTestNameWasLlmGenerated") { it.contains("The suffix must follow the naming conventions of Java") }
+        MockChatModel.mockResponse("this_test_name_was_llm_generated") { it.contains("[targetLanguage]:Python") }
+        MockChatModel.mockResponse("thisTestNameWasLlmGenerated") { it.contains("[targetLanguage]:Java") }
 
         val testCases = generateTestCases(outputFormat, llmService, graphTestCaseWriter)
 
