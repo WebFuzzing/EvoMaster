@@ -1,5 +1,7 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.llm.Prompts.RE_ITERATE_TEST_CASE_NAME
+import org.evomaster.core.llm.Prompts.getPromptForTestCaseName
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -23,8 +25,6 @@ class LlmServiceTestCaseNamingStrategy(
     private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     private val generatedNames = mutableSetOf<String>()
 
-    private val baseUrlOfSut = "baseUrlOfSut"
-    private val fixture = "_fixture"
     private val remainingNameChars = maxTestCaseNameLength - namePrefixChars()
 
     override fun expandName(
@@ -58,45 +58,13 @@ class LlmServiceTestCaseNamingStrategy(
     private fun getNewName(test: TestCase): String {
         val testLines = getTestSourceCode(test)
         val targetLanguage = getTargetLanguage()
-        return llmService.chat("""
-            You are an expert software engineer specializing in test naming.
-
-            Given the following test case written in $targetLanguage, produce a descriptive suffix to append to its existing name.
-
-            ## Rules
-
-            - The suffix must follow the naming conventions of $targetLanguage (e.g. snake_case for Python, camelCase for Java).
-            - The suffix must be derived directly from the code: what unit is being exercised, under what conditions, and what outcome is asserted.
-            - The suffix should follow the pattern `<method/feature>_<condition>_<expectedOutcome>` or a close variant natural to $targetLanguage test frameworks. Pick whichever fits the test best.
-            - Use only information present in the test body — do not invent context.
-            - Be specific: prefer `createUser_duplicateEmail_throwsConflict` over `createUser_fails`.
-            - Do not include words like "test", "check", "verify", or "ensure" in the suffix.
-            - The suffix must not exceed $remainingNameChars characters.
-            - The suffix must not match any of the already assigned names listed below.
-            - Output only the suffix, nothing else.
-
-            ## Language
-
-            $targetLanguage
-
-            ## Max suffix length
-
-            $remainingNameChars characters
-
-            ## Already assigned names
-
-            $generatedNames
-
-            ## Test case
-
-            $testLines
-
-        """.trimIndent())
+        val prompt = getPromptForTestCaseName(targetLanguage, remainingNameChars, generatedNames, testLines.toString())
+        return llmService.chat(prompt.first, prompt.second)
     }
 
     // Just in case the LLM did not follow the directive of just giving the new name as output.
     private fun promptReIterateName(): String {
-        return llmService.chat("Your previous response contained more than just the suffix. Output only the suffix, nothing else. No explanation, no punctuation, no extra text.")
+        return llmService.chat(RE_ITERATE_TEST_CASE_NAME)
     }
 
     // With this regex, we check that the output by the LLM is only the test case name. We validate:
@@ -121,10 +89,7 @@ class LlmServiceTestCaseNamingStrategy(
 
     private fun getTestSourceCode(test: TestCase): Lines {
         return try {
-            if (outputFormat.isCsharp())
-                testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut", null)
-            else
-                testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut, null)
+            testCaseWriter.convertToCompilableTestCode(test, TestSuiteWriter.baseUrlOfSut, null)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred in generating test code ${test.name} for LLM naming strategy. \n "

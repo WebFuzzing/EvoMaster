@@ -60,7 +60,7 @@ class TestSuiteWriter {
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
-        private const val baseUrlOfSut = "baseUrlOfSut"
+        const val baseUrlOfSut = "baseUrlOfSut"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"

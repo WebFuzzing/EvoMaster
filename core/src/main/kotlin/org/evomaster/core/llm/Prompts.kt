@@ -51,6 +51,42 @@ object Prompts {
         the following error message:
     """
 
+    const val NEW_TEST_CASE_NAME = """
+        You are an expert software engineer specializing in test naming.
+
+        Given the following test case written in [targetLanguage], produce a descriptive suffix to append to its existing name.
+
+        ## Rules
+
+        - The suffix must follow the naming conventions of [targetLanguage] (e.g. snake_case for Python, camelCase for Java).
+        - The suffix must be derived directly from the code: what unit is being exercised, under what conditions, and what outcome is asserted.
+        - The suffix should follow the pattern `<method/feature>_<condition>_<expectedOutcome>` or a close variant natural to [targetLanguage] test frameworks. Pick whichever fits the test best.
+        - Use only information present in the test body — do not invent context.
+        - Be specific: prefer `createUser_duplicateEmail_throwsConflict` over `createUser_fails`.
+        - Do not include words like "test", "check", "verify", or "ensure" in the suffix.
+        - The suffix must not exceed [remainingNameChars] characters.
+        - The suffix must not match any of the already assigned names listed below.
+        - Output only the suffix, nothing else.
+
+        ## Language
+
+        [targetLanguage]
+
+        ## Max suffix length
+
+        [remainingNameChars] characters
+
+        ## Already assigned names
+
+        [generatedNames]
+
+        ## Test case
+
+        [testLines]
+    """
+
+    const val RE_ITERATE_TEST_CASE_NAME = "Your previous response contained more than just the suffix. Output only the suffix, nothing else. No explanation, no punctuation, no extra text, do not exceed max chars."
+
     fun getPromptForNameDescription(name: String, description: String?): Pair<String,String> {
         var user = "Your input is\n [name]:$name"
         if(description != null) {
@@ -61,6 +97,15 @@ object Prompts {
 
     fun getPromptForFailedName(error: String): Pair<String,String>{
         return Pair(VALUE_BASED_ON_NAME_FAILURE, error)
+    }
+
+    fun getPromptForTestCaseName(targetLanguage: String, remainingNameChars: Int, generatedNames: MutableSet<String>, testLines: String): Pair<String,String>{
+        val userMessage = """Your input is
+            [targetLanguage]:$targetLanguage"
+            [remainingNameChars]: $remainingNameChars
+            [generatedNames]: $generatedNames
+            [testLines]: $testLines"""
+        return Pair(NEW_TEST_CASE_NAME, userMessage)
     }
 
 }
