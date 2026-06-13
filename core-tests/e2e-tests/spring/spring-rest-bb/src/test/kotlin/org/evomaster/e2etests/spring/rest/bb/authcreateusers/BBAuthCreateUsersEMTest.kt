@@ -37,7 +37,7 @@ class BBAuthCreateUsersEMTest : SpringTestBase() {
             "CHECK"
         ){ args: MutableList<String> ->
 
-            setOption(args, "configPath", "src/main/resources/config/authcreateusers.yaml")
+            setOption(args, "configPath", "src/test/resources/config/authcreateusers.yaml")
 
             val solution = initAndRun(args)
 

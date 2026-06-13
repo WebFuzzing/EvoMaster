@@ -5,6 +5,7 @@ import org.checkerframework.checker.units.qual.g
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.CreateUsersWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -28,16 +29,16 @@ object AuthUtils {
     private val log: Logger = LoggerFactory.getLogger(AuthUtils::class.java)
 
 
-    fun getTokens(client: Client, baseUrl: String, ind: Individual): Map<String, String> {
+    fun getTokens(client: Client, baseUrl: String, ind: Individual, placeholders: List<PlaceHolderResolver>): Map<String, String> {
         val tokensLogin = TokenWriter.getTokenLoginAuth(ind)
-        return getTokens(client, baseUrl, tokensLogin)
+        return getTokens(client, baseUrl, tokensLogin, placeholders)
     }
 
     /**
      * If any action needs auth based on tokens via JSON, do a "login" before
      * running the actions, and store the tokens
      */
-    fun getTokens(client: Client, baseUrl: String, tokensLogin: List<EndpointCallLogin>): Map<String, String> {
+    fun getTokens(client: Client, baseUrl: String, tokensLogin: List<EndpointCallLogin>, placeholders: List<PlaceHolderResolver>): Map<String, String> {
 
         //from userId to Token
         val map = mutableMapOf<String, String>()
@@ -49,7 +50,7 @@ object AuthUtils {
             }
             val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
-            val response = makeCall(client, tl, baseUrl)
+            val response = makeCall(client, tl, baseUrl, placeholders)
                 ?: continue
 
             var token = when (data.extractFrom) {
@@ -94,10 +95,9 @@ object AuthUtils {
     }
 
 
-    fun getCookies(client: Client, baseUrl: String, ind: Individual): Map<String, List<NewCookie>> {
-
+    fun getCookies(client: Client, baseUrl: String, ind: Individual, placeholders: List<PlaceHolderResolver>): Map<String, List<NewCookie>> {
         val cookieLogins = CookieWriter.getCookieLoginAuth(ind)
-        return getCookies(client, baseUrl, cookieLogins)
+        return getCookies(client, baseUrl, cookieLogins, placeholders)
     }
 
     /**
@@ -109,7 +109,8 @@ object AuthUtils {
     fun getCookies(
         client: Client,
         baseUrl: String,
-        cookieLogins: List<EndpointCallLogin>
+        cookieLogins: List<EndpointCallLogin>,
+        placeholders: List<PlaceHolderResolver>
     ): Map<String, List<NewCookie>> {
 
         val map: MutableMap<String, List<NewCookie>> = mutableMapOf()
@@ -121,7 +122,7 @@ object AuthUtils {
             }
 
 
-            val response = makeCall(client, cl, baseUrl)
+            val response = makeCall(client, cl, baseUrl, placeholders)
                 ?: continue
             response.close()
 
@@ -136,7 +137,14 @@ object AuthUtils {
         return map
     }
 
-    TODO call it
+
+    fun createUsers(
+        client: Client,
+        baseUrl: String,
+        individual: Individual
+    ) : List<PlaceHolderResolver> {
+        return createUsers(client, baseUrl, CreateUsersWriter.getCreateUsersAuth(individual))
+    }
 
     /**
      * Make calls to create new users.
@@ -161,7 +169,7 @@ object AuthUtils {
                 payload = payload.replace(g.placeHolder, generated)
             }
 
-            val response = makeCall(client, baseUrl, c.verb, c.contentType, payload, listOf(), c.endpoint, c.externalEndpointURL)
+            val response = makeCall(client, baseUrl, c.name, c.verb, c.contentType, payload, listOf(), c.endpoint, c.externalEndpointURL)
                 ?: continue
             response.close()
 
@@ -195,13 +203,28 @@ object AuthUtils {
     }
 
 
-    private fun makeCall(client: Client, x: EndpointCallLogin, baseUrl: String): Response?{
-        return makeCall(client, baseUrl, x.verb, x.contentType, x.payload, x.headers, x.endpoint, x.externalEndpointURL)
+    private fun makeCall(client: Client, x: EndpointCallLogin, baseUrl: String, placeholders: List<PlaceHolderResolver>): Response?{
+
+        val resolver = placeholders.firstOrNull { it.name == x.name }
+        val payload = if(resolver == null){
+            x.payload
+        } else {
+            var modified = x.payload
+            if(modified != null) {
+                for (p in resolver.placeHolders.entries) {
+                    modified = modified!!.replace(p.key, p.value)
+                }
+            }
+            modified
+        }
+
+        return makeCall(client, baseUrl, x.name, x.verb, x.contentType, payload, x.headers, x.endpoint, x.externalEndpointURL)
     }
 
     private fun makeCall(
         client: Client,
         baseUrl: String,
+        name: String,
         verb: HttpVerb,
         contentType: ContentType?,
         payload: String?,
@@ -248,7 +271,7 @@ object AuthUtils {
         val response = try {
             invocation.invoke()
         } catch (e: Exception) {
-            log.warn("Failed to login for ${x.name}: $e")
+            log.warn("Failed to login for ${name}: $e")
             return null
         }
 
