@@ -14,14 +14,11 @@ object BlackBoxUtils {
     private const val GENERATED_FOLDER_NAME = "generated"
 
     const val baseLocationForJavaScript = "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
-    const val baseLocationForPlaywright = "$JS_BASE_PATH/$GENERATED_FOLDER_NAME/playwright"
     const val baseLocationForPython = "$PY_BASE_PATH/$GENERATED_FOLDER_NAME"
     const val baseLocationForJava = "$MAVEN_BASE_PATH/src/test/java"
     const val baseLocationForKotlin = "$MAVEN_BASE_PATH/src/test/kotlin"
 
     fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"
-
-    fun relativePathPlaywright(folderName: String) = "$GENERATED_FOLDER_NAME/playwright/$folderName"
 
     fun checkCoveredTargets(targetLabels: Collection<String>) {
         targetLabels.forEach {
@@ -108,7 +105,7 @@ object BlackBoxUtils {
         }
     }
 
-    fun runNpmTests(folderRelativePath: String) {
+    fun runNpmTests(folderRelativePath: String, isPlaywright: Boolean = false) {
         runNpmInstall()
 
         val path = if(folderRelativePath.endsWith("/")){
@@ -118,22 +115,12 @@ object BlackBoxUtils {
             "$folderRelativePath/"
         }
 
-        val command = listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
-        runTestsCommand(command, JS_BASE_PATH, "NPM")
-    }
-
-    fun runPlaywrightTests(folderRelativePath: String) {
-        runNpmInstall()
-
-        val path = if(folderRelativePath.endsWith("/")){
-            folderRelativePath
+        val command = if (isPlaywright) {
+            listOf(npm(), "run", "test:playwright", "--", path)
         } else {
-            "$folderRelativePath/"
+            listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
         }
-
-        val npx = if (isWindows()) "npx.cmd" else "npx"
-        val command = listOf(npx, "playwright", "test", path)
-        runTestsCommand(command, JS_BASE_PATH, "Playwright")
+        runTestsCommand(command, JS_BASE_PATH, if (isPlaywright) "Playwright" else "NPM")
     }
 
     fun runPythonTests(folderRelativePath: String) {

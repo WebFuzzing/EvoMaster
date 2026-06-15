@@ -745,11 +745,8 @@ class TestSuiteWriter {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {
-                if (config.outputFormat.isPlaywright()) {
-                    lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
-                } else {
-                    lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
-                }
+                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
+
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
@@ -800,7 +797,7 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll( async () =>")
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll(async () =>")
             format.isJavaScript() && format.isPlaywright() -> lines.add("(async ({ request }) =>")
         }
 

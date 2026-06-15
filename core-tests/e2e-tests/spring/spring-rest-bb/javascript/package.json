@@ -13,7 +13,8 @@
     "urijs": "1.19.6"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:playwright": "playwright test"
   },
   "jest": {
     "testEnvironment": "node",

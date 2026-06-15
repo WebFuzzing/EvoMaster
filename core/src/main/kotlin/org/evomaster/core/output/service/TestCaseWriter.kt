@@ -139,7 +139,7 @@ abstract class TestCaseWriter {
             lines.add("}")
         }
 
-        if (format.isJavaScript()) { // add to code block - ok for playwright?
+        if (format.isJavaScript()) {
             lines.append(");")
         }
         return lines

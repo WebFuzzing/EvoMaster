@@ -341,14 +341,33 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return text.replace("\$", "\\\$")
     }
 
+    private fun formatFieldPath(fieldPath: String): String {
+        if (fieldPath.isEmpty()) {
+            return ""
+        }
+        if (format.isJavaOrKotlin()) {
+            return if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+        }
+        return if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) {
+            fieldPath
+        } else {
+            ".$fieldPath"
+        }
+    }
+
     private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (value == null) {
             val field = when {
-                format.isPlaywright() -> "(await $responseVariableName.json())"
-                format.isJavaScript() -> "$responseVariableName.body"
-                else -> ""
-            }
+                format.isJavaScript() -> {
+                    if (format.isPlaywright()) {
+                        "(await $responseVariableName.json())"
+                    } else {
+                        "$responseVariableName.body"
+                    }
+                }
+                    else -> ""
+                }
             val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
@@ -404,10 +423,16 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             if (isSuitableToPrint(toPrint)) {
                 if (format.isJavaScript() || format.isPython()) {
                     val field = when {
-                        format.isPlaywright() -> "(await $responseVariableName.json())"
-                        format.isJavaScript() -> "$responseVariableName.body"
+                        format.isJavaScript() -> {
+                        if (format.isPlaywright()) {
+                            "(await $responseVariableName.json())"
+                        } else {
+                            "$responseVariableName.body"
+                        }
+                    }
                         else -> ""
                     }
+
                     val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
                     val assertionContent = if (format.isPython()) {
                         "assert $responseVariableName.json()$fieldPath == $toPrint"
@@ -599,7 +624,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             }
             format.isJavaScript() -> {
                 if (format.isPlaywright()) {
-                    val field = if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
+                    val field = formatFieldPath(fieldPath)
                     "expect((await $responseVariableName.json())$field).toHaveLength($expectedSize);"
                 } else {
                     val field = "$responseVariableName.body"

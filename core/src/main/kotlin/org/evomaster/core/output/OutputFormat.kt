@@ -18,7 +18,7 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
-    JS_JEST_PLAYWRIGHT,  // Testing new playwright imp
+    JS_JEST_PLAYWRIGHT,
     //CSHARP_XUNIT, //no longer supported, but there is still legacy code not removed
     PYTHON_UNITTEST
     ;
@@ -29,11 +29,7 @@ enum class OutputFormat {
 
     fun isJavaScript() = this.name.startsWith("js_", true)
 
-    /**
-     *  Return true if the output format is Playwright.
-     *  Playwright is currently only supported for JavaScript (or TypeScript).
-     */
-    fun isPlaywright() = this.name.endsWith("_playwright", true) // Testing new playwright imp
+    fun isPlaywright() = this.name.endsWith("_playwright", true)
 
     fun isJavaOrKotlin() = isJava() || isKotlin()
 
@@ -47,4 +43,7 @@ enum class OutputFormat {
     fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
 
     fun isPython() = this.name.startsWith("python_", true)
+
+    fun isJsBased() = isJavaScript() || isPlaywright()
+    // Helper method for JavaScript based formats. Playwright is currently only supported for JavaScript (or TypeScript) //
 }

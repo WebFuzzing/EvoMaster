@@ -201,7 +201,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         when {
             format.isJava() -> lines.add("String $name = ")
             format.isKotlin() -> lines.add("val $name : String? = ")
-            format.isJavaScript() || format.isPlaywright() -> lines.add("const $name = ")
+            format.isJsBased() -> lines.add("const $name = ")
             format.isPython() -> {lines.add("$name = ")}
             // should never happen
             else -> throw IllegalStateException("Unsupported format $format")
@@ -422,8 +422,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
+
                         if (format.isPlaywright()) {
-                            lines.add("const $location = $resVarName.headers()['location'];")
+                            lines.add("const $location = $resVarName")
+                            lines.append(".headers()['location'];")
                         } else {
                             lines.add("const $location = $resVarName.header['location'];")
                         }
@@ -458,7 +460,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val extract = extractValueFromJsonResponse(resVarName, idPointer)
 
                 when{
-                    format.isJavaScript() || format.isPlaywright() -> lines.add("const ")
+                    format.isJsBased() -> lines.add("const ")
                     format.isJava() -> lines.add("String ")
                     format.isKotlin() -> lines.add("val ")
                     format.isPython()  -> lines.add("")/* nothing to do in Python */

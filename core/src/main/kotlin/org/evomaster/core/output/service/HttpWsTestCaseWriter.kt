@@ -297,8 +297,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
-                    format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
-                    format.isPlaywright() -> lines.add("'Cookie': ${CookieWriter.cookiesName(elc)},")
+                    format.isJavaScript() -> when {
+                        format.isPlaywright() -> {
+                            val cookieVar = CookieWriter.cookiesName(elc)
+                        lines.add("'Cookie': $cookieVar,")
+                        }
+                        else ->
+                            lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
+                    }
                     // Python cookies are set alongside the headers and body when performing the request
                 }
             }
@@ -564,6 +570,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         }
                         lines.add("},")
                         handleBody(call, lines, dtoVar)
+                        lines.add("maxRedirects: 0,")
                     }
                     lines.add("})")
                 } else {

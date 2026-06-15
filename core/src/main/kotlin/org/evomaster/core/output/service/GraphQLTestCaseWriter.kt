@@ -102,7 +102,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val verb = "post"
 
         if (format.isPlaywright()) {
-            lines.add("request.$verb(")
+            lines.add("await request.$verb(")
         } else {
             lines.add(".$verb(")
         }
@@ -136,6 +136,14 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
             handlePythonVerbEndpoint(_call as GraphQLAction, lines) {
                 lines.append(", data=body")
             }
+        }
+
+        if (format.isPlaywright()) {
+            lines.append(", {")
+            lines.indented {
+                lines.add("maxRedirects: 0,")
+            }
+            lines.add("}")
         }
 
         lines.append(")")

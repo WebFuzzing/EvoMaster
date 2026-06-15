@@ -50,15 +50,17 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-                format.isPlaywright() -> lines.add("let ${cookiesName(k)};")
-                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = ")
+                format.isJavaScript() -> when {
+                    format.isPlaywright() ->
+                        lines.add("let ${cookiesName(k)};")
+                    else ->
+                        lines.add("const ${cookiesName(k)} = ")
+                }
             }
 
             if (!format.isPython()) {
                 // TODO: should we use DTO for cookie related requests?
-                if (!format.isPlaywright()) {
-                    testCaseWriter.startRequest(lines)
-                }
+                testCaseWriter.startRequest(lines)
                 lines.indent()
             }
 
@@ -79,16 +81,31 @@ object CookieWriter {
                 format.isPython() -> lines.append(".cookies")
             }
 
-            if(format.isJavaScript() && !format.isPlaywright()){
-                lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
-                lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+            if (format.isJavaScript()) {
+
+                // SuperAgent/Playwright cookie extraction
+                if (format.isPlaywright()) {
+                    lines.add(".then((res) => {")
+                    lines.add("const setCookie = res.headers()['set-cookie'];")
+                    lines.add("if (setCookie) {")
+                    lines.add("return setCookie.split('\\n')[0].split(';')[0];")
+                    lines.add("}")
+                    lines.add("return null;")
+                    lines.add("})")
+                } else {
+                    lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
+                    lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+                }
+
+                if (format.isPlaywright()) {
+                    // Playwright cookie extraction must NOT assume res is a response object
+                    lines.add(".then(async (cookie) => {")
+                    lines.add("${cookiesName(k)} = cookie;")
+                    lines.add("})")
+                }
                 lines.appendSemicolon()
             }
 
-            if (format.isPlaywright()) {
-                lines.add(".then(async (res) => { ${cookiesName(k)} = res.headers()['set-cookie']?.split('\\n')?.find(c => c.trim().length > 0)?.split(';')[0]; })")
-                lines.appendSemicolon()
-            }
 
             if (format.isPython()) {
                 lines.add("${cookiesName(k)} = requests.utils.dict_from_cookiejar($targetCookieVariable)")
@@ -118,13 +135,12 @@ object CookieWriter {
         targetVariable: String
     ) {
 
-        if (format.isPlaywright()) {
+        if(format.isJavaScript() ) {
             callEndpoint(lines, k, format, baseUrlOfSut)
-            return
-        }
-
-        if(format.isJavaScript() && !format.isPlaywright()) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
+            if (format.isPlaywright()) {
+                return
+                // to avoid two request calls for the same endpoint
+            }
         }
 
         if(format.isPython()) {
@@ -167,19 +183,27 @@ object CookieWriter {
         for(header in k.headers) {
             when {
                 format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
-                format.isPlaywright() -> {
-                    // handled in callEndpoint for Playwright
+                format.isJavaScript() -> when {
+                    format.isPlaywright() ->
+                    {
+                        // handled in callEndPoint for Playwright
+                    }
+                    else ->
+                        lines.add(".set(\"${header.name}\", \"${header.value}\")")
                 }
-                format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
                 format.isPython() -> {
                     lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
                 }
             }
         }
 
-        if (format.isJavaScript() && !format.isPlaywright()){
+        if (format.isJavaScript()){
             // disable redirections
-            lines.add(".redirects(0)")
+            if (format.isPlaywright()) {
+                // handled in callEndPoint
+            } else {
+                lines.add(".redirects(0)")
+            }
         }
 
         /*
@@ -250,6 +274,7 @@ object CookieWriter {
                         lines.add("data: '${k.payload}',")
                     }
                 }
+                lines.add("maxRedirects: 0,")
             }
             lines.add("}")
         }

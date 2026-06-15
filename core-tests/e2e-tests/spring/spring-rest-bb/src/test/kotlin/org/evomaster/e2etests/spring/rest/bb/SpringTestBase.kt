@@ -159,7 +159,6 @@ abstract class SpringTestBase : RestTestBase() {
         lambda: Consumer<MutableList<String>>
     ){
         val baseLocation = when {
-            outputFormat.isPlaywright() -> BlackBoxUtils.baseLocationForPlaywright
             outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
             outputFormat.isPython() -> BlackBoxUtils.baseLocationForPython
             outputFormat.isJava() -> BlackBoxUtils.baseLocationForJava
@@ -172,7 +171,7 @@ abstract class SpringTestBase : RestTestBase() {
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
 
         when{
-            outputFormat.isPlaywright() -> BlackBoxUtils.runPlaywrightTests(BlackBoxUtils.relativePathPlaywright(outputFolderName))
+            outputFormat.isPlaywright() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), true)
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)
