@@ -30,7 +30,17 @@ public class RedisCommandExecutor {
         for (int i = 0; i < insertions.size(); i++) {
             RedisInsertionDto dto = insertions.get(i);
             try {
-                client.setValue(dto.key, dto.value);
+                switch (dto.command.toUpperCase()) {
+                    case "SET":
+                        client.setValue(dto.key, dto.value);
+                        break;
+                    case "HSET":
+                        client.hashSet(dto.key, dto.field, dto.value);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(
+                                "Unsupported Redis command: " + dto.command);
+                }
                 results.set(i, true);
             } catch (Exception e) {
                 throw new RuntimeException(

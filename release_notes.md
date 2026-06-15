@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Addressed GitHub Issues
+- #1286: SSL verification error during the execution of generated tests 
+- #1071: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with SSLException 
+
 # Version 6.0.0
 
 ### Breaking Changes

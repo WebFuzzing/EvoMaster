@@ -539,11 +539,7 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
-            if (format.isPlaywright()) {
-                lines.add("const { test, expect, request } = require('@playwright/test');")
-            } else {
-                lines.add("const superagent = require(\"superagent\");")
-            }
+            lines.add("const superagent = require(\"superagent\");")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -552,8 +548,7 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
-
-            if (config.testTimeout > 0 && !format.isPlaywright()) {
+            if (config.testTimeout > 0) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
@@ -746,7 +741,6 @@ class TestSuiteWriter {
                 lines.add("let $baseUrlOfSut;")
             } else {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
-
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
@@ -797,8 +791,7 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll(async () =>")
-            format.isJavaScript() && format.isPlaywright() -> lines.add("(async ({ request }) =>")
+            format.isJavaScript() -> lines.add("beforeAll( async () =>")
         }
 
         lines.block {
@@ -930,7 +923,7 @@ class TestSuiteWriter {
             testCaseWriter.addExtraInitStatement(lines)
         }
 
-        if (format.isJavaScript()) { // End statement of blocks. Valid for playwright too
+        if (format.isJavaScript()) {
             lines.append(");")
         }
     }
@@ -953,8 +946,7 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun tearDown()")
             }
-            format.isJavaScript() && !format.isPlaywright()-> lines.add("afterAll( async () =>")
-            format.isJavaScript() && format.isPlaywright() -> lines.add("test.afterAll(async () =>")
+            format.isJavaScript() -> lines.add("afterAll( async () =>")
         }
 
         if (!format.isCsharp()) {
@@ -1007,9 +999,7 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeEach( async () =>")
-            format.isJavaScript() && format.isPlaywright() -> lines.add("test.beforeEach(async () =>")
-
+            format.isJavaScript() -> lines.add("beforeEach(async () => ")
             //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }

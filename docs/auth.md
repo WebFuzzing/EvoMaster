@@ -15,7 +15,6 @@ The following documentation is divided on whether the tested API is a REST/Graph
 
 ### Black-Box Testing
 
-> __NOTE__: since version `4.0.0`, for black-box testing of  APIs we support authentication configurations expressed in [WFC format](https://github.com/WebFuzzing/Commons). For the most updated documentation, we suggest to read the documentation on the WFC site as well.     
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed).
 
@@ -34,80 +33,9 @@ Still, this can be tedious, especially if the lifespan of the token is short.
 To enable this use case, since version `2.1.0` we support a declarative approach to specify how to make calls to a login endpoint, and how to then use such response to extract an auth token for the following authenticated requests.
 Because several settings need to be specified, these auth declarations need to be put in the configuration file (default `./em.yaml`, but TOML format is supported as well).
 
-Let's consider this following example of configuration:
+Currently, since version `4.0.0`, for black-box testing of  APIs we support authentication configurations expressed in [WFC format](https://github.com/WebFuzzing/Commons). 
+For the most updated documentation, we suggest to read the [documentation on the WFC site](https://github.com/WebFuzzing/Commons/blob/master/auth.md).
 
-```
-auth:
-  - name: foo
-    loginEndpointAuth:
-      payloadRaw: "{\"username\": \"foo\", \"password\": \"123\"}"
-  - name: bar
-    loginEndpointAuth:
-      payloadUserPwd:
-        username: bar
-        password: "456"
-        usernameField: username
-        passwordField: password
-
-authTemplate:
-  loginEndpointAuth:
-    endpoint: /login
-    verb: POST
-    contentType: application/json
-    expectCookies: true
-```
-
-Here, 2 example users are specified under `auth`: `foo` and `bar`, with their passwords.
-Note: to be able to test the API with such credentials, such users should exist in its database. 
-
-The payload sent to the login endpoint could be either specified as it is (i.e., with `payloadRaw`), or with username/password separately (from which the right payload is automatically derived and formatted based on the `contentType`, e.g., `application/json` or `application/x-www-form-urlencoded`).
-
-There are several pieces of information that would be the same for both users:
-* `endpoint`: the path for the endpoint with the login (can use `externalEndpointURL` if it is on a different server).
-* `verb`: the HTTP verb used to make the request (typically it is a `POST`).
-* `contentType`: specify how the payload will be sent (e.g., JSON in this case).
-* `expectCookies`: tell _EvoMaster_ that from the login endpoint we expect to get a cookie for the authentication.
-
-Note that, at times, username/password information might be passed via header (e.g., with `Basic`), instead of with a body payload.
-This is supported with the array `headers`, in which each header can be specified with a `name` and `value`. 
-For example:
-
-```
-auth:
-  - name: test
-    loginEndpointAuth:
-      endpoint: /api/login
-      verb: POST
-      headers:
-        - name: Authorization
-          value: "Basic dGVzdDp0ZXN0Cg=="
-```
-
-
-
-If instead of cookies we have a token to be extracted from the JSON response of the login endpoint, we can use something like:
-
-```
-auth:
-  loginEndpointAuth:
-     # ... other data here
-     token:
-        headerPrefix="Bearer "
-        extractFromField = "/token/authToken"
-        httpHeaderName="Authorization"
-```
-
-What will happen here is that _EvoMaster_ will make a POST to `/login` and then extract the field `token.authToken` from the JSON response (the entry `extractFromField` is treated as a JSON Pointer (RFC 6901)). 
-Assume for example we have `token.authToken = 123456`.
-In the following auth requests, then _EvoMaster_ will make requests with HTTP header: `Authorization:Bearer 123456`.
-
-
-These configuration auth declaration are mapped into the Java class `org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto`.
-The different fields are then validated on load.
-To read the documentation of such fields, you can look at the [JavaDocs for that class](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller-api/latest/index.html).
-Note: the previous link is for the documentation of released versions of _EvoMaster_. 
-If you are using latest SNAPSHOT (e.g., built directly from latest `master` branch of the Git repository), the DTO definitions could be updated (e.g., there was major refactoring after version `2.0.0`). 
-In such case, you could directly look at the documentation in the [AuthenticationDto class](https://github.com/WebFuzzing/EvoMaster/blob/master/client-java/controller-api/src/main/java/org/evomaster/client/java/controller/api/dto/auth/AuthenticationDto.java). 
 
 
 

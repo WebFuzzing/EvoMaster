@@ -1,0 +1,443 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "QUARTZ MANAGER DEMO API",
+    "description": "Quartz Manager- DEMO - REST API",
+    "license": {
+      "name": "Apache License 2.0",
+      "url": "https://github.com/fabioformosa/quartz-manager/blob/master/LICENSE"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/quartz-manager/simple-triggers/{name}": {
+      "get": {
+        "tags": [
+          "simple-trigger-controller"
+        ],
+        "summary": "Get a simple trigger by name",
+        "operationId": "getSimpleTrigger",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Trigger not found",
+            "content": {}
+          },
+          "200": {
+            "description": "Got the trigger by its name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleTriggerDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "simple-trigger-controller"
+        ],
+        "summary": "Reschedule a simple trigger",
+        "operationId": "rescheduleSimpleTrigger",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimpleTriggerInputDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Rescheduled a simple trigger",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid trigger configuration"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "simple-trigger-controller"
+        ],
+        "summary": "Schedule a new simple trigger",
+        "operationId": "postSimpleTrigger",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimpleTriggerInputDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Scheduled a new simple trigger",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleTriggerDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid trigger configuration"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/triggers": {
+      "get": {
+        "tags": [
+          "trigger-controller"
+        ],
+        "summary": "Get a list of triggers",
+        "operationId": "listTriggers",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Got the trigger list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerKeyDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/scheduler": {
+      "get": {
+        "tags": [
+          "scheduler-controller"
+        ],
+        "summary": "Get the scheduler details",
+        "operationId": "getScheduler",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Return the scheduler config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/scheduler/stop": {
+      "get": {
+        "tags": [
+          "scheduler-controller"
+        ],
+        "summary": "Stop the scheduler",
+        "operationId": "stop",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Got stopped successfully"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/scheduler/run": {
+      "get": {
+        "tags": [
+          "scheduler-controller"
+        ],
+        "summary": "Start the scheduler",
+        "operationId": "run",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Got started successfully"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/scheduler/resume": {
+      "get": {
+        "tags": [
+          "scheduler-controller"
+        ],
+        "summary": "Get resumed the scheduler",
+        "operationId": "resume",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Got resumed successfully"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/scheduler/pause": {
+      "get": {
+        "tags": [
+          "scheduler-controller"
+        ],
+        "summary": "Get paused the scheduler",
+        "operationId": "pause",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Got paused successfully"
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/jobs": {
+      "get": {
+        "tags": [
+          "job-controller"
+        ],
+        "summary": "Get the list of job classes eligible for Quartz-Manager",
+        "operationId": "listJobs",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Return a list of qualified java classes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "quartz-manager-auth": []
+          }
+        ]
+      }
+    },
+    "/quartz-manager/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized - Username or password are incorrect!"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "quartz-manager-auth": {
+        "type": "http",
+        "description": "A JWT Token in required to access this API. You can obtain a JWT Token by providing the username and password in the login API",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
