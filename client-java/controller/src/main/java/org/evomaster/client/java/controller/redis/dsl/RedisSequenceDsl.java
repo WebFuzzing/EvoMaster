@@ -22,9 +22,9 @@ public interface RedisSequenceDsl {
     RedisStatementDsl hset(String key, String field, String value);
 
     /**
-     * An SADD operation on the Redis database.
+     * A SADD operation on the Redis database.
      *
-     * @param key   the set key.
+     * @param key    the set key.
      * @param member the new member in that set.
      * @return a statement object on which the sequence can be continued or closed
      */

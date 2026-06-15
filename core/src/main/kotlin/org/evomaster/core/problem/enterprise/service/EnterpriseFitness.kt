@@ -231,8 +231,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         if (results?.executionResults != null) {
             var dtoIndex = 0
             allRedisActions.forEachIndexed { actionIndex, action ->
-                // Now actions such as SaddFromSinter have multiple execution dtos.
-                val count = action.dtoCount()
+                // Now actions such as SaddFromSinter have multiple insertion dtos related.
+                val count = action.insertionsCount()
                 val success = (dtoIndex until dtoIndex + count).all {
                     results.executionResults[it]
                 }

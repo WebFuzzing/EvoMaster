@@ -154,8 +154,6 @@ class RedisInsertBuilderTest {
         }
     }
 
-    // --- helpers ---
-
     private fun getCommand(key: String) = RedisFailedCommand().also {
         it.keys = listOf(key)
         it.command = "GET"

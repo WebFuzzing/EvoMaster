@@ -25,7 +25,7 @@ class RedisSaddFromSinterAction(
 
     override fun getTargetKey() = keys.joinToString(",")
 
-    override fun dtoCount(): Int = keys.size
+    override fun insertionsCount(): Int = keys.size
 
     override fun seeTopGenes(): List<Gene> = listOf(memberGene)
 

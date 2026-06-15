@@ -92,12 +92,12 @@ public class RedisHandler {
 
     public List<RedisCommandEvaluation> getEvaluatedRedisCommands() {
         operations.stream()
-                .filter(command -> command.getType().shouldCalculateHeuristic())
-                .forEach(redisCommand -> {
-                    RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
-                    evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
-                    registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
-                });
+            .filter(command -> command.getType().shouldCalculateHeuristic())
+            .forEach(redisCommand -> {
+                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
+                registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+            });
         operations.clear();
 
         return evaluatedRedisCommands;
