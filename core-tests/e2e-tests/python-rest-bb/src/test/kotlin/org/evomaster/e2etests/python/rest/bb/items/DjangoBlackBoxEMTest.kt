@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.python.rest.bb.items
 
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.python.rest.bb.DjangoSutController
@@ -18,6 +19,9 @@ class DjangoBlackBoxEMTest : ExternalSutBlackBoxTestBase() {
         @BeforeAll
         @JvmStatic
         fun startDjango() {
+            // do not even bootstrap the Django SUT on Linux/GA: these tests are skipped there
+            // (see ExternalSutBlackBoxTestBase.skipOnLinuxOnGA)
+            CIUtils.skipIfOnLinuxOnGA()
             sut = DjangoSutController()
             sut.start()
             configureSut(sut.baseUrl, sut.schemaPath)

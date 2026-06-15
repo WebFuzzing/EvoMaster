@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.python.rest.bb
 
 import org.apache.commons.io.FileUtils
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
@@ -9,6 +10,7 @@ import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.nio.file.Paths
 import java.time.Duration
@@ -53,6 +55,21 @@ abstract class ExternalSutBlackBoxTestBase : RestTestBase() {
         fun resetInstrumentation() {
             EnterpriseTestBase.shouldApplyInstrumentation = true
         }
+    }
+
+    @BeforeEach
+    fun skipOnLinuxOnGA() {
+        /*
+            The generated Java/Kotlin tests are compiled and run via a CHILD Maven process
+            (see BlackBoxUtils.runMavenTests) against the standalone workspace project, which
+            depends on EvoMaster SNAPSHOT artifacts. On Linux/GitHub Actions those artifacts
+            are not reliably resolvable from that child process, leading to:
+              "Could not find artifact org.evomaster:evomaster-client-java-controller:jar:...-SNAPSHOT".
+            Same issue is documented and handled the same way in SpringTestBase.
+            These tests are therefore run only on Win/Mac, in the dedicated 'python-bb-e2e' CI job
+            (which does 'mvn clean install' first), and skipped here on the Linux 'tests' build.
+        */
+        CIUtils.skipIfOnLinuxOnGA()
     }
 
     private fun addBlackBoxOptions(args: MutableList<String>, outputFormat: OutputFormat) {
