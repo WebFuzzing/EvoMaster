@@ -3,34 +3,39 @@ package org.evomaster.core.redis
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.parser.RegexHandler
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Transforms a failed Redis read command into the corresponding insert action.
  *
  * Each supported command type maps to a specific [RedisDbAction] subclass:
  * - GET key        -> [RedisSetAction]
- * - KEYS pattern   -> [RedisSetAction]
+ * - KEYS pattern   -> [RedisSetFromPatternAction]
  * - HGET key field -> [RedisHsetAction]
  * - HGETALL key    -> [RedisHsetAction]
  */
 object RedisInsertBuilder {
 
+    private val log: Logger = LoggerFactory.getLogger(RedisInsertBuilder::class.java)
+
     fun buildInsertActions(
         failedCommands: List<RedisFailedCommand>,
-        existingKeys: Set<String>,
-        randomness: Randomness
+        existingKeys: Set<String>
     ): List<RedisDbAction> {
         return failedCommands.flatMap { cmd ->
-            buildActionsForCommand(cmd, existingKeys, randomness)
+            buildActionsForCommand(cmd, existingKeys)
         }
     }
 
     private fun buildActionsForCommand(
         cmd: RedisFailedCommand,
-        existingKeys: Set<String>,
-        randomness: Randomness
+        existingKeys: Set<String>
     ): List<RedisDbAction> {
         val keys = cmd.keys ?: emptyList()
 
@@ -38,64 +43,63 @@ object RedisInsertBuilder {
             "GET" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
-                listOf(RedisSetAction(
-                    keyGene = StringGene("key", key),
-                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
-                ))
+                listOf(
+                    RedisSetAction(
+                        key = key,
+                        valueGene = StringGene("value")
+                    )
+                )
             }
             "HGET" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
-                listOf(RedisHsetAction(
-                    keyGene = StringGene("key", key),
-                    field = cmd.field ?: "field",
-                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
-                ))
+                listOf(
+                    RedisHsetAction(
+                        key = key,
+                        field = cmd.field ?: "field",
+                        valueGene = StringGene("value")
+                    )
+                )
             }
             "HGETALL" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
-                listOf(RedisHsetAction(
-                    keyGene = StringGene("key", key),
-                    field = "field",
-                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
-                ))
+                listOf(
+                    RedisHsetAction(
+                        key = key,
+                        field = "field",
+                        valueGene = StringGene("value")
+                    )
+                )
             }
             "KEYS" -> {
-                val keyGene = StringGene("key").also {
-                    it.addSpecializations(
-                        "key",
-                        listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, cmd.pattern)),
-                        randomness,
-                        updateGlobalInfo = false,
-                        enableConstraintHandling = false
-                    )
-                    it.doInitialize(randomness)
-                }
-                listOf(RedisSetAction(
+                val pattern = cmd.pattern ?: return emptyList()
+                val keyGene = RegexHandler.createGeneForJVM(pattern)
+                listOf(RedisSetFromPatternAction(
                     keyGene = keyGene,
-                    valueGene = StringGene("value").also { it.randomize(randomness, false) }
+                    valueGene = StringGene("value")
                 ))
             }
             "SMEMBERS" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
                 listOf(RedisSaddAction(
-                    keyGene = StringGene("key", key),
-                    memberGene = StringGene("member").also { it.randomize(randomness, false) }
+                    key = key,
+                    memberGene = StringGene("member")
                 ))
             }
             "SINTER" -> {
                 if (keys.isEmpty()) return emptyList()
-                val sharedElement = StringGene("member").also { it.randomize(randomness, false) }
-                keys.map { key ->
-                    RedisSaddAction(
-                        keyGene = StringGene("key", key),
-                        memberGene = sharedElement.copy() as StringGene
-                    )
-                }
+                listOf(RedisSaddFromSinterAction(
+                    keys = keys,
+                    memberGene = StringGene("member")
+                ))
             }
-            else -> emptyList()
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Unsupported Redis command for insert action: ${cmd.command}")
+                assert(false) { "Unsupported Redis command: ${cmd.command}" }
+                emptyList()
+            }
         }
     }
 }

@@ -15,6 +15,11 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
  * Using RFC3339
@@ -166,6 +171,34 @@ open class DateTimeGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
         return false
+    }
+
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        val pd = DateTimeFormatter.ofPattern("YYYY-MM-DD")
+        val pt = DateTimeFormatter.ofPattern("HH:MM:SS")
+
+        val (dateValue, timeValue) = try{
+            if(format == FormatForDatesAndTimes.RFC3339) {
+                val dateTime = OffsetDateTime.parse(value)
+
+                val dateValue = dateTime.format(pd)
+                val timeValue = dateTime.format(pt)
+                Pair(dateValue, timeValue)
+
+            } else{
+                val formatter = DateTimeFormatter.ofPattern(format.pattern)
+                val dateTime = LocalDateTime.parse(value, formatter)
+
+                val dateValue =  dateTime.format(pd)
+                val timeValue = dateTime.format(pt)
+                Pair(dateValue, timeValue)
+            }
+        }catch (e: Exception){
+            return false
+        }
+
+        return date.unsafeSetFromStringValue(dateValue) && time.unsafeSetFromStringValue(timeValue)
     }
 
 }

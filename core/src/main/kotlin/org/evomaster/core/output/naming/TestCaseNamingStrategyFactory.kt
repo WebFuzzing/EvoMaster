@@ -24,26 +24,27 @@ class TestCaseNamingStrategyFactory(
     }
 
     fun create(solution: Solution<*>): TestCaseNamingStrategy {
-        return when {
-            namingStrategy.isNumbered() -> NamingHelperNumberedTestCaseNamingStrategy(solution)
-            namingStrategy.isAction() -> actionBasedNamingStrategy(solution)
+        return when(namingStrategy) {
+            NamingStrategy.NUMBERED -> NamingHelperNumberedTestCaseNamingStrategy(solution)
+            NamingStrategy.DETERMINISTIC -> deterministicActionBasedNamingStrategy(solution)
+            //TODO LLM
             else -> throw IllegalStateException("Unrecognized naming strategy $namingStrategy")
         }
     }
 
-    private fun actionBasedNamingStrategy(solution: Solution<*>): NumberedTestCaseNamingStrategy {
+    private fun deterministicActionBasedNamingStrategy(solution: Solution<*>): NumberedTestCaseNamingStrategy {
         val individuals = solution.individuals
         return when {
-            individuals.any { it.individual is RestIndividual } -> return RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, nameWithQueryParameters, maxTestCaseNameLength)
-            individuals.any { it.individual is GraphQLIndividual } -> return GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
-            individuals.any { it.individual is RPCIndividual } -> return RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
+            individuals.any { it.individual is RestIndividual } ->  RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, nameWithQueryParameters, maxTestCaseNameLength)
+            individuals.any { it.individual is GraphQLIndividual } ->  GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
+            individuals.any { it.individual is RPCIndividual } ->  RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
-                return NamingHelperNumberedTestCaseNamingStrategy(solution)
+                NamingHelperNumberedTestCaseNamingStrategy(solution)
             }
             individuals.isEmpty() -> {
                 log.warn("No individuals present in the solution. Defaulting to Numbered strategy.")
-                return NumberedTestCaseNamingStrategy(solution)
+                NumberedTestCaseNamingStrategy(solution)
             }
             else -> throw IllegalStateException("Unrecognized test individuals with no action based naming strategy set.")
         }

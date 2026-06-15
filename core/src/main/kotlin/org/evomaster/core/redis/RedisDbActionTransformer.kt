@@ -9,23 +9,35 @@ object RedisDbActionTransformer {
 
     fun transform(actions: List<RedisDbAction>): RedisDatabaseCommandsDto {
         val dto = RedisDatabaseCommandsDto()
-        dto.insertions = actions.map { action ->
+        dto.insertions = actions.flatMap { action ->
             when (action) {
-                is RedisSetAction -> RedisInsertionDto().also {
+                is RedisSetAction -> listOf(RedisInsertionDto().also {
                     it.command = "SET"
-                    it.key = action.keyGene.value
+                    it.key = action.key
                     it.value = action.valueGene.value
-                }
-                is RedisHsetAction -> RedisInsertionDto().also {
+                })
+                is RedisSetFromPatternAction -> listOf(RedisInsertionDto().also {
+                    it.command = "SET"
+                    it.key = action.keyGene.getValueAsRawString()
+                    it.value = action.valueGene.value
+                })
+                is RedisHsetAction -> listOf(RedisInsertionDto().also {
                     it.command = "HSET"
-                    it.key = action.keyGene.value
+                    it.key = action.key
                     it.field = action.field
                     it.value = action.valueGene.value
-                }
-                is RedisSaddAction -> RedisInsertionDto().also {
+                })
+                is RedisSaddAction -> listOf(RedisInsertionDto().also {
                     it.command = "SADD"
-                    it.key = action.keyGene.value
+                    it.key = action.key
                     it.value = action.memberGene.value
+                })
+                is RedisSaddFromSinterAction -> action.keys.map { key ->
+                    RedisInsertionDto().also {
+                        it.command = "SADD"
+                        it.key = key
+                        it.value = action.memberGene.value
+                    }
                 }
             }
         }

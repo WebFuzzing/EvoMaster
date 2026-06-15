@@ -120,7 +120,7 @@ public class ReflectionBasedRedisClient {
 
     /** SADD key */
     public void addMember(String key, String member) {
-        invoke(SADD_METHOD, key, member);
+        invoke(SADD_METHOD, key, new String[]{member});
     }
 
     /** SMEMBERS key */

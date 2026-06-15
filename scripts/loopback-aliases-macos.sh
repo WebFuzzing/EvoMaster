@@ -77,3 +77,7 @@ then
 else
 	echo "No operation selected to execute"
 fi
+
+
+### On shell, can also just run:
+### for i in {2..255}; do sudo ifconfig lo0 alias 127.0.0.$i up; done

@@ -15,5 +15,7 @@ sealed class RedisDbAction : EnvironmentAction(listOf()) {
      */
     open fun getTargetKey(): String? = null
 
+    open fun dtoCount(): Int = 1
+
     override fun getActionGroupKey(): String = RedisDbAction::class.java.name
 }
