@@ -54,28 +54,34 @@ public class Z3DockerExecutor implements AutoCloseable {
      * The file must be in the directory specified by containerPath.
      *
      * @param fileName the name of the SMT-LIB file to read and solve
-     * @return the result of the Z3 solver as a map of variable names to their values, if the problem is satisfiable (sat)
-     *         or an empty Optional if the problem is unsatisfiable (unsat)
+     * @return a {@link Z3Result} with status SAT (and the model), UNSAT, or ERROR
      */
-    public Optional<Map<String, SMTLibValue>> solveFromFile(String fileName) {
+    public Z3Result solveFromFile(String fileName) {
         try {
-            // Execute the Z3 solver on the specified file in the container
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
+
             if (result.getExitCode() != 0) {
-                throw new RuntimeException("Error executing Z3 solver: \n" + result.getStdout() + "\n" + result.getStderr());
+                return Z3Result.error("Z3 exited with code " + result.getExitCode()
+                        + ": " + result.getStdout() + result.getStderr());
             }
+
             String stdout = result.getStdout();
-
-            // Check if the solver returned any output
-            if (stdout == null || stdout.isEmpty()) {
-                String stderr = result.getStderr();
-                throw new RuntimeException("No result after solving file " + stderr);
+            if (stdout == null || stdout.trim().isEmpty()) {
+                return Z3Result.error("Z3 produced no output for file: " + fileName
+                        + " stderr: " + result.getStderr());
             }
 
-            // Parse the solver output and return the result
-            return Optional.of(SMTResultParser.parseZ3Response(stdout));
+            if (stdout.trim().startsWith("unsat")) {
+                return Z3Result.unsat();
+            }
+
+            Map<String, SMTLibValue> model = SMTResultParser.parseZ3Response(stdout);
+            return Z3Result.sat(model);
+
         } catch (IOException | InterruptedException e) {
-            return Optional.empty();
+            return Z3Result.error("I/O or interruption error running Z3 on " + fileName + ": " + e.getMessage());
+        } catch (RuntimeException e) {
+            return Z3Result.error("Unexpected error parsing Z3 output for " + fileName + ": " + e.getMessage());
         }
     }
 
