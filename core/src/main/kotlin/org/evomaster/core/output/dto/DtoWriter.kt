@@ -23,6 +23,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -119,16 +120,45 @@ class DtoWriter(
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
             gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
-            // TODO: a JsonPatchDocumentGene is currently skipped from DTO collection. Once we decide
-            //  how a JSON Patch document should be rendered when a test case is written (it is not a
-            //  regular object/array DTO but an RFC 6902 array of operations), this should build and
-            //  emit the corresponding DTO instead of returning.
-            gene is JsonPatchDocumentGene -> return
+            gene is JsonPatchDocumentGene -> calculateDtoFromJsonPatch(gene)
             isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
         }
+    }
+
+    /**
+     * Collects the DTO needed to render a JSON Patch document (RFC 6902) as a typed payload.
+     *
+     * A single shared [GeneToDto.JSON_PATCH_OPERATION_DTO] class is used for all patch operations,
+     * holding every field used across the operation types: "op" and "path" (always present),
+     * "from" (move/copy) and "value" (add/replace/test). The "value" field is typed as the generic
+     * object type since a JSON Patch value can be any JSON value; fields not used by a given
+     * operation are left null and skipped on serialization (see @JsonInclude(NON_NULL)).
+     *
+     * When an operation carries an object or array value, the corresponding nested DTOs are also
+     * collected so the value can be rendered as a proper object instead of stringified JSON.
+     */
+    private fun calculateDtoFromJsonPatch(gene: JsonPatchDocumentGene) {
+        val dtoName = GeneToDto.JSON_PATCH_OPERATION_DTO
+        val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(it) }
+        dtoClass.addField(GeneToDto.FIELD_OP, DtoField(GeneToDto.FIELD_OP, "String"))
+        dtoClass.addField(GeneToDto.FIELD_PATH, DtoField(GeneToDto.FIELD_PATH, "String"))
+        dtoClass.addField(GeneToDto.FIELD_FROM, DtoField(GeneToDto.FIELD_FROM, "String"))
+        dtoClass.addField(GeneToDto.FIELD_VALUE, DtoField(GeneToDto.FIELD_VALUE, anyType()))
+        dtoCollector[dtoName] = dtoClass
+
+        gene.operations.filterIsInstance<JsonPatchPathValueGene>().forEach { operation ->
+            when (val valueGene = operation.pathValueChoice.activeGene().second.getLeafGene()) {
+                is ObjectGene -> calculateDtoFromObject(valueGene, GeneToDto.FIELD_VALUE)
+                is ArrayGene<*> -> calculateDtoFromArray(valueGene, GeneToDto.FIELD_VALUE)
+            }
+        }
+    }
+
+    private fun anyType(): String {
+        return if (outputFormat.isJava()) "Object" else "Any"
     }
 
     private fun calculateDtoFromFixedMapGene(gene: FixedMapGene<*, *>, actionName: String) {
