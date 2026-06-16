@@ -1,13 +1,16 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.sorting.SortingHelper
 import org.evomaster.core.search.Solution
 
 
 class TestSuiteOrganizer(
-    private val config: EMConfig
+    private val config: EMConfig,
+    private val llmService: LlmService
 ) {
 
     private val sortingHelper = SortingHelper()
@@ -27,7 +30,7 @@ class TestSuiteOrganizer(
      * WARNING: side-effect of sorting tests inside input [solution] object
      *
      */
-    fun createSortedTestCases(solution: Solution<*>): List<TestCase> {
+    fun createSortedTestCases(solution: Solution<*>, testCaseWriter: TestCaseWriter): List<TestCase> {
 
         /*
             Tests MUST be sorted before they are named, as their position might influence
@@ -35,7 +38,7 @@ class TestSuiteOrganizer(
          */
         sortingHelper.sort(solution.individuals, config.testCaseSortingStrategy)
 
-        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
+        val namingStrategy = TestCaseNamingStrategyFactory(config, testCaseWriter, llmService).create(solution)
 
         val tests = namingStrategy.getTestCases()
 

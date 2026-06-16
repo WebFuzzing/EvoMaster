@@ -84,7 +84,11 @@ class LlmService {
     }
 
     fun chat(userMessage: String) : String{
-        return LlmSupport.chat(syncModel, "", userMessage)
+        return LlmSupport.chat(syncModel, userMessage)
+    }
+
+    fun chat(systemMessage: String, userMessage: String) : String{
+        return LlmSupport.chat(syncModel, systemMessage, userMessage)
     }
 
     /**
