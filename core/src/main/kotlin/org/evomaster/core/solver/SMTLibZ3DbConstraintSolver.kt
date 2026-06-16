@@ -56,6 +56,10 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    // Schema is assumed stable within a single run, so only query + row count form the key.
+    private val z3ResultCache = mutableMapOf<Pair<String, Int>, Z3Result>()
+
     @Inject
     private lateinit var config: EMConfig
 
@@ -95,11 +99,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      *         or an empty list if the problem is UNSAT, unparseable, or an error occurred.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
         val collectStats = config.collectDseStats
 
         if (collectStats) {
             statistics.reportDseQuerySeen(sqlQuery.hashCode())
+        }
+
+        val cacheKey = Pair(sqlQuery, numberOfRows)
+        val cached = z3ResultCache[cacheKey]
+        if (cached != null) {
+            return when (cached.status) {
+                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
+                else -> emptyList()
+            }
         }
 
         val queryStatement = try {
@@ -128,15 +140,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return when (z3Result.status) {
             Z3Result.Status.SAT -> {
                 if (collectStats) statistics.reportDseSat(z3TimeMs)
+                z3ResultCache[cacheKey] = z3Result
                 toSqlActionList(schemaDto, z3Result.model)
             }
             Z3Result.Status.UNSAT -> {
                 if (collectStats) statistics.reportDseUnsat(z3TimeMs)
+                z3ResultCache[cacheKey] = z3Result
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
                 LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
                 if (collectStats) statistics.reportDseError(z3TimeMs)
+                // Errors are not cached — they may be transient Docker failures
                 emptyList()
             }
         }
