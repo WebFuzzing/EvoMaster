@@ -127,11 +127,11 @@ object TestWriterUtils {
 
     /**
      * Some character shouldn't be used for variable names, as it would lead to compilation/runtime errors.
-     * Those are replaced with safe ones
+     * Those are replaced with [replacementChar], which by default is '_'.
      */
-    fun safeVariableName(name: String): String {
+    fun safeVariableName(name: String, replacementChar: String = "_"): String {
 
-        val safe = name.replace(Regex("[^0-9a-zA-Z_]"), "_")
+        val safe = name.replace(Regex("[^0-9a-zA-Z_]"), replacementChar)
         val first = safe.codePointAt(0)
         if(first >= '0'.code && first <= '9'.code ) {
             //can't start a variable name with a number
