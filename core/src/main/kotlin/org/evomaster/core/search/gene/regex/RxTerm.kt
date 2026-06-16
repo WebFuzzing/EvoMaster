@@ -10,5 +10,5 @@ interface RxTerm {
      * for example an empty character class intersection like [a&&b].
      * Used at construction time to filter unsatisfiable branches from disjunctions.
      */
-    fun isEffectivelyEmpty(): Boolean = false
+    fun isUnsatisfiable(): Boolean = false
 }

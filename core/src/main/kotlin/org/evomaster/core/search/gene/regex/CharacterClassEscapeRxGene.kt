@@ -132,10 +132,10 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun isEffectivelyEmpty(): Boolean = multiCharRange.isEmpty
+    override fun isUnsatisfiable(): Boolean = multiCharRange.isEmpty
 
     override fun isMutable(): Boolean {
-        return !isEffectivelyEmpty()
+        return !isUnsatisfiable()
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -199,7 +199,7 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        if (isEffectivelyEmpty()) {
+        if (isUnsatisfiable()) {
             throw IllegalStateException("Cannot get value from empty CharacterClassEscape")
         }
         return if (!flags.isCaseable(value[0])) {

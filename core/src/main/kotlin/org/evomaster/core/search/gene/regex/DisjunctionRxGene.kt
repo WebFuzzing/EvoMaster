@@ -47,8 +47,8 @@ class DisjunctionRxGene(
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
-    override fun isEffectivelyEmpty(): Boolean =
-        terms.isNotEmpty() && terms.any { (it as? RxTerm)?.isEffectivelyEmpty() == true }
+    override fun isUnsatisfiable(): Boolean =
+        terms.isNotEmpty() && terms.any { (it as? RxTerm)?.isUnsatisfiable() == true }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true

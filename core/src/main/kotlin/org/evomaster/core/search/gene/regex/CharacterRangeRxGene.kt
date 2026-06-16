@@ -30,7 +30,7 @@ class CharacterRangeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    var value : Char = if (isEffectivelyEmpty()) '\u0000' else validRanges[0].start
+    var value : Char = if (isUnsatisfiable()) '\u0000' else validRanges[0].start
 
     /**
      * Whether to output the character in uppercase.
@@ -38,7 +38,7 @@ class CharacterRangeRxGene(
      */
     var useUpperCase: Boolean = false
 
-    override fun isEffectivelyEmpty(): Boolean = validRanges.isEmpty
+    override fun isUnsatisfiable(): Boolean = validRanges.isEmpty
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return validRanges.any {
@@ -51,7 +51,7 @@ class CharacterRangeRxGene(
     }
 
     override fun isMutable(): Boolean {
-        if (isEffectivelyEmpty()) {
+        if (isUnsatisfiable()) {
             return false
         }
         // check if there is more than one character or if the character is caseable
@@ -139,7 +139,7 @@ class CharacterRangeRxGene(
             TODO should \ be handled specially?
             In any case, would have same handling as AnyCharacterRxGene
          */
-        if (isEffectivelyEmpty()) {
+        if (isUnsatisfiable()) {
             throw IllegalStateException("Cannot get value from empty CharacterRange")
         }
         return if (!flags.isCaseable(value)) {

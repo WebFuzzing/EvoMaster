@@ -88,15 +88,15 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val res = ctx.accept(this)
         val validDisjunctions = res.genes.map { it as DisjunctionRxGene }
 
-        val nonEmptyDisj = validDisjunctions.filter{ !it.isEffectivelyEmpty() }
+        val satisfiableDisjunctions = validDisjunctions.filter{ !it.isUnsatisfiable() }
 
-        if(nonEmptyDisj.isEmpty()){
+        if(satisfiableDisjunctions.isEmpty()){
             // As DisjunctionListRxGene extends CompositeFixedGene, its disjunctions list cannot be empty.
             // In this case we return null to represent an unsatisfiable DisjunctionListRxGene.
             return null
         }
 
-        val disjList = DisjunctionListRxGene(nonEmptyDisj)
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
         //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
         for (gene in disjList.disjunctions) {
@@ -114,15 +114,15 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        val nonEmptyDisj = res.genes
+        val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
-            .filter{ !it.isEffectivelyEmpty() }
+            .filter{ !it.isUnsatisfiable() }
 
-        if (nonEmptyDisj.isEmpty()) {
+        if (satisfiableDisjunctions.isEmpty()) {
             throw IllegalStateException("Regex is unsatisfiable.")
         }
 
-        val disjList = DisjunctionListRxGene(nonEmptyDisj)
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
         val gene = RegexGene(
@@ -265,7 +265,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             // if quantified atom is unsatisfiable we must then check the limits
             if (atom == null ||
-                ((atom as? RxTerm)?.isEffectivelyEmpty() == true) && resAtom.genes.size == 1) {
+                ((atom as? RxTerm)?.isUnsatisfiable() == true) && resAtom.genes.size == 1) {
                 return if (limits.first == 0) {
                     // if 0 appearances is allowed then the regex is satisfiable only with empty string
                     VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))
