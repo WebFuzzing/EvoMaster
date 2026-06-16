@@ -21,12 +21,14 @@ import org.slf4j.LoggerFactory
  * - Common performance tracking and metric estimation
  *
  * The classifier assumes a fixed input representation. Each feature is uniquely identified
- * (by e.g., a parameter path) and stored in `modelKeys`, where:
+ * (by e.g., a parameter path) and stored in `modelKeys`, such that:
  *
  *     modelKeys[i] <-> inputVector[i]
  *
+ * where `inputVector` is the encoded representation of a `RestCallAction` produced by [InputEncoderUtilWrapper].
  * The ordering of `modelKeys` is important and must remain stable
- * throughout the lifetime of the model. This guarantees that the same parameter
+ * to provide a fixed-length `inputVector` throughout the model's lifetime.
+ * This guarantees that the same parameter
  * is always encoded into the same feature dimension.
  */
 abstract class AbstractProbabilistic400EndpointModel(
@@ -83,10 +85,10 @@ abstract class AbstractProbabilistic400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val allParamsPathsAndEncodedValues = encoder.getAllParamsPathsAndEncodedValues()
 
-        val inputVector = allParamsPathsAndEncodedValues.values.toList()
         val paramPaths = allParamsPathsAndEncodedValues.keys.toList()
 
-        require(inputVector.isNotEmpty()) { "Input vector is empty" }
+        // It is sufficient to check the parameter paths. The encoder guarantees
+        // that every parameter path has a corresponding non-null encoded value.
         require(paramPaths.isNotEmpty()) { "Parameter paths are empty" }
         require(warmup > 0) { "Warmup must be positive" }
 
