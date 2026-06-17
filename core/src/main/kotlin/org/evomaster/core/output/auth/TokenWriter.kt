@@ -47,6 +47,11 @@ object TokenWriter {
 
         for (k in tokensInfo) {
 
+            val createUsers = CreateUsersWriter.getCreateUsersForNamedAuth(k.name, ind.individual)
+            if(createUsers != null) {
+                //TODO
+            }
+
             val token = k.token!!
 
             when {
