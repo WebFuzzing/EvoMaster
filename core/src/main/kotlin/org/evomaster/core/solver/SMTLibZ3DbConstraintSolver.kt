@@ -99,7 +99,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      *         or an empty list if the problem is UNSAT, unparseable, or an error occurred.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        val collectStats = config.collectDseStats
+        val collectStats = ::config.isInitialized && config.collectDseStats
 
         if (collectStats) {
             statistics.reportDseQuerySeen(sqlQuery.hashCode())
