@@ -127,8 +127,9 @@ class InputEncoderUtilWrapper(
      */
     fun getAllParamsPathsAndEncodedValues(): Map<String, Double> {
 
-        val paramPaths = endPointToGeneList().map { it.paramPath }
-        val encodedValues = encode()
+        val geneList = endPointToGeneList()
+        val paramPaths = geneList.map { it.paramPath }
+        val encodedValues = encode(geneList)
 
         return paramPaths.zip(encodedValues).toMap()
     }
@@ -186,10 +187,10 @@ class InputEncoderUtilWrapper(
      *
      * @return a list of doubles representing the encoded feature vector
      */
-    fun encode(): List<Double> {
+    fun encode(geneList: List<ParamAndGene> = endPointToGeneList()): List<Double> {
         val sentinel = -1e6 // for null handling
         val neutral = 0.0 // for handling unsupported genes
-        val listGenes = endPointToGeneList().map { it.gene }
+        val listGenes = geneList.map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 
         for (g in listGenes) {
