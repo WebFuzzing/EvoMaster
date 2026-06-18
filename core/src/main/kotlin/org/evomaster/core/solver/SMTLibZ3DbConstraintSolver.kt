@@ -126,12 +126,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
         val smtLib = generator.generateSMT(queryStatement)
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
+        val smtString = smtLib.toString()
         if (collectStats) {
-            val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
+            val smtlibBytes = smtString.toByteArray(StandardCharsets.UTF_8).size
             statistics.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
         }
 
-        val fileName = storeToTmpFile(smtLib)
+        val fileName = storeToTmpFile(smtString)
 
         val z3Start = System.currentTimeMillis()
         val z3Result = executor.solveFromFile(fileName)
@@ -398,7 +399,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param smtLib The SMTLib problem.
      * @return The filename of the stored SMTLib problem.
      */
-    private fun storeToTmpFile(smtLib: SMTLib): String {
+    private fun storeToTmpFile(smtLib: String): String {
         val directoryPath = leadingBarResourcesFolder()
         val fileNameBase = "smt2_${System.currentTimeMillis()}"
         val fileExtension = ".smt2"
@@ -417,7 +418,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 filePath = directory.resolve(fileName)
             }
 
-            Files.write(filePath, smtLib.toString().toByteArray(StandardCharsets.UTF_8))
+            Files.write(filePath, smtLib.toByteArray(StandardCharsets.UTF_8))
 
             return fileName
         } catch (e: IOException) {
