@@ -23,6 +23,7 @@ import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.string.StringGene
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
+import java.util.IdentityHashMap
 
 /**
  * Utility object for encoding the genes of a [org.evomaster.core.problem.rest.data.RestCallAction] into a numerical representation.
@@ -79,24 +80,22 @@ class InputEncoderUtilWrapper(
      * Builds a string representing the gene name and all its parents.
      * This string is used as a unique identifier for the gene in the AI models.
      */
+    private val _genePathCache = IdentityHashMap<Gene, String>()
+
     private fun genePath(g: Gene): String {
-
-        val names = mutableListOf<String>()
-
-        var current: Gene? = g
-
-        while (current != null) {
-            names.add(current.name)
-            current = current.parent as? Gene
+        return _genePathCache.getOrPut(g) {
+            val names = mutableListOf<String>()
+            var current: Gene? = g
+            while (current != null) {
+                names.add(current.name)
+                current = current.parent as? Gene
+            }
+            val path = names.reversed()
+            if (path.size > 1)
+                path.dropLast(1).joinToString("/")
+            else
+                path.joinToString("/")
         }
-
-        val path = names.reversed()
-        
-        return if (path.size > 1)
-            path.dropLast(1).joinToString("/") //ignore the last name, which is the repetition of gene itself as its own parent
-        else
-            path.joinToString("/")
-
     }
 
     /**
