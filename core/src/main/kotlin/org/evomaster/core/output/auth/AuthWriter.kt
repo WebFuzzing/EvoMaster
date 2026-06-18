@@ -12,7 +12,7 @@ object AuthWriter {
      * Add lines related to make the call (eg setup of body payload), without the opening function (eg, 'given()' for
      * RestAssured).
      * Python is treated specially, as before the opening function we need to setup some variables.
-     * The opening function is then
+     * The opening function is then added here in this function.
      *
      * @param lines Current lines buffer
      * @param k The endpoint to call
