@@ -69,7 +69,7 @@ object TokenWriter {
                 lines.indent(2)
             }
 
-            AuthWriter.addCallCommand(lines,k,testCaseWriter,format,baseUrlOfSut, responseName(k))
+            AuthWriter.addCallCommand(lines,k.call,testCaseWriter,format,baseUrlOfSut, responseName(k))
 
             var path = token.extractSelector.substring(1).replace("/",".")
 

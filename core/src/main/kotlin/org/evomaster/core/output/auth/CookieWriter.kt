@@ -69,7 +69,7 @@ object CookieWriter {
                 else -> cookiesName(k)
             }
 
-            AuthWriter.addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
+            AuthWriter.addCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")

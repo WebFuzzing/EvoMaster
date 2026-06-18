@@ -3,14 +3,14 @@ package org.evomaster.core.output.auth
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
-import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
+import org.evomaster.core.problem.httpws.auth.CallToEndpoint
 import org.evomaster.core.problem.rest.data.ContentType
 
 object AuthWriter {
 
     fun addCallCommand(
         lines: Lines,
-        k: EndpointCallLogin,
+        k: CallToEndpoint,
         testCaseWriter: HttpWsTestCaseWriter,
         format: OutputFormat,
         baseUrlOfSut: String,
@@ -91,7 +91,7 @@ object AuthWriter {
 
     private fun callEndpoint(
         lines: Lines,
-        k: EndpointCallLogin,
+        k: CallToEndpoint,
         format: OutputFormat,
         baseUrlOfSut: String
     ) {
