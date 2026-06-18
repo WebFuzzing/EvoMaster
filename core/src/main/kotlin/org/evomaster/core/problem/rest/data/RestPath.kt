@@ -354,15 +354,7 @@ class RestPath(path: String) {
         val data = dynamicResolutionOnlyPathData(params, mapOf())
         assert(data.size == 1)
         assert(!data[0].second)
-        return data[0].first.map { c ->
-        // The URI calls in dynamicResolutionOnlyPathData do not encode non-ASCII characters in path segments.
-            if (c.code > 127) {
-                // non-ASCII
-                encode(c.toString())
-            } else {
-                c.toString()
-            }
-        }.joinToString( "")
+        return data[0].first
     }
 
 
@@ -421,7 +413,7 @@ class RestPath(path: String) {
                             why not using URI also for Query part???
                             it seems unclear how to properly build it as a single string...
                          */
-                        val entry = URI(null, null, path.toString(), null, null).rawPath
+                        val entry = URI(null, null, path.toString(), null, null).toASCIIString()
                         data.add(Pair(entry, false))
                         path.setLength(0) // clear it
                         data.add(Pair(variable, true))
@@ -454,7 +446,7 @@ class RestPath(path: String) {
         }
 
         if(path.isNotEmpty()){
-            val entry = URI(null, null, path.toString(), null, null).rawPath
+            val entry = URI(null, null, path.toString(), null, null).toASCIIString()
             data.add(Pair(entry, false))
         }
 
