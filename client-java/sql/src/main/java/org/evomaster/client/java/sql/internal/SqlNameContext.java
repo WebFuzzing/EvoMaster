@@ -144,9 +144,8 @@ public class SqlNameContext {
 
                 @Override
                 public void visit(ParenthesedSelect selectBody) {
-                    PlainSelect plainSelect = selectBody.getPlainSelect();
-                    SqlNameContext subContext = new SqlNameContext(plainSelect);
-                    tableAliases.putAll(subContext.tableAliases);
+                    names.add(UNNAMED_TABLE);
+                    handleAlias(tableAliases, selectBody);
                 }
 
                 @Override
@@ -240,7 +239,7 @@ public class SqlNameContext {
 
         @Override
         public void visit(ParenthesedSelect selectBody) {
-            handleAlias(aliases, selectBody.getPlainSelect());
+            handleAlias(aliases, selectBody);
         }
 
         @Override
@@ -262,8 +261,8 @@ public class SqlNameContext {
     }
 
 
-    private static void handleAlias(Map<String, String> aliases, PlainSelect plainSelect) {
-        Alias alias = plainSelect.getFromItem().getAlias();
+    private static void handleAlias(Map<String, String> aliases, ParenthesedSelect select) {
+        Alias alias = select.getAlias();
         if (alias != null) {
             String aliasName = alias.getName();
             if (aliasName != null) {
@@ -290,3 +289,4 @@ public class SqlNameContext {
         }
     }
 }
+
