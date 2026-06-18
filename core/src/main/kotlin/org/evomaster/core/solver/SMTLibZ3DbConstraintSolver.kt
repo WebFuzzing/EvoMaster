@@ -125,9 +125,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtlibGenStart = System.currentTimeMillis()
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
         val smtLib = generator.generateSMT(queryStatement)
+        val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
         if (collectStats) {
-            val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
             statistics.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
         }
 
