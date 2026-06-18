@@ -6,7 +6,6 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
-import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -69,7 +68,7 @@ object CookieWriter {
                 else -> cookiesName(k)
             }
 
-            AuthWriter.addCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
+            AuthWriter.addBodyOfCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")

@@ -8,13 +8,24 @@ import org.evomaster.core.problem.rest.data.ContentType
 
 object AuthWriter {
 
-    fun addCallCommand(
+    /**
+     * Add lines related to make the call (eg setup of body payload), without the opening function (eg, 'given()' for
+     * RestAssured).
+     * Python is treated specially, as before the opening function we need to setup some variables.
+     * The opening function is then
+     *
+     * @param lines Current lines buffer
+     * @param k The endpoint to call
+     * @param targetVariable Only used for languages like Python. If present, in the  generated code the result of call
+     *                       is saved to this variable.
+     */
+    fun addBodyOfCallCommand(
         lines: Lines,
         k: CallToEndpoint,
         testCaseWriter: HttpWsTestCaseWriter,
         format: OutputFormat,
         baseUrlOfSut: String,
-        targetVariable: String
+        targetVariable: String?
     ) {
 
         if(format.isJavaScript()) {
@@ -78,7 +89,11 @@ object AuthWriter {
         }
 
         if (format.isPython()) {
-            lines.add("$targetVariable = requests \\")
+            if(targetVariable != null){
+                lines.add("$targetVariable = requests \\")
+            } else {
+                lines.add("requests \\")
+            }
             lines.indent(2)
             callEndpoint(lines, k, format, baseUrlOfSut)
             lines.append(", ")
