@@ -82,6 +82,12 @@ abstract class AbstractProbabilistic400EndpointModel(
             return
         }
 
+        if (modelKeys != null && dimension != null) {
+            require(warmup > 0) { "Warmup must be positive" }
+            initialized = true
+            return
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val allParamsPathsAndEncodedValues = encoder.getAllParamsPathsAndEncodedValues()
 
