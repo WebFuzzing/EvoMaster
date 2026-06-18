@@ -405,6 +405,7 @@ class SamplerVerifierTest {
                     || (contains("xero.com") && contains("xero_bankfeeds") && contains("2.9.4"))
                     || (contains("dataflowkit.com")  && contains("1.3"))
                     || (contains("rebilly.com")  && contains("2.1"))
+                    || (contains("azure.com") && contains("web-WebApps"))
         }
     }
 
