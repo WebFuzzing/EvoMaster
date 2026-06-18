@@ -5,7 +5,6 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -24,7 +23,7 @@ class McpIndividualTest {
     @Test
     fun `seeMainExecutableActions returns all actions`() {
         val toolAction = McpToolCallAction("myTool", ObjectGene("input", emptyList()))
-        val resourceAction = McpResourceReadAction(StringGene("uri", "file:///data"))
+        val resourceAction = McpResourceReadAction(uriTemplate = "file:///data", uriParams = emptyList())
 
         val individual = buildIndividual(toolAction, resourceAction)
 
@@ -35,7 +34,7 @@ class McpIndividualTest {
     @Test
     fun `copyContent returns equal-sized independent copy`() {
         val toolAction = McpToolCallAction("myTool", ObjectGene("input", emptyList()))
-        val resourceAction = McpResourceReadAction(StringGene("uri", "file:///data"))
+        val resourceAction = McpResourceReadAction(uriTemplate = "file:///data", uriParams = emptyList())
 
         val individual = buildIndividual(toolAction, resourceAction)
         val copy = individual.copy() as McpIndividual
@@ -67,7 +66,7 @@ class McpIndividualTest {
     @Test
     fun `group size is tracked correctly`() {
         val toolAction = McpToolCallAction("myTool", ObjectGene("input", emptyList()))
-        val resourceAction = McpResourceReadAction(StringGene("uri", "file:///data"))
+        val resourceAction = McpResourceReadAction(uriTemplate = "file:///data", uriParams = emptyList())
 
         val individual = buildIndividual(toolAction, resourceAction)
 

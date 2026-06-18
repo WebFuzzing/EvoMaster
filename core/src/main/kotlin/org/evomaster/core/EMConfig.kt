@@ -1449,7 +1449,8 @@ class EMConfig {
         REST(experimental = false),
         GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEBFRONTEND(experimental = true);
+        WEBFRONTEND(experimental = true),
+        MCP(experimental = true);
 
         override fun isExperimental() = experimental
     }

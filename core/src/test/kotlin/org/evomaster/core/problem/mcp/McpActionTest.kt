@@ -16,8 +16,7 @@ class McpActionTest {
 
     @Test
     fun `McpResourceReadAction getName starts with resource colon`() {
-        val uriGene = StringGene("uri", "http://example.com/resource")
-        val action = McpResourceReadAction(uriGene)
+        val action = McpResourceReadAction(uriTemplate = "http://example.com/resource", uriParams = emptyList())
         assertTrue(action.getName().startsWith("resource:"))
     }
 
@@ -45,12 +44,13 @@ class McpActionTest {
 
     @Test
     fun `copy on McpResourceReadAction produces structurally equal but independent copy`() {
-        val uriGene = StringGene("uri", "file:///data/res")
-        val action = McpResourceReadAction(uriGene, isTemplate = true)
+        val param = McpUriParam("city", StringGene("city", "paris"))
+        val action = McpResourceReadAction(uriTemplate = "weather:///{city}/current", uriParams = listOf(param), isTemplate = true)
         val copy = action.copy() as McpResourceReadAction
 
         assertEquals(action.isTemplate, copy.isTemplate)
-        assertNotSame(action.uri, copy.uri)
-        assertEquals(action.uri.value, copy.uri.value)
+        assertEquals(action.uriTemplate, copy.uriTemplate)
+        assertNotSame(action.uriParams[0], copy.uriParams[0])
+        assertEquals(action.resolvedUri(), copy.resolvedUri())
     }
 }

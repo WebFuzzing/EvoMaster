@@ -67,7 +67,7 @@ class McpBlackBoxFitness : McpFitness() {
                     }
 
                     is McpResourceReadAction -> {
-                        val resourceResult = client.readResource(action.uri.value)
+                        val resourceResult = client.readResource(action.resolvedUri())
                         result.setIsError(false)
                         result.stopping = false
 

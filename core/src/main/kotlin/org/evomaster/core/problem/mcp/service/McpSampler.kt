@@ -9,6 +9,7 @@ import org.evomaster.core.problem.mcp.McpAction
 import org.evomaster.core.problem.mcp.McpIndividual
 import org.evomaster.core.problem.mcp.McpResourceReadAction
 import org.evomaster.core.problem.mcp.McpToolCallAction
+import org.evomaster.core.problem.mcp.McpUriParam
 import org.evomaster.core.problem.mcp.client.HttpMcpClient
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.gene.Gene
@@ -90,8 +91,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         // Discover static resources
         val resources = mcpClient.listResources()
         for (resource in resources) {
-            val uri = StringGene("uri", resource.uri)
-            val action = McpResourceReadAction(uri = uri, isTemplate = false)
+            val action = McpResourceReadAction(uriTemplate = resource.uri, uriParams = emptyList(), isTemplate = false)
             resourceActionCluster[action.id] = action
             actionCluster[action.id] = action
         }
@@ -99,8 +99,9 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         // Discover resource templates
         val templates = mcpClient.listResourceTemplates()
         for (template in templates) {
-            val uri = StringGene("uri", template.uriTemplate)
-            val action = McpResourceReadAction(uri = uri, isTemplate = true)
+            val paramNames = Regex("""\{(\w+)}""").findAll(template.uriTemplate).map { it.groupValues[1] }.toList()
+            val uriParams = paramNames.map { McpUriParam(it, StringGene(it)) }
+            val action = McpResourceReadAction(uriTemplate = template.uriTemplate, uriParams = uriParams, isTemplate = true)
             // Use "template:" prefix to avoid collision with static resource keys
             val key = "template:${template.uriTemplate}"
             resourceActionCluster[key] = action
