@@ -10,6 +10,7 @@ import org.evomaster.core.llm.FieldInfo
 import org.evomaster.core.llm.LlmProvider
 import org.evomaster.core.llm.LlmSupport
 import org.evomaster.core.llm.Prompts
+import org.evomaster.core.logging.LoggingUtil
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -63,6 +64,16 @@ class LlmService {
             throw ConfigProblemException("Failed to connect and initialize the chosen LLM: ${e.message}")
         }
 
+        /*
+            If user asks to use LLM, then verify immediately if it works, by making a call
+         */
+        val response = try{
+            chat(Prompts.GREETINGS)
+        }catch (e: Exception){
+            throw ConfigProblemException("Failed to connect to LLM: ${e.message}")
+        }
+        LoggingUtil.getInfoLogger().info("Connected LLM replies with: $response")
+
         val n = if(config.llmProvider == LlmProvider.OLLAMA) 1 else config.llmThreads
         executor = Executors.newFixedThreadPool(n)
     }
@@ -84,7 +95,11 @@ class LlmService {
     }
 
     fun chat(userMessage: String) : String{
-        return LlmSupport.chat(syncModel, "", userMessage)
+        return LlmSupport.chat(syncModel, userMessage)
+    }
+
+    fun chat(systemMessage: String, userMessage: String) : String{
+        return LlmSupport.chat(syncModel, systemMessage, userMessage)
     }
 
     /**
