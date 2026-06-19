@@ -6,12 +6,12 @@ import org.evomaster.client.java.controller.api.dto.database.operations.MongoIns
 import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
-import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
@@ -60,7 +60,7 @@ class TestSuiteWriter {
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
-        private const val baseUrlOfSut = "baseUrlOfSut"
+        const val baseUrlOfSut = "baseUrlOfSut"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
@@ -94,6 +94,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
+
+    @Inject
+    private lateinit var llmService: LlmService
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -136,9 +139,22 @@ class TestSuiteWriter {
         controllerInput: String?
     ): TestSuiteCode {
 
+        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
+
+        //catch any sorting problems (see NPE is SortingHelper on Trello)
+        val tests = try {
+            testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
+        } catch (ex: Exception) {
+            log.warn(
+                "A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+            )
+            // fallback to numbered naming strategy upon failure
+            NumberedTestCaseNamingStrategy(solution).getTestCases()
+        }
+
         val lines = Lines(config.outputFormat)
-        val testSuiteOrganizer = TestSuiteOrganizer()
-        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -152,20 +168,6 @@ class TestSuiteWriter {
         classFields(lines, config.outputFormat)
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
-
-        //catch any sorting problems (see NPE is SortingHelper on Trello)
-        val tests = try {
-            // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
-        } catch (ex: Exception) {
-            log.warn(
-                "A failure has occurred with the test sorting. Reverting to default settings. \n"
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-            )
-            // fallback to numbered naming strategy upon failure
-            NumberedTestCaseNamingStrategy(solution).getTestCases()
-        }
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -539,7 +541,11 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
-            lines.add("const superagent = require(\"superagent\");")
+            if (format.isPlaywright()) {
+                lines.add("const { test, expect } = require(\"@playwright/test\");")
+            } else {
+                lines.add("const superagent = require(\"superagent\");")
+            }
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -548,7 +554,7 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
-            if (config.testTimeout > 0) {
+            if (config.testTimeout > 0 && !format.isPlaywright()) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
@@ -791,7 +797,13 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() -> lines.add("beforeAll( async () =>")
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    lines.add("test.beforeAll( async () =>")
+                } else {
+                    lines.add("beforeAll( async () =>")
+                }
+            }
         }
 
         lines.block {
@@ -845,6 +857,10 @@ class TestSuiteWriter {
                     addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
                     addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
+                }
+
+                if (format.isJavaScript() && !format.isPlaywright()) {
+                    addStatement("process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", lines)
                 }
 
                 if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
@@ -946,7 +962,13 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun tearDown()")
             }
-            format.isJavaScript() -> lines.add("afterAll( async () =>")
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    lines.add("test.afterAll( async () =>")
+                } else {
+                    lines.add("afterAll( async () =>")
+                }
+            }
         }
 
         if (!format.isCsharp()) {
@@ -999,7 +1021,13 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    lines.add("test.beforeEach(async () => ")
+                } else {
+                    lines.add("beforeEach(async () => ")
+                }
+            }
             //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }

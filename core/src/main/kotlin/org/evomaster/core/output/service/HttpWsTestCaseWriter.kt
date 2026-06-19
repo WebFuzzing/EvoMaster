@@ -396,6 +396,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         baseUrlOfSut: String,
         addTimeMeasurement: Boolean,
     ) {
+        this.baseUrlOfSut = baseUrlOfSut
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
         // add all used external service actions for the action
@@ -571,6 +572,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.add("},")
                         handleBody(call, lines, dtoVar)
                         lines.add("maxRedirects: 0,")
+                        lines.add("ignoreHTTPSErrors: true,")
                     }
                     lines.add("})")
                 } else {
