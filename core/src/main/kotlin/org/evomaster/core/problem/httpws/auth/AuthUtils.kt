@@ -50,8 +50,7 @@ object AuthUtils {
             }
             val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
-            val response = makeCall(client, tl.name, tl.call, baseUrl)
-            val response = makeCall(client, tl, baseUrl, placeholders)
+            val response = makeCall(client, tl.name, tl.call, baseUrl,placeholders)
                 ?: continue
 
             var token = when (data.extractFrom) {
@@ -122,9 +121,7 @@ object AuthUtils {
                 throw IllegalArgumentException("Cookie based login expects cookies")
             }
 
-
-            val response = makeCall(client, cl, baseUrl, placeholders)
-            val response = makeCall(client, cl.name, cl.call, baseUrl)
+            val response = makeCall(client, cl.name, cl.call, baseUrl, placeholders)
                 ?: continue
             response.close()
 
@@ -188,7 +185,6 @@ object AuthUtils {
         }
 
         val s = baseUrl.trim()
-    private fun makeCall(client: Client, name: String, x: CallToEndpoint, baseUrl: String) : Response?{
 
         if (!s.startsWith("http://", true) && !s.startsWith("https://")) {
             throw IllegalArgumentException("baseUrl should use HTTP(S): $baseUrl")
@@ -206,9 +202,9 @@ object AuthUtils {
     }
 
 
-    private fun makeCall(client: Client, x: EndpointCallLogin, baseUrl: String, placeholders: List<PlaceHolderResolver>): Response?{
+    private fun makeCall(client: Client, name: String, x: CallToEndpoint, baseUrl: String, placeholders: List<PlaceHolderResolver>): Response?{
 
-        val resolver = placeholders.firstOrNull { it.name == x.name }
+        val resolver = placeholders.firstOrNull { it.name == name }
         val payload = if(resolver == null){
             x.payload
         } else {
@@ -221,7 +217,7 @@ object AuthUtils {
             modified
         }
 
-        return makeCall(client, baseUrl, x.name, x.verb, x.contentType, payload, x.headers, x.endpoint, x.externalEndpointURL)
+        return makeCall(client, baseUrl, name, x.verb, x.contentType, payload, x.headers, x.endpoint, x.externalEndpointURL)
     }
 
     private fun makeCall(
