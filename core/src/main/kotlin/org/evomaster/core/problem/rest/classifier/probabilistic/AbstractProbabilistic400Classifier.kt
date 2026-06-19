@@ -38,6 +38,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
             return
         }
 
+        // create an endPoint model if it does not exist
         val m = models.getOrPut(endpoint) {
             val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
 
@@ -46,20 +47,26 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
                 return@getOrPut null
             }
 
-            val listGenes = encoder.endPointToGeneList().map { it.gene.getLeafGene() }
+            val initialParamPaths = encoder.getAllParamsPathsAndEncodedValues().keys.toList()
+
             createEndpointModel(
-                endpoint, warmup,
-                listGenes.size,
+                endpoint,
+                warmup,
+                initialParamPaths,
+                initialParamPaths.size,
                 encoderType,
                 metricType,
-                randomness)
+                randomness
+            )
         }
+
 
         if (m == null) {
             unsupportedEndpoints.add(endpoint)
             return
         }
 
+        // update the endpoint model and initialize if needed
         m.updateModel(input, output)
     }
 
@@ -99,6 +106,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
     protected abstract fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
+        modelKeys: List<String>,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
         metricType: EMConfig.AIClassificationMetrics,

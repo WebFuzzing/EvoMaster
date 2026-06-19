@@ -17,6 +17,7 @@ class KDE400Classifier(
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
+        modelKeys: List<String>,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
         metricType: EMConfig.AIClassificationMetrics,
@@ -25,6 +26,7 @@ class KDE400Classifier(
         return KDE400EndpointModel(
             endpoint,
             warmup,
+            modelKeys,
             dimension,
             encoderType,
             metricType,
