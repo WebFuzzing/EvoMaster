@@ -159,7 +159,7 @@ object AuthUtils {
 
         for(c in createUsersList) {
 
-            var payload = c.payload
+            var payload = c.call.payload!! //TODO will need to handle headers, where payload could be null
             val placeHolders = mutableMapOf<String,String>()
 
             for(g in c.generators) {
@@ -168,7 +168,16 @@ object AuthUtils {
                 payload = payload.replace(g.placeHolder, generated)
             }
 
-            val response = makeCall(client, baseUrl, c.name, c.verb, c.contentType, payload, listOf(), c.endpoint, c.externalEndpointURL)
+            val response = makeCall(
+                client,
+                baseUrl,
+                c.name,
+                c.call.verb,
+                c.call.contentType,
+                payload,
+                listOf(),
+                c.call.endpoint,
+                c.call.externalEndpointURL)
                 ?: continue
             response.close()
 

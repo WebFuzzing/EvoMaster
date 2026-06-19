@@ -4,7 +4,9 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.auth.CallToEndpoint
+import org.evomaster.core.problem.httpws.auth.PlaceHolderResolver
 import org.evomaster.core.problem.rest.data.ContentType
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 object AuthWriter {
 
@@ -25,7 +27,8 @@ object AuthWriter {
         testCaseWriter: HttpWsTestCaseWriter,
         format: OutputFormat,
         baseUrlOfSut: String,
-        targetVariable: String?
+        targetVariable: String?,
+        placeHolderResolver: PlaceHolderResolver?
     ) {
 
         if(format.isJavaScript()) {
@@ -61,6 +64,20 @@ object AuthWriter {
 
                 else -> {
                     throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                }
+            }
+
+            if(placeHolderResolver != null) {
+                if (!format.isPython()) {
+                    //easier to just remove the closing ')' then hunting down all places in which it is added
+                    lines.replaceInCurrent(Regex("\\)\\s*$"), "")
+                }
+                placeHolderResolver.placeHolders.entries.forEach {
+                    val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
+                    lines.append(".replace(\"${placeholder}\", ${it.value})")
+                }
+                if (!format.isPython()) {
+                    lines.append(")")
                 }
             }
         }

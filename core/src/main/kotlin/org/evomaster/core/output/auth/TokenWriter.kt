@@ -47,10 +47,7 @@ object TokenWriter {
 
         for (k in tokensInfo) {
 
-            val createUsers = CreateUsersWriter.getCreateUsersForNamedAuth(k.name, ind.individual)
-            if(createUsers != null) {
-                //TODO
-            }
+            val resolver = CreateUsersWriter.handleCreateUsers(k.name, ind.individual, format, lines, testCaseWriter, baseUrlOfSut)
 
             val token = k.token!!
 
@@ -74,7 +71,7 @@ object TokenWriter {
                 lines.indent(2)
             }
 
-            AuthWriter.addBodyOfCallCommand(lines,k.call,testCaseWriter,format,baseUrlOfSut, responseName(k))
+            AuthWriter.addBodyOfCallCommand(lines,k.call,testCaseWriter,format,baseUrlOfSut, responseName(k), resolver)
 
             var path = token.extractSelector.substring(1).replace("/",".")
 
