@@ -613,7 +613,7 @@ internal class RestPathTest{
         // causing them to appear raw in the generated URL.
         val key = PathParam("key", CustomMutationRateGene("d_", StringGene("key", "key-聚"), 1.0))
 
-        val resolved = RestPath("/api/{key}").resolveOnlyPath(listOf(key))
+        val resolved = RestPath("/api/{key}").resolve(listOf(key))
 
         assertFalse(resolved.contains("聚"),
             "Resolved path must not contain a raw non-ASCII character, got: $resolved")
