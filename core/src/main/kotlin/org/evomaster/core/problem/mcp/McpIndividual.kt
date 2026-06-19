@@ -9,6 +9,16 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.action.ActionComponent
 
+/**
+ * An individual (test case) for MCP blackbox testing.
+ *
+ * Represents a sequence of [McpAction]s — tool calls and resource reads — to be executed
+ * against an MCP server in order. Each action is wrapped in an [EnterpriseActionGroup] and
+ * stored in the MAIN group.
+ *
+ * The search engine samples, mutates, and evaluates instances of this class via
+ * [McpSampler] and [McpBlackBoxFitness] respectively.
+ */
 class McpIndividual(
     sampleType: SampleType,
     allActions: MutableList<out ActionComponent>,

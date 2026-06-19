@@ -5,12 +5,22 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * [McpClient] implementation that uses the Streamable HTTP transport.
+ *
+ * All MCP messages are sent as HTTP POST requests to [baseUrl] using JSON-RPC 2.0.
+ *
+ * **Session lifecycle**: [initialize] must be invoked once before any other method. It performs
+ * the two-step MCP handshake (`initialize` request + `notifications/initialized` notification)
+ * and captures the `Mcp-Session-Id` header returned by the server.
+ *
+ * @param baseUrl the full URL of the MCP endpoint.
+ */
 class HttpMcpClient(private val baseUrl: String) : McpClient {
 
     private val mapper: ObjectMapper = ObjectMapper()
     private val idCounter = AtomicInteger(1)
 
-    // Mcp-Session-Id issued by the server during initialize; must be sent on all subsequent requests
     @Volatile private var sessionId: String? = null
 
     private fun nextId() = idCounter.getAndIncrement()

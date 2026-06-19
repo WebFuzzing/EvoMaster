@@ -2,6 +2,12 @@ package org.evomaster.core.problem.mcp
 
 import org.evomaster.core.search.action.ActionResult
 
+/**
+ * Stores the outcome of executing a single [McpAction] during fitness evaluation.
+ *
+ * A result is considered an error when the MCP server sets `isError: true` in the tool-call
+ * response, or when the fitness function catches an exception from the server.
+ */
 class McpCallResult : ActionResult {
 
     companion object {

@@ -32,11 +32,10 @@ class McpActionTest {
     @Test
     fun `copy on McpToolCallAction produces structurally equal but independent copy`() {
         val inputGene = ObjectGene("input", emptyList())
-        val action = McpToolCallAction("myTool", inputGene, "a tool description")
+        val action = McpToolCallAction("myTool", inputGene)
         val copy = action.copy() as McpToolCallAction
 
         assertEquals(action.toolName, copy.toolName)
-        assertEquals(action.description, copy.description)
         assertEquals(action.getName(), copy.getName())
         // Must be independent: different gene instances
         assertNotSame(action.inputSchema, copy.inputSchema)

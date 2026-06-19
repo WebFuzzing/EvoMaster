@@ -25,9 +25,11 @@ import javax.annotation.PostConstruct
 /**
  * Sampler for MCP blackbox testing.
  *
- * On initialization, connects to the MCP server, discovers
- * tools and resources, and builds an action cluster. Follows the pattern of GraphQLSampler
- * (blackbox init) and RPCSampler (dual cluster + adHoc individuals).
+ * On initialization ([initialize]), connects to the MCP server, performs the MCP handshake
+ * and discovers capabilities:
+ * - **Tools** (`tools/list`) → one [McpToolCallAction] per tool.
+ * - **Static resources** (`resources/list`) → one [McpResourceReadAction] per URI.
+ * - **Template resources** (`resources/templates/list`) → one [McpResourceReadAction] per template.
  */
 class McpSampler : ApiWsSampler<McpIndividual>() {
 
@@ -81,8 +83,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
             val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
             val action = McpToolCallAction(
                 toolName = tool.name,
-                inputSchema = inputGene,
-                description = tool.description
+                inputSchema = inputGene
             )
             toolActionCluster[action.id] = action
             actionCluster[action.id] = action
