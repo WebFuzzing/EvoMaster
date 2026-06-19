@@ -58,12 +58,12 @@ object ExtraTools {
         | Actual 400 | TP=${metrics.truePositive400.toString().padEnd(10)}| FN=${metrics.falseNegative400.toString().padEnd(11)}|
         | Actual¬400 | FP=${metrics.falsePositive400.toString().padEnd(10)}| TN=${metrics.trueNegative400.toString().padEnd(11)}|
         +-------------------------------------------+
-        Window Total      : ${metrics.windowTotal}
-        Accuracy            : ${"%.4f".format(metrics.estimateMetrics().accuracy)}
-        Precision400        : ${"%.4f".format(metrics.estimateMetrics().precision400)}
-        Recall400           : ${"%.4f".format(metrics.estimateMetrics().sensitivity400)}
-        F1Score400          : ${"%.4f".format(metrics.estimateMetrics().f1Score400)}
-        MCC400              : ${"%.4f".format(metrics.estimateMetrics().mcc)}
+        Window Total    : ${metrics.windowTotal}
+        Accuracy        : ${"%.4f".format(metrics.estimateMetrics().accuracy)}
+        Precision400    : ${"%.4f".format(metrics.estimateMetrics().precision400)}
+        Sensitivity400  : ${"%.4f".format(metrics.estimateMetrics().sensitivity400)}
+        Specificity     : ${"%.4f".format(metrics.estimateMetrics().specificity)}
+        NPV             : ${"%.4f".format(metrics.estimateMetrics().npv)}
         """.trimIndent()
         )
     }
@@ -107,12 +107,12 @@ object ExtraTools {
                 sb.appendLine("| Actual¬400 | FP=${it.falsePositive400.toString().padEnd(10)}| TN=${it.trueNegative400.toString().padEnd(11)}|")
                 sb.appendLine("+-------------------------------------------+")
                 sb.appendLine()
-                sb.appendLine("Window Total        : ${it.windowTotal}")
-                sb.appendLine("Accuracy            : ${"%.4f".format(it.estimateMetrics().accuracy)}")
-                sb.appendLine("Precision400        : ${"%.4f".format(it.estimateMetrics().precision400)}")
-                sb.appendLine("Recall400           : ${"%.4f".format(it.estimateMetrics().sensitivity400)}")
-                sb.appendLine("F1Score400          : ${"%.4f".format(it.estimateMetrics().f1Score400)}")
-                sb.appendLine("MCC400              : ${"%.4f".format(it.estimateMetrics().mcc)}")
+                sb.appendLine("Window Total    : ${it.windowTotal}")
+                sb.appendLine("Accuracy        : ${"%.4f".format(it.estimateMetrics().accuracy)}")
+                sb.appendLine("Precision400    : ${"%.4f".format(it.estimateMetrics().precision400)}")
+                sb.appendLine("Sensitivity400  : ${"%.4f".format(it.estimateMetrics().sensitivity400)}")
+                sb.appendLine("Specificity     : ${"%.4f".format(it.estimateMetrics().specificity)}")
+                sb.appendLine("NPV             : ${"%.4f".format(it.estimateMetrics().npv)}")
                 sb.appendLine()
                 sb.appendLine("=============================================")
                 sb.appendLine()
