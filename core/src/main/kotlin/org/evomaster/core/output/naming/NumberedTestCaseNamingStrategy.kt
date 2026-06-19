@@ -9,6 +9,8 @@ open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
 ) : TestCaseNamingStrategy(solution) {
 
+    protected val testCasesSize = solution.individuals.size
+
     companion object{
         const val TEST_NAME_PREFIX = "test_"
     }
@@ -16,8 +18,6 @@ open class NumberedTestCaseNamingStrategy(
     override fun getTestCases(): List<TestCase> {
         return generateNames(solution.individuals)
     }
-
-
 
     // numbered strategy will not expand the name unless it is using the namingHelper
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
@@ -27,6 +27,11 @@ open class NumberedTestCaseNamingStrategy(
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
         return emptyMap()
+    }
+
+    protected fun namePrefixChars(): Int {
+        val digitsUsedForTestNumbering = testCasesSize.toString().length
+        return TEST_NAME_PREFIX.length + digitsUsedForTestNumbering + 1
     }
 
     private fun concatName(counter: Int, expandedName: String): String {
