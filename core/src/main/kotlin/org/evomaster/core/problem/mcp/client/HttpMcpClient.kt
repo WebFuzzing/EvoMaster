@@ -10,6 +10,9 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
     private val mapper: ObjectMapper = ObjectMapper()
     private val idCounter = AtomicInteger(1)
 
+    // Mcp-Session-Id issued by the server during initialize; must be sent on all subsequent requests
+    @Volatile private var sessionId: String? = null
+
     private fun nextId() = idCounter.getAndIncrement()
 
     private fun openConnection(method: String, params: Map<String, Any?>): Pair<HttpURLConnection, String> {
@@ -24,7 +27,8 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         val conn = URL(baseUrl).openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
-        conn.setRequestProperty("Accept", "application/json")
+        conn.setRequestProperty("Accept", "application/json, text/event-stream")
+        sessionId?.let { conn.setRequestProperty("Mcp-Session-Id", it) }
         conn.doOutput = true
         conn.connectTimeout = 10_000
         conn.readTimeout = 30_000
@@ -32,12 +36,13 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return Pair(conn, body)
     }
 
+
     /**
      * Perform the MCP initialization handshake (initialize + notifications/initialized).
      * Must be called once before any other method.
      */
     fun initialize() {
-        val initResponse = postRaw(
+        val (conn, _) = openConnection(
             "initialize",
             mapOf(
                 "protocolVersion" to "2024-11-05",
@@ -45,10 +50,19 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
                 "clientInfo" to mapOf("name" to "EvoMaster", "version" to "1.0.0")
             )
         )
-        if (initResponse == null) {
-            throw IllegalStateException("MCP initialize handshake failed")
+        val status = conn.responseCode
+        if (status >= 400) {
+            throw IllegalStateException(
+                "MCP initialize handshake failed with HTTP $status at '$baseUrl'"
+            )
         }
-        // Send the required follow-up notification (fire-and-forget, response is empty/204)
+        // Capture session ID before reading the body
+        conn.getHeaderField("Mcp-Session-Id")?.let { sessionId = it }
+        val responseBody = conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
+        if (responseBody.isBlank()) {
+            throw IllegalStateException("MCP initialize handshake returned empty body")
+        }
+        // Send the required follow-up notification (fire-and-forget)
         postNotification("notifications/initialized", emptyMap())
     }
 
@@ -66,6 +80,7 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         conn.requestMethod = "POST"
         conn.setRequestProperty("Content-Type", "application/json")
         conn.setRequestProperty("Accept", "application/json")
+        sessionId?.let { conn.setRequestProperty("Mcp-Session-Id", it) }
         conn.doOutput = true
         conn.connectTimeout = 10_000
         conn.readTimeout = 10_000
@@ -74,18 +89,12 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         try { conn.inputStream.close() } catch (_: Exception) {}
     }
 
-    /** Send a JSON-RPC request. Throws on connection errors; throws on 5xx. Returns null on 4xx (method not supported). */
+    /** Send a JSON-RPC request. Returns null on 4xx (method not supported). */
     @Suppress("UNCHECKED_CAST")
     private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
-        return postRaw(method, params)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun postRaw(method: String, params: Map<String, Any?>): Map<String, Any?>? {
         val (conn, _) = openConnection(method, params)
         val status = conn.responseCode
         if (status == 400 || status == 404 || status == 405) {
-            // server does not support this MCP method — treat as empty
             return null
         }
         val responseBody = conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
