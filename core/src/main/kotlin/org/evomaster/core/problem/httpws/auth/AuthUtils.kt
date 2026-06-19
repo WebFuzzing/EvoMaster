@@ -50,6 +50,7 @@ object AuthUtils {
             }
             val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
+            val response = makeCall(client, tl.name, tl.call, baseUrl)
             val response = makeCall(client, tl, baseUrl, placeholders)
                 ?: continue
 
@@ -123,6 +124,7 @@ object AuthUtils {
 
 
             val response = makeCall(client, cl, baseUrl, placeholders)
+            val response = makeCall(client, cl.name, cl.call, baseUrl)
                 ?: continue
             response.close()
 
@@ -186,6 +188,7 @@ object AuthUtils {
         }
 
         val s = baseUrl.trim()
+    private fun makeCall(client: Client, name: String, x: CallToEndpoint, baseUrl: String) : Response?{
 
         if (!s.startsWith("http://", true) && !s.startsWith("https://")) {
             throw IllegalArgumentException("baseUrl should use HTTP(S): $baseUrl")

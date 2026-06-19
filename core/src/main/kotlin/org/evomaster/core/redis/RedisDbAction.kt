@@ -1,43 +1,19 @@
 package org.evomaster.core.redis
 
 import org.evomaster.core.search.action.EnvironmentAction
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.string.StringGene
 
 /**
  * Represents an action to insert data into a Redis database, generated in response
  * to a failed Redis read command.
  */
-class RedisDbAction(
+sealed class RedisDbAction : EnvironmentAction(listOf()) {
 
     /**
-     * Immutable key for which Redis returned no data.
+     * Returns the primary key this action targets, if any.
+     * Commands that operate on patterns rather than specific keys (e.g., KEYS)
+     * return null.
      */
-    val key: String,
-    /**
-     * Value associated to the key.
-     */
-    val valueGene: StringGene,
-    /**
-     * Command type executed.
-     */
-    val dataType: RedisDataType
-) : EnvironmentAction(listOf()) {
+    open fun getTargetKey(): String? = null
 
-    enum class RedisDataType {
-        STRING
-    }
-
-    override fun seeTopGenes(): List<Gene> = listOf(valueGene)
-
-    override fun copyContent(): Action {
-        return RedisDbAction(
-            key,
-            valueGene.copy() as StringGene,
-            dataType
-        )
-    }
-
-    override fun getName(): String = "Redis_${dataType}_${key}"
+    override fun getActionGroupKey(): String = RedisDbAction::class.java.name
 }
