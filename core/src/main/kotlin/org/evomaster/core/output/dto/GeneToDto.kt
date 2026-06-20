@@ -42,11 +42,7 @@ class GeneToDto(
 ) {
 
     companion object {
-        /**
-         * Shared DTO class name used to represent a single JSON Patch operation (RFC 6902).
-         * A single class is enough since all operations share the same set of possible fields;
-         * fields not used by a given operation are simply left null and skipped on serialization.
-         */
+        // Shared DTO class name for all JSON Patch operations (RFC 6902).
         const val JSON_PATCH_OPERATION_DTO = "JsonPatchOperation"
         const val FIELD_OP = "op"
         const val FIELD_PATH = "path"
@@ -109,11 +105,7 @@ class GeneToDto(
         }
     }
 
-    /**
-     * A JSON Patch document (RFC 6902) is rendered as a list of [JSON_PATCH_OPERATION_DTO] objects,
-     * one per active operation in the document. This mirrors the JSON array structure of the payload
-     * while keeping the generated test readable and type-safe.
-     */
+    // Renders a JSON Patch document as a List<JsonPatchOperation>, one DTO per active operation.
     private fun getJsonPatchDtoCall(gene: JsonPatchDocumentGene, counters: MutableList<Int>): DtoCall {
         val listVarName = "list_${JSON_PATCH_OPERATION_DTO}_${counters.joinToString("_")}"
         val result = mutableListOf<String>()
@@ -133,6 +125,7 @@ class GeneToDto(
         return DtoCall(listVarName, result)
     }
 
+    // Renders a single RFC 6902 operation as a JsonPatchOperation DTO with only its relevant fields set.
     private fun getJsonPatchOperationCall(operation: JsonPatchOperationGene, counters: MutableList<Int>): DtoCall {
         val varName = "dto_${JSON_PATCH_OPERATION_DTO}_${counters.joinToString("_")}"
         val result = mutableListOf<String>()
@@ -157,11 +150,7 @@ class GeneToDto(
         return DtoCall(varName, result)
     }
 
-    /**
-     * Sets the "value" field of a JSON Patch operation. Primitive values are inlined as literals,
-     * while object and array values reuse the regular DTO/list generation so nested structures
-     * are rendered as proper objects rather than stringified JSON.
-     */
+    // Sets the "value" field: primitives are inlined as literals, objects/arrays delegate to DTO generation.
     private fun setJsonPatchValue(
         varName: String,
         valueGene: Gene,
@@ -183,6 +172,7 @@ class GeneToDto(
         }
     }
 
+    // Returns the printable string representation of a gene's leaf value with its language-specific suffix.
     private fun renderLeafValue(gene: Gene): String {
         val leafGene = gene.getLeafGene()
         return "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"

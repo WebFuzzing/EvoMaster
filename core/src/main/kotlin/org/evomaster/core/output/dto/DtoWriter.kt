@@ -128,18 +128,7 @@ class DtoWriter(
         }
     }
 
-    /**
-     * Collects the DTO needed to render a JSON Patch document (RFC 6902) as a typed payload.
-     *
-     * A single shared [GeneToDto.JSON_PATCH_OPERATION_DTO] class is used for all patch operations,
-     * holding every field used across the operation types: "op" and "path" (always present),
-     * "from" (move/copy) and "value" (add/replace/test). The "value" field is typed as the generic
-     * object type since a JSON Patch value can be any JSON value; fields not used by a given
-     * operation are left null and skipped on serialization (see @JsonInclude(NON_NULL)).
-     *
-     * When an operation carries an object or array value, the corresponding nested DTOs are also
-     * collected so the value can be rendered as a proper object instead of stringified JSON.
-     */
+    // Registers the shared JsonPatchOperation DTO and collects nested DTOs for object/array values.
     private fun calculateDtoFromJsonPatch(gene: JsonPatchDocumentGene) {
         val dtoName = GeneToDto.JSON_PATCH_OPERATION_DTO
         val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(it) }
