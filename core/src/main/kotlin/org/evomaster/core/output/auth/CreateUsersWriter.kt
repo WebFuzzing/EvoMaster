@@ -66,7 +66,11 @@ object CreateUsersWriter {
             val postfix = if(g.postfix == null) null else "\"${g.postfix}\""
 
             // function in EMTestUtils
-            lines.append(" createString($min, $max, $prefix, $postfix)")
+            when{
+                format.isPython() -> lines.append(" create_string")
+                else -> lines.append(" createString")
+            }
+            lines.append("($min, $max, $prefix, $postfix)")
             lines.appendSemicolon()
         }
         lines.addEmpty()
