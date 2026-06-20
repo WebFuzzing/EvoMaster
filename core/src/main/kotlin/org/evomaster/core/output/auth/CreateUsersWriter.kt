@@ -4,6 +4,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.CreateUsers
 import org.evomaster.core.problem.httpws.auth.Generator
@@ -65,10 +66,13 @@ object CreateUsersWriter {
             val prefix = if(g.prefix == null) null else "\"${g.prefix}\""
             val postfix = if(g.postfix == null) null else "\"${g.postfix}\""
 
-            // function in EMTestUtils
+            if (format.isJavaScript()) {
+                lines.append("${TestSuiteWriter.jsImport}.")
+            }
             when{
-                format.isPython() -> lines.append(" create_string")
-                else -> lines.append(" createString")
+                // function in EMTestUtils
+                format.isPython() -> lines.append("create_string")
+                else -> lines.append("createString")
             }
             lines.append("($min, $max, $prefix, $postfix)")
             lines.appendSemicolon()
