@@ -17,6 +17,9 @@ object CreateUsersWriter {
     fun generatorName(name: String, g: Generator): String =
         TestWriterUtils.safeVariableName("generator_${name}_${g.placeHolder}")
 
+    fun responseName(name: String) : String =
+        TestWriterUtils.safeVariableName("res_create_user_${name}")
+
     fun getCreateUsersForNamedAuth(name: String, ind: Individual): CreateUsers? {
 
         return ind.seeAllActions()
@@ -90,12 +93,26 @@ object CreateUsersWriter {
             lines.addSingleCommentLine(infoMsg)
         }
 
-        AuthWriter.addBodyOfCallCommand(lines, user.call, testCaseWriter, format, baseUrlOfSut, null, null)
-        lines.appendSemicolon()
+        val resName = responseName(name)
+
+        AuthWriter.addBodyOfCallCommand(lines, user.call, testCaseWriter, format, baseUrlOfSut, resName, null)
+
+        //need to add check that call was 2xx success or 3xx
 
         if (! format.isPython()){
+            if(format.isJavaOrKotlin()){
+                lines.add(".then()")
+                lines.add(".statusCode(both(greaterThanOrEqualTo(200)).and(Matchers.lessThan(400)))")
+            }
+            if(format.isJavaScript()){
+                lines.add(".ok(res => res.status >= 200 && res.status < 400)")
+            }
+            lines.appendSemicolon()
             lines.deindent(2)
+        } else {
+            lines.add("assert $resName.status_code >= 200 and $resName.status_code < 400")
         }
+
         lines.addEmpty()
 
         return PlaceHolderResolver(user.name, resolverData)
