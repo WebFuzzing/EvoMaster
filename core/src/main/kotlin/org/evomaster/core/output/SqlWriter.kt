@@ -110,13 +110,21 @@ object SqlWriter {
                 //TODO already escaped???
                 return x.replace("\"","\\\"")
             }
-            return StringEscapeUtils.escapeJava(x)
+            return when {
+                format.isJava() -> StringEscapeUtils.escapeJava(x)
+                format.isKotlin() -> escapeKotlin(x)
+                else -> throw IllegalStateException("Output format $format is not valid for SQL test case generation")
+            }
             //TODO this is an atypical treatment of escapes. Should we run all escapes through the same procedure?
             // or is this special enough to be justified?
             /*
                 FIXME: Yep, escaping in EM is currently a total mess... will need to be refactored/cleaned up
              */
         }
+    }
+
+    private fun escapeKotlin(value: String): String {
+        return StringEscapeUtils.escapeJava(value).replace("\\$", "\$")
     }
 
     private fun handleFK(format: OutputFormat, fkg: SqlForeignKeyGene, action: SqlAction, allActions: List<SqlAction>): String {
