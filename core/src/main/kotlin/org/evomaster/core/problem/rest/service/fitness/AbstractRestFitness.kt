@@ -1352,6 +1352,40 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
             handleInvalidLocation(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
+            handleInvalidAllow(individual, actionResults, fv)
+        }
+    }
+
+    /**
+     * Check any OPTIONS call, regardless of its position. The Allow header must not list
+     * verbs that are not declared in the schema (ignoring OPTIONS and HEAD).
+     */
+    private fun handleInvalidAllow(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val actions = individual.seeMainExecutableActions()
+
+        for (index in actions.indices) {
+            val a = actions[index]
+            if (a.verb != HttpVerb.OPTIONS) continue
+
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            val allowed = r.getAllowedVerbs() ?: continue
+
+            val extra = allowed.any {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
+            }
+            if (!extra) continue
+
+            val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
+            val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
+            fv.updateTarget(scenarioId, 1.0, index)
+            r.addFault(DetectedFault(category, a.getName(), null))
+        }
     }
 
     private fun handleFailedModification(
