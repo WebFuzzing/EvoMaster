@@ -11,7 +11,7 @@ private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
-class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
+class GeneRegexJavaVisitor(externalFlags: RegexFlags = RegexFlags()) : RegexJavaBaseVisitor<VisitResult>(){
 
     private val hexEscapePrefixes = setOf('x', 'u')
 
@@ -52,8 +52,9 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
     /**
      * Tracks the flags active in the current lexical scope.
      * Updated when entering a flag group, restored on exit.
+     * Initialized from [externalFlags].
      */
-    private var currentFlags = RegexFlags()
+    private var currentFlags = externalFlags
 
     /**
      * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.

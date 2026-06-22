@@ -60,7 +60,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
              */
             String regex = caller.pattern().toString();
             ExecutionTracer.addStringSpecialization(text,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, taintType, flags));
         }
         boolean matcherMatchesResults = caller.matches();
         assert (patternMatchesResult == matcherMatchesResults);
@@ -73,6 +73,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
         String input = getText(caller);
         String regex = caller.pattern().toString();
+        int flags = caller.pattern().flags();
         int end;
         try {
             end = caller.end();
@@ -105,7 +106,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         TaintType taintType = ExecutionTracer.getTaintType(substring);
         if (taintType.isTainted()) {
             ExecutionTracer.addStringSpecialization(substring,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_PARTIAL, regex, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_PARTIAL, regex, taintType, flags));
         }
 
         String anyPositionRegexMatch = RegexSharedUtils.handlePartialMatch(regex);

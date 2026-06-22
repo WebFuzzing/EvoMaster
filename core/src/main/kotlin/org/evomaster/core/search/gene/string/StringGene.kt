@@ -36,6 +36,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
@@ -811,16 +812,17 @@ class StringGene(
                     .filter{RegexUtils.isMeaningfulRegex(it.value)}
                     .filter{RegexUtils.isNotUselessRegex(it.value) }
                     .map {
-                        if(it.stringSpecialization == StringSpecialization.REGEX_WHOLE) {
+                        val regex = if(it.stringSpecialization == StringSpecialization.REGEX_WHOLE) {
                             RegexSharedUtils.forceFullMatch(it.value)
                         } else {
                             RegexSharedUtils.handlePartialMatch(it.value)
                         }
+                        Pair(regex, RegexFlags.fromJavaFlags(it.regexFlags))
                     }
                     //.joinToString("|")
-                    .forEach {regex ->
+                    .forEach {(regex, flags) ->
                       try {
-                              toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+                              toAddGenes.add(RegexHandler.createGeneForJVM(regex, flags))
                               log.trace("Regex, added specification for: {}", regex)
                           } catch (e: Exception) {
                               LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")

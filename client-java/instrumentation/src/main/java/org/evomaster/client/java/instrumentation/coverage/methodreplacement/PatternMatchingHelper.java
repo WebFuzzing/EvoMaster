@@ -5,6 +5,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
@@ -31,7 +32,7 @@ public class PatternMatchingHelper {
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, TaintType.FULL_MATCH, flags));
         }
 
         Pattern p = Pattern.compile(regex, flags);

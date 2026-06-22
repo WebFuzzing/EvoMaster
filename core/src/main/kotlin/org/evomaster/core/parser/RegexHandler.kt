@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.utils.RegexFlags
 
 
 /**
@@ -19,15 +20,16 @@ object RegexHandler {
         WARNING mutable static state, but those are just caches.
         Key -> regex
      */
-    private val cacheJVM : MutableMap<String, RegexGene> = mutableMapOf()
+    private val cacheJVM : MutableMap<Pair<String, RegexFlags>, RegexGene> = mutableMapOf()
     private val cacheEcma262 : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresLike : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresSimilarTo : MutableMap<String, RegexGene> = mutableMapOf()
 
-    fun createGeneForJVM(regex: String) : RegexGene {
+    fun createGeneForJVM(regex: String, flags: RegexFlags = RegexFlags()) : RegexGene {
 
-        if(cacheJVM.contains(regex)){
-            return cacheJVM[regex]!!.copy() as RegexGene
+        val key = Pair(regex, flags)
+        if(cacheJVM.contains(key)){
+            return cacheJVM[key]!!.copy() as RegexGene
         }
 
         val stream = CharStreams.fromString(regex)
@@ -38,10 +40,10 @@ object RegexHandler {
 
         val pattern = parser.pattern()
 
-        val res = GeneRegexJavaVisitor().visit(pattern)
+        val res = GeneRegexJavaVisitor(flags).visit(pattern)
 
         val gene= res.genes.first() as RegexGene
-        cacheJVM[regex] = gene.copy() as RegexGene
+        cacheJVM[key] = gene.copy() as RegexGene
         return gene
     }
 
