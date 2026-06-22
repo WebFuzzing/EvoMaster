@@ -6,7 +6,6 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
-import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -74,7 +73,7 @@ object CookieWriter {
                 else -> cookiesName(k)
             }
 
-            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
+            AuthWriter.addBodyOfCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
@@ -106,7 +105,6 @@ object CookieWriter {
                 lines.appendSemicolon()
             }
 
-
             if (format.isPython()) {
                 lines.add("${cookiesName(k)} = requests.utils.dict_from_cookiejar($targetCookieVariable)")
             }
@@ -121,166 +119,6 @@ object CookieWriter {
             if (!format.isPython()) {
                 lines.deindent()
             }
-        }
-    }
-
-
-
-    fun addCallCommand(
-        lines: Lines,
-        k: EndpointCallLogin,
-        testCaseWriter: HttpWsTestCaseWriter,
-        format: OutputFormat,
-        baseUrlOfSut: String,
-        targetVariable: String
-    ) {
-
-        if(format.isJavaScript() ) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
-            if (format.isPlaywright()) {
-                return
-                // to avoid two request calls for the same endpoint
-            }
-        }
-
-        if(format.isPython()) {
-            lines.add("headers = {}")
-        }
-
-        val contentType = k.contentType
-        if(contentType != null) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
-                format.isPlaywright() -> {
-                    // handled in request options 'data' or similar if needed,
-                    // but usually Playwright sets it automatically if passed as object
-                }
-                format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
-                format.isPython() -> {
-                    lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
-                }
-            }
-
-            when (contentType) {
-                ContentType.X_WWW_FORM_URLENCODED -> {
-                    val send = testCaseWriter.sendBodyCommand()
-                    when {
-                        format.isPython() -> lines.add("body = \"${k.payload}\"")
-                        else -> lines.add(".$send(\"${k.payload}\")")
-                    }
-                }
-
-                ContentType.JSON -> {
-                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
-                }
-
-                else -> {
-                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                }
-            }
-        }
-
-        for(header in k.headers) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
-                format.isJavaScript() -> when {
-                    format.isPlaywright() ->
-                    {
-                        // handled in callEndPoint for Playwright
-                    }
-                    else ->
-                        lines.add(".set(\"${header.name}\", \"${header.value}\")")
-                }
-                format.isPython() -> {
-                    lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
-                }
-            }
-        }
-
-        if (format.isJavaScript()){
-            // disable redirections
-            if (format.isPlaywright()) {
-                // handled in callEndPoint
-            } else {
-                lines.add(".redirects(0)")
-            }
-        }
-
-        /*
-            For RestAssure, the call to "post" must be last, which is in opposite of what
-            needed in used libraries for Python and JS
-         */
-        if(format.isJavaOrKotlin()) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
-        }
-
-
-        if (format.isPython()) {
-            lines.add("$targetVariable = requests \\")
-            lines.indent(2)
-            callEndpoint(lines, k, format, baseUrlOfSut)
-            lines.append(", ")
-            lines.indented {
-                lines.add("headers=headers, data=body, allow_redirects=False, verify=False)")
-            }
-            lines.deindent(2)
-        }
-    }
-
-    private fun callEndpoint(
-        lines: Lines,
-        k: EndpointCallLogin,
-        format: OutputFormat,
-        baseUrlOfSut: String
-    ) {
-        val verb = k.verb.name.lowercase()
-
-        if (format.isPlaywright()) {
-            lines.add("await request.$verb(")
-        } else {
-            lines.add(".$verb(")
-        }
-
-        if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\"")
-        } else {
-            when {
-                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
-                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
-                else -> lines.append("\"\${$baseUrlOfSut}")
-            }
-            lines.append("${k.endpoint}\"")
-        }
-
-        if (format.isPlaywright()) {
-            lines.append(", {")
-            lines.indented {
-                if (k.headers.isNotEmpty() || k.contentType != null) {
-                    lines.add("headers: {")
-                    lines.indented {
-                        if (k.contentType != null) {
-                            lines.add("'Content-Type': '${k.contentType.defaultValue}',")
-                        }
-                        for (header in k.headers) {
-                            lines.add("'${header.name}': '${header.value}',")
-                        }
-                    }
-                    lines.add("},")
-                }
-                if (k.payload != null) {
-                    if (k.contentType == ContentType.JSON) {
-                        lines.add("data: ${k.payload},")
-                    } else {
-                        lines.add("data: '${k.payload}',")
-                    }
-                }
-                lines.add("maxRedirects: 0,")
-            }
-            lines.add("}")
-        }
-
-        if (!format.isPython()) {
-            lines.append(")")
         }
     }
 }

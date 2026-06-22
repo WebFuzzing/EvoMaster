@@ -53,8 +53,16 @@ class InputEncoderUtilWrapper(
         DateTimeGene::class
     )
 
+    /**
+     * Represents a mapping between a parameter (with its name and path)
+     * and its associated gene object.
+     * @property paramName The name of the parameter.
+     * @property paramPath A unique identifier for the parameter, representing its hierarchical path (including all its parents).
+     * @property gene The gene corresponding to the parameter.
+     */
     data class ParamAndGene(
         val paramName: String,
+        val paramPath: String,
         val gene: Gene
     )
 
@@ -67,6 +75,35 @@ class InputEncoderUtilWrapper(
     fun areAllGenesUnSupported(): Boolean =
         endPointToGeneList().all { !isSupported(it.gene.getLeafGene()) }
 
+    /**
+     * Builds a string representing the gene name and all its parents.
+     * This string is used as a unique identifier for the gene in the AI models.
+     */
+    private fun genePath(g: Gene): String {
+
+        val names = mutableListOf<String>()
+
+        var current: Gene? = g
+
+        while (current != null) {
+            names.add(current.name)
+            current = current.parent as? Gene
+        }
+
+        val path = names.reversed()
+        
+        return if (path.size > 1)
+            path.dropLast(1).joinToString("/") //ignore the last name, which is the repetition of gene itself as its own parent
+        else
+            path.joinToString("/")
+
+    }
+
+    /**
+     * Recursively expands the input gene into a list of its leaf genes.
+     * If the input gene is of type [ObjectGene], it will traverse its fixed fields
+     * and additional fields to expand and collect all nested leaf genes.
+     */
     private fun expandGene(g: Gene): List<Gene> {
 
         val gene = g.getLeafGene()
@@ -83,6 +120,23 @@ class InputEncoderUtilWrapper(
         return listOf(gene)
     }
 
+
+    /**
+     * Associate all parameters' paths with their corresponding encoded numerical values of their parameter.
+     * Note that each endpoint may have multiple parameters, but each parameter has a unique path including all its parents.
+     */
+    fun getAllParamsPathsAndEncodedValues(): Map<String, Double> {
+
+        val paramPaths = endPointToGeneList().map { it.paramPath }
+        val encodedValues = encode()
+
+        return paramPaths.zip(encodedValues).toMap()
+    }
+
+    /**
+     * Converts the endpoint parameters into a list of `ParamAndGene` objects,
+     * where each entry represents a parameter, its associated gene, and all the gene's parents.
+     */
     fun endPointToGeneList(): List<ParamAndGene> {
         val paramAndGenes = mutableListOf<ParamAndGene>()
 
@@ -96,7 +150,13 @@ class InputEncoderUtilWrapper(
                 val g = p.primaryGene()
                 val expanded = expandGene(g)
                 expanded.forEach { subGene ->
-                    paramAndGenes.add(ParamAndGene(subGene.name, subGene))
+                    paramAndGenes.add(
+                        ParamAndGene(
+                            paramName = subGene.name,
+                            paramPath = genePath(subGene),
+                            gene = subGene
+                        )
+                    )
                 }
             }
 
