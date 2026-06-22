@@ -16,6 +16,7 @@ import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
@@ -28,6 +29,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
@@ -1678,5 +1680,31 @@ public void test() throws Exception {
 
         assertFalse(lines.toString().contains(".body()"))
 
+    }
+
+    @Test
+    fun testNonAsciiInPathParamIsEncoded() {
+        // non-ASCII characters in path parameter values must be percent-encoded in generated test output.
+        val format = OutputFormat.KOTLIN_JUNIT_5
+
+        val pathParam = PathParam("key", CustomMutationRateGene("key", StringGene("key", "聚"), 1.0))
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/api/{key}"), mutableListOf(pathParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual)
+
+        val result = RestCallResult(action.getLocalId())
+        result.setTimedout(false)
+        result.setStatusCode(200)
+        val ei = EvaluatedIndividual(FitnessValue(0.0), individual, listOf(result))
+
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), "baseUrlOfSut")
+        val output = lines.toString()
+
+        assertFalse(output.contains("聚"),
+            "Non-ASCII character must not appear raw in generated test output, got:\n$output")
+
+        assertTrue(output.contains("%E8%81%9A"),
+            "Non-ASCII character must be percent-encoded as %E8%81%9A in generated test output, got:\n$output")
     }
 }
