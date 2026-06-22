@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -169,5 +170,72 @@ internal class RegexHandlerTest{
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("\\xR") }
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\ugggg") }
         assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("[9-1]") }
+    }
+
+    @Test
+    fun testJVMExternalCaseInsensitiveFlagWithUnicodeCase() {
+        // \u03A1 is greek capital Rho, \u03C1 is lowercase rho
+        val regex = "\u03A1+"
+        val flags = RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE)
+        val gene = RegexHandler.createGeneForJVM(regex, flags)
+        val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE)
+        val rand = Randomness()
+
+        repeat(200) {
+            gene.randomize(rand, false)
+            val value = gene.getValueAsRawString()
+            assertTrue(pattern.matcher(value).find())
+        }
+    }
+
+    @Test
+    fun testJVMCacheDistinguishesByExternalFlags() {
+
+        val regex = "^abc$"
+        val noFlags = RegexHandler.createGeneForJVM(regex)
+        val withCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+
+        val rand = Randomness()
+        val noFlagsSamples = (1..200).map {
+            noFlags.randomize(rand, false)
+            noFlags.getValueAsRawString()
+        }.toSet()
+
+        val withCISamples = (1..200).map {
+            withCI.randomize(rand, false)
+            withCI.getValueAsRawString()
+        }.toSet()
+
+        assertTrue(noFlagsSamples.all { it == "abc" })
+        assertTrue(withCISamples.size > 1)
+    }
+
+    @Test
+    fun testJVMInlineFlagNotDoubledByExternalFlag() {
+
+        val regex = "(?i:abc)"
+        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+        val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE)
+        val rand = Randomness()
+
+        repeat(200) {
+            withExternalCI.randomize(rand, false)
+            val value = withExternalCI.getValueAsRawString()
+            assertTrue(pattern.matcher(value).find())
+        }
+    }
+
+    @Test
+    fun testJVMInlineCanDisableExternalFlag() {
+
+        val regex = "^(?-i:abc)$"
+        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+        val rand = Randomness()
+
+        repeat(200) {
+            withExternalCI.randomize(rand, false)
+            val value = withExternalCI.getValueAsRawString()
+            assertEquals("abc", value)
+        }
     }
 }
