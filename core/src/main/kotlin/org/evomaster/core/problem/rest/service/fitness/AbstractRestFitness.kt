@@ -1379,11 +1379,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
             val allowed = r.getAllowedVerbs() ?: continue
 
+            // listed in Allow but not declared in the schema
             val extra = allowed.any {
                 it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
             }
-            val missing = callGraphService.endpointsForPath(a.path).any {
-                it.verb != HttpVerb.OPTIONS && it.verb != HttpVerb.HEAD && !allowed.contains(it.verb)
+            // declared in the schema but not listed in Allow
+            val missing = HttpVerb.values().any {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && callGraphService.isDeclared(it, a.path) && it !in allowed
             }
             if (!extra && !missing) continue
 
