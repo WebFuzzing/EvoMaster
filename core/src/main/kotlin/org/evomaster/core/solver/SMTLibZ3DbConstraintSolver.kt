@@ -58,7 +58,16 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
     // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
     // Schema is assumed stable within a single run, so only query + row count form the key.
-    private val z3ResultCache = mutableMapOf<Pair<String, Int>, Z3Result>()
+    // LRU-bounded to prevent unbounded heap growth in long runs (singleton lifetime).
+    private val z3ResultCache: MutableMap<Pair<String, Int>, Z3Result> =
+        object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                size > MAX_CACHE_SIZE
+        }
+
+    companion object {
+        private const val MAX_CACHE_SIZE = 500
+    }
 
     @Inject
     private lateinit var config: EMConfig
@@ -134,7 +143,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val fileName = storeToTmpFile(smtLib)
 
         val z3Start = System.currentTimeMillis()
-        val z3Result = executor.solveFromFile(fileName)
+        val z3Result = try {
+            executor.solveFromFile(fileName)
+        } finally {
+            Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
+        }
         val z3TimeMs = System.currentTimeMillis() - z3Start
 
         return when (z3Result.status) {
