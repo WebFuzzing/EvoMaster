@@ -1359,8 +1359,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     /**
-     * Check any OPTIONS call, regardless of its position. The Allow header must not list
-     * verbs that are not declared in the schema (ignoring OPTIONS and HEAD).
+     * Check any OPTIONS call, regardless of its position. The Allow header must match
+     * the verbs declared in the schema (ignoring OPTIONS and HEAD). Two faults, both
+     * reported under HTTP_INVALID_ALLOW:
+     * - extra: a verb is allowed but not declared in the schema
+     * - missing: a verb is declared in the schema but absent from the Allow header
      */
     private fun handleInvalidAllow(
         individual: RestIndividual,
@@ -1379,7 +1382,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val extra = allowed.any {
                 it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
             }
-            if (!extra) continue
+            val missing = callGraphService.endpointsForPath(a.path).any {
+                it.verb != HttpVerb.OPTIONS && it.verb != HttpVerb.HEAD && !allowed.contains(it.verb)
+            }
+            if (!extra && !missing) continue
 
             val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
             val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))

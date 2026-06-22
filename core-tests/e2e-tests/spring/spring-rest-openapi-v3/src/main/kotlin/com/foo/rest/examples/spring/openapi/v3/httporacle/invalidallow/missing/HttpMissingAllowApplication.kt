@@ -1,11 +1,9 @@
-package com.foo.rest.examples.spring.openapi.v3.httporacle.invalidallow.base
+package com.foo.rest.examples.spring.openapi.v3.httporacle.invalidallow.missing
 
-import io.swagger.v3.oas.annotations.Hidden
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -16,12 +14,12 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api"])
 @RestController
-open class HttpInvalidAllowApplication {
+open class HttpMissingAllowApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(HttpInvalidAllowApplication::class.java, *args)
+            SpringApplication.run(HttpMissingAllowApplication::class.java, *args)
         }
 
         private val products = mutableMapOf<Int, String>()
@@ -33,8 +31,8 @@ open class HttpInvalidAllowApplication {
         }
     }
 
-    // Faulty resource: DELETE is mapped but hidden from the schema,
-    // so OPTIONS Allow lists a verb (DELETE) not documented in OpenAPI.
+    // Faulty resource: the manual schema declares DELETE, but no DELETE handler is mapped,
+    // so OPTIONS Allow omits a verb (DELETE) that is documented in OpenAPI.
 
     @GetMapping(path = ["/products/{id}"])
     open fun getProduct(@PathVariable("id") id: Int): ResponseEntity<String> {
@@ -49,14 +47,8 @@ open class HttpInvalidAllowApplication {
         return ResponseEntity.status(if (isNew) 201 else 200).build()
     }
 
-    @Hidden
-    @DeleteMapping(path = ["/products/{id}"])
-    open fun deleteProduct(@PathVariable("id") id: Int): ResponseEntity<Any> {
-        products.remove(id)
-        return ResponseEntity.status(204).build()
-    }
-
     // Clean resource: Allow matches the schema (ignoring HEAD/OPTIONS).
+
     @GetMapping(path = ["/orders/{id}"])
     open fun getOrder(@PathVariable("id") id: Int): ResponseEntity<String> {
         val value = orders[id] ?: return ResponseEntity.status(404).build()

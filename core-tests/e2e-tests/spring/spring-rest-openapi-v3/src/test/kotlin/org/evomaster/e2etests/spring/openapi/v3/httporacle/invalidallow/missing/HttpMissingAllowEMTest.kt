@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidallow
+package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidallow.missing
 
-import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidallow.HttpInvalidAllowController
+import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidallow.missing.HttpMissingAllowController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -8,13 +8,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HttpInvalidAllowEMTest : SpringTestBase() {
+class HttpMissingAllowEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(HttpInvalidAllowController())
+            initClass(HttpMissingAllowController())
         }
     }
 
@@ -23,7 +23,7 @@ class HttpInvalidAllowEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "HttpInvalidAllowEM",
+                "HttpMissingAllowEM",
                 20
         ) { args: MutableList<String> ->
 
@@ -37,7 +37,7 @@ class HttpInvalidAllowEMTest : SpringTestBase() {
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue({ ExperimentalFaultCategory.HTTP_INVALID_ALLOW in faults })
+            assertTrue(ExperimentalFaultCategory.HTTP_INVALID_ALLOW in faults)
 
             val allowFaults = DetectedFaultUtils.getDetectedFaults(solution)
                 .filter { it.category == ExperimentalFaultCategory.HTTP_INVALID_ALLOW }
