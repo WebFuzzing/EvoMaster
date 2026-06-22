@@ -28,6 +28,57 @@ object AuthWriter {
         targetVariable: String?
     ) {
 
+        // Special handling for Playwright: build request with options object instead of chained calls
+        if (format.isPlaywright()) {
+            val verb = k.verb.name.lowercase()
+            lines.add(".$verb(")
+            if (k.externalEndpointURL != null) {
+                lines.append("\"${k.externalEndpointURL}\"")
+            } else {
+                lines.append("$baseUrlOfSut + \"")
+                lines.append("${k.endpoint}\"")
+            }
+            lines.append(", {")
+            lines.addEmpty()
+            lines.indented {
+                // headers block
+                lines.add("headers: {")
+                lines.indented {
+                    // content-type header if present
+                    val contentType = k.contentType
+                    if (contentType != null) {
+                        lines.add("'content-type': \"${contentType.defaultValue}\",")
+                    }
+                    // any additional headers
+                    for (header in k.headers) {
+                        lines.add("'${header.name}': \"${header.value}\",")
+                    }
+                }
+                lines.add("},")
+
+                // body/payload
+                val contentType = k.contentType
+                if (contentType != null) {
+                    when (contentType) {
+                        ContentType.X_WWW_FORM_URLENCODED -> {
+                            lines.add("data: \"${k.payload}\",")
+                        }
+                        ContentType.JSON -> {
+                            testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                            // printSendJsonBody for Playwright appends a trailing comma
+                        }
+                        else -> throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                    }
+                }
+
+                // disable redirections and ignore HTTPS errors
+                lines.add("maxRedirects: 0,")
+                lines.add("ignoreHTTPSErrors: true,")
+            }
+            lines.add("})")
+            return
+        }
+
         if(format.isJavaScript()) {
             callEndpoint(lines, k, format, baseUrlOfSut)
         }
@@ -75,8 +126,8 @@ object AuthWriter {
             }
         }
 
-        if (format.isJavaScript()){
-            // disable redirections
+        // Disable redirections where supported (SuperAgent/Frisby style only)
+        if (format.isJavaScript() && !format.isPlaywright()){
             lines.add(".redirects(0)")
         }
 
