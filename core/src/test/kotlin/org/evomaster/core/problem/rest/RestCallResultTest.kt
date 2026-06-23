@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult.FlakyObservationSource
+import org.evomaster.core.problem.httpws.HttpWsCallResult.ResponseField
+import org.evomaster.core.utils.FlakinessInferenceUtil.UUID_MARKER
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -133,19 +136,24 @@ internal class RestCallResultTest {
     @ParameterizedTest
     @MethodSource("getFlakyBodyDataProvider")
     fun testSetFlakinessInBody(same: String, diff: String){
-        val body = createCallResult(same)
-        val same = createCallResult(same)
-        val diff = createCallResult(diff)
+        val original = createCallResult(same)
+        val sameResult = createCallResult(same)
+        val differentResult = createCallResult(diff)
 
-        body.setFlakiness(same)
-        assertNotNull(body.getBodyType())
+        original.recordFlakyObservation(sameResult, 1)
+        assertNotNull(original.getBodyType())
 
-        assertNull(body.getFlakyBody())
-        assertNull(body.getFlakyBodyType())
+        assertNull(original.getFlakyObservation(1))
+        assertNull(original.getFlakyVariation(ResponseField.BODY))
+        assertNull(original.getFlakyVariation(ResponseField.BODY_TYPE))
 
-        body.setFlakiness(diff)
-        assertEquals(diff.getBody(), body.getFlakyBody())
-        assertNull(body.getFlakyBodyType())
+        original.recordFlakyObservation(differentResult, 2)
+
+        val observation = original.getFlakyObservation(2)
+        assertNotNull(observation)
+        assertEquals(differentResult.getBody(), observation!!.differences[ResponseField.BODY])
+        assertEquals(mapOf(2 to differentResult.getBody()), original.getFlakyVariation(ResponseField.BODY)!!.valuesByExecIndex)
+        assertNull(original.getFlakyVariation(ResponseField.BODY_TYPE))
 
     }
 
@@ -157,25 +165,72 @@ internal class RestCallResultTest {
         val msg = "hello"
         val diffmsg = "hello!"
 
-        val body = RestCallResult("1")
-        val same = RestCallResult("2")
-        val diff = RestCallResult("3")
+        val original = RestCallResult("1")
+        val sameResult = RestCallResult("2")
+        val differentResult = RestCallResult("3")
 
-        body.setStatusCode(code)
-        same.setStatusCode(code)
-        diff.setStatusCode(diffcode)
+        original.setStatusCode(code)
+        sameResult.setStatusCode(code)
+        differentResult.setStatusCode(diffcode)
 
-        body.setErrorMessage(msg)
-        same.setErrorMessage(msg)
-        diff.setErrorMessage(diffmsg)
+        original.setErrorMessage(msg)
+        sameResult.setErrorMessage(msg)
+        differentResult.setErrorMessage(diffmsg)
 
-        body.setFlakiness(same)
-        assertNull(body.getFlakyStatusCode())
-        assertNull(body.getFlakyErrorMessage())
+        original.recordFlakyObservation(sameResult, 1)
+        assertNull(original.getFlakyObservation(1))
+        assertNull(original.getFlakyVariation(ResponseField.STATUS_CODE))
+        assertNull(original.getFlakyVariation(ResponseField.ERROR_MESSAGE))
 
-        body.setFlakiness(diff)
-        assertEquals(diffcode, body.getFlakyStatusCode())
-        assertEquals(diffmsg, body.getFlakyErrorMessage())
+        original.recordFlakyObservation(differentResult, 2)
 
+        val observation = original.getFlakyObservation(2)
+        assertNotNull(observation)
+        assertEquals(diffcode.toString(), observation!!.differences[ResponseField.STATUS_CODE])
+        assertEquals(diffmsg, observation.differences[ResponseField.ERROR_MESSAGE])
+        assertEquals(mapOf(2 to diffcode.toString()), original.getFlakyVariation(ResponseField.STATUS_CODE)!!.valuesByExecIndex)
+        assertEquals(mapOf(2 to diffmsg), original.getFlakyVariation(ResponseField.ERROR_MESSAGE)!!.valuesByExecIndex)
+
+    }
+
+    @Test
+    fun testFlakinessIsRecordedAsExecutionDeltas(){
+        val original = createCallResult("""{"id":"42"}""")
+        original.setStatusCode(200)
+
+        val same = createCallResult("""{"id":"42"}""")
+        same.setStatusCode(200)
+
+        val different = createCallResult("""{"id":"735"}""")
+        different.setStatusCode(500)
+
+        original.recordFlakyObservation(same, 1)
+        original.recordFlakyObservation(different, 2)
+
+        assertNull(original.getFlakyObservation(1))
+
+        val observation = original.getFlakyObservation(2)
+        assertNotNull(observation)
+        assertEquals("500", observation!!.differences[ResponseField.STATUS_CODE])
+        assertEquals("""{"id":"735"}""", observation.differences[ResponseField.BODY])
+
+        val statusVariation = original.getFlakyVariation(ResponseField.STATUS_CODE)
+        assertNotNull(statusVariation)
+        assertEquals(mapOf(2 to "500"), statusVariation!!.valuesByExecIndex)
+    }
+
+    @Test
+    fun testStaticFlakinessInferenceIsStoredSeparatelyFromExecutionDeltas(){
+        val original = createCallResult("""{"id":"550e8400-e29b-41d4-a716-446655440000"}""")
+
+        original.recordStaticFlakyInference()
+
+        assertNull(original.getFlakyObservation(1))
+
+        val staticObservation = original.getStaticFlakyObservation()
+        assertNotNull(staticObservation)
+        assertEquals(FlakyObservationSource.STATIC_INFERENCE, staticObservation!!.source)
+        assertNull(staticObservation.execIndex)
+        assertEquals("""{"id":"$UUID_MARKER"}""", staticObservation.differences[ResponseField.BODY])
     }
 }
