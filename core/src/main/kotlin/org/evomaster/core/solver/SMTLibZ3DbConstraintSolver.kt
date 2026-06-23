@@ -56,14 +56,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
-    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
-    // Schema is assumed stable within a single run, so only query + row count form the key.
-    // LRU-bounded to prevent unbounded heap growth in long runs (singleton lifetime).
-    private val z3ResultCache: MutableMap<Pair<String, Int>, Z3Result> =
-        object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
-                size > MAX_CACHE_SIZE
-        }
+    // Null until DSE is enabled in postConstruct — avoids allocating the map in runs where DSE is off.
+    private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
     companion object {
         private const val MAX_CACHE_SIZE = 500
@@ -79,6 +73,10 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithDSE) {
             initializeExecutor()
+            z3ResultCache = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                    size > MAX_CACHE_SIZE
+            }
         }
     }
 
@@ -91,7 +89,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     @PreDestroy
     override fun close() {
-        executor.close()
+        if (::executor.isInitialized) {
+            executor.close()
+        }
         try {
             FileUtils.cleanDirectory(File(resourcesFolder))
         } catch (e: IOException) {
@@ -115,7 +115,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         }
 
         val cacheKey = Pair(sqlQuery, numberOfRows)
-        val cached = z3ResultCache[cacheKey]
+        val cached = z3ResultCache?.get(cacheKey)
         if (cached != null) {
             return when (cached.status) {
                 Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
@@ -153,12 +153,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return when (z3Result.status) {
             Z3Result.Status.SAT -> {
                 if (collectStats) statistics.reportDseSat(z3TimeMs)
-                z3ResultCache[cacheKey] = z3Result
+                z3ResultCache?.set(cacheKey, z3Result)
                 toSqlActionList(schemaDto, z3Result.model)
             }
             Z3Result.Status.UNSAT -> {
                 if (collectStats) statistics.reportDseUnsat(z3TimeMs)
-                z3ResultCache[cacheKey] = z3Result
+                z3ResultCache?.set(cacheKey, z3Result)
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
