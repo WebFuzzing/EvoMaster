@@ -39,6 +39,8 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_INVALID_ALLOW(919, "Invalid allow", "invalidAllow",
         "TODO"),
+    HTTP_TIMEOUT(921, "Timeout", "timeout",
+        "TODO"),
 
     HTTP_STATUS_NO_NON_STANDARD_CODES(950, "no-non-standard-codes", "invalidStatusCode", "TODO"),
     HTTP_STATUS_NO_201_IF_DELETE(951, "no-201-if-delete", "201OnDelete",  "TODO"),
