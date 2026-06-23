@@ -39,39 +39,6 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     }
 
-    enum class ResponseField {
-        STATUS_CODE,
-        BODY,
-        BODY_TYPE,
-        ERROR_MESSAGE,
-        TOO_LARGE_BODY,
-        INFINITE_LOOP,
-        TIMEDOUT,
-        TCP_PROBLEM,
-        INVALID_HTTP,
-        LOCATION,
-        ALLOW,
-        RESPONSE_TIME_MS
-    }
-
-    enum class FlakyObservationSource {
-        RE_EXECUTION,
-        STATIC_INFERENCE
-    }
-
-    data class FlakyObservation(
-        val source: FlakyObservationSource,
-        val execIndex: Int?,
-        val differences: Map<ResponseField, String?>
-    )
-
-    data class FieldVariation(
-        val field: ResponseField,
-        val valuesByExecIndex: Map<Int, String?>
-    )
-
-    private val flakyObservations: MutableList<FlakyObservation> = mutableListOf()
-
     /**
      * In some cases (eg infinite loop redirection), a HTTP call
      * might fail, and, as such, we might not have an actual "result"
@@ -237,7 +204,73 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun setResponseTimeMs(responseTime: Long) = addResultValue(RESPONSE_TIME_MS, responseTime.toString())
     fun getResponseTimeMs(): Long? = getResultValue(RESPONSE_TIME_MS)?.toLong()
 
+    // -------------------- Flakiness handling --------------------
 
+    /**
+     * Fields in responses compared across multiple executions of the http call action
+     * when handling flakiness.
+     */
+    enum class ResponseField {
+        STATUS_CODE,
+        BODY,
+        BODY_TYPE,
+        ERROR_MESSAGE //,
+        // do not consider the following fields in flakiness handling
+//        TOO_LARGE_BODY,
+//        INFINITE_LOOP,
+//        TIMEDOUT,
+//        TCP_PROBLEM,
+//        INVALID_HTTP,
+//        LOCATION,
+//        ALLOW,
+//        RESPONSE_TIME_MS
+    }
+
+    /**
+     * specify how flakiness was observed or identified.
+     */
+    enum class FlakyObservationSource {
+        /**
+         * flakiness was observed by re-executing the HTTP action.
+         */
+        RE_EXECUTION,
+
+        /**
+         * flakiness was inferred through static analysis.
+         */
+        STATIC_INFERENCE
+    }
+
+    /**
+     * A set of response fields whose values differ from the original call result.
+     *
+     * [execIndex] is index of re-execution to detect flakiness
+     * and is null when the observation comes from static inference.
+     * [source] is the source how this flaky was observed
+     */
+    data class FlakyObservation(
+        val source: FlakyObservationSource,
+        val execIndex: Int?,
+        val differences: Map<ResponseField, String?>
+    )
+
+    /**
+     * field value differences between the original result and re-execution results.
+     */
+    data class FieldVariation(
+        val field: ResponseField,
+        val valuesByExecIndex: Map<Int, String?>
+    )
+
+    private val flakyObservations: MutableList<FlakyObservation> = mutableListOf()
+
+    /**
+     * Compare [other] result with [this] original call result
+     * the response fields whose observed values differ from the [this] original call result.
+     *
+     * @param other result from the re-execution to compare against this one
+     * @param execIndex index identifying the re-execution that produced [other]
+     */
     fun recordFlakyObservation(other: HttpWsCallResult, execIndex: Int) {
         val differences = responseFieldExtractors()
             .mapNotNull { spec ->
@@ -258,6 +291,10 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         }
     }
 
+    /**
+     * Infer unstable values directly from this result, for example by
+     * normalizing timestamps or generated identifiers found in response text.
+     */
     fun recordStaticFlakyInference() {
         val differences = mutableMapOf<ResponseField, String?>()
 
@@ -281,17 +318,33 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         }
     }
 
+    /**
+     * Return all recorded flaky observations.
+     */
     fun getFlakyObservations(): List<FlakyObservation> = flakyObservations.toList()
 
+    /**
+     * Return the flaky observation recorded for a specific re-execution.
+     */
     fun getFlakyObservation(execIndex: Int): FlakyObservation? =
         flakyObservations.find { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex == execIndex }
 
+    /**
+     * Return the flaky observation derived without re-executing the action.
+     */
     fun getStaticFlakyObservation(): FlakyObservation? =
         flakyObservations.find { it.source == FlakyObservationSource.STATIC_INFERENCE }
 
+    /**
+     * Check whether any flaky observation contains a difference for [field].
+     */
     fun hasFlakyField(field: ResponseField): Boolean =
         flakyObservations.any { it.differences.containsKey(field) }
 
+    /**
+     * Return the observed flaky values for [field], ordered by observation
+     * source and execution index.
+     */
     fun getFlakyValues(field: ResponseField): List<String?> =
         flakyObservations
             .sortedWith(compareBy<FlakyObservation> { it.source }.thenBy { it.execIndex ?: Int.MAX_VALUE })
@@ -303,6 +356,9 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
                 }
             }
 
+    /**
+     * Return the values observed for [field] across concrete re-executions.
+     */
     fun getFlakyVariation(field: ResponseField): FieldVariation? {
         val values = flakyObservations
             .filter { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex != null }
@@ -364,14 +420,14 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         ResponseFieldSpec(ResponseField.STATUS_CODE) { it.getStatusCode()?.toString() },
         ResponseFieldSpec(ResponseField.BODY) { it.getBody() },
         ResponseFieldSpec(ResponseField.BODY_TYPE) { it.getBodyType()?.toString() },
-        ResponseFieldSpec(ResponseField.ERROR_MESSAGE) { it.getErrorMessage() },
-        ResponseFieldSpec(ResponseField.TOO_LARGE_BODY) { it.getTooLargeBody().toString() },
-        ResponseFieldSpec(ResponseField.INFINITE_LOOP) { it.getInfiniteLoop().toString() },
-        ResponseFieldSpec(ResponseField.TIMEDOUT) { it.getTimedout().toString() },
-        ResponseFieldSpec(ResponseField.TCP_PROBLEM) { it.getTcpProblem().toString() },
-        ResponseFieldSpec(ResponseField.INVALID_HTTP) { it.getInvalidHTTP().toString() },
-        ResponseFieldSpec(ResponseField.LOCATION) { it.getLocation() },
-        ResponseFieldSpec(ResponseField.ALLOW) { it.getAllow() },
-        ResponseFieldSpec(ResponseField.RESPONSE_TIME_MS) { it.getResponseTimeMs()?.toString() }
+        ResponseFieldSpec(ResponseField.ERROR_MESSAGE) { it.getErrorMessage() }//,
+//        ResponseFieldSpec(ResponseField.TOO_LARGE_BODY) { it.getTooLargeBody().toString() },
+//        ResponseFieldSpec(ResponseField.INFINITE_LOOP) { it.getInfiniteLoop().toString() },
+//        ResponseFieldSpec(ResponseField.TIMEDOUT) { it.getTimedout().toString() },
+//        ResponseFieldSpec(ResponseField.TCP_PROBLEM) { it.getTcpProblem().toString() },
+//        ResponseFieldSpec(ResponseField.INVALID_HTTP) { it.getInvalidHTTP().toString() },
+//        ResponseFieldSpec(ResponseField.LOCATION) { it.getLocation() },
+//        ResponseFieldSpec(ResponseField.ALLOW) { it.getAllow() },
+//        ResponseFieldSpec(ResponseField.RESPONSE_TIME_MS) { it.getResponseTimeMs()?.toString() }
     )
 }
