@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.utils.FlakinessInferenceUtil
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
@@ -12,7 +13,9 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId,stopping)
 
     @VisibleForTesting
-    internal constructor(other: HttpWsCallResult) : super(other)
+    internal constructor(other: HttpWsCallResult) : super(other) {
+        flakyObservations.addAll(other.flakyObservations)
+    }
 
     companion object {
         const val STATUS_CODE = "STATUS_CODE"
@@ -34,12 +37,40 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val VULNERABLE_SQLI = "VULNERABLE_SQLI"
 
 
-        const val FLAKY_STATUS_CODE = "FLAKY_STATUS_CODE"
-        const val FLAKY_BODY = "FLAKY_BODY"
-        const val FLAKY_BODY_TYPE = "FLAKY_BODY_TYPE"
-        const val FLAKY_ERROR_MESSAGE = "FLAKY_ERROR_MESSAGE"
-        const val FLAKY_DETECTION_TIMES = "FLAKY_DETECTION_TIMES"
     }
+
+    enum class ResponseField {
+        STATUS_CODE,
+        BODY,
+        BODY_TYPE,
+        ERROR_MESSAGE,
+        TOO_LARGE_BODY,
+        INFINITE_LOOP,
+        TIMEDOUT,
+        TCP_PROBLEM,
+        INVALID_HTTP,
+        LOCATION,
+        ALLOW,
+        RESPONSE_TIME_MS
+    }
+
+    enum class FlakyObservationSource {
+        RE_EXECUTION,
+        STATIC_INFERENCE
+    }
+
+    data class FlakyObservation(
+        val source: FlakyObservationSource,
+        val execIndex: Int?,
+        val differences: Map<ResponseField, String?>
+    )
+
+    data class FieldVariation(
+        val field: ResponseField,
+        val valuesByExecIndex: Map<Int, String?>
+    )
+
+    private val flakyObservations: MutableList<FlakyObservation> = mutableListOf()
 
     /**
      * In some cases (eg infinite loop redirection), a HTTP call
@@ -207,64 +238,140 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun getResponseTimeMs(): Long? = getResultValue(RESPONSE_TIME_MS)?.toLong()
 
 
-    fun setFlakyErrorMessage(msg: String)  = addResultValue(FLAKY_ERROR_MESSAGE, msg)
-    fun getFlakyErrorMessage() : String? = getResultValue(FLAKY_ERROR_MESSAGE)
+    fun recordFlakyObservation(other: HttpWsCallResult, execIndex: Int) {
+        val differences = responseFieldExtractors()
+            .mapNotNull { spec ->
+                val baseline = spec.extract(this)
+                val observed = spec.extract(other)
 
-    fun setFlakyStatusCode(code: Int) = addResultValue(FLAKY_STATUS_CODE, code.toString())
-    fun getFlakyStatusCode() : Int? = getResultValue(FLAKY_STATUS_CODE)?.toInt()
+                if (observed != null && observed != baseline) {
+                    spec.field to observed
+                } else {
+                    null
+                }
+            }
+            .toMap()
 
-    fun setFlakyBody(body: String, execIndex : Int?=null) = addResultValue(flakyInfoKey(FLAKY_BODY, execIndex), body)
-    fun getFlakyBody(execIndex : Int? = null) : String? = getResultValue(flakyInfoKey(FLAKY_BODY, execIndex))
-    fun getFlakyBodies() : List<String>? = getMultipleFlakyInfo(FLAKY_BODY)
-    fun containFlakyBody(flakyBody: String) : Boolean {
-        if (getFlakyBodies() == null) return false
-        return getFlakyBodies()!!.contains(flakyBody)
-    }
-
-    fun setFlakyBodyType(type: MediaType) = addResultValue(FLAKY_BODY_TYPE, type.toString())
-    fun getFlakyBodyType() : MediaType? = getResultValue(FLAKY_BODY_TYPE)?.let { MediaType.valueOf(it) }
-
-    fun setFlakyDetectionTimes(times: Int) {
-        if (getFlakyDetectionTimes() == null || getFlakyDetectionTimes()!! < times) addResultValue(FLAKY_DETECTION_TIMES, times.toString())
-    }
-    fun getFlakyDetectionTimes() : Int? = getResultValue(FLAKY_DETECTION_TIMES)?.toInt()
-
-    fun setFlakiness(previous: HttpWsCallResult, execIndex: Int = 1){
-        setFlakyDetectionTimes(execIndex)
-
-        val pStatusCode = previous.getStatusCode()
-        if (pStatusCode != null && pStatusCode != getStatusCode()) {
-            setFlakyStatusCode(pStatusCode)
-        }
-
-        val pBody = previous.getBody()
-        if (pBody != null && pBody != getBody() && !containFlakyBody(pBody)) {
-            setFlakyBody(pBody)
-        }
-
-        val pBodyType = previous.getBodyType()
-        if (pBodyType != null && pBodyType != getBodyType()) {
-            setFlakyBodyType(pBodyType)
-        }
-
-        val pMessage = previous.getErrorMessage()
-        if (pMessage != null && pMessage != getErrorMessage()) {
-            setFlakyErrorMessage(pMessage)
+        if (differences.isNotEmpty()) {
+            flakyObservations.removeIf { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex == execIndex }
+            flakyObservations.add(FlakyObservation(FlakyObservationSource.RE_EXECUTION, execIndex, differences))
         }
     }
 
-    private fun flakyInfoKey(infoKey: String, execIndex : Int? = null): String = "${infoKey}_${execIndex?.toString() ?: ""}"
+    fun recordStaticFlakyInference() {
+        val differences = mutableMapOf<ResponseField, String?>()
 
-    private fun getMultipleFlakyInfo(infoKey: String): List<String>?{
-        val repeat = getFlakyDetectionTimes()
-
-        if (repeat != null && repeat > 0) {
-            return (1..repeat).map {
-                getResultValue(flakyInfoKey(infoKey, it))
-            }.plus(getResultValue(infoKey)).filterNotNull().run {
-                ifEmpty { null }
+        getBody()?.let {
+            val normalized = FlakinessInferenceUtil.derive(it)
+            if (normalized != it) {
+                differences[ResponseField.BODY] = normalized
             }
         }
-        return null
+
+        getErrorMessage()?.let {
+            val normalized = FlakinessInferenceUtil.derive(it)
+            if (normalized != it) {
+                differences[ResponseField.ERROR_MESSAGE] = normalized
+            }
+        }
+
+        if (differences.isNotEmpty()) {
+            flakyObservations.removeIf { it.source == FlakyObservationSource.STATIC_INFERENCE }
+            flakyObservations.add(FlakyObservation(FlakyObservationSource.STATIC_INFERENCE, null, differences))
+        }
     }
+
+    fun getFlakyObservations(): List<FlakyObservation> = flakyObservations.toList()
+
+    fun getFlakyObservation(execIndex: Int): FlakyObservation? =
+        flakyObservations.find { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex == execIndex }
+
+    fun getStaticFlakyObservation(): FlakyObservation? =
+        flakyObservations.find { it.source == FlakyObservationSource.STATIC_INFERENCE }
+
+    fun hasFlakyField(field: ResponseField): Boolean =
+        flakyObservations.any { it.differences.containsKey(field) }
+
+    fun getFlakyValues(field: ResponseField): List<String?> =
+        flakyObservations
+            .sortedWith(compareBy<FlakyObservation> { it.source }.thenBy { it.execIndex ?: Int.MAX_VALUE })
+            .mapNotNull { observation ->
+                if (observation.differences.containsKey(field)) {
+                    observation.differences[field]
+                } else {
+                    null
+                }
+            }
+
+    fun getFlakyVariation(field: ResponseField): FieldVariation? {
+        val values = flakyObservations
+            .filter { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex != null }
+            .sortedBy { it.execIndex }
+            .mapNotNull { observation ->
+                if (observation.differences.containsKey(field)) {
+                    observation.execIndex!! to observation.differences[field]
+                } else {
+                    null
+                }
+            }
+            .toMap()
+
+        return if (values.isEmpty()) null else FieldVariation(field, values)
+    }
+
+    fun setFlakyErrorMessage(msg: String) = addFlakyDifference(ResponseField.ERROR_MESSAGE, msg)
+    fun getFlakyErrorMessage() : String? = getFirstFlakyValue(ResponseField.ERROR_MESSAGE)
+
+    fun setFlakyStatusCode(code: Int) = addFlakyDifference(ResponseField.STATUS_CODE, code.toString())
+    fun getFlakyStatusCode() : Int? = getFirstFlakyValue(ResponseField.STATUS_CODE)?.toInt()
+
+    fun setFlakyBody(body: String, execIndex : Int?=null) = addFlakyDifference(ResponseField.BODY, body, execIndex)
+    fun getFlakyBody(execIndex : Int? = null) : String? =
+        if (execIndex == null) getFirstFlakyValue(ResponseField.BODY)
+        else getFlakyObservation(execIndex)?.differences?.get(ResponseField.BODY)
+
+    fun getFlakyBodies() : List<String>? = getFlakyValues(ResponseField.BODY).filterNotNull().ifEmpty { null }
+    fun containFlakyBody(flakyBody: String) : Boolean = getFlakyBodies()?.contains(flakyBody) ?: false
+
+    fun setFlakyBodyType(type: MediaType) = addFlakyDifference(ResponseField.BODY_TYPE, type.toString())
+    fun getFlakyBodyType() : MediaType? = getFirstFlakyValue(ResponseField.BODY_TYPE)?.let { MediaType.valueOf(it) }
+
+    fun setFlakiness(previous: HttpWsCallResult, execIndex: Int = 1) =
+        recordFlakyObservation(previous, execIndex)
+
+    private fun addFlakyDifference(field: ResponseField, value: String?, execIndex: Int? = null) {
+        val index = execIndex ?: 1
+
+        val existing = flakyObservations.find { it.execIndex == index }
+        val differences = existing?.differences?.toMutableMap() ?: mutableMapOf()
+        differences[field] = value
+
+        flakyObservations.removeIf { it.source == FlakyObservationSource.RE_EXECUTION && it.execIndex == index }
+        flakyObservations.add(FlakyObservation(FlakyObservationSource.RE_EXECUTION, index, differences))
+    }
+
+    private fun getFirstFlakyValue(field: ResponseField): String? =
+        flakyObservations
+            .sortedBy { it.execIndex }
+            .firstNotNullOfOrNull { it.differences[field] }
+
+    private data class ResponseFieldSpec(
+        val field: ResponseField,
+        val extract: (HttpWsCallResult) -> String?
+    )
+
+    private fun responseFieldExtractors(): List<ResponseFieldSpec> = listOf(
+        ResponseFieldSpec(ResponseField.STATUS_CODE) { it.getStatusCode()?.toString() },
+        ResponseFieldSpec(ResponseField.BODY) { it.getBody() },
+        ResponseFieldSpec(ResponseField.BODY_TYPE) { it.getBodyType()?.toString() },
+        ResponseFieldSpec(ResponseField.ERROR_MESSAGE) { it.getErrorMessage() },
+        ResponseFieldSpec(ResponseField.TOO_LARGE_BODY) { it.getTooLargeBody().toString() },
+        ResponseFieldSpec(ResponseField.INFINITE_LOOP) { it.getInfiniteLoop().toString() },
+        ResponseFieldSpec(ResponseField.TIMEDOUT) { it.getTimedout().toString() },
+        ResponseFieldSpec(ResponseField.TCP_PROBLEM) { it.getTcpProblem().toString() },
+        ResponseFieldSpec(ResponseField.INVALID_HTTP) { it.getInvalidHTTP().toString() },
+        ResponseFieldSpec(ResponseField.LOCATION) { it.getLocation() },
+        ResponseFieldSpec(ResponseField.ALLOW) { it.getAllow() },
+        ResponseFieldSpec(ResponseField.RESPONSE_TIME_MS) { it.getResponseTimeMs()?.toString() }
+    )
 }
