@@ -233,4 +233,40 @@ internal class RestCallResultTest {
         assertNull(staticObservation.execIndex)
         assertEquals("""{"id":"$UUID_MARKER"}""", staticObservation.differences[ResponseField.BODY])
     }
+
+    @Test
+    fun testMergedFlakyBodyCombinesDifferentExecutionDeltas(){
+        val original = createCallResult("""{"stable":"same","first":"a","second":"b"}""")
+        val firstDiff = createCallResult("""{"stable":"same","first":"x","second":"b"}""")
+        val secondDiff = createCallResult("""{"stable":"same","first":"a","second":"y"}""")
+
+        original.recordFlakyObservation(firstDiff, 1)
+        original.recordFlakyObservation(secondDiff, 2)
+
+        assertEquals("""{"stable":"same","first":"x","second":"y"}""", original.getMergedFlakyBody())
+    }
+
+    @Test
+    fun testMergedFlakyBodyCombinesNestedExecutionDeltas(){
+        val original = createCallResult("""{"data":{"stable":"same","first":"a","second":"b"},"items":[{"id":"1"},{"id":"2"}]}""")
+        val firstDiff = createCallResult("""{"data":{"stable":"same","first":"x","second":"b"},"items":[{"id":"1"},{"id":"2"}]}""")
+        val secondDiff = createCallResult("""{"data":{"stable":"same","first":"a","second":"b"},"items":[{"id":"1"},{"id":"3"}]}""")
+
+        original.recordFlakyObservation(firstDiff, 1)
+        original.recordFlakyObservation(secondDiff, 2)
+
+        assertEquals("""{"data":{"stable":"same","first":"x","second":"b"},"items":[{"id":"1"},{"id":"3"}]}""", original.getMergedFlakyBody())
+    }
+
+    @Test
+    fun testMergedFlakyBodyFallsBackToFirstObservedBodyForNonJson(){
+        val original = createCallResult("original")
+        val firstDiff = createCallResult("first")
+        val secondDiff = createCallResult("second")
+
+        original.recordFlakyObservation(firstDiff, 1)
+        original.recordFlakyObservation(secondDiff, 2)
+
+        assertEquals("first", original.getMergedFlakyBody())
+    }
 }
