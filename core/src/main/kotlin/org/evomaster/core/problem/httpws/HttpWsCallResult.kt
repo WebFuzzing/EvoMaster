@@ -1,5 +1,10 @@
 package org.evomaster.core.problem.httpws
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -18,6 +23,8 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     companion object {
+        private val mapper = ObjectMapper()
+
         const val STATUS_CODE = "STATUS_CODE"
         const val BODY = "BODY"
         const val BODY_TYPE = "BODY_TYPE"
@@ -388,6 +395,92 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     fun getFlakyBodies() : List<String>? = getFlakyValues(ResponseField.BODY).filterNotNull().ifEmpty { null }
     fun containFlakyBody(flakyBody: String) : Boolean = getFlakyBodies()?.contains(flakyBody) ?: false
+
+    /**
+     * Merge all observed flaky body values into one representative body.
+     *
+     * For JSON objects and arrays, the original body is used as the baseline and each
+     * observed flaky body contributes only the fields or elements that differ from it.
+     * This allows different flaky fields observed in different executions to be handled
+     * together when generating assertions.
+     *
+     * If there is no flaky body, the original body is returned. If the body is not
+     * mergeable as JSON, the first observed flaky body is returned.
+     */
+    fun getMergedFlakyBody() : String{
+        val originalBody = getBody()
+        val flakyBodies = getFlakyBodies()
+
+        if (flakyBodies.isNullOrEmpty()) {
+            return originalBody ?: ""
+        }
+
+        if (originalBody == null) {
+            return flakyBodies.first()
+        }
+
+        return try {
+            val originalJson = mapper.readTree(originalBody)
+            if (!originalJson.isObject && !originalJson.isArray) {
+                return flakyBodies.first()
+            }
+
+            flakyBodies
+                .map { mapper.readTree(it) }
+                .fold(originalJson.deepCopy<JsonNode>()) { merged, observed ->
+                    mergeJsonDiffFromOriginal(originalJson, observed, merged)
+                }
+                .let { mapper.writeValueAsString(it) }
+        } catch (e: JsonProcessingException) {
+            flakyBodies.first()
+        } catch (e: IllegalStateException) {
+            flakyBodies.first()
+        }
+    }
+
+    private fun mergeJsonDiffFromOriginal(
+        original: JsonNode,
+        observed: JsonNode,
+        merged: JsonNode
+    ): JsonNode {
+        if (original == observed) {
+            return merged
+        }
+
+        if (original is ObjectNode && observed is ObjectNode && merged is ObjectNode) {
+            val observedFieldNames = observed.fieldNames().asSequence().toSet()
+
+            original.fieldNames().asSequence()
+                .filter { !observedFieldNames.contains(it) }
+                .forEach { merged.remove(it) }
+
+            observed.fields().asSequence().forEach { (field, observedValue) ->
+                val originalValue = original.get(field)
+                if (originalValue == null) {
+                    merged.set<JsonNode>(field, observedValue.deepCopy<JsonNode>())
+                } else {
+                    val mergedValue = merged.get(field) ?: originalValue.deepCopy<JsonNode>()
+                    merged.set<JsonNode>(field, mergeJsonDiffFromOriginal(originalValue, observedValue, mergedValue))
+                }
+            }
+
+            return merged
+        }
+
+        if (original is ArrayNode && observed is ArrayNode && merged is ArrayNode) {
+            if (original.size() != observed.size()) {
+                return observed.deepCopy<JsonNode>()
+            }
+
+            for (i in 0 until observed.size()) {
+                merged.set(i, mergeJsonDiffFromOriginal(original[i], observed[i], merged[i]))
+            }
+
+            return merged
+        }
+
+        return observed.deepCopy<JsonNode>()
+    }
 
     fun setFlakyBodyType(type: MediaType) = addFlakyDifference(ResponseField.BODY_TYPE, type.toString())
     fun getFlakyBodyType() : MediaType? = getFirstFlakyValue(ResponseField.BODY_TYPE)?.let { MediaType.valueOf(it) }
