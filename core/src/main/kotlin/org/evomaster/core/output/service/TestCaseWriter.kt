@@ -117,7 +117,8 @@ abstract class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
-            format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("test(\"${test.name}\", async ({ request }) => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
             format.isPython() -> lines.add("def ${test.name}(self):")
         }
@@ -310,6 +311,12 @@ abstract class TestCaseWriter {
         testSuitePath: Path?,
         baseUrlOfSut: String
     ) {
+        val playwrightExpectException = format.isPlaywright() && shouldFailIfExceptionNotThrown(res)
+        val hasThrownVar = if (playwrightExpectException) "hasThrown_${counter++}" else ""
+
+        if (playwrightExpectException) {
+            lines.add("let $hasThrownVar = false;")
+        }
         when {
             /*
                 TODO do we need to handle differently in JS due to Promises?
@@ -372,6 +379,12 @@ abstract class TestCaseWriter {
             format.isPython() -> lines.add("except Exception as e:")
         }
 
+        if (playwrightExpectException) {
+            lines.indented {
+                lines.add("$hasThrownVar = true;")
+            }
+        }
+
         res.getErrorMessage()?.let {
             lines.indented {
                 lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
@@ -384,6 +397,9 @@ abstract class TestCaseWriter {
             }
         } else {
             lines.add("}")
+        }
+        if (playwrightExpectException) {
+            lines.add("expect($hasThrownVar).toBe(true);")
         }
     }
 

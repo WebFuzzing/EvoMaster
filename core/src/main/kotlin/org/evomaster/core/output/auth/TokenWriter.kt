@@ -52,11 +52,13 @@ object TokenWriter {
             when {
                 format.isJava() -> lines.add("final String ${tokenName(k)} = ")
                 format.isKotlin() -> lines.add("val ${tokenName(k)} : String = ")
+                format.isPlaywright() -> lines.add("let ${tokenName(k)};")
                 format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
             }
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
+                format.isPlaywright() -> testCaseWriter.startRequest(lines) //handled in HttpWsTestCaseWriter with startRequest(lines) and await request
                 format.isJavaScript() -> {
                     lines.append("\"\"")
                     lines.appendSemicolon()
@@ -85,7 +87,9 @@ object TokenWriter {
 
             when(token.extractFrom){
                 TokenHandling.ExtractFrom.BODY -> {
-                    if (format.isJavaScript()) {
+                    if (format.isPlaywright()) {
+                        lines.add(".then(async res => {${tokenName(k)} = (await res.json()).$path;})")
+                    } else if (format.isJavaScript()) {
                         lines.add(".then(res => {${tokenName(k)} = res.body.$path;},")
                         lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")})") }
                     } else if (format.isPython()) {
@@ -100,7 +104,9 @@ object TokenWriter {
                 }
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = token.extractSelector
-                    if (format.isJavaScript()) {
+                    if (format.isPlaywright()) {
+                        lines.add(".then(async res => {${tokenName(k)} = res.headers()[\"${header.lowercase()}\"];})")
+                    } else if (format.isJavaScript()) {
                         lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")
                         lines.indented { lines.add("error => {console.log(error.response.headers); throw Error(\"Auth failed.\")})") }
                     } else if (format.isPython()) {

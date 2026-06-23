@@ -201,7 +201,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         when {
             format.isJava() -> lines.add("String $name = ")
             format.isKotlin() -> lines.add("val $name : String? = ")
-            format.isJavaScript() -> lines.add("const $name = ")
+            format.isJsBased() -> lines.add("const $name = ")
             format.isPython() -> {lines.add("$name = ")}
             // should never happen
             else -> throw IllegalStateException("Unsupported format $format")
@@ -217,14 +217,23 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val call = _call as RestCallAction
         val verb = call.verb.name.lowercase()
 
-        if (format.isCsharp()) {
-            lines.append(".${StringUtils.capitalization(verb)}Async(")
-        } else {
-            if (verb == "trace" && format.isJavaOrKotlin()) {
-                //currently, RestAssured does not have a trace() method
-                lines.add(".request(io.restassured.http.Method.TRACE, ")
-            } else {
-                lines.add(".$verb(")
+        when {
+            format.isPlaywright() -> {
+                val verbToUse = call.verb.name.lowercase()
+                if (verbToUse.uppercase() == "OPTIONS") {
+                    lines.add("await request.fetch(")
+                } else {
+                    lines.add("await request.$verbToUse(")
+                }
+            }
+            format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
+            else -> {
+                if (verb == "trace" && format.isJavaOrKotlin()) {
+                    //currently, RestAssured does not have a trace() method
+                    lines.add(".request(io.restassured.http.Method.TRACE, ")
+                } else {
+                    lines.add(".$verb(")
+                }
             }
         }
 
@@ -413,7 +422,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        lines.add("const $location = $resVarName.header['location'];")
+
+                        if (format.isPlaywright()) {
+                            lines.add("const $location = $resVarName")
+                            lines.append(".headers()['location'];")
+                        } else {
+                            lines.add("const $location = $resVarName.header['location'];")
+                        }
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
@@ -445,7 +460,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val extract = extractValueFromJsonResponse(resVarName, idPointer)
 
                 when{
-                    format.isJavaScript() -> lines.add("const ")
+                    format.isJsBased() -> lines.add("const ")
                     format.isJava() -> lines.add("String ")
                     format.isKotlin() -> lines.add("val ")
                     format.isPython()  -> lines.add("")/* nothing to do in Python */
