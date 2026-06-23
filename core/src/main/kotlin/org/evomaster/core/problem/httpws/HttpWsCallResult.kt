@@ -229,7 +229,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
     fun getFlakyDetectionTimes() : Int? = getResultValue(FLAKY_DETECTION_TIMES)?.toInt()
 
-    fun setFlakiness(previous: HttpWsCallResult, execIndex: Int){
+    fun setFlakiness(previous: HttpWsCallResult, execIndex: Int = 1){
         setFlakyDetectionTimes(execIndex)
 
         val pStatusCode = previous.getStatusCode()
