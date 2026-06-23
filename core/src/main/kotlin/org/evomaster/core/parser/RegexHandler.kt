@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.RegexWithFlags
 
 
 /**
@@ -20,14 +21,14 @@ object RegexHandler {
         WARNING mutable static state, but those are just caches.
         Key -> regex
      */
-    private val cacheJVM : MutableMap<Pair<String, RegexFlags>, RegexGene> = mutableMapOf()
+    private val cacheJVM : MutableMap<RegexWithFlags, RegexGene> = mutableMapOf()
     private val cacheEcma262 : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresLike : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresSimilarTo : MutableMap<String, RegexGene> = mutableMapOf()
 
     fun createGeneForJVM(regex: String, flags: RegexFlags = RegexFlags()) : RegexGene {
 
-        val key = Pair(regex, flags)
+        val key = RegexWithFlags(regex, flags)
         if(cacheJVM.contains(key)){
             return cacheJVM[key]!!.copy() as RegexGene
         }

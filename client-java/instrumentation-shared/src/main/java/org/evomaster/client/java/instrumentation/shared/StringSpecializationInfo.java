@@ -53,6 +53,10 @@ public class StringSpecializationInfo implements Serializable {
         return type;
     }
 
+    /**
+     * Getter for regex flags bitmask, only meaningful when stringSpecialization is regex type. Defaults to 0 (no flags)
+     * @return Integer bitmask for the regex flags associated to the string.
+     */
     public int getRegexFlags() { return regexFlags; }
 
     @Override

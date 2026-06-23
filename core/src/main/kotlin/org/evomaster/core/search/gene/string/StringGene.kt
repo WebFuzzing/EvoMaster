@@ -36,7 +36,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
-import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.RegexWithFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
@@ -817,7 +817,7 @@ class StringGene(
                         } else {
                             RegexSharedUtils.handlePartialMatch(it.value)
                         }
-                        Pair(regex, RegexFlags.fromJavaFlags(it.regexFlags))
+                        RegexWithFlags(regex, it.regexFlags)
                     }
                     //.joinToString("|")
                     .forEach {(regex, flags) ->
