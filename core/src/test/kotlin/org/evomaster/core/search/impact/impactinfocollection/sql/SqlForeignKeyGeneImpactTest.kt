@@ -1,5 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
@@ -25,7 +26,8 @@ class SqlForeignKeyGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene = SqlForeignKeyGene(
             sourceColumn = "source",
             uniqueId = 1L,
-            targetTable = "fake",
+            targetTable = TableId("fake"),
+            targetColumn = "id",
             nullable = false,
             uniqueIdOfPrimaryKey = 1L
     )

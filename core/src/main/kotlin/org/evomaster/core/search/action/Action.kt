@@ -3,7 +3,6 @@ package org.evomaster.core.search.action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -40,6 +39,15 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * the genotype
      */
     abstract fun seeTopGenes(): List<Gene>
+
+    /**
+     * Check if this action has invalid data on purpose, done or Robustness Testing
+     */
+    open fun isForRobustnessTesting() : Boolean{
+        //TODO currently this is just a place-holder, needed for code that we already know will
+        //depend on this check
+        return false
+    }
 
     fun seeAllGenes(): List<Gene> = seeTopGenes().flatMap {g ->  g.flatView() }
 
@@ -117,4 +125,11 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * once an action is mounted inside an initialized individual
      */
     open fun resolveTempData() : Boolean = true
+
+    /**
+     * Returns the key used to group this action in the impact collection system.
+     * By default, returns the actual class name. Subclasses can override this to
+     * group multiple concrete types under a single logical key.
+     */
+    open fun getActionGroupKey(): String = this::class.java.name
 }

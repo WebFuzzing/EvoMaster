@@ -106,11 +106,15 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
+    private final Set<ExecutedCqlCommand> executedCqlCommandData = new CopyOnWriteArraySet<>();
+
     private final Set<Neo4JRunCommand> neo4JRunCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<OpenSearchCommand> openSearchCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<RedisCommand> redisCommandData = new CopyOnWriteArraySet<>();
+
+    private final Set<DynamoDbCommand> dynamoDbInfoData = new CopyOnWriteArraySet<>();
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
@@ -120,6 +124,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<MongoFindCommand> getMongoInfoData(){
         return Collections.unmodifiableSet(mongoFindCommandData);
+    }
+
+    public Set<ExecutedCqlCommand> getCqlInfoData(){
+        return Collections.unmodifiableSet(executedCqlCommandData);
     }
 
     public Set<Neo4JRunCommand> getNeo4JInfoData(){
@@ -134,6 +142,10 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(redisCommandData);
     }
 
+    public Set<DynamoDbCommand> getDynamoDbInfoData(){
+        return Collections.unmodifiableSet(dynamoDbInfoData);
+    }
+
     public Set<MongoCollectionSchema> getMongoCollectionTypeData(){
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
@@ -146,6 +158,10 @@ public class AdditionalInfo implements Serializable {
         mongoFindCommandData.add(info);
     }
 
+    public void addCqlInfo(ExecutedCqlCommand info){
+        executedCqlCommandData.add(info);
+    }
+
     public void addNeo4JInfo(Neo4JRunCommand info){
         neo4JRunCommandData.add(info);
     }
@@ -156,6 +172,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addRedisCommand(RedisCommand info){
         redisCommandData.add(info);
+    }
+
+    public void addDynamoDbInfo(DynamoDbCommand info){
+        dynamoDbInfoData.add(info);
     }
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){

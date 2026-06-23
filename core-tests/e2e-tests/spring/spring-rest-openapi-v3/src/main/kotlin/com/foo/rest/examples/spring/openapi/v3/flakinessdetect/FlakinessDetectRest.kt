@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -19,6 +20,18 @@ class FlakinessDetectRest {
 
     companion object{
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS yyyy-MM-dd EEEE 'Week' ww")
+        private val START_UP_OBJECT_TAG = arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString()
+    }
+    @GetMapping(path = ["/objectFlag"])
+    fun getEmptyFlag()  : ResponseEntity<String> {
+
+        return ResponseEntity.ok(START_UP_OBJECT_TAG)
+    }
+
+    @GetMapping(path = ["/stringuuid"])
+    fun getStringuuid() : ResponseEntity<String>{
+
+        return ResponseEntity.ok( UUID.randomUUID().toString())
     }
 
     @GetMapping(path = ["/stringfirst/{n}"])
@@ -89,3 +102,5 @@ data class TimeAgoData(
     val message: String,
     val calculatedPastTime: String
 )
+
+class EmptyForFlag(val flag: String)

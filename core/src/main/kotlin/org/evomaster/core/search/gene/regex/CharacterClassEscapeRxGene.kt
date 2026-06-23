@@ -12,6 +12,8 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains
 
@@ -29,7 +31,8 @@ import kotlin.collections.contains
 \p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
-    val type: String
+    val type: String,
+    val flags: RegexFlags = RegexFlags()
 ) : RxAtom, SimpleGene("\\$type") {
 
     companion object{
@@ -61,9 +64,7 @@ class CharacterClassEscapeRxGene(
         private val nonHorizontalSpaceMultiCharRange = MultiCharacterRange(true, horizontalSpaceSet)
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
-        private val pEscapesMultiCharRanges: Map<String, MultiCharacterRange> = run {
-            // US-ASCII POSIX character classes (\p{X})
-            val posixAsciiSets = mapOf(
+        private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
                 "Lower"  to listOf(CharacterRange('a', 'z')),
                 "Upper"  to listOf(CharacterRange('A', 'Z')),
                 "ASCII"  to listOf(CharacterRange(0, 0x7f)),
@@ -78,28 +79,30 @@ class CharacterClassEscapeRxGene(
                 "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
                 "Space"  to spaceSet,
             )
-
-            // Unicode category character classes (\p{X})
-            val unicodeCategorySets = mapOf(
-                "Pe" to stringToListOfCharacterRanges(")]}")
-                // more Unicode categories will be added here in the future
-            )
-
             // create both normal and negated version for all
-            (posixAsciiSets + unicodeCategorySets).flatMap { (key, value) ->
+            .flatMap { (key, value) ->
                 listOf(
-                    key     to MultiCharacterRange(false, value),
+                    key     to MultiCharacterRange(value),
                     "^$key" to MultiCharacterRange(true,  value)
                 )
             }.toMap()
-        }
+
+        private val unicodeCache = UnicodeCache()
     }
 
     var value: String = ""
     var multiCharRange: MultiCharacterRange
 
+    /**
+     * Whether to output the sampled character in uppercase.
+     * Only meaningful when flags.caseInsensitive is true.
+     */
+    var useUpperCase: Boolean = false
+
+    private var validClassEscapeChars = setOf('w', 'W', 'd', 'D', 's', 'S', 'v', 'V' , 'h', 'H', 'p', 'P')
+
     init {
-        if (type[0] !in "wWdDsSvVhHpP") {
+        if (type[0] !in validClassEscapeChars) {
             throw IllegalArgumentException("Invalid type: $type")
         }
 
@@ -118,10 +121,10 @@ class CharacterClassEscapeRxGene(
                 val pLabel = type.substring(2, type.length - 1)
                 val negated = type[0].isUpperCase()
                 val lookupKey = if (negated) "^$pLabel" else pLabel
-                if (lookupKey !in pEscapesMultiCharRanges) {
-                    throw IllegalArgumentException("$type invalid/unsupported \\p escape character class")
+                if (lookupKey !in posixAsciiMultiCharRange) {
+                    unicodeCache.getRanges(pLabel, negated)
                 } else {
-                    pEscapesMultiCharRanges[lookupKey]!!
+                    posixAsciiMultiCharRange[lookupKey]!!
                 }
             }
             else -> //this should never happen due to check in init
@@ -130,13 +133,15 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return value.matches(Regex("\\$type"))
+        // we pass the same embedded flags to the regex to accurately match the expected behavior
+        return value.matches(Regex("${flags.getScopeString()}\\$type"))
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterClassEscapeRxGene(type)
+        val copy = CharacterClassEscapeRxGene(type, flags)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
+        copy.useUpperCase = this.useUpperCase //copy the current casing
         return copy
     }
 
@@ -145,12 +150,22 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
+        /*
+        Besides randomizing by sampling from the MultiCharacterRange, we can also randomize the casings for the sampled
+        characters (if applicable), this is needed to allow things like "\p{Lower}" sampling things like "A" when the
+        CASE_INSENSITIVE flag is on, etc.
+         */
         val previous = value
+        val previousUpper = useUpperCase
 
         value = multiCharRange.sample(randomness).toString()
+        useUpperCase = if (flags.isCaseable(value[0])) {
+            randomness.nextBoolean()
+        } else {
+            false
+        }
 
-        if(tryToForceNewValue && previous == value){
+        if(tryToForceNewValue && previous == value && previousUpper == useUpperCase){
             randomize(randomness, tryToForceNewValue)
         }
     }
@@ -160,6 +175,12 @@ class CharacterClassEscapeRxGene(
             // if standardMutation was invoked before calling to randomize
             // then we signal an exception
             throw IllegalStateException("Cannot apply mutation on an uninitialized gene")
+        }
+
+        // flip case if applicable
+        if (flags.isCaseable(value[0]) && randomness.nextBoolean()) {
+            useUpperCase = !useUpperCase
+            return true
         }
 
         if(type == "d"){
@@ -172,7 +193,16 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value
+        return if (!flags.isCaseable(value[0])) {
+            value[0].toString()
+        }
+        // We apply the case selected for each character (for the caseable characters)
+        else if (useUpperCase) {
+            value[0].uppercaseChar().toString()
+        }
+        else {
+            value[0].lowercaseChar().toString()
+        }
     }
 
 
@@ -181,7 +211,9 @@ class CharacterClassEscapeRxGene(
         if(other !is CharacterClassEscapeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.value == other.value
+        // we need to consider casings too, therefore we can just compare the strings using getValueAsPrintableString
+        return getValueAsPrintableString(targetFormat = null) ==
+                other.getValueAsPrintableString(targetFormat = null)
     }
 
 
@@ -191,6 +223,7 @@ class CharacterClassEscapeRxGene(
 
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
+            useUpperCase = gene.useUpperCase //copy current casing
             return true
         }
         LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")

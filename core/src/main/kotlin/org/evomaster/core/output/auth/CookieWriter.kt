@@ -6,7 +6,6 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
-import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -69,7 +68,7 @@ object CookieWriter {
                 else -> cookiesName(k)
             }
 
-            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
+            AuthWriter.addBodyOfCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
@@ -96,112 +95,6 @@ object CookieWriter {
             if (!format.isPython()) {
                 lines.deindent()
             }
-        }
-    }
-
-
-
-    fun addCallCommand(
-        lines: Lines,
-        k: EndpointCallLogin,
-        testCaseWriter: HttpWsTestCaseWriter,
-        format: OutputFormat,
-        baseUrlOfSut: String,
-        targetVariable: String
-    ) {
-
-        if(format.isJavaScript()) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
-        }
-
-        if(format.isPython()) {
-            lines.add("headers = {}")
-        }
-
-        val contentType = k.contentType
-        if(contentType != null) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
-                format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
-                format.isPython() -> {
-                    lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
-                }
-            }
-
-            when (contentType) {
-                ContentType.X_WWW_FORM_URLENCODED -> {
-                    val send = testCaseWriter.sendBodyCommand()
-                    when {
-                        format.isPython() -> lines.add("body = \"${k.payload}\"")
-                        else -> lines.add(".$send(\"${k.payload}\")")
-                    }
-                }
-
-                ContentType.JSON -> {
-                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
-                }
-
-                else -> {
-                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                }
-            }
-        }
-
-        for(header in k.headers) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
-                format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
-                format.isPython() -> {
-                    lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
-                }
-            }
-        }
-
-        if (format.isJavaScript()){
-            // disable redirections
-            lines.add(".redirects(0)")
-        }
-
-        /*
-            For RestAssure, the call to "post" must be last, which is in opposite of what
-            needed in used libraries for Python and JS
-         */
-        if(format.isJavaOrKotlin()) {
-            callEndpoint(lines, k, format, baseUrlOfSut)
-        }
-
-        if (format.isPython()) {
-            lines.add("$targetVariable = requests \\")
-            lines.indent(2)
-            callEndpoint(lines, k, format, baseUrlOfSut)
-            lines.append(", ")
-            lines.indented {
-                lines.add("headers=headers, data=body, allow_redirects=False)")
-            }
-            lines.deindent(2)
-        }
-    }
-
-    private fun callEndpoint(
-        lines: Lines,
-        k: EndpointCallLogin,
-        format: OutputFormat,
-        baseUrlOfSut: String
-    ) {
-        val verb = k.verb.name.lowercase()
-        lines.add(".$verb(")
-        if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\"")
-        } else {
-            when {
-                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
-                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
-                else -> lines.append("\"\${$baseUrlOfSut}")
-            }
-            lines.append("${k.endpoint}\"")
-        }
-        if (!format.isPython()) {
-            lines.append(")")
         }
     }
 }

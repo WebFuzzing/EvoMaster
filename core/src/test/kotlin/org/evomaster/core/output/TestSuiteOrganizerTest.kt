@@ -4,6 +4,7 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
+import org.evomaster.core.output.sorting.SortingHelper
 import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup

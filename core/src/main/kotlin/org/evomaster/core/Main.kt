@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
 import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
@@ -687,13 +688,21 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<GraphQLIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
 
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
 
@@ -726,15 +735,26 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
 
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RPCIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<RPCIndividual>>() {})
 
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
@@ -744,6 +764,7 @@ class Main {
 
                 EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
                     Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RPCIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -766,15 +787,26 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
 
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<WebIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<WebIndividual>>() {})
 
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
@@ -784,6 +816,7 @@ class Main {
 
                 EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
                     Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<WebIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -807,22 +840,25 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.StandardGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.MonotonicGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.SteadyStateGA ->
-                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.LIPS ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MuLambdaEA ->
-                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
@@ -867,9 +903,16 @@ class Main {
                                 snapshotTimestamp: String ->
                 writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
             }.also {
+                /*
+                    TODO should have a better way to specify that some services need to be shutdown
+                 */
                 if (config.isEnabledHarvestingActualResponse()) {
                     val hp = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
                     hp.shutdown()
+                }
+                if(config.llm){
+                    val llm = injector.getInstance(LlmService::class.java)
+                    llm.shutdown()
                 }
             }
         }

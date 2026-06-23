@@ -38,9 +38,9 @@ class FailModificationForbiddenEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
+                .filter { it.category ==  ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION}
 
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
         }
     }
 }

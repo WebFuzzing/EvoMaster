@@ -3,10 +3,26 @@ package org.evomaster.core.utils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.LoggerFactory
 
-class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) {
+class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
+
+    init {
+        require(ranges.isNotEmpty()) { "MultiCharacterRange cannot be created with an empty list" }
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
+
+        operator fun invoke (negated: Boolean, characters: String): MultiCharacterRange {
+            return MultiCharacterRange(negated, characters.map { CharacterRange(it, it) })
+        }
+
+        operator fun invoke(negated: Boolean, multiCharRange: MultiCharacterRange): MultiCharacterRange {
+            return if (negated) {
+                MultiCharacterRange(true, multiCharRange.ranges)
+            } else {
+                multiCharRange
+            }
+        }
 
         operator fun invoke(negated: Boolean, ranges: List<CharacterRange>): MultiCharacterRange {
             if (ranges.isEmpty()) {
@@ -24,10 +40,6 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
                 } else {
                     add(internalRanges, CharacterRange(range.start, range.end))
                 }
-            }
-
-            if (internalRanges.isEmpty()) {
-                throw IllegalArgumentException("No defined ranges")
             }
 
             return MultiCharacterRange(internalRanges)
@@ -89,6 +101,87 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
                 }
             }.toMutableList()
         }
+
+        /**
+         * Create an intersection from two [org.evomaster.core.utils.MultiCharacterRange] instances
+         * Used to allow character class intersections (e.g.: `[a-z0-9&&[0-9A-Z]]`).
+         */
+        fun intersect(a: MultiCharacterRange, b: MultiCharacterRange): MultiCharacterRange {
+            val result = mutableListOf<CharacterRange>()
+
+            var idxA = 0
+            var idxB = 0
+
+            val lenA = a.size
+            val lenB = b.size
+
+            while (idxA < lenA && idxB < lenB) {
+                val start = maxOf(a[idxA].start, b[idxB].start)
+                val end = minOf(a[idxA].end, b[idxB].end)
+
+                if (start <= end) {
+                    result.add(CharacterRange(start, end))
+                }
+
+                if ( a[idxA].end < b[idxB].end ) {
+                    idxA++
+                } else {
+                    idxB++
+                }
+            }
+
+            return MultiCharacterRange(result)
+        }
+
+        /**
+         * Creates a union from two [MultiCharacterRange] instances, merging overlapping
+         * and adjacent ranges into a single normalized [MultiCharacterRange].
+         * Used to allow character class unions (e.g.: `[[a-c][x-z]]`).
+         */
+        fun union(a: MultiCharacterRange, b: MultiCharacterRange): MultiCharacterRange {
+            val result = mutableListOf<CharacterRange>()
+            var idxA = 0
+            var idxB = 0
+
+            while (idxA < a.size && idxB < b.size) {
+                // pick the range with the smaller start
+                val (start, end) = if (a[idxA].start <= b[idxB].start) {
+                    a[idxA].start to a[idxA].end.also { idxA++ }
+                } else {
+                    b[idxB].start to b[idxB].end.also { idxB++ }
+                }
+
+                // merge with last range in result if overlapping or adjacent
+                if (result.isNotEmpty() && start.code <= result.last().end.code + 1) {
+                    val last = result.removeLast()
+                    result.add(CharacterRange(last.start, maxOf(last.end, end)))
+                } else {
+                    result.add(CharacterRange(start, end))
+                }
+            }
+
+            // append remaining ranges from whichever list isn't exhausted
+            while (idxA < a.size) {
+                val curr = a[idxA++]
+                if (result.isNotEmpty() && curr.start.code <= result.last().end.code + 1) {
+                    val last = result.removeLast()
+                    result.add(CharacterRange(last.start, maxOf(last.end, curr.end)))
+                } else {
+                    result.add(curr)
+                }
+            }
+            while (idxB < b.size) {
+                val curr = b[idxB++]
+                if (result.isNotEmpty() && curr.start.code <= result.last().end.code + 1) {
+                    val last = result.removeLast()
+                    result.add(CharacterRange(last.start, maxOf(last.end, curr.end)))
+                } else {
+                    result.add(curr)
+                }
+            }
+
+            return MultiCharacterRange(result)
+        }
     }
 
     /**
@@ -98,7 +191,7 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
      * @return The sampled character.
      */
     fun sample(randomness: Randomness): Char {
-        val total = ranges.sumOf { it.size }
+        val total = charCount
         val sampledValue = randomness.nextInt(total)
         var currentRangeMinValue = 0
         for (r in ranges) {
@@ -116,6 +209,7 @@ class MultiCharacterRange private constructor(val ranges: List<CharacterRange>) 
     }
 
     val size: Int get() = ranges.size
+    val charCount :Int = ranges.sumOf{ it.size }
     operator fun get(index: Int): CharacterRange = ranges[index]
     fun any(predicate: (CharacterRange) -> Boolean): Boolean = ranges.any(predicate)
 }

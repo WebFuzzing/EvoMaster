@@ -126,7 +126,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
             } else {
                 val normO = derive(oBody)
                 if (rBody != normO && !resultToUpdate.containFlakyBody(oBody)) {
-                    resultToUpdate.setFlakyBody(oBody)
+                    resultToUpdate.setFlakyBody(normO)
                 }
             }
         }
@@ -154,7 +154,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
                  */
                 val normO = derive(oMsg)
                 if (rMsg != normO) {
-                    resultToUpdate.setFlakyErrorMessage(oMsg)
+                    resultToUpdate.setFlakyErrorMessage(normO)
                 }
             }
         }

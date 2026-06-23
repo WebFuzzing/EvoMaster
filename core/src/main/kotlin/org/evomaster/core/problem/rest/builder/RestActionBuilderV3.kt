@@ -51,8 +51,11 @@ import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.uri.UriGene
+import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -106,21 +109,27 @@ object RestActionBuilderV3 {
         which might impact how we design the chromosome.
         but, for black-box, they would not be useful
          */
-        val usingWhiteBox: Boolean = true
+        val usingWhiteBox: Boolean = true,
+
+        val enableAdvancedFormats: Boolean = true,
+
+        val inferFormatFromNames: Boolean = true,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
             invalidData = config.allowInvalidData,
             probUseDefault = config.probRestDefault,
             probUseExamples = config.probRestExamples,
-            usingWhiteBox = !config.blackBox
+            usingWhiteBox = !config.blackBox,
+            enableAdvancedFormats = config.enableAdvancedFormats,
+            inferFormatFromNames = config.inferFormatFromNames
         )
 
         init {
-            if(probUseDefault < 0 || probUseDefault > 1){
+            if(probUseDefault !in 0.0..1.0){
                 throw IllegalArgumentException("Invalid probUseDefault: $probUseDefault")
             }
-            if(probUseExamples < 0 || probUseExamples > 1){
+            if(probUseExamples !in 0.0..1.0){
                 throw IllegalArgumentException("Invalid probUseExamples: $probUseExamples")
             }
         }
@@ -978,7 +987,7 @@ object RestActionBuilderV3 {
             )//Base64StringGene(name)
             "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time", "local-date-time" -> {
-                val f = if (format?.lowercase() == "date-time") {
+                val f = if (format.lowercase() == "date-time") {
                     FormatForDatesAndTimes.RFC3339
                 } else {
                     FormatForDatesAndTimes.ISO_LOCAL
@@ -992,6 +1001,13 @@ object RestActionBuilderV3 {
             }
 
             else -> if (format != null) {
+
+                if(options.enableAdvancedFormats){
+                    val advanced = createGeneBasedOnAdvancedFormats(format,schema,name, options, messages, isInPath, examples, schemaHolder, currentSchema, history, referenceClassDef)
+                    if(advanced != null) {
+                        return advanced
+                    }
+                }
                 messages.add("Unhandled format '$format' for '$name'")
             }
         }
@@ -1010,7 +1026,7 @@ object RestActionBuilderV3 {
                 isInPath,
                 examples,
                 messages = messages
-            )//IntegerGene(name)
+            )
             "number" -> return createNonObjectGeneWithSchemaConstraints(
                 schema,
                 name,
@@ -1024,7 +1040,7 @@ object RestActionBuilderV3 {
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    createNonObjectGeneWithSchemaConstraints(
+                    val gene = createNonObjectGeneWithSchemaConstraints(
                         schema,
                         name,
                         StringGene::class.java,
@@ -1034,6 +1050,12 @@ object RestActionBuilderV3 {
                         examples,
                         messages = messages
                     ) //StringGene(name)
+
+                    if(options.inferFormatFromNames){
+                        heuristicInferFormatFromName(gene, name, schema.description)
+                    } else {
+                        gene
+                    }
                 } else {
                     try {
                         createNonObjectGeneWithSchemaConstraints(
@@ -1170,7 +1192,7 @@ object RestActionBuilderV3 {
                 isInPath,
                 examples,
                 messages = messages
-            ) //StringGene(name)
+            )
         }
 
         if ((name == "body" || referenceClassDef != null) && schema.properties?.isNotEmpty() == true) {
@@ -1200,6 +1222,176 @@ object RestActionBuilderV3 {
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
+    }
+
+    private fun heuristicInferFormatFromName(
+        gene: Gene,
+        name: String,
+        description: String?
+    ): Gene {
+
+        //TODO should handle min/max length constraint, if any
+
+        //RFC 3339, RFC-3339, RFC3339
+        //ISO 8601, ISO-8601, ISO8601
+        val rfc3339 = description!=null && description.contains("rfc",true) && description.contains("3339",true)
+        val iso8601 = description!=null && description.contains("iso",true) && description.contains("8601",true)
+
+        handleNameMatch("uuid",name,gene){n -> UUIDGene(n)}?.let { return it }
+        handleNameMatch("email",name,gene){n -> createEmailGene(n)}?.let { return it }
+        handleNameMatch("uri", name, gene){n -> UriGene(n) }?.let { return it }
+        handleNameMatch("url", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("website", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("href", name, gene){n -> UrlHttpGene(n) }?.let { return it }
+        handleNameMatch("date", name, gene){n ->
+            if(rfc3339) {
+                DateTimeGene(n, format = FormatForDatesAndTimes.RFC3339)
+            } else if(iso8601){
+                DateTimeGene(n, format = FormatForDatesAndTimes.ISO_LOCAL)
+            } else {
+                DateGene(n)
+            }
+        }?.let { return it }
+
+        if(description == null){
+            //nothing we can infer further
+            return gene
+        }
+
+        //if no name match, look at description, if any
+        return when{
+            rfc3339 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.RFC3339)}
+            iso8601 ->  handleDescriptionMatch(name,gene){DateTimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL)}
+            StringUtils.hasWord(description,"uuid") -> handleDescriptionMatch(name,gene){n -> UUIDGene(n) }
+            StringUtils.hasWord(description,"date") -> handleDescriptionMatch(name,gene){n -> DateGene(n) }
+            StringUtils.hasWord(description,"uri") -> handleDescriptionMatch(name,gene){n -> UriGene(n)}
+            StringUtils.hasWord(description,"url") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"urls") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"website") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"href") -> handleDescriptionMatch(name,gene){n -> UrlHttpGene(n) }
+            StringUtils.hasWord(description,"email") -> handleDescriptionMatch(name,gene){n ->  createEmailGene(n)}
+            else -> gene
+        }
+    }
+
+    private fun handleDescriptionMatch(
+        name: String,
+        gene: Gene,
+        producer: (String) -> Gene): Gene {
+
+        val pDescriptionMatch = 0.5
+
+        return ChoiceGene(name, listOf(producer(name), gene), probabilities = listOf(pDescriptionMatch, 1-pDescriptionMatch))
+    }
+
+    private fun handleNameMatch(format: String, name: String, gene: Gene, producer: (String) -> Gene) : Gene?{
+
+        val pNameMatch = 0.8
+
+        if(name.startsWith(format,true) || name.endsWith(format, true)) {
+            val choice = ChoiceGene(name, listOf(producer(name),gene), probabilities = listOf(pNameMatch,1.0-pNameMatch))
+            return choice
+        }
+
+        return null
+    }
+
+    private fun createGeneBasedOnAdvancedFormats(
+        format: String,
+        schema: Schema<*>,
+        name: String,
+        options: Options,
+        messages: MutableList<String>,
+        isInPath: Boolean,
+        examples: List<Pair<Any, String?>>,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        history: Deque<String>,
+        referenceClassDef: String?
+    ) : Gene? {
+
+        /*
+        https://spec.openapis.org/registry/format/
+
+        The (YES) are new, whereas (NO) are already supported since 3.0
+
+        Value 	Description 	JSON Data Type 	Source 	Deprecated
+        (YES) base64url 	Binary data encoded as a url-safe string as defined in RFC4648 	string 	  	Yes
+        (NO)  binary 	any sequence of octets 	string 	OAS 	Yes
+        (NO)  byte 	base64 encoded data as defined in RFC4648 	string 	OAS 	Yes
+        (YES) char 	A single character 	string 	  	No
+        (YES) commonmark 	commonmark-formatted text 	string 	OAS 	No
+        (YES) date-time-local 	RFC3339 date-time without the timezone component 	string 	RFC 3339 	No
+        (NO)  date-time 	date and time as defined by date-time - RFC3339 	string 	JSON Schema 	No
+        (NO)  date 	date as defined by full-date - RFC3339 	string 	JSON Schema 	No
+        (YES) decimal 	A fixed point decimal number of unspecified precision and range 	string, number 	  	No
+        (YES) decimal128 	A decimal floating-point number with 34 significant decimal digits 	string, number 	  	No
+        (YES) double-int 	an integer that can be stored in an IEEE 754 double-precision number without loss of precision 	number 	  	No
+        (NO)  double 	double precision floating point number 	number 	OAS 	No
+        (YES) duration 	duration as defined by duration - RFC3339 	string 	JSON Schema 	No
+        (YES) email 	An email address as defined as Mailbox in RFC5321 	string 	JSON Schema 	No
+        (NO)  float 	single precision floating point number 	number 	OAS 	No
+        (YES) hostname 	A host name as defined by RFC1123 	string 	JSON Schema 	No
+        (YES) html 	HTML-formatted text 	string 	OAS 	No
+        (YES) http-date 	date and time as defined by HTTP-date - RFC7231 	string 	  	No
+        (YES) idn-email 	An email address as defined as Mailbox in RFC6531 	string 	JSON Schema 	No
+        (YES) idn-hostname 	An internationalized host name as defined by RFC5890 	string 	JSON Schema 	No
+        (YES) int16 	signed 16-bit integer 	number 	  	No
+        (NO)  int32 	signed 32-bit integer 	number 	OAS 	No
+        (NO)  int64 	signed 64-bit integer 	number, string 	OAS 	No
+        (YES) int8 	signed 8-bit integer 	number 	OAS 	No
+        (YES) ipv4 	An IPv4 address as defined as dotted-quad by RFC2673 	string 	JSON Schema 	No
+        (YES) ipv6 	An IPv6 address as defined by RFC4673 	string 	JSON Schema 	No
+        (YES) iri-reference 	A Internationalized Resource Identifier as defined in RFC3987 	string 	JSON Schema 	No
+        (YES) iri 	A Internationalized Resource Identifier as defined in RFC3987 	string 	JSON Schema 	No
+        (YES) json-pointer 	A JSON string representation of a JSON Pointer as defined in RFC6901 	string 	JSON Schema 	No
+        (YES) media-range 	A media type as defined by the media-range ABNF production in RFC9110. 	string 	OpenAPI 	No
+        (NO)  password 	a string that hints to obscure the value. 	string 	OAS 	No
+        (YES) regex 	A regular expression as defined in ECMA-262 	string 	JSON Schema 	No
+        (YES) relative-json-pointer 	A JSON string representation of a relative JSON Pointer as defined in draft RFC 01 	string 	JSON Schema 	No
+        (YES) sf-binary 	structured fields byte sequence as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-boolean 	structured fields boolean as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-decimal 	structured fields decimal as defined in [RFC8941] 	number 	RFC 8941 	No
+        (YES) sf-integer 	structured fields integer as defined in [RFC8941] 	number 	RFC 8941 	No
+        (YES) sf-string 	structured fields string as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) sf-token 	structured fields token as defined in [RFC8941] 	string 	RFC 8941 	No
+        (YES) time-local 	RFC3339 time without the timezone component 	string 	RFC 3339 	No
+        (YES) time 	time as defined by full-time - RFC3339 	string 	JSON Schema 	No
+        (YES) uint16 	unsigned 16-bit integer 	number 	OAS 	No
+        (YES) uint32 	unsigned 32-bit integer 	number 	OAS 	No
+        (YES) uint64 	unsigned 64-bit integer 	number, string 	OAS 	No
+        (YES) uint8 	unsigned 8-bit integer 	number 	OAS 	No
+        (YES) unixtime 	seconds since Jan 1st 1970 - IEEE1003.1-2024/POSIX.1-2024 	number, string 	IEEE1003.1-2024 	No
+        (YES) uri-reference 	A URI reference as defined in RFC3986 	string 	JSON Schema 	No
+        (YES) uri-template 	A URI Template as defined in RFC6570 	string 	JSON Schema 	No
+        (YES) uri 	A Uniform Resource Identifier as defined in RFC3986 	string 	JSON Schema 	No
+        (YES) uuid 	A Universally Unique IDentifier as defined in RFC4122 	string 	JSON Schema 	No
+         */
+
+        when(format){
+            "uuid" -> return UUIDGene(name)
+            "uri" -> return UriGene(name)
+            "email" -> return createEmailGene(name, options)
+            //TODO all the other cases, and update BBAdvancedFormatsEMTest accordingly
+        }
+
+        return null
+    }
+
+    private fun createEmailGene(
+        name: String,
+        options: Options? = null
+    ): Gene {
+
+        /*
+            A new EmailGene might be on overkill if we can just use a regex.
+            However, RFC5321 is quite complex.
+            This regex is quite simple, but should do.
+            After all, here we just need to sample valid emails, and not verify
+            if a string is a valid email.
+         */
+        return RegexHandler.createGeneForJVM("[A-Za-z0-9]{2,}@[A-Za-z0-9]+\\.[A-Za-z]{2,}")
+            .apply { this.name = name }
     }
 
     /**
@@ -1369,12 +1561,11 @@ object RestActionBuilderV3 {
     }
 
     /**
-     *
      * handled constraints include
      *      - allOf
      *      - anyOf
      *      - oneOf
-     *      - not (OpenAPI not support this yet)
+     *      - not
      */
     private fun assembleObjectGeneWithConstraints(
         name: String,
@@ -1394,37 +1585,61 @@ object RestActionBuilderV3 {
             https://spec.openapis.org/oas/latest.html#discriminator-object
          */
 
-        if (!options.enableConstraintHandling)
+        if (!options.enableConstraintHandling){
             return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+        }
+
+        /*
+            THIS IS VERY TRICKY
+            in theory, the use of allOf/anyOf/oneOf/not provides a rich language where many different kinds of
+            constraints can be specified.
+            this is the case when "const" is used in schemas to specify particular values, e.g., oneOf could be then
+            used to specify only particular combinations of field values.
+            the use of "const" is also quite tricky with "not", as can use to say some specific value combinations are not valid.
+            furthermore, those keywords are NOT mutually exclusive.
+
+            support all possible constraint would be a GIGANTIC piece of work... yet, these kinds of constraints do
+            not seem so common, apart for allOf on merging fields.
+            TODO we should have full support, but not high priority task
+         */
+
+        /*
+            A further complication is how to use, and interpret, "examples" values (if any).
+            Eg. what to nested referenced $ref objects that have on examples?
+            should those be merged/hanled like the fields?
+            TODO possibly something to handle (but again, not high priority)
+         */
 
         val allOf = schema.allOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         val anyOf = schema.anyOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
-            messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle allOf and oneOf at same time for a schema with name $name")
         }
 
         val oneOf = schema.oneOf?.map { s->
-            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
             getGene(name, s, schemaHolder,currentSchema, history, null, options = options, messages = messages)
         }
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
-            messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
+            messages.add("Currently cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
         }
 
         if (!allOf.isNullOrEmpty()){
+
+            if(allOf.size == 1 && fields.isEmpty()){
+                //just use it as it is
+                return allOf[0]
+            }
+
             val allFields = allOf.mapNotNull {
                 when (it) {
+                    is ChoiceGene<*> -> extractOriginalObject(it)?.fields
                     is ObjectGene -> it.fields
                     else -> null
                 }
@@ -1493,6 +1708,19 @@ object RestActionBuilderV3 {
         return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         //TODO not
+    }
+
+    private fun extractOriginalObject(choice: ChoiceGene<*>): ObjectGene? {
+        /*
+            this only makes sense if we are in this case:
+            Choice( Choice(examples), Object)
+            in which we would return Object, null otherwise
+         */
+        val children = choice.getViewOfChildren()
+        if(children.size != 2 || children.none { it is UserExamplesGene && it.isUsedForExamples() }){
+            return null
+        }
+        return children.find { it is ObjectGene } as ObjectGene?
     }
 
     /**

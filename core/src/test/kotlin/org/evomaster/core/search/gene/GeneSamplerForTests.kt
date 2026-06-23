@@ -6,8 +6,15 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGeneBuilder
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -135,6 +142,7 @@ object GeneSamplerForTests {
             PatternCharacterBlockGene::class -> samplePatternCharacterBlock(rand) as T
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
+            BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -176,6 +184,12 @@ object GeneSamplerForTests {
 
             // Mongo genes
             ObjectIdGene::class -> sampleMongoObjectIdGene(rand) as T
+
+            // JSON Patch genes
+            JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
+            JsonPatchPathOnlyGene::class  -> sampleJsonPatchPathOnlyGene(rand) as T
+            JsonPatchFromPathGene::class  -> sampleJsonPatchFromPathGene(rand) as T
+            JsonPatchPathValueGene::class -> sampleJsonPatchPathValueGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
@@ -319,6 +333,7 @@ object GeneSamplerForTests {
                 .filter { !it.isAbstract }
                 .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java }
                 .filter { it.java != ArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+                .filter{ it.java != SqlPrimaryKeyGene::class.java }
         // TODO might filter out some more genes here
     }
 
@@ -376,7 +391,8 @@ object GeneSamplerForTests {
     private fun sampleSqlForeignKeyGene(rand: Randomness): SqlForeignKeyGene {
         return SqlForeignKeyGene(sourceColumn = "rand source column",
                 uniqueId = rand.nextLong(min = 0L, max = Long.MAX_VALUE),
-                targetTable = "rand target table",
+                targetTable = TableId("rand target table"),
+                targetColumn = "rand target column",
                 nullable = rand.nextBoolean(),
                 uniqueIdOfPrimaryKey = rand.nextLong())
     }
@@ -400,6 +416,16 @@ object GeneSamplerForTests {
 
     private fun sampleMongoObjectIdGene(rand: Randomness): ObjectIdGene {
         return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
+    }
+
+    fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
+        val captureGroup = sampleDisjunctionListRxGene(rand)
+        // as we do not allow to mutate the inner captureGroup gene using the backref gene we must first initialize it
+        captureGroup.doInitialize(rand)
+        return BackReferenceRxGene(
+            groupIndex = rand.nextInt(1, 99),
+            captureGroup = captureGroup
+        )
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
@@ -446,7 +472,8 @@ object GeneSamplerForTests {
                 .filter { it.isSubclassOf(RxTerm::class) }
                 //let's avoid huge trees...
                 .filter {
-                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java)
+                    (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
+                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
                             || rand.nextBoolean()
                 }
 
@@ -948,6 +975,43 @@ object GeneSamplerForTests {
         }
     }
 
+    private fun sampleJsonPatchDocumentGene(rand: Randomness): JsonPatchDocumentGene {
+        return JsonPatchDocumentGene("rand JsonPatchDocumentGene ${rand.nextInt()}")
+    }
+
+    private fun sampleJsonPatchPathOnlyGene(rand: Randomness): JsonPatchPathOnlyGene {
+        return JsonPatchPathOnlyGene(
+            "rand JsonPatchPathOnlyGene ${rand.nextInt()}",
+            JsonPatchOperationGene.OP_REMOVE,
+            EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        )
+    }
+
+    private fun sampleJsonPatchFromPathGene(rand: Randomness): JsonPatchFromPathGene {
+        val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_MOVE, JsonPatchOperationGene.OP_COPY))
+        return JsonPatchFromPathGene(
+            "rand JsonPatchFromPathGene ${rand.nextInt()}",
+            operationName,
+            fromGene = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_FROM, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS),
+            pathGene  = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        )
+    }
+
+    private fun sampleJsonPatchPathValueGene(rand: Randomness): JsonPatchPathValueGene {
+        val operationName = rand.choose(listOf(JsonPatchOperationGene.OP_ADD, JsonPatchOperationGene.OP_REPLACE, JsonPatchOperationGene.OP_TEST))
+        val pathEnum = EnumGene(JsonPatchDocumentGeneBuilder.FIELD_PATH, JsonPatchDocumentGeneBuilder.DEFAULT_PATHS)
+        val entry = PairGene<EnumGene<String>, Gene>(
+            JsonPatchDocumentGeneBuilder.ENTRY_STRING,
+            pathEnum,
+            StringGene(JsonPatchDocumentGeneBuilder.FIELD_VALUE)
+        )
+        return JsonPatchPathValueGene(
+            "rand JsonPatchPathValueGene ${rand.nextInt()}",
+            operationName,
+            ChoiceGene("${operationName}PathValue", listOf(entry))
+        )
+    }
+
     fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {
 
         // Use a restricted selection similar to selectionForArrayTemplate()
@@ -972,7 +1036,7 @@ object GeneSamplerForTests {
         // #text is content, not an attribute
         val stringFields = fields
             .filterIsInstance<StringGene>()
-            .filter { it.name != "#text" }
+            .filter { it.name != ObjectGene.contentXMLTag }
 
         // Strategy: use a small number of fixed attribute configurations
         val seed = rand.nextInt(0, 10)

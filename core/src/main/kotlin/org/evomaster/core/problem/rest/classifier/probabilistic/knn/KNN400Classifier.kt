@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400Classifier
+import kotlin.String
 
 
 class KNN400Classifier(
@@ -19,6 +20,7 @@ class KNN400Classifier(
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
+        modelKeys: List<String>,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
         metricType: EMConfig.AIClassificationMetrics,
@@ -27,6 +29,7 @@ class KNN400Classifier(
         return KNN400EndpointModel(
             endpoint,
             warmup,
+            modelKeys,
             dimension,
             encoderType,
             metricType,

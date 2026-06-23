@@ -1,17 +1,15 @@
 package org.evomaster.core.search.gene.datetime
 
-enum class FormatForDatesAndTimes {
+enum class FormatForDatesAndTimes(
+    val pattern: String
+) {
 
-    // YYYY-MM-DDTHH:MM:SS
-    ISO_LOCAL,
-
+    // ISO 8601
+    ISO_LOCAL("YYYY-MM-DDTHH:MM:SS"),
 
     //https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
-    // // YYYY-MM-DDTHH:MM:SS[.mmm](Z|+-hh)
-    RFC3339,
+    RFC3339("YYYY-MM-DDTHH:MM:SS[.mmm](Z|+-hh)"),
 
-
-    // YYYY-MM-DD HH:MM:SS
     // Note the missing T. used for example in SQL
-    DATETIME
+    DATETIME("YYYY-MM-DD HH:MM:SS")
 }

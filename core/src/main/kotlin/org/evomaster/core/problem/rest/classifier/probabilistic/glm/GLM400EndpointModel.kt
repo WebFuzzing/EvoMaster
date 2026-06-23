@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.glm
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -20,20 +19,21 @@ import kotlin.math.exp
 class GLM400EndpointModel(
     endpoint: Endpoint,
     warmup: Int,
+    modelKeys: List<String>? = null,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType,
     metricType: EMConfig.AIClassificationMetrics,
     private val learningRate: Double = 0.01,
     randomness: Randomness
 ) : AbstractProbabilistic400EndpointModel(
-    endpoint, warmup, dimension, encoderType, metricType, randomness) {
+    endpoint, warmup, modelKeys, dimension, encoderType, metricType, randomness){
 
     private var weights: MutableList<Double>? = null
     private var bias: Double = 0.0
 
     /** Initialize dimension and weights if needed */
-    override fun initializeIfNeeded(inputVector: List<Double>) {
-        super.initializeIfNeeded(inputVector)
+    override fun initializeIfNeeded(input: RestCallAction) {
+        super.initializeIfNeeded(input)
         if (weights == null) {
             weights = MutableList(dimension!!) { 0.0 }
         }
@@ -49,10 +49,9 @@ class GLM400EndpointModel(
             return AIResponseClassification()
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        initializeIfNeeded(input)
 
-        initializeIfNeeded(inputVector)
+        val inputVector = encodeUsingModelKeys(input)
 
         if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
@@ -72,12 +71,18 @@ class GLM400EndpointModel(
         val prob400 = 1 - sigmoid(z)
         val probNot400 = 1.0 - prob400
 
-        return AIResponseClassification(
-            probabilities = mapOf(
-                NOT_400 to probNot400,
-                400 to prob400
+        return if (prob400.isNaN() || probNot400.isNaN()) {
+            AIResponseClassification(
+                probabilities = mapOf(NOT_400 to 0.5, 400 to 0.5)
             )
-        )
+        }else {
+            AIResponseClassification(
+                probabilities = mapOf(
+                    NOT_400 to probNot400,
+                    400 to prob400
+                )
+            )
+        }
 
     }
 
@@ -90,10 +95,9 @@ class GLM400EndpointModel(
             return
         }
 
-        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        initializeIfNeeded(input)
 
-        initializeIfNeeded(inputVector)
+        val inputVector = encodeUsingModelKeys(input)
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")

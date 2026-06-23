@@ -2,6 +2,32 @@ package org.evomaster.core.utils
 
 object StringUtils {
 
+    private val delimiters = listOf(' ', '\n', '\r', '\t', ',', '.','!','?',';','"','\'','-','_','(',')')
+
+    /**
+     * Check if the given [text] contains the specified [word].
+     * This is not a simple "contains" check, as we need to make sure we are not dealing
+     * with any embedding of another word.
+     * eg, 'url' should not match when finding 'curling'.
+     */
+    fun hasWord(text: String, word: String): Boolean {
+
+        var start = text.indexOf(word, 0, true)
+
+        while(start >= 0){
+
+            val before = start == 0 || delimiters.contains(text[start-1])
+            val end = start + word.length
+            val after = end == text.length || delimiters.contains(text[end])
+
+            if(before && after){
+                return true
+            }
+            start = text.indexOf(word, end, true)
+        }
+        return false
+    }
+
     /**
      * Capitalizes a word, lowercasing the rest of the word. For example, stringProperty would be modified into
      * Stringproperty.
@@ -155,4 +181,16 @@ object StringUtils {
         'Ɍ' to "R",  'ɍ' to "r",    // R with stroke
         'Ɏ' to "Y",  'ɏ' to "y",    // Y with stroke
     )
+
+    /**
+     * Checks whether the given string looks like a number or a boolean value.
+     *
+     * The function trims leading and trailing whitespace, then returns true if the
+     * resulting value is either "true", "false", or a valid decimal number.
+     */
+    fun looksLikeNumberOrBoolean(s: String): Boolean {
+        val t = s.trim()
+        if (t == "true" || t == "false") return true
+        return t.toBigDecimalOrNull() != null
+    }
 }

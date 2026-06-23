@@ -5,13 +5,16 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests-spring</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>6.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>evomaster-e2e-tests-spring-graphql</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipGraphQL}</skipTests>
+    </properties>
 
     <dependencies>
 

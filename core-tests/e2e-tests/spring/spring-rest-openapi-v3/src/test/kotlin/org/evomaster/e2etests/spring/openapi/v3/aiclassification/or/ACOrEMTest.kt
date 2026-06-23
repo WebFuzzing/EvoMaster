@@ -62,7 +62,20 @@ class ACOrEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.NN)
     }
 
-    private fun testRunEM(model: AIResponseClassifierModel) {
+    @Test
+    fun testRunEnsemble(){
+        testRunEM(
+            AIResponseClassifierModel.GAUSSIAN,
+            AIResponseClassifierModel.GLM,
+            AIResponseClassifierModel.KDE,
+            AIResponseClassifierModel.KNN,
+            AIResponseClassifierModel.NN
+        )
+    }
+
+    private fun testRunEM(vararg models: AIResponseClassifierModel) {
+
+        val modelString = models.joinToString(",") { it.name }
 
         runTestHandlingFlakyAndCompilation(
             "ACOrEM",
@@ -70,7 +83,7 @@ class ACOrEMTest : AIClassificationEMTestBase() {
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
-            args.add("$model")
+            args.add(modelString)
 
             val (injector, solution) = initAndDebug(args)
 

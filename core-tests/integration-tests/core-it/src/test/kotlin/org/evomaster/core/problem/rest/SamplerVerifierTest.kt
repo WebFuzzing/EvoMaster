@@ -22,6 +22,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertTrue
 import java.io.File
@@ -31,13 +32,23 @@ import kotlin.io.path.Path
 import kotlin.sequences.filter
 import kotlin.text.contains
 
-
 class SamplerVerifierTest {
 
     companion object {
         init {
             Main.applyGlobalJVMSettings()
         }
+    }
+
+    @TestFactory
+    fun debugIssue(): Collection<DynamicTest>{
+        val tests = sampleFromSchemasAndCheckInvariants(
+            //NOTE: can replace with a folder to debug
+            "./src/test/resources/APIs_guru/asana.com/1.0",
+            "APIs_guru",
+            false)
+        assertTrue(tests.isNotEmpty())
+        return tests
     }
 
 
@@ -117,10 +128,21 @@ class SamplerVerifierTest {
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
-                System.gc()
+                /*
+                    These tests are expensive... and once upon a time they were a source of timeouts due
+                    to some bottlenecks. For that reason, we were forcing a GC before each test outside of the
+                    timeout, hoping it would help. But it looks like nowadays this is creating a deadlock on GA :(
+                    so we had to remove it
+                 */
+                //System.gc()
+
+                EnumGene.cleanCache() //due to this, these tests cannot be run in parallel
+
+                println("RUNNING: $it") // Surefire sucks at providing info for @TestFactory
                 assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
+                println("DONE WITH: $it")
             }
         }.toList()
     }
@@ -400,7 +422,7 @@ class SamplerVerifierTest {
         val controllerInfo = ControllerInfoDto()
 
         val injector = try{
-            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
+            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42","--schema",resourcePath))
         } catch (e: Throwable){
 
             val s = if(e.cause is InvocationTargetException) {
@@ -456,7 +478,7 @@ class SamplerVerifierTest {
             blackBox: Boolean,
             args: List<String> = listOf()): Injector {
 
-        val base = BaseModule(args.toTypedArray())
+        val base = BaseModule(args.toTypedArray().plus("--blackBox").plus("$blackBox"))
         val problemModule = if(blackBox){
             BlackBoxRestModule(false)
         } else {

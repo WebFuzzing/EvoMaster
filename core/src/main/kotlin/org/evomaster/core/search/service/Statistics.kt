@@ -489,12 +489,12 @@ class Statistics : SearchListener {
         }
 
         // Compute metrics
-        val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
+        val metrics = aiResponseClassifier.estimateOverallMetrics()
         val aiStats = aiResponseClassifier.getStats()
 
         return aiMetricsAsPairs(
             enabled = true,
-            type = config.aiModelForResponseClassification.name,
+            type = config.aiModelForResponseClassification.joinToString(","),
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
             sensitivity = metrics.sensitivity400,
@@ -566,10 +566,11 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedMainActions() }
                 .filter {
-                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult &&
+                            (it.result).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 // in phases like Security we might create calls that do not exist in schema
-                .filter{ it.action is RestCallAction && callGraphService.isDeclared(it.action.verb,it.action.path)}
+                .filter{ it.action is RestCallAction && callGraphService.isInUse(it.action.verb,it.action.path)}
                 .map { it.action.getName() }
                 .distinct()
                 .count()

@@ -413,7 +413,7 @@ class RestPath(path: String) {
                             why not using URI also for Query part???
                             it seems unclear how to properly build it as a single string...
                          */
-                        val entry = URI(null, null, path.toString(), null, null).rawPath
+                        val entry = URI(null, null, path.toString(), null, null).toASCIIString()
                         data.add(Pair(entry, false))
                         path.setLength(0) // clear it
                         data.add(Pair(variable, true))
@@ -446,7 +446,7 @@ class RestPath(path: String) {
         }
 
         if(path.isNotEmpty()){
-            val entry = URI(null, null, path.toString(), null, null).rawPath
+            val entry = URI(null, null, path.toString(), null, null).toASCIIString()
             data.add(Pair(entry, false))
         }
 

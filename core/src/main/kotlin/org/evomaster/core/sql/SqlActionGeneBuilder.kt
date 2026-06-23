@@ -10,7 +10,6 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
-import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -54,8 +53,9 @@ class SqlActionGeneBuilder {
             //TODO handle all constraints and cases
             column.autoIncrement ->
                 SqlAutoIncrementGene(column.name)
-            fk != null ->
-                SqlForeignKeyGene(column.name, id, fk.targetTableId, column.nullable)
+            fk != null -> {
+                handleForeignKeyColumn(fk, column, id)
+            }
 
             else -> when (column.type) {
                 // Man: TODO need to check
@@ -404,6 +404,27 @@ class SqlActionGeneBuilder {
                     numberOfDimensions = column.dimension)
         }
         return gene
+    }
+
+    private fun handleForeignKeyColumn(
+        fk: ForeignKey,
+        column: Column,
+        id: Long,
+    ): SqlForeignKeyGene {
+        val indexOfSourceColumn = fk.sourceColumns.indexOf(column)
+        if (indexOfSourceColumn == -1) {
+            throw IllegalArgumentException("Column $column is not part of foreign key $fk")
+        }
+        val targetColumn = fk.targetColumns[indexOfSourceColumn]
+        val otherSourceColumnsInCompositeFK = fk.sourceColumns.filter { it != column }.map { it.name }.toSet()
+        return SqlForeignKeyGene(
+            sourceColumn = column.name,
+            uniqueId = id,
+            targetTable = fk.targetTableId,
+            targetColumn = targetColumn.name,
+            nullable = column.nullable,
+            otherSourceColumnsInCompositeFK = otherSourceColumnsInCompositeFK
+        )
     }
 
     private fun handleSqlGeometry(column: Column): ChoiceGene<*> {

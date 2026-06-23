@@ -37,12 +37,9 @@ public class FileCreationIssueFaultEMTest extends SpringTestBase {
 
             List<String> args = new ArrayList<>();
 
-            args.add("--blackBox");
-            args.add("true");
-            args.add("--bbTargetUrl");
-            args.add(baseUrlOfSut);
-            args.add("--bbSwaggerUrl");
-            args.add(baseUrlOfSut + "/v2/api-docs");
+            setOption(args, "blackBox", "true");
+            setOption(args, "bbTargetUrl", baseUrlOfSut);
+            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
             args.add("--outputFormat");
             args.add("JAVA_JUNIT_4");
             args.add("--outputFolder");
@@ -99,12 +96,9 @@ public class FileCreationIssueFaultEMTest extends SpringTestBase {
 
             List<String> args = new ArrayList<>();
 
-            args.add("--blackBox");
-            args.add("true");
-            args.add("--bbTargetUrl");
-            args.add(baseUrlOfSut);
-            args.add("--bbSwaggerUrl");
-            args.add(baseUrlOfSut + "/v2/api-docs");
+            setOption(args, "blackBox", "true");
+            setOption(args, "bbTargetUrl", baseUrlOfSut);
+            setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
             args.add("--outputFormat");
             args.add("JAVA_JUNIT_4");
             args.add("--outputFolder");

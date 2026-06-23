@@ -10,7 +10,7 @@ public class RedisLettuceFindKeyNoSaveRest extends AbstractRedisLettuceRest {
 
     @GetMapping("/findKey")
     public ResponseEntity<Void> findKey() {
-        String result = sync.get("here-goes-the-key");
+        String result = sync.get("key-for-findkey");
         if (result != null) {
             return ResponseEntity.status(200).build();
         } else {
