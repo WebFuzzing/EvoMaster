@@ -124,6 +124,12 @@ object SqlWriter {
     }
 
     private fun escapeKotlin(value: String): String {
+        /*
+         * Kotlin strings use `$` for interpolation. `getValueAsPrintableString` with kotlin format
+         * already escapes the dollar sign as `\$`. `escapeJava` would escape it again, producing
+         * `\\$` (a double-escaped `$`). We replace this with a single `\$` so the value
+         * is safe for Kotlin source generation.
+         */
         return StringEscapeUtils.escapeJava(value).replace("\\$", "\$")
     }
 
