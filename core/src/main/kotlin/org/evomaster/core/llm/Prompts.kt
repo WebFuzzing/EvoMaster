@@ -2,6 +2,8 @@ package org.evomaster.core.llm
 
 object Prompts {
 
+    const val GREETINGS = "Hi! Give me a greeting as a JSON string"
+
     const val VALUE_BASED_ON_NAME_SYSTEM = """
         You are a software tester, tasked to test an API. 
         There is a string parameter with a given name [name]. 
