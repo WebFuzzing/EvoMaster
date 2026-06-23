@@ -2794,8 +2794,14 @@ class EMConfig {
     var handleFlakiness = false
 
     @Experimental
-    @Min(1.0)
-    @Cfg("Specify the number of re-executions for detecting flakiness in tests")
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
+    var enableStaticFlakyInference = true
+
+    @Experimental
+    @Min(0.0)
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
     var execNumForDetectFlakiness = 1
 
     @Experimental
