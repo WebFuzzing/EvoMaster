@@ -100,7 +100,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
+        val cacheKey = Pair(sqlQuery, numberOfRows)
+        val cached = z3ResultCache[cacheKey]
+        if (cached != null) {
+            return toSqlActionList(schemaDto, cached)
+        }
 
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
         val queryStatement = parseStatement(sqlQuery)
@@ -108,6 +112,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val fileName = storeToTmpFile(smtLib)
         val z3Response = executor.solveFromFile(fileName)
 
+        z3ResultCache[cacheKey] = z3Response
         return toSqlActionList(schemaDto, z3Response)
     }
 
