@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import com.google.inject.Inject
+
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
