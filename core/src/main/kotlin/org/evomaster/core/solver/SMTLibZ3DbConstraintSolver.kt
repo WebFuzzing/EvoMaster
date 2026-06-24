@@ -54,6 +54,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    private val z3ResultCache: MutableMap<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>> =
+        object : LinkedHashMap<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>>?) =
+                size > MAX_CACHE_SIZE
+        }
+
+    companion object {
+        private const val MAX_CACHE_SIZE = 500
+    }
+
     @Inject
     private lateinit var config: EMConfig
 
