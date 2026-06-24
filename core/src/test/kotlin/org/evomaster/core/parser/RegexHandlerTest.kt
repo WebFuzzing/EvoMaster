@@ -3,7 +3,6 @@ package org.evomaster.core.parser
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.client.java.instrumentation.heuristic.ValidatorHeuristics
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -11,7 +10,6 @@ import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
@@ -176,7 +174,7 @@ internal class RegexHandlerTest{
     fun testJVMExternalCaseInsensitiveFlagWithUnicodeCase() {
         // \u03A1 is greek capital Rho, \u03C1 is lowercase rho
         val regex = "\u03A1+"
-        val flags = RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE)
+        val flags = RegexFlags.fromExternalJavaRegexFlagBitmask(Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE)
         val gene = RegexHandler.createGeneForJVM(regex, flags)
         val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE)
         val rand = Randomness()
@@ -193,7 +191,7 @@ internal class RegexHandlerTest{
 
         val regex = "^abc$"
         val noFlags = RegexHandler.createGeneForJVM(regex)
-        val withCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+        val withCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromExternalJavaRegexFlagBitmask(Pattern.CASE_INSENSITIVE))
 
         val rand = Randomness()
         val noFlagsSamples = (1..200).map {
@@ -214,7 +212,7 @@ internal class RegexHandlerTest{
     fun testJVMInlineFlagNotDoubledByExternalFlag() {
 
         val regex = "(?i:abc)"
-        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromExternalJavaRegexFlagBitmask(Pattern.CASE_INSENSITIVE))
         val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE)
         val rand = Randomness()
 
@@ -229,7 +227,7 @@ internal class RegexHandlerTest{
     fun testJVMInlineCanDisableExternalFlag() {
 
         val regex = "^(?-i:abc)$"
-        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromJavaFlags(Pattern.CASE_INSENSITIVE))
+        val withExternalCI = RegexHandler.createGeneForJVM(regex, RegexFlags.fromExternalJavaRegexFlagBitmask(Pattern.CASE_INSENSITIVE))
         val rand = Randomness()
 
         repeat(200) {

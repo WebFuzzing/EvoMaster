@@ -21,7 +21,7 @@ public class StringSpecializationInfo implements Serializable {
      * Only meaningful when stringSpecialization is a regex type.
      * Defaults to 0 (no external flags).
      */
-    private final int regexFlags;
+    private final int externalRegexFlagsBitmask;
 
     public StringSpecializationInfo(StringSpecialization stringSpecialization, String value) {
         this(stringSpecialization, value, TaintType.FULL_MATCH);
@@ -31,14 +31,14 @@ public class StringSpecializationInfo implements Serializable {
         this(stringSpecialization, value, taintType, 0);
     }
 
-    public StringSpecializationInfo(StringSpecialization stringSpecialization, String value, TaintType taintType, int regexFlags) {
+    public StringSpecializationInfo(StringSpecialization stringSpecialization, String value, TaintType taintType, int externalRegexFlagsBitmask) {
         this.stringSpecialization = Objects.requireNonNull(stringSpecialization);
         this.value = value;
         if(taintType == null || taintType == TaintType.NONE){
             throw new IllegalArgumentException("Invalid type: "+taintType);
         }
         this.type = taintType;
-        this.regexFlags = regexFlags;
+        this.externalRegexFlagsBitmask = externalRegexFlagsBitmask;
     }
 
     public StringSpecialization getStringSpecialization() {
@@ -57,7 +57,7 @@ public class StringSpecializationInfo implements Serializable {
      * Getter for regex flags bitmask, only meaningful when stringSpecialization is regex type. Defaults to 0 (no flags)
      * @return Integer bitmask for the regex flags associated to the string.
      */
-    public int getRegexFlags() { return regexFlags; }
+    public int getExternalRegexFlagsBitmask() { return externalRegexFlagsBitmask; }
 
     @Override
     public boolean equals(Object o) {
@@ -67,11 +67,11 @@ public class StringSpecializationInfo implements Serializable {
         return stringSpecialization == that.stringSpecialization &&
                 Objects.equals(value, that.value) &&
                 type == that.type &&
-                regexFlags == that.regexFlags;
+                externalRegexFlagsBitmask == that.externalRegexFlagsBitmask;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(stringSpecialization, value, type, regexFlags);
+        return Objects.hash(stringSpecialization, value, type, externalRegexFlagsBitmask);
     }
 }

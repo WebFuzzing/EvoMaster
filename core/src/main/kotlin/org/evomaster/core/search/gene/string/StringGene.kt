@@ -817,7 +817,7 @@ class StringGene(
                         } else {
                             RegexSharedUtils.handlePartialMatch(it.value)
                         }
-                        RegexWithFlags(regex, it.regexFlags)
+                        RegexWithFlags(regex, it.externalRegexFlagsBitmask)
                     }
                     //.joinToString("|")
                     .forEach {(regex, flags) ->

@@ -26,16 +26,16 @@ public class PatternMatchingHelper {
         /**
          * Invocation to Pattern.matches() is free of side-effects.
          */
-    public static boolean matches(String regex, int flags, String input, String idTemplate) {
+    public static boolean matches(String regex, int externalRegexFlagsBitmask, String input, String idTemplate) {
         Objects.requireNonNull(regex);
         Objects.requireNonNull(input);
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, TaintType.FULL_MATCH, flags));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, TaintType.FULL_MATCH, externalRegexFlagsBitmask));
         }
 
-        Pattern p = Pattern.compile(regex, flags);
+        Pattern p = Pattern.compile(regex, externalRegexFlagsBitmask);
         Matcher m = p.matcher(input);
         boolean matches = m.matches();
 

@@ -66,14 +66,14 @@ data class RegexFlags(
          * [java.util.regex.Pattern.compile] to be preserved and applied when building
          * the gene tree, mirroring the behaviour of the Java regex engine.
          */
-        fun fromJavaFlags(flags: Int): RegexFlags = RegexFlags(
-            caseInsensitive       = flags and Pattern.CASE_INSENSITIVE != 0,
-            unicodeCase           = flags and Pattern.UNICODE_CASE != 0,
-            dotAll                = flags and Pattern.DOTALL != 0,
-            multiline             = flags and Pattern.MULTILINE != 0,
-            unixLines             = flags and Pattern.UNIX_LINES != 0,
-            unicodeCharacterClass = flags and Pattern.UNICODE_CHARACTER_CLASS != 0,
-            comments              = flags and Pattern.COMMENTS != 0
+        fun fromExternalJavaRegexFlagBitmask(externalRegexFlagsBitmask: Int): RegexFlags = RegexFlags(
+            caseInsensitive       = externalRegexFlagsBitmask and Pattern.CASE_INSENSITIVE != 0,
+            unicodeCase           = externalRegexFlagsBitmask and Pattern.UNICODE_CASE != 0,
+            dotAll                = externalRegexFlagsBitmask and Pattern.DOTALL != 0,
+            multiline             = externalRegexFlagsBitmask and Pattern.MULTILINE != 0,
+            unixLines             = externalRegexFlagsBitmask and Pattern.UNIX_LINES != 0,
+            unicodeCharacterClass = externalRegexFlagsBitmask and Pattern.UNICODE_CHARACTER_CLASS != 0,
+            comments              = externalRegexFlagsBitmask and Pattern.COMMENTS != 0
         )
     }
 
