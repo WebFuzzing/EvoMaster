@@ -18,6 +18,7 @@ class GLM400Classifier(
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
+        modelKeys: List<String>,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
         metricType: EMConfig.AIClassificationMetrics,
@@ -26,6 +27,7 @@ class GLM400Classifier(
         return GLM400EndpointModel(
             endpoint,
             warmup,
+            modelKeys,
             dimension,
             encoderType,
             metricType,

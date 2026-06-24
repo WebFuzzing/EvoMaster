@@ -55,6 +55,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
     val metricType = "TIME_WINDOW"
     val warmUpRep = 10
     val maxAttemptRepair = 100 // i.e., the classifier has 10 times the chances to pick an action with non-400 response
+    val repairThreshold = 0.5
+    val weaknessThreshold = 0.6
 
     val runIterations = 500
     val saveReport = false
@@ -82,6 +84,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
             EMConfig.AIClassificationMetrics.valueOf(metricType)
         config.aiResponseClassifierWarmup = warmUpRep
         config.maxRepairAttemptsInResponseClassification = maxAttemptRepair
+        config.classificationRepairThreshold = repairThreshold
+        config.aIResponseClassifierWeaknessThreshold = weaknessThreshold
+//        config.blackBox = false
     }
 
     fun repairAction(call: RestCallAction) {
@@ -157,7 +162,12 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
-            if (!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.5)) {
+            val deltaW = config.aIResponseClassifierWeaknessThreshold
+            if(metrics.precision400 < deltaW
+                || metrics.sensitivity400 < deltaW
+                || metrics.specificity < deltaW
+                || metrics.npv < deltaW) {
+
                 println("The classifier is weak for $endPoint")
 
                 val result = ExtraTools.executeRestCallAction(action, baseUrlOfSut)
@@ -208,11 +218,11 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         val overAllMetrics = aiGlobalClassifier.estimateOverallMetrics()
 
-        println("Overall Accuracy: ${overAllMetrics.accuracy}")
-        println("Overall Precision400: ${overAllMetrics.precision400}")
-        println("Overall Recall400: ${overAllMetrics.sensitivity400}")
-        println("Overall F1Score400: ${overAllMetrics.f1Score400}")
-        println("Overall MCC: ${overAllMetrics.mcc}")
+        println("Overall Accuracy:       ${overAllMetrics.accuracy}")
+        println("Overall Precision400:   ${overAllMetrics.precision400}")
+        println("Overall Sensitivity400: ${overAllMetrics.sensitivity400}")
+        println("Overall Specificity:    ${overAllMetrics.specificity}")
+        println("Overall NPV:            ${overAllMetrics.npv}")
 
         if (saveReport) {
             saveReports()
