@@ -319,4 +319,15 @@ public class TruthnessUtils {
         );
     }
 
+    public static Truthness getStringEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        if (a.equals(b)) {
+            return new Truthness(1.0d, DistanceHelper.H_NOT_NULL);
+        }
+        long dist = DistanceHelper.getLeftAlignmentDistance(a, b);
+        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, (double) dist);
+        return new Truthness(ofTrue, 1.0d);
+    }
+
 }
