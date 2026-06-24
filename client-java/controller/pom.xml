@@ -360,7 +360,7 @@
                 </executions>
             </plugin>
 
-            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar and the CQL parser-->
+            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
