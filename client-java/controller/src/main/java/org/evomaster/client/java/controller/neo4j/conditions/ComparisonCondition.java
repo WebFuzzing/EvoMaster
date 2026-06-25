@@ -14,8 +14,8 @@ public class ComparisonCondition implements CypherCondition {
     private final Operand right;
 
     public ComparisonCondition(Operand left, ComparisonOperator operator, Operand right) {
-        this.left = left;
-        this.operator = operator;
+        this.left = Objects.requireNonNull(left, "left operand must not be null");
+        this.operator = Objects.requireNonNull(operator, "operator must not be null");
         this.right = right;
     }
 

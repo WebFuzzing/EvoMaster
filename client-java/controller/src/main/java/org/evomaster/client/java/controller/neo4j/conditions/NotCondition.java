@@ -10,7 +10,7 @@ public class NotCondition implements CypherCondition {
     private final CypherCondition condition;
 
     public NotCondition(CypherCondition condition) {
-        this.condition = condition;
+        this.condition = Objects.requireNonNull(condition, "condition must not be null");
     }
 
     public CypherCondition getCondition() {

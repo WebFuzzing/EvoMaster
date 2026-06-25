@@ -23,9 +23,10 @@ public class PatternEdge {
 
     public PatternEdge(String variableName, String sourceVariable, String targetVariable,
                        boolean directed, boolean variableLength, Integer minLength, Integer maxLength) {
+        // endpoints are always present; variableName is the relationship's own optional variable
         this.variableName = variableName;
-        this.sourceVariable = sourceVariable;
-        this.targetVariable = targetVariable;
+        this.sourceVariable = Objects.requireNonNull(sourceVariable, "sourceVariable must not be null");
+        this.targetVariable = Objects.requireNonNull(targetVariable, "targetVariable must not be null");
         this.directed = directed;
         this.variableLength = variableLength;
         this.minLength = minLength;

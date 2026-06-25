@@ -20,21 +20,24 @@ public class MatchPattern {
 
     public MatchPattern(List<PatternNode> nodes, List<PatternEdge> edges,
                         List<QuantifiedPathPattern> quantifiedPaths) {
-        this.nodes = nodes != null ? new ArrayList<>(nodes) : new ArrayList<>();
-        this.edges = edges != null ? new ArrayList<>(edges) : new ArrayList<>();
-        this.quantifiedPaths = quantifiedPaths != null ? new ArrayList<>(quantifiedPaths) : new ArrayList<>();
+        this.nodes = Collections.unmodifiableList(
+                nodes != null ? new ArrayList<>(nodes) : new ArrayList<>());
+        this.edges = Collections.unmodifiableList(
+                edges != null ? new ArrayList<>(edges) : new ArrayList<>());
+        this.quantifiedPaths = Collections.unmodifiableList(
+                quantifiedPaths != null ? new ArrayList<>(quantifiedPaths) : new ArrayList<>());
     }
 
     public List<PatternNode> getNodes() {
-        return Collections.unmodifiableList(nodes);
+        return nodes;
     }
 
     public List<PatternEdge> getEdges() {
-        return Collections.unmodifiableList(edges);
+        return edges;
     }
 
     public List<QuantifiedPathPattern> getQuantifiedPaths() {
-        return Collections.unmodifiableList(quantifiedPaths);
+        return quantifiedPaths;
     }
 
     public int nodeCount() {

@@ -13,11 +13,12 @@ public final class ListOperand implements Operand {
     private final List<Operand> elements;
 
     public ListOperand(List<Operand> elements) {
-        this.elements = elements != null ? new ArrayList<>(elements) : new ArrayList<>();
+        this.elements = Collections.unmodifiableList(
+                elements != null ? new ArrayList<>(elements) : new ArrayList<>());
     }
 
     public List<Operand> getElements() {
-        return Collections.unmodifiableList(elements);
+        return elements;
     }
 
     @Override

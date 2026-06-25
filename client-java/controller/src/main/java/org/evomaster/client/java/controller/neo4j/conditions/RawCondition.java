@@ -13,7 +13,7 @@ public class RawCondition implements CypherCondition {
     private final String expression;
 
     public RawCondition(String expression) {
-        this.expression = expression;
+        this.expression = Objects.requireNonNull(expression, "expression must not be null");
     }
 
     public String getExpression() {

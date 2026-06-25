@@ -12,8 +12,8 @@ public final class PropertyOperand implements Operand {
     private final String propertyKey;
 
     public PropertyOperand(String variableName, String propertyKey) {
-        this.variableName = variableName;
-        this.propertyKey = propertyKey;
+        this.variableName = Objects.requireNonNull(variableName, "variableName must not be null");
+        this.propertyKey = Objects.requireNonNull(propertyKey, "propertyKey must not be null");
     }
 
     public String getVariableName() {

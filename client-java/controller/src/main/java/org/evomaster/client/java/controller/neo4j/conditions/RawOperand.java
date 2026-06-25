@@ -11,7 +11,7 @@ public final class RawOperand implements Operand {
     private final String text;
 
     public RawOperand(String text) {
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text must not be null");
     }
 
     public String getText() {
