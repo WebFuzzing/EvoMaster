@@ -49,35 +49,40 @@ object AuthWriter {
                 }
             }
 
+            val replacements = placeHolderResolver?.placeHolders?.entries?.map {
+                    val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
+                    ".replace(\"${placeholder}\", ${it.value})"
+            }
+
             when (contentType) {
                 ContentType.X_WWW_FORM_URLENCODED -> {
                     val send = testCaseWriter.sendBodyCommand()
-                    when {
-                        format.isPython() -> lines.add("body = \"${k.payload}\"")
-                        else -> lines.add(".$send(\"${k.payload}\")")
+                    if(replacements == null) {
+                        when {
+                            format.isPython() -> lines.add("body = \"${k.payload}\"")
+                            else -> lines.add(".$send(\"${k.payload}\")")
+                        }
+                    } else {
+                        when {
+                            format.isPython() -> {
+                                lines.add("body = \"${k.payload}\"")
+                                replacements.forEach { lines.append(it) }
+                            }
+                            else -> {
+                                lines.add(".$send(\"${k.payload}\"")
+                                replacements.forEach { lines.append(it) }
+                                lines.append(")")
+                            }
+                        }
                     }
                 }
 
                 ContentType.JSON -> {
-                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                    testCaseWriter.printSendJsonBody(k.payload!!, lines, functionsOnString = replacements)
                 }
 
                 else -> {
-                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                }
-            }
-
-            if(placeHolderResolver != null) {
-                if (!format.isPython()) {
-                    //easier to just remove the closing ')' then hunting down all places in which it is added
-                    lines.replaceInCurrent(Regex("\\)\\s*$"), "")
-                }
-                placeHolderResolver.placeHolders.entries.forEach {
-                    val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
-                    lines.append(".replace(\"${placeholder}\", ${it.value})")
-                }
-                if (!format.isPython()) {
-                    lines.append(")")
+                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in auth handling")
                 }
             }
         }
