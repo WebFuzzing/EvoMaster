@@ -82,6 +82,8 @@ object CreateUsersWriter {
         }
         lines.addEmpty()
 
+        val resolver = PlaceHolderResolver(user.name, resolverData)
+
         val infoMsg = "Create new user dynamically for ${user.name}"
 
         if(! format.isPython()){
@@ -95,7 +97,7 @@ object CreateUsersWriter {
 
         val resName = responseName(name)
 
-        AuthWriter.addBodyOfCallCommand(lines, user.call, testCaseWriter, format, baseUrlOfSut, resName, null)
+        AuthWriter.addBodyOfCallCommand(lines, user.call, testCaseWriter, format, baseUrlOfSut, resName, resolver)
 
         //need to add check that call was 2xx success or 3xx
 
@@ -115,6 +117,6 @@ object CreateUsersWriter {
 
         lines.addEmpty()
 
-        return PlaceHolderResolver(user.name, resolverData)
+        return resolver
     }
 }

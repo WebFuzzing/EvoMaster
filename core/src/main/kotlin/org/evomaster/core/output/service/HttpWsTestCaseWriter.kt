@@ -673,6 +673,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
+                    functionsOnString?.forEach { lines.append(it) }
                 }
                 format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
                 else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
@@ -680,12 +681,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         } else {
             when {
                 format.isPython() -> {
-                    lines.add("body = ${bodyLines.first()} + \\")
+                    lines.add("body = ")
+                    if(!functionsOnString.isNullOrEmpty()){
+                        lines.append("(")
+                    }
+                    lines.append("${bodyLines.first()} + \\")
                     lines.indented {
                         (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + \\")
                         }
                         lines.add(bodyLines.last())
+                        if(!functionsOnString.isNullOrEmpty()){
+                            lines.append(")")
+                            functionsOnString.forEach { lines.append(it) }
+                        }
                     }
                 }
                 format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
