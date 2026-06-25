@@ -66,8 +66,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     @Inject
     private lateinit var config: EMConfig
 
-    @Inject
-    private lateinit var statistics: Statistics
+    @Inject(optional = true)
+    private var statistics: Statistics? = null
 
     @PostConstruct
     private fun postConstruct() {
@@ -107,11 +107,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        val collectStats = ::config.isInitialized && config.collectDseStats
+        val stats: Statistics? = if (::config.isInitialized && config.collectDseStats) statistics else null
 
-        if (collectStats) {
-            statistics.reportDseQuerySeen(sqlQuery.hashCode())
-        }
+        stats?.reportDseQuerySeen(sqlQuery.hashCode())
 
         val cacheKey = Pair(sqlQuery, numberOfRows)
         val cached = z3ResultCache?.get(cacheKey)
@@ -126,7 +124,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("DSE: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            if (collectStats) statistics.reportDseParseFailure()
+            stats?.reportDseParseFailure()
             return emptyList()
         }
 
@@ -135,9 +133,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtLib = generator.generateSMT(queryStatement)
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
-        if (collectStats) {
-            statistics.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
-        }
+        stats?.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
 
         val fileName = storeToTmpFile(smtLib)
 
@@ -151,18 +147,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
         return when (z3Result.status) {
             Z3Result.Status.SAT -> {
-                if (collectStats) statistics.reportDseSat(z3TimeMs)
+                stats?.reportDseSat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
                 toSqlActionList(schemaDto, z3Result.model)
             }
             Z3Result.Status.UNSAT -> {
-                if (collectStats) statistics.reportDseUnsat(z3TimeMs)
+                stats?.reportDseUnsat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
                 LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
-                if (collectStats) statistics.reportDseError(z3TimeMs)
+                stats?.reportDseError(z3TimeMs)
                 emptyList()
             }
         }
