@@ -96,6 +96,18 @@ class Statistics : SearchListener {
     private var redisHeuristicEvaluationFailureCount = 0
     private val redisDocumentsAverageCalculator = IncrementalAverage()
 
+    // DSE (Dynamic Symbolic Execution) statistics
+    private var dseTotalQueriesProcessed = 0
+    private var dseSatCount = 0
+    private var dseUnsatCount = 0
+    private var dseErrorCount = 0
+    private var dseParseFailureCount = 0
+    private var dseZ3TimeMs = 0L
+    private var dseSmtlibGenTimeMs = 0L
+    private val dseSmtlibSizeBytes = IncrementalAverage()
+    private val dseSeenQueryHashes = mutableSetOf<Int>()
+    private var dseUniqueQueriesCount = 0
+
    class Pair(val header: String, val element: String)
 
 
@@ -221,6 +233,40 @@ class Statistics : SearchListener {
 
     fun reportRedisHeuristicEvaluationFailure() {
         redisHeuristicEvaluationFailureCount++
+    }
+
+    fun reportDseSat(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseSatCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseUnsat(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseUnsatCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseError(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseErrorCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseParseFailure() {
+        dseTotalQueriesProcessed++
+        dseParseFailureCount++
+    }
+
+    fun reportDseSmtlibGenTime(ms: Long, sizeBytes: Int) {
+        dseSmtlibGenTimeMs += ms
+        dseSmtlibSizeBytes.addValue(sizeBytes)
+    }
+
+    fun reportDseQuerySeen(queryHash: Int) {
+        if (dseSeenQueryHashes.add(queryHash)) {
+            dseUniqueQueriesCount++
+        }
     }
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
@@ -380,6 +426,20 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
+
+            // statistics info for DSE (only emitted when collectDseStats=true)
+            if (config.collectDseStats) {
+                add(Pair("dseTotalQueries", "$dseTotalQueriesProcessed"))
+                add(Pair("dseUniqueQueries", "$dseUniqueQueriesCount"))
+                add(Pair("dseDuplicateQueries", "${dseTotalQueriesProcessed - dseParseFailureCount - dseUniqueQueriesCount}"))
+                add(Pair("dseSat", "$dseSatCount"))
+                add(Pair("dseUnsat", "$dseUnsatCount"))
+                add(Pair("dseErrors", "$dseErrorCount"))
+                add(Pair("dseParseFailures", "$dseParseFailureCount"))
+                add(Pair("dseZ3TotalMs", "$dseZ3TimeMs"))
+                add(Pair("dseSmtlibGenTotalMs", "$dseSmtlibGenTimeMs"))
+                add(Pair("dseAvgSmtlibSizeBytes", "%.1f".format(dseSmtlibSizeBytes.mean)))
+            }
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
