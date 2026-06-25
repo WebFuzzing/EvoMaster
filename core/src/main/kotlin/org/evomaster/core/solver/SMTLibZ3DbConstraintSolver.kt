@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -65,6 +66,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     @Inject
     private lateinit var config: EMConfig
 
+    @Inject
+    private lateinit var statistics: Statistics
+
     @PostConstruct
     private fun postConstruct() {
         if (config.generateSqlDataWithDSE) {
@@ -103,42 +107,64 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        val cache = z3ResultCache
+        val collectStats = ::config.isInitialized && config.collectDseStats
+
+        if (collectStats) {
+            statistics.reportDseQuerySeen(sqlQuery.hashCode())
+        }
+
         val cacheKey = Pair(sqlQuery, numberOfRows)
-        if (cache != null) {
-            val cached = cache[cacheKey]
-            if (cached != null) {
-                return when (cached.status) {
-                    Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
-                    Z3Result.Status.UNSAT -> emptyList()
-                    Z3Result.Status.ERROR -> emptyList()
-                }
+        val cached = z3ResultCache?.get(cacheKey)
+        if (cached != null) {
+            return when (cached.status) {
+                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
+                else -> emptyList()
             }
         }
 
+        val queryStatement = try {
+            parseStatement(sqlQuery)
+        } catch (e: RuntimeException) {
+            LoggingUtil.getInfoLogger().warn("DSE: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
+            if (collectStats) statistics.reportDseParseFailure()
+            return emptyList()
+        }
+
+        val smtlibGenStart = System.currentTimeMillis()
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
-        val queryStatement = parseStatement(sqlQuery)
         val smtLib = generator.generateSMT(queryStatement)
+        val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
+        val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
+        if (collectStats) {
+            statistics.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
+        }
+
         val fileName = storeToTmpFile(smtLib)
 
-        var z3Result: Z3Result = Z3Result.error("Not executed")
-        try {
-            z3Result = executor.solveFromFile(fileName)
-        } catch (e: Exception) {
-            z3Result = Z3Result.error(e.message ?: "Unknown error")
+        val z3Start = System.currentTimeMillis()
+        val z3Result = try {
+            executor.solveFromFile(fileName)
         } finally {
-            try {
-                Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
-            } catch (_: Exception) {}
+            Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
         }
-
-        if (z3Result.status != Z3Result.Status.ERROR && cache != null) {
-            cache[cacheKey] = z3Result
-        }
+        val z3TimeMs = System.currentTimeMillis() - z3Start
 
         return when (z3Result.status) {
-            Z3Result.Status.SAT -> toSqlActionList(schemaDto, z3Result.model)
-            Z3Result.Status.UNSAT, Z3Result.Status.ERROR -> emptyList()
+            Z3Result.Status.SAT -> {
+                if (collectStats) statistics.reportDseSat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                toSqlActionList(schemaDto, z3Result.model)
+            }
+            Z3Result.Status.UNSAT -> {
+                if (collectStats) statistics.reportDseUnsat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                emptyList()
+            }
+            Z3Result.Status.ERROR -> {
+                LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                if (collectStats) statistics.reportDseError(z3TimeMs)
+                emptyList()
+            }
         }
     }
 
