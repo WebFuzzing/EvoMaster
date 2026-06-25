@@ -84,6 +84,7 @@ There are 3 types of options:
 |`bbTargetUrl`| __String__. Old, deprecated parameter for 'base'. *Default value*: `""`.|
 |`blackBoxCleanUp`| __Boolean__. In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test. For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT. However, this is done heuristically. There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt. *Default value*: `true`.|
 |`bloatControlForSecondaryObjective`| __Boolean__. Whether secondary objectives are less important than test bloat control. *Default value*: `false`.|
+|`collectDseStats`| __Boolean__. Collect detailed statistics for DSE SQL generation: SAT/UNSAT/error counts, timings, and SMT-LIB sizes. Only meaningful when generateSqlDataWithDSE=true. *Depends on*: `generateSqlDataWithDSE=true`. *Default value*: `false`.|
 |`coveredTargetFile`| __String__. Specify a file which saves covered targets info regarding generated test suite. *Default value*: `coveredTargets.txt`.|
 |`coveredTargetSortedBy`| __Enum__. Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
 |`createConfigPathIfMissing`| __Boolean__. If there is no configuration file, create a default template at given configPath location. However this is done only on the 'default' location. If you change 'configPath', no new file will be created. *Default value*: `true`.|
