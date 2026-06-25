@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,13 +42,13 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void satisfiabilityExample() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("example.smt");
+        Z3Result result = executor.solveFromFile("example.smt");
 
-        assertTrue(response.isPresent());
-        assertEquals(2, response.get().size());
+        assertEquals(Z3Result.Status.SAT, result.status);
+        assertEquals(2, result.model.size());
 
-        assertEquals(new LongValue(0L), response.get().get("y"));
-        assertEquals(new LongValue((long) -4), response.get().get("x"));
+        assertEquals(new LongValue(0L), result.model.get("y"));
+        assertEquals(new LongValue((long) -4), result.model.get("x"));
     }
 
     /**
@@ -64,14 +63,14 @@ public class Z3DockerExecutorTest {
 
         Files.copy(originalPath, copied, StandardCopyOption.REPLACE_EXISTING);
 
-        Optional<Map<String, SMTLibValue>> response;
+        Z3Result result;
         try {
-            response = executor.solveFromFile("example2.smt");
+            result = executor.solveFromFile("example2.smt");
         } finally {
             Files.deleteIfExists(copied); // Ensure the file is deleted
         }
 
-        assertTrue(response.isPresent());
+        assertEquals(Z3Result.Status.SAT, result.status);
     }
 
     /**
@@ -79,11 +78,11 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void uniqueUInt() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("unique_uint.smt");
+        Z3Result result = executor.solveFromFile("unique_uint.smt");
 
-        assertTrue(response.isPresent(), "Response should be present for unique_uint.smt");
-        assertEquals(new LongValue(2L), response.get().get("id_1"), "The value for id_1 should be 2");
-        assertEquals(new LongValue(3L), response.get().get("id_2"), "The value for id_2 should be 3");
+        assertEquals(Z3Result.Status.SAT, result.status, "Response should be SAT for unique_uint.smt");
+        assertEquals(new LongValue(2L), result.model.get("id_1"), "The value for id_1 should be 2");
+        assertEquals(new LongValue(3L), result.model.get("id_2"), "The value for id_2 should be 3");
     }
 
     /**
@@ -91,47 +90,45 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void composedTypes() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("composed_types.smt");
+        Z3Result result = executor.solveFromFile("composed_types.smt");
 
-        assertTrue(response.isPresent(), "Response should be present for composed_types.smt");
+        assertEquals(Z3Result.Status.SAT, result.status, "Response should be SAT for composed_types.smt");
 
-        assertTrue(response.get().containsKey("users1"), "Response should contain users1");
+        assertTrue(result.model.containsKey("users1"), "Response should contain users1");
         Map<String, SMTLibValue> users1Expected = new HashMap<>();
         users1Expected.put("ID", new LongValue(3L));
         users1Expected.put("NAME", new StringValue("agus"));
         users1Expected.put("AGE", new LongValue(31L));
         users1Expected.put("POINTS", new LongValue(7L));
 
-        assertEquals(new StructValue(users1Expected), response.get().get("users1"), "The value for users1 is incorrect");
+        assertEquals(new StructValue(users1Expected), result.model.get("users1"), "The value for users1 is incorrect");
 
-        assertTrue(response.get().containsKey("users2"), "Response should contain users2");
+        assertTrue(result.model.containsKey("users2"), "Response should contain users2");
         Map<String, SMTLibValue> users2Expected = new HashMap<>();
         users2Expected.put("ID", new LongValue(3L));
         users2Expected.put("NAME", new StringValue("agus"));
         users2Expected.put("AGE", new LongValue(31L));
         users2Expected.put("POINTS", new LongValue(7L));
-        assertEquals(new StructValue(users2Expected), response.get().get("users2"), "The value for users2 is incorrect");
+        assertEquals(new StructValue(users2Expected), result.model.get("users2"), "The value for users2 is incorrect");
     }
 
     /**
-     * Test solving with an invalid file to ensure proper error handling
+     * Test solving with an invalid file returns an ERROR result
      */
     @Test
-    public void whenSolvingInvalidFileItFails() {
-        assertThrows(
-                RuntimeException.class,
-                () -> executor.solveFromFile("invalid.smt")
-        );
+    public void whenSolvingInvalidFileReturnsError() {
+        Z3Result result = executor.solveFromFile("invalid.smt");
+        assertEquals(Z3Result.Status.ERROR, result.status);
+        assertNotNull(result.errorMessage);
     }
 
     /**
-     * Test handling an empty file
+     * Test handling an empty file returns an ERROR result
      */
     @Test
-    public void whenSolvingEmptyFileItFails() {
-        assertThrows(
-                RuntimeException.class,
-                () -> executor.solveFromFile("empty.smt")
-        );
+    public void whenSolvingEmptyFileReturnsError() {
+        Z3Result result = executor.solveFromFile("empty.smt");
+        assertEquals(Z3Result.Status.ERROR, result.status);
+        assertNotNull(result.errorMessage);
     }
 }

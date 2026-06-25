@@ -1,15 +1,12 @@
 package org.evomaster.solver;
 
 import org.evomaster.solver.smtlib.SMTResultParser;
-import org.evomaster.solver.smtlib.value.SMTLibValue;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Z3DockerExecutor is responsible for executing the Z3 SMT solver inside a Docker container.
@@ -51,31 +48,27 @@ public class Z3DockerExecutor implements AutoCloseable {
 
     /**
      * Executes the Z3 solver on an SMT-LIB file located in the container.
-     * The file must be in the directory specified by containerPath.
      *
      * @param fileName the name of the SMT-LIB file to read and solve
-     * @return the result of the Z3 solver as a map of variable names to their values, if the problem is satisfiable (sat)
-     *         or an empty Optional if the problem is unsatisfiable (unsat)
+     * @return Z3Result.sat(model) if satisfiable, Z3Result.unsat() if unsatisfiable,
+     *         or Z3Result.error(message) on any failure
      */
-    public Optional<Map<String, SMTLibValue>> solveFromFile(String fileName) {
+    public Z3Result solveFromFile(String fileName) {
         try {
-            // Execute the Z3 solver on the specified file in the container
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
             if (result.getExitCode() != 0) {
-                throw new RuntimeException("Error executing Z3 solver: \n" + result.getStdout() + "\n" + result.getStderr());
+                return Z3Result.error("Error executing Z3 solver: \n" + result.getStdout() + "\n" + result.getStderr());
             }
             String stdout = result.getStdout();
-
-            // Check if the solver returned any output
             if (stdout == null || stdout.isEmpty()) {
-                String stderr = result.getStderr();
-                throw new RuntimeException("No result after solving file " + stderr);
+                return Z3Result.error("No result after solving file: " + result.getStderr());
             }
-
-            // Parse the solver output and return the result
-            return Optional.of(SMTResultParser.parseZ3Response(stdout));
+            if (stdout.trim().startsWith("unsat")) {
+                return Z3Result.unsat();
+            }
+            return Z3Result.sat(SMTResultParser.parseZ3Response(stdout));
         } catch (IOException | InterruptedException e) {
-            return Optional.empty();
+            return Z3Result.error("I/O or interrupt error: " + e.getMessage());
         }
     }
 

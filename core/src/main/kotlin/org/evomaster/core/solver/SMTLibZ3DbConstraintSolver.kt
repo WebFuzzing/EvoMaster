@@ -22,6 +22,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
+import org.evomaster.solver.Z3Result
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
@@ -54,12 +55,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
-    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
-    private val z3ResultCache: MutableMap<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>> =
-        object : LinkedHashMap<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>>(16, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Optional<MutableMap<String, SMTLibValue>>>?) =
-                size > MAX_CACHE_SIZE
-        }
+    // Lazy LRU cache: allocated only when DSE is enabled. Errors are not cached.
+    private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
     companion object {
         private const val MAX_CACHE_SIZE = 500
@@ -72,6 +69,10 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithDSE) {
             initializeExecutor()
+            z3ResultCache = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                    size > MAX_CACHE_SIZE
+            }
         }
     }
 
@@ -84,7 +85,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     @PreDestroy
     override fun close() {
-        executor.close()
+        if (::executor.isInitialized) {
+            executor.close()
+        }
         try {
             FileUtils.cleanDirectory(File(resourcesFolder))
         } catch (e: IOException) {
@@ -100,20 +103,43 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
+        val cache = z3ResultCache
         val cacheKey = Pair(sqlQuery, numberOfRows)
-        val cached = z3ResultCache[cacheKey]
-        if (cached != null) {
-            return toSqlActionList(schemaDto, cached)
+        if (cache != null) {
+            val cached = cache[cacheKey]
+            if (cached != null) {
+                return when (cached.status) {
+                    Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
+                    Z3Result.Status.UNSAT -> emptyList()
+                    Z3Result.Status.ERROR -> emptyList()
+                }
+            }
         }
 
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
         val queryStatement = parseStatement(sqlQuery)
         val smtLib = generator.generateSMT(queryStatement)
         val fileName = storeToTmpFile(smtLib)
-        val z3Response = executor.solveFromFile(fileName)
 
-        z3ResultCache[cacheKey] = z3Response
-        return toSqlActionList(schemaDto, z3Response)
+        var z3Result: Z3Result = Z3Result.error("Not executed")
+        try {
+            z3Result = executor.solveFromFile(fileName)
+        } catch (e: Exception) {
+            z3Result = Z3Result.error(e.message ?: "Unknown error")
+        } finally {
+            try {
+                Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
+            } catch (_: Exception) {}
+        }
+
+        if (z3Result.status != Z3Result.Status.ERROR && cache != null) {
+            cache[cacheKey] = z3Result
+        }
+
+        return when (z3Result.status) {
+            Z3Result.Status.SAT -> toSqlActionList(schemaDto, z3Result.model)
+            Z3Result.Status.UNSAT, Z3Result.Status.ERROR -> emptyList()
+        }
     }
 
     /**
@@ -141,19 +167,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Converts Z3's response to a list of SqlActions.
+     * Converts Z3's SAT model to a list of SqlActions.
      *
-     * @param z3Response The response from Z3.
+     * @param model The variable assignments from Z3 (non-null, called only for SAT results).
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbInfoDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
-        if (!z3Response.isPresent) {
+    private fun toSqlActionList(schemaDto: DbInfoDto, model: Map<String, SMTLibValue>?): List<SqlAction> {
+        if (model == null) {
             return emptyList()
         }
 
         val actions = mutableListOf<SqlAction>()
 
-        for (row in z3Response.get()) {
+        for (row in model) {
             val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
