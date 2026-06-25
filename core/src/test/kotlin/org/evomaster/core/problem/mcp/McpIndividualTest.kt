@@ -13,7 +13,6 @@ class McpIndividualTest {
     private fun buildIndividual(vararg actions: McpAction): McpIndividual {
         val wrappedActions: MutableList<EnterpriseActionGroup<McpAction>> =
             actions.map { EnterpriseActionGroup(it) }.toMutableList()
-        @Suppress("UNCHECKED_CAST")
         return McpIndividual(
             sampleType = SampleType.RANDOM,
             allActions = wrappedActions as MutableList<out ActionComponent>

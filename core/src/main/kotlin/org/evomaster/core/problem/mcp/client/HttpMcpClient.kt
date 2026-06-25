@@ -100,7 +100,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
     }
 
     /** Send a JSON-RPC request. Returns null on 4xx (method not supported). */
-    @Suppress("UNCHECKED_CAST")
     private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
         val (conn, _) = openConnection(method, params)
         val status = conn.responseCode
@@ -111,7 +110,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun listTools(): List<McpToolDefinition> {
         val tools = mutableListOf<McpToolDefinition>()
         var cursor: String? = null
@@ -134,7 +132,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return tools
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun listResources(): List<McpResourceDefinition> {
         val resources = mutableListOf<McpResourceDefinition>()
         var cursor: String? = null
@@ -158,7 +155,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return resources
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun listResourceTemplates(): List<McpResourceTemplate> {
         val templates = mutableListOf<McpResourceTemplate>()
         var cursor: String? = null
@@ -181,7 +177,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         return templates
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
         val response = post("tools/call", mapOf("name" to name, "arguments" to arguments))
             ?: return McpToolResult(isError = true)
@@ -201,7 +196,6 @@ class HttpMcpClient(private val baseUrl: String) : McpClient {
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun readResource(uri: String): McpResourceResult {
         val response = post("resources/read", mapOf("uri" to uri))
             ?: return McpResourceResult()

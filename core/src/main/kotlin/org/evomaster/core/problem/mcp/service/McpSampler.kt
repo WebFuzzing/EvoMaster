@@ -217,7 +217,6 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
      * Build an [ObjectGene] from a JSON Schema map.
      * If the schema has no "properties" key, returns an empty [ObjectGene].
      */
-    @Suppress("UNCHECKED_CAST")
     internal fun buildObjectGeneFromSchema(name: String, schema: Map<String, Any?>): ObjectGene {
         val properties = schema["properties"] as? Map<String, Any?> ?: emptyMap()
         val fields = properties.entries.map { (propName, propSchema) ->
