@@ -32,7 +32,7 @@ import kotlin.jvm.java
 class LlmServiceTestCaseNamingStrategyTest {
 
     companion object {
-        const val MAX_NAME_LENGTH = 80
+        const val MAX_NAME_LENGTH = 40
     }
 
     @Test
@@ -67,6 +67,23 @@ class LlmServiceTestCaseNamingStrategyTest {
 
         assertEquals(1, testCases.size)
         assertEquals("test_0_thisTestNameWasLlmGenerated", testCases[0].name)
+    }
+
+    @Test
+    fun testFallbackNameIsAssignedAfterTwoFailedPrompts() {
+        val outputFormat = OutputFormat.JAVA_JUNIT_4
+        val baseModule = BaseModule(arrayOf("--llm", "true", "--llmProvider", "MOCK", "--outputFormat", outputFormat.name))
+        val llmService = getLlmService(baseModule)
+        val graphTestCaseWriter = getTestCaseWriter(baseModule.getEMConfig())
+
+        MockChatModel.reset()
+        MockChatModel.mockResponse("[\"aNameThatExceeds The Amount of Characters and has ! f\"]") { it.contains("[targetLanguage]:Java") }
+        MockChatModel.mockResponse("\"This name+ will !!! also have over 40chars and shouldBe_rejected") { it.contains("Your previous response") }
+
+        val testCases = generateTestCases(outputFormat, llmService, graphTestCaseWriter)
+
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_llmInteractionFailed_reviewName", testCases[0].name)
     }
 
     private fun getLlmService(baseModule: BaseModule): LlmService {
