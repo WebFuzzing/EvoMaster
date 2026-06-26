@@ -224,7 +224,11 @@
         <springfox.version>3.0.0</springfox.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <slf4j.version>1.7.24</slf4j.version>
-        <jersey.version>2.33</jersey.version>
+        <!-- 2.x latest using JDK 8. 3.x needs JDK 11, 4.x needs JDK 17.
+             Also, it switches package from javax to jakarta, so actually
+             hopefully it should help with split between core and client-java
+         -->
+        <jersey.version>2.48</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <!--
             Using latest, eg 2.16.0, breaks build, as Maven Shade Plugin
