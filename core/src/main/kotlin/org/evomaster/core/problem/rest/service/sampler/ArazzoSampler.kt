@@ -1,34 +1,15 @@
 package org.evomaster.core.problem.rest.service.sampler
 
-import org.evomaster.arazzo.access.ArazzoAccess
 import org.evomaster.arazzo.models.domain.Step
 import org.evomaster.arazzo.models.domain.Workflow
-import org.evomaster.arazzo.parser.ArazzoParser
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 
 class ArazzoSampler : AbstractRestSampler() {
 
-    private val workflows = mutableListOf<Workflow>()
-    private lateinit var workflowsById: Map<String, Workflow>
-
-    /**
-     * Prepare workflows arazzo
-     */
     override fun customizeAdHocInitialIndividuals() {
-        val arazzo = readWorkflowsArazzo()
-        workflows.clear()
-        workflows.addAll(arazzo)
-        workflowsById = arazzo.associateBy { it.workflowId }
-    }
-
-    /**
-     * Parse Arazzo and looking for Workflows
-     */
-    private fun readWorkflowsArazzo(): List<Workflow> {
-        val arazzoText = ArazzoAccess.readFromDisk(config.arazzoExampleLocation)
-        return ArazzoParser.parse(arazzoText, schemaHolder.main.schemaParsed).workflows
+        // workflows are loaded in AbstractRestSampler.initialize() when arazzoStrategy is enabled
     }
 
     override fun hasSpecialInitForSmartSampler(): Boolean = false
@@ -37,7 +18,7 @@ class ArazzoSampler : AbstractRestSampler() {
      * Choose a random workflow
      */
     override fun sampleAtRandom(): RestIndividual {
-        val workflow = randomness.choose(workflows)
+        val workflow = randomness.choose(workflowsArazzo)
         return buildIndividualFromWorkflow(workflow)
     }
 
@@ -64,7 +45,7 @@ class ArazzoSampler : AbstractRestSampler() {
             return listOfNotNull(findActionForOperation(step.operationId))
         }
         if (!step.workflowId.isNullOrBlank()) {
-            val nested = workflowsById[step.workflowId] ?: return emptyList()
+            val nested = workflowsArazzoById[step.workflowId] ?: return emptyList()
             return nested.steps.flatMap { resolveStep(it) }
         }
         return emptyList()

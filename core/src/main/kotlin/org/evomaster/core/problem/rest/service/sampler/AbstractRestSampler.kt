@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.rest.service.sampler
 
 import com.google.inject.Inject
+import org.evomaster.arazzo.access.ArazzoAccess
+import org.evomaster.arazzo.models.domain.Workflow
+import org.evomaster.arazzo.parser.ArazzoParser
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -90,6 +93,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     lateinit var skippedEndpoints : List<Endpoint>
         private set
 
+    var workflowsArazzo = mutableListOf<Workflow>()
+        private set
+
+    lateinit var workflowsArazzoById: Map<String, Workflow>
+        private set
 
     @PostConstruct
     open fun initialize() {
@@ -149,6 +157,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         if(problem.derivedParams != null) {
             initializeDerivedParamRules(problem.derivedParams)
+        }
+
+        if (config.arazzoStrategy != EMConfig.ArazzoStrategy.NONE) {
+            val arazzo = readWorkflowsArazzo()
+            workflowsArazzo.clear()
+            workflowsArazzo.addAll(arazzo)
+            workflowsArazzoById = arazzo.associateBy { it.workflowId }
         }
 
         updateDataPoolBasedOnSchema(actionCluster)
@@ -454,7 +469,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-
     private fun updateDataPoolBasedOnSchema(actionCluster: MutableMap<String, Action>){
 
         //pre-filled dictionary and LLM
@@ -489,6 +503,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             .forEach {
                 dataPool.addValue(it.name, it.getValueAsRawString())
             }
+    }
+
+    /**
+     * Parse Arazzo and looking for Workflows
+     */
+    private fun readWorkflowsArazzo(): List<Workflow> {
+        val arazzoText = ArazzoAccess.readFromDisk(config.arazzoExampleLocation)
+        return ArazzoParser.parse(arazzoText, schemaHolder.main.schemaParsed).workflows
     }
 
 }
