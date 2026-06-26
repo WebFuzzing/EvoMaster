@@ -28,6 +28,7 @@ import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -66,8 +67,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     @Inject
     private lateinit var config: EMConfig
 
+    /*
+        Held WEAKLY on purpose. This solver has @PreDestroy, so each instance is
+        retained by Governator's predestroy-monitor thread (a GC root) for the whole
+        lifetime of the JVM. A strong reference to Statistics would therefore pin
+        Statistics -> Archive -> every individual, leaking across every injector ever
+        created. That is harmless in production (a single injector, process exits) but
+        OOMs test suites that build thousands of injectors (RestIndividualTestBase,
+        SamplerVerifierTest). A weak reference lets that graph be collected once the
+        owning injector is otherwise unreachable, while still resolving fine during an
+        active search (Statistics is strongly held by SearchTimeController then).
+     */
+    private var statisticsRef: WeakReference<Statistics>? = null
+
     @Inject(optional = true)
-    private var statistics: Statistics? = null
+    fun setStatistics(statistics: Statistics) {
+        this.statisticsRef = WeakReference(statistics)
+    }
 
     @PostConstruct
     private fun postConstruct() {
@@ -107,7 +123,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        val stats: Statistics? = if (::config.isInitialized && config.collectDseStats) statistics else null
+        val stats: Statistics? = if (::config.isInitialized && config.collectDseStats) statisticsRef?.get() else null
 
         stats?.reportDseQuerySeen(sqlQuery.hashCode())
 

@@ -691,19 +691,6 @@ abstract class RestIndividualTestBase {
     @AfterEach
     fun defaultSetting(){
         employFakeDbHeuristicResult = true
-        /*
-            JUnit retains every parameterized test instance until the class finishes
-            (https://github.com/junit-team/junit5/issues/1445), and each instance's
-            injector creates an SMT solver. The solver has @PreDestroy, so Governator's
-            'predestroy-monitor' thread (a GC root) pins every solver instance for the
-            whole forked JVM. Since the solver holds a reference to Statistics, which
-            holds the Archive, every sampled/mutated individual stays reachable and
-            accumulates across the 450 invocations until a later test class OOMs.
-            Emptying the archive here breaks that retained chain at its heaviest link.
-         */
-        if (::archive.isInitialized) {
-            archive.clearPopulations()
-        }
     }
 
 }
