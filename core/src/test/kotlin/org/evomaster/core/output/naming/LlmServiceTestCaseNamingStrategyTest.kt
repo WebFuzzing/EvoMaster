@@ -32,6 +32,8 @@ import kotlin.jvm.java
 class LlmServiceTestCaseNamingStrategyTest {
 
     companion object {
+        // Setting a shorter name length just to force a condition in which the LLM response does not comply
+        // with the ask since the mock will return a longer name, we force the re-prompt and later the fallback name
         const val MAX_NAME_LENGTH = 40
     }
 
