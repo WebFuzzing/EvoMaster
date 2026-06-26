@@ -30,6 +30,9 @@ class CharacterRangeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
+    // '\u0000' is a placeholder for the unsatisfiable case (empty MCR with no valid ranges).
+    // This gene will never be randomized or mutated when isUnsatisfiable() is true, as it would be immutable.
+    // getValueAsPrintableString throws when isUnsatisfiable, so that value should be unreachable.
     var value : Char = if (isUnsatisfiable()) '\u0000' else validRanges[0].start
 
     /**
