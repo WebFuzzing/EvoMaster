@@ -30,9 +30,9 @@ public class SyntheticRest {
                 .collect(Collectors.toList());
 
         if(list.isEmpty()){
-            return "NOPE";
+            return "\"NOPE\"";
         } else {
-            return "OK";
+            return "\"OK\"";
         }
     }
 
