@@ -77,8 +77,9 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         sampler = injector.getInstance(ResourceSampler::class.java)
         mutator = injector.getInstance(ResourceRestMutator::class.java)
         ff = injector.getInstance(RestFitness::class.java)
-        rm = injector.getInstance(ResourceManageService::class.java)
-        cluster = rm.cluster
+        val rmInst = injector.getInstance(ResourceManageService::class.java)
+        rm = rmInst
+        cluster = rmInst.cluster
     }
 
     override fun getProblemModule(): Module = ResourceRestModule(false)
@@ -95,13 +96,13 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     }
 
     private fun sampleResourceCall(resNode: RestResourceNode? = null): RestResourceCalls {
-        val node = resNode?: randomness.choose(cluster.getCluster().values)
+        val node = resNode?: randomness.choose(cluster!!.getCluster().values)
         val sampleOption = randomness.nextInt(0, 3)
         return when (sampleOption) {
             0 -> node.sampleOneAction(verb = null, randomness)
-            1 -> node.sampleIndResourceCall(randomness, config.maxTestSize)
-            2 -> node.sampleAnyRestResourceCalls(randomness, config.maxTestSize)
-            3 -> node.sampleRestResourceCalls(randomness.choose(node.getTemplates().values).template, randomness, config.maxTestSize)
+            1 -> node.sampleIndResourceCall(randomness, config!!.maxTestSize)
+            2 -> node.sampleAnyRestResourceCalls(randomness, config!!.maxTestSize)
+            3 -> node.sampleRestResourceCalls(randomness.choose(node.getTemplates().values).template, randomness, config!!.maxTestSize)
             else -> throw IllegalStateException("not support")
         }
     }
@@ -110,13 +111,13 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         val sqlActions = mutableListOf<SqlAction>()
         val resoureCalls = mutableListOf<RestResourceCalls>()
         do {
-            val table = randomness.choose(cluster.getTableInfo().values)
+            val table = randomness.choose(cluster!!.getTableInfo().values)
             sqlActions.addAll(sampleDbAction(table))
         }while (sqlActions.size < dbSize)
 
 
         do {
-            val node = randomness.choose(cluster.getCluster().values)
+            val node = randomness.choose(cluster!!.getCluster().values)
             resoureCalls.add(sampleResourceCall(node))
         }while (resoureCalls.size < resourceSize)
         return RestIndividual(dbInitialization = sqlActions, resourceCalls = resoureCalls, sampleType = SampleType.RANDOM)
@@ -131,8 +132,8 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     fun testIndividualResourceManipulation(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
 
-        config.maxEvaluations = iteration
-        config.maxTestSize = 20
+        config!!.maxEvaluations = iteration
+        config!!.maxTestSize = 20
         (0 until iteration).forEach { _ ->
             val dbSize = randomness.nextInt(1, 15)
             val resourceSize = randomness.nextInt(2, 4)
@@ -311,6 +312,14 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             all values of genes which have the same name should be same
          */
         sameNameWithSameValue(mutated.individual)
+    }
+
+    override fun cleanService() {
+        clearField("sampler")
+        clearField("mutator")
+        clearField("ff")
+        clearField("rm")
+        clearField("cluster")
     }
 
     private fun sameNameWithSameValue(individual: RestIndividual){

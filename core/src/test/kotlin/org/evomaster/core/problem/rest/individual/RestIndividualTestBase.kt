@@ -65,9 +65,10 @@ import kotlin.math.max
 
 abstract class RestIndividualTestBase {
 
-    protected lateinit var config : EMConfig
-    protected lateinit var archive : Archive<RestIndividual>
-    protected lateinit var searchTimeController: SearchTimeController
+    protected var config: EMConfig? = null
+    protected var archive: Archive<RestIndividual>? = null
+    protected var searchTimeController: SearchTimeController? = null
+    private var currentInjector: LifecycleInjector? = null
 
     companion object {
         private lateinit var connection: Connection
@@ -169,6 +170,33 @@ abstract class RestIndividualTestBase {
         randomness.updateSeed(42)
     }
 
+    @AfterEach
+    fun tearDownInjector() {
+        currentInjector?.getLifecycleManager()?.close()
+        currentInjector = null
+        config = null
+        archive = null
+        searchTimeController = null
+        cleanService()
+    }
+
+    /**
+     * Null a private lateinit var field by name (declared on `this` subclass).
+     * Calling close() on the LifecycleInjector removes Governator's shutdown hook,
+     * but the test instance still holds @Inject fields transitively covering all
+     * singletons. Nulling them here lets the GC reclaim each injector's heap after
+     * the invocation, preventing accumulation across 90+ parameterized runs.
+     */
+    protected fun clearField(fieldName: String) {
+        try {
+            val f = this.javaClass.getDeclaredField(fieldName)
+            f.isAccessible = true
+            f.set(this, null)
+        } catch (_: NoSuchFieldException) {}
+    }
+
+    open fun cleanService() {}
+
     fun getConnection() : Connection = connection
 
     abstract fun initService(injector: Injector)
@@ -185,7 +213,7 @@ abstract class RestIndividualTestBase {
     @MethodSource("getBudgetAndNumOfResourceForSampler")
     fun testSampledIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
-        config.maxEvaluations = iteration
+        config!!.maxEvaluations = iteration
 
         (0 until iteration).forEach { i ->
             val ind = getSampler().sample()
@@ -213,8 +241,8 @@ abstract class RestIndividualTestBase {
     @MethodSource("getBudgetAndNumOfResourceForMutator")
     fun testMutatedIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
-        config.maxEvaluations = iteration
-        searchTimeController.startSearch()
+        config!!.maxEvaluations = iteration
+        searchTimeController!!.startSearch()
 
         val ind = getSampler().sample()
         var eval = getFitnessFunction().calculateCoverage(ind, modifiedSpec = null)
@@ -224,12 +252,12 @@ abstract class RestIndividualTestBase {
         do {
             val impact = eval?.impactInfo?.copy()
             val original = eval!!.copy()
-            val mutated = getMutator().mutateAndSave(1, eval, archive)
+            val mutated = getMutator().mutateAndSave(1, eval, archive!!)
             evaluated ++
             checkActionIndex(mutated.individual)
             extraMutatedIndividualCheck(evaluated, impact, original, mutated)
             eval = mutated
-        }while (searchTimeController.shouldContinueSearch())
+        }while (searchTimeController!!.shouldContinueSearch())
 
     }
 
@@ -292,9 +320,11 @@ abstract class RestIndividualTestBase {
             ControllerInfoDto()
         ))
 
-        val injector: Injector = LifecycleInjector.builder()
+        val lci = LifecycleInjector.builder()
             .withModules(modules)
-            .build().createInjector()
+            .build()
+        currentInjector = lci
+        val injector: Injector = lci.createInjector()
 
        // randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)
