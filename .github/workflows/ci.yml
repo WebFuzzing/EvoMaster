@@ -429,15 +429,21 @@ jobs:
       - name: Build with Maven
         run: |
           if [ "${{ matrix.profile }}" = "CoreTests" ]; then
-            # [bisect-diag] snapshot live-object class histogram of the surefire
-            # fork every 12s; the last snapshot before an OOM crash shows the top
-            # heap consumers. jcmd GC.class_histogram forces a full GC, so it only
-            # reports retained (live) objects -- exactly the leak candidates.
+            # [bisect-diag] append a live-object class histogram of the surefire
+            # fork every 12s, building a time-series so we can see which class
+            # GROWS toward the OOM. The fork is matched by its -Xmx4096m flag
+            # (unique to it; the maven process does not have it). jcmd
+            # GC.class_histogram forces a full GC, so it reports only retained
+            # (live) objects -- exactly the leak candidates.
+            echo "[bisect-diag] histogram monitor starting at $(date -u +%FT%TZ)" > /tmp/histo-core.txt
             ( while true; do
-                PID=$(pgrep -f ForkedBooter 2>/dev/null | head -1)
+                PID=$(pgrep -f 'Xmx4096m' 2>/dev/null | head -1)
                 if [ -n "$PID" ]; then
-                  { date -u +%FT%TZ; jcmd "$PID" GC.class_histogram 2>/dev/null | head -45; echo; } > /tmp/histo-core.txt.tmp 2>/dev/null \
-                    && mv /tmp/histo-core.txt.tmp /tmp/histo-core.txt
+                  {
+                    echo "===== $(date -u +%FT%TZ)  pid=$PID =====";
+                    jcmd "$PID" GC.class_histogram 2>/dev/null | head -42;
+                    echo;
+                  } >> /tmp/histo-core.txt
                 fi
                 sleep 12
               done ) &
