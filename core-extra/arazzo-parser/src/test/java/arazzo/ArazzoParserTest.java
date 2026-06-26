@@ -2,10 +2,9 @@ package arazzo;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
-import org.dataloader.impl.Assertions;
-import org.evomaster.arazzo.access.ArazzoAccess;
-import org.evomaster.arazzo.models.domain.ArazzoSpecifications;
-import org.evomaster.arazzo.parser.ArazzoParser;
+import com.webfuzzing.arazzo.access.ArazzoAccess;
+import com.webfuzzing.arazzo.models.domain.ArazzoSpecifications;
+import com.webfuzzing.arazzo.parser.ArazzoParser;
 import org.junit.Assert;
 import org.junit.Test;
 
