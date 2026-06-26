@@ -431,6 +431,16 @@ jobs:
           mvn -P default-build,${{ matrix.profile }} clean verify --fae
         env:
           CI_env: GithubAction
+      - name: Upload GC log (OOM diagnostics)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gc-log-${{ matrix.profile }}
+          path: |
+            /tmp/gc-core.log
+            core/target/surefire-reports/*.txt
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v6
