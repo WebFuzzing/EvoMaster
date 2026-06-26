@@ -29,6 +29,7 @@ import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -67,8 +68,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     @Inject
     private lateinit var config: EMConfig
 
-    @Inject
-    private lateinit var statistics: Statistics
+    /*
+        Held WEAKLY on purpose. This solver has @PreDestroy, so each instance is
+        retained by Governator's predestroy-monitor thread (a GC root) for the whole
+        lifetime of the JVM. A strong reference to Statistics would therefore pin
+        Statistics -> Archive -> every individual, leaking across every injector ever
+        created. That is harmless in production (a single injector, process exits) but
+        OOMs test suites that build thousands of injectors (RestIndividualTestBase,
+        SamplerVerifierTest). A weak reference lets that graph be collected once the
+        owning injector is otherwise unreachable, while still resolving fine during an
+        active search (Statistics is strongly held by SearchTimeController then).
+     */
+    private var statisticsRef: WeakReference<Statistics>? = null
+
+    @Inject(optional = true)
+    fun setStatistics(statistics: Statistics) {
+        this.statisticsRef = WeakReference(statistics)
+    }
 
     @PostConstruct
     private fun postConstruct() {
@@ -110,10 +126,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
         val collectStats = ::config.isInitialized && config.collectDseStats
+        val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
-        if (collectStats) {
-            statistics.reportDseQuerySeen(sqlQuery.hashCode())
-        }
+        stats?.reportDseQuerySeen(sqlQuery.hashCode())
 
         val cacheKey = Pair(sqlQuery, numberOfRows)
         val cached = z3ResultCache?.get(cacheKey)
@@ -128,7 +143,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("DSE: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            if (collectStats) statistics.reportDseParseFailure()
+            stats?.reportDseParseFailure()
             return emptyList()
         }
 
@@ -137,9 +152,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtLib = generator.generateSMT(queryStatement)
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
-        if (collectStats) {
-            statistics.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
-        }
+        stats?.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
 
         val fileName = storeToTmpFile(smtLib)
 
@@ -153,18 +166,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
         return when (z3Result.status) {
             Z3Result.Status.SAT -> {
-                if (collectStats) statistics.reportDseSat(z3TimeMs)
+                stats?.reportDseSat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
                 toSqlActionList(schemaDto, z3Result.model)
             }
             Z3Result.Status.UNSAT -> {
-                if (collectStats) statistics.reportDseUnsat(z3TimeMs)
+                stats?.reportDseUnsat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
                 LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
-                if (collectStats) statistics.reportDseError(z3TimeMs)
+                stats?.reportDseError(z3TimeMs)
                 // Errors are not cached — they may be transient Docker failures
                 emptyList()
             }
