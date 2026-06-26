@@ -33,10 +33,10 @@ public class TestabilityRest {
         List<String> list = Arrays.asList("Foo", "Bar");
 
         if(d.getYear() == 2019 && n == 42 && list.contains(setting)){
-            return "OK";
+            return "\"OK\"";
         }
 
-        return "ERROR";
+        return "\"ERROR\"";
     }
 
 }

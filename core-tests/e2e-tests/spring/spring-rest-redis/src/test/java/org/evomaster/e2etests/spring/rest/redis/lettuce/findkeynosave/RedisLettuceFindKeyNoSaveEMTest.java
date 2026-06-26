@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.rest.redis.lettuce.findkeynosave;
 
-import com.foo.spring.rest.redis.lettuce.findkeynosave.findkey.RedisLettuceFindKeyNoSaveController;
+import com.foo.spring.rest.redis.lettuce.findkeynosave.RedisLettuceFindKeyNoSaveController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;

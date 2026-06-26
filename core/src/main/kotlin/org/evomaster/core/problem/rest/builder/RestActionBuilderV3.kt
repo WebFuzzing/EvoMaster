@@ -47,6 +47,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
@@ -747,11 +748,37 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
-        val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
-        val name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+        val isJsonPatch = verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
 
-        var gene = getGene(name, obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        val name: String
+        var gene: Gene
+        if (isJsonPatch) {
+            /*
+                The body is a JSON Patch document (RFC 6902), not a regular object, so it is not built
+                from the media type schema. resolveResourceSchema returns the OpenAPI Schema of the resource
+                being patched, found by inspecting sibling operations on the same path (GET 2xx response,
+                else PUT/POST requestBody). We turn that schema into a gene via getGene so the patch
+                operations reference real fields/paths of the resource, and use it to seed the
+                JsonPatchDocumentGene. If no resource schema is found, the gene is still built with
+                resourceGene == null and emits generic, structurally valid operations.
+            */
+            name = "body"
+            val patchResourceSchema = JsonPatchSchemaResolver.resolveResourceSchema(
+                operation,
+                schemaHolder,
+                currentSchema,
+                messages
+            )
+            val resourceGene = patchResourceSchema?.let {
+                getGene(name, it, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages)
+            }
+            gene = JsonPatchDocumentGene(name, resourceGene)
+        } else {
+            // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
+            val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
+            name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            gene = getGene(name, obj.schema, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        }
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
