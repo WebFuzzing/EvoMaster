@@ -29,6 +29,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val LOCATION = "LOCATION"
         const val ALLOW = "ALLOW"
         const val RESPONSE_TIME_MS = "RESPONSE_TIME_MS"
+        const val HEADER_PREFIX = "HTTP_HEADER_"
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
         const val VULNERABLE_SQLI = "VULNERABLE_SQLI"
@@ -96,6 +97,15 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getLocation(): String? = getResultValue(LOCATION)
+
+    fun setHeaders(headers: Map<String, List<String>>?) {
+        headers?.forEach {
+            //RFC specs says to concatenate duplicated entries with a ",", but for Set-Cookie
+            addResultValue("$HEADER_PREFIX${it.key.lowercase()}", it.value.joinToString(","))
+        }
+    }
+
+    fun getHeader(name: String): String? = getResultValue("$HEADER_PREFIX${name.lowercase()}")
 
     fun setAllow(allow: String?){
         if(allow != null) {

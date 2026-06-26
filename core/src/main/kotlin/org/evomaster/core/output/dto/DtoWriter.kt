@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -118,6 +119,11 @@ class DtoWriter(
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
             gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
+            // TODO: a JsonPatchDocumentGene is currently skipped from DTO collection. Once we decide
+            //  how a JSON Patch document should be rendered when a test case is written (it is not a
+            //  regular object/array DTO but an RFC 6902 array of operations), this should build and
+            //  emit the corresponding DTO instead of returning.
+            gene is JsonPatchDocumentGene -> return
             isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")

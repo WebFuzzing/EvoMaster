@@ -23,6 +23,7 @@ class LlmServiceTestCaseNamingStrategy(
 ) : NumberedTestCaseNamingStrategy(solution) {
 
     private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+    private val fallbackLlmTestCaseName = "llmInteractionFailed_reviewName"
     private val generatedNames = mutableSetOf<String>()
 
     private val remainingNameChars = maxTestCaseNameLength - namePrefixChars()
@@ -38,8 +39,14 @@ class LlmServiceTestCaseNamingStrategy(
 
     private fun generateLlmName(test: TestCase): String {
         var newName = sanitizeName(getNewName(test))
-        while (!isValidSuffix(newName)) {
+        if (!isValidSuffix(newName)) {
             newName = sanitizeName(promptReIterateName())
+            if (!isValidSuffix(newName)) {
+                // If prompting the LLM to re-iterate the naming returned an invalid name again,
+                // then we fall back to a default name. Since this is a special case that should not happen,
+                // this name is not added to the list of names the LLM is provided to avoid repetition
+                return fallbackLlmTestCaseName
+            }
         }
         generatedNames.add(newName)
         return newName

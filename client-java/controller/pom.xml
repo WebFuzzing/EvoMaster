@@ -123,6 +123,10 @@
             <artifactId>jsqlparser</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>
@@ -346,10 +350,20 @@
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>shaded.org.antlr</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
             </plugin>
 
         </plugins>
