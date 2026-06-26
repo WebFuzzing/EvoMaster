@@ -27,7 +27,7 @@ public class StringMinLengthRest {
             @PathVariable("s") @Valid @Size(min = 20) String s
     ){
 
-        return "OK";
+        return "\"OK\"";
     }
 
 
