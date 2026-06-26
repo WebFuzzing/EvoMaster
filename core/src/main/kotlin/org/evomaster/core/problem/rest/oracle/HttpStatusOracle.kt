@@ -24,15 +24,15 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
  * no-201-if-get
  * no-201-if-patch
  * no-204-if-content
- * no-304-if-no-get-or-head  (TODO)
- * no-401-if-no-www-authenticate (TODO)
- * no-405-if-no-allow (TODO)
+ * no-304-if-no-get-or-head
+ * no-401-if-no-www-authenticate
+ * no-405-if-no-allow
  * no-413-if-no-payload
  * no-415-if-no-payload
  * no-401-if-no-auth (schema)
  * no-403-if-no-401 (schema)
  * has-406-if-accept (schema)
- * no-501-if-implemented (TODO)
+ * no-501-if-implemented
  *
  *
  * IMPORTANT: in contrast to what done in [HttpSemanticsOracle], here there is no need to construct any test case
