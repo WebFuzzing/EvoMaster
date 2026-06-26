@@ -1707,4 +1707,40 @@ public void test() throws Exception {
         assertTrue(output.contains("%E8%81%9A"),
             "Non-ASCII character must be percent-encoded as %E8%81%9A in generated test output, got:\n$output")
     }
+
+    @Test
+    fun testStringWithDollarKotlin() {
+        // A StringGene value containing '$' must be escaped as '\$' in generated Kotlin source. Currently,
+        // SqlWriter.getPrintableValue applies StringEscapeUtils.escapeJava() after GeneUtils.applyEscapes(),
+        // which doubles the backslash and leaves '$' bare, causing a Kotlin string template compile error.
+        val aColumn = Column("name", VARCHAR, 10, databaseType = DatabaseType.H2)
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+        val gene = StringGene("name", "v\$t")
+        val insertAction = SqlAction(aTable, setOf(aColumn), 0L, mutableListOf(gene))
+
+        val (_, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertAction))
+
+        val format = OutputFormat.KOTLIN_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), baseUrlOfSut)
+
+        val expectedLines = Lines(format).apply {
+            add("@Test")
+            add("fun test()  {")
+            indent()
+            add("val insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"name\", \"\\\"v\\\$t\\\"\")")
+            deindent()
+            add(".dtos()")
+            deindent()
+            add("val insertionsresult = controller.execInsertionsIntoDatabase(insertions)")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
 }
