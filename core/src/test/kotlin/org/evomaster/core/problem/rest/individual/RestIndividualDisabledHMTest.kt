@@ -45,9 +45,5 @@ class RestIndividualDisabledHMTest : RestIndividualTestBase(){
 
     override fun getFitnessFunction(): AbstractRestFitness = ff
 
-    override fun cleanService() {
-        clearField("sampler")
-        clearField("mutator")
-        clearField("ff")
-    }
+
 }

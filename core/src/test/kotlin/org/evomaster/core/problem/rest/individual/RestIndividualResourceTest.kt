@@ -46,13 +46,6 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
 
     }
 
-    override fun cleanService() {
-        clearField("sampler")
-        clearField("mutator")
-        clearField("rm")
-        clearField("ff")
-    }
-
     override fun extraSampledIndividualCheck(index: Int, individual: RestIndividual) {
         assertTrue(individual.isInitialized())
     }
@@ -72,7 +65,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
     private fun checkTracking(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>) {
         mutated.tracking.apply {
             assertNotNull(this)
-            assertEquals(min(evaluated, config!!.maxLengthOfTraces), this!!.history.size)
+            assertEquals(min(evaluated, config.maxLengthOfTraces), this!!.history.size)
             assertNotNull(this.history.last().evaluatedResult)
             // with faked remote controller, it should always return better results
             assertEquals(EvaluatedMutation.BETTER_THAN, this.history.last().evaluatedResult)
@@ -178,7 +171,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
             }
         }
 
-        if (searchTimeController!!.evaluatedActions > 20 || searchTimeController!!.percentageUsedBudget() >= 0.1) {
+        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0.1) {
             /*
                 newly additional dbaction would affect the impact collections
                 then disable after 10% used budget or after 20 rest action evaluations

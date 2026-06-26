@@ -89,7 +89,7 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
                 .asEagerSingleton()
 
         bind(SMTLibZ3DbConstraintSolver::class.java)
-            .`in`(Singleton::class.java)
+            .asEagerSingleton()
 
         bind(ExecutionStats::class.java)
             .asEagerSingleton()

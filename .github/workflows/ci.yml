@@ -427,47 +427,10 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: |
-          if [ "${{ matrix.profile }}" = "CoreTests" ]; then
-            # [bisect-diag] append a live-object class histogram of the surefire
-            # fork every 12s, building a time-series so we can see which class
-            # GROWS toward the OOM. The fork is matched by its -Xmx4096m flag
-            # (unique to it; the maven process does not have it). jcmd
-            # GC.class_histogram forces a full GC, so it reports only retained
-            # (live) objects -- exactly the leak candidates.
-            echo "[bisect-diag] histogram monitor starting at $(date -u +%FT%TZ)" > /tmp/histo-core.txt
-            ( while true; do
-                PID=$(pgrep -f 'Xmx4096m' 2>/dev/null | head -1)
-                if [ -n "$PID" ]; then
-                  {
-                    echo "===== $(date -u +%FT%TZ)  pid=$PID =====";
-                    jcmd "$PID" GC.class_histogram 2>/dev/null | head -42;
-                    echo;
-                  } >> /tmp/histo-core.txt
-                fi
-                sleep 12
-              done ) &
-            MON=$!
-            mvn -P default-build,${{ matrix.profile }} clean verify --fae
-            RC=$?
-            kill "$MON" 2>/dev/null || true
-            exit $RC
-          else
-            mvn -P default-build,${{ matrix.profile }} clean verify --fae
-          fi
+        run:
+          mvn -P default-build,${{ matrix.profile }} clean verify --fae
         env:
           CI_env: GithubAction
-      - name: Upload GC log (OOM diagnostics)
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: gc-log-${{ matrix.profile }}
-          path: |
-            /tmp/gc-core.log
-            /tmp/histo-core.txt
-            core/target/surefire-reports/*.txt
-          if-no-files-found: ignore
-          retention-days: 3
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v6

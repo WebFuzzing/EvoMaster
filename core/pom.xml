@@ -474,15 +474,6 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
             </plugin>
-
-            <!-- [bisect-diag] GC log to diagnose OOM in GeneRandomizedTest -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens} -Xlog:gc*:file=/tmp/gc-core.log:time,uptime:filecount=1,filesize=50m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heap-core.hprof</argLine>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
