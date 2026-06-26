@@ -427,8 +427,28 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run:
-          mvn -P default-build,${{ matrix.profile }} clean verify --fae
+        run: |
+          if [ "${{ matrix.profile }}" = "CoreTests" ]; then
+            # [bisect-diag] snapshot live-object class histogram of the surefire
+            # fork every 12s; the last snapshot before an OOM crash shows the top
+            # heap consumers. jcmd GC.class_histogram forces a full GC, so it only
+            # reports retained (live) objects -- exactly the leak candidates.
+            ( while true; do
+                PID=$(pgrep -f ForkedBooter 2>/dev/null | head -1)
+                if [ -n "$PID" ]; then
+                  { date -u +%FT%TZ; jcmd "$PID" GC.class_histogram 2>/dev/null | head -45; echo; } > /tmp/histo-core.txt.tmp 2>/dev/null \
+                    && mv /tmp/histo-core.txt.tmp /tmp/histo-core.txt
+                fi
+                sleep 12
+              done ) &
+            MON=$!
+            mvn -P default-build,${{ matrix.profile }} clean verify --fae
+            RC=$?
+            kill "$MON" 2>/dev/null || true
+            exit $RC
+          else
+            mvn -P default-build,${{ matrix.profile }} clean verify --fae
+          fi
         env:
           CI_env: GithubAction
       - name: Upload GC log (OOM diagnostics)
@@ -438,6 +458,7 @@ jobs:
           name: gc-log-${{ matrix.profile }}
           path: |
             /tmp/gc-core.log
+            /tmp/histo-core.txt
             core/target/surefire-reports/*.txt
           if-no-files-found: ignore
           retention-days: 3
