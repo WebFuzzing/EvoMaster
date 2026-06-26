@@ -128,13 +128,15 @@ class DtoWriter(
         }
     }
 
-    // Registers the shared JsonPatchOperation DTO and collects nested DTOs for object/array values.
+    /**
+     * Registers the shared JsonPatchOperation DTO and collects nested DTOs for object/array values.
+     */
     private fun calculateDtoFromJsonPatch(gene: JsonPatchDocumentGene) {
         val dtoName = GeneToDto.JSON_PATCH_OPERATION_DTO
         val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(it) }
-        dtoClass.addField(GeneToDto.FIELD_OP, DtoField(GeneToDto.FIELD_OP, "String"))
-        dtoClass.addField(GeneToDto.FIELD_PATH, DtoField(GeneToDto.FIELD_PATH, "String"))
-        dtoClass.addField(GeneToDto.FIELD_FROM, DtoField(GeneToDto.FIELD_FROM, "String"))
+        dtoClass.addField(GeneToDto.FIELD_OP, DtoField(GeneToDto.FIELD_OP, GeneToDto.TYPE_STRING))
+        dtoClass.addField(GeneToDto.FIELD_PATH, DtoField(GeneToDto.FIELD_PATH, GeneToDto.TYPE_STRING))
+        dtoClass.addField(GeneToDto.FIELD_FROM, DtoField(GeneToDto.FIELD_FROM, GeneToDto.TYPE_STRING))
         dtoClass.addField(GeneToDto.FIELD_VALUE, DtoField(GeneToDto.FIELD_VALUE, anyType()))
         dtoCollector[dtoName] = dtoClass
 
@@ -147,7 +149,7 @@ class DtoWriter(
     }
 
     private fun anyType(): String {
-        return if (outputFormat.isJava()) "Object" else "Any"
+        return if (outputFormat.isJava()) GeneToDto.TYPE_JAVA_OBJECT else GeneToDto.TYPE_KOTLIN_ANY
     }
 
     private fun calculateDtoFromFixedMapGene(gene: FixedMapGene<*, *>, actionName: String) {
