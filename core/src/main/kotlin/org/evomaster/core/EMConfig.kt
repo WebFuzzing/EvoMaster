@@ -1927,6 +1927,14 @@ class EMConfig {
     @DependsOnTrueFor("generateSqlDataWithDSE")
     var collectDseStats = false
 
+    @Experimental
+    @Cfg("Measure the correctness of DSE-generated SQL inserts by computing the heuristic " +
+            "distance between the original failing WHERE query and the generated INSERT data. " +
+            "Distance=0 means the insert satisfies the WHERE; distance>0 means it does not. " +
+            "Only meaningful when generateSqlDataWithDSE=true.")
+    @DependsOnTrueFor("generateSqlDataWithDSE")
+    var measureDseCorrectness = false
+
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true

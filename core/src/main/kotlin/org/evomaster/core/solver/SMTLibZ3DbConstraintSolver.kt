@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.insert.Insert
 import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -12,10 +13,17 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.client.java.sql.DataRow
+import org.evomaster.client.java.sql.QueryResult
+import org.evomaster.client.java.sql.QueryResultSet
+import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator
+import org.evomaster.client.java.sql.heuristic.TableColumnResolver
+import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -58,6 +66,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    // Schema is assumed stable within a single run, so only query + row count form the key.
     // Null until DSE is enabled in postConstruct — avoids allocating the map in runs where DSE is off.
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
@@ -253,7 +263,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                             )
                             ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                         } else {
-                            IntegerGene(dbColumnName, columnValue.value.toInt())
+                            LongGene(dbColumnName, columnValue.value.toLong())
                         }
                     }
                     is RealValue -> {
@@ -453,4 +463,60 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     private fun leadingBarResourcesFolder() = if (resourcesFolder.endsWith("/")) resourcesFolder else "$resourcesFolder/"
+
+    private fun computeCorrectnessDistance(
+        sqlQuery: String,
+        schemaDto: DbInfoDto,
+        sqlActions: List<SqlAction>
+    ): SqlDistanceWithMetrics {
+        val queryResultSet = toQueryResultSet(schemaDto, sqlActions)
+        val calculator = SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder()
+            .withTableColumnResolver(TableColumnResolver(schemaDto))
+            .withSourceQueryResultSet(queryResultSet)
+            .build()
+        return calculator.computeDistance(sqlQuery)
+    }
+
+    private fun toQueryResultSet(schemaDto: DbInfoDto, sqlActions: List<SqlAction>): QueryResultSet {
+        val queryResultSet = QueryResultSet()
+        val byTable = sqlActions.groupBy { it.table.id.name }
+        for ((tableName, actions) in byTable) {
+            val columnNames = actions.first().seeTopGenes().map { it.name }
+            val queryResult = QueryResult(columnNames, tableName)
+            for (action in actions) {
+                val values: List<Any?> = action.seeTopGenes().map { gene -> extractGeneValue(gene) }
+                queryResult.addRow(DataRow(tableName, columnNames, values))
+            }
+            queryResultSet.addQueryResult(queryResult)
+        }
+        // Tables not present in Z3's SAT model (e.g. the optional side of a LEFT OUTER JOIN)
+        // still need an (empty) QueryResult, otherwise SqlHeuristicsCalculator NPEs when it
+        // looks them up unconditionally while walking the FROM/JOIN clause.
+        for (table in schemaDto.tables) {
+            if (table.id.name !in byTable.keys) {
+                val columnNames = table.columns.map { it.name }
+                queryResultSet.addQueryResult(QueryResult(columnNames, table.id.name))
+            }
+        }
+        return queryResultSet
+    }
+
+    private fun extractGeneValue(gene: Gene): Any? {
+        val inner = if (gene is SqlPrimaryKeyGene) gene.gene else gene
+        return when (inner) {
+            is IntegerGene             -> inner.value
+            is LongGene                -> inner.value
+            is StringGene              -> inner.value
+            is DoubleGene              -> inner.value
+            is BooleanGene             -> inner.value
+            is ImmutableDataHolderGene -> inner.value
+            else -> {
+                LoggingUtil.getInfoLogger().warn(
+                    "DSE: extractGeneValue() fallback to raw string for unhandled gene type " +
+                            "${inner.javaClass.name} (outer: ${gene.javaClass.name}, name: ${gene.name})"
+                )
+                inner.getValueAsRawString()
+            }
+        }
+    }
 }

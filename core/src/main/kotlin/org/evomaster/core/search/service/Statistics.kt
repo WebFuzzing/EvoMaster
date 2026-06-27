@@ -98,6 +98,13 @@ class Statistics : SearchListener {
     private val dseSeenQueryHashes = mutableSetOf<Int>()
     private var dseUniqueQueriesCount = 0
 
+    // DSE correctness distance statistics (only when measureDseCorrectness=true)
+    private var dseCorrectnessCheckCount = 0
+    private var dseCorrectnessZeroDistanceCount = 0
+    private var dseCorrectnessNonZeroDistanceCount = 0
+    private val dseCorrectnessAvgDistance = IncrementalAverage()
+    private var dseCorrectnessEvalFailureCount = 0
+
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
     private var mongoHeuristicEvaluationFailureCount = 0
@@ -267,6 +274,22 @@ class Statistics : SearchListener {
         if (dseSeenQueryHashes.add(queryHash)) {
             dseUniqueQueriesCount++
         }
+    }
+
+    fun reportDseCorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
+        dseCorrectnessCheckCount++
+        if (evaluationFailure) {
+            // sqlDistance is a sentinel value (e.g. Double.MAX_VALUE) in this case,
+            // and must not pollute the average of real distances
+            dseCorrectnessEvalFailureCount++
+            return
+        }
+        if (sqlDistance == 0.0) {
+            dseCorrectnessZeroDistanceCount++
+        } else {
+            dseCorrectnessNonZeroDistanceCount++
+        }
+        dseCorrectnessAvgDistance.addValue(sqlDistance)
     }
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
@@ -439,6 +462,15 @@ class Statistics : SearchListener {
                 add(Pair("dseZ3TotalMs", "$dseZ3TimeMs"))
                 add(Pair("dseSmtlibGenTotalMs", "$dseSmtlibGenTimeMs"))
                 add(Pair("dseAvgSmtlibSizeBytes", "%.1f".format(dseSmtlibSizeBytes.mean)))
+            }
+
+            // correctness distance stats (only emitted when measureDseCorrectness=true)
+            if (config.measureDseCorrectness) {
+                add(Pair("dseCorrectnessChecks",      "$dseCorrectnessCheckCount"))
+                add(Pair("dseCorrectnessZeroDistance", "$dseCorrectnessZeroDistanceCount"))
+                add(Pair("dseCorrectnessNonZero",      "$dseCorrectnessNonZeroDistanceCount"))
+                add(Pair("dseCorrectnessAvgDist",      "%.4f".format(dseCorrectnessAvgDistance.mean)))
+                add(Pair("dseCorrectnessEvalFailures", "$dseCorrectnessEvalFailureCount"))
             }
 
             for(phase in ExecutionPhaseController.Phase.entries){

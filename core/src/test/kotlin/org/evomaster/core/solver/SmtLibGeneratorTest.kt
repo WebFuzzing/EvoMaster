@@ -555,4 +555,79 @@ class SmtLibGeneratorTest {
             conn.close()
         }
     }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun compositePkEmitsDisjunctiveDistinctness() {
+        val conn = DriverManager.getConnection("jdbc:h2:mem:composite_pk_test", "sa", "")
+        try {
+            SqlScriptRunner.execCommand(
+                conn,
+                "CREATE TABLE assignments(employee_id int not null, project_id int not null, PRIMARY KEY (employee_id, project_id));"
+            )
+            val schemaDto = DbInfoExtractor.extract(conn)
+            val compositePkGenerator = SmtLibGenerator(schemaDto, 2)
+
+            val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM assignments")
+            val response: SMTLib = compositePkGenerator.generateSMT(selectStatement)
+
+            val expected = SMTLib()
+            expected.addNode(
+                DeclareDatatypeSMTNode(
+                    "AssignmentsRow", ImmutableList.of(
+                        DeclareConstSMTNode("EMPLOYEE_ID", "Int"),
+                        DeclareConstSMTNode("PROJECT_ID", "Int")
+                    )
+                )
+            )
+            expected.addNode(DeclareConstSMTNode("assignments1", "AssignmentsRow"))
+            expected.addNode(DeclareConstSMTNode("assignments2", "AssignmentsRow"))
+            // Composite PK: at least one column must differ between row pairs — not each column individually.
+            expected.addNode(AssertSMTNode(OrAssertion(listOf(
+                DistinctAssertion(listOf("(EMPLOYEE_ID assignments1)", "(EMPLOYEE_ID assignments2)")),
+                DistinctAssertion(listOf("(PROJECT_ID assignments1)", "(PROJECT_ID assignments2)"))
+            ))))
+            expected.addNode(CheckSatSMTNode())
+            expected.addNode(GetValueSMTNode("assignments1"))
+            expected.addNode(GetValueSMTNode("assignments2"))
+
+            assertEquals(expected, response)
+        } finally {
+            conn.close()
+        }
+    }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun deleteFromUsersWithWhereClause() {
+        val deleteStatement: Statement = CCJSqlParserUtil.parse("DELETE FROM users WHERE age > 30")
+
+        val response: SMTLib = generator.generateSMT(deleteStatement)
+
+        val expected = tableConstraints
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users2)", "30")))
+        expected.addNode(CheckSatSMTNode())
+        expected.addNode(GetValueSMTNode("users1"))
+        expected.addNode(GetValueSMTNode("users2"))
+
+        assertEquals(expected, response)
+    }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun updateUsersWithWhereClause() {
+        val updateStatement: Statement = CCJSqlParserUtil.parse("UPDATE users SET points = 5 WHERE age > 30")
+
+        val response: SMTLib = generator.generateSMT(updateStatement)
+
+        val expected = tableConstraints
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users2)", "30")))
+        expected.addNode(CheckSatSMTNode())
+        expected.addNode(GetValueSMTNode("users1"))
+        expected.addNode(GetValueSMTNode("users2"))
+
+        assertEquals(expected, response)
+    }
 }
