@@ -1377,22 +1377,29 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             if (a.verb != HttpVerb.OPTIONS) continue
 
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            // The Allow header is not mandatory in an OPTIONS response
+            // (see https://httpwg.org/specs/rfc9110.html#OPTIONS), so if it is
+            // missing we cannot conclude anything, ie it is not a fault.
             val allowed = r.getAllowedVerbs() ?: continue
 
             // listed in Allow but not declared in the schema
-            val extra = allowed.any {
+            val extra = allowed.filter {
                 it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
-            }
+            }.sorted()
             // declared in the schema but not listed in Allow
-            val missing = HttpVerb.values().any {
+            val missing = HttpVerb.values().filter {
                 it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && callGraphService.isDeclared(it, a.path) && it !in allowed
             }
-            if (!extra && !missing) continue
+            if (extra.isEmpty() && missing.isEmpty()) continue
 
             val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
             val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
             fv.updateTarget(scenarioId, 1.0, index)
-            r.addFault(DetectedFault(category, a.getName(), null))
+            val localMessage = listOfNotNull(
+                extra.takeIf { it.isNotEmpty() }?.let { "extra verbs: $it" },
+                missing.takeIf { it.isNotEmpty() }?.let { "missing verbs: $it" }
+            ).joinToString("; ")
+            r.addFault(DetectedFault(category, a.getName(), null, localMessage))
         }
     }
 
