@@ -22,7 +22,7 @@ public class ParameterReusableDeserializer extends JsonDeserializer<ParameterReu
     public ParameterReusable deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        if (node.has("reference")) {
+        if (node.has(Reusable.REFERENCE)) {
             Reusable reusable = jsonParser.getCodec().treeToValue(node, Reusable.class);
             return new ParameterReusable.ReusableObj(reusable);
         }

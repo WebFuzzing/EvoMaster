@@ -5,6 +5,9 @@ package com.webfuzzing.arazzo.models.domain;
  * A simple object to allow referencing of objects contained within the {@link Components}
  */
 public class Reusable {
+
+    public static final String REFERENCE = "reference";
+
     private String reference;
     private String value;
 
