@@ -221,7 +221,57 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testFlags(){
+        checkSameAsJava("""[(?iu)(?sd:x)]""")
+        checkCanSample("""[(?iu)(?sd:x)]""", listOf("(", ")", "?", "i", "u", "s", "d", ":", "x"), 1000)
+        checkSameAsJava("""(?i:)""")
+        checkSameAsJava("""(?i:a.*[abc]+\w{1,3})""")
+        checkCanSample("""(?i:a)(?i:A)""", listOf("aa", "aA", "Aa", "AA"), 100)
+        checkSameAsJava("""(?i:\u00C2)""")
+        checkSameAsJava("^((?i)@.+)$")
+        checkSameAsJava("""(?iu:[\u03A1\u00C2]*)""")
+        checkCanSample("""(?iu:\u03A1\u00C2)""", listOf("\u03a1\u00c2", "\u03a1\u00e2", "\u03c1\u00c2", "\u03c1\u00e2"), 100)
+        checkSameAsJava("^((?iu)@.+)$")
+        checkSameAsJava("^(?iu)")
+        checkSameAsJava("(?iu)")
+    }
+
+    @Test
+    fun testBackreferences(){
+        checkSameAsJava("""(aaa)(?:bbb)\1""")
+        checkSameAsJava("""(a|b|c)\1\1""")
+        checkSameAsJava("""(?<randomName>a|b|c)\1\k<randomName>""")
+        checkSameAsJava("""<>[(?<notAName>abc)]""")
+        checkCanSample("""[(?<notAName>abc)]""", "N", 100)
+        checkSameAsJava("""((A)(B(C)))\1\2\3\4""")
+        checkSameAsJava("""(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\10\11\12\120\120{3}""")
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
+    }
+
+    @Test
+    fun testCharClassIntersectionSubtractionAndNesting(){
+        checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
+        checkSameAsJava("[a&&a][a&&a&&a]")
+        checkSameAsJava("[a-z&&[aeiou]]")
+        checkSameAsJava("[a-z&&[^aeiou]]")
+        checkSameAsJava("[a-z&&[a-p]&&[f-z]]")
+        checkSameAsJava("[ac-e&&[a-d]]")
+        checkSameAsJava("[\\w&&[a-z]]")
+        checkSameAsJava("[a-z&&[b-y]]")
+        checkSameAsJava("[a-z0-9&&[A-Z0-9]&&[2B4C]]")
+        checkSameAsJava("[[a-c][x-z]&&[b-y]]")
+        checkSameAsJava("[a-c&&[b-d]e-g]")
+        checkSameAsJava("[^a-z&&[^aeiou]]")
+        checkSameAsJava("[\\s&&[^\\n]]")
+        checkSameAsJava("[a-c&&[c-e]]")
+        checkSameAsJava("[a-z&&[a-z]]")
+        checkSameAsJava("[a-ce-g&&[b-f]]")
+        checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
+        checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
+        checkSameAsJava("&&")
     }
 }

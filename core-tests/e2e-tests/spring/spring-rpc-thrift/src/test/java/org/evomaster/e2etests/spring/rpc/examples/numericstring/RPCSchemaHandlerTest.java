@@ -25,6 +25,7 @@ public class RPCSchemaHandlerTest extends NumericStringTestBase{
     public void test(){
 
         List<String> args =  new ArrayList<>(Arrays.asList(
+                "--blackBox", "false",
                 "--createTests", "false",
                 "--seed", "42",
                 "--showProgress", "false",

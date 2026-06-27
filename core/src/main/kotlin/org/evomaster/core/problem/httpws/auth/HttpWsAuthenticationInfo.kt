@@ -81,7 +81,7 @@ open class HttpWsAuthenticationInfo(
      */
     fun excludeAuthCheck(action: Action) : Boolean{
         if (action is RestCallAction && endpointCallLogin != null){
-            return action.getName() == "POST:${endpointCallLogin.endpoint}"
+            return action.getName() == "POST:${endpointCallLogin.call.endpoint}"
         }
         return false
     }

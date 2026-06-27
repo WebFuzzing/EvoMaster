@@ -10,8 +10,8 @@ import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
-import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
@@ -22,6 +22,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.sql.schema.TableId
@@ -59,7 +60,7 @@ class TestSuiteWriter {
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
-        private const val baseUrlOfSut = "baseUrlOfSut"
+        const val baseUrlOfSut = "baseUrlOfSut"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
@@ -93,6 +94,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
+
+    @Inject
+    private lateinit var llmService: LlmService
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -136,8 +140,7 @@ class TestSuiteWriter {
     ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
-        val testSuiteOrganizer = TestSuiteOrganizer()
-        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
+        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -152,19 +155,7 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        //catch any sorting problems (see NPE is SortingHelper on Trello)
-        val tests = try {
-            // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
-        } catch (ex: Exception) {
-            log.warn(
-                "A failure has occurred with the test sorting. Reverting to default settings. \n"
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-            )
-            // fallback to numbered naming strategy upon failure
-            NumberedTestCaseNamingStrategy(solution).getTestCases()
-        }
+        val tests = testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -190,10 +181,16 @@ class TestSuiteWriter {
                 null
             } else {
                 lines.addEmpty(2)
+
                 val start = lines.nextLineNumber()
                 lines.add(testLines)
                 val end = lines.nextLineNumber() - 1
-                TestCaseCode(test.name,test.test,testLines.toString(), start, end)
+
+                val examples = test.test.individual.getAllActiveUsedExamples()
+                    .filterIsInstance<UserExamplesGene>()
+                    .mapNotNull { it.getValueName() }
+                    .toSet()
+                TestCaseCode(test.name,test.test,testLines.toString(), start, end, examples)
             }
         }
 
@@ -532,6 +529,7 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
+            lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()

@@ -12,20 +12,26 @@ public class RedisFailedCommand {
     public String command;
 
     /**
-     * Command type. Corresponds to a RedisCommandType dataType.
-     */
-    public String type;
-
-    /**
      * Key involved. Could be null if the command does not have a key in the arguments. For example: KEYS (pattern).
      */
     public String key;
 
+    /**
+     * Pattern involved. It'd only apply to commands with pattern like KEYS.
+     */
+    public String pattern;
+
+    /**
+     * Field involved. It'd only apply to hash commands with a field like HGET.
+     */
+    public String field;
+
     public RedisFailedCommand() {}
 
-    public RedisFailedCommand(String command, String key, String type) {
+    public RedisFailedCommand(String command, String key, String pattern, String field) {
         this.command = command;
         this.key = key;
-        this.type = type;
+        this.pattern = pattern;
+        this.field = field;
     }
 }

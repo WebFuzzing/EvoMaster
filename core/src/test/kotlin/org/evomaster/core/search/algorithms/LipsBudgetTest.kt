@@ -1,12 +1,13 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.SearchTestBase
 import org.evomaster.core.search.service.time.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-class LipsBudgetTest {
+class LipsBudgetTest : SearchTestBase(){
 
     @Test
     fun computePerTargetBudget_Actions_FairShare() {

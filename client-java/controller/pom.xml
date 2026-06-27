@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>5.2.1-SNAPSHOT</version>
+        <version>6.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-controller</artifactId>
@@ -121,6 +121,10 @@
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -346,10 +350,20 @@
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>shaded.org.antlr</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
             </plugin>
 
         </plugins>

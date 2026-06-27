@@ -12,8 +12,18 @@ _EvoMaster_ is composed of two main components:
 
 ## Core Tool
 
-The latest release of the `evomaster.jar` executable  can be downloaded from GitHub
- on the [releases page](https://github.com/WebFuzzing/EvoMaster/releases).
+The recommended way to install EvoMaster is via PyPi with:
+
+`pip install evomaster`
+
+which will then allow you to run it with:
+
+`evomaster <args>`
+
+On the first run, it will download a suitable JDK and the latest release of `evomaster.jar`. 
+The python command is then just a wrapper that run those, [see documentation on PyPi](https://pypi.org/project/evomaster/).
+
+The latest release of the `evomaster.jar` executable  can also be downloaded directly from GitHub on the [releases page](https://github.com/WebFuzzing/EvoMaster/releases).
 Alternatively, it can be built from [source code](./build.md).
 
 Note: it does not matter where you download the jar file (e.g., your home folder, or the folder
@@ -62,6 +72,9 @@ See for example instructions for Mac Sequoia:
 
 ![](img/mac_tax.png)
 
+Unfortunately,  recent versions of Windows/Mac might still block the installation without providing any workaround, even for admin-rights users, especially on corporate machines (as it was reported by some users). 
+As such, those installers should be considered deprecated.
+I.e., use `pip` or download the jar and a JDK manually.  
 
 ## Driver Library
 

@@ -54,6 +54,7 @@ public class PrintSnapshotsEMTest extends SpringTestBase {
     @Override
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
         return new ArrayList<>(Arrays.asList(
+                "--blackBox", "false",
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",

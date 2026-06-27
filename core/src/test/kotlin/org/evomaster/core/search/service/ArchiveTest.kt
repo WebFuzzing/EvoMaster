@@ -26,7 +26,7 @@ class ArchiveTest{
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(OneMaxModule(), BaseModule())
+                .withModules(OneMaxModule(), BaseModule(arrayOf("--blackBox","false")))
                 .build().createInjector()
 
 

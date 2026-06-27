@@ -29,6 +29,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
@@ -127,6 +128,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
             val primaryGene = bodyParam.primaryGene()
+            if (primaryGene.getWrappedGene(JsonPatchDocumentGene::class.java) != null) {
+                return ""
+            }
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
             if (choiceGene != null) {
@@ -869,6 +873,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
             }
             appendBodyArgument(call)
+        lines.append(", verify=False")
         }
     }
 

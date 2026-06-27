@@ -59,6 +59,16 @@ def replaceInBBE2E():
     replacement = '        <version>'+version+'</version><!--MARKER-->\n'
     replace("core-tests/e2e-tests/spring/spring-rest-bb/maven/pom.xml", regex, replacement)
 
+def replaceInPyPi():
+    regex = re.compile(r'version =.*')
+    replacement = 'version = "'+reducedVersion+'"\n'
+    replace("pypi-distribution/pyproject.toml", regex, replacement)
+
+    regex = re.compile(r'evomaster_version =.*')
+    replacement = 'evomaster_version = "'+reducedVersion+'"\n'
+    replace("pypi-distribution/src/evomaster/__main__.py", regex, replacement)
+
+
 ### JS and C# no longer supported
 # def replaceInJS():
 #     regex = re.compile(r'\s*"version"\s*:.*')
@@ -90,6 +100,9 @@ replaceInMakeExecutable()
 replaceInCI()
 replaceInMvn()
 replaceInBBE2E()
+replaceInPyPi()
+
+
 ### No longer supported
 # replaceInCS()
 # replaceInJS()

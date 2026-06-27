@@ -30,7 +30,13 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(915, "A failed PUT or PATCH must not change the resource", "sideEffectsFailedModification",
         "TODO"),
+    HTTP_PARTIAL_UPDATE_PUT(916, "The verb PUT makes a full replacement", "partialUpdatePut",
+        "TODO"),
+    HTTP_MISLEADING_CREATE_PUT(917, "PUT if creating, must get 201", "misleadingCreatePut",
+        "TODO"),
 
+    HTTP_NON_IDEMPOTENT_PUT(918, "PUT is idempotent", "nonIdempotentPut",
+        "TODO"),
 
     HTTP_STATUS_NO_NON_STANDARD_CODES(950, "no-non-standard-codes", "invalidStatusCode", "TODO"),
     HTTP_STATUS_NO_201_IF_DELETE(951, "no-201-if-delete", "201OnDelete",  "TODO"),
@@ -42,6 +48,10 @@ enum class ExperimentalFaultCategory(
     HTTP_STATUS_NO_401_IF_NO_AUTH(957, "no-401-if-no-auth", "401WhenNoAuth",  "TODO"),
     HTTP_STATUS_NO_403_IF_NO_401(958, "no-403-if-no-401", "403WhenNo401",  "TODO"),
     HTTP_STATUS_HAS_406_IF_ACCEPT(959, "has-406-if-accept", "406WhenValid",  "TODO"),
+    HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD(960, "no-304-if-no-get-or-head", "", "TODO"),
+    HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE(961, "no-401-if-no-www-authenticate", "", "TODO"),
+    HTTP_STATUS_NO_405_IF_NO_ALLOW(962, "no-405-if-no-allow", "", "TODO"),
+    HTTP_STATUS_NO_501_IF_IMPLEMENTED(963, "no-501-if-implemented", "", "TODO"),
 
 
     //3xx: GraphQL
@@ -66,7 +76,7 @@ enum class ExperimentalFaultCategory(
         "TODO"),
 
     //5xx: Web Frontend
-    WEB_BROKEN_LINK(960, "Broken Link", "returnsBrokenLink",
+    WEB_BROKEN_LINK(980, "Broken Link", "returnsBrokenLink",
         "TODO"),
     //6xx: mobile
 

@@ -57,6 +57,9 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.search.warning.GeneralWarning
+import org.evomaster.core.search.warning.WarningCategory
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
@@ -103,6 +106,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var securityOracle: RestSecurityOracle
+
+    @Inject
+    protected lateinit var warningsAggregator: WarningsAggregator
 
     //TODO refactor
     private lateinit var schemaOracle: RestSchemaOracle
@@ -208,6 +214,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 But the other way round should not really happen
              */
             log.warn("Length mismatch between ${individual.seeAllActions().size} actions and ${additionalInfoList.size} info data")
+            return
+        }
+
+        /*
+            actionResults contains only the REST calls that were executed on the client side,
+            collected one by one during the test run. If execution was stopped early (e.g.,
+            due to a stopping condition or timeout), fewer results are recorded here than
+            the number of additional info entries the SUT reports back. This guard avoids
+            an index-out-of-bounds when iterating below.
+         */
+        if (actionResults.size < additionalInfoList.size) {
+            log.warn("Length mismatch between ${actionResults.size} action results and ${additionalInfoList.size} info data")
             return
         }
 
@@ -389,7 +407,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
                 handleHttpStatusOracles(fv, actions[it], result, it)
 
-                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                val location5xx: String? = if (it < additionalInfoList.size)
+                    getlocation5xx(status, additionalInfoList, it, result, name)
+                else null
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
                 handleAuthTargets(status, actions, it, name, fv)
             }
@@ -397,6 +417,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     private fun handleHttpStatusOracles(fv: FitnessValue, call: RestCallAction, result: RestCallResult, index: Int) {
         if(!config.statusOracles){
+            return
+        }
+        if(!callGraphService.isInUse(call.verb, call.path)) {
+            //avoid computing for call outside schema, as it can lead to false-positives
             return
         }
 
@@ -725,7 +749,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     throw SutProblemException(
                         "Failed to connect API with TCP." +
                                 " Is the API up and running at '${getBaseUrl()}' ?" +
-                                " If not, the location can be overridden with --bbTargetUrl"
+                                " If not, the location can be overridden with --base"
+                    )
+                }
+
+                TcpUtils.isNotSupportingSSL(e)  && getBaseUrl().startsWith("https",true)-> {
+                    throw SutProblemException(
+                        "SSL error when connecting to API via HTTPS protocol at '${getBaseUrl()}': ${e.message}" +
+                                "\n Are you sure you were not supposed to use HTTP?" +
+                                " Perhaps you meant '${getBaseUrl().replace("https:", "http:")}' ?" +
+                                "\n Otherwise it might be that SSL is misconfigured in the API."
                     )
                 }
 
@@ -747,10 +780,55 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        rcr.setStatusCode(response.status)
+        val statusCode = response.status
+        if(statusCode == 429){
+            /*
+                Very, very tricky to handle.
+                If "Too Many Requests", we need to wait, and retry.
+                If still fails, it becomes a source of flakiness.
+                Also, if there is a rate-limiter, executing final test suite might
+                have very high chances to be flaky if many tests are generated.
+                Currently we do not handle retry in generated tests...
+                TODO is it something worth to add? sounds complicated...
+             */
+            LoggingUtil.getInfoLogger().warn("Hit a rate-limiter. Received a response with 429 'Too Many Requests'.")
+
+            val detailedMessage = "A 429 'Too Many Requests' was encountered." +
+                    " If you are fuzzing an API, it is strongly recommended to disable the rate limiter, if possible," +
+                    " as it hinders how many test cases the fuzzer can evaluate in the same amount of time."
+            warningsAggregator.addWarning(GeneralWarning(WarningCategory.SUT,detailedMessage))
+
+            val retryAfter = response.getHeaderString("Retry-After")
+            val delay = if(retryAfter == null){
+                config.defaultDelayInSecondsFor429
+            } else {
+                val k = TimeUtils.getTimeToWaitInSeconds(retryAfter)
+                if(k < 0){
+                    //invalid value
+                    config.defaultDelayInSecondsFor429
+                } else {
+                    k
+                }
+            }.toLong()
+
+            LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
+            val hasWaited = searchTimeController.waitUpToSeconds(delay)
+
+            if(hasWaited){
+                actionResults.removeLast()
+                //recursion
+                return handleRestCall(a, all, actionResults, chainState, cookies, tokens, fv)
+            } else {
+                return false
+            }
+        }
+
+
+        rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
         rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
+        rcr.setHeaders(response.stringHeaders)
 
         handlePossibleConnectionClose(response)
 
@@ -1259,6 +1337,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+            handlePartialUpdatePut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
+            handleMisleadingCreatePut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
+            handleNonIdempotentPut(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
+            handleInvalidLocation(individual, actionResults, fv)
+        }
     }
 
     private fun handleFailedModification(
@@ -1338,6 +1432,77 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handlePartialUpdatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
+        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+
+        val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleMisleadingCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasMisleadingCreatePut(individual, actionResults)) return
+
+        val put = individual.seeMainExecutableActions().last()
+
+        val category = ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleNonIdempotentPut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasNonIdempotentPut(individual, actionResults)) return
+
+        val actions = individual.seeMainExecutableActions()
+        // sequence ends with: PUT, GET, PUT, GET — flag the 2nd PUT as the offending action
+        val secondPut = actions[actions.size - 2]
+
+        val category = ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, secondPut.getName()))
+        fv.updateTarget(scenarioId, 1.0, actions.size - 2)
+
+        val ar = actionResults.find { it.sourceLocalId == secondPut.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, secondPut.getName(), null))
+    }
+
+    private fun handleInvalidLocation(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasInvalidLocation(individual, actionResults)) return
+
+        val actions = individual.seeMainExecutableActions()
+        val creator = actions[actions.size - 2]
+
+        val category = ExperimentalFaultCategory.HTTP_INVALID_LOCATION
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, creator.getName()))
+        fv.updateTarget(scenarioId, 1.0, actions.size - 2)
+
+        val ar = actionResults.find { it.sourceLocalId == creator.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, creator.getName(), null))
+    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

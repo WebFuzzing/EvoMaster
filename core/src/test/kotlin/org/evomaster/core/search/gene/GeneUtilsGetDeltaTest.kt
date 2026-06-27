@@ -30,7 +30,7 @@ class GeneUtilsGetDeltaTest {
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
+            .withModules(* arrayOf<Module>(BaseModule(arrayOf("--blackBox","false"), true)))
             .build().createInjector()
 
 

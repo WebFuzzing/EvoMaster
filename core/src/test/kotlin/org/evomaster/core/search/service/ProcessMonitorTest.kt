@@ -46,7 +46,7 @@ class ProcessMonitorTest{
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(arrayOf("--blackBox","false"))))
                 .build().createInjector()
 
 

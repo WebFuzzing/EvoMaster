@@ -159,6 +159,18 @@ class RestIndividualBuilder {
         //merge shouldn't lose any actions
         assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
 
+        if(!first.isValidInitializationActions() || !second.isValidInitializationActions()){
+            /*
+                FIXME
+                current SQL repair is not bullet-proof.
+                input individuals might not be "valid"...
+                so here we would crash.
+                we need to fix SQL repair and constraints.
+                this happens for example in proxyprint and in user-management
+             */
+            return base
+        }
+
         base.verifyValidity(true)
 
         return base

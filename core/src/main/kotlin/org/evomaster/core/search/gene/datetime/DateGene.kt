@@ -209,4 +209,18 @@ class DateGene(
         return false
     }
 
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DD")
+        val date = try{
+            LocalDate.parse(value, formatter)
+        }catch (ex: DateTimeParseException){
+            return false
+        }
+
+        year.value = date.year
+        month.value = date.monthValue
+        day.value = date.dayOfMonth
+        return true
+    }
 }
