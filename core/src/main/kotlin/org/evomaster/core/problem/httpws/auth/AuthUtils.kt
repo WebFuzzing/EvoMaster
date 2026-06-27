@@ -46,7 +46,7 @@ object AuthUtils {
             }
             val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
-            val response = makeCall(client, tl, baseUrl)
+            val response = makeCall(client, tl.name, tl.call, baseUrl)
                 ?: continue
 
             var token = when(data.extractFrom){
@@ -113,7 +113,7 @@ object AuthUtils {
             }
 
 
-            val response = makeCall(client, cl, baseUrl)
+            val response = makeCall(client, cl.name, cl.call, baseUrl)
                 ?: continue
             response.close()
 
@@ -130,7 +130,7 @@ object AuthUtils {
 
 
 
-    private fun makeCall(client: Client, x: EndpointCallLogin, baseUrl: String) : Response?{
+    private fun makeCall(client: Client, name: String, x: CallToEndpoint, baseUrl: String) : Response?{
 
         val mediaType = when (x.contentType) {
             ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
@@ -171,7 +171,7 @@ object AuthUtils {
         val response = try {
             invocation.invoke()
         } catch (e: Exception) {
-            log.warn("Failed to login for ${x.name}: $e")
+            log.warn("Failed to login for ${name}: $e")
             return null
         }
 
