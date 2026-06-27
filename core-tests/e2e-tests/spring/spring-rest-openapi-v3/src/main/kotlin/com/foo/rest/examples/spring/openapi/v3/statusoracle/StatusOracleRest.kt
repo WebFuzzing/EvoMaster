@@ -80,4 +80,19 @@ private class StatisticsRest {
         return ResponseEntity.status(403).build()
     }
 
+
+    @PostMapping(path = ["/no-304-if-no-get-or-head"])
+    fun no304IfNoGetOrHead(): ResponseEntity<String>{
+        return ResponseEntity.status(304).build()
+    }
+
+    @GetMapping(path = ["/no-405-if-no-allow"])
+    fun no405IfNoAllow(): ResponseEntity<String>{
+        return ResponseEntity.status(405).build()
+    }
+
+    @GetMapping(path = ["/no-501-if-implemented"])
+    fun no501IfImplemented(): ResponseEntity<String>{
+        return ResponseEntity.status(501).build()
+    }
 }
