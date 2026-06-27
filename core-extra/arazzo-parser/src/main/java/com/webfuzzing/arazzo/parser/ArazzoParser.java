@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.swagger.v3.oas.models.OpenAPI;
-import javafx.util.Pair;
 import com.webfuzzing.arazzo.mapper.ArazzoMapper;
 import com.webfuzzing.arazzo.models.domain.ArazzoSpecifications;
 import com.webfuzzing.arazzo.models.dto.ArazzoSpecificationsDTO;
 import com.webfuzzing.arazzo.resolver.ArazzoReferenceResolver;
+import java.util.AbstractMap;
 
 /**
  * Parse a String containing an Arazzo document into a complete model in ArazzoSpecifications
@@ -19,13 +19,13 @@ public class ArazzoParser {
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory()).findAndRegisterModules();
 
     public static ArazzoSpecifications parse(String schemaText, OpenAPI openAPI) {
-        Pair<ArazzoSpecificationsDTO, JsonNode> parsed = parseSchemaText(schemaText);
+        AbstractMap.SimpleEntry<ArazzoSpecificationsDTO, JsonNode> parsed = parseSchemaText(schemaText);
         ArazzoReferenceResolver resolver = new ArazzoReferenceResolver(parsed.getKey().getComponents(), parsed.getValue(), openAPI);
         ArazzoMapper mapper = new ArazzoMapper(resolver);
         return mapper.toDomain(parsed.getKey());
     }
 
-    private static Pair<ArazzoSpecificationsDTO, JsonNode> parseSchemaText(String schemaText) {
+    private static AbstractMap.SimpleEntry<ArazzoSpecificationsDTO, JsonNode> parseSchemaText(String schemaText) {
         String schemaTextClean = schemaText.replaceAll("^\\s+", "");
 
         ArazzoSpecificationsDTO arazzoSpecificationsDTO;
@@ -43,6 +43,6 @@ public class ArazzoParser {
             throw new IllegalArgumentException("Problems parsing the Arazzo document", e);
         }
 
-        return new Pair<>(arazzoSpecificationsDTO, arazzoJsonNode);
+        return new AbstractMap.SimpleEntry<>(arazzoSpecificationsDTO, arazzoJsonNode);
     }
 }

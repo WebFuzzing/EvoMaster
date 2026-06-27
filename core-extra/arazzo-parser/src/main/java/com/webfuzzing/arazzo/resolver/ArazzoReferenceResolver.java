@@ -5,7 +5,6 @@ import com.webfuzzing.arazzo.models.domain.*;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import org.evomaster.arazzo.models.domain.*;
 
 import java.util.List;
 import java.util.stream.Collectors;

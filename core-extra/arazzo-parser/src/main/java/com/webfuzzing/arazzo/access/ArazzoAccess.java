@@ -10,7 +10,11 @@ import java.nio.file.Paths;
  * Read Arrazzo documents
  */
 public class ArazzoAccess {
-    public static String readFromDisk(String arazzoLocation) throws Exception {
+
+    /**
+     * Read Arrazzo documents from disk (files in the project)
+     */
+    public static String readFromDisk(String arazzoLocation) {
         String fileScheme = "file:";
 
         Path path;
@@ -21,18 +25,18 @@ public class ArazzoAccess {
                 path = Paths.get(arazzoLocation);
             }
         } catch (Exception e) {
-            throw new Exception("The file path provided for the Arazzo Schema " + arazzoLocation + " ended up with the following error: " + e.getMessage());
+            throw new IllegalArgumentException("The file path provided for the Arazzo Schema " + arazzoLocation + " ended up with the following error: " + e.getMessage());
         }
 
         if ((!Files.exists(path))) {
-            throw new Exception("The provided Arazzo file does not exist: " + arazzoLocation);
+            throw new IllegalArgumentException("The provided Arazzo file does not exist: " + arazzoLocation);
         }
 
         try {
             byte[] bytes = Files.readAllBytes(path);
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new Exception("Error reading the Arazzo file: " + e.getMessage());
+            throw new RuntimeException("Error reading the Arazzo file: " + e.getMessage());
         }
 
     }

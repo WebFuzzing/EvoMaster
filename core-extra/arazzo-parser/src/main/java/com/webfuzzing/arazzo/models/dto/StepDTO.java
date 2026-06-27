@@ -5,7 +5,6 @@ import com.webfuzzing.arazzo.deserializer.FailureReusableDeserializer;
 import com.webfuzzing.arazzo.deserializer.ParameterReusableDeserializer;
 import com.webfuzzing.arazzo.deserializer.SuccessReusableDeserializer;
 import com.webfuzzing.arazzo.models.domain.*;
-import org.evomaster.arazzo.models.domain.*;
 
 import java.util.List;
 import java.util.Map;
