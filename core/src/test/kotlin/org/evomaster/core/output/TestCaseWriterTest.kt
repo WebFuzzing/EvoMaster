@@ -34,7 +34,7 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 class TestCaseWriterTest : WriterTestBase(){
 

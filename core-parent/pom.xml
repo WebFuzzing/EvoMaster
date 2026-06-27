@@ -14,7 +14,9 @@
     <name>${project.groupId}:${project.artifactId}</name>
 
     <properties>
-        <jersey.version>2.48</jersey.version>
+        <!--  Jersey is used as well in client. but, there, as we need to keep compatibility with JDK 8,
+              we use an older version -->
+        <jersey.version>4.0.2</jersey.version>
         <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
         <swagger.parser-v2.version>1.0.64</swagger.parser-v2.version>
         <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
@@ -42,6 +44,18 @@
                 <artifactId>jersey-hk2</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.connectors</groupId>
+                <artifactId>jersey-apache5-connector</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.6.1</version>
+            </dependency>
+
+
 
 
             <!-- Dependency Injection -->

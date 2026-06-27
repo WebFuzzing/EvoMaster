@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.action.EvaluatedAction
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 object RestNamingUtils {
 

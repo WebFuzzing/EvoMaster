@@ -6,7 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.*
-import javax.ws.rs.ProcessingException
+import jakarta.ws.rs.ProcessingException
 
 
 object TcpUtils {

@@ -15,7 +15,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequ
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest.Companion.getTextualURLFromRequestDescription
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.param.ResponseParam
-import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -40,13 +39,13 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
-import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.client.Entity
-import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
+import jakarta.ws.rs.ProcessingException
+import jakarta.ws.rs.client.Client
+import jakarta.ws.rs.client.ClientBuilder
+import jakarta.ws.rs.client.Entity
+import jakarta.ws.rs.client.Invocation
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
 import kotlin.math.max
 import kotlin.math.min
 

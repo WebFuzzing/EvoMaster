@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.*
 import java.util.Collections.singletonList
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 
 open class RestActionNamingStrategyTest {

@@ -416,12 +416,12 @@ class HttpSemanticsOracleTest {
         val putResult = RestCallResult(put.getLocalId()).apply {
             setStatusCode(putResponseStatus)
             setBody("{}")
-            setBodyType(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
+            setBodyType(jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
         }
         val getResult = RestCallResult(get.getLocalId()).apply {
             setStatusCode(getResponseStatus)
             setBody(getResponseBody)
-            setBodyType(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
+            setBodyType(jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE)
         }
 
         return HttpSemanticsOracle.hasMismatchedPutResponse(

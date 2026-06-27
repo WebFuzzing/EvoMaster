@@ -18,11 +18,10 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.client.Entity
-import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.NewCookie
+import jakarta.ws.rs.ProcessingException
+import jakarta.ws.rs.client.Entity
+import jakarta.ws.rs.client.Invocation
+import jakarta.ws.rs.core.NewCookie
 
 
 open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {

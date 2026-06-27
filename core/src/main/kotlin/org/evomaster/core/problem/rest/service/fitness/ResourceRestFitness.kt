@@ -23,7 +23,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.ws.rs.core.NewCookie
+import jakarta.ws.rs.core.NewCookie
 
 /**
  * take care of calculating/collecting fitness of [RestIndividual]

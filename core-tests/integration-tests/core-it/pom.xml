@@ -17,6 +17,12 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core</artifactId>
+        </dependency>
+
         <dependency>
             <!--
                 This is only needed for testing, when accessing some SQL
@@ -34,10 +40,7 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-core</artifactId>
-        </dependency>
+
 
         <dependency>
             <groupId>org.evomaster</groupId>

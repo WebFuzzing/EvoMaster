@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.rest.data.HttpVerb
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
 

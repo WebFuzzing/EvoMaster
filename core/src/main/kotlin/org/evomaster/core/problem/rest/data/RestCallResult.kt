@@ -7,7 +7,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.IdHeuristics
 import org.evomaster.core.problem.rest.IdLocationValue
 import org.evomaster.core.search.action.Action
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 
 class RestCallResult : HttpWsCallResult {

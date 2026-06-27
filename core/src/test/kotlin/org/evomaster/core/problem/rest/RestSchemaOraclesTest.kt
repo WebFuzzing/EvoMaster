@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.schema.RestSchema
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 class RestSchemaOraclesTest{
 

@@ -14,7 +14,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.core.MediaType
 
 object ExtraTools {
 

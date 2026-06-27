@@ -18,8 +18,7 @@ import java.net.URI
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.core.Response
+import jakarta.ws.rs.core.Response
 
 /**
  * Created by arcuri82 on 22-Jan-20.
