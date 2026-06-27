@@ -35,6 +35,10 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-sql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
         </dependency>
 
@@ -473,6 +477,21 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
+            </plugin>
+
+            <!--
+                core has the heaviest gene test suite (GeneRandomizedTest: 1001 seeds × ~100 gene types).
+                On CI runners where algorithm tests complete faster than usual, less GC activity
+                accumulates before gene tests run, leaving the heap more fragmented and full.
+                5120m (vs the global 4096m) provides the headroom to survive runner variability.
+                GitHub Actions ubuntu-latest has 7 GB RAM: 5 GB heap + 1 GB Maven + 1 GB OS = 7 GB.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -ea -Xms1024m -Xmx5120m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
