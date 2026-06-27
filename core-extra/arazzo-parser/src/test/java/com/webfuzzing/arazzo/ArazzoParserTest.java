@@ -5,8 +5,9 @@ import com.webfuzzing.arazzo.models.domain.ArazzoSpecifications;
 import com.webfuzzing.arazzo.parser.ArazzoParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArazzoParserTest {
 
@@ -20,8 +21,8 @@ public class ArazzoParserTest {
 
         ArazzoSpecifications arazzo = ArazzoParser.parse(schemaText, openAPI);
 
-        Assert.assertEquals(3, arazzo.getWorkflows().size());
-        Assert.assertEquals("Petstore - Apply Coupons", arazzo.getInfo().getTitle());
+        assertEquals(3, arazzo.getWorkflows().size());
+        assertEquals("Petstore - Apply Coupons", arazzo.getInfo().getTitle());
     }
 
     @Test
@@ -31,8 +32,8 @@ public class ArazzoParserTest {
 
         ArazzoSpecifications arazzo = ArazzoParser.parse(schemaText, openAPI);
 
-        Assert.assertEquals(3, arazzo.getWorkflows().size());
-        Assert.assertEquals("Petstore - Apply Coupons", arazzo.getInfo().getTitle());
+        assertEquals(3, arazzo.getWorkflows().size());
+        assertEquals("Petstore - Apply Coupons", arazzo.getInfo().getTitle());
     }
 
 }
