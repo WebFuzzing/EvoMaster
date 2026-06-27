@@ -1920,6 +1920,13 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
 
+    @Experimental
+    @Cfg("Collect detailed statistics for DSE SQL generation: SAT/UNSAT/error counts, " +
+            "query uniqueness, Z3 execution time, and SMT-LIB generation time. " +
+            "Only meaningful when generateSqlDataWithDSE=true.")
+    @DependsOnTrueFor("generateSqlDataWithDSE")
+    var collectDseStats = false
+
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true

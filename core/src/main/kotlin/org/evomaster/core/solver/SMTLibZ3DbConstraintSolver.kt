@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import com.google.inject.Inject
+
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
@@ -18,14 +19,17 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
+import org.evomaster.solver.Z3Result
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -54,13 +58,42 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
+    // Null until DSE is enabled in postConstruct — avoids allocating the map in runs where DSE is off.
+    private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
+
+    companion object {
+        private const val MAX_CACHE_SIZE = 500
+    }
+
     @Inject
     private lateinit var config: EMConfig
+
+    /*
+        Held WEAKLY on purpose. This solver has @PreDestroy, so each instance is
+        retained by Governator's predestroy-monitor thread (a GC root) for the whole
+        lifetime of the JVM. A strong reference to Statistics would therefore pin
+        Statistics -> Archive -> every individual, leaking across every injector ever
+        created. That is harmless in production (a single injector, process exits) but
+        OOMs test suites that build thousands of injectors (RestIndividualTestBase,
+        SamplerVerifierTest). A weak reference lets that graph be collected once the
+        owning injector is otherwise unreachable, while still resolving fine during an
+        active search (Statistics is strongly held by SearchTimeController then).
+     */
+    private var statisticsRef: WeakReference<Statistics>? = null
+
+    @Inject(optional = true)
+    fun setStatistics(statistics: Statistics) {
+        this.statisticsRef = WeakReference(statistics)
+    }
 
     @PostConstruct
     private fun postConstruct() {
         if (config.generateSqlDataWithDSE) {
             initializeExecutor()
+            z3ResultCache = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                    size > MAX_CACHE_SIZE
+            }
         }
     }
 
@@ -73,7 +106,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     @PreDestroy
     override fun close() {
-        executor.close()
+        if (::executor.isInitialized) {
+            executor.close()
+        }
         try {
             FileUtils.cleanDirectory(File(resourcesFolder))
         } catch (e: IOException) {
@@ -86,18 +121,67 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * and returns a list of SqlActions that satisfy the query.
      *
      * @param sqlQuery The SQL query to solve.
-     * @return A list of SQL actions that can be executed to satisfy the query.
+     * @return A list of SQL actions that can be executed to satisfy the query,
+     *         or an empty list if the problem is UNSAT, unparseable, or an error occurred.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
+        val collectStats = ::config.isInitialized && config.collectDseStats
+        val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
+        stats?.reportDseQuerySeen(sqlQuery.hashCode())
+
+        val cacheKey = Pair(sqlQuery, numberOfRows)
+        val cached = z3ResultCache?.get(cacheKey)
+        if (cached != null) {
+            return when (cached.status) {
+                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
+                else -> emptyList()
+            }
+        }
+
+        val queryStatement = try {
+            parseStatement(sqlQuery)
+        } catch (e: RuntimeException) {
+            LoggingUtil.getInfoLogger().warn("DSE: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
+            stats?.reportDseParseFailure()
+            return emptyList()
+        }
+
+        val smtlibGenStart = System.currentTimeMillis()
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
-        val queryStatement = parseStatement(sqlQuery)
         val smtLib = generator.generateSMT(queryStatement)
-        val fileName = storeToTmpFile(smtLib)
-        val z3Response = executor.solveFromFile(fileName)
+        val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
+        val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
+        stats?.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
 
-        return toSqlActionList(schemaDto, z3Response)
+        val fileName = storeToTmpFile(smtLib)
+
+        val z3Start = System.currentTimeMillis()
+        val z3Result = try {
+            executor.solveFromFile(fileName)
+        } finally {
+            Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
+        }
+        val z3TimeMs = System.currentTimeMillis() - z3Start
+
+        return when (z3Result.status) {
+            Z3Result.Status.SAT -> {
+                stats?.reportDseSat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                toSqlActionList(schemaDto, z3Result.model)
+            }
+            Z3Result.Status.UNSAT -> {
+                stats?.reportDseUnsat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                emptyList()
+            }
+            Z3Result.Status.ERROR -> {
+                LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                stats?.reportDseError(z3TimeMs)
+                // Errors are not cached — they may be transient Docker failures
+                emptyList()
+            }
+        }
     }
 
     /**
@@ -125,35 +209,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Converts Z3's response to a list of SqlActions.
+     * Converts Z3's model to a list of SqlActions.
      *
-     * @param z3Response The response from Z3.
+     * @param model The satisfying assignment from Z3 (non-null, status must be SAT).
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbInfoDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
-        if (!z3Response.isPresent) {
-            return emptyList()
-        }
-
+    private fun toSqlActionList(schemaDto: DbInfoDto, model: Map<String, org.evomaster.solver.smtlib.value.SMTLibValue>): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
 
-        for (row in z3Response.get()) {
+        for (row in model) {
             val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
-            // Find table from schema and create SQL actions
             val table = findTableByName(schemaDto, tableName)
 
-            /*
-             * The invariant requires that action.insertionId == primaryKey.uniqueId (and same for FK).
-             * So we must use the same id for the action and all its PK/FK genes.
-             */
             val actionId = idCounter
             idCounter++
 
-            // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            // smtColumn is the Ascii version from SmtLib; resolve back to original DB column name
             for (smtColumn in columns.fields) {
                 val dbColumn = table.columns.firstOrNull {
                     convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
@@ -232,7 +305,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return The extracted table name.
      */
     private fun getTableName(key: String): String {
-        return key.substring(0, key.length - 1) // Remove last character
+        return key.substring(0, key.length - 1)
     }
 
     /**
@@ -247,7 +320,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
-            findColumns(schema,tableDto), // Convert columns from DTO
+            findColumns(schema, tableDto),
             findForeignKeys(tableDto) // TODO: Implement this method
         )
     }
@@ -337,13 +410,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             "TIMESTAMP" -> ColumnDataType.TIMESTAMP
             "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
             "CHAR" -> ColumnDataType.CHAR
-            else -> ColumnDataType.CHARACTER_VARYING // Default type
+            else -> ColumnDataType.CHARACTER_VARYING
         }
     }
 
     // TODO: Implement this method
     private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet() // Placeholder
+        return emptySet()
     }
 
     /**
@@ -358,23 +431,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val fileExtension = ".smt2"
 
         try {
-            // Create dir if it doesn't exist
             val directory = Paths.get(directoryPath)
             if (!directory.exists()) {
                 directory.createDirectories()
             }
 
-            // Generate a unique file name
             var fileName = "$fileNameBase$fileExtension"
             var filePath = directory.resolve(fileName)
             if (filePath.exists()) {
-                // Add a random suffix to the file name if it already exists
                 val randomSuffix = (1000..9999).random()
                 fileName = "${fileNameBase}_$randomSuffix$fileExtension"
                 filePath = directory.resolve(fileName)
             }
 
-            // Write the SMTLib content to the file
             Files.write(filePath, smtLib.toString().toByteArray(StandardCharsets.UTF_8))
 
             return fileName
