@@ -72,6 +72,8 @@ object HttpClientFactory {
             .property(ClientProperties.FOLLOW_REDIRECTS, followRedirects)
             // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
             .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
+            // buffer request bodies to send Content-Length instead of chunked transfer-encoding,
+            // which some servers (e.g. Django/WSGI dev server) do not parse reliably
             .property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED)
             .build()
 
