@@ -1,5 +1,6 @@
 package com.webfuzzing.arazzo.parser;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -26,21 +27,19 @@ public class ArazzoParser {
     }
 
     private static AbstractMap.SimpleEntry<ArazzoSpecificationsDTO, JsonNode> parseSchemaText(String schemaText) {
-        String schemaTextClean = schemaText.replaceAll("^\\s+", "");
-
         ArazzoSpecificationsDTO arazzoSpecificationsDTO;
         JsonNode arazzoJsonNode;
 
         try {
-            if (schemaTextClean.startsWith("{")) {
-                arazzoSpecificationsDTO = JSON_MAPPER.readValue(schemaTextClean, ArazzoSpecificationsDTO.class);
-                arazzoJsonNode = JSON_MAPPER.readTree(schemaTextClean);
-            } else {
-                arazzoSpecificationsDTO = YAML_MAPPER.readValue(schemaTextClean, ArazzoSpecificationsDTO.class);
-                arazzoJsonNode = YAML_MAPPER.readTree(schemaTextClean);
+            arazzoSpecificationsDTO = JSON_MAPPER.readValue(schemaText, ArazzoSpecificationsDTO.class);
+            arazzoJsonNode = JSON_MAPPER.readTree(schemaText);
+        } catch (JsonProcessingException jsonException) {
+            try {
+                arazzoSpecificationsDTO = YAML_MAPPER.readValue(schemaText, ArazzoSpecificationsDTO.class);
+                arazzoJsonNode = YAML_MAPPER.readTree(schemaText);
+            } catch (Exception yamlException) {
+                throw new IllegalArgumentException("Problems parsing the Arazzo document", yamlException);
             }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Problems parsing the Arazzo document", e);
         }
 
         return new AbstractMap.SimpleEntry<>(arazzoSpecificationsDTO, arazzoJsonNode);

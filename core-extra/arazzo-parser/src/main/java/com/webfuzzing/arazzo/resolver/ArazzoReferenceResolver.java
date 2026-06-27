@@ -13,6 +13,12 @@ import java.util.stream.Collectors;
  * Resolver class responsible for resolving Arazzo references.
  */
 public class ArazzoReferenceResolver {
+    private final String COMPONENTS_PREFIX = "$components.";
+    private final String SUCCESS_ACTIONS = "successActions";
+    private final String FAILURE_ACTIONS = "failureActions";
+    private final String PARAMETERS = "parameters";
+    private final String OPENAPI_SCHEMAS_PREFIX = "/components/schemas/";
+
     private Components components;
     private JsonNode arazzoJsonNode;
     private OpenAPI openApi;
@@ -49,7 +55,7 @@ public class ArazzoReferenceResolver {
                 return action.getAction();
             }
             SuccessReusable.ReusableObj reusableObj = (SuccessReusable.ReusableObj) item;
-            return (SuccessAction) resolveReusableWithPrefix(reusableObj.getReusable(), "successActions");
+            return (SuccessAction) resolveReusableWithPrefix(reusableObj.getReusable(), this.SUCCESS_ACTIONS);
         }).collect(Collectors.toList());
     }
 
@@ -67,7 +73,7 @@ public class ArazzoReferenceResolver {
                 return action.getAction();
             }
             FailureReusable.ReusableObj reusableObj = (FailureReusable.ReusableObj) item;
-            return (FailureAction) resolveReusableWithPrefix(reusableObj.getReusable(), "failureActions");
+            return (FailureAction) resolveReusableWithPrefix(reusableObj.getReusable(), this.FAILURE_ACTIONS);
         }).collect(Collectors.toList());
     }
 
@@ -85,7 +91,7 @@ public class ArazzoReferenceResolver {
                 return param.getParameter();
             }
             ParameterReusable.ReusableObj reusableObj = (ParameterReusable.ReusableObj) item;
-            return (Parameter) resolveReusableWithPrefix(reusableObj.getReusable(), "parameters");
+            return (Parameter) resolveReusableWithPrefix(reusableObj.getReusable(), this.PARAMETERS);
         }).collect(Collectors.toList());
     }
 
@@ -95,11 +101,11 @@ public class ArazzoReferenceResolver {
         }
 
         String reference = reusable.getReference();
-        if (!reference.startsWith("$components.")) {
-            throw new IllegalArgumentException("Arazzo Parsing Error: Invalid reference (" + reference + "). Expected to point to '$components.'");
+        if (!reference.startsWith(this.COMPONENTS_PREFIX)) {
+            throw new IllegalArgumentException("Arazzo Parsing Error: Invalid reference (" + reference + "). Expected to point to '" + this.COMPONENTS_PREFIX + "'");
         }
 
-        String referenceWithoutComponents = reference.substring(("$components.").length());
+        String referenceWithoutComponents = reference.substring(this.COMPONENTS_PREFIX.length());
         if (!referenceWithoutComponents.startsWith(expectedPrefix)) {
             throw new IllegalArgumentException("Arazzo Parsing Error: Invalid reference (" + referenceWithoutComponents + "). Expected to point to '" + expectedPrefix +"'");
         }
@@ -107,13 +113,13 @@ public class ArazzoReferenceResolver {
         String referenceClean = referenceWithoutComponents.substring((expectedPrefix + ".").length());
         Object resolve;
         switch (expectedPrefix) {
-            case "successActions":
+            case SUCCESS_ACTIONS:
                 resolve = (components.getSuccessAction() != null) ? components.getSuccessAction().get(referenceClean) : null;
                 break;
-            case "failureActions":
+            case FAILURE_ACTIONS:
                 resolve = (components.getFailureAction() != null) ? components.getFailureAction().get(referenceClean) : null;
                 break;
-            case "parameters":
+            case PARAMETERS:
                 resolve = (components.getParameters() != null) ? components.getParameters().get(referenceClean) : null;
                 break;
             default:
@@ -163,13 +169,11 @@ public class ArazzoReferenceResolver {
         }
 
         String jsonPointer = tokens[1];
-        String expectedPrefix = "/components/schemas/";
-
-        if (!jsonPointer.startsWith(expectedPrefix)) {
-            throw new IllegalArgumentException("Arazzo Parsing Error: Error reference (" + reference + "). \"/components/schemas/\" Is mandatory for references to OpenApi");
+        if (!jsonPointer.startsWith(this.OPENAPI_SCHEMAS_PREFIX)) {
+            throw new IllegalArgumentException("Arazzo Parsing Error: Error reference (" + reference + "). \"" + this.OPENAPI_SCHEMAS_PREFIX + "\" Is mandatory for references to OpenApi");
         }
 
-        String schemaName = jsonPointer.substring((expectedPrefix).length());
+        String schemaName = jsonPointer.substring(this.OPENAPI_SCHEMAS_PREFIX.length());
         Schema<?> result = null;
         if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
             result = openApi.getComponents().getSchemas().get(schemaName);
