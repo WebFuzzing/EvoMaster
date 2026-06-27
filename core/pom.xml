@@ -386,37 +386,37 @@
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
 
-            <!--            <plugin>-->
-            <!--                <groupId>org.apache.maven.plugins</groupId>-->
-            <!--                <artifactId>maven-assembly-plugin</artifactId>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>make-assembly</id>-->
-            <!--                        <phase>package</phase>-->
-            <!--                        <goals>-->
-            <!--                            <goal>single</goal>-->
-            <!--                        </goals>-->
-            <!--                        <configuration>-->
-            <!--                            <archive>-->
-            <!--                                <manifest>-->
-            <!--                                    <mainClass>org.evomaster.core.Main</mainClass>-->
-            <!--                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>-->
-            <!--                                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>-->
-            <!--                                </manifest>-->
-            <!--                                <manifestEntries>-->
-            <!--                                    &lt;!&ndash; needs to be kept in sync with JdkIssue &ndash;&gt;-->
-            <!--                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>-->
-            <!--                                </manifestEntries>-->
-            <!--                            </archive>-->
-            <!--                            <finalName>evomaster</finalName>-->
-            <!--                            <appendAssemblyId>false</appendAssemblyId>-->
-            <!--                            <descriptorRefs>-->
-            <!--                                <descriptorRef>jar-with-dependencies</descriptorRef>-->
-            <!--                            </descriptorRefs>-->
-            <!--                        </configuration>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-assembly-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>make-assembly</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <archive>-->
+<!--                                <manifest>-->
+<!--                                    <mainClass>org.evomaster.core.Main</mainClass>-->
+<!--                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>-->
+<!--                                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>-->
+<!--                                </manifest>-->
+<!--                                <manifestEntries>-->
+<!--                                    &lt;!&ndash; needs to be kept in sync with JdkIssue &ndash;&gt;-->
+<!--                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>-->
+<!--                                </manifestEntries>-->
+<!--                            </archive>-->
+<!--                            <finalName>evomaster</finalName>-->
+<!--                            <appendAssemblyId>false</appendAssemblyId>-->
+<!--                            <descriptorRefs>-->
+<!--                                <descriptorRef>jar-with-dependencies</descriptorRef>-->
+<!--                            </descriptorRefs>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <!-- Upgrading Jersey lead to lot of issues, which forced to change how jar is built, due to
                  handling of META-INF/services/*  arghhhh...  -->
             <plugin>
