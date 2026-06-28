@@ -141,6 +141,18 @@ data class RegexFlags(
         }
     }
 
+    fun toJavaFlagBitmask(): Int {
+        var flags = 0
+        if (caseInsensitive) flags = flags or Pattern.CASE_INSENSITIVE
+        if (unicodeCase) flags = flags or Pattern.UNICODE_CASE
+        if (dotAll) flags = flags or Pattern.DOTALL
+        if (multiline) flags = flags or Pattern.MULTILINE
+        if (unixLines) flags = flags or Pattern.UNIX_LINES
+        if (unicodeCharacterClass) flags = flags or Pattern.UNICODE_CHARACTER_CLASS
+        if (comments) flags = flags or Pattern.COMMENTS
+        return flags
+    }
+
     /**
      * Merges this [RegexFlags] with a [ParsedFlagExpression], returning a new [RegexFlags] with the
      * enabled flags turned on and the disabled flags turned off.
@@ -160,6 +172,15 @@ data class RegexFlags(
         if (unicodeCharacterClass) throw IllegalStateException("Regex flag 'U' (UNICODE_CHARACTER_CLASS) is not yet supported")
         if (comments) throw IllegalStateException("Regex flag 'x' (COMMENTS) is not yet supported")
     }
+
+    /**
+     * Checks if the provided character is a line terminator according to the flag behavior.
+     */
+    fun isLineTerminator(c: Char) = if (unixLines) {
+            c == '\n'
+        } else {
+            c == '\n' || c == '\r' || c == '\u0085' || c == '\u2028' || c == '\u2029'
+        }
 
     /**
      * Checks if the provided character has a case variant according to the flag behavior, checking both caseInsensitive
