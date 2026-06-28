@@ -138,14 +138,44 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     private fun handleAuthInfo(i: AuthenticationDto) {
 
-        val auth = try{
-            HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
-        }catch (e: Exception){
-            throw SutProblemException("Failed to parse auth info: " + e.message!!)
-        }
+        if(i.createUsers != null) {
+            val auth = try {
+                HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
+            } catch (e: Exception) {
+                throw SutProblemException("Failed to parse auth info: " + e.message!!)
+            }
 
-        authentications.addInfo(auth)
-        return
+            authentications.addInfo(auth)
+            return
+        } else {
+
+            /*
+                make 2 copies, with different names.
+                this might look weird at a first look... if an auth has info to create users,
+                it can create as many as it wants.
+                but, we still need to be able to distinguish 2 different users created in the same test.
+                easiest approach is to have 2 distinct auth objects with different names, as those will
+                be treated as 2 different users, regardless of the fact they are created on the fly
+             */
+            val name = i.name
+            try {
+                i.name = "${name}_x" // changing name is easier than duplicating the DTO
+                val auth = HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
+                authentications.addInfo(auth)
+            } catch (e: Exception) {
+                i.name = name
+                throw SutProblemException("Failed to parse auth info: " + e.message!!)
+            }
+            try {
+                i.name = "${name}_y"
+                val auth = HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
+                authentications.addInfo(auth)
+            } catch (e: Exception) {
+                i.name = name
+                throw SutProblemException("Failed to parse auth info: " + e.message!!)
+            }
+            i.name = name // let's avoid side-effects on input objects
+        }
     }
 
 
