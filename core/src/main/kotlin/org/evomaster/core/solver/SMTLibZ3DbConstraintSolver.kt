@@ -178,7 +178,28 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             Z3Result.Status.SAT -> {
                 stats?.reportDseSat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
-                toSqlActionList(schemaDto, z3Result.model)
+                val sqlActions = toSqlActionList(schemaDto, z3Result.model)
+                if (::config.isInitialized && config.measureDseCorrectness && queryStatement !is Insert) {
+                    /*
+                     * INSERT statements have no WHERE clause, so SqlHeuristicsCalculator has no
+                     * predicate to evaluate distance against and will always report a failure.
+                     * Correctness measurement only makes sense for queries that filter rows
+                     * (SELECT, DELETE, UPDATE). In the future this could be extended to verify
+                     * that the generated rows satisfy insertion preconditions such as FK constraints
+                     * or NOT NULL columns that DSE currently leaves unconstrained.
+                     */
+                    val distResult = computeCorrectnessDistance(sqlQuery, schemaDto, sqlActions)
+                    if (distResult.sqlDistanceEvaluationFailure) {
+                        LoggingUtil.getInfoLogger().warn("DSE: correctness evaluation failure for query '$sqlQuery'")
+                    } else if (distResult.sqlDistance != 0.0) {
+                        LoggingUtil.getInfoLogger().warn("DSE: non-zero correctness distance (${distResult.sqlDistance}) for query '$sqlQuery'")
+                    }
+                    statisticsRef?.get()?.reportDseCorrectnessDistance(
+                        distResult.sqlDistance,
+                        distResult.sqlDistanceEvaluationFailure
+                    )
+                }
+                sqlActions
             }
             Z3Result.Status.UNSAT -> {
                 stats?.reportDseUnsat(z3TimeMs)
