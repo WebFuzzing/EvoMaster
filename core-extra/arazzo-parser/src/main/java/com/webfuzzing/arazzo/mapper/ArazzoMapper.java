@@ -23,6 +23,9 @@ public class ArazzoMapper {
         this.resolver = resolver;
     }
 
+    /**
+     * Mapp ArazzoSpecificationsDTO to ArazzoSpecifications
+     */
     public ArazzoSpecifications toDomain(ArazzoSpecificationsDTO arazzoSpecificationsDTO) {
         return ArazzoSpecifications.builder()
                 .arazzo(arazzoSpecificationsDTO.getArazzo())
@@ -35,6 +38,9 @@ public class ArazzoMapper {
                 .build();
     }
 
+    /**
+     * Mapp WorkflowDTO to Workflow
+     */
     public Workflow toDomain(WorkflowDTO workflowDTO) {
         return Workflow.builder()
                 .workflowId(workflowDTO.getWorkflowId())
@@ -52,6 +58,9 @@ public class ArazzoMapper {
                 .build();
     }
 
+    /**
+     * Mapp StepDTO to Step
+     */
     public Step toDomain(StepDTO stepDTO) {
         return Step.builder()
                 .description(stepDTO.getDescription())
@@ -68,6 +77,9 @@ public class ArazzoMapper {
                 .build();
     }
 
+    /**
+     * Map Schema to Schema with reference resolved
+     */
     public Schema<?> toDomain(Schema<?> schema) {
         if (schema != null && schema.get$ref() != null && !schema.get$ref().trim().isEmpty()) {
             Schema<?> reference = toDomain(resolver.resolveJsonPointer(schema.get$ref()));
