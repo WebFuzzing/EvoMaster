@@ -28,13 +28,9 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
     )
 
     /**
-     * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
+     * None of these can be escaped to be treated as literals. Some may be part of legal escape sequences.
      */
-    private val allowedSyntaxEscapes = setOf(
-        '^', '$', '\\', '.', '*', '+', '?',
-        '(', ')', '[', ']', '{', '}', '|',
-        '/', '-', ',' ,':', '<', '>', '=', '!'
-    )
+    private val notIdentityEscapes = ('a'..'z').toList() + ('A'..'Z').toList() + ('0'..'9').toList()
 
     /**
      * Capture groups in order of appearance (1-based index -> list index 0).
@@ -470,7 +466,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
             } else {
                 // This case handles the escaped syntax characters, like "\." and "\+", etc. cases
                 // where '.' and '+', etc. should be treated as regular chars
-                assert(startText[0] == '\\' && startText[1] in allowedSyntaxEscapes)
+                assert(startText[0] == '\\' && startText[1] !in notIdentityEscapes)
                 start = startText[1]
                 end = start
             }
@@ -647,7 +643,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                         currentFlags
                 )
             }
-            in allowedSyntaxEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
+            !in notIdentityEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
             else -> CharacterClassEscapeRxGene(txt.substring(1), currentFlags)
         })
     }
