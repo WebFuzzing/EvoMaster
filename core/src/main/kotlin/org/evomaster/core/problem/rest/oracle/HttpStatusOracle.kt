@@ -24,11 +24,15 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
  * no-201-if-get
  * no-201-if-patch
  * no-204-if-content
+ * no-304-if-no-get-or-head
+ * no-401-if-no-www-authenticate
+ * no-405-if-no-allow
  * no-413-if-no-payload
  * no-415-if-no-payload
  * no-401-if-no-auth (schema)
  * no-403-if-no-401 (schema)
  * has-406-if-accept (schema)
+ * no-501-if-implemented
  *
  *
  * IMPORTANT: in contrast to what done in [HttpSemanticsOracle], here there is no need to construct any test case
@@ -69,6 +73,30 @@ object HttpStatusOracle {
 
         val hasBody = bodyParam != null && bodyParam.primaryGene().getValueAsRawString().isNotEmpty()
 
+        if(status == 304 && (verb != HttpVerb.GET && verb != HttpVerb.HEAD)){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD)
+        }
+
+        if(status == 401 && !SchemaUtils.hasAuthDefinition(schema)){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH)
+        }
+
+        if(status == 401 && result.getHeader("www-authenticate").isNullOrEmpty()){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE)
+        }
+
+        if(status == 403 && !SchemaUtils.getDeclaredStatusInResponse(call.endpoint, schema).contains(401)){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401)
+        }
+
+        if(status == 405 && result.getHeader("allow").isNullOrEmpty()){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW)
+        }
+
+        if(status == 406 && !call.isForRobustnessTesting()){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT)
+        }
+
         if(status == 413 && !hasBody){
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD)
         }
@@ -77,16 +105,8 @@ object HttpStatusOracle {
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD)
         }
 
-        if(status == 406 && !call.isForRobustnessTesting()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT)
-        }
-
-        if(status == 401 && !SchemaUtils.hasAuthDefinition(schema)){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH)
-        }
-
-        if(status == 403 && !SchemaUtils.getDeclaredStatusInResponse(call.endpoint, schema).contains(401)){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401)
+        if(status == 501){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_501_IF_IMPLEMENTED)
         }
 
         return faults

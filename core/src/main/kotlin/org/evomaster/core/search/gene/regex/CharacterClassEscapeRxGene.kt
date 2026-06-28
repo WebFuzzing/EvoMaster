@@ -152,6 +152,12 @@ class CharacterClassEscapeRxGene(
         }
     }
 
+    override fun isUnsatisfiable(): Boolean = multiCharRange.isEmpty
+
+    override fun isMutable(): Boolean {
+        return !isUnsatisfiable()
+    }
+
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         // we pass the same embedded flags to the regex to accurately match the expected behavior
         return value.matches(Regex("${flags.getScopeString()}\\$type"))
@@ -213,6 +219,9 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        if (isUnsatisfiable()) {
+            throw IllegalStateException("Cannot get value from empty CharacterClassEscape")
+        }
         return if (!flags.isCaseable(value[0])) {
             value[0].toString()
         }

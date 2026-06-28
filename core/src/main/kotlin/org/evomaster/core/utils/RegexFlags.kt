@@ -1,5 +1,7 @@
 package org.evomaster.core.utils
 
+import java.util.regex.Pattern
+
 /**
  * Represents a parsed flag expression like "(?iu-s:".
  * Encapsulates the flags being turned on and off, to be applied to an existing [RegexFlags] via [RegexFlags.merge].
@@ -57,6 +59,22 @@ data class RegexFlags(
                 comments              = 'x' in s,
             )
         }
+
+        /**
+         * Constructs a [RegexFlags] from a Java regex flags bitmask, as accepted by
+         * [java.util.regex.Pattern.compile]. This allows external flags passed to
+         * [java.util.regex.Pattern.compile] to be preserved and applied when building
+         * the gene tree, mirroring the behaviour of the Java regex engine.
+         */
+        fun fromExternalJavaRegexFlagBitmask(externalRegexFlagsBitmask: Int): RegexFlags = RegexFlags(
+            caseInsensitive       = externalRegexFlagsBitmask and Pattern.CASE_INSENSITIVE != 0,
+            unicodeCase           = externalRegexFlagsBitmask and Pattern.UNICODE_CASE != 0,
+            dotAll                = externalRegexFlagsBitmask and Pattern.DOTALL != 0,
+            multiline             = externalRegexFlagsBitmask and Pattern.MULTILINE != 0,
+            unixLines             = externalRegexFlagsBitmask and Pattern.UNIX_LINES != 0,
+            unicodeCharacterClass = externalRegexFlagsBitmask and Pattern.UNICODE_CHARACTER_CLASS != 0,
+            comments              = externalRegexFlagsBitmask and Pattern.COMMENTS != 0
+        )
     }
 
     /**
