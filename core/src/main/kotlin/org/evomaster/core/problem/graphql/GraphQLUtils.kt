@@ -17,7 +17,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.util.*
-import jakarta.ws.rs.client.Entity
+import javax.ws.rs.client.Entity
 
 object GraphQLUtils {
 

@@ -1,7 +1,7 @@
 package org.evomaster.core.output.clustering.metrics
 
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.core.MediaType
 
 
 /**

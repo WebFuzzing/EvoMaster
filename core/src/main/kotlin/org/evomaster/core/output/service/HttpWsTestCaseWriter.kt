@@ -34,7 +34,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.core.MediaType
 import kotlin.collections.filter
 
 

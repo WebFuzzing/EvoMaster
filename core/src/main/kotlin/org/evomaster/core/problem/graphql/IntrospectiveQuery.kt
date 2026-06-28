@@ -9,9 +9,9 @@ import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.utils.TimeUtils
 import org.slf4j.LoggerFactory
-import jakarta.ws.rs.client.Client
-import jakarta.ws.rs.client.Entity
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
 
 
 class IntrospectiveQuery {

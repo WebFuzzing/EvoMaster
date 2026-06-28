@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import jakarta.ws.rs.core.Response
+import javax.ws.rs.core.Response
 
 /**
  * abstract class for handling fitness of API based SUT, such as REST, GraphQL, RPC

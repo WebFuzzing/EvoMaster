@@ -14,10 +14,12 @@ import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import jakarta.ws.rs.core.NewCookie
+import javax.inject.Inject
+import javax.ws.rs.core.NewCookie
 
 
 class BlackBoxRestFitness : RestFitness() {

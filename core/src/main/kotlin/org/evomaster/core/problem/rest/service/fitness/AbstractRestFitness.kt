@@ -70,11 +70,11 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.inject.Inject
-import jakarta.ws.rs.ProcessingException
-import jakarta.ws.rs.client.Entity
-import jakarta.ws.rs.client.Invocation
-import jakarta.ws.rs.core.MediaType
-import jakarta.ws.rs.core.NewCookie
+import javax.ws.rs.ProcessingException
+import javax.ws.rs.client.Entity
+import javax.ws.rs.client.Invocation
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.NewCookie
 
 
 abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {

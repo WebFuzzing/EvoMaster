@@ -38,7 +38,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import java.util.*
 import java.util.Collections.singletonList
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.core.MediaType
 
 object RestActionTestCaseUtils {
 

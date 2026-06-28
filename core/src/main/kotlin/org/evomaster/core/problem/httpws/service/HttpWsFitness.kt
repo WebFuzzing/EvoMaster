@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
 import javax.annotation.PostConstruct
-import jakarta.ws.rs.client.Client
-import jakarta.ws.rs.client.Invocation
-import jakarta.ws.rs.core.NewCookie
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.Invocation
+import javax.ws.rs.core.NewCookie
 
 abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 

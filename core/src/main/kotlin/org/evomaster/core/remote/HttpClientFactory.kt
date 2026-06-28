@@ -1,15 +1,16 @@
 package org.evomaster.core.remote
 
 import org.evomaster.core.Lazy
-import org.glassfish.jersey.apache5.connector.Apache5ClientProperties
-import org.glassfish.jersey.apache5.connector.Apache5ConnectorProvider
+import org.glassfish.jersey.apache.connector.ApacheClientProperties
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
+import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.*
-import jakarta.ws.rs.client.Client
-import jakarta.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
 
 object HttpClientFactory {
 
@@ -57,9 +58,9 @@ object HttpClientFactory {
                 must use this connector, because default of Jersey has problems,
                 eg, it does not handle PATCH properly and body payloads in GET/DELETE
              */
-            .connectorProvider(Apache5ConnectorProvider())
+            .connectorProvider(ApacheConnectorProvider())
             .register(org.glassfish.jersey.jackson.JacksonFeature::class.java)
-            .property(Apache5ClientProperties.DISABLE_COOKIES, true)
+            .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
         val client = ClientBuilder.newBuilder()
             .withConfig(config)

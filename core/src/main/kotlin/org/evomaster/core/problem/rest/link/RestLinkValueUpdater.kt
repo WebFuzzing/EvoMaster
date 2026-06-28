@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.link
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.core.MediaType
 
 object RestLinkValueUpdater {
 

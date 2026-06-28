@@ -12,7 +12,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import jakarta.ws.rs.core.MediaType
+import javax.ws.rs.core.MediaType
 
 class PythonTestCaseWriterTest : WriterTestBase(){
 
