@@ -25,6 +25,26 @@ data class ParsedFlagExpression(
         enable  -> true
         else    -> current
     }
+
+    companion object {
+        /**
+         * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
+         * into a [ParsedFlagExpression] that can be applied to the current flags.
+         */
+        fun fromFlagToken(tokenText: String): ParsedFlagExpression {
+            // strip "(?" from start and ":" (or ")") from end
+            val inner = tokenText.drop(2).dropLast(1)
+
+            val (enableStr, disableStr) = if ('-' in inner)
+                inner.split('-', limit = 2).let { it[0] to it[1] }
+            else Pair(inner, "")
+
+            return ParsedFlagExpression(
+                RegexFlags.fromString(enableStr),
+                RegexFlags.fromString(disableStr)
+            )
+        }
+    }
 }
 
     private val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
@@ -90,8 +110,7 @@ data class RegexFlags(
                     unicodeCharacterClass ||
                     comments)) {
             return ""
-        }
-        else {
+        } else {
             val sb = StringBuilder()
             sb.append("(?")
 

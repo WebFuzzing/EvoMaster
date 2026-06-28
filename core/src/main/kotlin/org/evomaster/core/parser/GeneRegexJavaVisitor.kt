@@ -56,25 +56,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
      */
     private var currentFlags = externalRegexFlags
 
-    /**
-     * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
-     * into a [ParsedFlagExpression] that can be applied to the current flags.
-     */
-    private fun parseFlagToken(tokenText: String): ParsedFlagExpression {
-        // strip "(?" from start and ":" (or ")") from end
-        val inner = tokenText.drop(2).dropLast(1)
-
-        val (enableStr, disableStr) = if ('-' in inner)
-            inner.split('-', limit = 2).let { it[0] to it[1] }
-        else Pair(inner, "")
-
-        return ParsedFlagExpression(
-            RegexFlags.fromString(enableStr),
-            RegexFlags.fromString(disableStr)
-        )
-    }
-
-
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -129,7 +110,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 val previous = currentFlags
 
                 val merged = currentFlags.merge(
-                    parseFlagToken(term.FLAG_SCOPE_OPEN().text)
+                    ParsedFlagExpression.fromFlagToken(term.FLAG_SCOPE_OPEN().text)
                 )
 
                 merged.validate()
@@ -300,7 +281,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
             val previous = currentFlags
 
             val merged = currentFlags.merge(
-                parseFlagToken(ctx.FLAG_GROUP_OPEN().text)
+                ParsedFlagExpression.fromFlagToken(ctx.FLAG_GROUP_OPEN().text)
             )
 
             merged.validate()
