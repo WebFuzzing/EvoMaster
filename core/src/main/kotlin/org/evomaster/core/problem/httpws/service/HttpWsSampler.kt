@@ -146,7 +146,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             }
 
             authentications.addInfo(auth)
-            return
+
         } else {
 
             /*
