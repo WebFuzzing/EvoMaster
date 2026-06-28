@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 import org.evomaster.core.utils.RegexWithExternalFlags
 
@@ -33,7 +34,9 @@ object RegexHandler {
             return cacheJVM[key]!!.copy() as RegexGene
         }
 
-        val stream = CharStreams.fromString(regex)
+        val preprocessedRegex = preprocessCommentsForJavaRegex(regex, externalRegexFlags)
+
+        val stream = CharStreams.fromString(preprocessedRegex)
         val lexer = RegexJavaLexer(stream)
         val tokenStream = prepareLexer(lexer)
         val parser = RegexJavaParser(tokenStream)
@@ -46,6 +49,107 @@ object RegexHandler {
         val gene= res.genes.first() as RegexGene
         cacheJVM[key] = gene.copy() as RegexGene
         return gene
+    }
+
+    /**
+     * This function handles comments and whitespace for Java regex, striping them when the "x" flag is on.
+     */
+    private fun preprocessCommentsForJavaRegex(regex: String, externalRegexFlags: RegexFlags): String {
+        val result = StringBuilder(regex.length)
+        val scopeStack = ArrayDeque<RegexFlags>() // stack of flags per level
+        var currentFlags = externalRegexFlags
+        var i = 0
+
+        while (i < regex.length) {
+            val c = regex[i]
+            when {
+                // backslash escape
+                c == '\\' && i + 1 < regex.length -> {
+                    when {
+                        regex[i+1] == 'Q' -> {
+                            // \Q...\E quote block, copy everything
+                            result.append('\\'); result.append('Q')
+                            i += 2
+                            while (i < regex.length) {
+                                if (regex[i] == '\\' && i+1 < regex.length && regex[i+1] == 'E') {
+                                    result.append('\\'); result.append('E')
+                                    i += 2; break
+                                }
+                                result.append(regex[i++])
+                            }
+                        }
+                        else -> {
+                            // regular escape, copy both
+                            result.append(c); result.append(regex[i+1])
+                            i += 2
+                        }
+                    }
+                }
+
+                // opening paren: check for flag group or scope
+                c == '(' && i+1 < regex.length && regex[i+1] == '?' -> {
+                    // scan forward to find the flag content
+                    val flagStart = i + 2
+                    var j = flagStart
+                    // lookahead to end of group/scope/other, set j to that position
+                    while (j < regex.length && regex[j] != ':' && regex[j] != ')' && regex[j] != '(') j++
+
+                    // check if regex[i..j] forms valid flag scope/group
+                    if (j < regex.length && (regex[j] == ':' || regex[j] == ')') && j > i+2
+                        && regex.substring(i+2, j).all{ it in RegexFlags.validFlagCharacters || it == '-' }) {
+                        // valid flag group/scope
+                        if(regex[j] == ':') {
+                            // flag group (?flags:...): parse flags and push scope
+                            val flagToken = regex.substring(i, j+1) // e.g. "(?iu:"
+                            val newFlags = currentFlags.merge(ParsedFlagExpression.fromFlagToken(flagToken))
+                            scopeStack.addLast(currentFlags)
+                            currentFlags = newFlags
+                            result.append(regex.substring(i, j+1))
+                            i = j + 1
+                        } else {
+                            // flag scope (?flags), update currentFlags
+                            val flagToken = regex.substring(i, j+1) // e.g. "(?iu)"
+                            currentFlags = currentFlags.merge(ParsedFlagExpression.fromFlagToken(flagToken))
+                            result.append(regex.substring(i, j+1))
+                            i = j + 1
+                        }
+                    } else {
+                        // not a flag group/scope: push current flags unchanged
+                        scopeStack.addLast(currentFlags)
+                        result.append(c); i++
+                    }
+                }
+
+                c == '(' -> {
+                    scopeStack.addLast(currentFlags)
+                    result.append(c); i++
+                }
+
+                c == ')' -> {
+                    currentFlags = scopeStack.removeLastOrNull() ?: externalRegexFlags
+                    result.append(c); i++
+                }
+
+                // comment
+                c == '#' && currentFlags.comments -> {
+                    i++
+                    while (i < regex.length && !currentFlags.isLineTerminator(regex[i])) i++
+                    // consume line terminator
+                    if (i < regex.length) {
+                        // \r\n is a 2-character line terminator
+                        if (regex[i] == '\r' && i+1 < regex.length && regex[i+1] == '\n') i += 2
+                        else i++
+                    }
+                }
+
+                // whitespace, skip when comments flag is on
+                c.isWhitespace() && currentFlags.comments -> i++
+
+                // else copy
+                else -> { result.append(c); i++ }
+            }
+        }
+        return result.toString()
     }
 
     /**

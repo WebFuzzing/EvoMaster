@@ -170,7 +170,6 @@ data class RegexFlags(
         if (multiline)             throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
         if (unixLines)             throw IllegalStateException("Regex flag 'd' (UNIX_LINES) is not yet supported")
         if (unicodeCharacterClass) throw IllegalStateException("Regex flag 'U' (UNICODE_CHARACTER_CLASS) is not yet supported")
-        if (comments) throw IllegalStateException("Regex flag 'x' (COMMENTS) is not yet supported")
     }
 
     /**
