@@ -1,6 +1,7 @@
 package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Test
 
 /**
@@ -273,5 +274,27 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
         checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
         checkSameAsJava("&&")
+    }
+
+    @Test
+    fun testCommentsFlag(){
+        val commentsOn = RegexFlags(comments=true)
+        checkSameAsJava("a b c", commentsOn)
+        checkSameAsJava("a b c #comment\n after comment", commentsOn)
+        checkSameAsJava("[also within char classes#comments too\n]", commentsOn)
+        checkSameAsJava("a#comment\nb#noNewLine", commentsOn)
+        checkSameAsJava("a#c1\n#c2\nb", commentsOn)
+        checkSameAsJava("(a|b|#comment\nc)", commentsOn)
+        checkSameAsJava("(?-x)( #notAComment)")
+        checkSameAsJava("(?-x)( #notAComment)", commentsOn)
+        checkCanSample("(?x)(a|b|#comment\nc)", listOf("a", "b", "c"), 100)
+        checkSameAsJava("a\\ b +", commentsOn)
+        checkSameAsJava("\\#a{1,3 #comment\n} ", commentsOn)
+        checkSameAsJava("    ", commentsOn)
+        checkCanSample("(?x)a|#comment", listOf("a", ""), 100)
+        checkSameAsJava("a(?x:b c(?-x: d )e f)g")
+        checkSameAsJava("\\Q#not a comment\\E", commentsOn)
+        checkSameAsJava("a b(?-x: c d(?x: e f)g h)i j", commentsOn)
+        checkSameAsJava("a b(?-x: c d(?x: e f (?-x) #no (?x: a b))g h)i j", commentsOn)
     }
 }
