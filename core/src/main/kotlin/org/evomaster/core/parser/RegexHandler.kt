@@ -130,11 +130,12 @@ object RegexHandler {
                     result.append(c); i++
                 }
 
-                // comment
+                // comment (when COMMENTS flag is on)
                 c == '#' && currentFlags.comments -> {
                     i++
+                    // advance index until line terminator (eg: "#...\n") without copying
                     while (i < regex.length && !currentFlags.isLineTerminator(regex[i])) i++
-                    // consume line terminator
+                    // consume line terminator too:
                     if (i < regex.length) {
                         // \r\n is a 2-character line terminator
                         if (regex[i] == '\r' && i+1 < regex.length && regex[i+1] == '\n') i += 2
@@ -142,7 +143,7 @@ object RegexHandler {
                     }
                 }
 
-                // whitespace, skip when comments flag is on
+                // whitespace, skip copying when comments flag is on
                 c.isWhitespace() && currentFlags.comments -> i++
 
                 // else copy
