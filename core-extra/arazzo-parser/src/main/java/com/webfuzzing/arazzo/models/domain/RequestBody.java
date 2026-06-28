@@ -9,8 +9,19 @@ import java.util.List;
  * A single request body describing the Content-Type and request body content to be passed by a step to an operation.
  */
 public class RequestBody {
+    /**
+     * The Content-Type for the request content.
+     */
     private String contentType;
+
+    /**
+     * A value representing the request body payload.
+     */
     private JsonNode payload;
+
+    /**
+     * A list of locations and values to set within a payload.
+     */
     private List<PayloadReplacement> replacements;
 
     public RequestBody() {

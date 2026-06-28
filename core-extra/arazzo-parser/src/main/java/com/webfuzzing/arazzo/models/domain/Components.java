@@ -10,9 +10,24 @@ import io.swagger.v3.oas.models.media.Schema;
  * unless they are explicitly referenced from properties outside the components object.
  */
 public class Components {
+    /**
+     * An object to hold reusable JSON Schema objects to be referenced from workflow inputs.
+     */
     private Map<String, Schema<?>> inputs;
+
+    /**
+     * An object to hold reusable Parameter Objects
+     */
     private Map<String, Parameter> parameters;
+
+    /**
+     * An object to hold reusable Success Actions Objects.
+     */
     private Map<String, SuccessAction> successAction;
+
+    /**
+     * An object to hold reusable Failure Actions Objects.
+     */
     private Map<String, FailureAction> failureAction;
 
     public Components() {

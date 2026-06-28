@@ -7,8 +7,9 @@ import com.webfuzzing.arazzo.models.domain.SourceDescription;
 import java.util.List;
 
 /**
- * Representing the ArazzoSpecifications (DTO)
- * Used for direct document parsing
+ * Jackson-deserializable representation of the root Arazzo Specification Object.
+ * Mutable intermediate model used during parsing; mapped to the immutable domain
+ * {@link com.webfuzzing.arazzo.models.domain.ArazzoSpecifications} by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
  */
 public class ArazzoSpecificationsDTO {
     private String arazzo;

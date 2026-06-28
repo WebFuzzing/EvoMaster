@@ -5,12 +5,32 @@ import java.util.List;
 /**
  * Representing the model Arazzo Specification Object
  * This is the root object of the Arazzo Description
+ * Original info from Arazzo: <a href="https://spec.openapis.org/arazzo/v1.0.1.html#arazzo-specification-object">...</a>
  */
 public class ArazzoSpecifications {
+    /**
+     * This string MUST be the version number of the Arazzo Specification that the Arazzo Description uses
+     */
     private String arazzo;
+
+    /**
+     * Provides metadata about the workflows contain within the Arazzo Description.
+     */
     private InfoArazzo info;
+
+    /**
+     * A list of source descriptions.
+     */
     private List<SourceDescription> sourceDescriptions;
+
+    /**
+     * A list of workflows.
+     */
     private List<Workflow> workflows;
+
+    /**
+     * An element to hold various schemas for the Arazzo Description.
+     */
     private Components components;
 
     private ArazzoSpecifications(Builder builder) {

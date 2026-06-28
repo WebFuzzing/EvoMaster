@@ -9,9 +9,19 @@ import com.webfuzzing.arazzo.deserializer.CriterionTypeDeserializer;
  * and condition types that can be used to prove or satisfy assertions specified
  */
 public class Criterion {
+    /**
+     * A Runtime Expression used to set the context for the condition to be applied on.
+     */
     private String context;
+
+    /**
+     * The condition to apply.
+     */
     private String condition;
 
+    /**
+     * The type of condition to be applied.
+     */
     @JsonDeserialize(using = CriterionTypeDeserializer.class)
     private CriterionType type;
 

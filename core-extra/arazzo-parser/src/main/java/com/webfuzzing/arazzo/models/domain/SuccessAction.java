@@ -7,10 +7,29 @@ import java.util.List;
  * A single success action which describes an action to take upon success of a workflow step
  */
 public class SuccessAction {
+    /**
+     * The name of the success action.
+     */
     private String name;
+
+    /**
+     * The type of action to take.
+     */
     private String type;
+
+    /**
+     * The workflowId referencing an existing workflow within the Arazzo Description to transfer to upon success of the step.
+     */
     private String workflowId;
+
+    /**
+     * The stepId to transfer to upon success of the step.
+     */
     private String stepId;
+
+    /**
+     * A list of assertions to determine if this action SHALL be executed.
+     */
     private List<Criterion> criteria;
 
     public SuccessAction() {

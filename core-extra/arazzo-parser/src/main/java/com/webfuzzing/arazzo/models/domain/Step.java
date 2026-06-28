@@ -13,16 +13,59 @@ import java.util.Map;
  * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
  */
 public class Step {
+    /**
+     * A description of the step.
+     */
     private String description;
+
+    /**
+     * Unique string to represent the step.
+     */
     private String stepId;
+
+    /**
+     * The name of an existing, resolvable operation, as defined with a unique operationId and existing within one of the sourceDescriptions.
+     */
     private String operationId;
+
+    /**
+     * A reference to a Source Description Object combined with a JSON Pointer to reference an operation.
+     */
     private String operationPath;
+
+    /**
+     * The workflowId referencing an existing workflow within the Arazzo Description.
+     */
     private String workflowId;
+
+    /**
+     * A list of parameters that MUST be passed to an operation or workflow as referenced by operationId, operationPath, or workflowId.
+     */
     private List<Parameter> parameters;
+
+    /**
+     * The request body to pass to an operation as referenced by operationId or operationPath.
+     */
     private RequestBody requestBody;
+
+    /**
+     * A list of assertions to determine the success of the step.
+     */
     private List<Criterion> successCriteria;
+
+    /**
+     * An array of success action objects that specify what to do upon step success.
+     */
     private List<SuccessAction> onSuccess;
+
+    /**
+     * An array of failure action objects that specify what to do upon step failure.
+     */
     private List<FailureAction> onFailure;
+
+    /**
+     * A map between a friendly name and a dynamic output value defined using a Runtime Expression.
+     */
     private Map<String, String> outputs;
 
     public Step(Builder builder) {

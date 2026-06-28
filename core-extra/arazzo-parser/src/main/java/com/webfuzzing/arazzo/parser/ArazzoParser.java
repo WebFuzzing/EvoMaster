@@ -19,6 +19,9 @@ public class ArazzoParser {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().findAndRegisterModules();
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory()).findAndRegisterModules();
 
+    /**
+     * Parses an Arazzo document along with the corresponding OpenAPI document and returns an instance of ArazzoSpecifications.
+     */
     public static ArazzoSpecifications parse(String schemaText, OpenAPI openAPI) {
         AbstractMap.SimpleEntry<ArazzoSpecificationsDTO, JsonNode> parsed = parseSchemaText(schemaText);
         ArazzoReferenceResolver resolver = new ArazzoReferenceResolver(parsed.getKey().getComponents(), parsed.getValue(), openAPI);

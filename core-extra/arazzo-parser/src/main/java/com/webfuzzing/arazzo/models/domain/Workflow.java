@@ -16,15 +16,54 @@ import java.util.Map;
  * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
  */
 public class Workflow {
+    /**
+     * Unique string to represent the workflow.
+     */
     private String workflowId;
+
+    /**
+     * A summary of the purpose or objective of the workflow.
+     */
     private String summary;
+
+    /**
+     * A description of the workflow.
+     */
     private String description;
+
+    /**
+     * A JSON Schema 2020-12 object representing the input parameters used by this workflow.
+     */
     private Schema<?> inputs;
+
+    /**
+     * A list of workflows that MUST be completed before this workflow can be processed.
+     */
     private List<String> dependsOn;
+
+    /**
+     * An ordered list of steps where each step represents a call to an API operation or to another workflow.
+     */
     private List<Step> steps;
+
+    /**
+     * A list of success actions that are applicable for all steps described under this workflow.
+     */
     private List<SuccessAction> successActions;
+
+    /**
+     * A list of failure actions that are applicable for all steps described under this workflow.
+     */
     private List<FailureAction> failureActions;
+
+    /**
+     * A map between a friendly name and a dynamic output value.
+     */
     private Map<String, String> outputs;
+
+    /**
+     * A list of parameters that are applicable for all steps described under this workflow.
+     */
     private List<Parameter> parameters;
 
     private Workflow(Builder builder) {

@@ -8,7 +8,14 @@ public class Reusable {
 
     public static final String REFERENCE = "reference";
 
+    /**
+     * A Runtime Expression used to reference the desired object.
+     */
     private String reference;
+
+    /**
+     * Sets a value of the referenced parameter.
+     */
     private String value;
 
     public Reusable() {

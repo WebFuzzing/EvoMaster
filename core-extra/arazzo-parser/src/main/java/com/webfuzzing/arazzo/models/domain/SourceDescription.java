@@ -6,8 +6,19 @@ package com.webfuzzing.arazzo.models.domain;
  * that will be referenced by one or more workflows described within an Arazzo Description
  */
 public class SourceDescription {
+    /**
+     * A unique name for the source description.
+     */
     private String name;
+
+    /**
+     * A URL to a source description to be used by a workflow.
+     */
     private  String url;
+
+    /**
+     * The type of source description. Possible values are "openapi" or "arazzo".
+     */
     private String type;
 
     public SourceDescription() {
