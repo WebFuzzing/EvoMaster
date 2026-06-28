@@ -47,8 +47,6 @@ data class ParsedFlagExpression(
     }
 }
 
-    private val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
-
 data class RegexFlags(
     // currently implemented
     val caseInsensitive: Boolean = false,        // i
@@ -63,6 +61,8 @@ data class RegexFlags(
 ) {
 
     companion object {
+        val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
+
         /**
          * Parses a string of flag characters (e.g. "iu", "sm") into a [RegexFlags] instance.
          * Valid characters are: i, u, s, m, d, U, x.
