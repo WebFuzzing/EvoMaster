@@ -417,4 +417,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("a([b&&c])d") }
         assertThrows<IllegalStateException> { checkSameAsJava("abc|\\k<name>") }
     }
+
+    @Test
+    fun testUnicodeCharClassFlagImpliesUnicodeCase(){
+        checkCanSample("(?iU)Å", "å", 100)
+    }
 }

@@ -144,7 +144,8 @@ data class RegexFlags(
      * and unicodeCase flag values.
      */
     fun isCaseable(codePoint: Int): Boolean {
-        return if (caseInsensitive && unicodeCase) {
+        // unicodeCharacterClass implies also unicodeCase
+        return if (caseInsensitive && (unicodeCase || unicodeCharacterClass)) {
             Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
         }
         else if (caseInsensitive) {
