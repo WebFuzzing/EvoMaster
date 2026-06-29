@@ -1,9 +1,15 @@
 package com.foo.rest.examples.spring.endpointfocusandprefix;
 
+import static java.util.Arrays.asList;
+
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -12,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.HtmlUtils;
 
 import org.springframework.http.MediaType;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -32,7 +37,7 @@ public class EndpointFocusAndPrefixRest {
     public String getPetById(    @ApiParam("Value to retrieve")
                                  @PathVariable("petId")
                                  Integer value) {
-        return value + " retrieved";
+        return "\"" + value + " retrieved\"";
     }
 
     @ApiOperation("Update a pet according to the given pet id")
@@ -44,7 +49,7 @@ public class EndpointFocusAndPrefixRest {
     public String updatePetById(    @ApiParam("Value to store")
                                     @PathVariable("petId")
                                     Integer value) {
-        return value + " updated";
+        return "\"" + value + " updated\"";
     }
 
     @ApiOperation("Delete a pet according to the given pet id")
@@ -68,7 +73,7 @@ public class EndpointFocusAndPrefixRest {
     public String uploadImageForPet(    @ApiParam("Pet ID to upload")
                                         @PathVariable("petId")
                                         Integer value) {
-        return "Image uploaded for the pet: " + value;
+        return "\"Image uploaded for the pet: " + value + "\"";
     }
 
     @ApiOperation("Add a pet to the store")
@@ -98,7 +103,7 @@ public class EndpointFocusAndPrefixRest {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<String> findByStatus() {
-        return Arrays.asList("pet1", "pet2", "pet3", "pet4");
+        return asList("pet1", "pet2", "pet3", "pet4");
     }
 
     @ApiOperation("Finds items in the store inventory")
@@ -108,7 +113,7 @@ public class EndpointFocusAndPrefixRest {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<String> getStoreInventory() {
-        return Arrays.asList("item", "item2", "item3");
+        return asList("item", "item2", "item3");
     }
 
 
@@ -121,7 +126,7 @@ public class EndpointFocusAndPrefixRest {
     public String findStoreOrderById(    @ApiParam("order ID to check")
                                          @PathVariable("orderID")
                                          Integer value) {
-        return "Information for the order: " + value;
+        return "\"Information for the order: " + value + "\"";
     }
 
     @ApiOperation("Delete a given order according to orderID ")
@@ -155,7 +160,7 @@ public class EndpointFocusAndPrefixRest {
     public String getUserByName(    @ApiParam("username to retrieve")
                                     @PathVariable("username")
                                     String name) {
-        return "Retrieved information for the user " + HtmlUtils.htmlEscape(String.valueOf(name));
+        return "\"Retrieved information for the user " + HtmlUtils.htmlEscape(String.valueOf(name)) + "\"";
     }
 
     @ApiOperation("Update information about a user")
@@ -168,7 +173,7 @@ public class EndpointFocusAndPrefixRest {
             @ApiParam("username to update")
             @PathVariable("username")
             String name) {
-        return "Updated information for the user " + HtmlUtils.htmlEscape(String.valueOf(name));
+        return "\"Updated information for the user " + HtmlUtils.htmlEscape(String.valueOf(name)) + "\"";
     }
 
     @ApiOperation("Delete information about a user")
@@ -181,7 +186,7 @@ public class EndpointFocusAndPrefixRest {
             @ApiParam("username to delete")
             @PathVariable("username")
             String name) {
-        return "Deleted information for the user " + HtmlUtils.htmlEscape(String.valueOf(name));
+        return "\"Deleted information for the user " + HtmlUtils.htmlEscape(String.valueOf(name)) + "\"";
     }
 
     @ApiOperation("Create a new user")
@@ -190,8 +195,11 @@ public class EndpointFocusAndPrefixRest {
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public String createUser() {
-        return "Created a new user";
+    public ResponseEntity<?> createUser() {
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.put("location", asList(""));
+        return new ResponseEntity("\"Created a new user\"", headers, HttpStatus.OK);
+
     }
 
     @ApiOperation("Create users given with a given list")
@@ -218,7 +226,7 @@ public class EndpointFocusAndPrefixRest {
 
         report = report + "Created all users\n";
 
-        return report;
+        return "\"" + report + "\"";
     }
 
     @ApiOperation("Logs in a user")
@@ -229,7 +237,7 @@ public class EndpointFocusAndPrefixRest {
     )
     public String userLogin() {
 
-        return "Logged in a user";
+        return "\"Logged in a user\"";
     }
 
     @ApiOperation("Logs out a user")
@@ -240,6 +248,6 @@ public class EndpointFocusAndPrefixRest {
     )
     public String userLogout() {
 
-        return "Logged out a user";
+        return "\"Logged out a user\"";
     }
 }
