@@ -2,15 +2,11 @@ package org.evomaster.e2etests.spring.openapi.v3.flakinessdetect
 
 import com.foo.rest.examples.spring.openapi.v3.flakinessdetect.FlakinessDetectController
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.function.Predicate
 
-class FlakinessDetectEMTest : SpringTestBase() {
+class FlakinessDetectWithMultiExecEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -20,32 +16,29 @@ class FlakinessDetectEMTest : SpringTestBase() {
         }
     }
 
-
     @Test
-    fun testRunEM() {
+    fun testRunEMWithMultipleFlakinessExecutions() {
 
-        val outputFolder = "FlakinessDetectEM"
-        val outputClass = "org.foo.FlakinessDetectEM"
-        val flakyMark = "Flaky"
+        val outputFolder = "FlakinessDetectMultipleExecutionsEM"
+        val outputClass = "org.foo.FlakinessDetectMultipleExecutionsEM"
 
         runTestHandlingFlakyAndCompilation(
             outputFolder,
             outputClass,
-            100,
+            30,
             true
         ) { args: MutableList<String> ->
 
             setOption(args, "minimize", "true")
             setOption(args, "handleFlakiness", "true")
-            setOption(args, "execNumForDetectFlakiness", "1")
-
+            setOption(args, "execNumForDetectFlakiness", "2")
+            setOption(args, "endpointFocus", "/api/flakinessdetect/multiexecution")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
-            assertTextInTests(outputFolder,outputClass,flakyMark)
-            assertCountTextInTests(outputFolder,outputClass,
-                Predicate { it: String? -> it != null && it.contains(flakyMark) }, 3)
+            assertTextInTests(outputFolder, outputClass, "Flaky value of field \"'first'\"")
+            assertTextInTests(outputFolder, outputClass, "Flaky value of field \"'second'\"")
         }
     }
 }
