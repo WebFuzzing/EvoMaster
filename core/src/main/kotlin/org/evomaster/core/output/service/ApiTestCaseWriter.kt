@@ -24,6 +24,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
     companion object{
         private val mapper = ObjectMapper()
+        /*
+            HTML entities may be decoded differently by clients/servers, making exact string assertions flaky.
+            as this relates to asseration not sut, we fix it in the test generation instead of flakiness handling
+         */
+        private val HTML_ENTITY_REGEX = Regex("&(?:#[0-9]+|#x[0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]+);")
     }
 
     protected fun createUniqueResponseVariableName(): String {
@@ -116,6 +121,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             //TODO in the call above BODY was used... what's difference from TEXT?
             bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName)
         }
+        // with bodyIsString, it may return null, then add this
+        if (assertion == null) {
+            return
+        }
         if (flakyBodyString == null || flakyBodyString == bodyString) {
             lines.add(assertion)
         }else{
@@ -165,7 +174,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 }
             }
             '"' -> {
-                val isString = bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName)
+                val isString = bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName) ?: return
                 if (flakyBodyString == null || flakyBodyString == bodyString) {
                     lines.add(isString)
                 }else{
@@ -216,7 +225,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     object and array.
                     The rest is either ignored or leads to crash
                  */
-                val value = bodyIsString(s,GeneUtils.EscapeMode.BODY, responseVariableName)
+                val value = bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName) ?: return
 
                 val fs = flakyBodyString?.trim()
                 if (fs == null || fs == s) {
@@ -248,7 +257,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     payload (Java and Python don't seem to have such issue)
                  */
                 // TODO flaky
-                lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
+                bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName)?.let { lines.add(it) }
             }
             else -> throw IllegalStateException("Format not supported yet: $format")
         }
@@ -374,9 +383,13 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             val left = when (value) {
                 is Boolean -> "equalTo($value)"
                 is Number -> "numberMatches(${handleNumberInJavaOrKotlinTest(value)})"
-                is String -> "containsString(" +
-                        "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
-                        "\")"
+                is String -> {
+                    val content = GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format)
+                    val assertionContent = handleHtmlEntity(content) ?: return
+                    "containsString(" +
+                            "\"$assertionContent" +
+                            "\")"
+                }
                 else -> throw IllegalStateException("Unsupported type: ${value::class}")
             }
             if (isSuitableToPrint(left)) {
@@ -491,6 +504,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             val items = (list as List<String>).joinToString {
                 "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
             }
+            if (!isSuitableToPrint(items)) {
+                return
+            }
 
             if (flakyList != null && (!flakyList.containsAll(list) || flakyList.size != list.size)) {
 
@@ -590,16 +606,18 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return instruction
     }
 
-    protected fun bodyIsString(bodyString: String, mode: GeneUtils.EscapeMode, responseVariableName: String?): String {
+    protected fun bodyIsString(bodyString: String, mode: GeneUtils.EscapeMode, responseVariableName: String?): String? {
 
-        val content = GeneUtils.applyEscapes(bodyString, mode, format = format)
+        val originalContent = GeneUtils.applyEscapes(bodyString, mode, format = format)
+        val content = handleHtmlEntity(originalContent) ?: return null
 
         if (format.isJavaOrKotlin()) {
             return ".body(containsString(\"$content\"))"
         }
 
         if (format.isJavaScript()) {
-            return "expect($responseVariableName.text).toBe(\"$content\");"
+            return "expect($responseVariableName.text).toContain(\"$content\");"
+
         }
 
         if (format.isCsharp()) {
@@ -608,7 +626,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 content.startsWith("\\\"") -> content.substring(2, content.length - 2)
                 else -> content
             }
-            return "Assert.True($responseVariableName == \"$k\");"
+            return "Assert.True($responseVariableName.Contains(\"$k\"));"
+
         }
 
         if (format.isPython()) {
@@ -616,6 +635,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         throw IllegalStateException("Not supported format $format")
+    }
+
+    /**
+     * handle assertion text that may contain HTML entities.
+     * If none are found, the original text is returned.
+     * Otherwise, returns the first non-empty text segment.
+     * Returns null if no non-empty segment can be extracted.
+     */
+    private fun handleHtmlEntity(content: String): String? {
+        if (!HTML_ENTITY_REGEX.containsMatchIn(content)) {
+            return content
+        }
+
+        return HTML_ENTITY_REGEX.split(content)
+                .map { it.trim() }
+                .firstOrNull { it.isNotEmpty() }
     }
 
 
@@ -646,6 +681,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return (
                 printableContent != "null" //TODO not so sure about this one... need to double-check
                         && !printableContent.contains("logged")
+                        && !HTML_ENTITY_REGEX.containsMatchIn(printableContent)
                         // is this for IP host:port addresses?
                         && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
     }
