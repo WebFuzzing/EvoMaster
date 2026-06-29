@@ -1103,37 +1103,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             )
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
-            /*
-                PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used.
-             */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            //null //cannot be left null, Jersey crash
-        } else if (a.verb == HttpVerb.POST) {
-            /*
-                POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
-                411 if  Content-Length is missing...
-             */
-            //builder.header("Content-Length", 0)
-            // null
-            /*
-                yet another critical bug in Jersey that it ignores that header (verified with WireShark)
-             */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
-        if(bodyEntity != null) {
-            if(bodyEntity.entity.isEmpty()){
-                // Jersey overwrite it...
-                //builder.header("Content-Type", "")
-            } else {
-                builder.header("Content-Type", bodyEntity.mediaType)
-            }
-        }
+        /*
+            TODO
+            handling of empty body has been a shit show.
+            Before, Jersey would crash if left emtpy on PUT/PATCH/POST (which is wrong).
+            so, had to force empty bodies, which would lead to 415 when wrong type.
+            but, after upgrading, removing that wrong code was possible, but it leads to another issue:
+            for some server frameworks, might still expect 'Content-length: 0', which doesn't
+            seem possible to force in Jersey... :(
+            in those cases, then some servers might return a 411 :(
+            this happened when we were supporting C# in WB.
+            TODO should check if still a problem. if so, should reproduce and try fix
+         */
 
         val invocation = when (a.verb) {
             /*

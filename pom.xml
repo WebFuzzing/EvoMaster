@@ -835,7 +835,7 @@
             <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
-                <version>4.3.0</version>
+                <version>5.5.7</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
