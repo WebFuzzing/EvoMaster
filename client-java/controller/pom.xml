@@ -323,8 +323,8 @@
                                     <shadedPattern>shaded.javassist</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>jersey</pattern>
-                                    <shadedPattern>shaded.jersey</shadedPattern>
+                                    <pattern>jersey.repackaged</pattern>
+                                    <shadedPattern>shaded.jersey.repackaged</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.aopalliance</pattern>
