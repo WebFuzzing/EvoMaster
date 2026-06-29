@@ -275,7 +275,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     TODO should do check for when there are spaces in the field name
                     TODO also need more tests to check all these edge cases
                  */
-                format.isJavaOrKotlin() -> if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+                // field path starts with [ is an array index, do not need additional quote
+                format.isJavaOrKotlin() -> if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("'") || fieldPath.startsWith("[")) "$fieldPath." else "'$fieldPath'."
                 format.isJavaScript() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) "" else "."}$fieldPath"
                 format.isCsharp() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[")) "" else "."}$fieldPath"
                 format.isPython() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) "" else "."}$fieldPath"
