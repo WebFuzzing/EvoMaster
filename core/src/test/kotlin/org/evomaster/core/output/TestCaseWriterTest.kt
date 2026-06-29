@@ -106,6 +106,41 @@ class TestCaseWriterTest : WriterTestBase(){
     }
 
 
+    @Test
+    fun testTextAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleTextPlainTextAssertion(
+            "Unable to obtain a new access token for resource &#39;null&#39;.", // observed in the catwatch
+            null,
+            lines,
+            null
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJsonStringAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleJsonStringAssertion(
+            "{\"message\":\"Unable to obtain a new access token for resource &#39;null&#39;.\"}",
+            null,
+            lines,
+            null,
+            false
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
 
 
     private fun buildEvaluatedIndividual(dbInitialization: MutableList<SqlAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
