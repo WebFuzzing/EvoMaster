@@ -37,6 +37,7 @@ class FlakinessDetectBBEMTest : SpringTestBase() {
         ){ args: MutableList<String> ->
 
             setOption(args, "handleFlakiness", "true")
+            setOption(args, "execNumForDetectFlakiness", "1")
 
             val solution = initAndRun(args)
 
