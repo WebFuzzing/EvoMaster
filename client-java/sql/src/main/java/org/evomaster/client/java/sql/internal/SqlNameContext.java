@@ -262,6 +262,11 @@ public class SqlNameContext {
 
 
     private static void handleAlias(Map<String, String> aliases, ParenthesedSelect select) {
+        /*
+            The alias belongs to the parenthesized FROM item itself. Do not read
+            it from the inner select, as UNION/INTERSECT/EXCEPT subqueries are
+            represented by JSqlParser as SetOperationList, not PlainSelect.
+         */
         Alias alias = select.getAlias();
         if (alias != null) {
             String aliasName = alias.getName();
@@ -289,4 +294,3 @@ public class SqlNameContext {
         }
     }
 }
-
