@@ -36,6 +36,10 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     private lateinit var epc: ExecutionPhaseController
 
     override fun applyPhase() {
+        if (!config.handleFlakiness) {
+            throw IllegalStateException("handleFlakiness must be enabled before applying this phase of flakiness detection and handing with FlakinessDetector")
+        }
+
         if (config.enableStaticFlakyInference) {
             inferStaticFlakiness()
         }

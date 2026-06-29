@@ -47,6 +47,12 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     /**
+     * this is used to record observed flakiness during flakiness handling
+     */
+    private val flakyObservations: MutableList<FlakyObservation> = mutableListOf()
+
+
+    /**
      * In some cases (eg infinite loop redirection), a HTTP call
      * might fail, and, as such, we might not have an actual "result"
      * object with info
@@ -269,7 +275,6 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         val valuesByExecIndex: Map<Int, String?>
     )
 
-    private val flakyObservations: MutableList<FlakyObservation> = mutableListOf()
 
     /**
      * Compare [other] result with [this] original call result
