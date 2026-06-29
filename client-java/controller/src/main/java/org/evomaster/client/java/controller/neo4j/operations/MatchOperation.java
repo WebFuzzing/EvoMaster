@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.neo4j.conditions.CypherCondition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a parsed MATCH query containing the structural pattern and extracted conditions.
@@ -34,9 +35,11 @@ public class MatchOperation extends CypherQueryOperation {
 
     public MatchOperation(MatchPattern pattern, List<CypherCondition> conditions,
                           List<String> pathVariables, boolean optional) {
-        this.pattern = pattern;
-        this.conditions = conditions != null ? new ArrayList<>(conditions) : new ArrayList<>();
-        this.pathVariables = pathVariables != null ? new ArrayList<>(pathVariables) : new ArrayList<>();
+        this.pattern = Objects.requireNonNull(pattern, "pattern must not be null");
+        this.conditions = Collections.unmodifiableList(
+                conditions != null ? new ArrayList<>(conditions) : new ArrayList<>());
+        this.pathVariables = Collections.unmodifiableList(
+                pathVariables != null ? new ArrayList<>(pathVariables) : new ArrayList<>());
         this.optional = optional;
     }
 
@@ -51,7 +54,7 @@ public class MatchOperation extends CypherQueryOperation {
      * Returns all conditions extracted from both inline patterns and WHERE clause.
      */
     public List<CypherCondition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+        return conditions;
     }
 
     /**
@@ -66,7 +69,7 @@ public class MatchOperation extends CypherQueryOperation {
      * Returns every path variable assigned by the query, in source order (empty if there are none).
      */
     public List<String> getPathVariables() {
-        return Collections.unmodifiableList(pathVariables);
+        return pathVariables;
     }
 
     /**

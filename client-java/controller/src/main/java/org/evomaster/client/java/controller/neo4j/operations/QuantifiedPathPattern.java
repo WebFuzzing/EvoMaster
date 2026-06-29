@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.neo4j.conditions.CypherCondition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A quantified path pattern (QPP), i.e. a sub-pattern repeated a number of times,
@@ -32,8 +33,9 @@ public class QuantifiedPathPattern {
     }
 
     public QuantifiedPathPattern(MatchPattern subPattern, List<CypherCondition> conditions, int min, Integer max) {
-        this.subPattern = subPattern;
-        this.conditions = conditions != null ? new ArrayList<>(conditions) : new ArrayList<>();
+        this.subPattern = Objects.requireNonNull(subPattern, "subPattern must not be null");
+        this.conditions = Collections.unmodifiableList(
+                conditions != null ? new ArrayList<>(conditions) : new ArrayList<>());
         this.min = min;
         this.max = max;
     }
@@ -47,7 +49,7 @@ public class QuantifiedPathPattern {
      * inline WHERE), in source order. Empty when the sub-pattern is purely structural.
      */
     public List<CypherCondition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+        return conditions;
     }
 
     public int getMin() {

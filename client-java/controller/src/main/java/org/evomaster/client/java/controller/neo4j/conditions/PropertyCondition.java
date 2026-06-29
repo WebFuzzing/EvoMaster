@@ -15,9 +15,9 @@ public class PropertyCondition implements CypherCondition {
     private final Operand value;
 
     public PropertyCondition(String variableName, String propertyKey, Operand value) {
-        this.variableName = variableName;
-        this.propertyKey = propertyKey;
-        this.value = value;
+        this.variableName = Objects.requireNonNull(variableName, "variableName must not be null");
+        this.propertyKey = Objects.requireNonNull(propertyKey, "propertyKey must not be null");
+        this.value = Objects.requireNonNull(value, "value must not be null");
     }
 
     public String getVariableName() {

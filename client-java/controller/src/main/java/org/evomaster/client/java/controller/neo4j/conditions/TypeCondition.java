@@ -12,8 +12,8 @@ public class TypeCondition implements CypherCondition {
     private final String type;
 
     public TypeCondition(String variableName, String type) {
-        this.variableName = variableName;
-        this.type = type;
+        this.variableName = Objects.requireNonNull(variableName, "variableName must not be null");
+        this.type = Objects.requireNonNull(type, "type must not be null");
     }
 
     public String getVariableName() {

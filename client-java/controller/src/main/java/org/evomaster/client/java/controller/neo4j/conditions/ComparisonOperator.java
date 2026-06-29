@@ -19,7 +19,7 @@ public enum ComparisonOperator {
 
     private final String symbol;
 
-    ComparisonOperator(String symbol) {
+    private ComparisonOperator(String symbol) {
         this.symbol = symbol;
     }
 

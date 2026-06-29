@@ -12,11 +12,12 @@ public class AndCondition implements CypherCondition {
     private final List<CypherCondition> conditions;
 
     public AndCondition(List<CypherCondition> conditions) {
-        this.conditions = conditions != null ? new ArrayList<>(conditions) : new ArrayList<>();
+        this.conditions = Collections.unmodifiableList(
+                conditions != null ? new ArrayList<>(conditions) : new ArrayList<>());
     }
 
     public List<CypherCondition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+        return conditions;
     }
 
     @Override

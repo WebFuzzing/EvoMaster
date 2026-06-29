@@ -12,11 +12,12 @@ public class XorCondition implements CypherCondition {
     private final List<CypherCondition> conditions;
 
     public XorCondition(List<CypherCondition> conditions) {
-        this.conditions = conditions != null ? new ArrayList<>(conditions) : new ArrayList<>();
+        this.conditions = Collections.unmodifiableList(
+                conditions != null ? new ArrayList<>(conditions) : new ArrayList<>());
     }
 
     public List<CypherCondition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+        return conditions;
     }
 
     @Override

@@ -828,6 +828,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr.setLocation(response.location?.toString())
         rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
+        rcr.setHeaders(response.stringHeaders)
 
         handlePossibleConnectionClose(response)
 
@@ -1351,6 +1352,55 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
             handleInvalidLocation(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
+            handleInvalidAllow(individual, actionResults, fv)
+        }
+    }
+
+    /**
+     * Check any OPTIONS call, regardless of its position. The Allow header must match
+     * the verbs declared in the schema (ignoring OPTIONS and HEAD). Two faults, both
+     * reported under HTTP_INVALID_ALLOW:
+     * - extra: a verb is allowed but not declared in the schema
+     * - missing: a verb is declared in the schema but absent from the Allow header
+     */
+    private fun handleInvalidAllow(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val actions = individual.seeMainExecutableActions()
+
+        for (index in actions.indices) {
+            val a = actions[index]
+            if (a.verb != HttpVerb.OPTIONS) continue
+
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            // The Allow header is not mandatory in an OPTIONS response
+            // (see https://httpwg.org/specs/rfc9110.html#OPTIONS), so if it is
+            // missing we cannot conclude anything, ie it is not a fault.
+            val allowed = r.getAllowedVerbs() ?: continue
+
+            // listed in Allow but not declared in the schema
+            val extra = allowed.filter {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
+            }.sorted()
+            // declared in the schema but not listed in Allow
+            val missing = HttpVerb.values().filter {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && callGraphService.isDeclared(it, a.path) && it !in allowed
+            }
+            if (extra.isEmpty() && missing.isEmpty()) continue
+
+            val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
+            val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
+            fv.updateTarget(scenarioId, 1.0, index)
+            val localMessage = listOfNotNull(
+                extra.takeIf { it.isNotEmpty() }?.let { "extra verbs: $it" },
+                missing.takeIf { it.isNotEmpty() }?.let { "missing verbs: $it" }
+            ).joinToString("; ")
+            r.addFault(DetectedFault(category, a.getName(), null, localMessage))
         }
     }
 

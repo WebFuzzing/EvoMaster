@@ -37,6 +37,7 @@ class FlakinessDetectEMTest : SpringTestBase() {
 
             setOption(args, "minimize", "true")
             setOption(args, "handleFlakiness", "true")
+            setOption(args, "execNumForDetectFlakiness", "1")
 
 
             val solution = initAndRun(args)

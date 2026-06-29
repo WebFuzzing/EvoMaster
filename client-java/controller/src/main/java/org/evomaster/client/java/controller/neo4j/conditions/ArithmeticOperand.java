@@ -21,8 +21,8 @@ public final class ArithmeticOperand implements Operand {
     private final Operand right;
 
     public ArithmeticOperand(ArithmeticOperator operator, Operand left, Operand right) {
-        this.operator = operator;
-        this.left = left;
+        this.operator = Objects.requireNonNull(operator, "operator must not be null");
+        this.left = Objects.requireNonNull(left, "left operand must not be null");
         this.right = right;
     }
 

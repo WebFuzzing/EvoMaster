@@ -12,8 +12,8 @@ public class LabelCondition implements CypherCondition {
     private final String label;
 
     public LabelCondition(String variableName, String label) {
-        this.variableName = variableName;
-        this.label = label;
+        this.variableName = Objects.requireNonNull(variableName, "variableName must not be null");
+        this.label = Objects.requireNonNull(label, "label must not be null");
     }
 
     public String getVariableName() {
