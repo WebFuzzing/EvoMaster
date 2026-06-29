@@ -1319,6 +1319,35 @@ public void test() throws Exception {
 
 
     @Test
+    fun testJavaObjectAssertionInArrayUsesGPathIndex() {
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_4
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("[{}]") // example in restcountries
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+
+        assertTrue(lines.toString().contains(".body(\"[0].isEmpty()\", is(true))"))
+        assertFalse(lines.toString().contains(".body(\"'[0]'.isEmpty()\", is(true))"))
+    }
+
+
+    @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
