@@ -5,10 +5,6 @@ import org.slf4j.LoggerFactory
 
 class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>) {
 
-    init {
-        require(ranges.isNotEmpty()) { "MultiCharacterRange cannot be created with an empty list" }
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(MultiCharacterRange::class.java)
 
@@ -31,7 +27,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
             if (negated) {
                 internalRanges.add(CharacterRange(Character.MIN_VALUE, Character.MAX_VALUE))
             }
-            for (range in ranges) {
+            for (range in ranges.sortedBy { it.start }) {
                 internalRanges = if (negated) {
                     remove(internalRanges, CharacterRange(range.start, range.end))
                 } else {
@@ -55,7 +51,7 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
             var currentEnd = toAdd.end
             var merged = false
 
-            for ((start, end) in internalRanges.sortedBy { it.start }) {
+            for ((start, end) in internalRanges) {
                 when {
                     end.code < currentStart.code - 1 -> newInternalRanges += CharacterRange(start, end)
                     start.code > currentEnd.code + 1 -> {
@@ -201,10 +197,15 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
             }
             currentRangeMinValue = currentRangeMaxValue
         }
-        assert(false) // internal ranges being empty should never happen
-        return '0'
+        throw IllegalStateException("Cannot sample characters from an empty char range")
     }
 
+    fun intersect(other: MultiCharacterRange): MultiCharacterRange {
+        return intersect(this, other)
+    }
+
+    val isEmpty: Boolean get() = ranges.isEmpty()
+    val isNotEmpty: Boolean get() = ranges.isNotEmpty()
     val size: Int get() = ranges.size
     val charCount :Int = ranges.sumOf{ it.size }
     operator fun get(index: Int): CharacterRange = ranges[index]
