@@ -510,6 +510,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.indent(2)
                 //in SuperAgent, verb must be first
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
+                //client timeout, same source as fuzzing tcpTimeoutMs
+                lines.add(".timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS})")
                 lines.append(getAcceptHeader(call, res))
                 handleHeaders(call, lines)
                 handleBody(call, lines)
