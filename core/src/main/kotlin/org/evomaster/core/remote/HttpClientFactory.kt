@@ -6,6 +6,7 @@ import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
+import org.glassfish.jersey.client.RequestEntityProcessing
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.*
@@ -71,6 +72,9 @@ object HttpClientFactory {
             .property(ClientProperties.FOLLOW_REDIRECTS, followRedirects)
             // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
             .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
+            // buffer request bodies to send Content-Length instead of chunked transfer-encoding,
+            // which some servers (e.g. Django/WSGI dev server) do not parse reliably
+            .property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED)
             .build()
 
         Lazy.assert {

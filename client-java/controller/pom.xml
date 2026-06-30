@@ -81,10 +81,10 @@
             <artifactId>javax.ws.rs-api</artifactId>
             <version>2.1.1</version>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>net.java.dev.jna</groupId>-->
-        <!--            <artifactId>jna-platform</artifactId>-->
-        <!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>net.java.dev.jna</groupId>-->
+<!--            <artifactId>jna-platform</artifactId>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.ea.agentloader</groupId>
@@ -360,7 +360,7 @@
                 </executions>
             </plugin>
 
-            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar and the CQL parser-->
+            <!-- Generates the Cypher and Cql parsers from the Neo4j Cypher25 grammar and the Cql grammar respectively -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
