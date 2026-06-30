@@ -1331,7 +1331,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1404,7 +1405,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1462,7 +1464,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
