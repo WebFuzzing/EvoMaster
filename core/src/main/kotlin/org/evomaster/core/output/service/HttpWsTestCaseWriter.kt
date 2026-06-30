@@ -13,6 +13,8 @@ import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
@@ -56,6 +58,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         */
         return !(result as HttpWsCallResult).getTimedout()
     }
+
+    /**
+     * For a HTTP_TIMEOUT fault, the call is expected to fail, and the assertion is expressed
+     * directly on the call:
+     *  - JS:     await expect(...).rejects.toThrow()
+     *  - Python: with self.assertRaises(Exception): ...
+     */
+    protected fun hasTimeoutFault(res: ActionResult): Boolean {
+        return res is EnterpriseActionResult
+                && res.getFaults().any { it.category == ExperimentalFaultCategory.HTTP_TIMEOUT }
+    }
+
+    protected fun expectsRejection(res: ActionResult) = format.isJavaScript() && hasTimeoutFault(res)
+
+    protected fun expectsAssertRaises(res: ActionResult) = format.isPython() && hasTimeoutFault(res)
 
     fun startRequest(lines: Lines){
         when {
@@ -111,7 +128,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
+            // for a call expected to reject, wrap it in await expect(...).rejects.toThrow()
+            format.isJavaScript() -> lines.append(if (expectsRejection(res)) "await expect(superagent" else "await superagent")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
         }
@@ -392,7 +410,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             timeStartName = handleExecutionTimePrologue(lines);
         }
 
-        if (res.invalidCall()) {
+        if (res.invalidCall() && !expectsRejection(res) && !expectsAssertRaises(res)) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
@@ -496,6 +514,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             dtoVar = writeDto(call, lines)
         }
 
+        val pyAssertRaises = expectsAssertRaises(res)
+        if (pyAssertRaises) {
+            lines.add("with self.assertRaises(Exception):")
+            lines.indent()
+        }
+
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
@@ -533,6 +557,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             handleResponseDirectlyInTheCall(call, res, lines)
         }
         handleLastLine(call, res, lines, responseVariableName)
+
+        if (pyAssertRaises) {
+            lines.deindent()
+        }
         return responseVariableName
     }
 
@@ -884,6 +912,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 so, here we make it passes as long as a status was present
              */
             lines.add(".ok(res => res.status)")
+            if (expectsRejection(res)) {
+                //close the await expect(...) and assert the call rejected
+                lines.append(").rejects.toThrow()")
+            }
         }
 
 

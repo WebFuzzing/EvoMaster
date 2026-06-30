@@ -1,5 +1,6 @@
-package com.foo.rest.examples.spring.openapi.v3.httporacle.timeout
+package com.foo.rest.examples.bb.httptimeout
 
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -13,19 +14,20 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/timeout"])
 @RestController
-open class HttpTimeoutApplication {
+open class BBHttpTimeoutApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(HttpTimeoutApplication::class.java, *args)
+            SpringApplication.run(BBHttpTimeoutApplication::class.java, *args)
         }
-
-        fun reset() {}
     }
 
+    // slow endpoint: blocks longer than the client timeout, triggering a HTTP_TIMEOUT fault.
+    // the target is covered as soon as the request is handled, before the client gives up.
     @GetMapping(path = ["/slow/{id}"])
     open fun slow(@PathVariable("id") id: Int): ResponseEntity<String> {
+        CoveredTargets.cover("timeout")
         val deadline = System.currentTimeMillis() + 10_000
         while (System.currentTimeMillis() < deadline) {
             try {
