@@ -8,6 +8,7 @@ Under development in `master` branch.
 
 ### Fixed Bugs
 - Resolved issue of wrong handling of empty bodies in PUT/PATCH/POST requests. 
+- Fixed sending of wrong content-type header when type is not supported in EvoMaster.
 
 
 # Version 6.0.0
