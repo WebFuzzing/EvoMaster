@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.cassandra;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.junit.jupiter.api.Test;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -219,6 +221,68 @@ public class CassandraHeuristicsCalculatorTest {
         assertTrue(dClose < dFar);
     }
 
+    // Duration equality (CqlDuration)
+
+    @Test
+    void durationEquals_exactMatch_zeroDistance() {
+        // 1y3d4h = months:12, days:3, nanos:4h in nanoseconds
+        CqlDuration dur = CqlDuration.newInstance(12, 3, 14_400_000_000_000L);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE d = 1y3d4h", row("d", dur)),
+                DELTA);
+    }
+
+    @Test
+    void durationEquals_differentMonths_nonZero() {
+        CqlDuration dur = CqlDuration.newInstance(1, 0, 0); // 1mo
+        double d = dist("SELECT * FROM t WHERE d = 2mo", row("d", dur));
+        assertTrue(d > 0.0 && d < 1.0);
+    }
+
+    @Test
+    void durationEquals_allComponentsDiffer_nonZero() {
+        CqlDuration dur = CqlDuration.newInstance(2, 1, 0);
+        double d = dist("SELECT * FROM t WHERE d = 1mo3d", row("d", dur));
+        assertTrue(d > 0.0 && d < 1.0);
+    }
+
+    @Test
+    void durationEquals_closerMonthsGivesBetterScore() {
+        CqlDuration close = CqlDuration.newInstance(1, 0, 0);  // 1 month away from 2mo
+        CqlDuration far   = CqlDuration.newInstance(10, 0, 0); // 8 months away from 2mo
+        double dClose = dist("SELECT * FROM t WHERE d = 2mo", row("d", close));
+        double dFar   = dist("SELECT * FROM t WHERE d = 2mo", row("d", far));
+        assertTrue(dClose < dFar);
+    }
+
+    // InetAddress equality
+
+    @Test
+    void inetEquals_exactMatch_zeroDistance() throws Exception {
+        InetAddress addr = InetAddress.getByName("192.168.1.1");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ip = '192.168.1.1'", row("ip", addr)),
+                DELTA);
+    }
+
+    @Test
+    void inetEquals_differentAddress_nonZero() throws Exception {
+        InetAddress addr = InetAddress.getByName("192.168.1.2");
+        double d = dist("SELECT * FROM t WHERE ip = '192.168.1.1'", row("ip", addr));
+        assertTrue(d > 0.0 && d < 1.0);
+    }
+
+    @Test
+    void inetEquals_closerAddressGivesBetterScore() throws Exception {
+        // '192.168.1.1' vs '192.168.1.2' — one character differs
+        // '192.168.1.1' vs '10.0.0.1'    — many characters differ
+        double dClose = dist("SELECT * FROM t WHERE ip = '192.168.1.1'",
+                row("ip", InetAddress.getByName("192.168.1.2")));
+        double dFar   = dist("SELECT * FROM t WHERE ip = '192.168.1.1'",
+                row("ip", InetAddress.getByName("10.0.0.1")));
+        assertTrue(dClose < dFar);
+    }
+
     // AND operator
 
     @Test
@@ -285,6 +349,16 @@ public class CassandraHeuristicsCalculatorTest {
     @Test
     void in_singleElementList_match_zeroDistance() {
         assertEquals(0.0, dist("SELECT * FROM t WHERE col IN (42)", row("col", 42L)), DELTA);
+    }
+
+    @Test
+    void in_nullRowValue_nonZeroDistance() {
+        assertTrue(dist("SELECT * FROM t WHERE col IN (1, 2, 3)", row("col", null)) > 0.0);
+    }
+
+    @Test
+    void in_missingColumn_nonZeroDistance() {
+        assertTrue(dist("SELECT * FROM t WHERE col IN (1, 2, 3)", row("other", 99L)) > 0.0);
     }
 
     // CONTAINS operator
@@ -566,6 +640,34 @@ public class CassandraHeuristicsCalculatorTest {
         LocalTime t = LocalTime.of(15, 0, 0);
         double d = dist("SELECT * FROM t WHERE t < '14:30:00'", row("t", t));
         assertTrue(d > 0.0);
+    }
+
+    @Test
+    void timeGTE_boundary_zeroDistance() {
+        LocalTime t = LocalTime.of(14, 30, 0);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE t >= '14:30:00'", row("t", t)),
+                DELTA);
+    }
+
+    @Test
+    void timeGTE_notSatisfied_nonZero() {
+        LocalTime t = LocalTime.of(14, 0, 0);
+        assertTrue(dist("SELECT * FROM t WHERE t >= '14:30:00'", row("t", t)) > 0.0);
+    }
+
+    @Test
+    void timeLTE_boundary_zeroDistance() {
+        LocalTime t = LocalTime.of(14, 30, 0);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE t <= '14:30:00'", row("t", t)),
+                DELTA);
+    }
+
+    @Test
+    void timeLTE_notSatisfied_nonZero() {
+        LocalTime t = LocalTime.of(15, 0, 0);
+        assertTrue(dist("SELECT * FROM t WHERE t <= '14:30:00'", row("t", t)) > 0.0);
     }
 
     // Temporal types — timestamp (Instant)
