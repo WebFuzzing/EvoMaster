@@ -10,7 +10,9 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 public class CassandraHeuristicsCalculator {
@@ -204,12 +206,16 @@ public class CassandraHeuristicsCalculator {
 
     private static long toLong(Object value, Object rowValueHint) {
         if (rowValueHint instanceof LocalDate) {
-            if (value instanceof String) return LocalDate.parse((String) value).toEpochDay();
-            return ((LocalDate) value).toEpochDay();
+            LocalDate d = (value instanceof String)
+                    ? LocalDate.parse((String) value)
+                    : (LocalDate) value;
+            return d.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
         }
         if (rowValueHint instanceof LocalTime) {
-            if (value instanceof String) return LocalTime.parse((String) value).toNanoOfDay();
-            return ((LocalTime) value).toNanoOfDay();
+            LocalTime t = (value instanceof String)
+                    ? LocalTime.parse((String) value)
+                    : (LocalTime) value;
+            return LocalDateTime.of(LocalDate.of(1970, 1, 1), t).toInstant(ZoneOffset.UTC).toEpochMilli();
         }
         if (rowValueHint instanceof Instant) {
             if (value instanceof String) return Instant.parse((String) value).toEpochMilli();
@@ -257,15 +263,14 @@ public class CassandraHeuristicsCalculator {
     private Truthness calculateDistanceForIn(InOperation op, Map<String, Object> row) {
         Object rowValue = getRowValue(row, op.getColumnName());
         if (rowValue == MISSING) rowValue = null;
-        return computeEqualsAny(rowValue, op.getValues());
+        return any(rowValue, op.getValues());
     }
 
     private Truthness calculateDistanceForContains(ContainsOperation<?> op,
                                                    Map<String, Object> row) {
         Object rawCol = getRowValue(row, op.getColumnName());
         if (rawCol == MISSING || rawCol == null) return FALSE_TRUTHNESS;
-        // Elements are the authoritative side — pass them first so compareByType dispatches on their type.
-        return computeEqualsAnyElements(toElementList(rawCol), op.getValue());
+        return any(op.getValue(), toElementList(rawCol));
     }
 
     private Truthness calculateDistanceForContainsKey(ContainsKeyOperation<?> op,
@@ -274,40 +279,15 @@ public class CassandraHeuristicsCalculator {
         if (rawCol == MISSING || rawCol == null) return FALSE_TRUTHNESS;
         if (!(rawCol instanceof Map<?, ?>)) return FALSE_TRUTHNESS;
         List<?> keys = new ArrayList<>(((Map<?, ?>) rawCol).keySet());
-        // Keys are the authoritative side — pass them first so compareByType dispatches on their type.
-        return computeEqualsAnyElements(keys, op.getValue());
+        return any(op.getValue(), keys);
     }
 
-    /**
-     * Used by IN: value is the row column (authoritative type), candidates are the query IN-list values.
-     * compareByType dispatches on value.
-     */
-    private Truthness computeEqualsAny(Object value, List<?> candidates) {
+    private Truthness any(Object value, List<?> candidates) {
         if (candidates.isEmpty()) return FALSE_TRUTHNESS;
-
-        double maxOfTrue = 0.0;
-        for (Object candidate : candidates) {
-            Truthness t = evaluateEquals(value, candidate);
-            if (t.isTrue()) return TRUE_TRUTHNESS;
-            if (t.getOfTrue() > maxOfTrue) maxOfTrue = t.getOfTrue();
-        }
-        return new Truthness(maxOfTrue, 1.0);
-    }
-
-    /**
-     * Used by CONTAINS / CONTAINS KEY: elements are the collection elements (authoritative type),
-     * queryValue is what we search for. compareByType dispatches on the element.
-     */
-    private Truthness computeEqualsAnyElements(List<?> elements, Object queryValue) {
-        if (elements.isEmpty()) return FALSE_TRUTHNESS;
-
-        double maxOfTrue = 0.0;
-        for (Object element : elements) {
-            Truthness t = evaluateEquals(element, queryValue);
-            if (t.isTrue()) return TRUE_TRUTHNESS;
-            if (t.getOfTrue() > maxOfTrue) maxOfTrue = t.getOfTrue();
-        }
-        return new Truthness(maxOfTrue, 1.0);
+        Truthness[] truthnesses = candidates.stream()
+                .map(candidate -> evaluateEquals(value, candidate))
+                .toArray(Truthness[]::new);
+        return TruthnessUtils.buildOrAggregationTruthness(truthnesses);
     }
 
     private Truthness evaluateEquals(Object a, Object b) {
