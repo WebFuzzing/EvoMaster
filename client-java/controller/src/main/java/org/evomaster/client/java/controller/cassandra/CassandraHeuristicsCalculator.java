@@ -12,7 +12,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 
 public class CassandraHeuristicsCalculator {
@@ -206,22 +210,51 @@ public class CassandraHeuristicsCalculator {
 
     private static long toLong(Object value, Object rowValueHint) {
         if (rowValueHint instanceof LocalDate) {
-            LocalDate d = (value instanceof String)
-                    ? LocalDate.parse((String) value)
-                    : (LocalDate) value;
+            LocalDate d = (value instanceof Long)   ? LocalDate.ofEpochDay((Long) value)
+                        : (value instanceof String) ? LocalDate.parse((String) value)
+                        : (LocalDate) value;
             return d.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
         }
         if (rowValueHint instanceof LocalTime) {
-            LocalTime t = (value instanceof String)
-                    ? LocalTime.parse((String) value)
-                    : (LocalTime) value;
+            LocalTime t = (value instanceof Long)   ? LocalTime.ofNanoOfDay((Long) value)
+                        : (value instanceof String) ? LocalTime.parse((String) value)
+                        : (LocalTime) value;
             return LocalDateTime.of(LocalDate.of(1970, 1, 1), t).toInstant(ZoneOffset.UTC).toEpochMilli();
         }
         if (rowValueHint instanceof Instant) {
-            if (value instanceof String) return Instant.parse((String) value).toEpochMilli();
-            return ((Instant) value).toEpochMilli();
+            if (value instanceof Long)    return (Long) value;
+            if (value instanceof Instant) return ((Instant) value).toEpochMilli();
+            if (value instanceof String)  return parseTimestampString((String) value).toEpochMilli();
+            throw new IllegalArgumentException("Unexpected timestamp value type: " + value.getClass());
         }
         throw new IllegalArgumentException("Unrecognized temporal type: " + rowValueHint.getClass());
+    }
+
+    private static final DateTimeFormatter[] TIMESTAMP_FORMATTERS = {
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mmXX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmXX"),
+    };
+
+    private static final DateTimeFormatter DATE_WITH_OFFSET = DateTimeFormatter.ofPattern("yyyy-MM-ddXX");
+
+    private static Instant parseTimestampString(String s) {
+        try { return Instant.parse(s); } catch (DateTimeParseException ignored) {}
+        for (DateTimeFormatter formatter : TIMESTAMP_FORMATTERS) {
+            try { return OffsetDateTime.parse(s, formatter).toInstant(); } catch (DateTimeParseException ignored) {}
+        }
+        // date-only with offset ("2011-02-03+0000"): OffsetDateTime.parse fails without a time
+        // component, so extract LocalDate and ZoneOffset from the TemporalAccessor directly.
+        try {
+            TemporalAccessor accessor = DATE_WITH_OFFSET.parse(s);
+            return LocalDate.from(accessor).atStartOfDay(ZoneOffset.from(accessor)).toInstant();
+        } catch (DateTimeParseException ignored) {}
+        // date-only without offset ("2011-02-03"): treat as midnight UTC
+        try { return LocalDate.parse(s).atStartOfDay(ZoneOffset.UTC).toInstant(); } catch (DateTimeParseException ignored) {}
+        throw new IllegalArgumentException("Cannot parse timestamp string: " + s);
     }
 
     private static boolean isCqlDuration(Object v) {

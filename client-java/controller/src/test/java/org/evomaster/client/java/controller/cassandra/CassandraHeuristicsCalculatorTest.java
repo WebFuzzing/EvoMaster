@@ -570,6 +570,21 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     @Test
+    void dateEquals_integerDaysSinceEpoch_zeroDistance() {
+        LocalDate d = LocalDate.of(2023, 1, 15);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE d = " + d.toEpochDay(), row("d", d)),
+                DELTA);
+    }
+
+    @Test
+    void dateEquals_integerDaysSinceEpoch_nonZero() {
+        LocalDate d = LocalDate.of(2023, 1, 16);
+        double distance = dist("SELECT * FROM t WHERE d = " + LocalDate.of(2023, 1, 15).toEpochDay(), row("d", d));
+        assertTrue(distance > 0.0 && distance < 1.0);
+    }
+
+    @Test
     void dateEquals_differentDay_nonZero() {
         LocalDate d = LocalDate.of(2023, 1, 16);
         double distance = dist("SELECT * FROM t WHERE d = '2023-01-15'", row("d", d));
@@ -618,6 +633,21 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     // Temporal types — time (LocalTime)
+
+    @Test
+    void timeEquals_integerNanosSinceMidnight_zeroDistance() {
+        LocalTime t = LocalTime.of(14, 30, 0);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE t = " + t.toNanoOfDay(), row("t", t)),
+                DELTA);
+    }
+
+    @Test
+    void timeEquals_integerNanosSinceMidnight_nonZero() {
+        LocalTime t = LocalTime.of(15, 0, 0);
+        double d = dist("SELECT * FROM t WHERE t = " + LocalTime.of(14, 30, 0).toNanoOfDay(), row("t", t));
+        assertTrue(d > 0.0 && d < 1.0);
+    }
 
     @Test
     void timeEquals_exactMatch_zeroDistance() {
@@ -703,5 +733,92 @@ public class CassandraHeuristicsCalculatorTest {
         double dFar   = dist("SELECT * FROM t WHERE ts = '2023-01-15T12:00:00Z'",
                 row("ts", Instant.parse("2023-01-16T12:00:00Z")));   // 1 day away
         assertTrue(dClose < dFar);
+    }
+
+    // Temporal types — timestamp additional constant formats
+
+    @Test
+    void timestampEquals_integerEpochMs_zeroDistance() {
+        Instant ts = Instant.ofEpochMilli(1_299_038_700_000L);
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = 1299038700000", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_integerEpochMs_nonZero() {
+        Instant ts = Instant.ofEpochMilli(1_299_038_700_000L + 3_600_000L); // 1 hour later
+        assertTrue(dist("SELECT * FROM t WHERE ts = 1299038700000", row("ts", ts)) > 0.0);
+    }
+
+    @Test
+    void timestampEquals_spaceSeparatorNoSeconds_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03 04:05+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_spaceSeparatorWithSeconds_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03 04:05:00+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_spaceSeparatorWithMillis_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00.123Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03 04:05:00.123+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_tSeparatorNoSeconds_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03T04:05+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_tSeparatorWithSeconds_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03T04:05:00+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_tSeparatorWithMillis_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T04:05:00.123Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03T04:05:00.123+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_dateOnly_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T00:00:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_dateOnlyWithOffset_zeroDistance() {
+        Instant ts = Instant.parse("2011-02-03T00:00:00Z");
+        assertEquals(0.0,
+                dist("SELECT * FROM t WHERE ts = '2011-02-03+0000'", row("ts", ts)),
+                DELTA);
+    }
+
+    @Test
+    void timestampEquals_spaceSeparator_differentTime_nonZero() {
+        Instant ts = Instant.parse("2011-02-03T05:00:00Z");
+        double d = dist("SELECT * FROM t WHERE ts = '2011-02-03 04:05:00+0000'", row("ts", ts));
+        assertTrue(d > 0.0 && d < 1.0);
     }
 }
