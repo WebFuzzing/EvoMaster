@@ -592,43 +592,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         } else if (bodyParam.isTextPlain()) {
 
-            val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-            // handle body only if it is not black
-            if (body.isNotBlank()) {
-                if (body != "\"\"") {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-
-                        format.isPython() -> {
-                            if (body.trim().isNullOrBlank()) {
-                                lines.add("body = \"\"")
-                            } else {
-                                lines.add("body = $body")
-                            }
-                        }
-
-                        else -> lines.add(".$send($body)")
-                    }
-                } else {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-
-                        format.isPython() -> {
-                            lines.add("body = \"\"")
-                        }
-
-                        else -> lines.add(".$send(\"${"""\"\""""}\")")
-                    }
-                }
-            }
-
-            //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
-            // inserting \"\" should prevent that problem
-            // TODO: get some tests done of this
+            handleTextBody(bodyParam, lines)
 
         } else if (bodyParam.isForm()) {
             val body = bodyParam.gene.getValueAsPrintableString(
@@ -636,14 +600,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 targetFormat = format
             )
             when {
-                format.isCsharp() -> {
-                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                }
-
                 format.isPython() -> {
                     lines.add("body = \"$body\"")
                 }
-
                 else -> lines.add(".$send(\"$body\")")
             }
         } else if (bodyParam.isXml()) {
@@ -660,9 +619,47 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 else -> lines.add(".$send(\"$escapedXml\")")
             }
         } else {
-            LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
+            LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType() +
+                    ". It will be handled as TEXT")
+            handleTextBody(bodyParam, lines)
         }
 
+    }
+
+    private fun handleTextBody(
+        bodyParam: BodyParam,
+        lines: Lines,
+    ) {
+        val send = sendBodyCommand()
+
+        val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+
+        val text = GeneUtils.applyEscapes(body, mode = GeneUtils.EscapeMode.TEXT, format = format)
+
+        // handle body only if it is not black
+        if (body.isNotBlank()) {
+            if (body != "\"\"") {
+                when {
+                    format.isPython() -> {
+                        if (body.trim().isBlank()) {
+                            lines.add("body = \"\"")
+                        } else {
+                            lines.add("body = \"$text\"")
+                        }
+                    }
+
+                    else -> lines.add(".$send(\"$text\")")
+                }
+            } else {
+                when {
+                    format.isPython() -> {
+                        lines.add("body = \"\"")
+                    }
+                    //TODO isn't this valid just for Kotlin???
+                    else -> lines.add(".$send(\"${"""\"\""""}\")")
+                }
+            }
+        }
     }
 
     fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
