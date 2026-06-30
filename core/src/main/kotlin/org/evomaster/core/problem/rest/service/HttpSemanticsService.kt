@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.service.fitness.RestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
@@ -127,6 +128,40 @@ class HttpSemanticsService : TimeBoxedPhase{
         if(hasPhaseTimedOut()) return
         // – invalid location, leading to a 404 when doing a follow up GET
         invalidLocation()
+
+        if(hasPhaseTimedOut()) return
+        invalidAllow()
+    }
+
+    /**
+     * For each path, make a single OPTIONS call. The Allow header must not list
+     * verbs that are not declared in the schema (ignoring OPTIONS and HEAD).
+     */
+    private fun invalidAllow() {
+
+        // OPTIONS has no schema template, so the resource sampler cannot build such an
+        // individual. We build it directly, reusing the shared search global state.
+        val globalState = individualsInSolution.firstOrNull()?.individual?.searchGlobalState ?: return
+
+        val actions = actionDefinitions.distinctBy { it.path }
+
+        for (a in actions) {
+
+            if (hasPhaseTimedOut()) return
+
+            val pathVariables = a.parameters
+                .filterIsInstance<PathParam>()
+                .map { it.copy() }
+                .toMutableList()
+
+            val path = a.path.copy()
+            val options = RestCallAction("${HttpVerb.OPTIONS}:$path", HttpVerb.OPTIONS, path, pathVariables, a.auth)
+            options.doInitialize(randomness)
+
+            val ind = RestIndividual(mutableListOf(options), SampleType.HTTP_SEMANTICS)
+            ind.doGlobalInitialize(globalState)
+            prepareEvaluateAndSave(ind)
+        }
     }
 
     /**

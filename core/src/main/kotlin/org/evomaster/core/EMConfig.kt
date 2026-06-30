@@ -2809,6 +2809,17 @@ class EMConfig {
     var handleFlakiness = false
 
     @Experimental
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
+    var enableStaticFlakyInference = true
+
+    @Experimental
+    @Min(0.0)
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
+    var execNumForDetectFlakiness = 1
+
+    @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
             "This is necessary when the generated tests are executed on the different machine. " +
             "Note that this setting only affects the generated test cases.")
