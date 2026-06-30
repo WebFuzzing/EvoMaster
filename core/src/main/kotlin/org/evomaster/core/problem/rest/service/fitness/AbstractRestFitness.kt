@@ -1093,7 +1093,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isXml() -> GeneUtils.EscapeMode.XML
                 body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
-                else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Cannot handle body type: " + body.contentType() + "." +
+                            " It will be treated as TEXT.")
+                    GeneUtils.EscapeMode.TEXT
+                }
             }
 
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
