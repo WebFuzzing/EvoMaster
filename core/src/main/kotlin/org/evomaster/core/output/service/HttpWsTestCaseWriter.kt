@@ -633,6 +633,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val send = sendBodyCommand()
 
         val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+
+        val text = GeneUtils.applyEscapes(body, mode = GeneUtils.EscapeMode.TEXT, format = format)
+
         // handle body only if it is not black
         if (body.isNotBlank()) {
             if (body != "\"\"") {
@@ -641,11 +644,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         if (body.trim().isBlank()) {
                             lines.add("body = \"\"")
                         } else {
-                            lines.add("body = $body")
+                            lines.add("body = \"$text\"")
                         }
                     }
 
-                    else -> lines.add(".$send($body)")
+                    else -> lines.add(".$send(\"$text\")")
                 }
             } else {
                 when {
