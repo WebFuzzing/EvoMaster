@@ -502,17 +502,19 @@ class TestSuiteWriter {
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
+            if (useRestAssured()) {
+                addImport("io.restassured.config.JsonConfig", lines)
+                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                addImport("io.restassured.config.EncoderConfig", lines)
+                addImport("io.restassured.http.ContentType", lines)
+            }
+
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers", lines, false)
                     addImport("org.hamcrest.Matchers.*", lines, true)
-                }
-
-                //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()) {
-                    addImport("io.restassured.config.JsonConfig", lines)
-                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
                 }
 
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
@@ -843,6 +845,7 @@ class TestSuiteWriter {
                     lines.indented {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
                     }
                     lines.appendSemicolon()
                 }

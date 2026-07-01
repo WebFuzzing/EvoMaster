@@ -790,7 +790,8 @@ object RestActionBuilderV3 {
 
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
-            messages.add("Not supported content types for body payload in $verb:$restPath : ${ns.joinToString()}")
+            messages.add("Not supported content types for body payload in $verb:$restPath : ${ns.joinToString()}." +
+                    " It will be treated as TEXT.")
         }
 
         params.add(bodyParam)
