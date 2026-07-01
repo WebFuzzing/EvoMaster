@@ -49,8 +49,9 @@ class BlackBoxRestFitness : RestFitness() {
             rc.resetSUT()
         }
 
-        cookies.putAll(AuthUtils.getCookies(client, getBaseUrl(), individual))
-        tokens.putAll(AuthUtils.getTokens(client, getBaseUrl(), individual))
+        val placeholders = AuthUtils.createUsers(client, getBaseUrl(), individual)
+        cookies.putAll(AuthUtils.getCookies(client, getBaseUrl(), individual, placeholders))
+        tokens.putAll(AuthUtils.getTokens(client, getBaseUrl(), individual, placeholders))
 
         val fv = FitnessValue(individual.size().toDouble())
 

@@ -46,6 +46,8 @@ object CookieWriter {
 
         for (k in cookiesInfo) {
 
+            val resolver = CreateUsersWriter.handleCreateUsers(k.name, ind.individual, format, lines, testCaseWriter, baseUrlOfSut)
+
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
@@ -68,7 +70,7 @@ object CookieWriter {
                 else -> cookiesName(k)
             }
 
-            AuthWriter.addBodyOfCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
+            AuthWriter.addBodyOfCallCommand(lines, k.call, testCaseWriter, format, baseUrlOfSut, targetCookieVariable, resolver)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
