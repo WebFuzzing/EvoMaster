@@ -13,6 +13,10 @@ import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.dbconstraint.ast.*;
 
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -45,7 +49,14 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(Function function) {
-        // TODO This translation should be implemented
+        String name = function.getName().toUpperCase();
+        if ((name.equals("LOWER") || name.equals("UPPER"))
+                && function.getParameters() != null
+                && function.getParameters().size() == 1) {
+            // Treat LOWER(col)/UPPER(col) as the column itself (case-folding is dropped as an approximation)
+            function.getParameters().get(0).accept(this);
+            return;
+        }
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
@@ -113,8 +124,10 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(TimestampValue timestampValue) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        // Treat the timestamp string as UTC so the epoch round-trips consistently with the
+        // UTC-based decoder in SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+        long epochSeconds = timestampValue.getValue().toLocalDateTime().toEpochSecond(ZoneOffset.UTC);
+        stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
     }
 
     @Override
@@ -599,7 +612,19 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-        // TODO This translation should be implemented
+        if (dateTimeLiteralExpression.getType() == DateTimeLiteralExpression.DateTime.TIMESTAMP) {
+            String value = dateTimeLiteralExpression.getValue();
+            if (value.startsWith("'") && value.endsWith("'")) {
+                value = value.substring(1, value.length() - 1);
+            }
+            // Treat the timestamp string as UTC to match the UTC-based decoder in
+            // SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+            long epochSeconds = java.time.LocalDateTime.parse(value,
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    .toEpochSecond(ZoneOffset.UTC);
+            stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
+            return;
+        }
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 

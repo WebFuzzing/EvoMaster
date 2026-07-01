@@ -2,9 +2,11 @@ package org.evomaster.core.solver
 
 import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.delete.Delete
 import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
+import net.sf.jsqlparser.statement.update.Update
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
@@ -231,9 +233,19 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun appendPrimaryKeyConstraints(smt: SMTLib, smtTable: SmtTable) {
         val primaryKeys = smtTable.dto.columns.filter { it.primaryKey }
 
-        for (primaryKey in primaryKeys) {
-            val nodes = assertForDistinctField(smtTable.smtColumnName(primaryKey.name), smtTable.smtName)
-            smt.addNodes(nodes)
+        if (primaryKeys.size <= 1) {
+            // Single-column PK: the column must be individually distinct across all row pairs.
+            for (primaryKey in primaryKeys) {
+                smt.addNodes(assertForDistinctField(smtTable.smtColumnName(primaryKey.name), smtTable.smtName))
+            }
+        } else {
+            // Composite PK: the *tuple* of PK columns must be distinct across all row pairs,
+            // meaning at least one column must differ — not necessarily all of them.
+            // Emitting per-column distinctness (the old behaviour) was over-constrained: it
+            // prevented valid rows like (emp=1, proj=2) and (emp=1, proj=3) because it forced
+            // every PK column to differ individually, rather than just the tuple.
+            val pkSelectors = primaryKeys.map { smtTable.smtColumnName(it.name) }
+            smt.addNodes(assertForDistinctCompositePK(pkSelectors, smtTable.smtName))
         }
     }
 
@@ -258,6 +270,30 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         )
                     )
                 )
+            }
+        }
+        return nodes
+    }
+
+    /**
+     * Generates composite PK distinctness assertions across all row pairs.
+     * For each pair (i, j), asserts that at least one PK column differs between row i and row j.
+     *
+     * @param pkSelectors The list of PK column names (SMT form).
+     * @param tableName The SMT name of the table.
+     * @return A list of SMT nodes representing composite PK distinctness assertions.
+     */
+    private fun assertForDistinctCompositePK(pkSelectors: List<String>, tableName: String): List<SMTNode> {
+        val nodes = mutableListOf<AssertSMTNode>()
+        for (i in 1..numberOfRows) {
+            for (j in i + 1..numberOfRows) {
+                val columnDistinctness = pkSelectors.map { selector ->
+                    DistinctAssertion(listOf(
+                        "(${selector.uppercase()} $tableName$i)",
+                        "(${selector.uppercase()} $tableName$j)"
+                    ))
+                }
+                nodes.add(AssertSMTNode(OrAssertion(columnDistinctness)))
             }
         }
         return nodes
@@ -368,21 +404,25 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
         appendJoinConstraints(smt, sqlQuery, tableAliases)
 
-        if (sqlQuery is Select) { // TODO: Handle other queries
-            val plainSelect = sqlQuery.selectBody as PlainSelect
-            val where = plainSelect.where
+        val (where, defaultTable) = when (sqlQuery) {
+            is Select -> {
+                val plainSelect = sqlQuery.selectBody as PlainSelect
+                Pair(plainSelect.where, TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull())
+            }
+            is Delete -> Pair(sqlQuery.where, sqlQuery.table.getName())
+            is Update -> Pair(sqlQuery.where, sqlQuery.table.getName())
+            else -> Pair(null, null)
+        }
 
-            if (where != null) {
-                try {
-                    val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
-                    val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                    for (i in 1..numberOfRows) {
-                        val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                        smt.addNode(constraint)
-                    }
-                } catch (e: RuntimeException) {
-                    LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
+        if (where != null && defaultTable != null) {
+            try {
+                val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                for (i in 1..numberOfRows) {
+                    val constraint = parseQueryCondition(tableAliases, defaultTable, condition, i)
+                    smt.addNode(constraint)
                 }
+            } catch (e: RuntimeException) {
+                LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
             }
         }
     }
@@ -443,22 +483,34 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun extractTableAliases(sqlQuery: Statement): Map<String, String> {
         val tableAliasMap = mutableMapOf<String, String>()
-        if (sqlQuery is Select) { // TODO: Handle other queries
-            val plainSelect = sqlQuery.selectBody as PlainSelect
-            val fromItem = plainSelect.fromItem
-            if (fromItem != null) {
-                val tableName = getTableName(fromItem)
-                val alias = fromItem.alias?.name ?: tableName
-                tableAliasMap[alias] = tableName
+        when (sqlQuery) {
+            is Select -> {
+                val plainSelect = sqlQuery.selectBody as PlainSelect
+                val fromItem = plainSelect.fromItem
+                if (fromItem != null) {
+                    val tableName = getTableName(fromItem)
+                    val alias = fromItem.alias?.name ?: tableName
+                    tableAliasMap[alias] = tableName
 
-                val joins = plainSelect.joins
-                if (joins != null) {
-                    for (join in joins) {
-                        val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                        val joinName = getTableName(join.rightItem)
-                        tableAliasMap[joinAlias] = joinName
+                    val joins = plainSelect.joins
+                    if (joins != null) {
+                        for (join in joins) {
+                            val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
+                            val joinName = getTableName(join.rightItem)
+                            tableAliasMap[joinAlias] = joinName
+                        }
                     }
                 }
+            }
+            is Delete -> {
+                val tableName = sqlQuery.table.getName()
+                val alias = sqlQuery.table.alias?.name ?: tableName
+                tableAliasMap[alias] = tableName
+            }
+            is Update -> {
+                val tableName = sqlQuery.table.getName()
+                val alias = sqlQuery.table.alias?.name ?: tableName
+                tableAliasMap[alias] = tableName
             }
         }
         return tableAliasMap

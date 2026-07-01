@@ -86,6 +86,25 @@ class Statistics : SearchListener {
     private var sqlHeuristicEvaluationFailureCount = 0;
     private val sqlRowsAverageCalculator = IncrementalAverage()
 
+    // DSE (Dynamic Symbolic Execution) statistics
+    private var dseTotalQueriesProcessed = 0
+    private var dseSatCount = 0
+    private var dseUnsatCount = 0
+    private var dseErrorCount = 0
+    private var dseParseFailureCount = 0
+    private var dseZ3TimeMs = 0L
+    private var dseSmtlibGenTimeMs = 0L
+    private val dseSmtlibSizeBytes = IncrementalAverage()
+    private val dseSeenQueryHashes = mutableSetOf<Int>()
+    private var dseUniqueQueriesCount = 0
+
+    // DSE correctness distance statistics (only when measureDseCorrectness=true)
+    private var dseCorrectnessCheckCount = 0
+    private var dseCorrectnessZeroDistanceCount = 0
+    private var dseCorrectnessNonZeroDistanceCount = 0
+    private val dseCorrectnessAvgDistance = IncrementalAverage()
+    private var dseCorrectnessEvalFailureCount = 0
+
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
     private var mongoHeuristicEvaluationFailureCount = 0
@@ -221,6 +240,56 @@ class Statistics : SearchListener {
 
     fun reportRedisHeuristicEvaluationFailure() {
         redisHeuristicEvaluationFailureCount++
+    }
+
+    fun reportDseSat(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseSatCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseUnsat(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseUnsatCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseError(z3TimeMs: Long) {
+        dseTotalQueriesProcessed++
+        dseErrorCount++
+        dseZ3TimeMs += z3TimeMs
+    }
+
+    fun reportDseParseFailure() {
+        dseTotalQueriesProcessed++
+        dseParseFailureCount++
+    }
+
+    fun reportDseSmtlibGenTime(ms: Long, sizeBytes: Int) {
+        dseSmtlibGenTimeMs += ms
+        dseSmtlibSizeBytes.addValue(sizeBytes)
+    }
+
+    fun reportDseQuerySeen(queryHash: Int) {
+        if (dseSeenQueryHashes.add(queryHash)) {
+            dseUniqueQueriesCount++
+        }
+    }
+
+    fun reportDseCorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
+        dseCorrectnessCheckCount++
+        if (evaluationFailure) {
+            // sqlDistance is a sentinel value (e.g. Double.MAX_VALUE) in this case,
+            // and must not pollute the average of real distances
+            dseCorrectnessEvalFailureCount++
+            return
+        }
+        if (sqlDistance == 0.0) {
+            dseCorrectnessZeroDistanceCount++
+        } else {
+            dseCorrectnessNonZeroDistanceCount++
+        }
+        dseCorrectnessAvgDistance.addValue(sqlDistance)
     }
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
@@ -380,6 +449,29 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
+
+            // statistics info for DSE (only emitted when collectDseStats=true)
+            if (config.collectDseStats) {
+                add(Pair("dseTotalQueries", "$dseTotalQueriesProcessed"))
+                add(Pair("dseUniqueQueries", "$dseUniqueQueriesCount"))
+                add(Pair("dseDuplicateQueries", "${dseTotalQueriesProcessed - dseParseFailureCount - dseUniqueQueriesCount}"))
+                add(Pair("dseSat", "$dseSatCount"))
+                add(Pair("dseUnsat", "$dseUnsatCount"))
+                add(Pair("dseErrors", "$dseErrorCount"))
+                add(Pair("dseParseFailures", "$dseParseFailureCount"))
+                add(Pair("dseZ3TotalMs", "$dseZ3TimeMs"))
+                add(Pair("dseSmtlibGenTotalMs", "$dseSmtlibGenTimeMs"))
+                add(Pair("dseAvgSmtlibSizeBytes", "%.1f".format(dseSmtlibSizeBytes.mean)))
+            }
+
+            // correctness distance stats (only emitted when measureDseCorrectness=true)
+            if (config.measureDseCorrectness) {
+                add(Pair("dseCorrectnessChecks",      "$dseCorrectnessCheckCount"))
+                add(Pair("dseCorrectnessZeroDistance", "$dseCorrectnessZeroDistanceCount"))
+                add(Pair("dseCorrectnessNonZero",      "$dseCorrectnessNonZeroDistanceCount"))
+                add(Pair("dseCorrectnessAvgDist",      "%.4f".format(dseCorrectnessAvgDistance.mean)))
+                add(Pair("dseCorrectnessEvalFailures", "$dseCorrectnessEvalFailureCount"))
+            }
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
