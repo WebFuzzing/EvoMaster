@@ -662,11 +662,25 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
+    /**
+     * @param json the representation to send
+     * @param dtoVar whether we rather send the data as DTO, stored in a variable with this name
+     * @param functionsOnString  appended function calls on the string representation before sending it
+     */
+    fun printSendJsonBody(
+        json: String,
+        lines: Lines,
+        dtoVar: String? = null,
+        functionsOnString: List<String>? = null
+    ) {
 
         if(json.isEmpty()){
             //nothing is sent
             return
+        }
+
+        if(dtoVar != null && functionsOnString != null) {
+            throw IllegalArgumentException("Cannot use extra functions on string JSON when using DTOs")
         }
 
         val send = sendBodyCommand()
@@ -675,50 +689,51 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (bodyLines.size == 1) {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
+                    functionsOnString?.forEach { lines.append(it) }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         } else {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(")
-                    lines.add("${bodyLines.first()} +")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()}")
-                    }
-                    lines.add(", Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
-                    lines.add("body = ${bodyLines.first()} + \\")
+                    lines.add("body = ")
+                    if(!functionsOnString.isNullOrEmpty()){
+                        lines.append("(")
+                    }
+                    lines.append("${bodyLines.first()} + \\")
                     lines.indented {
                         (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + \\")
                         }
-                        lines.add("${bodyLines.last()}")
+                        lines.add(bodyLines.last())
+                        if(!functionsOnString.isNullOrEmpty()){
+                            lines.append(")")
+                            functionsOnString.forEach { lines.append(it) }
+                        }
                     }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         }
     }
 
-    private fun writeJavaOrKotlinJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+    private fun writeJavaOrKotlinJsonBody(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        dtoVar: String?,
+        functionsOnString: List<String>?
+    ) {
         // TODO: When performing robustness testing, we'll need to check the individual type and send data
         //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
         if (shouldUseDtoForPayload(dtoVar)) {
             lines.add(".$send(${dtoVar})")
         } else {
-            writeStringifiedPayload(lines, send, bodyLines, isMultiLine)
+            writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
         }
     }
 
@@ -726,17 +741,48 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
     }
 
-    private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
-        lines.add(".$send(${bodyLines.first()}")
-        if (isMultiLine) {
+    private fun writeStringifiedPayload(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        functionsOnString: List<String>?
+    ) {
+        if(bodyLines.isEmpty()) {
+            throw IllegalArgumentException("Empty JSON payload")
+        }
+
+        lines.add(".$send(")
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            //need to wrap string concatenation into a () to be able to call methods
+            //on the final result
+            lines.append("(")
+        }
+
+        lines.append(bodyLines.first())
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size == 1) {
+            //there is only 1 string, so no need for (), and can append directly
+            functionsOnString.forEach {lines.append(it)}
+        }
+
+        if (bodyLines.size > 1) {
             lines.append(" + ")
             lines.indented {
                 (1 until bodyLines.lastIndex).forEach { i ->
                     lines.add("${bodyLines[i]} + ")
                 }
-                lines.add("${bodyLines.last()}")
+                lines.add(bodyLines.last())
             }
         }
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            lines.append(")")
+            lines.indented {
+                functionsOnString.forEach { lines.add(it) }
+            }
+        }
+
         lines.append(")")
     }
 
