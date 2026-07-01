@@ -17,6 +17,11 @@ import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains
 
+private const val firstASCIIChar = 0
+private const val lastASCIIChar = 0x7f
+private val unicodeCharClassModePredefinedEscapes = setOf('w', 'W', 'd', 'D', 's', 'S')
+private val posixEscapePrefix = setOf('p', 'P')
+
 /*
 \w	Find a word character
 \W	Find a non-word character
@@ -65,20 +70,20 @@ class CharacterClassEscapeRxGene(
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
         private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
-                "Lower"  to listOf(CharacterRange('a', 'z')),
-                "Upper"  to listOf(CharacterRange('A', 'Z')),
-                "ASCII"  to listOf(CharacterRange(0, 0x7f)),
-                "Alpha"  to asciiLetterSet,
-                "Digit"  to digitSet,
-                "Alnum"  to digitSet + asciiLetterSet,
-                "Punct"  to punctuationSet,
-                "Graph"  to digitSet + asciiLetterSet + punctuationSet,
-                "Print"  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
-                "Blank"  to stringToListOfCharacterRanges(" \t"),
-                "Cntrl"  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
-                "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
-                "Space"  to spaceSet,
-            )
+            "Lower"  to listOf(CharacterRange('a', 'z')),
+            "Upper"  to listOf(CharacterRange('A', 'Z')),
+            "ASCII"  to listOf(CharacterRange(firstASCIIChar, lastASCIIChar)),
+            "Alpha"  to asciiLetterSet,
+            "Digit"  to digitSet,
+            "Alnum"  to digitSet + asciiLetterSet,
+            "Punct"  to punctuationSet,
+            "Graph"  to digitSet + asciiLetterSet + punctuationSet,
+            "Print"  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
+            "Blank"  to stringToListOfCharacterRanges(" \t"),
+            "Cntrl"  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
+            "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
+            "Space"  to spaceSet,
+        )
             // create both normal and negated version for all
             .flatMap { (key, value) ->
                 listOf(
@@ -106,29 +111,49 @@ class CharacterClassEscapeRxGene(
             throw IllegalArgumentException("Invalid type: $type")
         }
 
-        multiCharRange = when(type[0]){
-            'w' -> wordMultiCharRange
-            'W' -> nonWordMultiCharRange
-            'd' -> digitMultiCharRange
-            'D' -> nonDigitMultiCharRange
-            's' -> spaceMultiCharRange
-            'S' -> nonSpaceMultiCharRange
-            'v' -> verticalSpaceMultiCharRange
-            'V' -> nonVerticalSpaceMultiCharRange
-            'h' -> horizontalSpaceMultiCharRange
-            'H' -> nonHorizontalSpaceMultiCharRange
-            'p', 'P' -> {
-                val pLabel = type.substring(2, type.length - 1)
-                val negated = type[0].isUpperCase()
-                val lookupKey = if (negated) "^$pLabel" else pLabel
-                if (lookupKey !in posixAsciiMultiCharRange) {
-                    unicodeCache.getRanges(pLabel, negated)
-                } else {
-                    posixAsciiMultiCharRange[lookupKey]!!
-                }
+        val lowercasePosixKeys = posixAsciiMultiCharRange.keys.map{ it.lowercase() }
+
+        multiCharRange = if ( flags.unicodeCharacterClass &&
+            (type[0] in unicodeCharClassModePredefinedEscapes ||
+                    (type[0] in posixEscapePrefix && type.substring(2, type.length - 1).lowercase() in lowercasePosixKeys)) ) {
+            // UNICODE_CHARACTER_CLASSES flag is on, so these should now be in conformance with the recommendation of
+            // Annex C: Compatibility Properties of Unicode Regular Expression, see:
+            // https://www.unicode.org/reports/tr18/#Compatibility_Properties
+            val cacheLabel = when (type[0]) {
+                'd', 'D', 's', 'S', 'w', 'W' -> type.lowercase()
+                'p', 'P' -> type.substring(2, type.length - 1)
+                else -> //this should never happen due to check in init
+                    throw IllegalStateException("Type '\\$type' not supported yet")
             }
-            else -> //this should never happen due to check in init
-                throw IllegalStateException("Type '\\$type' not supported yet")
+            unicodeCache.getRanges(cacheLabel, type[0].isUpperCase())
+        } else {
+            // regular predefined character classes
+            when(type[0]){
+                'w' -> wordMultiCharRange
+                'W' -> nonWordMultiCharRange
+                'd' -> digitMultiCharRange
+                'D' -> nonDigitMultiCharRange
+                's' -> spaceMultiCharRange
+                'S' -> nonSpaceMultiCharRange
+                'v' -> verticalSpaceMultiCharRange
+                'V' -> nonVerticalSpaceMultiCharRange
+                'h' -> horizontalSpaceMultiCharRange
+                'H' -> nonHorizontalSpaceMultiCharRange
+                'p', 'P' -> {
+                    val pLabel = type.substring(2, type.length - 1)
+                    val negated = type[0].isUpperCase()
+                    val lookupKey = if (negated) "^$pLabel" else pLabel
+                    if (lookupKey in posixAsciiMultiCharRange) {
+                        posixAsciiMultiCharRange[lookupKey]!!
+                    } else if (lookupKey.lowercase() in lowercasePosixKeys) {
+                        throw IllegalStateException("This escape (\\$type) is only valid when the \"U\" flag is on.")
+                    } else {
+                        unicodeCache.getRanges(pLabel, negated)
+                    }
+                }
+                else -> //this should never happen due to check in init
+                    throw IllegalStateException("Type '\\$type' not supported yet")
+            }
         }
     }
 
