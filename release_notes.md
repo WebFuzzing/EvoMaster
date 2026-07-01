@@ -6,6 +6,11 @@ Under development in `master` branch.
 - #1286: SSL verification error during the execution of generated tests 
 - #1071: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with SSLException 
 
+### Fixed Bugs
+- Resolved issue of wrong handling of empty bodies in PUT/PATCH/POST requests. 
+- Fixed sending of wrong content-type header when type is not supported in EvoMaster.
+
+
 # Version 6.0.0
 
 ### Breaking Changes

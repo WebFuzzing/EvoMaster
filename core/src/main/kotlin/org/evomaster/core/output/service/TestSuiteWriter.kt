@@ -155,21 +155,7 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        //FIXME should solve all problems that happen in the EM tests
-        //catch any sorting problems (see NPE is SortingHelper on Trello)
-        val tests = try {
-            // TODO skip to sort RPC for the moment
-            testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
-        } catch (ex: Exception) {
-            log.warn(
-                "A failure has occurred with the test sorting. Reverting to default settings. \n"
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-            )
-            // fallback to numbered naming strategy upon failure
-            NumberedTestCaseNamingStrategy(solution).getTestCases()
-        }
-
+        val tests = testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -517,17 +503,18 @@ class TestSuiteWriter {
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
+            if (useRestAssured()) {
+                addImport("io.restassured.config.JsonConfig", lines)
+                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                addImport("io.restassured.config.EncoderConfig", lines)
+                addImport("io.restassured.http.ContentType", lines)
+            }
+
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
                     addImport("org.hamcrest.Matchers.*", lines, true)
-                }
-
-                //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()) {
-                    addImport("io.restassured.config.JsonConfig", lines)
-                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
                 }
 
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
@@ -871,6 +858,9 @@ class TestSuiteWriter {
                             lines.add(".setParam(\"http.socket.timeout\", ${config.tcpTimeoutMs})")
                             lines.add(".setParam(\"http.connection.timeout\", ${config.tcpTimeoutMs}))")
                         }
+                        lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                        lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
                     }
                     lines.appendSemicolon()
                 }

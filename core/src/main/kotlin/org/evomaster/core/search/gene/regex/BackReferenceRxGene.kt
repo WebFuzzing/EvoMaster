@@ -14,11 +14,17 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * Represents a backreference \N in a regex (N being a number).
  * Its value is always identical to the current value of its [captureGroup].
  * It has no independent state and is therefore immutable.
+ * If capture group is null then the referenced group was unsatisfiable,
+ * in which case the same is true for the backreference to it.
  */
 class BackReferenceRxGene(
     val groupIndex: Int,
-    val captureGroup: DisjunctionListRxGene
+    val captureGroup: DisjunctionListRxGene?
 ) : RxAtom, SimpleGene("\\$groupIndex") {
+
+    override fun isUnsatisfiable(): Boolean {
+        return captureGroup == null || captureGroup.isUnsatisfiable()
+    }
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
@@ -59,7 +65,12 @@ class BackReferenceRxGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String = captureGroup.getValueAsPrintableString(targetFormat = null)
+    ): String {
+        if (captureGroup == null) {
+            throw IllegalStateException("Cannot get value from invalid backreference \\$groupIndex")
+        }
+        return captureGroup.getValueAsPrintableString(previousGenes, mode, targetFormat)
+    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is BackReferenceRxGene) return false
