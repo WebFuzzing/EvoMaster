@@ -22,6 +22,8 @@
         <swagger.parser-v3.version>2.1.14</swagger.parser-v3.version>
         <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <langchain4j.version>1.15.0</langchain4j.version>
+        <swagger.core.version>2.2.34</swagger.core.version>
+        <java.dataloader>2.2.3</java.dataloader>
     </properties>
 
     <dependencyManagement>
@@ -83,6 +85,21 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models</artifactId>
+                <version>${swagger.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-core</artifactId>
+                <version>${swagger.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>java-dataloader</artifactId>
+                <version>${java.dataloader}</version>
             </dependency>
             <dependency>
                 <groupId>com.atlassian.oai</groupId>
