@@ -465,6 +465,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
+                addImport("io.restassured.config.HttpClientConfig", lines)
             }
 
             if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
@@ -532,6 +533,8 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
+            // HTTP client timeout (ms)
+            lines.add("const EM_HTTP_TIMEOUT_MS = ${config.tcpTimeoutMs};")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -586,6 +589,8 @@ class TestSuiteWriter {
                 }
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
+            // HTTP client timeout (seconds)
+            lines.add("EM_HTTP_TIMEOUT = ${config.tcpTimeoutMs / 1000.0}")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
@@ -839,9 +844,20 @@ class TestSuiteWriter {
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
                 }
 
-                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                if (format.isJavaOrKotlin()) {
+                    // global HTTP client config. The socket timeout MUST match the one used during
+                    // fuzzing (tcpTimeoutMs), so that timeout faults are reproduced consistently
                     lines.add("RestAssured.config = RestAssured.config()")
                     lines.indented {
+                        if (config.enableBasicAssertions) {
+                            lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                            lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        }
+                        lines.add(".httpClient(HttpClientConfig.httpClientConfig()")
+                        lines.indented {
+                            lines.add(".setParam(\"http.socket.timeout\", ${config.tcpTimeoutMs})")
+                            lines.add(".setParam(\"http.connection.timeout\", ${config.tcpTimeoutMs}))")
+                        }
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
                         lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")

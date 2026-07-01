@@ -96,7 +96,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
             indent()
             add(".get(self.baseUrlOfSut + \"/\",")
             indent()
-            add("headers=headers, verify=False)")
+            add("headers=headers, timeout=EM_HTTP_TIMEOUT, verify=False)")
             deindent()
             deindent()
             deindent()
@@ -167,7 +167,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=EM_HTTP_TIMEOUT, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
@@ -241,7 +241,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=EM_HTTP_TIMEOUT, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
@@ -300,7 +300,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=EM_HTTP_TIMEOUT, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
