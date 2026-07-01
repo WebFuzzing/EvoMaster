@@ -53,6 +53,17 @@ object RegexHandler {
 
     /**
      * This function handles comments and whitespace for Java regex, striping them when the "x" flag is on.
+     *
+     * This cannot be handled at the ANTLR level because the flag can be enabled and disabled
+     * mid-pattern via inline flag groups like `(?x:...)` and `(?-x:...)`, which are only known
+     * at parse time. Lexer modes cannot react to parser-level flag state.
+     *
+     * The visitor cannot handle this either, as some constructs (character classes, quantifier bounds, etc.)
+     * are tokenised before the visitor sees them.
+     *
+     * This function therefore performs a linear scan of the raw string before ANTLR, tracking
+     * flag state across inline scopes, producing a cleaned string that requires no special
+     * handling in the lexer or visitor.
      */
     private fun preprocessCommentsForJavaRegex(regex: String, externalRegexFlags: RegexFlags): String {
         val result = StringBuilder(regex.length)
