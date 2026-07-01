@@ -21,6 +21,11 @@ import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+private const val firstSurrogateChar = '\uD800'
+private const val lastSurrogateChar = '\uDFFF'
+private const val defaultLineTerminators = "\n\r\u0085\u2028\u2029"
+private const val unixLinesModeLineTerminators = "\n"
+
 class AnyCharacterRxGene(
     val flags: RegexFlags = RegexFlags()
 ) : RxAtom, SimpleGene(".") {
@@ -35,9 +40,9 @@ class AnyCharacterRxGene(
          TODO in Java regex lone surrogates match ".", but this causes trouble when appearing in a rest path,
             so for now we avoid surrogates altogether
          */
-        val dotAllValidRanges = MultiCharacterRange(true,listOf(CharacterRange('\uD800','\uDFFF'))) // all characters accepted
-        val defaultValidRanges = MultiCharacterRange(true,"\n\r\u0085\u2028\u2029").intersect(dotAllValidRanges)
-        val unixLinesValidRanges = MultiCharacterRange(true, "\n").intersect(dotAllValidRanges)
+        val dotAllValidRanges = MultiCharacterRange(true,listOf(CharacterRange(firstSurrogateChar,lastSurrogateChar))) // all characters accepted
+        val defaultValidRanges = MultiCharacterRange(true,defaultLineTerminators).intersect(dotAllValidRanges)
+        val unixLinesValidRanges = MultiCharacterRange(true, unixLinesModeLineTerminators).intersect(dotAllValidRanges)
     }
 
     var value: Char = 'a'
@@ -69,10 +74,8 @@ class AnyCharacterRxGene(
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val previous = value
 
-        value = validRanges.sample(randomness)
-
-        if (previous == value) {
-            randomize(randomness, tryToForceNewValue)
+        while(tryToForceNewValue && previous == value) {
+            value = validRanges.sample(randomness)
         }
     }
 

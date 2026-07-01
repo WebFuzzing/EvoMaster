@@ -30,14 +30,11 @@ data class ParsedFlagExpression(
     private val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
 
 data class RegexFlags(
-    // currently implemented
     val caseInsensitive: Boolean = false,        // i
     val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
     val dotAll: Boolean = false,                 // s
     val unixLines: Boolean = false,              // d
     val unicodeCharacterClass: Boolean = false,  // U
-
-    // recognised but not yet implemented, validate() throws on these
     val multiline: Boolean = false,              // m
     val comments: Boolean = false,               // x
 ) {

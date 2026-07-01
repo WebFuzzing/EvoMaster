@@ -17,6 +17,11 @@ import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 import kotlin.collections.contains
 
+private const val firstASCIIChar = 0
+private const val lastASCIIChar = 0x7f
+private val unicodeCharClassModePredefinedEscapes = setOf('w', 'W', 'd', 'D', 's', 'S')
+private val posixEscapePrefix = setOf('p', 'P')
+
 /*
 \w	Find a word character
 \W	Find a non-word character
@@ -67,7 +72,7 @@ class CharacterClassEscapeRxGene(
         private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
             "Lower"  to listOf(CharacterRange('a', 'z')),
             "Upper"  to listOf(CharacterRange('A', 'Z')),
-            "ASCII"  to listOf(CharacterRange(0, 0x7f)),
+            "ASCII"  to listOf(CharacterRange(firstASCIIChar, lastASCIIChar)),
             "Alpha"  to asciiLetterSet,
             "Digit"  to digitSet,
             "Alnum"  to digitSet + asciiLetterSet,
@@ -109,8 +114,8 @@ class CharacterClassEscapeRxGene(
         val lowercasePosixKeys = posixAsciiMultiCharRange.keys.map{ it.lowercase() }
 
         multiCharRange = if ( flags.unicodeCharacterClass &&
-            (type[0] in "wWdDsS" ||
-                    (type[0] in "pP" && type.substring(2, type.length - 1).lowercase() in lowercasePosixKeys)) ) {
+            (type[0] in unicodeCharClassModePredefinedEscapes ||
+                    (type[0] in posixEscapePrefix && type.substring(2, type.length - 1).lowercase() in lowercasePosixKeys)) ) {
             // UNICODE_CHARACTER_CLASSES flag is on, so these should now be in conformance with the recommendation of
             // Annex C: Compatibility Properties of Unicode Regular Expression, see:
             // https://www.unicode.org/reports/tr18/#Compatibility_Properties
