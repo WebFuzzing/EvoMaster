@@ -1,4 +1,4 @@
-package com.webfuzzing.arazzo.models.dto;
+package com.webfuzzing.arazzo.models.unresolved;
 
 import com.webfuzzing.arazzo.models.domain.Components;
 import com.webfuzzing.arazzo.models.domain.InfoArazzo;
@@ -7,18 +7,19 @@ import com.webfuzzing.arazzo.models.domain.SourceDescription;
 import java.util.List;
 
 /**
- * Jackson-deserializable representation of the root Arazzo Specification Object.
- * Mutable intermediate model used during parsing; mapped to the immutable domain
- * {@link com.webfuzzing.arazzo.models.domain.ArazzoSpecifications} by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
+ * Jackson-deserializable representation of the root Arazzo Specification Object
+ * with unresolved references. Mutable intermediate model used during parsing;
+ * mapped to the immutable domain {@link com.webfuzzing.arazzo.models.domain.ArazzoSpecifications}
+ * by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
  */
-public class ArazzoSpecificationsDTO {
+public class UnresolvedArazzoSpecifications {
     private String arazzo;
     private InfoArazzo info;
     private List<SourceDescription> sourceDescriptions;
-    private List<WorkflowDTO> workflows;
+    private List<UnresolvedWorkflow> workflows;
     private Components components;
 
-    public ArazzoSpecificationsDTO() {
+    public UnresolvedArazzoSpecifications() {
     }
 
     public String getArazzo() {
@@ -45,11 +46,11 @@ public class ArazzoSpecificationsDTO {
         this.sourceDescriptions = sourceDescriptions;
     }
 
-    public List<WorkflowDTO> getWorkflows() {
+    public List<UnresolvedWorkflow> getWorkflows() {
         return workflows;
     }
 
-    public void setWorkflows(List<WorkflowDTO> workflows) {
+    public void setWorkflows(List<UnresolvedWorkflow> workflows) {
         this.workflows = workflows;
     }
 

@@ -1,4 +1,4 @@
-package com.webfuzzing.arazzo.models.dto;
+package com.webfuzzing.arazzo.models.unresolved;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.webfuzzing.arazzo.deserializer.FailureReusableDeserializer;
@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representing the Step (DTO)
- * Used for direct document parsing
- * Use SuccessReusable, FailureReusable and ParameterReusable, for representing (Object | Reusable Object)
+ * Jackson-deserializable representation of a Step Object
+ * with unresolved references. Mutable intermediate model used during parsing;
+ * mapped to the immutable domain {@link com.webfuzzing.arazzo.models.domain.Step}
+ * by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
+ * Uses {@link SuccessReusable}, {@link FailureReusable} and {@link ParameterReusable}
+ * for representing (Object | Reusable Object).
  */
-public class StepDTO {
+public class UnresolvedStep {
     private String description;
     private String stepId;
     private String operationId;
@@ -33,7 +36,7 @@ public class StepDTO {
     @JsonDeserialize(contentUsing = FailureReusableDeserializer.class)
     private List<FailureReusable> onFailure;
 
-    public StepDTO() {
+    public UnresolvedStep() {
     }
 
     public String getDescription() {

@@ -1,4 +1,4 @@
-package com.webfuzzing.arazzo.models.dto;
+package com.webfuzzing.arazzo.models.unresolved;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.webfuzzing.arazzo.deserializer.FailureReusableDeserializer;
@@ -13,17 +13,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representing the Workflow (DTO)
- * Used for direct document parsing
- * Use SuccessReusable, FailureReusable and ParameterReusable, for representing (Object | Reusable Object)
+ * Jackson-deserializable representation of a Workflow Object
+ * with unresolved references. Mutable intermediate model used during parsing;
+ * mapped to the immutable domain {@link com.webfuzzing.arazzo.models.domain.Workflow}
+ * by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
+ * Uses {@link SuccessReusable}, {@link FailureReusable} and {@link ParameterReusable}
+ * for representing (Object | Reusable Object).
  */
-public class WorkflowDTO {
+public class UnresolvedWorkflow {
     private String workflowId;
     private String summary;
     private String description;
     private Schema<?> inputs;
     private List<String> dependsOn;
-    private List<StepDTO> steps;
+    private List<UnresolvedStep> steps;
     private Map<String, String> outputs;
 
     @JsonDeserialize(contentUsing = SuccessReusableDeserializer.class)
@@ -35,7 +38,7 @@ public class WorkflowDTO {
     @JsonDeserialize(contentUsing = ParameterReusableDeserializer.class)
     private List<ParameterReusable> parameters;
 
-    public WorkflowDTO() {
+    public UnresolvedWorkflow() {
     }
 
     public String getWorkflowId() {
@@ -78,11 +81,11 @@ public class WorkflowDTO {
         this.dependsOn = dependsOn;
     }
 
-    public List<StepDTO> getSteps() {
+    public List<UnresolvedStep> getSteps() {
         return steps;
     }
 
-    public void setSteps(List<StepDTO> steps) {
+    public void setSteps(List<UnresolvedStep> steps) {
         this.steps = steps;
     }
 

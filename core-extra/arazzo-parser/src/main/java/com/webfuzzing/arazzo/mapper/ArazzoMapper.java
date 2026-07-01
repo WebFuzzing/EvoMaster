@@ -3,9 +3,9 @@ package com.webfuzzing.arazzo.mapper;
 import com.webfuzzing.arazzo.models.domain.ArazzoSpecifications;
 import com.webfuzzing.arazzo.models.domain.Step;
 import com.webfuzzing.arazzo.models.domain.Workflow;
-import com.webfuzzing.arazzo.models.dto.ArazzoSpecificationsDTO;
-import com.webfuzzing.arazzo.models.dto.StepDTO;
-import com.webfuzzing.arazzo.models.dto.WorkflowDTO;
+import com.webfuzzing.arazzo.models.unresolved.UnresolvedArazzoSpecifications;
+import com.webfuzzing.arazzo.models.unresolved.UnresolvedStep;
+import com.webfuzzing.arazzo.models.unresolved.UnresolvedWorkflow;
 import com.webfuzzing.arazzo.resolver.ArazzoReferenceResolver;
 import io.swagger.v3.oas.models.media.Schema;
 
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Mapper class responsible for converting Arazzo Specification (DTOs)
+ * Mapper class responsible for converting unresolved Arazzo Specification models
  * into their corresponding domain models.
  */
 public class ArazzoMapper {
@@ -24,56 +24,56 @@ public class ArazzoMapper {
     }
 
     /**
-     * Mapp ArazzoSpecificationsDTO to ArazzoSpecifications
+     * Maps UnresolvedArazzoSpecifications to ArazzoSpecifications
      */
-    public ArazzoSpecifications toDomain(ArazzoSpecificationsDTO arazzoSpecificationsDTO) {
+    public ArazzoSpecifications toDomain(UnresolvedArazzoSpecifications unresolvedArazzoSpecifications) {
         return ArazzoSpecifications.builder()
-                .arazzo(arazzoSpecificationsDTO.getArazzo())
-                .info(arazzoSpecificationsDTO.getInfo())
-                .sourceDescriptions(arazzoSpecificationsDTO.getSourceDescriptions())
-                .workflows(arazzoSpecificationsDTO.getWorkflows().stream()
+                .arazzo(unresolvedArazzoSpecifications.getArazzo())
+                .info(unresolvedArazzoSpecifications.getInfo())
+                .sourceDescriptions(unresolvedArazzoSpecifications.getSourceDescriptions())
+                .workflows(unresolvedArazzoSpecifications.getWorkflows().stream()
                         .map(this::toDomain)
                         .collect(Collectors.toList()))
-                .components(arazzoSpecificationsDTO.getComponents())
+                .components(unresolvedArazzoSpecifications.getComponents())
                 .build();
     }
 
     /**
-     * Mapp WorkflowDTO to Workflow
+     * Maps UnresolvedWorkflow to Workflow
      */
-    public Workflow toDomain(WorkflowDTO workflowDTO) {
+    public Workflow toDomain(UnresolvedWorkflow unresolvedWorkflow) {
         return Workflow.builder()
-                .workflowId(workflowDTO.getWorkflowId())
-                .summary(workflowDTO.getSummary())
-                .description(workflowDTO.getDescription())
-                .inputs(this.toDomain(workflowDTO.getInputs()))
-                .dependsOn(workflowDTO.getDependsOn())
-                .steps(workflowDTO.getSteps().stream()
+                .workflowId(unresolvedWorkflow.getWorkflowId())
+                .summary(unresolvedWorkflow.getSummary())
+                .description(unresolvedWorkflow.getDescription())
+                .inputs(this.toDomain(unresolvedWorkflow.getInputs()))
+                .dependsOn(unresolvedWorkflow.getDependsOn())
+                .steps(unresolvedWorkflow.getSteps().stream()
                         .map(this::toDomain)
                         .collect(Collectors.toList()))
-                .successActions(resolver.resolveSuccessReusable(workflowDTO.getSuccessActions()))
-                .failureActions(resolver.resolveFailureReusable(workflowDTO.getFailureActions()))
-                .outputs(workflowDTO.getOutputs())
-                .parameters(resolver.resolveParametersReusable(workflowDTO.getParameters()))
+                .successActions(resolver.resolveSuccessReusable(unresolvedWorkflow.getSuccessActions()))
+                .failureActions(resolver.resolveFailureReusable(unresolvedWorkflow.getFailureActions()))
+                .outputs(unresolvedWorkflow.getOutputs())
+                .parameters(resolver.resolveParametersReusable(unresolvedWorkflow.getParameters()))
                 .build();
     }
 
     /**
-     * Mapp StepDTO to Step
+     * Maps UnresolvedStep to Step
      */
-    public Step toDomain(StepDTO stepDTO) {
+    public Step toDomain(UnresolvedStep unresolvedStep) {
         return Step.builder()
-                .description(stepDTO.getDescription())
-                .stepId(stepDTO.getStepId())
-                .operationId(stepDTO.getOperationId())
-                .operationPath(stepDTO.getOperationPath())
-                .workflowId(stepDTO.getWorkflowId())
-                .parameters(resolver.resolveParametersReusable(stepDTO.getParameters()))
-                .requestBody(stepDTO.getRequestBody())
-                .successCriteria(stepDTO.getSuccessCriteria())
-                .onSuccess(resolver.resolveSuccessReusable(stepDTO.getOnSuccess()))
-                .onFailure(resolver.resolveFailureReusable(stepDTO.getOnFailure()))
-                .outputs(stepDTO.getOutputs())
+                .description(unresolvedStep.getDescription())
+                .stepId(unresolvedStep.getStepId())
+                .operationId(unresolvedStep.getOperationId())
+                .operationPath(unresolvedStep.getOperationPath())
+                .workflowId(unresolvedStep.getWorkflowId())
+                .parameters(resolver.resolveParametersReusable(unresolvedStep.getParameters()))
+                .requestBody(unresolvedStep.getRequestBody())
+                .successCriteria(unresolvedStep.getSuccessCriteria())
+                .onSuccess(resolver.resolveSuccessReusable(unresolvedStep.getOnSuccess()))
+                .onFailure(resolver.resolveFailureReusable(unresolvedStep.getOnFailure()))
+                .outputs(unresolvedStep.getOutputs())
                 .build();
     }
 
