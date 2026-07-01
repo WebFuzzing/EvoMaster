@@ -16,6 +16,8 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.security.data.ActionStubMapping
@@ -560,99 +562,125 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             return
         }
 
-        if (bodyParam != null) {
+        if (bodyParam == null) {
 
-            val send = sendBodyCommand()
-
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+            if(call is RestCallAction && call.verb == HttpVerb.POST && format.isJavaOrKotlin()){
+                //   RestAssured automatically add content-type for forms on POST without body :(
+                lines.add(".noContentType()")
             }
 
-            if (bodyParam.isJson()) {
+            return
+        }
 
-                if (format.isPython()) {
-                    lines.add("body = {}")
+        val send = sendBodyCommand()
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
+            format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+        }
+
+        if (bodyParam.isJson()) {
+
+            if (format.isPython()) {
+                lines.add("body = {}")
+            }
+
+            val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+
+            printSendJsonBody(json, lines, dtoVar)
+
+        } else if (bodyParam.isTextPlain()) {
+
+            handleTextBody(bodyParam, lines)
+
+        } else if (bodyParam.isForm()) {
+            val body = bodyParam.gene.getValueAsPrintableString(
+                mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
+                targetFormat = format
+            )
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$body\"")
+                }
+                else -> lines.add(".$send(\"$body\")")
+            }
+        } else if (bodyParam.isXml()) {
+
+            val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+            // Escape quotes for string literal in generated code
+            val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
+
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$escapedXml\"")
                 }
 
-                val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                else -> lines.add(".$send(\"$escapedXml\")")
+            }
+        } else {
+            LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType() +
+                    ". It will be handled as TEXT")
+            handleTextBody(bodyParam, lines)
+        }
 
-                printSendJsonBody(json, lines, dtoVar)
+    }
 
-            } else if (bodyParam.isTextPlain()) {
+    private fun handleTextBody(
+        bodyParam: BodyParam,
+        lines: Lines,
+    ) {
+        val send = sendBodyCommand()
 
-                val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                // handle body only if it is not black
-                if (body.isNotBlank()){
-                    if (body != "\"\"") {
-                        when {
-                            format.isCsharp() -> {
-                                lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                            }
-                            format.isPython() -> {
-                                if (body.trim().isNullOrBlank()) {
-                                    lines.add("body = \"\"")
-                                } else {
-                                    lines.add("body = $body")
-                                }
-                            }
-                            else -> lines.add(".$send($body)")
-                        }
-                    } else {
-                        when {
-                            format.isCsharp() -> {
-                                lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                            }
-                            format.isPython() -> {
-                                lines.add("body = \"\"")
-                            }
-                            else -> lines.add(".$send(\"${"""\"\""""}\")")
-                        }
-                    }
-                }
+        val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
 
-                //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
-                // inserting \"\" should prevent that problem
-                // TODO: get some tests done of this
+        val text = GeneUtils.applyEscapes(body, mode = GeneUtils.EscapeMode.TEXT, format = format)
 
-            } else if (bodyParam.isForm()) {
-                val body = bodyParam.gene.getValueAsPrintableString(
-                        mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
-                        targetFormat = format
-                )
+        // handle body only if it is not black
+        if (body.isNotBlank()) {
+            if (body != "\"\"") {
                 when {
-                    format.isCsharp() -> {
-                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                    }
                     format.isPython() -> {
-                        lines.add("body = \"$body\"")
+                        if (body.trim().isBlank()) {
+                            lines.add("body = \"\"")
+                        } else {
+                            lines.add("body = \"$text\"")
+                        }
                     }
-                    else -> lines.add(".$send(\"$body\")")
-                }
-            } else if (bodyParam.isXml()) {
 
-                val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
-                // Escape quotes for string literal in generated code
-                val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
-
-                when {
-                    format.isPython() -> {
-                        lines.add("body = \"$escapedXml\"")
-                    }
-                    else -> lines.add(".$send(\"$escapedXml\")")
+                    else -> lines.add(".$send(\"$text\")")
                 }
             } else {
-                LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
+                when {
+                    format.isPython() -> {
+                        lines.add("body = \"\"")
+                    }
+                    //TODO isn't this valid just for Kotlin???
+                    else -> lines.add(".$send(\"${"""\"\""""}\")")
+                }
             }
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
+    /**
+     * @param json the representation to send
+     * @param dtoVar whether we rather send the data as DTO, stored in a variable with this name
+     * @param functionsOnString  appended function calls on the string representation before sending it
+     */
+    fun printSendJsonBody(
+        json: String,
+        lines: Lines,
+        dtoVar: String? = null,
+        functionsOnString: List<String>? = null
+    ) {
 
         if(json.isEmpty()){
             //nothing is sent
             return
+        }
+
+        if(dtoVar != null && functionsOnString != null) {
+            throw IllegalArgumentException("Cannot use extra functions on string JSON when using DTOs")
         }
 
         val send = sendBodyCommand()
@@ -661,50 +689,51 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (bodyLines.size == 1) {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
+                    functionsOnString?.forEach { lines.append(it) }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         } else {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(")
-                    lines.add("${bodyLines.first()} +")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()}")
-                    }
-                    lines.add(", Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
-                    lines.add("body = ${bodyLines.first()} + \\")
+                    lines.add("body = ")
+                    if(!functionsOnString.isNullOrEmpty()){
+                        lines.append("(")
+                    }
+                    lines.append("${bodyLines.first()} + \\")
                     lines.indented {
                         (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + \\")
                         }
-                        lines.add("${bodyLines.last()}")
+                        lines.add(bodyLines.last())
+                        if(!functionsOnString.isNullOrEmpty()){
+                            lines.append(")")
+                            functionsOnString.forEach { lines.append(it) }
+                        }
                     }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         }
     }
 
-    private fun writeJavaOrKotlinJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+    private fun writeJavaOrKotlinJsonBody(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        dtoVar: String?,
+        functionsOnString: List<String>?
+    ) {
         // TODO: When performing robustness testing, we'll need to check the individual type and send data
         //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
         if (shouldUseDtoForPayload(dtoVar)) {
             lines.add(".$send(${dtoVar})")
         } else {
-            writeStringifiedPayload(lines, send, bodyLines, isMultiLine)
+            writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
         }
     }
 
@@ -712,17 +741,48 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
     }
 
-    private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
-        lines.add(".$send(${bodyLines.first()}")
-        if (isMultiLine) {
+    private fun writeStringifiedPayload(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        functionsOnString: List<String>?
+    ) {
+        if(bodyLines.isEmpty()) {
+            throw IllegalArgumentException("Empty JSON payload")
+        }
+
+        lines.add(".$send(")
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            //need to wrap string concatenation into a () to be able to call methods
+            //on the final result
+            lines.append("(")
+        }
+
+        lines.append(bodyLines.first())
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size == 1) {
+            //there is only 1 string, so no need for (), and can append directly
+            functionsOnString.forEach {lines.append(it)}
+        }
+
+        if (bodyLines.size > 1) {
             lines.append(" + ")
             lines.indented {
                 (1 until bodyLines.lastIndex).forEach { i ->
                     lines.add("${bodyLines[i]} + ")
                 }
-                lines.add("${bodyLines.last()}")
+                lines.add(bodyLines.last())
             }
         }
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            lines.append(")")
+            lines.indented {
+                functionsOnString.forEach { lines.add(it) }
+            }
+        }
+
         lines.append(")")
     }
 
@@ -847,7 +907,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
             }
 
-            handleJsonStringAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName, res.getTooLargeBody())
+            handleJsonStringAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName, res.getTooLargeBody())
 
         } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 
@@ -855,7 +915,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
 
-            handleTextPlainTextAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName)
+            handleTextPlainTextAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName)
         } else {
             if (format.isCsharp()) {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")

@@ -31,8 +31,9 @@ open class RestFitness : AbstractRestFitness() {
         rc.resetSUT()
         goingToStartExecutingNewTest()
 
-        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
-        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
+        val placeholders = AuthUtils.createUsers(client, getBaseUrl(), individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual, placeholders)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual, placeholders)
 
         if (log.isTraceEnabled){
             log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",

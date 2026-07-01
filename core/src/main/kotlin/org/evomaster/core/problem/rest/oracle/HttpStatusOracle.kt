@@ -24,6 +24,7 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
  * no-201-if-get
  * no-201-if-patch
  * no-204-if-content
+ * no-205-if-content
  * no-304-if-no-get-or-head
  * no-401-if-no-www-authenticate
  * no-405-if-no-allow
@@ -32,6 +33,7 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
  * no-401-if-no-auth (schema)
  * no-403-if-no-401 (schema)
  * has-406-if-accept (schema)
+ * no-426-if-no-upgrade
  * no-501-if-implemented
  *
  *
@@ -64,8 +66,12 @@ object HttpStatusOracle {
             }
         }
 
-        if(status == 204 && verb == HttpVerb.GET && result.hasBody()){
+        if(status == 204  && result.hasBody()){
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT)
+        }
+
+        if(status == 205  && result.hasBody()){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT)
         }
 
         val bodyParam = call.parameters.filterIsInstance<BodyParam>()
@@ -103,6 +109,10 @@ object HttpStatusOracle {
 
         if(status == 415 && !hasBody){
             faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD)
+        }
+
+        if(status == 426 && result.getHeader("upgrade").isNullOrEmpty()){
+            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE)
         }
 
         if(status == 501){
