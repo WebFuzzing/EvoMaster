@@ -123,6 +123,10 @@
             <artifactId>jsqlparser</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>
@@ -319,8 +323,8 @@
                                     <shadedPattern>shaded.javassist</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>jersey</pattern>
-                                    <shadedPattern>shaded.jersey</shadedPattern>
+                                    <pattern>jersey.repackaged</pattern>
+                                    <shadedPattern>shaded.jersey.repackaged</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.aopalliance</pattern>
@@ -346,10 +350,20 @@
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>shaded.org.antlr</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Generates the Cypher and Cql parsers from the Neo4j Cypher25 grammar and the Cql grammar respectively -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
             </plugin>
 
         </plugins>

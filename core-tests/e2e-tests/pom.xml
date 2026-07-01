@@ -17,6 +17,7 @@
         <module>dropwizard-examples</module>
         <module>micronaut-latest</module>
         <module>spring</module>
+        <module>python-rest-bb</module>
     </modules>
 
 

@@ -58,6 +58,7 @@ def replaceInBBE2E():
     regex = re.compile(r'\s*<version>.*</version><!--MARKER-->\s*')
     replacement = '        <version>'+version+'</version><!--MARKER-->\n'
     replace("core-tests/e2e-tests/spring/spring-rest-bb/maven/pom.xml", regex, replacement)
+    replace("core-tests/e2e-tests/python-rest-bb/maven/pom.xml", regex, replacement)
 
 def replaceInPyPi():
     regex = re.compile(r'version =.*')

@@ -5,6 +5,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
@@ -25,16 +26,16 @@ public class PatternMatchingHelper {
         /**
          * Invocation to Pattern.matches() is free of side-effects.
          */
-    public static boolean matches(String regex, int flags, String input, String idTemplate) {
+    public static boolean matches(String regex, int externalRegexFlagsBitmask, String input, String idTemplate) {
         Objects.requireNonNull(regex);
         Objects.requireNonNull(input);
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, TaintType.FULL_MATCH, externalRegexFlagsBitmask));
         }
 
-        Pattern p = Pattern.compile(regex, flags);
+        Pattern p = Pattern.compile(regex, externalRegexFlagsBitmask);
         Matcher m = p.matcher(input);
         boolean matches = m.matches();
 

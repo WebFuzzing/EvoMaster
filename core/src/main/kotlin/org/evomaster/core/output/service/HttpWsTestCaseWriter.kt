@@ -16,6 +16,8 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.security.data.ActionStubMapping
@@ -29,6 +31,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
@@ -127,6 +130,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
             val primaryGene = bodyParam.primaryGene()
+            if (primaryGene.getWrappedGene(JsonPatchDocumentGene::class.java) != null) {
+                return ""
+            }
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
             if (choiceGene != null) {
@@ -556,90 +562,102 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             return
         }
 
-        if (bodyParam != null) {
+        if (bodyParam == null) {
 
-            val send = sendBodyCommand()
-
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+            if(call is RestCallAction && call.verb == HttpVerb.POST && format.isJavaOrKotlin()){
+                //   RestAssured automatically add content-type for forms on POST without body :(
+                lines.add(".noContentType()")
             }
 
-            if (bodyParam.isJson()) {
+            return
+        }
 
-                if (format.isPython()) {
-                    lines.add("body = {}")
+        val send = sendBodyCommand()
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
+            format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+        }
+
+        if (bodyParam.isJson()) {
+
+            if (format.isPython()) {
+                lines.add("body = {}")
+            }
+
+            val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+
+            printSendJsonBody(json, lines, dtoVar)
+
+        } else if (bodyParam.isTextPlain()) {
+
+            handleTextBody(bodyParam, lines)
+
+        } else if (bodyParam.isForm()) {
+            val body = bodyParam.gene.getValueAsPrintableString(
+                mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
+                targetFormat = format
+            )
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$body\"")
+                }
+                else -> lines.add(".$send(\"$body\")")
+            }
+        } else if (bodyParam.isXml()) {
+
+            val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+            // Escape quotes for string literal in generated code
+            val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
+
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$escapedXml\"")
                 }
 
-                val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                else -> lines.add(".$send(\"$escapedXml\")")
+            }
+        } else {
+            LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType() +
+                    ". It will be handled as TEXT")
+            handleTextBody(bodyParam, lines)
+        }
 
-                printSendJsonBody(json, lines, dtoVar)
+    }
 
-            } else if (bodyParam.isTextPlain()) {
+    private fun handleTextBody(
+        bodyParam: BodyParam,
+        lines: Lines,
+    ) {
+        val send = sendBodyCommand()
 
-                val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                // handle body only if it is not black
-                if (body.isNotBlank()){
-                    if (body != "\"\"") {
-                        when {
-                            format.isCsharp() -> {
-                                lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                            }
-                            format.isPython() -> {
-                                if (body.trim().isNullOrBlank()) {
-                                    lines.add("body = \"\"")
-                                } else {
-                                    lines.add("body = $body")
-                                }
-                            }
-                            else -> lines.add(".$send($body)")
-                        }
-                    } else {
-                        when {
-                            format.isCsharp() -> {
-                                lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                            }
-                            format.isPython() -> {
-                                lines.add("body = \"\"")
-                            }
-                            else -> lines.add(".$send(\"${"""\"\""""}\")")
-                        }
-                    }
-                }
+        val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
 
-                //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
-                // inserting \"\" should prevent that problem
-                // TODO: get some tests done of this
+        val text = GeneUtils.applyEscapes(body, mode = GeneUtils.EscapeMode.TEXT, format = format)
 
-            } else if (bodyParam.isForm()) {
-                val body = bodyParam.gene.getValueAsPrintableString(
-                        mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
-                        targetFormat = format
-                )
+        // handle body only if it is not black
+        if (body.isNotBlank()) {
+            if (body != "\"\"") {
                 when {
-                    format.isCsharp() -> {
-                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                    }
                     format.isPython() -> {
-                        lines.add("body = \"$body\"")
+                        if (body.trim().isBlank()) {
+                            lines.add("body = \"\"")
+                        } else {
+                            lines.add("body = \"$text\"")
+                        }
                     }
-                    else -> lines.add(".$send(\"$body\")")
-                }
-            } else if (bodyParam.isXml()) {
 
-                val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
-                // Escape quotes for string literal in generated code
-                val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
-
-                when {
-                    format.isPython() -> {
-                        lines.add("body = \"$escapedXml\"")
-                    }
-                    else -> lines.add(".$send(\"$escapedXml\")")
+                    else -> lines.add(".$send(\"$text\")")
                 }
             } else {
-                LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
+                when {
+                    format.isPython() -> {
+                        lines.add("body = \"\"")
+                    }
+                    //TODO isn't this valid just for Kotlin???
+                    else -> lines.add(".$send(\"${"""\"\""""}\")")
+                }
             }
         }
     }
@@ -889,7 +907,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
             }
 
-            handleJsonStringAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName, res.getTooLargeBody())
+            handleJsonStringAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName, res.getTooLargeBody())
 
         } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 
@@ -897,7 +915,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
 
-            handleTextPlainTextAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName)
+            handleTextPlainTextAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName)
         } else {
             if (format.isCsharp()) {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
