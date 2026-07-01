@@ -15,6 +15,10 @@ sealed class RedisDbAction : EnvironmentAction(listOf()) {
      */
     open fun getTargetKey(): String? = null
 
+    /**
+     * Now actions such as SaddFromSinter have multiple insertion dtos related.
+     * This keeps track of the number of insertions for each Action, being 1 the default value.
+     */
     open fun insertionsCount(): Int = 1
 
     override fun getActionGroupKey(): String = RedisDbAction::class.java.name

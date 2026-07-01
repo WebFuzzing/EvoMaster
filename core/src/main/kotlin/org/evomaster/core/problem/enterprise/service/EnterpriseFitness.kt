@@ -236,7 +236,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 val success = (dtoIndex until dtoIndex + count).all {
                     results.executionResults[it]
                 }
-                if (!success) println("FAILED insertion $actionIndex: ${action.getName()}")
+                if (!success) {
+                    log.warn("FAILED insertion $actionIndex: ${action.getName()}")
+                    assert(false)
+                }
                 redisResults[actionIndex].setInsertExecutionResult(success)
                 dtoIndex += count
             }
