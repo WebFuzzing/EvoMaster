@@ -133,14 +133,7 @@ public class CassandraOperationEvaluator {
     private Truthness compareNumeric(Object rowVal, Object queryVal, ComparisonType type) {
         double x = ((Number) rowVal).doubleValue();
         double y = ((Number) queryVal).doubleValue();
-        switch (type) {
-            case EQUALS: return TruthnessUtils.getEqualityTruthness(x, y);
-            case GT:     return TruthnessUtils.getLessThanTruthness(y, x);
-            case GTE:    return TruthnessUtils.getLessThanTruthness(x, y).invert();
-            case LT:     return TruthnessUtils.getLessThanTruthness(x, y);
-            case LTE:    return TruthnessUtils.getLessThanTruthness(y, x).invert();
-            default:     return FALSE_TRUTHNESS;
-        }
+        return getTruthness(type, x, y);
     }
 
     private Truthness compareString(Object rowVal, Object queryVal, ComparisonType type) {
@@ -164,41 +157,45 @@ public class CassandraOperationEvaluator {
         return TruthnessUtils.getEqualityTruthness((UUID) rowVal, (UUID) queryVal);
     }
 
-    private static boolean isTemporalType(Object v) {
-        return v instanceof LocalDate
-            || v instanceof LocalTime
-            || v instanceof Instant;
+    private static boolean isTemporalType(Object value) {
+        return value instanceof LocalDate
+            || value instanceof LocalTime
+            || value instanceof Instant;
     }
 
     private Truthness compareTemporal(Object rowVal, Object queryVal, ComparisonType type) {
         try {
             double x = (double) toLong(rowVal, rowVal);
             double y = (double) toLong(queryVal, rowVal);
-            switch (type) {
-                case EQUALS: return TruthnessUtils.getEqualityTruthness(x, y);
-                case GT:     return TruthnessUtils.getLessThanTruthness(y, x);
-                case GTE:    return TruthnessUtils.getLessThanTruthness(x, y).invert();
-                case LT:     return TruthnessUtils.getLessThanTruthness(x, y);
-                case LTE:    return TruthnessUtils.getLessThanTruthness(y, x).invert();
-                default:     return FALSE_TRUTHNESS;
-            }
+            return getTruthness(type, x, y);
         } catch (Exception e) {
             return FALSE_TRUTHNESS;
         }
     }
 
+    private Truthness getTruthness(ComparisonType type, double x, double y) {
+        switch (type) {
+            case EQUALS: return TruthnessUtils.getEqualityTruthness(x, y);
+            case GT:     return TruthnessUtils.getLessThanTruthness(y, x);
+            case GTE:    return TruthnessUtils.getLessThanTruthness(x, y).invert();
+            case LT:     return TruthnessUtils.getLessThanTruthness(x, y);
+            case LTE:    return TruthnessUtils.getLessThanTruthness(y, x).invert();
+            default:     return FALSE_TRUTHNESS;
+        }
+    }
+
     private static long toLong(Object value, Object rowValueHint) {
         if (rowValueHint instanceof LocalDate) {
-            LocalDate d = (value instanceof Long)   ? LocalDate.ofEpochDay((Long) value)
+            LocalDate dateVal = (value instanceof Long)   ? LocalDate.ofEpochDay((Long) value)
                         : (value instanceof String) ? LocalDate.parse((String) value)
                         : (LocalDate) value;
-            return d.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+            return dateVal.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
         }
         if (rowValueHint instanceof LocalTime) {
-            LocalTime t = (value instanceof Long)   ? LocalTime.ofNanoOfDay((Long) value)
+            LocalTime timeVal = (value instanceof Long)   ? LocalTime.ofNanoOfDay((Long) value)
                         : (value instanceof String) ? LocalTime.parse((String) value)
                         : (LocalTime) value;
-            return LocalDateTime.of(LocalDate.of(1970, 1, 1), t).toInstant(ZoneOffset.UTC).toEpochMilli();
+            return LocalDateTime.of(LocalDate.of(1970, 1, 1), timeVal).toInstant(ZoneOffset.UTC).toEpochMilli();
         }
         if (rowValueHint instanceof Instant) {
             if (value instanceof Long)    return (Long) value;
@@ -236,36 +233,36 @@ public class CassandraOperationEvaluator {
         throw new IllegalArgumentException("Cannot parse timestamp string: " + s);
     }
 
-    private static boolean isCqlDuration(Object v) {
-        return v.getClass().getName()
+    private static boolean isCqlDuration(Object value) {
+        return value.getClass().getName()
                 .equals("com.datastax.oss.driver.api.core.data.CqlDuration");
     }
 
-    private static int getDurationMonths(Object d) throws Exception {
-        return (int) d.getClass().getMethod("getMonths").invoke(d);
+    private static int getDurationMonths(Object durationVal) throws Exception {
+        return (int) durationVal.getClass().getMethod("getMonths").invoke(durationVal);
     }
 
-    private static int getDurationDays(Object d) throws Exception {
-        return (int) d.getClass().getMethod("getDays").invoke(d);
+    private static int getDurationDays(Object durationVal) throws Exception {
+        return (int) durationVal.getClass().getMethod("getDays").invoke(durationVal);
     }
 
-    private static long getDurationNanos(Object d) throws Exception {
-        return (long) d.getClass().getMethod("getNanoseconds").invoke(d);
+    private static long getDurationNanos(Object durationVal) throws Exception {
+        return (long) durationVal.getClass().getMethod("getNanoseconds").invoke(durationVal);
     }
 
     private Truthness compareDuration(Object rowVal, Object queryVal, ComparisonType type) {
         if (type != ComparisonType.EQUALS) return FALSE_TRUTHNESS;
         try {
-            int  rm = getDurationMonths(rowVal);
-            int  rd = getDurationDays(rowVal);
-            long rn = getDurationNanos(rowVal);
+            int  months = getDurationMonths(rowVal);
+            int  days = getDurationDays(rowVal);
+            long nanos = getDurationNanos(rowVal);
 
             CqlDurationLiteral q = CqlDurationLiteral.parse((String) queryVal);
 
             return TruthnessUtils.buildAndAggregationTruthness(
-                    TruthnessUtils.getEqualityTruthness((long) rm, (long) q.months),
-                    TruthnessUtils.getEqualityTruthness((long) rd, (long) q.days),
-                    TruthnessUtils.getEqualityTruthness(rn, q.nanos)
+                    TruthnessUtils.getEqualityTruthness((long) months, (long) q.months),
+                    TruthnessUtils.getEqualityTruthness((long) days, (long) q.days),
+                    TruthnessUtils.getEqualityTruthness(nanos, q.nanos)
             );
         } catch (Exception e) {
             return FALSE_TRUTHNESS;
