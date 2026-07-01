@@ -138,7 +138,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     private fun handleAuthInfo(i: AuthenticationDto) {
 
-        if(i.createUsers != null) {
+        if(i.createUsers == null) {
             val auth = try {
                 HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
             } catch (e: Exception) {
