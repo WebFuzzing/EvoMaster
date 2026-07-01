@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -21,6 +22,7 @@ class FlakinessDetectRest {
     companion object{
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS yyyy-MM-dd EEEE 'Week' ww")
         private val START_UP_OBJECT_TAG = arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString()
+        private val MULTI_EXECUTION_COUNTER = AtomicInteger(0)
     }
     @GetMapping(path = ["/objectFlag"])
     fun getEmptyFlag()  : ResponseEntity<String> {
@@ -52,6 +54,19 @@ class FlakinessDetectRest {
         val num = max(2, randomInt(min(30 + abs(num), 100)))
         val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it:${randomInt(max(1000, num))}" }
         return ResponseEntity.ok(FlakinessDetectData(msg, num))
+    }
+
+    @GetMapping(path = ["/multiexecution"])
+    fun getMultiExecution() : ResponseEntity<MultiExecutionData> {
+        val index = MULTI_EXECUTION_COUNTER.getAndIncrement() % 3
+
+        return ResponseEntity.ok(
+            when (index) {
+                0 -> MultiExecutionData("same", "a", "b")
+                1 -> MultiExecutionData("same", "x", "b")
+                else -> MultiExecutionData("same", "a", "y")
+            }
+        )
     }
 
     @GetMapping("/price/estimate")
@@ -101,6 +116,12 @@ data class FlakinessDetectData(
 data class TimeAgoData(
     val message: String,
     val calculatedPastTime: String
+)
+
+data class MultiExecutionData(
+    val stable: String,
+    val first: String,
+    val second: String
 )
 
 class EmptyForFlag(val flag: String)

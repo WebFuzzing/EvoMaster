@@ -56,7 +56,7 @@ object Prompts {
     const val NEW_TEST_CASE_NAME = """
         You are an expert software engineer specializing in test naming.
 
-        Given the following test case written in [targetLanguage], produce a descriptive suffix to append to its existing name.
+        Given the following test case written in [targetLanguage], produce a descriptive suffix to append to its existing name. Return a JSON string.
 
         ## Rules
 
@@ -87,7 +87,7 @@ object Prompts {
         [testLines]
     """
 
-    const val RE_ITERATE_TEST_CASE_NAME = "Your previous response contained more than just the suffix. Output only the suffix, nothing else. No explanation, no punctuation, no extra text, do not exceed max chars."
+    const val RE_ITERATE_TEST_CASE_NAME = "Your previous response contained more than just the suffix. Output only the suffix, nothing else. No explanation, no punctuation, no extra text, do not exceed max chars. Return a JSON string."
 
     fun getPromptForNameDescription(name: String, description: String?): Pair<String,String> {
         var user = "Your input is\n [name]:$name"

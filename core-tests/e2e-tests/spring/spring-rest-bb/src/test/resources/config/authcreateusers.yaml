@@ -1,0 +1,24 @@
+auth:
+  - name: "CreatedUser"
+    createUsers:
+      endpoint: "/api/authcreateusers/users"
+      contentType: "application/json"
+      verb: "POST"
+      payloadRaw: '{"email": "{$username}@example.com", "password": "123456", "repeatPassword": "123456", "username": "{$username}"}'
+      generators:
+        - placeHolder: "{$username}"
+          minLength: 8
+          maxLength: 30
+          prefix: "user_"
+          postfix: ""
+    loginEndpointAuth:
+      endpoint: "/api/authcreateusers/users/login"
+      verb: "POST"
+      contentType: "application/json"
+      payloadRaw: '{"email": "{$username}@example.com", "password": "123456"}'
+      token:
+        extractFrom: "body"
+        extractSelector: "/token/authToken"
+        sendIn: "header"
+        sendName: "Authorization"
+        sendTemplate: "Bearer {token}"
