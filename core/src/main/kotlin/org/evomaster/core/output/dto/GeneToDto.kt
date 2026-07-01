@@ -12,6 +12,11 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchFromPathGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchOperationGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -35,6 +40,18 @@ import org.slf4j.LoggerFactory
 class GeneToDto(
     val outputFormat: OutputFormat
 ) {
+
+    companion object {
+        // Shared DTO class name for all JSON Patch operations (RFC 6902).
+        const val JSON_PATCH_OPERATION_DTO = "JsonPatchOperation"
+        const val FIELD_OP = "op"
+        const val FIELD_PATH = "path"
+        const val FIELD_FROM = "from"
+        const val FIELD_VALUE = "value"
+        const val TYPE_STRING = "String"
+        const val TYPE_JAVA_OBJECT = "Object"
+        const val TYPE_KOTLIN_ANY = "Any"
+    }
 
     private val log: Logger = LoggerFactory.getLogger(GeneToDto::class.java)
 
@@ -67,6 +84,7 @@ class GeneToDto(
             }
             is ChoiceGene<*> -> TestWriterUtils.safeVariableName(fallback)
             is FixedMapGene<*,*> -> TestWriterUtils.safeVariableName(fallback)
+            is JsonPatchDocumentGene -> JSON_PATCH_OPERATION_DTO
             else -> throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $fallback")
         }
     }
@@ -85,8 +103,88 @@ class GeneToDto(
             is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counters, null, capitalize)
             is ChoiceGene<*> -> getDtoCall(gene.activeGene(), dtoName, counters, capitalize)
             is FixedMapGene<*,*> -> getFixedMapGeneDtoCall(gene, dtoName, counters)
+            is JsonPatchDocumentGene -> getJsonPatchDtoCall(gene, counters)
             else -> throw RuntimeException("BUG: Gene $gene (with type ${this::class.java.simpleName}) should not be creating DTOs")
         }
+    }
+
+    /**
+     * Renders a JSON Patch document as a List<JsonPatchOperation>, one DTO per active operation.
+     */
+    private fun getJsonPatchDtoCall(gene: JsonPatchDocumentGene, counters: MutableList<Int>): DtoCall {
+        val listVarName = "list_${JSON_PATCH_OPERATION_DTO}_${counters.joinToString("_")}"
+        val result = mutableListOf<String>()
+        result.add(dtoOutput.getNewListStatement(JSON_PATCH_OPERATION_DTO, listVarName))
+
+        var operationCounter = 1
+        gene.operations.forEach { operation ->
+            val childCounter = mutableListOf<Int>().apply {
+                addAll(counters)
+                add(operationCounter++)
+            }
+            val operationCall = getJsonPatchOperationCall(operation, childCounter)
+            result.addAll(operationCall.objectCalls)
+            result.add(dtoOutput.getAddElementToListStatement(listVarName, operationCall.varName))
+        }
+
+        return DtoCall(listVarName, result)
+    }
+
+    /**
+     * Renders a single RFC 6902 operation as a JsonPatchOperation DTO with only its relevant fields set.
+     */
+    private fun getJsonPatchOperationCall(operation: JsonPatchOperationGene, counters: MutableList<Int>): DtoCall {
+        val varName = "dto_${JSON_PATCH_OPERATION_DTO}_${counters.joinToString("_")}"
+        val result = mutableListOf<String>()
+        result.add(dtoOutput.getNewObjectStatement(JSON_PATCH_OPERATION_DTO, varName))
+        result.add(dtoOutput.getSetterStatement(varName, FIELD_OP, "\"${operation.operationName}\""))
+
+        when (operation) {
+            is JsonPatchPathOnlyGene -> {
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_PATH, renderLeafValue(operation.pathGene)))
+            }
+            is JsonPatchFromPathGene -> {
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_FROM, renderLeafValue(operation.fromGene)))
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_PATH, renderLeafValue(operation.pathGene)))
+            }
+            is JsonPatchPathValueGene -> {
+                val pair = operation.pathValueChoice.activeGene()
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_PATH, renderLeafValue(pair.first)))
+                setJsonPatchValue(varName, pair.second.getLeafGene(), counters, result)
+            }
+        }
+
+        return DtoCall(varName, result)
+    }
+
+    /**
+     * Sets the "value" field: primitives are inlined as literals, objects/arrays delegate to DTO generation.
+     */
+    private fun setJsonPatchValue(
+        varName: String,
+        valueGene: Gene,
+        counters: MutableList<Int>,
+        result: MutableList<String>
+    ) {
+        when (valueGene) {
+            is ObjectGene -> {
+                val childCall = getDtoCall(valueGene, getDtoName(valueGene, FIELD_VALUE, true), counters, true)
+                result.addAll(childCall.objectCalls)
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_VALUE, childCall.varName))
+            }
+            is ArrayGene<*> -> {
+                val childCall = getArrayDtoCall(valueGene, getDtoName(valueGene, FIELD_VALUE, true), counters, FIELD_VALUE, true)
+                result.addAll(childCall.objectCalls)
+                result.add(dtoOutput.getSetterStatement(varName, FIELD_VALUE, childCall.varName))
+            }
+            else -> result.add(dtoOutput.getSetterStatement(varName, FIELD_VALUE, renderLeafValue(valueGene)))
+        }
+    }
+
+    // Returns the printable string representation of a gene's leaf value with its language-specific suffix.
+    private fun renderLeafValue(gene: Gene): String {
+        val leafGene = gene.getLeafGene()
+        return "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"
     }
 
     private fun getObjectDtoCall(gene: ObjectGene, dtoName: String, counters: MutableList<Int>): DtoCall {

@@ -130,11 +130,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
             val primaryGene = bodyParam.primaryGene()
-            if (primaryGene.getWrappedGene(JsonPatchDocumentGene::class.java) != null) {
-                return ""
+            val actionName = call.getName()
+            val jsonPatchGene = primaryGene.getWrappedGene(JsonPatchDocumentGene::class.java)
+            if (jsonPatchGene != null) {
+                // A JSON Patch document is rendered as a List<JsonPatchOperation> DTO (RFC 6902).
+                return generateDtoCall(jsonPatchGene, actionName, lines).varName
             }
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
-            val actionName = call.getName()
             if (choiceGene != null) {
                 // We only generate DTOs for ChoiceGene objects that contain either an ObjectGene or ArrayGene in their
                 // genes. This check is necessary since when using `example` and `default` entries,
