@@ -82,7 +82,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val action4Ind2 = pirTest.fromVerbPath("DELETE", "/api/endpoint5/8000")!!
         action4Ind2.auth = HttpWsAuthenticationInfo("action4Ind2",
             listOf(AuthenticationHeader("name", "authentication")),
-            null, false)
+            null, false, null)
         val action5Ind2 = pirTest.fromVerbPath("GET", "/api/endpoint2/setStatus/403")!!
 
         val individual2 = createIndividual(listOf(action1Ind2, action2Ind2, action3Ind2, action4Ind2, action5Ind2))
@@ -96,7 +96,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val action4Ind3 = pirTest.fromVerbPath("DELETE", "/api/endpoint5/8700")!!
         action1Ind3.auth = HttpWsAuthenticationInfo("action1Ind3",
             listOf(AuthenticationHeader("name", "authentication")),
-            null, false)
+            null, false, null)
         val action5Ind3 = pirTest.fromVerbPath("GET", "/api/endpoint4/setStatus/415")!!
 
         val individual3 = createIndividual(listOf(action1Ind3, action2Ind3, action3Ind3, action4Ind3, action5Ind3))
@@ -109,7 +109,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val action4Ind4 = pirTest.fromVerbPath("DELETE", "/api/endpoint3/1700")!!
         action1Ind4.auth = HttpWsAuthenticationInfo("action1Ind3",
             listOf(AuthenticationHeader("name", "authentication")),
-            null, false)
+            null, false, null)
         val action5Ind4 = pirTest.fromVerbPath("GET", "/api/endpoint4/setStatus/404")!!
 
         val individual4 = createIndividual(listOf(action1Ind4, action2Ind4, action3Ind4, action4Ind4, action5Ind4))
