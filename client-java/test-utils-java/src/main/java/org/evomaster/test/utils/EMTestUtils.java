@@ -23,6 +23,79 @@ import java.nio.file.Paths;
 public class EMTestUtils {
 
     /**
+     * Loaded only once at class loading.
+     * Seed is still going to incremented with ++ at each use.
+     * The idea is to force each value unique during a session, even when generating hundreds of thousands of tests.
+     * However, when running again in generated test suite, a new starting seed might reduce chances of clashes,
+     * albeit cannot guarantee removal of them
+     */
+    private static long seed = System.currentTimeMillis();
+
+    /**
+     *
+     * @param minLength Optional minimum length of the generated string
+     * @param maxLength Optional maximum length of the generated string
+     * @param prefix    Optional fixed prefix shared by all generated strings
+     * @param postfix   Optional fixed postfix shared by all generated strings
+     * @return
+     */
+    public static String createString(Integer minLength, Integer maxLength, String prefix, String postfix){
+
+        if(minLength != null && minLength < 0){
+            throw new IllegalArgumentException("Negative minimum length: " + minLength);
+        }
+        if(maxLength != null && maxLength < 0){
+            throw new IllegalArgumentException("Negative maximum length: " + maxLength);
+        }
+
+        int min = 0;
+        if(minLength != null){
+            min = minLength;
+        }
+        int len = 0;
+        if(prefix != null){
+            len += prefix.length();
+        }
+        if(postfix != null){
+            len += postfix.length();
+        }
+        min = Math.max(min, len);
+
+        //actual check on inputs
+        if(maxLength != null && maxLength < len){
+            throw new IllegalArgumentException("Maximum length " + maxLength + " does not cover minimum prefix+postfix length: "+prefix+postfix);
+        }
+
+        //recompute with default values if not specified
+        if(prefix == null){
+            prefix = "u";
+        }
+        if(postfix == null){
+            postfix = "";
+        }
+        len = prefix.length() + postfix.length();
+
+        int maxDigits = 6; // 999 999 values
+        if(maxDigits + len < min){
+            maxDigits = min - len;
+        }
+        if(maxLength != null && maxDigits + len > maxLength ){
+            maxDigits = maxLength - len;
+        }
+
+        int mask = 1;
+        for(int i = 0; i < maxDigits; i++){
+            mask = mask * 10;
+        }
+
+        long value = seed % mask;
+        seed++;
+
+        return prefix + value + postfix;
+    }
+
+
+    /**
      *
      * @param locationHeader a URI-reference, coming from a "location" header. See RFC 7231.
      *                       Note: it can be a relative reference

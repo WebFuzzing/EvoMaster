@@ -52,6 +52,11 @@ private class StatisticsRest {
         return ResponseEntity.status(204).body("Hello")
     }
 
+    @GetMapping(path = ["/no-205-if-content"])
+    fun no205IfContent(): ResponseEntity<String> {
+        return ResponseEntity.status(205).body("Hello")
+    }
+
     @PostMapping(path = ["/no-413-if-no-payload"])
     fun no413IfNoPayload() : ResponseEntity<String> {
         return ResponseEntity.status(413).build()
@@ -94,5 +99,10 @@ private class StatisticsRest {
     @GetMapping(path = ["/no-501-if-implemented"])
     fun no501IfImplemented(): ResponseEntity<String>{
         return ResponseEntity.status(501).build()
+    }
+
+    @GetMapping(path = ["/no-426-if-no-upgrade"])
+    fun no426IfNoUpgrade(): ResponseEntity<String>{
+        return ResponseEntity.status(426).build()
     }
 }
