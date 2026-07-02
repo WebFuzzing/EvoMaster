@@ -1941,6 +1941,11 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForRedis = false
 
+    @Experimental
+    @Cfg("Tracking of Neo4j commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForNeo4j = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true

@@ -96,6 +96,11 @@ class Statistics : SearchListener {
     private var redisHeuristicEvaluationFailureCount = 0
     private val redisDocumentsAverageCalculator = IncrementalAverage()
 
+    // neo4j heuristic evaluation statistic
+    private var neo4jHeuristicEvaluationSuccessCount = 0
+    private var neo4jHeuristicEvaluationFailureCount = 0
+    private val neo4jNodesAverageCalculator = IncrementalAverage()
+
    class Pair(val header: String, val element: String)
 
 
@@ -192,6 +197,10 @@ class Statistics : SearchListener {
         redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
+    fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
+        neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
+    }
+
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
         if (numberOfParsingFailures<0) {
             throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
@@ -223,6 +232,14 @@ class Statistics : SearchListener {
         redisHeuristicEvaluationFailureCount++
     }
 
+    fun reportNeo4jHeuristicEvaluationSuccess() {
+        neo4jHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportNeo4jHeuristicEvaluationFailure() {
+        neo4jHeuristicEvaluationFailureCount++
+    }
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -234,6 +251,10 @@ class Statistics : SearchListener {
     fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
 
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
+
+    fun getNeo4jHeuristicsEvaluationCount(): Int = neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -380,6 +401,10 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
+
+            // statistics info for Neo4j Heuristics
+            add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
+            add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))

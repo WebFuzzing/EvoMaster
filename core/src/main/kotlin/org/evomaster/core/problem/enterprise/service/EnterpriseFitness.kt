@@ -378,6 +378,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             handleRedisHeuristics(dto, fv)
         }
 
+        if (configuration.heuristicsForNeo4j) {
+            handleNeo4jHeuristics(dto, fv)
+        }
+
         if (configuration.extractRedisExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
@@ -488,6 +492,39 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportRedisHeuristicEvaluationFailure()
                         } else {
                             statistics.reportRedisHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun handleNeo4jHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.NEO4J
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.NEO4J) {
+                        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportNeo4jHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportNeo4jHeuristicEvaluationSuccess()
                         }
                     }
                 }
