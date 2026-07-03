@@ -40,6 +40,7 @@ class BBHttpTimeoutEMTest : SpringTestBase() {
 
             setOption(args, "useExperimentalOracles", "true")
             setOption(args, "tcpTimeoutMs", "2000")
+            setOption(args, "httpOracles", "true")
 
             val solution = initAndRun(args)
 
