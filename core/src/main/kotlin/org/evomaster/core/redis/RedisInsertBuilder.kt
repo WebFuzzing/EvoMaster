@@ -28,35 +28,71 @@ object RedisInsertBuilder {
         failedCommands: List<RedisFailedCommand>,
         existingKeys: Set<String>
     ): List<RedisDbAction> {
-        return failedCommands
-            .filter { it.key == null || it.key !in existingKeys }
-            .flatMap { cmd -> buildActionsForCommand(cmd) }
+        return failedCommands.flatMap { cmd ->
+            buildActionsForCommand(cmd, existingKeys)
+        }
     }
 
     private fun buildActionsForCommand(
-        cmd: RedisFailedCommand
+        cmd: RedisFailedCommand,
+        existingKeys: Set<String>
     ): List<RedisDbAction> {
+        val keys = cmd.keys ?: emptyList()
+
         return when (cmd.command) {
-            "GET" -> listOf(RedisSetAction(
-                key = cmd.key!!,
-                valueGene = StringGene("value")
-            ))
-            "HGET" -> listOf(RedisHsetAction(
-                key = cmd.key!!,
-                field = cmd.field ?: "field",
-                valueGene = StringGene("value")
-            ))
-            "HGETALL" -> listOf(RedisHsetAction(
-                key = cmd.key!!,
-                field = "field",
-                valueGene = StringGene("value")
-            ))
+            "GET" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(
+                    RedisSetAction(
+                        key = key,
+                        valueGene = StringGene("value")
+                    )
+                )
+            }
+            "HGET" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(
+                    RedisHsetAction(
+                        key = key,
+                        field = cmd.field ?: "field",
+                        valueGene = StringGene("value")
+                    )
+                )
+            }
+            "HGETALL" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(
+                    RedisHsetAction(
+                        key = key,
+                        field = "field",
+                        valueGene = StringGene("value")
+                    )
+                )
+            }
             "KEYS" -> {
                 val pattern = cmd.pattern ?: return emptyList()
                 val keyGene = RegexHandler.createGeneForJVM(pattern)
                 listOf(RedisSetFromPatternAction(
                     keyGene = keyGene,
                     valueGene = StringGene("value")
+                ))
+            }
+            "SMEMBERS" -> {
+                val key = keys.firstOrNull() ?: return emptyList()
+                if (key in existingKeys) return emptyList()
+                listOf(RedisSaddAction(
+                    key = key,
+                    memberGene = StringGene("member")
+                ))
+            }
+            "SINTER" -> {
+                if (keys.isEmpty()) return emptyList()
+                listOf(RedisSaddFromSinterAction(
+                    keys = keys,
+                    memberGene = StringGene("member")
                 ))
             }
             else -> {
