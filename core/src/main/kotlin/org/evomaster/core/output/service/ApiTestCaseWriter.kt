@@ -658,17 +658,26 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     /**
      * Some fields might lead to flackiness, eg assertions on timestamps.
      */
-    protected fun isFieldToSkip(fieldName: String) =
-    //TODO this should be from EMConfig
-            /*
-                There are some fields like "id" which are often non-deterministic,
-                which unfortunately would lead to flaky tests
-            */
-            listOf(
-                    "id",
-                    "timestamp", //needed since timestamps will change between runs
-                    "self" //TODO: temporary hack. Needed since ports might change between runs.
-            ).contains(fieldName.lowercase())
+    protected fun isFieldToSkip(fieldName: String): Boolean {
+        val field = fieldName.lowercase()
+
+        /*
+            There are some fields like "id" which are often non-deterministic,
+            which unfortunately would lead to flaky tests
+        */
+        val defaultFieldsToSkip = listOf(
+                "id",
+                "timestamp", //needed since timestamps will change between runs
+                "self" //TODO: temporary hack. Needed since ports might change between runs.
+        )
+
+        val configuredFieldsToSkip = config.fieldsToSkipInAssertions
+                .split(",")
+                .map { it.trim().lowercase() }
+                .filter { it.isNotEmpty() }
+
+        return defaultFieldsToSkip.contains(field) || configuredFieldsToSkip.contains(field)
+    }
 
     /**
      * Some content may be lead to problems in the resultant test case.
