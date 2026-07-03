@@ -25,7 +25,6 @@ open class InvalidMergePatchApplication {
 
     companion object {
 
-        // annotation args must be compile-time constants
         const val MERGE_PATCH = "application/merge-patch+json"
 
         @JvmStatic
@@ -33,8 +32,8 @@ open class InvalidMergePatchApplication {
             SpringApplication.run(InvalidMergePatchApplication::class.java, *args)
         }
 
-        private val buggyData = mutableMapOf<Int, ResourceData>()
-        private val correctData = mutableMapOf<Int, ResourceData>()
+        private val buggyData = mutableMapOf<Int, MergePatchResource>()
+        private val correctData = mutableMapOf<Int, MergePatchResource>()
 
         fun reset() {
             buggyData.clear()
@@ -42,15 +41,11 @@ open class InvalidMergePatchApplication {
         }
     }
 
-    // stored resource; server-assigned id, name/value nullable so "delete via null" is representable
-    data class ResourceData(
-        var id: Int? = null,
+    data class MergePatchResource(
         var name: String? = null,
         var value: Int? = null
     )
 
-    // POJO bound from a merge-patch body: absent fields deserialize as null,
-    // so this cannot tell "absent" from "explicit null" -> root cause of the bug
     class MergeRequest(
         var name: String? = null,
         var value: Int? = null
@@ -70,15 +65,15 @@ open class InvalidMergePatchApplication {
     // ----------------------------------------------------------------------
 
     @PostMapping("/api/mergepatch/buggy")
-    open fun createBuggy(@RequestBody body: ResourceData): ResponseEntity<ResourceData> {
+    open fun createBuggy(@RequestBody body: MergePatchResource): ResponseEntity<MergePatchResource> {
         val id = buggyData.size + 1
-        val stored = body.copy(id = id)
+        val stored = body.copy()
         buggyData[id] = stored
         return ResponseEntity.created(URI.create("/api/mergepatch/buggy/$id")).body(stored)
     }
 
     @GetMapping("/api/mergepatch/buggy/{id}")
-    open fun getBuggy(@PathVariable("id") id: Int): ResponseEntity<ResourceData> {
+    open fun getBuggy(@PathVariable("id") id: Int): ResponseEntity<MergePatchResource> {
         val resource = buggyData[id] ?: return ResponseEntity.status(404).build()
         return ResponseEntity.status(200).body(resource)
     }
@@ -87,7 +82,7 @@ open class InvalidMergePatchApplication {
     open fun patchBuggy(
         @PathVariable("id") id: Int,
         @RequestBody body: MergeRequest
-    ): ResponseEntity<ResourceData> {
+    ): ResponseEntity<MergePatchResource> {
 
         val resource = buggyData[id] ?: return ResponseEntity.status(404).build()
 
@@ -104,15 +99,15 @@ open class InvalidMergePatchApplication {
     // ----------------------------------------------------------------------
 
     @PostMapping("/api/mergepatch/correct")
-    open fun createCorrect(@RequestBody body: ResourceData): ResponseEntity<ResourceData> {
+    open fun createCorrect(@RequestBody body: MergePatchResource): ResponseEntity<MergePatchResource> {
         val id = correctData.size + 1
-        val stored = body.copy(id = id)
+        val stored = body.copy()
         correctData[id] = stored
         return ResponseEntity.created(URI.create("/api/mergepatch/correct/$id")).body(stored)
     }
 
     @GetMapping("/api/mergepatch/correct/{id}")
-    open fun getCorrect(@PathVariable("id") id: Int): ResponseEntity<ResourceData> {
+    open fun getCorrect(@PathVariable("id") id: Int): ResponseEntity<MergePatchResource> {
         val resource = correctData[id] ?: return ResponseEntity.status(404).build()
         return ResponseEntity.status(200).body(resource)
     }
@@ -121,7 +116,7 @@ open class InvalidMergePatchApplication {
     open fun patchCorrect(
         @PathVariable("id") id: Int,
         @RequestBody body: MergePatchDto
-    ): ResponseEntity<ResourceData> {
+    ): ResponseEntity<MergePatchResource> {
 
         val resource = correctData[id] ?: return ResponseEntity.status(404).build()
 
