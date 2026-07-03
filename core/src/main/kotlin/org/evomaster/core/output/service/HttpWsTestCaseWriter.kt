@@ -840,11 +840,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val instruction =
             if(value != null) {
+                val escaped = GeneUtils.applyEscapes(value, GeneUtils.EscapeMode.ASSERTION, format)
                 when {
-                    format.isJavaOrKotlin() -> ".header(\"$name\", \"$value\")"
+                    format.isJavaOrKotlin() -> ".header(\"$name\", \"$escaped\")"
                     format.isJavaScript() ->
-                        "expect($responseVariableName.header[\"$name\"].startsWith(\"$value\")).toBe(true);"
-                    format.isPython() -> "assert \"$value\" in $responseVariableName.headers[\"$name\"]"
+                        "expect($responseVariableName.header[\"$name\"].startsWith(\"$escaped\")).toBe(true);"
+                    format.isPython() -> "assert \"$escaped\" in $responseVariableName.headers[\"$name\"]"
                     else -> throw IllegalStateException("Unsupported format $format")
                 }
             } else {

@@ -24,7 +24,7 @@ open class BBHeaderAssertionsApplication {
     @GetMapping(path = ["/ok/401"])
     fun ok401(): ResponseEntity<String>{
         CoveredTargets.cover("ok401")
-        return ResponseEntity.status(401).header("WWW-Authenticate","some value").build()
+        return ResponseEntity.status(401).header("WWW-Authenticate","Basic realm=\"Realm\"").build()
     }
 
     @GetMapping(path = ["/fail/401"])
@@ -48,7 +48,7 @@ open class BBHeaderAssertionsApplication {
     @GetMapping(path = ["/ok/426"])
     fun ok426(): ResponseEntity<String>{
         CoveredTargets.cover("ok426")
-        return ResponseEntity.status(426).header("Upgrade","foo").build()
+        return ResponseEntity.status(426).header("Upgrade","foo \"bar\" \$x").build()
     }
 
     @GetMapping(path = ["/fail/426"])
