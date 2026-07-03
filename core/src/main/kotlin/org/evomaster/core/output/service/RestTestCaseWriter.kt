@@ -313,16 +313,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-//        if (format.isCsharp()) {
-//            if (isVerbWithPossibleBodyPayload(verb)) {
-//                lines.append(", ")
-//                handleBody(call, lines)
-//            }
-//            lines.append(");")
-//        } else {
-
         lines.append(")")
-//        }
     }
 
     private fun handleQuery(queryPair: String, replacements: Map<String, RestLinkParameter>) : String{

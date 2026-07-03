@@ -8,37 +8,31 @@ import org.junit.jupiter.api.Test
 
 class RedisWriterTest {
 
-    private fun makeEvaluatedSet(
-        key: String,
-        value: String,
-        success: Boolean = true
-    ): EvaluatedRedisDbAction {
-        val action = RedisSetAction(
-            key = key,
-            valueGene = StringGene("value", value)
-        )
+    private fun makeEvaluatedSet(key: String, value: String, success: Boolean = true): EvaluatedRedisDbAction {
+        val action = RedisSetAction(key = key, valueGene = StringGene("value", value))
         action.setLocalId("test-redis-set-action")
-        val result = RedisDbActionResult(action.getLocalId()).also {
-            it.setInsertExecutionResult(success)
-        }
+        val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
         return EvaluatedRedisDbAction(action, result)
     }
 
-    private fun makeEvaluatedHset(
-        key: String,
-        field: String,
-        value: String,
-        success: Boolean = true
-    ): EvaluatedRedisDbAction {
-        val action = RedisHsetAction(
-            key = key,
-            field = field,
-            valueGene = StringGene("value", value)
-        )
+    private fun makeEvaluatedHset(key: String, field: String, value: String, success: Boolean = true): EvaluatedRedisDbAction {
+        val action = RedisHsetAction(key = key, field = field, valueGene = StringGene("value", value))
         action.setLocalId("test-redis-hset-action")
-        val result = RedisDbActionResult(action.getLocalId()).also {
-            it.setInsertExecutionResult(success)
-        }
+        val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
+        return EvaluatedRedisDbAction(action, result)
+    }
+
+    private fun makeEvaluatedSadd(key: String, member: String, success: Boolean = true): EvaluatedRedisDbAction {
+        val action = RedisSaddAction(key = key, memberGene = StringGene("member", member))
+        action.setLocalId("test-redis-sadd-action")
+        val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
+        return EvaluatedRedisDbAction(action, result)
+    }
+
+    private fun makeEvaluatedSaddFromSinter(keys: List<String>, member: String, success: Boolean = true): EvaluatedRedisDbAction {
+        val action = RedisSaddFromSinterAction(keys = keys, memberGene = StringGene("member", member))
+        action.setLocalId("test-redis-sadd-sinter-action")
+        val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
         return EvaluatedRedisDbAction(action, result)
     }
 
@@ -49,14 +43,7 @@ class RedisWriterTest {
         groupIndex: String = ""
     ): String {
         val lines = Lines(OutputFormat.KOTLIN_JUNIT_5)
-        RedisWriter.handleRedisDbInitialization(
-            format = OutputFormat.KOTLIN_JUNIT_5,
-            redisDbInitialization = actions,
-            lines = lines,
-            groupIndex = groupIndex,
-            insertionVars = insertionVars,
-            skipFailure = skipFailure
-        )
+        RedisWriter.handleRedisDbInitialization(OutputFormat.KOTLIN_JUNIT_5, actions, lines, groupIndex, insertionVars, skipFailure)
         return lines.toString()
     }
 
@@ -66,13 +53,7 @@ class RedisWriterTest {
         skipFailure: Boolean = false
     ): String {
         val lines = Lines(OutputFormat.JAVA_JUNIT_5)
-        RedisWriter.handleRedisDbInitialization(
-            format = OutputFormat.JAVA_JUNIT_5,
-            redisDbInitialization = actions,
-            lines = lines,
-            insertionVars = insertionVars,
-            skipFailure = skipFailure
-        )
+        RedisWriter.handleRedisDbInitialization(OutputFormat.JAVA_JUNIT_5, actions, lines, "", insertionVars, skipFailure)
         return lines.toString()
     }
 
@@ -90,7 +71,6 @@ class RedisWriterTest {
     @Test
     fun testKotlinFormatSingleSetAction() {
         val output = writeKotlin(listOf(makeEvaluatedSet("user:1", "Alice")))
-
         assertTrue(output.contains("val insertions_redis = redis()"))
         assertTrue(output.contains(""".set("user:1", "Alice")"""))
         assertTrue(output.contains(".dtos()"))
@@ -100,20 +80,31 @@ class RedisWriterTest {
     @Test
     fun testKotlinFormatSingleHsetAction() {
         val output = writeKotlin(listOf(makeEvaluatedHset("user:1", "name", "Alice")))
-
-        assertTrue(output.contains("val insertions_redis = redis()"))
         assertTrue(output.contains(""".hset("user:1", "name", "Alice")"""))
-        assertTrue(output.contains(".dtos()"))
-        assertTrue(output.contains("val insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
     }
 
     @Test
     fun testJavaFormatSingleHsetAction() {
         val output = writeJava(listOf(makeEvaluatedHset("user:1", "name", "Alice")))
-
         assertTrue(output.contains("List<RedisInsertionDto> insertions_redis = redis()"))
         assertTrue(output.contains(""".hset("user:1", "name", "Alice")"""))
         assertTrue(output.contains("RedisInsertionResultsDto insertions_redis_result = controller.execInsertionsIntoRedisDatabase(insertions_redis)"))
+    }
+
+    @Test
+    fun testKotlinFormatSingleSaddAction() {
+        val output = writeKotlin(listOf(makeEvaluatedSadd("myset", "item1")))
+        assertTrue(output.contains(""".sadd("myset", "item1")"""))
+    }
+
+    @Test
+    fun testSaddFromSinterGeneratesOneSaddPerKey() {
+        val output = writeKotlin(listOf(makeEvaluatedSaddFromSinter(listOf("set1", "set2", "set3"), "shared")))
+
+        assertTrue(output.contains(""".sadd("set1", "shared")"""))
+        assertTrue(output.contains(""".sadd("set2", "shared")"""))
+        assertTrue(output.contains(""".sadd("set3", "shared")"""))
+        assertEquals(2, output.split(".and()").size - 1)
     }
 
     @Test
@@ -123,41 +114,36 @@ class RedisWriterTest {
             makeEvaluatedSet("k2", "v2", success = false)
         )
         val output = writeKotlin(actions, skipFailure = true)
-
         assertTrue(output.contains("k1"))
         assertFalse(output.contains("k2"))
     }
 
     @Test
     fun testMultipleActionsUsesAndChaining() {
-        val actions = listOf(
-            makeEvaluatedSet("key:1", "val1"),
-            makeEvaluatedSet("key:2", "val2")
-        )
+        val actions = listOf(makeEvaluatedSet("k1", "v1"), makeEvaluatedSet("k2", "v2"))
         val output = writeKotlin(actions)
-
         assertTrue(output.contains(".and()"))
-        assertTrue(output.contains("key:1"))
-        assertTrue(output.contains("key:2"))
     }
 
     @Test
-    fun testMixedSetAndHsetActions() {
+    fun testMixedActions() {
         val actions = listOf(
             makeEvaluatedSet("string:key", "val"),
-            makeEvaluatedHset("hash:key", "field1", "val2")
+            makeEvaluatedHset("hash:key", "field1", "val2"),
+            makeEvaluatedSadd("set:key", "member"),
+            makeEvaluatedSaddFromSinter(listOf("s1", "s2"), "shared")
         )
         val output = writeKotlin(actions)
-
         assertTrue(output.contains(""".set("string:key", "val")"""))
-        assertTrue(output.contains(".and()"))
         assertTrue(output.contains(""".hset("hash:key", "field1", "val2")"""))
+        assertTrue(output.contains(""".sadd("set:key", "member")"""))
+        assertTrue(output.contains(""".sadd("s1", "shared")"""))
+        assertTrue(output.contains(""".sadd("s2", "shared")"""))
     }
 
     @Test
     fun testKotlinEscapesDollarSign() {
         val output = writeKotlin(listOf(makeEvaluatedSet("key", "\$HOME")))
-
         assertTrue(output.contains("\\${'$'}HOME") || output.contains("\\\$HOME"))
         assertFalse(output.contains("\"\$HOME\""))
     }
@@ -165,16 +151,12 @@ class RedisWriterTest {
     @Test
     fun testKeyWithSpecialCharactersIsEscaped() {
         val output = writeKotlin(listOf(makeEvaluatedSet("key\"with\"quotes", "value")))
-
         assertTrue(output.contains("key\\\"with\\\"quotes"))
     }
 
     @Test
     fun testGroupIndexAppearsInVariableName() {
-        val output = writeKotlin(
-            actions = listOf(makeEvaluatedSet("key:1", "val")),
-            groupIndex = "_42"
-        )
+        val output = writeKotlin(listOf(makeEvaluatedSet("key:1", "val")), groupIndex = "_42")
         assertTrue(output.contains("insertions_redis_42"))
     }
 

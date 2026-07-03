@@ -60,8 +60,9 @@ class ResourceRestFitness : AbstractRestFitness() {
             which prevents the retrieval of token or cookie values.
         */
 
-        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
-        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
+        val placeholders = AuthUtils.createUsers(client, getBaseUrl(), individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual, placeholders)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual, placeholders)
 
         /*
             there might some dbaction between rest actions.

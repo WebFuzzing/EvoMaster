@@ -457,7 +457,15 @@ class RestSecurityOracle {
 
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+                /*
+                    FIXME either we check every "as RestCallResult" cast in this class, or
+                    we need to refactor how we pass around "individual" and "actionResults".
+                    TODO need refactoring
+                    TODO need invariant checks (eg if RestCallResult is missing, what property
+                     like "stopped" must be in the individual?)
+                 */
+                ?: break
 
             if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
                 && faultyPaths.contains(a.path)

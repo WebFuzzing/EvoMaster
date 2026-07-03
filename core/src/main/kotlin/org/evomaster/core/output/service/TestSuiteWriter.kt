@@ -514,6 +514,7 @@ class TestSuiteWriter {
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers", lines, false)
                     addImport("org.hamcrest.Matchers.*", lines, true)
                 }
 

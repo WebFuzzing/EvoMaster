@@ -692,11 +692,25 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
+    /**
+     * @param json the representation to send
+     * @param dtoVar whether we rather send the data as DTO, stored in a variable with this name
+     * @param functionsOnString  appended function calls on the string representation before sending it
+     */
+    fun printSendJsonBody(
+        json: String,
+        lines: Lines,
+        dtoVar: String? = null,
+        functionsOnString: List<String>? = null
+    ) {
 
         if(json.isEmpty()){
             //nothing is sent
             return
+        }
+
+        if(dtoVar != null && functionsOnString != null) {
+            throw IllegalArgumentException("Cannot use extra functions on string JSON when using DTOs")
         }
 
         val send = sendBodyCommand()
@@ -705,50 +719,51 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (bodyLines.size == 1) {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
+                    functionsOnString?.forEach { lines.append(it) }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         } else {
             when {
-                format.isCsharp() -> {
-                    lines.add("new StringContent(")
-                    lines.add("${bodyLines.first()} +")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()}")
-                    }
-                    lines.add(", Encoding.UTF8, \"application/json\")")
-                }
                 format.isPython() -> {
-                    lines.add("body = ${bodyLines.first()} + \\")
+                    lines.add("body = ")
+                    if(!functionsOnString.isNullOrEmpty()){
+                        lines.append("(")
+                    }
+                    lines.append("${bodyLines.first()} + \\")
                     lines.indented {
                         (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + \\")
                         }
-                        lines.add("${bodyLines.last()}")
+                        lines.add(bodyLines.last())
+                        if(!functionsOnString.isNullOrEmpty()){
+                            lines.append(")")
+                            functionsOnString.forEach { lines.append(it) }
+                        }
                     }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
-                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, functionsOnString)
             }
         }
     }
 
-    private fun writeJavaOrKotlinJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+    private fun writeJavaOrKotlinJsonBody(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        dtoVar: String?,
+        functionsOnString: List<String>?
+    ) {
         // TODO: When performing robustness testing, we'll need to check the individual type and send data
         //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
         if (shouldUseDtoForPayload(dtoVar)) {
             lines.add(".$send(${dtoVar})")
         } else {
-            writeStringifiedPayload(lines, send, bodyLines, isMultiLine)
+            writeStringifiedPayload(lines, send, bodyLines, functionsOnString)
         }
     }
 
@@ -756,17 +771,48 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
     }
 
-    private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
-        lines.add(".$send(${bodyLines.first()}")
-        if (isMultiLine) {
+    private fun writeStringifiedPayload(
+        lines: Lines,
+        send: String,
+        bodyLines: List<String>,
+        functionsOnString: List<String>?
+    ) {
+        if(bodyLines.isEmpty()) {
+            throw IllegalArgumentException("Empty JSON payload")
+        }
+
+        lines.add(".$send(")
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            //need to wrap string concatenation into a () to be able to call methods
+            //on the final result
+            lines.append("(")
+        }
+
+        lines.append(bodyLines.first())
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size == 1) {
+            //there is only 1 string, so no need for (), and can append directly
+            functionsOnString.forEach {lines.append(it)}
+        }
+
+        if (bodyLines.size > 1) {
             lines.append(" + ")
             lines.indented {
                 (1 until bodyLines.lastIndex).forEach { i ->
                     lines.add("${bodyLines[i]} + ")
                 }
-                lines.add("${bodyLines.last()}")
+                lines.add(bodyLines.last())
             }
         }
+
+        if(!functionsOnString.isNullOrEmpty() && bodyLines.size > 1) {
+            lines.append(")")
+            lines.indented {
+                functionsOnString.forEach { lines.add(it) }
+            }
+        }
+
         lines.append(")")
     }
 
@@ -803,6 +849,52 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     //----------------------------------------------------------------------------------------
     // assertion lines
 
+    protected fun addHeaderAssertions(lines: Lines, res: HttpWsCallResult, responseVariableName: String?){
+
+        val status = res.getStatusCode()
+
+        //TODO: verb order in Allow header is flaky
+        val allow = res.getAllow() //could had rather checked if was OPTIONS, but we don't have that info as input here
+        if(!allow.isNullOrBlank() || status == 405){
+            addAssertionOnHeader(lines, "allow", res.getHeader("allow"), true, responseVariableName)
+        }
+        if(status == 401){
+            addAssertionOnHeader(lines, "www-authenticate", res.getHeader("www-authenticate"), false, responseVariableName)
+        }
+        if(status == 426) {
+            addAssertionOnHeader(lines, "upgrade", res.getHeader("upgrade"), false, responseVariableName)
+        }
+    }
+
+    protected fun addAssertionOnHeader(lines: Lines, name: String, value: String?, flaky: Boolean, responseVariableName: String?){
+
+        val instruction =
+            if(value != null) {
+                val escaped = GeneUtils.applyEscapes(value, GeneUtils.EscapeMode.ASSERTION, format)
+                when {
+                    format.isJavaOrKotlin() -> ".header(\"$name\", \"$escaped\")"
+                    format.isJavaScript() ->
+                        "expect($responseVariableName.header[\"$name\"].startsWith(\"$escaped\")).toBe(true);"
+                    format.isPython() -> "assert \"$escaped\" in $responseVariableName.headers[\"$name\"]"
+                    else -> throw IllegalStateException("Unsupported format $format")
+                }
+            } else {
+                when {
+                    format.isJavaOrKotlin() -> ".header(\"$name\", isEmptyOrNullString())"
+                    format.isJavaScript() ->
+                        "expect($responseVariableName.header[\"$name\"]).toBeUndefined();"
+                    format.isPython() -> "assert \"$name\" not in $responseVariableName.headers"
+                    else -> throw IllegalStateException("Unsupported format $format")
+                }
+            }
+
+        if(flaky) {
+            lines.addSingleCommentLine(instruction)
+        } else {
+            lines.add(instruction)
+        }
+    }
+
     protected fun handleResponseAssertions(lines: Lines, res: HttpWsCallResult, responseVariableName: String?) {
 
         assert(responseVariableName != null || format.isJavaOrKotlin())
@@ -821,19 +913,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(".assertThat()")
         }
 
-        val allow = res.getAllow()
-        if(!allow.isNullOrBlank()){
-            val instruction = when {
-                format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
-                format.isJavaScript() ->
-                    "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
-                format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
-                else -> throw IllegalStateException("Unsupported format $format")
-            }
-            //lines.add(instruction)
-            //TODO: verb order in Allow header is flaky
-            lines.addSingleCommentLine(instruction)
-        }
+        addHeaderAssertions(lines, res, responseVariableName)
 
         if (res.getTooLargeBody()) {
             lines.addSingleCommentLine("the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +

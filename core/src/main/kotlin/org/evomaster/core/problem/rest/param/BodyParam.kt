@@ -52,6 +52,8 @@ class BodyParam(gene: Gene,
 
         val options = typeGene.values
             //.filter { isSupportedType(it) } //not supported will be treated as TEXT, to avoid useless 415 requests
+            .filter {it != "*/*"} //this makes no sense as content-type, but it looks like might happen when wrong V2
+                                  //is converted to V3
             .toMutableList()
 
 
