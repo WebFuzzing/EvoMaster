@@ -2039,6 +2039,10 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
 
+    @Experimental
+    @Cfg("Comma-separated list of response field names to skip when generating assertions.")
+    var fieldsToSkipInAssertions = ""
+
     @Cfg("Apply method replacement heuristics to smooth the search landscape." +
             " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
             " will be ignored in the fitness function if this option is set to false.")
