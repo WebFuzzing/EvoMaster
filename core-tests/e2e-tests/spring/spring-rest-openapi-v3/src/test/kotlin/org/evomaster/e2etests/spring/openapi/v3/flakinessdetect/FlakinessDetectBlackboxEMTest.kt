@@ -36,6 +36,7 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
 
 
             setOption(args, "handleFlakiness", "true")
+            setOption(args, "execNumForDetectFlakiness", "1")
 
             // we may still need to specify info in non bb-e2etest
             setOption(args, "blackBox", "true")

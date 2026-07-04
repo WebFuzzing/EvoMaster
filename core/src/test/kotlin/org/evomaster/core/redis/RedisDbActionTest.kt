@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class RedisDbActionTest {
 
@@ -68,4 +69,73 @@ class RedisDbActionTest {
         assertEquals("modified", copy.valueGene.value)
     }
 
+    // --- RedisSaddAction ---
+
+    @Test
+    fun testSaddActionGetName() {
+        val action = RedisSaddAction(key = "myset", memberGene = StringGene("member"))
+        assertEquals("Redis_SADD_myset", action.getName())
+    }
+
+    @Test
+    fun testSaddActionGetTargetKey() {
+        val action = RedisSaddAction(key = "myset", memberGene = StringGene("member"))
+        assertEquals("myset", action.getTargetKey())
+    }
+
+    @Test
+    fun testSaddActionSeeTopGenesReturnsMemberGene() {
+        val action = RedisSaddAction(key = "myset", memberGene = StringGene("member", "item1"))
+        assertEquals(1, action.seeTopGenes().size)
+        assertInstanceOf(StringGene::class.java, action.seeTopGenes()[0])
+    }
+
+    @Test
+    fun testSaddActionCopyIsIndependent() {
+        val original = RedisSaddAction(key = "myset", memberGene = StringGene("member", "item1"))
+        val copy = original.copy() as RedisSaddAction
+        copy.memberGene.value = "item2"
+
+        assertEquals("item1", original.memberGene.value)
+        assertEquals("item2", copy.memberGene.value)
+    }
+
+    // --- RedisSaddFromSinterAction ---
+
+    @Test
+    fun testSaddFromSinterActionGetName() {
+        val action = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member"))
+        assertEquals("Redis_SADD_SINTER_set1_set2", action.getName())
+    }
+
+    @Test
+    fun testSaddFromSinterActionGetTargetKey() {
+        val action = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member"))
+        assertEquals("set1,set2", action.getTargetKey())
+    }
+
+    @Test
+    fun testSaddFromSinterActionSeeTopGenesReturnsMemberGene() {
+        val action = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
+        assertEquals(1, action.seeTopGenes().size)
+        assertInstanceOf(StringGene::class.java, action.seeTopGenes()[0])
+    }
+
+    @Test
+    fun testSaddFromSinterActionCopyIsIndependent() {
+        val original = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
+        val copy = original.copy() as RedisSaddFromSinterAction
+        copy.memberGene.value = "changed"
+
+        assertEquals("shared", original.memberGene.value)
+        assertEquals("changed", copy.memberGene.value)
+        assertEquals(listOf("set1", "set2"), copy.keys)
+    }
+
+    @Test
+    fun testSaddFromSinterRequiresNonEmptyKeys() {
+        assertThrows<IllegalArgumentException> {
+            RedisSaddFromSinterAction(keys = emptyList(), memberGene = StringGene("member"))
+        }
+    }
 }

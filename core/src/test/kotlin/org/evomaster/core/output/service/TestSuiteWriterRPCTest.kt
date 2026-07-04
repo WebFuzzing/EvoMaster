@@ -62,7 +62,7 @@ class TestSuiteWriterRPCTest{
             mutableListOf(
                 //build fake rpc individual in order to test its generated tests
                 EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
-                    actions = EvaluatedIndividualBuilder.buildFakeRPCAction(expectedJson),
+                    actions = EvaluatedIndividualBuilder.buildFakeRPCAction(expectedJson, "FakeRPCCall:fakeCallableFunction"),
                     externalServicesActions = (0 until expectedJson).map {
                         EvaluatedIndividualBuilder.buildFakeDbExternalServiceAction(1).plus(EvaluatedIndividualBuilder.buildFakeRPCExternalServiceAction(1))
                     }.toMutableList(),
@@ -107,11 +107,11 @@ class TestSuiteWriterRPCTest{
         assertTrue(testContent.contains(expectedMockDbReset))
 
         (0 until 5).forEach {
-            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockExternalServiceObjectInfo_${it}.json\"),true)"))
-            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockExternalServiceObjectInfo_${it}.json\"),false)"))
+            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_fakeRPCCallOnFakeCallableFunction_4ReturnsSuccess_MockExternalServiceObjectInfo_${it}.json\"),true)"))
+            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_fakeRPCCallOnFakeCallableFunction_4ReturnsSuccess_MockExternalServiceObjectInfo_${it}.json\"),false)"))
 
-            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),true)"))
-            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),false)"))
+            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_fakeRPCCallOnFakeCallableFunction_4ReturnsSuccess_MockDatabaseObjectInfo_${it}.json\"),true)"))
+            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_fakeRPCCallOnFakeCallableFunction_4ReturnsSuccess_MockDatabaseObjectInfo_${it}.json\"),false)"))
         }
     }
 

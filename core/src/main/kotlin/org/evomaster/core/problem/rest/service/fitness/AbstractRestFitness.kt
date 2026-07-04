@@ -828,6 +828,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr.setLocation(response.location?.toString())
         rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
+        rcr.setHeaders(response.stringHeaders)
 
         handlePossibleConnectionClose(response)
 
@@ -1092,7 +1093,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isXml() -> GeneUtils.EscapeMode.XML
                 body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
-                else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Cannot handle body type: " + body.contentType() + "." +
+                            " It will be treated as TEXT.")
+                    GeneUtils.EscapeMode.TEXT
+                }
             }
 
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
@@ -1102,37 +1107,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             )
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
-            /*
-                PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used.
-             */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            //null //cannot be left null, Jersey crash
-        } else if (a.verb == HttpVerb.POST) {
-            /*
-                POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
-                411 if  Content-Length is missing...
-             */
-            //builder.header("Content-Length", 0)
-            // null
-            /*
-                yet another critical bug in Jersey that it ignores that header (verified with WireShark)
-             */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
-        if(bodyEntity != null) {
-            if(bodyEntity.entity.isEmpty()){
-                // Jersey overwrite it...
-                //builder.header("Content-Type", "")
-            } else {
-                builder.header("Content-Type", bodyEntity.mediaType)
-            }
-        }
+        /*
+            TODO
+            handling of empty body has been a shit show.
+            Before, Jersey would crash if left emtpy on PUT/PATCH/POST (which is wrong).
+            so, had to force empty bodies, which would lead to 415 when wrong type.
+            but, after upgrading, removing that wrong code was possible, but it leads to another issue:
+            for some server frameworks, might still expect 'Content-length: 0', which doesn't
+            seem possible to force in Jersey... :(
+            in those cases, then some servers might return a 411 :(
+            this happened when we were supporting C# in WB.
+            TODO should check if still a problem. if so, should reproduce and try fix
+         */
 
         val invocation = when (a.verb) {
             /*
@@ -1351,6 +1341,55 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
             handleInvalidLocation(individual, actionResults, fv)
+        }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
+            handleInvalidAllow(individual, actionResults, fv)
+        }
+    }
+
+    /**
+     * Check any OPTIONS call, regardless of its position. The Allow header must match
+     * the verbs declared in the schema (ignoring OPTIONS and HEAD). Two faults, both
+     * reported under HTTP_INVALID_ALLOW:
+     * - extra: a verb is allowed but not declared in the schema
+     * - missing: a verb is declared in the schema but absent from the Allow header
+     */
+    private fun handleInvalidAllow(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val actions = individual.seeMainExecutableActions()
+
+        for (index in actions.indices) {
+            val a = actions[index]
+            if (a.verb != HttpVerb.OPTIONS) continue
+
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            // The Allow header is not mandatory in an OPTIONS response
+            // (see https://httpwg.org/specs/rfc9110.html#OPTIONS), so if it is
+            // missing we cannot conclude anything, ie it is not a fault.
+            val allowed = r.getAllowedVerbs() ?: continue
+
+            // listed in Allow but not declared in the schema
+            val extra = allowed.filter {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && !callGraphService.isDeclared(it, a.path)
+            }.sorted()
+            // declared in the schema but not listed in Allow
+            val missing = HttpVerb.values().filter {
+                it != HttpVerb.OPTIONS && it != HttpVerb.HEAD && callGraphService.isDeclared(it, a.path) && it !in allowed
+            }
+            if (extra.isEmpty() && missing.isEmpty()) continue
+
+            val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
+            val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
+            fv.updateTarget(scenarioId, 1.0, index)
+            val localMessage = listOfNotNull(
+                extra.takeIf { it.isNotEmpty() }?.let { "extra verbs: $it" },
+                missing.takeIf { it.isNotEmpty() }?.let { "missing verbs: $it" }
+            ).joinToString("; ")
+            r.addFault(DetectedFault(category, a.getName(), null, localMessage))
         }
     }
 

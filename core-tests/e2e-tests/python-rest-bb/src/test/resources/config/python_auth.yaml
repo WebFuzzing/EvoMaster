@@ -1,0 +1,12 @@
+auth:
+  - name: "foo"
+    loginEndpointAuth:
+      endpoint: "/api/login"
+      payloadRaw: "{\"username\": \"foo\", \"password\": \"123\"}"
+      verb: "POST"
+      contentType: "application/json"
+      token:
+        extractFrom: "body"
+        extractSelector: "/access_token"
+        sendName: "Authorization"
+        sendIn: "header"
