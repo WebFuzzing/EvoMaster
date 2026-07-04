@@ -712,7 +712,7 @@ class EMConfig {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
             if (problemType == ProblemType.MCP && base.isBlank()) {
-                throw ConfigProblemException("In black-box mode for MCP servers, you must set the bbTargetUrl option")
+                throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
             }
         }
 
