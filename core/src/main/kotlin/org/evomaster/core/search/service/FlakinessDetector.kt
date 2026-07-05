@@ -10,7 +10,6 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.TimeBoxedPhase
-import org.evomaster.core.utils.FlakinessInferenceUtil.derive
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -37,7 +36,16 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     private lateinit var epc: ExecutionPhaseController
 
     override fun applyPhase() {
-        reexecuteToDetectFlakiness()
+        if (!config.handleFlakiness) {
+            throw IllegalStateException("handleFlakiness must be enabled before applying this phase of flakiness detection and handing with FlakinessDetector")
+        }
+
+        if (config.enableStaticFlakyInference) {
+            inferStaticFlakiness()
+        }
+        if (config.execNumForDetectFlakiness > 0) {
+            reexecuteToDetectFlakiness(config.execNumForDetectFlakiness)
+        }
     }
 
     override fun hasPhaseTimedOut(): Boolean {
@@ -47,7 +55,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     /**
      * re-execute individuals in archive for identifying flakiness
      */
-    fun reexecuteToDetectFlakiness() : Solution<T>{
+    fun reexecuteToDetectFlakiness(execNum : Int) : Solution<T>{
         /*
             here we rely on extractSolution returning actual references of individuals in the archive, and not copies
          */
@@ -59,12 +67,35 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
             if(hasPhaseTimedOut()) break
 
-            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
-            if(ei == null){
-                log.warn("Failed to re-evaluate individual during flakiness analysis.")
-            }else{
-                checkAndMarkConsistency(ei, ci)
+            for (execIndex in 1..execNum){
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
+                if(ei == null){
+                    log.warn("Failed to re-evaluate individual at index ($execIndex) during flakiness analysis.")
+                }else{
+                    checkAndMarkConsistency(ei, ci, execIndex)
+                }
             }
+        }
+
+        return archive.extractSolution()
+    }
+
+    /**
+     * Infer potential flaky response values without re-executing the SUT.
+     */
+    fun inferStaticFlakiness(): Solution<T> {
+        val currentIndividuals = archive.extractSolution().individuals
+
+        LoggingUtil.getInfoLogger().info("Inferring static flakiness for ${currentIndividuals.size} individuals.")
+
+        for (ci in currentIndividuals) {
+            if(hasPhaseTimedOut()) break
+
+            ci.evaluatedMainActions()
+                .filter { it.action is HttpWsAction && it.result is HttpWsCallResult }
+                .forEach {
+                    (it.result as HttpWsCallResult).recordStaticFlakyInference()
+                }
         }
 
         return archive.extractSolution()
@@ -74,8 +105,9 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
      * This might have side-effects will be applied in the archive
      * compare [inArchive] with [other] to check if the action results are same, the inconsistent info will be saved in [inArchive] evaluated individual
      * @param inArchive the evaluated individual which saves info of flakiness
+     * @param indexExecN the index of execution times, eg, 1st, 2nd
      */
-    fun checkAndMarkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>){
+    fun checkAndMarkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>, indexExecN: Int){
         val previousActions = other.evaluatedMainActions()
         val currentActions = inArchive.evaluatedMainActions()
 
@@ -89,7 +121,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
             val action = it.action
             if(action is HttpWsAction){
                 if (it.result is HttpWsCallResult){
-                    handleFlakinessInActionResult(it.result, previousActions[index].result as HttpWsCallResult)
+                    handleFlakinessInActionResult(it.result, previousActions[index].result as HttpWsCallResult, indexExecN)
                 }
 
             }
@@ -98,59 +130,10 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
     private fun handleFlakinessInActionResult(
         resultToUpdate: HttpWsCallResult,
-        other: HttpWsCallResult
+        other: HttpWsCallResult,
+        indexExecN: Int
     ) {
-
-        // handle status code
-        val rStatus = resultToUpdate.getStatusCode()
-        val oStatus = other.getStatusCode()
-
-        if (oStatus != null && rStatus != oStatus) {
-            resultToUpdate.setFlakyStatusCode(oStatus)
-        }
-
-        // handle body
-        val rBody = resultToUpdate.getBody()
-        val oBody = other.getBody()
-
-        if (oBody != null) {
-            if (rBody != oBody) {
-                resultToUpdate.setFlakyBody(oBody)
-            } else {
-                val normO = derive(oBody)
-                if (rBody != normO) {
-                    resultToUpdate.setFlakyBody(normO)
-                }
-            }
-        }
-
-        // handle body type
-        val rType = resultToUpdate.getBodyType()
-        val oType = other.getBodyType()
-
-        if (oType != null && rType != oType) {
-            resultToUpdate.setFlakyBodyType(oType)
-        }
-
-        // handle error message
-        val rMsg = resultToUpdate.getErrorMessage()
-        val oMsg = other.getErrorMessage()
-
-        if (oMsg != null) {
-            if (rMsg != oMsg) {
-                resultToUpdate.setFlakyErrorMessage(oMsg)
-            } else {
-                /*
-                     there may be chance that the flakiness is not identified with the near execution.
-                     However, we use predefined regex to infer potential flaky value for known flaky source,
-                     such as UUID, time.
-                 */
-                val normO = derive(oMsg)
-                if (rMsg != normO) {
-                    resultToUpdate.setFlakyErrorMessage(normO)
-                }
-            }
-        }
+        resultToUpdate.recordFlakyObservation(other, indexExecN)
     }
 
 }

@@ -37,6 +37,9 @@ public class RedisCommandExecutor {
                     case "HSET":
                         client.hashSet(dto.key, dto.field, dto.value);
                         break;
+                    case "SADD":
+                        client.addMember(dto.key, dto.value);
+                        break;
                     default:
                         throw new IllegalArgumentException(
                                 "Unsupported Redis command: " + dto.command);

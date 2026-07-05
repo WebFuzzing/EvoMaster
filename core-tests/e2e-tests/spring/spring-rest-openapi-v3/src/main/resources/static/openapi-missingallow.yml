@@ -1,0 +1,73 @@
+openapi: 3.0.0
+info:
+  title: Missing Allow API
+  version: 1.0.0
+paths:
+  # Faulty resource: declares DELETE, but the server has no DELETE handler,
+  # so OPTIONS Allow omits a declared verb.
+  /api/products/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Found
+        "404":
+          description: Not found
+    put:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Updated
+        "201":
+          description: Created
+    delete:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "204":
+          description: Deleted
+  # Clean resource: declared verbs match the served ones.
+  /api/orders/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Found
+        "404":
+          description: Not found
+    put:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Updated
+        "201":
+          description: Created

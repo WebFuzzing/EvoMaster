@@ -5,6 +5,27 @@ import re
 
 class EvoMaster_EM_Test_Utils_Test(unittest.TestCase):
 
+    def test_create_string(self):
+        prefix = "foo"
+        postfix = "bar"
+        min_val = 5
+        max_val = 10
+
+        first = create_string(min_val, max_val, prefix, postfix)
+        self.assertTrue(first.startswith(prefix))
+        self.assertTrue(first.endswith(postfix))
+        self.assertTrue(len(first) >= min_val)
+        self.assertTrue(len(first) <= max_val)
+
+        second = create_string(min_val, max_val, prefix, postfix)
+        self.assertTrue(second.startswith(prefix))
+        self.assertTrue(second.endswith(postfix))
+        self.assertTrue(len(second) >= min_val)
+        self.assertTrue(len(second) <= max_val)
+
+        self.assertNotEqual(first, second)
+
+
     def test_resolve_location_direct(self):
         template = "http://localhost:12345/a/{id}"
         location = "/a/5"

@@ -1,5 +1,28 @@
  const EMTestUtils = require("../main/resources/EMTestUtils");
 
+
+ test('should create string with prefix, postfix, and length constraints', () => {
+     const prefix = "foo";
+     const postfix = "bar";
+     const min = 5;
+     const max = 10;
+
+     const first = EMTestUtils.createString(min, max, prefix, postfix);
+     expect(first.startsWith(prefix)).toBe(true);
+     expect(first.endsWith(postfix)).toBe(true);
+     expect(first.length).toBeGreaterThanOrEqual(min);
+     expect(first.length).toBeLessThanOrEqual(max);
+
+     const second = EMTestUtils.createString(min, max, prefix, postfix);
+     expect(second.startsWith(prefix)).toBe(true);
+     expect(second.endsWith(postfix)).toBe(true);
+     expect(second.length).toBeGreaterThanOrEqual(min);
+     expect(second.length).toBeLessThanOrEqual(max);
+
+     expect(first).not.toEqual(second);
+ })
+
+
 test("testResolveLocation_direct", () => {
 
     const template = "http://localhost:12345/a/{id}";

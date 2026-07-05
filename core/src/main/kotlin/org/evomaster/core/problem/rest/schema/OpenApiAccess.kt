@@ -212,16 +212,20 @@ object OpenApiAccess {
                       */
                      val baseUrl = "${url.protocol}://${url.host}:${url.port}"
 
+                     //TODO should handle CreateUsers here?
+
                      val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(
                          client,
                          baseUrl,
-                         listOf(ecl)
+                         listOf(ecl),
+                         listOf()
                      )
                         else mapOf()
                      val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(
                          client,
                          baseUrl,
-                         listOf(ecl)
+                         listOf(ecl),
+                         listOf()
                      )
                         else mapOf()
 
