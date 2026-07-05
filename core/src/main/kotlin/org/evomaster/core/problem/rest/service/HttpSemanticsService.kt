@@ -13,11 +13,11 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.time.ExecutionPhaseController
@@ -48,7 +48,7 @@ class HttpSemanticsService : TimeBoxedPhase{
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var fitness: FitnessFunction<RestIndividual>
+    private lateinit var fitness: RestFitness
 
     @Inject
     private lateinit var idMapper: IdMapper
