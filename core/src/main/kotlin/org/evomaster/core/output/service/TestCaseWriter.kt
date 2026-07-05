@@ -46,8 +46,11 @@ abstract class TestCaseWriter {
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
 
-        // message for the assertion that flags a missing expected timeout (Java/Kotlin/C#)
-        // JS uses await expect(...).rejects.toThrow() and Python uses with self.assertRaises(...)
+
+        /**
+        * message for the assertion that flags a missing expected timeout (Java/Kotlin/C#)
+        * JS uses await expect(...).rejects.toThrow() and Python uses with self.assertRaises(...)
+        */
         private const val EXPECTED_TIMEOUT_MSG = "Expected a timeout"
     }
 

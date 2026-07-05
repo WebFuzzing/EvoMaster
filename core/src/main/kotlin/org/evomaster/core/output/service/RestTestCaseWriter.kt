@@ -308,7 +308,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         Client timeout per HTTP call, same source as fuzzing tcpTimeoutMs.
                         Also, timeout at test level does not work reliably in Python.
                     */
-                    lines.append(", timeout=EM_HTTP_TIMEOUT")
+                    lines.append(", timeout=${TestSuiteWriter.httpTimeoutVarSeconds}")
                 }
             }
         }

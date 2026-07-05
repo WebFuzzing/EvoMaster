@@ -58,6 +58,14 @@ class TestSuiteWriter {
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
 
+        /**
+         * Names of the variables, generated into each test suite, holding the per-HTTP-call
+         * client timeout. Same source as the fuzzing 'tcpTimeoutMs' option. Two unit-specific
+         * variants, as different output formats need different units.
+         */
+        const val httpTimeoutVarMs = "EM_HTTP_TIMEOUT_MS"     // milliseconds (JS/superagent)
+        const val httpTimeoutVarSeconds = "EM_HTTP_TIMEOUT_S" // seconds (Python/requests)
+
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
         const val baseUrlOfSut = "baseUrlOfSut"
@@ -535,7 +543,7 @@ class TestSuiteWriter {
             lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
             // HTTP client timeout (ms)
-            lines.add("const EM_HTTP_TIMEOUT_MS = ${config.tcpTimeoutMs};")
+            lines.add("const $httpTimeoutVarMs = ${config.tcpTimeoutMs};")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -591,7 +599,7 @@ class TestSuiteWriter {
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
             // HTTP client timeout (seconds)
-            lines.add("EM_HTTP_TIMEOUT = ${config.tcpTimeoutMs / 1000.0}")
+            lines.add("$httpTimeoutVarSeconds = ${config.tcpTimeoutMs / 1000.0}")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }

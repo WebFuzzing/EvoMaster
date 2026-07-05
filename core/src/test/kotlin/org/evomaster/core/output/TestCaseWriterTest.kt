@@ -13,6 +13,7 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -1398,7 +1399,7 @@ public void test() throws Exception {
                 
                 const res_0 = await superagent
                         .get(baseUrlOfSut + "/foo")
-                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1472,7 +1473,7 @@ public void test() throws Exception {
                 
                 const res_0 = await superagent
                         .get(baseUrlOfSut + "/foo")
-                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1531,7 +1532,7 @@ public void test() throws Exception {
                 
                 const res_0 = await superagent
                         .get(baseUrlOfSut + "/foo")
-                        .timeout({response: EM_HTTP_TIMEOUT_MS, deadline: EM_HTTP_TIMEOUT_MS}).set('Accept', "*/*")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
