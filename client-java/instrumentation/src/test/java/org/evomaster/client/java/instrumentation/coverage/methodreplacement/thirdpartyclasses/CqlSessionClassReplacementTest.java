@@ -37,7 +37,8 @@ public class CqlSessionClassReplacementTest {
                     .withStartupTimeout(Duration.ofMinutes(2)));
 
     private static final String KEYSPACE = "testks";
-    private static final String TABLE = KEYSPACE + ".users";
+    private static final String TABLE_NAME = "users";
+    private static final String TABLE = KEYSPACE + "." + TABLE_NAME;
 
     @BeforeAll
     static void startCassandra() {
@@ -86,6 +87,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -104,6 +107,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -161,6 +166,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -183,6 +190,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -202,6 +211,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -223,6 +234,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }

@@ -12,6 +12,8 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass {
     private static final CqlSessionClassReplacement singleton = new CqlSessionClassReplacement();
@@ -56,13 +58,59 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
             Object result = executeMethod.invoke(cqlSession, invokeArgs);
             long end = System.currentTimeMillis();
             long executionTime = end - start;
-            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, false, executionTime);
+            TableReference ref = extractTableReference(queryForTracking);
+            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, ref.keyspaceName, ref.tableName, false, executionTime);
             ExecutionTracer.addCqlInfo(info);
             return result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
+        }
+    }
+
+    /**
+     * Matches the keyspace/table reference after FROM (SELECT/DELETE), INTO (INSERT), or
+     * UPDATE, e.g. "FROM ks.tbl", "INTO tbl", "UPDATE \"Ks\".\"Tbl\"".
+     */
+    private static final Pattern TABLE_REFERENCE_PATTERN = Pattern.compile(
+            "(?i)\\b(?:FROM|INTO|UPDATE)\\s+(\"[^\"]+\"|[A-Za-z_]\\w*)(?:\\s*\\.\\s*(\"[^\"]+\"|[A-Za-z_]\\w*))?"
+    );
+
+    /**
+     * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
+     * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
+     * (eg DDL, batches).
+     */
+    private static TableReference extractTableReference(String query) {
+        if (query == null) {
+            return new TableReference(null, null);
+        }
+        Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
+        if (!matcher.find()) {
+            return new TableReference(null, null);
+        }
+        String first = stripQuotes(matcher.group(1));
+        String second = matcher.group(2) != null ? stripQuotes(matcher.group(2)) : null;
+        // if there is a "a.b" qualifier, a is the keyspace and b is the table;
+        // otherwise the single identifier is the table, and the keyspace is the session default
+        return second != null ? new TableReference(first, second) : new TableReference(null, first);
+    }
+
+    private static String stripQuotes(String identifier) {
+        if (identifier.length() >= 2 && identifier.charAt(0) == '"' && identifier.charAt(identifier.length() - 1) == '"') {
+            return identifier.substring(1, identifier.length() - 1);
+        }
+        return identifier;
+    }
+
+    private static class TableReference {
+        final String keyspaceName;
+        final String tableName;
+
+        TableReference(String keyspaceName, String tableName) {
+            this.keyspaceName = keyspaceName;
+            this.tableName = tableName;
         }
     }
 
