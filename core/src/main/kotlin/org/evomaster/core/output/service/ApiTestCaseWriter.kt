@@ -21,8 +21,7 @@ import java.math.BigDecimal
 import java.math.BigInteger
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
-    
-    protected var baseUrlOfSut: String = ""
+
 
     companion object{
         private val mapper = ObjectMapper()
@@ -47,7 +46,6 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         insertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
-        this.baseUrlOfSut = baseUrlOfSut
 
         //TODO: REFACTOR TO HANDLE MULTIPLE DATABASES
         val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()

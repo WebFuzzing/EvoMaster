@@ -104,8 +104,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
-                format.isPlaywright() -> lines.append("const $resVarName = ")
-                format.isJavaScript() -> lines.append("const $resVarName = ")
+                format.isJavaScript() || format.isPlaywright() -> lines.append("const $resVarName = ")
                 format.isPython() -> lines.append("$resVarName = ")
                 format.isCsharp() -> lines.append("var $resVarName = ")
             }
@@ -216,7 +215,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           but that is not the case for the other libraries used for example in JS and C#
          */
         return config.enableBasicAssertions &&
-                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.JS_JEST_PLAYWRIGHT || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
+                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.    JS_PLAYWRIGHT || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
@@ -396,7 +395,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         baseUrlOfSut: String,
         addTimeMeasurement: Boolean,
     ) {
-        this.baseUrlOfSut = baseUrlOfSut
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
         // add all used external service actions for the action

@@ -554,6 +554,7 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
+            // Playwright has its own test runner and does not use Jest
             if (config.testTimeout > 0 && !format.isPlaywright()) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
