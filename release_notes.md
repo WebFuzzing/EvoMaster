@@ -3,12 +3,14 @@
 Under development in `master` branch.
 
 ### New Features
+- REST APIs: native support for Overlay. It is now possible to provide as input one or more OAI Overlay files, which are automatically applied to the OpenAPI schema of the tested API.  
 - Support of WFC 0.6.0 for dynamic creation of users in auth configurations. 
-
+- `--fieldsToSkipInAssertions` can be used to manually specify which flaky fields to skip in assertion generation.
 
 ### Addressed GitHub Issues
 - #1286: SSL verification error during the execution of generated tests 
-- #1071: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with SSLException 
+- #1278: Support Ignoring Response Fields in Black-Box Test Generation for Python Output
+- #1071: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with SSLException
 
 ### Fixed Bugs
 - Resolved issue of wrong handling of empty bodies in PUT/PATCH/POST requests. 
@@ -19,7 +21,7 @@ Under development in `master` branch.
 
 ### Breaking Changes
 - Now the default mode for EvoMaster is black-box testing. 
-  If you have workflows where you are running EvoMaster in white-box mode without specifying '--blackBox false', those will break. Now, you will need to explicitly set that option. 
+  If you have workflows where you are running EvoMaster in white-box mode without specifying `--blackBox false`, those will break. Now, you will need to explicitly set that option. 
 
 ### New Features
 
