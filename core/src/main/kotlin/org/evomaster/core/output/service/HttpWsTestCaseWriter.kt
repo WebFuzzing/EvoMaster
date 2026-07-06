@@ -819,6 +819,52 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     //----------------------------------------------------------------------------------------
     // assertion lines
 
+    protected fun addHeaderAssertions(lines: Lines, res: HttpWsCallResult, responseVariableName: String?){
+
+        val status = res.getStatusCode()
+
+        //TODO: verb order in Allow header is flaky
+        val allow = res.getAllow() //could had rather checked if was OPTIONS, but we don't have that info as input here
+        if(!allow.isNullOrBlank() || status == 405){
+            addAssertionOnHeader(lines, "allow", res.getHeader("allow"), true, responseVariableName)
+        }
+        if(status == 401){
+            addAssertionOnHeader(lines, "www-authenticate", res.getHeader("www-authenticate"), false, responseVariableName)
+        }
+        if(status == 426) {
+            addAssertionOnHeader(lines, "upgrade", res.getHeader("upgrade"), false, responseVariableName)
+        }
+    }
+
+    protected fun addAssertionOnHeader(lines: Lines, name: String, value: String?, flaky: Boolean, responseVariableName: String?){
+
+        val instruction =
+            if(value != null) {
+                val escaped = GeneUtils.applyEscapes(value, GeneUtils.EscapeMode.ASSERTION, format)
+                when {
+                    format.isJavaOrKotlin() -> ".header(\"$name\", \"$escaped\")"
+                    format.isJavaScript() ->
+                        "expect($responseVariableName.header[\"$name\"].startsWith(\"$escaped\")).toBe(true);"
+                    format.isPython() -> "assert \"$escaped\" in $responseVariableName.headers[\"$name\"]"
+                    else -> throw IllegalStateException("Unsupported format $format")
+                }
+            } else {
+                when {
+                    format.isJavaOrKotlin() -> ".header(\"$name\", isEmptyOrNullString())"
+                    format.isJavaScript() ->
+                        "expect($responseVariableName.header[\"$name\"]).toBeUndefined();"
+                    format.isPython() -> "assert \"$name\" not in $responseVariableName.headers"
+                    else -> throw IllegalStateException("Unsupported format $format")
+                }
+            }
+
+        if(flaky) {
+            lines.addSingleCommentLine(instruction)
+        } else {
+            lines.add(instruction)
+        }
+    }
+
     protected fun handleResponseAssertions(lines: Lines, res: HttpWsCallResult, responseVariableName: String?) {
 
         assert(responseVariableName != null || format.isJavaOrKotlin())
@@ -837,19 +883,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(".assertThat()")
         }
 
-        val allow = res.getAllow()
-        if(!allow.isNullOrBlank()){
-            val instruction = when {
-                format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
-                format.isJavaScript() ->
-                    "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
-                format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
-                else -> throw IllegalStateException("Unsupported format $format")
-            }
-            //lines.add(instruction)
-            //TODO: verb order in Allow header is flaky
-            lines.addSingleCommentLine(instruction)
-        }
+        addHeaderAssertions(lines, res, responseVariableName)
 
         if (res.getTooLargeBody()) {
             lines.addSingleCommentLine("the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
