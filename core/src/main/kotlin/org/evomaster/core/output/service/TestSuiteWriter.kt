@@ -139,22 +139,8 @@ class TestSuiteWriter {
         controllerInput: String?
     ): TestSuiteCode {
 
-        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
-
-        //catch any sorting problems (see NPE is SortingHelper on Trello)
-        val tests = try {
-            testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
-        } catch (ex: Exception) {
-            log.warn(
-                "A failure has occurred with the test sorting. Reverting to default settings. \n"
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-            )
-            // fallback to numbered naming strategy upon failure
-            NumberedTestCaseNamingStrategy(solution).getTestCases()
-        }
-
         val lines = Lines(config.outputFormat)
+        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -168,6 +154,8 @@ class TestSuiteWriter {
         classFields(lines, config.outputFormat)
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
+
+        val tests = testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -514,17 +502,19 @@ class TestSuiteWriter {
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
+            if (useRestAssured()) {
+                addImport("io.restassured.config.JsonConfig", lines)
+                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                addImport("io.restassured.config.EncoderConfig", lines)
+                addImport("io.restassured.http.ContentType", lines)
+            }
+
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers", lines, false)
                     addImport("org.hamcrest.Matchers.*", lines, true)
-                }
-
-                //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()) {
-                    addImport("io.restassured.config.JsonConfig", lines)
-                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
                 }
 
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
@@ -541,6 +531,7 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
+            lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             if (format.isPlaywright()) {
                 lines.add("const { test, expect } = require(\"@playwright/test\");")
             } else {
@@ -860,15 +851,16 @@ class TestSuiteWriter {
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
                 }
 
-                if (format.isJavaScript() && !format.isPlaywright()) {
-                    addStatement("process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", lines)
-                }
+                //if (format.isJavaScript() && !format.isPlaywright()) {
+                //    addStatement("process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", lines)
+                //}
 
                 if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
                     lines.add("RestAssured.config = RestAssured.config()")
                     lines.indented {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
                     }
                     lines.appendSemicolon()
                 }

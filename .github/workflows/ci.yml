@@ -405,6 +405,47 @@ jobs:
           CI_env: GithubAction
 
 
+  python-bb-e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{env.java-distribution}}
+          java-version: ${{env.build-jdk}}
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cache Maven packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+        env:
+          CI_env: GithubAction
+      - name: Run Python/Django BB E2E tests
+        # important that what we run here does not use Docker
+        working-directory: core-tests/e2e-tests/python-rest-bb
+        run: mvn clean verify --fae
+        env:
+          CI_env: GithubAction
+
+
   tests:
     runs-on: ubuntu-latest
     needs: full-build-base

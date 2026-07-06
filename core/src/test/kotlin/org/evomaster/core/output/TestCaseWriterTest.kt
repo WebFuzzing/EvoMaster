@@ -106,6 +106,41 @@ class TestCaseWriterTest : WriterTestBase(){
     }
 
 
+    @Test
+    fun testTextAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleTextPlainTextAssertion(
+            "Unable to obtain a new access token for resource &#39;null&#39;.", // observed in the catwatch
+            null,
+            lines,
+            null
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJsonStringAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleJsonStringAssertion(
+            "{\"message\":\"Unable to obtain a new access token for resource &#39;null&#39;.\"}",
+            null,
+            lines,
+            null,
+            false
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
 
 
     private fun buildEvaluatedIndividual(dbInitialization: MutableList<SqlAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
@@ -1284,6 +1319,35 @@ public void test() throws Exception {
 
 
     @Test
+    fun testJavaObjectAssertionInArrayUsesGPathIndex() {
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_4
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("[{}]") // example in restcountries
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+
+        assertTrue(lines.toString().contains(".body(\"[0].isEmpty()\", is(true))"))
+        assertFalse(lines.toString().contains(".body(\"'[0]'.isEmpty()\", is(true))"))
+    }
+
+
+    @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
@@ -1706,5 +1770,41 @@ public void test() throws Exception {
 
         assertTrue(output.contains("%E8%81%9A"),
             "Non-ASCII character must be percent-encoded as %E8%81%9A in generated test output, got:\n$output")
+    }
+
+    @Test
+    fun testStringWithDollarKotlin() {
+        // A StringGene value containing '$' must be escaped as '\$' in generated Kotlin source. Currently,
+        // SqlWriter.getPrintableValue applies StringEscapeUtils.escapeJava() after GeneUtils.applyEscapes(),
+        // which doubles the backslash and leaves '$' bare, causing a Kotlin string template compile error.
+        val aColumn = Column("name", VARCHAR, 10, databaseType = DatabaseType.H2)
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+        val gene = StringGene("name", "v\$t")
+        val insertAction = SqlAction(aTable, setOf(aColumn), 0L, mutableListOf(gene))
+
+        val (_, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertAction))
+
+        val format = OutputFormat.KOTLIN_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), baseUrlOfSut)
+
+        val expectedLines = Lines(format).apply {
+            add("@Test")
+            add("fun test()  {")
+            indent()
+            add("val insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"name\", \"\\\"v\\\$t\\\"\")")
+            deindent()
+            add(".dtos()")
+            deindent()
+            add("val insertionsresult = controller.execInsertionsIntoDatabase(insertions)")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
     }
 }

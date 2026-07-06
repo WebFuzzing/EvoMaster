@@ -2039,6 +2039,13 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
 
+    @Cfg("Comma-separated list of response field names to skip when generating assertions." +
+            " This is useful when some fields have non-stable responses that can lead to test flakiness." +
+            " Note that EvoMaster has some systems to automatically handle flakiness." +
+            " This option is an extra layer of protection to force skipping some fields that EvoMaster is not" +
+            " currently able to automatically handle.")
+    var fieldsToSkipInAssertions = ""
+
     @Cfg("Apply method replacement heuristics to smooth the search landscape." +
             " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
             " will be ignored in the fitness function if this option is set to false.")
@@ -2792,6 +2799,17 @@ class EMConfig {
     @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. " +
             "Note that flakiness is now supported only for fuzzing REST APIs")
     var handleFlakiness = false
+
+    @Experimental
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
+    var enableStaticFlakyInference = true
+
+    @Experimental
+    @Min(0.0)
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
+    var execNumForDetectFlakiness = 1
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +

@@ -110,4 +110,10 @@ class EndpointCallLogin(
     }
 
     fun expectsCookie() = token == null
+
+    fun getUrl(baseUrl: String): String {
+        return AuthUtils.constructUrl(baseUrl, call.endpoint, call.externalEndpointURL)
+    }
+
+
 }
