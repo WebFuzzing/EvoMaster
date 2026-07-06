@@ -1316,7 +1316,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 //         This oracle should only be considered for Black-Box testing.
 //         In White-Box testing, instrumentation may affect execution time,
 //         especially for CPU-bound APIs.
-        if(config.blackBox && config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_TIMEOUT)){
+        if(config.httpOracles && config.blackBox && config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_TIMEOUT)){
             handleTimeout(individual, actionResults, fv)
         }
     }
