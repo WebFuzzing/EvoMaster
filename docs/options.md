@@ -131,6 +131,7 @@ There are 3 types of options:
 |`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`feedbackDirectedSampling`| __Enum__. Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement. *Valid values*: `NONE, LAST, FOCUSED_QUICKEST`. *Default value*: `FOCUSED_QUICKEST`.|
+|`fieldsToSkipInAssertions`| __String__. Comma-separated list of response field names to skip when generating assertions. This is useful when some fields have non-stable responses that can lead to test flakiness. Note that EvoMaster has some systems to automatically handle flakiness. This option is an extra layer of protection to force skipping some fields that EvoMaster is not currently able to automatically handle. *Default value*: `""`.|
 |`fixedRateMutation`| __Double__. Define the probability of happening mutation in the genetic algorithms. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.04`.|
 |`focusedSearchActivationTime`| __Double__. The percentage of passed search before starting a more focused, less exploratory one. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Depends on*: `blackBox=false`. *Default value*: `true`.|
@@ -294,7 +295,6 @@ There are 3 types of options:
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`extractRedisExecutionInfo`| __Boolean__. Enable extracting Redis execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
-|`fieldsToSkipInAssertions`| __String__. Comma-separated list of response field names to skip when generating assertions. *Default value*: `""`.|
 |`generateRedisData`| __Boolean__. Enable EvoMaster to generate Redis data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|

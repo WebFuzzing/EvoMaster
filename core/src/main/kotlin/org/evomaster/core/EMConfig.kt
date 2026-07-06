@@ -2039,8 +2039,11 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
 
-    @Experimental
-    @Cfg("Comma-separated list of response field names to skip when generating assertions.")
+    @Cfg("Comma-separated list of response field names to skip when generating assertions." +
+            " This is useful when some fields have non-stable responses that can lead to test flakiness." +
+            " Note that EvoMaster has some systems to automatically handle flakiness." +
+            " This option is an extra layer of protection to force skipping some fields that EvoMaster is not" +
+            " currently able to automatically handle.")
     var fieldsToSkipInAssertions = ""
 
     @Cfg("Apply method replacement heuristics to smooth the search landscape." +
