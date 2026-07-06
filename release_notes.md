@@ -3,6 +3,7 @@
 Under development in `master` branch.
 
 ### New Features
+- REST APIs: native support for Overlay. It is now possible to provide as input one or more OAI Overlay files, which are automatically applied to the OpenAPI schema of the tested API.  
 - Support of WFC 0.6.0 for dynamic creation of users in auth configurations. 
 - `--fieldsToSkipInAssertions` can be used to manually specify which flaky fields to skip in assertion generation.
 

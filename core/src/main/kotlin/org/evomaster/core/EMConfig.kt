@@ -3241,7 +3241,6 @@ class EMConfig {
             " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
-    @Experimental
     @ExistingPath(true,false)
     @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
             " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
@@ -3250,7 +3249,6 @@ class EMConfig {
             " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
     var overlay = ""
 
-    @Experimental
     @Cfg("Comma ',' separated list of file name suffixes." +
             " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
             " suffixes will be loaded and applied." +
@@ -3260,7 +3258,6 @@ class EMConfig {
             " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
     var overlayFileSuffixes = ".json,.yaml,.yml"
 
-    @Experimental
     @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
             " if there is any issue with the transformations, e.g., if some transformations are not applied" +
             " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
