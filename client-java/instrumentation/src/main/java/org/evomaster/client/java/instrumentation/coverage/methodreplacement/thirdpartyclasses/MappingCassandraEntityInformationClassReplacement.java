@@ -11,9 +11,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * When a Cassandra repository is created in Spring, a CqlSession is used under the hood.
@@ -58,14 +56,10 @@ public class MappingCassandraEntityInformationClassReplacement extends ThirdPart
     public static void MappingCassandraEntityInformation(
             @ThirdPartyCast(actualType = "org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity") Object entity,
             @ThirdPartyCast(actualType = "org.springframework.data.cassandra.core.convert.CassandraConverter") Object converter) {
-        handleMappingCassandraEntityInformationConstructor("constructorEntityConverter", Arrays.asList(entity, converter));
-    }
-
-    private static void handleMappingCassandraEntityInformationConstructor(String id, List<Object> args) {
-        Constructor original = getOriginalConstructor(singleton, id);
+        Constructor original = getOriginalConstructor(singleton, "constructorEntityConverter");
 
         try {
-            Object mappingCassandraEntityInformation = original.newInstance(args.toArray());
+            Object mappingCassandraEntityInformation = original.newInstance(entity, converter);
             addInstance(mappingCassandraEntityInformation);
 
             Object tableNameId = mappingCassandraEntityInformation.getClass().getMethod("getTableName").invoke(mappingCassandraEntityInformation);
@@ -79,4 +73,5 @@ public class MappingCassandraEntityInformationClassReplacement extends ThirdPart
             throw new RuntimeException(e);
         }
     }
+
 }
