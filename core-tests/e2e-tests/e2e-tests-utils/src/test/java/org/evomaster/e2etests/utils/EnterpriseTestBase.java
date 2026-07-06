@@ -625,6 +625,10 @@ public abstract class EnterpriseTestBase {
         assertTextInTests(outputFolder,className, l -> l.contains(content));
     }
 
+    protected void assertTextNotInTests(String outputFolder, String className, String content) {
+        assertTextNotInTests(outputFolder, className, l -> l.contains(content));
+    }
+
         /**
          * assert a certain text in the generated tests
          * @param outputFolder the folder where the test is
@@ -637,6 +641,24 @@ public abstract class EnterpriseTestBase {
         try {
             boolean ok = Files.lines(test).anyMatch(condition);
             String msg = "Cannot find line with requested condition in "+className+" in "+outputFolder;
+            assertTrue(ok, msg);
+        }catch (IOException e){
+            throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
+        }
+    }
+
+    /**
+     * Assert that a certain text is not present in the generated tests.
+     * @param outputFolder the folder where the test is
+     * @param className the complete test name
+     * @param condition is the content to check
+     */
+    protected void assertTextNotInTests(String outputFolder, String className, Predicate<String> condition) {
+        String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
+        Path test = Paths.get(path);
+        try {
+            boolean ok = Files.lines(test).noneMatch(condition);
+            String msg = "Found line with forbidden condition in "+className+" in "+outputFolder;
             assertTrue(ok, msg);
         }catch (IOException e){
             throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
