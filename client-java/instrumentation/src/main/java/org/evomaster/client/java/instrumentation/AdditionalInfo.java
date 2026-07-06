@@ -118,6 +118,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
+    private final Set<CassandraTableSchema> cassandraTableSchemaData = new CopyOnWriteArraySet<>();
+
     public Set<ExecutedSqlCommand> getSqlInfoData(){
         return Collections.unmodifiableSet(executedSqlCommandData);
     }
@@ -150,6 +152,10 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
+    public Set<CassandraTableSchema> getCassandraTableTypeData(){
+        return Collections.unmodifiableSet(cassandraTableSchemaData);
+    }
+
     public void addSqlInfo(ExecutedSqlCommand info){
         executedSqlCommandData.add(info);
     }
@@ -180,6 +186,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         mongoCollectionSchemaData.add(mongoCollectionSchema);
+    }
+
+    public void addCassandraTableType(CassandraTableSchema cassandraTableSchema){
+        cassandraTableSchemaData.add(cassandraTableSchema);
     }
 
     public Set<String> getParsedDtoNamesView(){

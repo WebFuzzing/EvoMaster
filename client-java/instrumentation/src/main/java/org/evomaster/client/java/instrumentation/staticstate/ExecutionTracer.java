@@ -478,6 +478,12 @@ public class ExecutionTracer {
         }
     }
 
+    public static void addCassandraTableType(CassandraTableSchema cassandraTableSchema){
+        if (!executingInitCassandra) {
+            getCurrentAdditionalInfo().addCassandraTableType(cassandraTableSchema);
+        }
+    }
+
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);

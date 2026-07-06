@@ -54,6 +54,7 @@ public class ReplacementList {
                     new LocalTimeClassReplacement(),
                     new LongClassReplacement(),
                     new MapClassReplacement(),
+                    new MappingCassandraEntityInformationClassReplacement(),
                     new MatcherClassReplacement(),
                     new MessageBodyReaderClassReplacement(),
                     new MethodClassReplacement(),
