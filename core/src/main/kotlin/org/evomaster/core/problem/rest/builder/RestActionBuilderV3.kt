@@ -1814,10 +1814,10 @@ object RestActionBuilderV3 {
         val n = examples.map{it.second} // names
 
         val exampleGene = if(examples.isNotEmpty()){
-            ChoiceGene(UserExamplesGene.EXAMPLES_NAME, v, valueNames = n)
+            ChoiceGene(RestGeneSpecialNames.SCHEMA_EXAMPLES.name, v, valueNames = n)
         } else null
         val defaultGene = if(defaultValue != null){
-            duplicateObjectWithExampleFields("default", mainGene, defaultValue)
+            duplicateObjectWithExampleFields(RestGeneSpecialNames.DEFAULT.name, mainGene, defaultValue)
         } else null
 
         /*
@@ -1838,6 +1838,7 @@ object RestActionBuilderV3 {
             if(exampleValue.has(f.name)){
                 val e = exampleValue.get(f.name)
                 if(e.isTextual){
+                    //WARN: if modify this might need update feedObjectExamplesToDataPool
                     EnumGene<String>(f.name, listOf(asRawString(e.textValue())), 0, false)
                 } else if(e.isObject) {
                     val nested = f.getWrappedGene(ObjectGene::class.java)
@@ -1997,12 +1998,12 @@ object RestActionBuilderV3 {
         val defaultGene = if(defaultValue != null){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                    -> EnumGene("default", listOf(defaultValue.toString()),0,true)
+                    -> EnumGene(RestGeneSpecialNames.DEFAULT.name, listOf(defaultValue.toString()),0,true)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                    -> EnumGene<String>("default", listOf(asRawString(defaultValue)),0,false)
+                    -> EnumGene<String>(RestGeneSpecialNames.DEFAULT.name, listOf(asRawString(defaultValue)),0,false)
 
                 //TODO Arrays
                 else -> {
@@ -2020,12 +2021,12 @@ object RestActionBuilderV3 {
         val exampleGene = if(examples.isNotEmpty()){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                    -> EnumGene(UserExamplesGene.EXAMPLES_NAME, v,0,true, n)
+                    -> EnumGene(RestGeneSpecialNames.SCHEMA_EXAMPLES.name, v,0,true, n)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                    -> EnumGene<String>(UserExamplesGene.EXAMPLES_NAME, v,0,false, n)
+                    -> EnumGene<String>(RestGeneSpecialNames.SCHEMA_EXAMPLES.name, v,0,false, n)
 
                 //TODO Arrays
                 else -> {
