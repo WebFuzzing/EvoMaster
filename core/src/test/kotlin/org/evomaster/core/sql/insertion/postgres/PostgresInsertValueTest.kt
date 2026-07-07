@@ -2,15 +2,13 @@ package org.evomaster.core.sql.insertion.postgres
 
 import com.google.gson.Gson
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.KGenericContainer
+import org.evomaster.core.PostgresContainerUtils
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.postgresql.util.PGobject
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
-import java.util.*
 
 class PostgresInsertValueTest {
 
@@ -19,32 +17,14 @@ class PostgresInsertValueTest {
         @JvmStatic
         protected lateinit var connection: Connection
 
-        private val POSTGRES_VERSION: String = "14"
-
-        private val postgres = KGenericContainer("postgres:$POSTGRES_VERSION")
-                .withExposedPorts(5432)
-                //https://www.postgresql.org/docs/current/auth-trust.html
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
-                .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
+        private val postgres = PostgresContainerUtils.newContainer()
 
         @BeforeAll
         @JvmStatic
         fun initClass() {
             postgres.start()
-            val host = postgres.containerIpAddress
-            val port = postgres.getMappedPort(5432)!!
-
-            val url = "jdbc:postgresql://$host:$port/postgres"
-
-            /*
-             * A call to getConnection()  when the postgres container is still not ready,
-             * signals a PSQLException with message "FATAL: the database system is starting up".
-             * The following issue describes how to avoid this by using a LogMessageWaitStrategy
-             * https://github.com/testcontainers/testcontainers-java/issues/317
-             */
-            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(5))
-
-            connection = DriverManager.getConnection(url, "postgres", "")
+            val jdbcUrl = PostgresContainerUtils.getJdbcUrl(postgres)
+            connection = DriverManager.getConnection(jdbcUrl, "postgres", "")
         }
 
         @AfterAll
