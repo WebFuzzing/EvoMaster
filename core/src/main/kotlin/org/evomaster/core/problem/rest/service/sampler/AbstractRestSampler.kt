@@ -7,6 +7,8 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.FieldInfo
+import org.evomaster.core.llm.service.DictionaryService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
@@ -35,6 +37,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -45,6 +48,7 @@ import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import kotlin.sequences.forEach
 
 
 abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
@@ -63,6 +67,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    @Inject
+    protected lateinit var dictionaryService: DictionaryService
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
@@ -139,6 +146,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initializeDerivedParamRules(problem.derivedParams)
         }
 
+        if(dictionaryService.isActive()){
+            updateDictionaryService(actionCluster)
+        }
+
         initSqlInfo(infoDto)
 
         initHostnameInfo(infoDto)
@@ -161,6 +172,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
 
     override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
 
@@ -432,6 +444,16 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             )
             )
         }
+    }
+
+
+    private fun updateDictionaryService(actionCluster: MutableMap<String, Action>) {
+        actionCluster.values
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<StringGene>()
+//            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
+            .map { FieldInfo(it.name, it.description) }
+            .let { dictionaryService.updatePoolFromDictionary(it.toList()) }
     }
 
 }
