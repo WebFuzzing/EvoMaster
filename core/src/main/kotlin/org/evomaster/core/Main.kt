@@ -614,6 +614,10 @@ class Main {
                     WebModule()
                 }
 
+                EMConfig.ProblemType.MCP -> {
+                    throw IllegalStateException("MCP server analysis is not yet supported")
+                }
+
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")
             }

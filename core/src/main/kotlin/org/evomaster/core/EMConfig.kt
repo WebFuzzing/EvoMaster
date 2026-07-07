@@ -711,6 +711,9 @@ class EMConfig {
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
+            if (problemType == ProblemType.MCP && base.isBlank()) {
+                throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
+            }
         }
 
         if (!blackBox && bbExperiments) {
@@ -1397,6 +1400,41 @@ class EMConfig {
             " file per type is generated.")
     var maxTestsPerTestSuite = 200
 
+    @Important(8.1)
+    @Cfg("Comma-separated list of response field names to skip when generating assertions." +
+            " This is useful when some fields have non-stable responses that can lead to test flakiness." +
+            " Note that EvoMaster has some systems to automatically handle flakiness." +
+            " This option is an extra layer of protection to force skipping some fields that EvoMaster is not" +
+            " currently able to automatically handle.")
+    var fieldsToSkipInAssertions = ""
+
+    @Important(9.0)
+    @ExistingPath(true,false)
+    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
+            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
+            " a given list of configurable suffixes." +
+            " Each Overlay will be applied to the target OpenAPI schema." +
+            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
+    var overlay = ""
+
+    @Important(9.1)
+    @Cfg("Comma ',' separated list of file name suffixes." +
+            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
+            " suffixes will be loaded and applied." +
+            " For example, '.json' could be used to match all JSON files." +
+            " If the folder contains also other types of files with same extension, you might need to define" +
+            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
+            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
+    var overlayFileSuffixes = ".json,.yaml,.yml"
+
+    @Important(9.2)
+    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
+            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
+            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
+            " This option can be used to override such behavior, and let the fuzzing go on without" +
+            " applying any overlay.")
+    var overlayLenient = false
+
 
     //-------- other options -------------
 
@@ -1446,7 +1484,8 @@ class EMConfig {
         REST(experimental = false),
         GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEBFRONTEND(experimental = true);
+        WEBFRONTEND(experimental = true),
+        MCP(experimental = true);
 
         override fun isExperimental() = experimental
     }
@@ -2053,6 +2092,7 @@ class EMConfig {
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
+
 
     @Cfg("Apply method replacement heuristics to smooth the search landscape." +
             " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
@@ -3166,6 +3206,9 @@ class EMConfig {
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
 
+    @Cfg("Feed the individual entries of object examples to the data pool.")
+    var useObjectExampleDataPool = true
+
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
@@ -3249,32 +3292,7 @@ class EMConfig {
             " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
-    @Experimental
-    @ExistingPath(true,false)
-    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
-            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
-            " a given list of configurable suffixes." +
-            " Each Overlay will be applied to the target OpenAPI schema." +
-            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
-    var overlay = ""
 
-    @Experimental
-    @Cfg("Comma ',' separated list of file name suffixes." +
-            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
-            " suffixes will be loaded and applied." +
-            " For example, '.json' could be used to match all JSON files." +
-            " If the folder contains also other types of files with same extension, you might need to define" +
-            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
-            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
-    var overlayFileSuffixes = ".json,.yaml,.yml"
-
-    @Experimental
-    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
-            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
-            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
-            " This option can be used to override such behavior, and let the fuzzing go on without" +
-            " applying any overlay.")
-    var overlayLenient = false
 
 
     @Min(0.0)
