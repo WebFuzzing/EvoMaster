@@ -151,13 +151,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initializeDerivedParamRules(problem.derivedParams)
         }
 
-        if(dictionaryService.isActive()){
-            updateDictionaryService(actionCluster)
-        }
-
-        if(config.useObjectExampleDataPool){
-            feedObjectExamplesToDataPool(actionCluster)
-        }
+        updateDataPoolBasedOnSchema(actionCluster)
 
         initSqlInfo(infoDto)
 
@@ -357,9 +351,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initSeededTests()
         }
 
-        if(config.useObjectExampleDataPool){
-            feedObjectExamplesToDataPool(actionCluster)
-        }
+        updateDataPoolBasedOnSchema(actionCluster)
+
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -462,11 +455,24 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
 
+    private fun updateDataPoolBasedOnSchema(actionCluster: MutableMap<String, Action>){
+
+        //pre-filled dictionary and LLM
+        if(dictionaryService.isActive()){
+            updateDictionaryService(actionCluster)
+        }
+
+        //fields inside object examples
+        if(config.useObjectExampleDataPool){
+            feedObjectExamplesToDataPool(actionCluster)
+        }
+    }
+
     private fun updateDictionaryService(actionCluster: MutableMap<String, Action>) {
         actionCluster.values
             .flatMap { it.seeAllGenes() }
             .filterIsInstance<StringGene>()
-//            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
+            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
             .map { FieldInfo(it.name, it.description) }
             .let { dictionaryService.updatePoolFromDictionary(it.toList()) }
     }
