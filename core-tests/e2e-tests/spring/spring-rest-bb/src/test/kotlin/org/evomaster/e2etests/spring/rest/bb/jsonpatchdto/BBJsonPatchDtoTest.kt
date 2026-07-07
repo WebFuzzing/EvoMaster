@@ -55,10 +55,6 @@ class BBJsonPatchDtoTest : SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/api/jsonpatchdto/resources/{id}", "patched")
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 404, "/api/jsonpatchdto/resources/{id}", "missing")
 
-            // assertHasAtLeastOne only checks each call exists somewhere in the solution, independently
-            // and in any order. Here we additionally require a single generated test that first creates the
-            // resource with a POST (201) and then manipulates it with a PATCH (200), which is what proves the
-            // "DTO used for POST followed by a PATCH without DTO" scenario requested for this feature.
             assertPostThenPatchInSameTest(solution)
         }
 

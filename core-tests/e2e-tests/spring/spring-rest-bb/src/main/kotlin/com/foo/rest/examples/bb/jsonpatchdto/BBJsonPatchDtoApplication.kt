@@ -45,7 +45,6 @@ open class BBJsonPatchDtoApplication {
     }
 
     @ApiResponses(value = [
-        ApiResponse(responseCode = "200", description = "Patched"),
         ApiResponse(responseCode = "400", description = "Invalid patch document"),
         ApiResponse(responseCode = "404", description = "Missing resource")
     ])
