@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.fitness.BlackBoxRestFitness
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
 import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.rest.service.mutator.RestStructureMutator
@@ -51,6 +52,13 @@ class BlackBoxRestModule(
             .asEagerSingleton()
 
         bind(object : TypeLiteral<AbstractRestFitness>() {})
+            .to(BlackBoxRestFitness::class.java)
+            .asEagerSingleton()
+
+        // Post-search oracle phases (e.g. HttpSemanticsService) inject the concrete
+        // RestFitness to evaluate synthetic individuals. In black-box mode there is no
+        // RemoteController, so route it to BlackBoxRestFitness to avoid using 'rc'.
+        bind(RestFitness::class.java)
             .to(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
 

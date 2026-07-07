@@ -1312,6 +1312,36 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeHttpSemantics(individual, actionResults, fv)
         }
 
+
+//         This oracle should only be considered for Black-Box testing.
+//         In White-Box testing, instrumentation may affect execution time,
+//         especially for CPU-bound APIs.
+        if(config.httpOracles && config.blackBox && config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_TIMEOUT)){
+            handleTimeout(individual, actionResults, fv)
+        }
+    }
+
+    /**
+     * A timeout is treated as a fault: the SUT should rather answer quickly (eg 202 with a
+     * Location header for long computations) instead of hanging until the client gives up.
+     */
+    private fun handleTimeout(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val actions = individual.seeMainExecutableActions()
+
+        for (index in actions.indices) {
+            val a = actions[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            if (!r.getTimedout()) continue
+
+            val category = ExperimentalFaultCategory.HTTP_TIMEOUT
+            val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
+            fv.updateTarget(scenarioId, 1.0, index)
+            r.addFault(DetectedFault(category, a.getName(), null))
+        }
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {

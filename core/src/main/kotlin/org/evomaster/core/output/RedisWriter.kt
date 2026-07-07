@@ -44,43 +44,22 @@ object RedisWriter {
         val insertionVarResult = "${insertionVar}_result"
         val previousVar = insertionVars.joinToString(", ") { it.first }
 
-        redisDbInitialization
+        val dslCalls = redisDbInitialization
             .filter { !skipFailure || it.redisResult.getInsertExecutionResult() }
-            .forEachIndexed { index, evaluated ->
+            .flatMap { evaluated -> toDslCalls(evaluated.redisAction, format) }
 
-                val action = evaluated.redisAction
-
-                val dslCall: String = when (action) {
-                    is RedisSetAction -> {
-                        val key = "\"${escape(action.key, format)}\""
-                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
-                        ".set($key, $value)"
-                    }
-                    is RedisSetFromPatternAction -> {
-                        val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
-                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
-                        ".set($key, $value)"
-                    }
-                    is RedisHsetAction -> {
-                        val key = "\"${escape(action.key, format)}\""
-                        val field = escape(action.field, format)
-                        val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
-                        ".hset($key, \"$field\", $value)"
-                    }
-                }
-
-                lines.add(
-                    when {
-                        index == 0 && format.isJava() ->
-                            "List<RedisInsertionDto> $insertionVar = redis($previousVar)"
-                        index == 0 && format.isKotlin() ->
-                            "val $insertionVar = redis($previousVar)"
-                        else -> ".and()"
-                    } + dslCall
-                )
-
-                if (index == 0) lines.indent()
-            }
+        dslCalls.forEachIndexed { index, dslCall ->
+            lines.add(
+                when {
+                    index == 0 && format.isJava() ->
+                        "List<RedisInsertionDto> $insertionVar = redis($previousVar)"
+                    index == 0 && format.isKotlin() ->
+                        "val $insertionVar = redis($previousVar)"
+                    else -> ".and()"
+                } + dslCall
+            )
+            if (index == 0) lines.indent()
+        }
 
         lines.add(".dtos()")
         lines.appendSemicolon()
@@ -98,6 +77,38 @@ object RedisWriter {
         lines.appendSemicolon()
 
         insertionVars.add(insertionVar to insertionVarResult)
+    }
+
+    private fun toDslCalls(action: RedisDbAction, format: OutputFormat): List<String> {
+        return when (action) {
+            is RedisSetAction -> {
+                val key = "\"${escape(action.key, format)}\""
+                val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                listOf(".set($key, $value)")
+            }
+            is RedisSetFromPatternAction -> {
+                val key = action.keyGene.getValueAsPrintableString(targetFormat = format)
+                val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                listOf(".set($key, $value)")
+            }
+            is RedisHsetAction -> {
+                val key = "\"${escape(action.key, format)}\""
+                val field = escape(action.field, format)
+                val value = action.valueGene.getValueAsPrintableString(targetFormat = format)
+                listOf(".hset($key, \"$field\", $value)")
+            }
+            is RedisSaddAction -> {
+                val key = "\"${escape(action.key, format)}\""
+                val member = action.memberGene.getValueAsPrintableString(targetFormat = format)
+                listOf(".sadd($key, $member)")
+            }
+            is RedisSaddFromSinterAction -> {
+                val member = action.memberGene.getValueAsPrintableString(targetFormat = format)
+                action.keys.map { key ->
+                    ".sadd(\"${escape(key, format)}\", $member)"
+                }
+            }
+        }
     }
 
     private fun escape(value: String, format: OutputFormat): String {
