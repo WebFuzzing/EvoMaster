@@ -7,6 +7,8 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.FieldInfo
+import org.evomaster.core.llm.service.DictionaryService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
@@ -47,6 +49,7 @@ import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import kotlin.sequences.forEach
 
 
 
@@ -66,6 +69,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    @Inject
+    protected lateinit var dictionaryService: DictionaryService
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
@@ -145,9 +151,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initializeDerivedParamRules(problem.derivedParams)
         }
 
-        if(config.useObjectExampleDataPool){
-            feedObjectExamplesToDataPool(actionCluster)
-        }
+        updateDataPoolBasedOnSchema(actionCluster)
 
         initSqlInfo(infoDto)
 
@@ -171,6 +175,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
 
 
 
@@ -346,9 +351,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initSeededTests()
         }
 
-        if(config.useObjectExampleDataPool){
-            feedObjectExamplesToDataPool(actionCluster)
-        }
+        updateDataPoolBasedOnSchema(actionCluster)
+
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -448,6 +452,29 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             )
             )
         }
+    }
+
+
+    private fun updateDataPoolBasedOnSchema(actionCluster: MutableMap<String, Action>){
+
+        //pre-filled dictionary and LLM
+        if(dictionaryService.isActive()){
+            updateDictionaryService(actionCluster)
+        }
+
+        //fields inside object examples
+        if(config.useObjectExampleDataPool){
+            feedObjectExamplesToDataPool(actionCluster)
+        }
+    }
+
+    private fun updateDictionaryService(actionCluster: MutableMap<String, Action>) {
+        actionCluster.values
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<StringGene>()
+            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
+            .map { FieldInfo(it.name, it.description) }
+            .let { dictionaryService.updatePoolFromDictionary(it.toList()) }
     }
 
     private fun feedObjectExamplesToDataPool(actionCluster: Map<String, Action>) {
