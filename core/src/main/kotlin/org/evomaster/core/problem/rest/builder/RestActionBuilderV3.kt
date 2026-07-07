@@ -784,7 +784,7 @@ object RestActionBuilderV3 {
             gene = OptionalGene(name, gene)
         }
 
-        val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
+        val contentTypeGene = EnumGene<String>(RestGeneSpecialNames.CONTENT_TYPE.name, bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
             .apply { this.description = description }
 
