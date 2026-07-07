@@ -711,6 +711,9 @@ class EMConfig {
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
+            if (problemType == ProblemType.MCP && base.isBlank()) {
+                throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
+            }
         }
 
         if (!blackBox && bbExperiments) {
@@ -1446,7 +1449,8 @@ class EMConfig {
         REST(experimental = false),
         GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEBFRONTEND(experimental = true);
+        WEBFRONTEND(experimental = true),
+        MCP(experimental = true);
 
         override fun isExperimental() = experimental
     }
