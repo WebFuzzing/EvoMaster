@@ -248,6 +248,7 @@ There are 3 types of options:
 |`useExtraSqlDbConstraintsProbability`| __Double__. Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic. An example is javax/jakarta annotation constraints defined on JPA entities. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
 |`useMethodReplacement`| __Boolean__. Apply method replacement heuristics to smooth the search landscape. Note that the method replacement instrumentations would still be applied, it is just that their testing targets will be ignored in the fitness function if this option is set to false. *Default value*: `true`.|
 |`useNonIntegerReplacement`| __Boolean__. Apply non-integer numeric comparison heuristics to smooth the search landscape. *Default value*: `true`.|
+|`useObjectExampleDataPool`| __Boolean__. Feed the individual entries of object examples to the data pool. *Default value*: `true`.|
 |`useResponseDataPool`| __Boolean__. Enable the collection of response data, to feed new individuals based on field names matching. *Default value*: `true`.|
 |`useTimeInFeedbackSampling`| __Boolean__. Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones). *Default value*: `true`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
