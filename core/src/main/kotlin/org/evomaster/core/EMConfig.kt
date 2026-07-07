@@ -3191,6 +3191,9 @@ class EMConfig {
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
 
+    @Cfg("Feed the individual entries of object examples to the data pool.")
+    var useObjectExampleDataPool = true
+
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
