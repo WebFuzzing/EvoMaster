@@ -759,9 +759,13 @@ object HttpSemanticsOracle {
         // the two GETs must use the same auth for a meaningful state comparison
         if (before.auth.isDifferentFrom(after.auth)) return false
 
-        // merge-patch bodies are JSON (incl. application/merge-patch+json)
+        // merge-patch bodies must be application/merge-patch+json (RFC 7386) or application/json.
         val bodyParam = patch.parameters.find { it is BodyParam } as BodyParam?
-        if (bodyParam != null && !bodyParam.isJson()) return false
+        if (bodyParam != null) {
+            // can contain parameter like "application/json; charset=utf-8"
+            val contentType = bodyParam.contentType().substringBefore(";").trim().lowercase()
+            if (contentType != "application/json" && contentType != "application/merge-patch+json") return false
+        }
 
         val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult? ?: return false
         val resPatch  = actionResults.find { it.sourceLocalId == patch.getLocalId() } as RestCallResult? ?: return false
@@ -771,6 +775,10 @@ object HttpSemanticsOracle {
         if (!StatusGroup.G_2xx.isInGroup(resPatch.getStatusCode())) return false
         if (!StatusGroup.G_2xx.isInGroup(resAfter.getStatusCode())) return false
 
+        // If there are flaky fields, eg, timestamps, there could be a different value between the 2 GETs,
+        // regardless of the PATCH. However, we are only looking at the fields of PATCH. it would be weird
+        // to set a value with a PATCH that the API can change on a whim... not impossible, but most likely
+        // very unlikely. so, in theory field flakiness should not be a problem here
         val untouched = extractModifiedFieldNames(patch) - extractSentFieldNames(patch)
         if (untouched.isEmpty()) return false
 
