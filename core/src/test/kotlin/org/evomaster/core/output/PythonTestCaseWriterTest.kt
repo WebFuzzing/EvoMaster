@@ -6,6 +6,7 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.search.EvaluatedIndividual
@@ -96,7 +97,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
             indent()
             add(".get(self.baseUrlOfSut + \"/\",")
             indent()
-            add("headers=headers, verify=False)")
+            add("headers=headers, timeout=${TestSuiteWriter.httpTimeoutVarSeconds}, verify=False)")
             deindent()
             deindent()
             deindent()
@@ -167,7 +168,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=${TestSuiteWriter.httpTimeoutVarSeconds}, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
@@ -241,7 +242,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=${TestSuiteWriter.httpTimeoutVarSeconds}, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
@@ -300,7 +301,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
                 headers['Accept'] = "*/*"
                 res_0 = requests \
                         .get(self.baseUrlOfSut + "/foo",
-                            headers=headers, verify=False)
+                            headers=headers, timeout=${TestSuiteWriter.httpTimeoutVarSeconds}, verify=False)
                 
                 assert res_0.status_code == 200
                 assert "application/json" in res_0.headers["content-type"]
