@@ -346,6 +346,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initSeededTests()
         }
 
+        if(config.useObjectExampleDataPool){
+            feedObjectExamplesToDataPool(actionCluster)
+        }
+
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
