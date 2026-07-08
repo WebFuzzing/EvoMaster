@@ -28,13 +28,9 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
     )
 
     /**
-     * These are the Java regex syntax characters, all of these can be escaped to be treated as literals.
+     * None of these can be escaped to be treated as literals. Some may be part of legal escape sequences.
      */
-    private val allowedSyntaxEscapes = setOf(
-        '^', '$', '\\', '.', '*', '+', '?',
-        '(', ')', '[', ']', '{', '}', '|',
-        '/', '-', ',' ,':', '<', '>', '=', '!'
-    )
+    private val notIdentityEscapes = ('a'..'z').toList() + ('A'..'Z').toList() + ('0'..'9').toList()
 
     /**
      * Capture groups in order of appearance (1-based index -> list index 0).
@@ -63,24 +59,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
      * Initialized from [externalRegexFlags].
      */
     private var currentFlags = externalRegexFlags
-
-    /**
-     * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
-     * into a [ParsedFlagExpression] that can be applied to the current flags.
-     */
-    private fun parseFlagToken(tokenText: String): ParsedFlagExpression {
-        // strip "(?" from start and ":" (or ")") from end
-        val inner = tokenText.drop(2).dropLast(1)
-
-        val (enableStr, disableStr) = if ('-' in inner)
-            inner.split('-', limit = 2).let { it[0] to it[1] }
-        else Pair(inner, "")
-
-        return ParsedFlagExpression(
-            RegexFlags.fromString(enableStr),
-            RegexFlags.fromString(disableStr)
-        )
-    }
 
     /**
      * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
@@ -181,7 +159,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 val previous = currentFlags
 
                 val merged = currentFlags.merge(
-                    parseFlagToken(term.FLAG_SCOPE_OPEN().text)
+                    ParsedFlagExpression.fromFlagToken(term.FLAG_SCOPE_OPEN().text)
                 )
 
                 merged.validate()
@@ -367,7 +345,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
             val previous = currentFlags
 
             val merged = currentFlags.merge(
-                parseFlagToken(ctx.FLAG_GROUP_OPEN().text)
+                ParsedFlagExpression.fromFlagToken(ctx.FLAG_GROUP_OPEN().text)
             )
 
             merged.validate()
@@ -546,7 +524,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
             } else {
                 // This case handles the escaped syntax characters, like "\." and "\+", etc. cases
                 // where '.' and '+', etc. should be treated as regular chars
-                assert(startText[0] == '\\' && startText[1] in allowedSyntaxEscapes)
+                assert(startText[0] == '\\' && startText[1] !in notIdentityEscapes)
                 start = startText[1]
                 end = start
             }
@@ -722,7 +700,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                         currentFlags
                 )
             }
-            in allowedSyntaxEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
+            !in notIdentityEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
             else -> CharacterClassEscapeRxGene(txt.substring(1), currentFlags)
         })
     }
