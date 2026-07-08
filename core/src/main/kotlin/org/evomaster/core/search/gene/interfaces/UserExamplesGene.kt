@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.interfaces
 
+import org.evomaster.core.problem.rest.builder.RestGeneSpecialNames
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -12,18 +13,11 @@ import org.evomaster.core.search.gene.Gene
  */
 interface UserExamplesGene {
 
-    companion object {
-        /**
-         * Name given to enum genes representing data examples coming from OpenAPI schema
-         */
-        const val EXAMPLES_NAME = "SCHEMA_EXAMPLES"
-    }
-
     /**
      * Check if this gene is used to store examples provided by the user
      */
     fun isUsedForExamples() : Boolean{
-        return (this as Gene).name == EXAMPLES_NAME
+        return (this as Gene).name == RestGeneSpecialNames.SCHEMA_EXAMPLES.name
     }
 
     /**
