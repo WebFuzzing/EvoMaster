@@ -22,8 +22,7 @@ class RedisDbActionTransformerTest {
 
     @Test
     fun testTransformHsetAction() {
-        val action =
-            RedisHsetAction(key = "user:1", field = "name", valueGene = StringGene("value", "Alice"))
+        val action = RedisHsetAction(key = "user:1", field = "name", valueGene = StringGene("value", "Alice"))
         val dto = RedisDbActionTransformer.transform(listOf(action))
 
         assertEquals(1, dto.insertions.size)
@@ -49,6 +48,33 @@ class RedisDbActionTransformerTest {
             assertEquals("user:123", key)
             assertEquals("data", value)
         }
+    }
+
+    @Test
+    fun testTransformSaddAction() {
+        val action = RedisSaddAction(key = "myset", memberGene = StringGene("member", "item1"))
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(1, dto.insertions.size)
+        with(dto.insertions[0]) {
+            assertEquals("SADD", command)
+            assertEquals("myset", key)
+            assertEquals("item1", value)
+        }
+    }
+
+    @Test
+    fun testTransformSaddFromSinterExpandsToOneInsertionPerKey() {
+        val action = RedisSaddFromSinterAction(
+            keys = listOf("set1", "set2", "set3"),
+            memberGene = StringGene("member", "shared")
+        )
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(3, dto.insertions.size)
+        dto.insertions.forEach { assertEquals("SADD", it.command) }
+        dto.insertions.forEach { assertEquals("shared", it.value) }
+        assertEquals(setOf("set1", "set2", "set3"), dto.insertions.map { it.key }.toSet())
     }
 
     @Test

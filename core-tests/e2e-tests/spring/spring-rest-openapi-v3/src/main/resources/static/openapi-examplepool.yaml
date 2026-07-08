@@ -1,0 +1,45 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+paths:
+  /api/examplepool:
+    post:
+      tags:
+        - example-pool-application
+      operationId: post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ExamplePoolDto'
+            examples:
+                 first:
+                    value:
+                      x: foo
+                      y: '123'
+                 second:
+                    value:
+                      x: '456'
+                      y: bar
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+components:
+  schemas:
+    ExamplePoolDto:
+      type: object
+      properties:
+        x:
+          type: string
+        y:
+          type: string

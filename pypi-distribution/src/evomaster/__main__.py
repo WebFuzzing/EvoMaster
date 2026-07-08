@@ -8,7 +8,7 @@ import zipfile
 import requests
 from tqdm import tqdm
 
-evomaster_version = "6.0.1"
+evomaster_version = "6.1.2"
 jdk_version = 17
 
 def download_file(url, target_path) -> None:

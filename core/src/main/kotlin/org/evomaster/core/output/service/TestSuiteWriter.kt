@@ -58,6 +58,14 @@ class TestSuiteWriter {
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
 
+        /**
+         * Names of the variables, generated into each test suite, holding the per-HTTP-call
+         * client timeout. Same source as the fuzzing 'tcpTimeoutMs' option. Two unit-specific
+         * variants, as different output formats need different units.
+         */
+        const val httpTimeoutVarMs = "EM_HTTP_TIMEOUT_MS"     // milliseconds (JS/superagent)
+        const val httpTimeoutVarSeconds = "EM_HTTP_TIMEOUT_S" // seconds (Python/requests)
+
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
         const val baseUrlOfSut = "baseUrlOfSut"
@@ -465,6 +473,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
+                addImport("io.restassured.config.HttpClientConfig", lines)
             }
 
             if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
@@ -533,6 +542,8 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
+            // HTTP client timeout (ms)
+            lines.add("const $httpTimeoutVarMs = ${config.tcpTimeoutMs};")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -587,6 +598,8 @@ class TestSuiteWriter {
                 }
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
+            // HTTP client timeout (seconds)
+            lines.add("$httpTimeoutVarSeconds = ${config.tcpTimeoutMs / 1000.0}")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
@@ -840,9 +853,20 @@ class TestSuiteWriter {
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
                 }
 
-                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                if (format.isJavaOrKotlin()) {
+                    // global HTTP client config. The socket timeout MUST match the one used during
+                    // fuzzing (tcpTimeoutMs), so that timeout faults are reproduced consistently
                     lines.add("RestAssured.config = RestAssured.config()")
                     lines.indented {
+                        if (config.enableBasicAssertions) {
+                            lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                            lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        }
+                        lines.add(".httpClient(HttpClientConfig.httpClientConfig()")
+                        lines.indented {
+                            lines.add(".setParam(\"http.socket.timeout\", ${config.tcpTimeoutMs})")
+                            lines.add(".setParam(\"http.connection.timeout\", ${config.tcpTimeoutMs}))")
+                        }
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
                         lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
