@@ -31,7 +31,8 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     HTTP_INVALID_ALLOW(919, "Invalid allow", "invalidAllow",
         "TODO"),
-    HTTP_TIMEOUT(921, "Timeout", "timeout",
+    HTTP_TIMEOUT(921, "Timeout", "timeout", "TODO"),
+    HTTP_INVALID_MERGE_PATCH(922, "JSON Merge Patch changes untouched fields", "invalidMergePatch",
         "TODO"),
 
     HTTP_STATUS_NO_NON_STANDARD_CODES(950, "HTTP/REST-Design Violation: no-non-standard-codes", "invalidStatusCode", "TODO"),
