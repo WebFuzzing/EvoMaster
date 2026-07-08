@@ -1376,6 +1376,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
             handleInvalidAllow(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+            handleInvalidMergePatch(individual, actionResults, fv)
+        }
     }
 
     /**
@@ -1516,6 +1520,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
         ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleInvalidMergePatch(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasInvalidMergePatch(individual, actionResults)) return
+
+        val patch = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PATCH }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, patch.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == patch.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, patch.getName(), null))
     }
 
     private fun handleMisleadingCreatePut(
