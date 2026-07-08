@@ -1,6 +1,7 @@
 package com.foo.spring.rest.postgres
 
 import org.evomaster.client.java.controller.EmbeddedSutController
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType

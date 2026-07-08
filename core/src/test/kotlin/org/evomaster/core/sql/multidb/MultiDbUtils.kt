@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.sql.DbCleaner
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
-import org.evomaster.core.PostgresContainerUtils
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*

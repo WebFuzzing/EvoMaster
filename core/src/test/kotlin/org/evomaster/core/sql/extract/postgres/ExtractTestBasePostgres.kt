@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.PostgresContainerUtils
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach

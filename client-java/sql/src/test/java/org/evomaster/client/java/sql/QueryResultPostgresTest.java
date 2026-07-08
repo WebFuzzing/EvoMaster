@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

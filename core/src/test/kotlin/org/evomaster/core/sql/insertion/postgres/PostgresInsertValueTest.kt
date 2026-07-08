@@ -2,7 +2,7 @@ package org.evomaster.core.sql.insertion.postgres
 
 import com.google.gson.Gson
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.PostgresContainerUtils
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.postgresql.util.PGobject

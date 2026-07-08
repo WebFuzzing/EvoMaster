@@ -2,7 +2,7 @@ package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.sql.DbCleaner;
-import org.evomaster.client.java.sql.PostgresContainerUtils;
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
