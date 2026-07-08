@@ -168,7 +168,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val fileName = storeToTmpFile(smtLib)
 
         val z3Start = System.currentTimeMillis()
-        val z3Timeout = if (::config.isInitialized) config.sqlZ3TimeoutMs.toLong() else 0L
+        val z3Timeout = if (::config.isInitialized) config.sqlZ3TimeoutMs.toLong()
+            else EMConfig.DEFAULT_SQL_Z3_TIMEOUT_MS.toLong()
         val z3Result = try {
             executor.solveFromFile(fileName, z3Timeout)
         } finally {

@@ -59,6 +59,12 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
+        /**
+         * Default soft timeout, in milliseconds, for each Z3 solver invocation
+         * when generating SQL data. See [sqlZ3TimeoutMs].
+         */
+        const val DEFAULT_SQL_Z3_TIMEOUT_MS = 5000
+
         private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
@@ -1980,7 +1986,7 @@ class EMConfig {
             "A value of 0 disables the timeout. Only meaningful when generateSqlDataWithZ3=true.")
     @DependsOnTrueFor("generateSqlDataWithZ3")
     @Min(0.0)
-    var sqlZ3TimeoutMs = 5000
+    var sqlZ3TimeoutMs = DEFAULT_SQL_Z3_TIMEOUT_MS
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
