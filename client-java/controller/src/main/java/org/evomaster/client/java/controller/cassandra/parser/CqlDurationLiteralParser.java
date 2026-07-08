@@ -1,4 +1,6 @@
-package org.evomaster.client.java.controller.cassandra;
+package org.evomaster.client.java.controller.cassandra.parser;
+
+import org.evomaster.client.java.controller.cassandra.model.CqlDurationLiteral;
 
 import java.time.Duration;
 import java.time.Period;
@@ -6,39 +8,50 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Parses a Cassandra duration string literal (as produced by CqlParserUtils) into
- * its three components: months, days, and nanoseconds.
+ * Parses a Cassandra duration string literal into a {@link CqlDurationLiteral}.
  *
  * Supports two formats:
  *   - ISO 8601:          P1Y2M3DT4H5M6S
  *   - Standard Cassandra: 1y2mo3d4h5m6s  (units may appear in any order)
  */
-public class CqlDurationLiteral {
+public class CqlDurationLiteralParser {
 
-    public final int  months;
-    public final int  days;
-    public final long nanos;
+    private CqlDurationLiteralParser() {}
 
-    private CqlDurationLiteral(int months, int days, long nanos) {
-        this.months = months;
-        this.days   = days;
-        this.nanos  = nanos;
-    }
+    /**
+     * Matches an optional digit sequence followed by a unit token. Units are ordered
+     * longest-first ({@code mo, ms, us, µs, ns, y, d, h, m, s}) to avoid {@code m} consuming
+     * {@code mo}, or {@code ms} consuming {@code m}.
+     */
+    private static final Pattern TOKEN =
+            Pattern.compile("(\\d+)(mo|ms|µs|us|ns|y|d|h|m|s)", Pattern.CASE_INSENSITIVE);
 
-    public static CqlDurationLiteral parse(String text) {
-        if (text == null || text.isEmpty()) {
+    /**
+     * Parses a CQL duration literal into a {@link CqlDurationLiteral}, auto-detecting the
+     * format: strings starting with {@code P}/{@code p} are parsed as ISO 8601 (e.g.
+     * {@code P1Y2M3DT4H5M6S}), everything else as the standard Cassandra format (e.g.
+     * {@code 1y2mo3d4h5m6s}).
+     *
+     * @param stringDuration the duration literal to parse; must not be {@code null} or empty
+     * @return the parsed duration, decomposed into months, days and nanoseconds
+     * @throws IllegalArgumentException if {@code stringDuration} is {@code null} or empty
+     */
+    public static CqlDurationLiteral parse(String stringDuration) {
+        if (stringDuration == null || stringDuration.isEmpty()) {
             throw new IllegalArgumentException("Empty duration literal");
         }
-        String t = text.trim();
+
+        String t = stringDuration.trim();
         if (t.startsWith("P") || t.startsWith("p")) {
             return parseIso(t);
         }
+
         return parseCassandra(t);
     }
 
-    private static CqlDurationLiteral parseIso(String text) {
+    private static CqlDurationLiteral parseIso(String isoDuration) {
         // Split on T (or t) to separate date and time parts
-        String upper = text.toUpperCase();
+        String upper = isoDuration.toUpperCase();
         int tIndex = upper.indexOf('T');
 
         int months = 0;
@@ -66,12 +79,6 @@ public class CqlDurationLiteral {
         }
         return new CqlDurationLiteral(months, days, nanos);
     }
-
-    // Matches: optional digits followed by a unit token.
-    // Units (longest-first to avoid 'm' consuming 'mo' or 'ms' consuming 'm'):
-    //   mo, ms, us, µs, ns, y, d, h, m, s
-    private static final Pattern TOKEN =
-            Pattern.compile("(\\d+)(mo|ms|µs|us|ns|y|d|h|m|s)", Pattern.CASE_INSENSITIVE);
 
     private static CqlDurationLiteral parseCassandra(String text) {
         int  months = 0;

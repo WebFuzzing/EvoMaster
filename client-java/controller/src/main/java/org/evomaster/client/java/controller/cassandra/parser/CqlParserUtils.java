@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Utility methods to parse CQL (Cassandra Query Language) commands with the ANTLR-generated
+ * {@link CqlParser}, and to extract the information needed for heuristics computation (e.g.
+ * the WHERE-clause condition tree) from the resulting parse tree.
+ */
 public class CqlParserUtils {
 
     private CqlParserUtils() {}
