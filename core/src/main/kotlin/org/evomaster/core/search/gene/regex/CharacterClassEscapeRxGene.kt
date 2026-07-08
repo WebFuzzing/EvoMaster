@@ -21,6 +21,23 @@ private const val firstASCIIChar = 0
 private const val lastASCIIChar = 0x7f
 private val unicodeCharClassModePredefinedEscapes = setOf('w', 'W', 'd', 'D', 's', 'S')
 private val posixEscapePrefix = setOf('p', 'P')
+private const val firstLowerCaseChar = 'a'
+private const val lastLowerCaseChar = 'z'
+private const val firstUpperCaseChar = 'A'
+private const val lastUpperCaseChar = 'Z'
+
+private const val WORD = 'w'
+private const val NON_WORD = 'W'
+private const val DIGIT = 'd'
+private const val NON_DIGIT = 'D'
+private const val SPACE = 's'
+private const val NON_SPACE = 'S'
+private const val VERTICAL_SPACE = 'v'
+private const val NON_VERTICAL_SPACE = 'V'
+private const val HORIZONTAL_SPACE = 'h'
+private const val NON_HORIZONTAL_SPACE = 'H'
+private const val POSIX_LOWER_PREFIX = 'p'
+private const val POSIX_UPPER_PREFIX = 'P'
 
 /*
 \w	Find a word character
@@ -48,7 +65,7 @@ class CharacterClassEscapeRxGene(
         }
 
         private val digitSet = listOf(CharacterRange('0', '9'))
-        private val asciiLetterSet = listOf(CharacterRange('a', 'z'), CharacterRange('A', 'Z'))
+        private val asciiLetterSet = listOf(CharacterRange(firstLowerCaseChar, lastLowerCaseChar), CharacterRange(firstUpperCaseChar, lastUpperCaseChar))
         private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
         private val spaceSet = stringToListOfCharacterRanges(" \t\r\n\u000C\u000b") // u000b, u000c being line
         // tabulation (VT) & form feed (FF, \f) respectively
@@ -70,8 +87,8 @@ class CharacterClassEscapeRxGene(
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
         private val posixAsciiMultiCharRange: Map<String, MultiCharacterRange> = mapOf(
-            "Lower"  to listOf(CharacterRange('a', 'z')),
-            "Upper"  to listOf(CharacterRange('A', 'Z')),
+            "Lower"  to listOf(CharacterRange(firstLowerCaseChar, lastLowerCaseChar)),
+            "Upper"  to listOf(CharacterRange(firstUpperCaseChar, lastUpperCaseChar)),
             "ASCII"  to listOf(CharacterRange(firstASCIIChar, lastASCIIChar)),
             "Alpha"  to asciiLetterSet,
             "Digit"  to digitSet,
@@ -120,8 +137,8 @@ class CharacterClassEscapeRxGene(
             // Annex C: Compatibility Properties of Unicode Regular Expression, see:
             // https://www.unicode.org/reports/tr18/#Compatibility_Properties
             val cacheLabel = when (type[0]) {
-                'd', 'D', 's', 'S', 'w', 'W' -> type.lowercase()
-                'p', 'P' -> type.substring(2, type.length - 1)
+                DIGIT, NON_DIGIT, SPACE, NON_SPACE, WORD, NON_WORD -> type.lowercase()
+                POSIX_LOWER_PREFIX, POSIX_UPPER_PREFIX -> type.substring(2, type.length - 1)
                 else -> //this should never happen due to check in init
                     throw IllegalStateException("Type '\\$type' not supported yet")
             }
@@ -129,17 +146,17 @@ class CharacterClassEscapeRxGene(
         } else {
             // regular predefined character classes
             when(type[0]){
-                'w' -> wordMultiCharRange
-                'W' -> nonWordMultiCharRange
-                'd' -> digitMultiCharRange
-                'D' -> nonDigitMultiCharRange
-                's' -> spaceMultiCharRange
-                'S' -> nonSpaceMultiCharRange
-                'v' -> verticalSpaceMultiCharRange
-                'V' -> nonVerticalSpaceMultiCharRange
-                'h' -> horizontalSpaceMultiCharRange
-                'H' -> nonHorizontalSpaceMultiCharRange
-                'p', 'P' -> {
+                WORD -> wordMultiCharRange
+                NON_WORD -> nonWordMultiCharRange
+                DIGIT -> digitMultiCharRange
+                NON_DIGIT -> nonDigitMultiCharRange
+                SPACE -> spaceMultiCharRange
+                NON_SPACE -> nonSpaceMultiCharRange
+                VERTICAL_SPACE -> verticalSpaceMultiCharRange
+                NON_VERTICAL_SPACE -> nonVerticalSpaceMultiCharRange
+                HORIZONTAL_SPACE -> horizontalSpaceMultiCharRange
+                NON_HORIZONTAL_SPACE -> nonHorizontalSpaceMultiCharRange
+                POSIX_LOWER_PREFIX, POSIX_UPPER_PREFIX -> {
                     val pLabel = type.substring(2, type.length - 1)
                     val negated = type[0].isUpperCase()
                     val lookupKey = if (negated) "^$pLabel" else pLabel
