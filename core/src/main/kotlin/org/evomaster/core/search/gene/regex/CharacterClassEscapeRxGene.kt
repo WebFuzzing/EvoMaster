@@ -22,6 +22,8 @@ private const val firstLowerCaseChar = 'a'
 private const val lastLowerCaseChar = 'z'
 private const val firstUpperCaseChar = 'A'
 private const val lastUpperCaseChar = 'Z'
+private const val lastLowerHexChar = 'f'
+private const val lastUpperHexChar = 'F'
 
 private const val WORD = 'w'
 private const val NON_WORD = 'W'
@@ -38,6 +40,20 @@ private const val POSIX_UPPER_PREFIX = 'P'
 
 private val unicodeCharClassModePredefinedEscapes = setOf(WORD, NON_WORD, DIGIT, NON_DIGIT, SPACE, NON_SPACE)
 private val posixEscapePrefix = setOf(POSIX_LOWER_PREFIX, POSIX_UPPER_PREFIX)
+private val validClassEscapeChars = setOf(
+    WORD,
+    NON_WORD,
+    DIGIT,
+    NON_DIGIT,
+    SPACE,
+    NON_SPACE,
+    VERTICAL_SPACE,
+    NON_VERTICAL_SPACE,
+    HORIZONTAL_SPACE,
+    NON_HORIZONTAL_SPACE,
+    POSIX_LOWER_PREFIX,
+    POSIX_UPPER_PREFIX
+)
 
 enum class PosixClass(val pLabel: String) {
     LOWER("Lower"),
@@ -131,10 +147,9 @@ class CharacterClassEscapeRxGene(
                 PosixClass.PRINT  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
                 PosixClass.BLANK  to stringToListOfCharacterRanges(" \t"),
                 PosixClass.CNTRL  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
-                PosixClass.XDIGIT to listOf(
-                    CharacterRange('0', '9'),
-                    CharacterRange('a', 'f'),
-                    CharacterRange('A', 'F')
+                PosixClass.XDIGIT to digitSet + listOf(
+                    CharacterRange(firstLowerCaseChar, lastLowerHexChar),
+                    CharacterRange(firstUpperCaseChar, lastUpperHexChar)
                 ),
                 PosixClass.SPACE  to spaceSet,
             ).mapValues { (_, ranges) ->
@@ -155,8 +170,6 @@ class CharacterClassEscapeRxGene(
      * Only meaningful when flags.caseInsensitive is true.
      */
     var useUpperCase: Boolean = false
-
-    private var validClassEscapeChars = setOf('w', 'W', 'd', 'D', 's', 'S', 'v', 'V' , 'h', 'H', 'p', 'P')
 
     init {
         if (type[0] !in validClassEscapeChars) {
