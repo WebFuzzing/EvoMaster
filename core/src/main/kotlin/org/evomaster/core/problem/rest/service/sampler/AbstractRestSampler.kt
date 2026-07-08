@@ -7,6 +7,8 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.FieldInfo
+import org.evomaster.core.llm.service.DictionaryService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
@@ -18,6 +20,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.builder.RestGeneSpecialNames
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -35,16 +38,19 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.warning.GeneralWarning
 import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import kotlin.sequences.forEach
+
 
 
 abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
@@ -64,9 +70,15 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
 
+    @Inject
+    protected lateinit var dictionaryService: DictionaryService
+
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
     protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    protected lateinit var dataPool: DataPool
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -139,6 +151,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initializeDerivedParamRules(problem.derivedParams)
         }
 
+        updateDataPoolBasedOnSchema(actionCluster)
+
         initSqlInfo(infoDto)
 
         initHostnameInfo(infoDto)
@@ -161,6 +175,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
+
+
 
     override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
 
@@ -334,6 +351,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initSeededTests()
         }
 
+        updateDataPoolBasedOnSchema(actionCluster)
+
+
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
@@ -432,6 +452,43 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             )
             )
         }
+    }
+
+
+    private fun updateDataPoolBasedOnSchema(actionCluster: MutableMap<String, Action>){
+
+        //pre-filled dictionary and LLM
+        if(dictionaryService.isActive()){
+            updateDictionaryService(actionCluster)
+        }
+
+        //fields inside object examples
+        if(config.useObjectExampleDataPool){
+            feedObjectExamplesToDataPool(actionCluster)
+        }
+    }
+
+    private fun updateDictionaryService(actionCluster: MutableMap<String, Action>) {
+        actionCluster.values
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<StringGene>()
+            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
+            .map { FieldInfo(it.name, it.description) }
+            .let { dictionaryService.updatePoolFromDictionary(it.toList()) }
+    }
+
+    private fun feedObjectExamplesToDataPool(actionCluster: Map<String, Action>) {
+
+        actionCluster.values.asSequence()
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<EnumGene<String>>()
+            //Not the cleanest option, but adding a further tag on Gene would likely had been worse.
+            //This is based on what done in RestActionBuilderV3
+            .filter{!it.treatAsNotString && it.valueNames==null && it.values.size == 1}
+            .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
+            .forEach {
+                dataPool.addValue(it.name, it.getValueAsRawString())
+            }
     }
 
 }

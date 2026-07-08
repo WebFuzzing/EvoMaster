@@ -13,6 +13,8 @@ import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
@@ -59,6 +61,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         */
         return !(result as HttpWsCallResult).getTimedout()
     }
+
+    /**
+     * For a HTTP_TIMEOUT fault, the call is expected to fail, and the assertion is expressed
+     * directly on the call:
+     *  - JS:     await expect(...).rejects.toThrow()
+     *  - Python: with self.assertRaises(Exception): ...
+     */
+    protected fun hasTimeoutFault(res: ActionResult): Boolean {
+        return res is EnterpriseActionResult
+                && res.getFaults().any { it.category == ExperimentalFaultCategory.HTTP_TIMEOUT }
+    }
+
+    protected fun expectsRejection(res: ActionResult) = format.isJavaScript() && hasTimeoutFault(res)
+
+    protected fun expectsAssertRaises(res: ActionResult) = format.isPython() && hasTimeoutFault(res)
 
     fun startRequest(lines: Lines){
         when {
@@ -115,7 +132,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
+            // for a call expected to reject, wrap it in await expect(...).rejects.toThrow()
+            format.isJavaScript() -> lines.append(if (expectsRejection(res)) "await expect(superagent" else "await superagent")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
         }
@@ -202,12 +220,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     protected fun closeAcceptHeader(openedHeader: String): String {
         var result = openedHeader
-        when {
-            format.isPlaywright() -> result += ","
-            !config.outputFormat.isPython() -> result += ")"
+        if (!config.outputFormat.isPython()) {
+            result += ")"
         }
         if (format.isCsharp()){
             result = "$result;"
+        }
+        if (format.isPlaywright()) { result += ","
         }
         return result
     }
@@ -219,7 +238,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           but that is not the case for the other libraries used for example in JS and C#
          */
         return config.enableBasicAssertions &&
-                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.    JS_PLAYWRIGHT || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
+                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.JS_PLAYWRIGHT || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
@@ -278,7 +297,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 if (format.isPython()) {
                     lines.add("headers[\"${it.name}\"] = \"${escapedHeader}\"")
                 } else if (format.isPlaywright()) {
-                    lines.add("'${it.name}': '${escapedHeader}',")
+                        lines.add("'${it.name}': '${escapedHeader}',")
                 } else {
 
                     lines.add(".$set(\"${it.name}\", \"${escapedHeader}\")")
@@ -435,7 +454,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             timeStartName = handleExecutionTimePrologue(lines);
         }
 
-        if (res.invalidCall()) {
+        if (res.invalidCall() && !expectsRejection(res) && !expectsAssertRaises(res)) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
@@ -545,6 +564,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             dtoVar = writeDto(call, lines)
         }
 
+        val pyAssertRaises = expectsAssertRaises(res)
+        if (pyAssertRaises) {
+            lines.add("with self.assertRaises(Exception):")
+            lines.indent()
+        }
+
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
@@ -578,12 +603,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                     lines.add("})")
                 } else {
-                    //in SuperAgent, verb must be first
-                    handleVerbEndpoint(baseUrlOfSut, call, lines)
-                    lines.append(getAcceptHeader(call, res))
-                    handleHeaders(call, lines)
-                    handleBody(call, lines)
-                }
+                //in SuperAgent, verb must be first
+                handleVerbEndpoint(baseUrlOfSut, call, lines)
+                //client timeout, same source as fuzzing tcpTimeoutMs
+                lines.add(".timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}})")
+                lines.append(getAcceptHeader(call, res))
+                handleHeaders(call, lines)
+                handleBody(call, lines)
+            }
             }
 
             format.isCsharp() -> {
@@ -602,6 +629,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             handleResponseDirectlyInTheCall(call, res, lines)
         }
         handleLastLine(call, res, lines, responseVariableName)
+
+        if (pyAssertRaises) {
+            lines.deindent()
+        }
         return responseVariableName
     }
 
@@ -1076,6 +1107,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 so, here we make it passes as long as a status was present
              */
             lines.add(".ok(res => res.status)")
+            if (expectsRejection(res)) {
+                //close the await expect(...) and assert the call rejected
+                lines.append(").rejects.toThrow()")
+            }
         }
 
 
