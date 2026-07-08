@@ -36,12 +36,12 @@ class EnumGene<T : Comparable<T>>(
      * to avoid specifying exact types. Still, should not be printed out as string.
      * Recall that an enum is just a group of constants that cannot be mutated
      */
-    private val treatAsNotString : Boolean = false,
+    val treatAsNotString : Boolean = false,
     /**
      * An optional list of 'names' for each/some of the values in this enumeration.
      * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
      */
-    private val valueNames: List<String?>? = null
+    val valueNames: List<String?>? = null
 ) : SimpleGene(name), UserExamplesGene {
 
     companion object {

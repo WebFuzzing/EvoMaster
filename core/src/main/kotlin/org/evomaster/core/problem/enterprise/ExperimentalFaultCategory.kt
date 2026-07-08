@@ -11,14 +11,6 @@ enum class ExperimentalFaultCategory(
 
     //9xx for experimental, work-in-progress oracles
 
-    //security
-    //Likely this one is not really viable
-    //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
-    //  "TODO")
-    HIDDEN_ACCESSIBLE_ENDPOINT(903, "Hidden Accessible Endpoint",
-        "hiddenAccessible",
-        "TODO"),
-
 
     HTTP_INVALID_PAYLOAD_SYNTAX(911, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
         "TODO"),
@@ -37,22 +29,28 @@ enum class ExperimentalFaultCategory(
 
     HTTP_NON_IDEMPOTENT_PUT(918, "PUT is idempotent", "nonIdempotentPut",
         "TODO"),
+    HTTP_INVALID_ALLOW(919, "Invalid allow", "invalidAllow",
+        "TODO"),
+    HTTP_TIMEOUT(921, "Timeout", "timeout", "TODO"),
+    HTTP_INVALID_MERGE_PATCH(922, "JSON Merge Patch changes untouched fields", "invalidMergePatch",
+        "TODO"),
 
-    HTTP_STATUS_NO_NON_STANDARD_CODES(950, "no-non-standard-codes", "invalidStatusCode", "TODO"),
-    HTTP_STATUS_NO_201_IF_DELETE(951, "no-201-if-delete", "201OnDelete",  "TODO"),
-    HTTP_STATUS_NO_201_IF_GET(952, "no-201-if-get", "201OnGet",  "TODO"),
-    HTTP_STATUS_NO_201_IF_PATCH(953, "no-201-if-patch", "201OnPatch",  "TODO"),
-    HTTP_STATUS_NO_204_IF_CONTENT(954, "no-204-if-content", "204WhenContent",  "TODO"),
-    HTTP_STATUS_NO_413_IF_NO_PAYLOAD(955, "no-413-if-no-payload", "413WhenNoPayload",  "TODO"),
-    HTTP_STATUS_NO_415_IF_NO_PAYLOAD(956, "no-415-if-no-payload", "415WhenNoPayload",  "TODO"),
-    HTTP_STATUS_NO_401_IF_NO_AUTH(957, "no-401-if-no-auth", "401WhenNoAuth",  "TODO"),
-    HTTP_STATUS_NO_403_IF_NO_401(958, "no-403-if-no-401", "403WhenNo401",  "TODO"),
-    HTTP_STATUS_HAS_406_IF_ACCEPT(959, "has-406-if-accept", "406WhenValid",  "TODO"),
-    HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD(960, "no-304-if-no-get-or-head", "", "TODO"),
-    HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE(961, "no-401-if-no-www-authenticate", "", "TODO"),
-    HTTP_STATUS_NO_405_IF_NO_ALLOW(962, "no-405-if-no-allow", "", "TODO"),
-    HTTP_STATUS_NO_501_IF_IMPLEMENTED(963, "no-501-if-implemented", "", "TODO"),
-
+    HTTP_STATUS_NO_NON_STANDARD_CODES(950, "HTTP/REST-Design Violation: no-non-standard-codes", "invalidStatusCode", "TODO"),
+    HTTP_STATUS_NO_201_IF_DELETE(951, "HTTP/REST-Design Violation: no-201-if-delete", "201OnDelete",  "TODO"),
+    HTTP_STATUS_NO_201_IF_GET(952, "HTTP/REST-Design Violation: no-201-if-get", "201OnGet",  "TODO"),
+    HTTP_STATUS_NO_201_IF_PATCH(953, "HTTP/REST-Design Violation: no-201-if-patch", "201OnPatch",  "TODO"),
+    HTTP_STATUS_NO_204_IF_CONTENT(954, "HTTP/REST-Design Violation: no-204-if-content", "204WhenContent",  "TODO"),
+    HTTP_STATUS_NO_413_IF_NO_PAYLOAD(955, "HTTP/REST-Design Violation: no-413-if-no-payload", "413WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_415_IF_NO_PAYLOAD(956, "HTTP/REST-Design Violation: no-415-if-no-payload", "415WhenNoPayload",  "TODO"),
+    HTTP_STATUS_NO_401_IF_NO_AUTH(957, "HTTP/REST-Design Violation: no-401-if-no-auth", "401WhenNoAuth",  "TODO"),
+    HTTP_STATUS_NO_403_IF_NO_401(958, "HTTP/REST-Design Violation: no-403-if-no-401", "403WhenNo401",  "TODO"),
+    HTTP_STATUS_HAS_406_IF_ACCEPT(959, "HTTP/REST-Design Violation: has-406-if-accept", "406WhenValid",  "TODO"),
+    HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD(960, "HTTP/REST-Design Violation: no-304-if-no-get-or-head", "304OnWrongVerb", "TODO"),
+    HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE(961, "HTTP/REST-Design Violation: no-401-if-no-authenticate", "401MissingWwwAuthenticate", "TODO"),
+    HTTP_STATUS_NO_405_IF_NO_ALLOW(962, "HTTP/REST-Design Violation: no-405-if-no-allow", "405MissingAllow", "TODO"),
+    HTTP_STATUS_NO_501_IF_IMPLEMENTED(963, "HTTP/REST-Design Violation: no-501-if-implemented", "501OnDeclaredEndpoint", "TODO"),
+    HTTP_STATUS_NO_205_IF_CONTENT(964,"HTTP/REST-Design Violation: no-205-if-content","205WhenContent", "TODO"),
+    HTTP_STATUS_NO_426_IF_NO_UPGRADE(965,"HTTP/REST-Design Violation: no-426-if-no-upgrade","426MissingUpgrade", "TODO"),
 
     //3xx: GraphQL
     GQL_ERROR_FIELD(920, "Error Field", "returnedErrors",

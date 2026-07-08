@@ -451,7 +451,7 @@ class Main {
                     epc.markStartingFlakiness()
 
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
-                    flakinessDetector.reexecuteToDetectFlakiness()
+                    flakinessDetector.applyPhase()
                 } else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
@@ -612,6 +612,10 @@ class Main {
                 EMConfig.ProblemType.WEBFRONTEND -> {
                     //TODO black-box mode
                     WebModule()
+                }
+
+                EMConfig.ProblemType.MCP -> {
+                    throw IllegalStateException("MCP server analysis is not yet supported")
                 }
 
                 //this should never happen, unless we add new type and forget to add it here

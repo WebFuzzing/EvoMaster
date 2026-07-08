@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.1.2-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
@@ -14,6 +14,8 @@
     <name>${project.groupId}:${project.artifactId}</name>
 
     <properties>
+        <!-- Before we can upgrade this, need to get rid off Jersey/Jetty in client-java -->
+        <jersey.version>2.48</jersey.version>
         <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
         <swagger.parser-v2.version>1.0.64</swagger.parser-v2.version>
         <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
@@ -26,6 +28,25 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!-- Jersey -->
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+
             <!-- Dependency Injection -->
             <dependency>
                 <groupId>com.google.inject</groupId>

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-controller</artifactId>
@@ -323,8 +323,8 @@
                                     <shadedPattern>shaded.javassist</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>jersey</pattern>
-                                    <shadedPattern>shaded.jersey</shadedPattern>
+                                    <pattern>jersey.repackaged</pattern>
+                                    <shadedPattern>shaded.jersey.repackaged</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.aopalliance</pattern>
@@ -360,7 +360,7 @@
                 </executions>
             </plugin>
 
-            <!-- Generates the Cypher parser from the Neo4j Cypher25 grammar -->
+            <!-- Generates the Cypher and Cql parsers from the Neo4j Cypher25 grammar and the Cql grammar respectively -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>

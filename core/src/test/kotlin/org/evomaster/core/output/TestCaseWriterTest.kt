@@ -13,6 +13,7 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -105,6 +106,41 @@ class TestCaseWriterTest : WriterTestBase(){
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+
+    @Test
+    fun testTextAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleTextPlainTextAssertion(
+            "Unable to obtain a new access token for resource &#39;null&#39;.", // observed in the catwatch
+            null,
+            lines,
+            null
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJsonStringAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleJsonStringAssertion(
+            "{\"message\":\"Unable to obtain a new access token for resource &#39;null&#39;.\"}",
+            null,
+            lines,
+            null,
+            false
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
 
 
 
@@ -1284,6 +1320,35 @@ public void test() throws Exception {
 
 
     @Test
+    fun testJavaObjectAssertionInArrayUsesGPathIndex() {
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_4
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("[{}]") // example in restcountries
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+
+        assertTrue(lines.toString().contains(".body(\"[0].isEmpty()\", is(true))"))
+        assertFalse(lines.toString().contains(".body(\"'[0]'.isEmpty()\", is(true))"))
+    }
+
+
+    @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
@@ -1333,7 +1398,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1406,7 +1472,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1464,7 +1531,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);

@@ -50,10 +50,14 @@ class BodyParam(gene: Gene,
 
         notSupportedContentTypes = typeGene.values.filter { !isSupportedType(it)}
 
-        val options = typeGene.values.filter { isSupportedType(it) }.toMutableList()
-        if(options.isEmpty()){
+        val options = typeGene.values
+            //.filter { isSupportedType(it) } //not supported will be treated as TEXT, to avoid useless 415 requests
+            .filter {it != "*/*"} //this makes no sense as content-type, but it looks like might happen when wrong V2
+                                  //is converted to V3
+            .toMutableList()
 
-            if(typeGene.values.any { isContentTypeMultipartForm(it) }){
+
+        if(typeGene.values.any { isContentTypeMultipartForm(it) }){
                 /*
                     This is tricky... we have seen cases in V2 in which formData without an explicit
                     application/x-www-form-urlencoded  turns by V3 parser into a multipart/form-data.
@@ -64,14 +68,13 @@ class BodyParam(gene: Gene,
                     TODO handle it properly
                  */
                 options.add("application/x-www-form-urlencoded")
+        }
 
-            } else {
-
-                /*
-                 If no info, or not supported, we just try with JSON
-                */
-                options.add("application/json")
-            }
+        if(options.isEmpty()){
+            /*
+                 If no info, we just try with JSON
+             */
+            options.add("application/json")
         }
 
         contentTypeGene = EnumGene(typeGene.name, options, typeGene.index)
