@@ -50,12 +50,12 @@ class SmtLibGeneratorTest {
         )
         addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(NAME users1)", "\"agus\""))
+                EqualsAssertion(listOf("(NAME users1)", "\"Alice\""))
             )
         )
         addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(NAME users2)", "\"agus\""))
+                EqualsAssertion(listOf("(NAME users2)", "\"Alice\""))
             )
         )
         addNode(
@@ -192,7 +192,7 @@ class SmtLibGeneratorTest {
                     "ALTER TABLE users add CHECK (points<=10);\n" +
                     "ALTER TABLE users add CHECK (points>=0);\n" +
                     "ALTER TABLE users add CHECK (points<4 OR points>6);\n" +
-                    "ALTER TABLE users add CHECK (name = 'agus');\n" +
+                    "ALTER TABLE users add CHECK (name = 'Alice');\n" +
                     "ALTER TABLE users ADD UNIQUE (document);\n" +
                     "CREATE TABLE products(price int not null, min_price int not null, stock int not null, user_id bigint not null);\n" +
                     "ALTER TABLE products add constraint userIdKey foreign key (user_id) REFERENCES users;\n")

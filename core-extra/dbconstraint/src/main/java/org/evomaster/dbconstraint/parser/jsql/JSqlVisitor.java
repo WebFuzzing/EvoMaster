@@ -28,6 +28,9 @@ public class JSqlVisitor implements ExpressionVisitor {
     private static final String SIMILAR_ESCAPE = "similar_escape";
     private static final String SIMILAR_TO_ESCAPE = "similar_to_escape";
 
+    private static final String LOWER = "LOWER";
+    private static final String UPPER = "UPPER";
+
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
     @Override
@@ -50,7 +53,7 @@ public class JSqlVisitor implements ExpressionVisitor {
     @Override
     public void visit(Function function) {
         String name = function.getName().toUpperCase();
-        if ((name.equals("LOWER") || name.equals("UPPER"))
+        if ((name.equals(LOWER) || name.equals(UPPER))
                 && function.getParameters() != null
                 && function.getParameters().size() == 1) {
             // Treat LOWER(col)/UPPER(col) as the column itself (case-folding is dropped as an approximation)

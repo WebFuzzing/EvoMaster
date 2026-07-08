@@ -65,7 +65,7 @@ public class SMTResultParserTest {
 
     @Test
     public void testParseComposedType() {
-        String response = "sat\n((users1 (id-document-name-age-points 4 2 \"agus\" 31 7)))";
+        String response = "sat\n((users1 (id-document-name-age-points 4 2 \"Alice\" 31 7)))";
 
         Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
 
@@ -78,7 +78,7 @@ public class SMTResultParserTest {
         assertTrue(users1.getField("DOCUMENT") instanceof LongValue);
         assertEquals(2, ((LongValue) users1.getField("DOCUMENT")).getValue());
         assertTrue(users1.getField("NAME") instanceof StringValue);
-        assertEquals("agus", ((StringValue) users1.getField("NAME")).getValue());
+        assertEquals("Alice", ((StringValue) users1.getField("NAME")).getValue());
         assertTrue(users1.getField("AGE") instanceof LongValue);
         assertEquals(31, ((LongValue) users1.getField("AGE")).getValue());
         assertTrue(users1.getField("POINTS") instanceof LongValue);
@@ -90,8 +90,8 @@ public class SMTResultParserTest {
         String response = "sat\n" +
                 "((products1 (price-min_price-stock-user_id 5 501 8 4)))\n" +
                 "((products2 (price-min_price-stock-user_id 9 21739 8 6)))\n" +
-                "((users1 (id-document-name-age-points 4 2 \"agus\" 31 7)))\n" +
-                "((users2 (id-document-name-age-points 6 3 \"agus\" 91 7)))\n";
+                "((users1 (id-document-name-age-points 4 2 \"Alice\" 31 7)))\n" +
+                "((users2 (id-document-name-age-points 6 3 \"Bob\" 91 7)))\n";
 
         Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
         assertEquals(4, result.size());
@@ -128,7 +128,7 @@ public class SMTResultParserTest {
         assertTrue(users1.getField("DOCUMENT") instanceof LongValue);
         assertEquals(2, ((LongValue) users1.getField("DOCUMENT")).getValue());
         assertTrue(users1.getField("NAME") instanceof StringValue);
-        assertEquals("agus", ((StringValue) users1.getField("NAME")).getValue());
+        assertEquals("Alice", ((StringValue) users1.getField("NAME")).getValue());
         assertTrue(users1.getField("AGE") instanceof LongValue);
         assertEquals(31, ((LongValue) users1.getField("AGE")).getValue());
         assertTrue(users1.getField("POINTS") instanceof LongValue);
@@ -142,7 +142,7 @@ public class SMTResultParserTest {
         assertTrue(users2.getField("DOCUMENT") instanceof LongValue);
         assertEquals(3, ((LongValue) users2.getField("DOCUMENT")).getValue());
         assertTrue(users2.getField("NAME") instanceof StringValue);
-        assertEquals("agus", ((StringValue) users2.getField("NAME")).getValue());
+        assertEquals("Bob", ((StringValue) users2.getField("NAME")).getValue());
         assertTrue(users2.getField("AGE") instanceof LongValue);
         assertEquals(91, ((LongValue) users2.getField("AGE")).getValue());
         assertTrue(users2.getField("POINTS") instanceof LongValue);

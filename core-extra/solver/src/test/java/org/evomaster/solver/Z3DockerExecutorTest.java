@@ -44,11 +44,11 @@ public class Z3DockerExecutorTest {
     public void satisfiabilityExample() {
         Z3Result result = executor.solveFromFile("example.smt");
 
-        assertEquals(Z3Result.Status.SAT, result.status);
-        assertEquals(2, result.model.size());
+        assertEquals(Z3Result.Status.SAT, result.getStatus());
+        assertEquals(2, result.getSolution().size());
 
-        assertEquals(new LongValue(0L), result.model.get("y"));
-        assertEquals(new LongValue((long) -4), result.model.get("x"));
+        assertEquals(new LongValue(0L), result.getSolution().get("y"));
+        assertEquals(new LongValue((long) -4), result.getSolution().get("x"));
     }
 
     /**
@@ -70,7 +70,7 @@ public class Z3DockerExecutorTest {
             Files.deleteIfExists(copied);
         }
 
-        assertEquals(Z3Result.Status.SAT, result.status);
+        assertEquals(Z3Result.Status.SAT, result.getStatus());
     }
 
     /**
@@ -80,9 +80,9 @@ public class Z3DockerExecutorTest {
     public void uniqueUInt() {
         Z3Result result = executor.solveFromFile("unique_uint.smt");
 
-        assertEquals(Z3Result.Status.SAT, result.status, "Response should be SAT for unique_uint.smt");
-        assertEquals(new LongValue(2L), result.model.get("id_1"), "The value for id_1 should be 2");
-        assertEquals(new LongValue(3L), result.model.get("id_2"), "The value for id_2 should be 3");
+        assertEquals(Z3Result.Status.SAT, result.getStatus(), "Response should be SAT for unique_uint.smt");
+        assertEquals(new LongValue(2L), result.getSolution().get("id_1"), "The value for id_1 should be 2");
+        assertEquals(new LongValue(3L), result.getSolution().get("id_2"), "The value for id_2 should be 3");
     }
 
     /**
@@ -92,24 +92,24 @@ public class Z3DockerExecutorTest {
     public void composedTypes() {
         Z3Result result = executor.solveFromFile("composed_types.smt");
 
-        assertEquals(Z3Result.Status.SAT, result.status, "Response should be SAT for composed_types.smt");
+        assertEquals(Z3Result.Status.SAT, result.getStatus(), "Response should be SAT for composed_types.smt");
 
-        assertTrue(result.model.containsKey("users1"), "Response should contain users1");
+        assertTrue(result.getSolution().containsKey("users1"), "Response should contain users1");
         Map<String, SMTLibValue> users1Expected = new HashMap<>();
         users1Expected.put("ID", new LongValue(3L));
-        users1Expected.put("NAME", new StringValue("agus"));
+        users1Expected.put("NAME", new StringValue("Alice"));
         users1Expected.put("AGE", new LongValue(31L));
         users1Expected.put("POINTS", new LongValue(7L));
 
-        assertEquals(new StructValue(users1Expected), result.model.get("users1"), "The value for users1 is incorrect");
+        assertEquals(new StructValue(users1Expected), result.getSolution().get("users1"), "The value for users1 is incorrect");
 
-        assertTrue(result.model.containsKey("users2"), "Response should contain users2");
+        assertTrue(result.getSolution().containsKey("users2"), "Response should contain users2");
         Map<String, SMTLibValue> users2Expected = new HashMap<>();
         users2Expected.put("ID", new LongValue(3L));
-        users2Expected.put("NAME", new StringValue("agus"));
+        users2Expected.put("NAME", new StringValue("Bob"));
         users2Expected.put("AGE", new LongValue(31L));
         users2Expected.put("POINTS", new LongValue(7L));
-        assertEquals(new StructValue(users2Expected), result.model.get("users2"), "The value for users2 is incorrect");
+        assertEquals(new StructValue(users2Expected), result.getSolution().get("users2"), "The value for users2 is incorrect");
     }
 
     /**
@@ -118,8 +118,8 @@ public class Z3DockerExecutorTest {
     @Test
     public void whenSolvingInvalidFileItReturnsError() {
         Z3Result result = executor.solveFromFile("invalid.smt");
-        assertEquals(Z3Result.Status.ERROR, result.status);
-        assertNotNull(result.errorMessage);
+        assertEquals(Z3Result.Status.ERROR, result.getStatus());
+        assertNotNull(result.getErrorMessage());
     }
 
     /**
@@ -128,7 +128,18 @@ public class Z3DockerExecutorTest {
     @Test
     public void whenSolvingEmptyFileItReturnsError() {
         Z3Result result = executor.solveFromFile("empty.smt");
-        assertEquals(Z3Result.Status.ERROR, result.status);
-        assertNotNull(result.errorMessage);
+        assertEquals(Z3Result.Status.ERROR, result.getStatus());
+        assertNotNull(result.getErrorMessage());
+    }
+
+    /**
+     * A hard non-linear problem solved with a small soft timeout: Z3 cannot decide
+     * in time and returns 'unknown', which must be reported as UNKNOWN (not SAT).
+     */
+    @Test
+    public void whenTimeoutExceededItReturnsUnknown() {
+        Z3Result result = executor.solveFromFile("hard_factoring.smt", 1);
+        assertEquals(Z3Result.Status.UNKNOWN, result.getStatus());
+        assertNull(result.getSolution());
     }
 }

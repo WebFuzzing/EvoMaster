@@ -31,7 +31,7 @@ public class Z3SolverEMTest extends SpringTestBase {
                     args.add("true");
                     args.add("--generateSqlDataWithSearch");
                     args.add("false");
-                    args.add("--generateSqlDataWithDSE");
+                    args.add("--generateSqlDataWithZ3");
                     args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);

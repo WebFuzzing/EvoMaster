@@ -33,6 +33,7 @@ import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.Z3Result
+import org.evomaster.solver.Z3Solution
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
@@ -68,7 +69,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
     // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
     // Schema is assumed stable within a single run, so only query + row count form the key.
-    // Null until DSE is enabled in postConstruct — avoids allocating the map in runs where DSE is off.
+    // Null until Z3 SQL generation is enabled in postConstruct — avoids allocating the map in runs where Z3 SQL generation is off.
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
     companion object {
@@ -98,7 +99,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
     @PostConstruct
     private fun postConstruct() {
-        if (config.generateSqlDataWithDSE) {
+        if (config.generateSqlDataWithZ3) {
             initializeExecutor()
             z3ResultCache = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
                 override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
@@ -135,16 +136,16 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      *         or an empty list if the problem is UNSAT, unparseable, or an error occurred.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        val collectStats = ::config.isInitialized && config.collectDseStats
+        val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
-        stats?.reportDseQuerySeen(sqlQuery.hashCode())
+        stats?.reportSqlZ3QuerySeen(sqlQuery.hashCode())
 
         val cacheKey = Pair(sqlQuery, numberOfRows)
         val cached = z3ResultCache?.get(cacheKey)
         if (cached != null) {
             return when (cached.status) {
-                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.model)
+                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.solution)
                 else -> emptyList()
             }
         }
@@ -152,8 +153,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val queryStatement = try {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
-            LoggingUtil.getInfoLogger().warn("DSE: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            stats?.reportDseParseFailure()
+            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
+            stats?.reportSqlZ3ParseFailure()
             return emptyList()
         }
 
@@ -162,13 +163,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtLib = generator.generateSMT(queryStatement)
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
-        stats?.reportDseSmtlibGenTime(smtlibGenMs, smtlibBytes)
+        stats?.reportSqlZ3SmtlibGenTime(smtlibGenMs, smtlibBytes)
 
         val fileName = storeToTmpFile(smtLib)
 
         val z3Start = System.currentTimeMillis()
+        val z3Timeout = if (::config.isInitialized) config.sqlZ3TimeoutMs.toLong() else 0L
         val z3Result = try {
-            executor.solveFromFile(fileName)
+            executor.solveFromFile(fileName, z3Timeout)
         } finally {
             Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
         }
@@ -176,25 +178,25 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
         return when (z3Result.status) {
             Z3Result.Status.SAT -> {
-                stats?.reportDseSat(z3TimeMs)
+                stats?.reportSqlZ3Sat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
-                val sqlActions = toSqlActionList(schemaDto, z3Result.model)
-                if (::config.isInitialized && config.measureDseCorrectness && queryStatement !is Insert) {
+                val sqlActions = toSqlActionList(schemaDto, z3Result.solution)
+                if (::config.isInitialized && config.measureSqlZ3Correctness && queryStatement !is Insert) {
                     /*
                      * INSERT statements have no WHERE clause, so SqlHeuristicsCalculator has no
                      * predicate to evaluate distance against and will always report a failure.
                      * Correctness measurement only makes sense for queries that filter rows
                      * (SELECT, DELETE, UPDATE). In the future this could be extended to verify
                      * that the generated rows satisfy insertion preconditions such as FK constraints
-                     * or NOT NULL columns that DSE currently leaves unconstrained.
+                     * or NOT NULL columns that Z3 SQL generation currently leaves unconstrained.
                      */
                     val distResult = computeCorrectnessDistance(sqlQuery, schemaDto, sqlActions)
                     if (distResult.sqlDistanceEvaluationFailure) {
-                        LoggingUtil.getInfoLogger().warn("DSE: correctness evaluation failure for query '$sqlQuery'")
+                        LoggingUtil.getInfoLogger().warn("SQL-Z3: correctness evaluation failure for query '$sqlQuery'")
                     } else if (distResult.sqlDistance != 0.0) {
-                        LoggingUtil.getInfoLogger().warn("DSE: non-zero correctness distance (${distResult.sqlDistance}) for query '$sqlQuery'")
+                        LoggingUtil.getInfoLogger().warn("SQL-Z3: non-zero correctness distance (${distResult.sqlDistance}) for query '$sqlQuery'")
                     }
-                    statisticsRef?.get()?.reportDseCorrectnessDistance(
+                    statisticsRef?.get()?.reportSqlZ3CorrectnessDistance(
                         distResult.sqlDistance,
                         distResult.sqlDistanceEvaluationFailure
                     )
@@ -202,13 +204,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 sqlActions
             }
             Z3Result.Status.UNSAT -> {
-                stats?.reportDseUnsat(z3TimeMs)
+                stats?.reportSqlZ3Unsat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
                 emptyList()
             }
+            Z3Result.Status.UNKNOWN -> {
+                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
+                stats?.reportSqlZ3Unknown(z3TimeMs)
+                // Not cached: an 'unknown' may be timeout-driven and therefore transient
+                emptyList()
+            }
             Z3Result.Status.ERROR -> {
-                LoggingUtil.getInfoLogger().warn("DSE: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
-                stats?.reportDseError(z3TimeMs)
+                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                stats?.reportSqlZ3Error(z3TimeMs)
                 // Errors are not cached — they may be transient Docker failures
                 emptyList()
             }
@@ -240,15 +248,15 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Converts Z3's model to a list of SqlActions.
+     * Converts Z3's solution to a list of SqlActions.
      *
-     * @param model The satisfying assignment from Z3 (non-null, status must be SAT).
+     * @param solution The satisfying assignment from Z3 (non-null, status must be SAT).
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbInfoDto, model: Map<String, org.evomaster.solver.smtlib.value.SMTLibValue>): List<SqlAction> {
+    private fun toSqlActionList(schemaDto: DbInfoDto, solution: Z3Solution): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
 
-        for (row in model) {
+        for (row in solution.assignments) {
             val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
@@ -533,7 +541,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             is ImmutableDataHolderGene -> inner.value
             else -> {
                 LoggingUtil.getInfoLogger().warn(
-                    "DSE: extractGeneValue() fallback to raw string for unhandled gene type " +
+                    "SQL-Z3: extractGeneValue() fallback to raw string for unhandled gene type " +
                             "${inner.javaClass.name} (outer: ${gene.javaClass.name}, name: ${gene.name})"
                 )
                 inner.getValueAsRawString()

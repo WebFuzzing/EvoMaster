@@ -54,11 +54,28 @@ public class Z3DockerExecutor implements AutoCloseable {
      * The file must be in the directory specified by containerPath.
      *
      * @param fileName the name of the SMT-LIB file to read and solve
-     * @return a {@link Z3Result} with status SAT (and the model), UNSAT, or ERROR
+     * @return a {@link Z3Result} with status SAT (and the solution), UNSAT, UNKNOWN, or ERROR
      */
     public Z3Result solveFromFile(String fileName) {
+        return solveFromFile(fileName, 0);
+    }
+
+    /**
+     * Executes the Z3 solver on an SMT-LIB file located in the container.
+     * The file must be in the directory specified by containerPath.
+     *
+     * @param fileName  the name of the SMT-LIB file to read and solve
+     * @param timeoutMs soft per-query timeout in milliseconds. When greater than 0, it is passed
+     *                  to Z3 as {@code -t:<ms>}; if exceeded, Z3 returns {@code unknown} for the
+     *                  query (mapped to {@link Z3Result.Status#UNKNOWN}) rather than running
+     *                  unbounded. A value {@code <= 0} disables the timeout.
+     * @return a {@link Z3Result} with status SAT (and the solution), UNSAT, UNKNOWN, or ERROR
+     */
+    public Z3Result solveFromFile(String fileName, long timeoutMs) {
         try {
-            Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
+            Container.ExecResult result = timeoutMs > 0
+                    ? z3Prover.execInContainer("z3", "-t:" + timeoutMs, containerPath + fileName)
+                    : z3Prover.execInContainer("z3", containerPath + fileName);
 
             if (result.getExitCode() != 0) {
                 return Z3Result.error("Z3 exited with code " + result.getExitCode()
@@ -71,12 +88,22 @@ public class Z3DockerExecutor implements AutoCloseable {
                         + " stderr: " + result.getStderr());
             }
 
-            if (stdout.trim().startsWith("unsat")) {
+            String trimmed = stdout.trim();
+            if (trimmed.startsWith("unsat")) {
                 return Z3Result.unsat();
             }
+            // "unknown" means Z3 could not decide (e.g. incomplete theory or timeout).
+            // It must be handled explicitly: otherwise it would fall through and be parsed
+            // as an empty model, silently masquerading as SAT.
+            if (trimmed.startsWith("unknown")) {
+                return Z3Result.unknown();
+            }
+            if (!trimmed.startsWith("sat")) {
+                return Z3Result.error("Unexpected Z3 output for file " + fileName + ": " + stdout);
+            }
 
-            Map<String, SMTLibValue> model = SMTResultParser.parseZ3Response(stdout);
-            return Z3Result.sat(model);
+            Map<String, SMTLibValue> assignments = SMTResultParser.parseZ3Response(stdout);
+            return Z3Result.sat(new MapBasedZ3Solution(assignments));
 
         } catch (IOException | InterruptedException e) {
             return Z3Result.error("I/O or interruption error running Z3 on " + fileName + ": " + e.getMessage());

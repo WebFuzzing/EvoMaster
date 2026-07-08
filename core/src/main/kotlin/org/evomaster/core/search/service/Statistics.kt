@@ -86,24 +86,25 @@ class Statistics : SearchListener {
     private var sqlHeuristicEvaluationFailureCount = 0;
     private val sqlRowsAverageCalculator = IncrementalAverage()
 
-    // DSE (Dynamic Symbolic Execution) statistics
-    private var dseTotalQueriesProcessed = 0
-    private var dseSatCount = 0
-    private var dseUnsatCount = 0
-    private var dseErrorCount = 0
-    private var dseParseFailureCount = 0
-    private var dseZ3TimeMs = 0L
-    private var dseSmtlibGenTimeMs = 0L
-    private val dseSmtlibSizeBytes = IncrementalAverage()
-    private val dseSeenQueryHashes = mutableSetOf<Int>()
-    private var dseUniqueQueriesCount = 0
+    // Z3-based SQL data generation statistics
+    private var sqlZ3TotalQueriesProcessed = 0
+    private var sqlZ3SatCount = 0
+    private var sqlZ3UnsatCount = 0
+    private var sqlZ3UnknownCount = 0
+    private var sqlZ3ErrorCount = 0
+    private var sqlZ3ParseFailureCount = 0
+    private var sqlZ3TimeMs = 0L
+    private var sqlZ3SmtlibGenTimeMs = 0L
+    private val sqlZ3SmtlibSizeBytes = IncrementalAverage()
+    private val sqlZ3SeenQueryHashes = mutableSetOf<Int>()
+    private var sqlZ3UniqueQueriesCount = 0
 
-    // DSE correctness distance statistics (only when measureDseCorrectness=true)
-    private var dseCorrectnessCheckCount = 0
-    private var dseCorrectnessZeroDistanceCount = 0
-    private var dseCorrectnessNonZeroDistanceCount = 0
-    private val dseCorrectnessAvgDistance = IncrementalAverage()
-    private var dseCorrectnessEvalFailureCount = 0
+    // Z3-based SQL data generation correctness distance statistics (only when measureSqlZ3Correctness=true)
+    private var sqlZ3CorrectnessCheckCount = 0
+    private var sqlZ3CorrectnessZeroDistanceCount = 0
+    private var sqlZ3CorrectnessNonZeroDistanceCount = 0
+    private val sqlZ3CorrectnessAvgDistance = IncrementalAverage()
+    private var sqlZ3CorrectnessEvalFailureCount = 0
 
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
@@ -242,54 +243,60 @@ class Statistics : SearchListener {
         redisHeuristicEvaluationFailureCount++
     }
 
-    fun reportDseSat(z3TimeMs: Long) {
-        dseTotalQueriesProcessed++
-        dseSatCount++
-        dseZ3TimeMs += z3TimeMs
+    fun reportSqlZ3Sat(z3TimeMs: Long) {
+        sqlZ3TotalQueriesProcessed++
+        sqlZ3SatCount++
+        sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportDseUnsat(z3TimeMs: Long) {
-        dseTotalQueriesProcessed++
-        dseUnsatCount++
-        dseZ3TimeMs += z3TimeMs
+    fun reportSqlZ3Unsat(z3TimeMs: Long) {
+        sqlZ3TotalQueriesProcessed++
+        sqlZ3UnsatCount++
+        sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportDseError(z3TimeMs: Long) {
-        dseTotalQueriesProcessed++
-        dseErrorCount++
-        dseZ3TimeMs += z3TimeMs
+    fun reportSqlZ3Unknown(z3TimeMs: Long) {
+        sqlZ3TotalQueriesProcessed++
+        sqlZ3UnknownCount++
+        sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportDseParseFailure() {
-        dseTotalQueriesProcessed++
-        dseParseFailureCount++
+    fun reportSqlZ3Error(z3TimeMs: Long) {
+        sqlZ3TotalQueriesProcessed++
+        sqlZ3ErrorCount++
+        sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportDseSmtlibGenTime(ms: Long, sizeBytes: Int) {
-        dseSmtlibGenTimeMs += ms
-        dseSmtlibSizeBytes.addValue(sizeBytes)
+    fun reportSqlZ3ParseFailure() {
+        sqlZ3TotalQueriesProcessed++
+        sqlZ3ParseFailureCount++
     }
 
-    fun reportDseQuerySeen(queryHash: Int) {
-        if (dseSeenQueryHashes.add(queryHash)) {
-            dseUniqueQueriesCount++
+    fun reportSqlZ3SmtlibGenTime(ms: Long, sizeBytes: Int) {
+        sqlZ3SmtlibGenTimeMs += ms
+        sqlZ3SmtlibSizeBytes.addValue(sizeBytes)
+    }
+
+    fun reportSqlZ3QuerySeen(queryHash: Int) {
+        if (sqlZ3SeenQueryHashes.add(queryHash)) {
+            sqlZ3UniqueQueriesCount++
         }
     }
 
-    fun reportDseCorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
-        dseCorrectnessCheckCount++
+    fun reportSqlZ3CorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
+        sqlZ3CorrectnessCheckCount++
         if (evaluationFailure) {
             // sqlDistance is a sentinel value (e.g. Double.MAX_VALUE) in this case,
             // and must not pollute the average of real distances
-            dseCorrectnessEvalFailureCount++
+            sqlZ3CorrectnessEvalFailureCount++
             return
         }
         if (sqlDistance == 0.0) {
-            dseCorrectnessZeroDistanceCount++
+            sqlZ3CorrectnessZeroDistanceCount++
         } else {
-            dseCorrectnessNonZeroDistanceCount++
+            sqlZ3CorrectnessNonZeroDistanceCount++
         }
-        dseCorrectnessAvgDistance.addValue(sqlDistance)
+        sqlZ3CorrectnessAvgDistance.addValue(sqlDistance)
     }
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
@@ -450,27 +457,28 @@ class Statistics : SearchListener {
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
-            // statistics info for DSE (only emitted when collectDseStats=true)
-            if (config.collectDseStats) {
-                add(Pair("dseTotalQueries", "$dseTotalQueriesProcessed"))
-                add(Pair("dseUniqueQueries", "$dseUniqueQueriesCount"))
-                add(Pair("dseDuplicateQueries", "${dseTotalQueriesProcessed - dseParseFailureCount - dseUniqueQueriesCount}"))
-                add(Pair("dseSat", "$dseSatCount"))
-                add(Pair("dseUnsat", "$dseUnsatCount"))
-                add(Pair("dseErrors", "$dseErrorCount"))
-                add(Pair("dseParseFailures", "$dseParseFailureCount"))
-                add(Pair("dseZ3TotalMs", "$dseZ3TimeMs"))
-                add(Pair("dseSmtlibGenTotalMs", "$dseSmtlibGenTimeMs"))
-                add(Pair("dseAvgSmtlibSizeBytes", "%.1f".format(dseSmtlibSizeBytes.mean)))
+            // statistics info for Z3-based SQL data generation (only emitted when collectSqlZ3Stats=true)
+            if (config.collectSqlZ3Stats) {
+                add(Pair("sqlZ3TotalQueries", "$sqlZ3TotalQueriesProcessed"))
+                add(Pair("sqlZ3UniqueQueries", "$sqlZ3UniqueQueriesCount"))
+                add(Pair("sqlZ3DuplicateQueries", "${sqlZ3TotalQueriesProcessed - sqlZ3ParseFailureCount - sqlZ3UniqueQueriesCount}"))
+                add(Pair("sqlZ3Sat", "$sqlZ3SatCount"))
+                add(Pair("sqlZ3Unsat", "$sqlZ3UnsatCount"))
+                add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
+                add(Pair("sqlZ3Errors", "$sqlZ3ErrorCount"))
+                add(Pair("sqlZ3ParseFailures", "$sqlZ3ParseFailureCount"))
+                add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
+                add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
+                add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))
             }
 
-            // correctness distance stats (only emitted when measureDseCorrectness=true)
-            if (config.measureDseCorrectness) {
-                add(Pair("dseCorrectnessChecks",      "$dseCorrectnessCheckCount"))
-                add(Pair("dseCorrectnessZeroDistance", "$dseCorrectnessZeroDistanceCount"))
-                add(Pair("dseCorrectnessNonZero",      "$dseCorrectnessNonZeroDistanceCount"))
-                add(Pair("dseCorrectnessAvgDist",      "%.4f".format(dseCorrectnessAvgDistance.mean)))
-                add(Pair("dseCorrectnessEvalFailures", "$dseCorrectnessEvalFailureCount"))
+            // correctness distance stats (only emitted when measureSqlZ3Correctness=true)
+            if (config.measureSqlZ3Correctness) {
+                add(Pair("sqlZ3CorrectnessChecks",      "$sqlZ3CorrectnessCheckCount"))
+                add(Pair("sqlZ3CorrectnessZeroDistance", "$sqlZ3CorrectnessZeroDistanceCount"))
+                add(Pair("sqlZ3CorrectnessNonZero",      "$sqlZ3CorrectnessNonZeroDistanceCount"))
+                add(Pair("sqlZ3CorrectnessAvgDist",      "%.4f".format(sqlZ3CorrectnessAvgDistance.mean)))
+                add(Pair("sqlZ3CorrectnessEvalFailures", "$sqlZ3CorrectnessEvalFailureCount"))
             }
 
             for(phase in ExecutionPhaseController.Phase.entries){

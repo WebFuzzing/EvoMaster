@@ -53,7 +53,7 @@ class SMTLibZ3DbConstraintSolverTest {
     @Test
     fun selectFromUsers() {
 
-        val newActions = solver.solve(schemaDto, "SELECT * FROM Users WHERE name = 'agus';", 2)
+        val newActions = solver.solve(schemaDto, "SELECT * FROM Users WHERE name = 'Alice';", 2)
 
         assertEquals(2, newActions.size)
 
@@ -70,7 +70,7 @@ class SMTLibZ3DbConstraintSolverTest {
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
-                    assertEquals("agus", (gene as StringGene).value)
+                    assertEquals("Alice", (gene as StringGene).value)
                 }
                 "AGE" -> {
                     assertTrue(gene is LongGene)
@@ -111,7 +111,7 @@ class SMTLibZ3DbConstraintSolverTest {
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
-                    assertEquals("agus", (gene as StringGene).value)
+                    assertEquals("Alice", (gene as StringGene).value)
                 }
                 "AGE" -> {
                     assertTrue(gene is LongGene)
