@@ -8,7 +8,7 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 6.1.1
+  evomaster-version: 6.1.2
   jdk-jar: 17
   jdk-jpackage: 21
   java-distribution: temurin
