@@ -2,6 +2,8 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
@@ -202,17 +204,18 @@ class HttpSemanticsService : TimeBoxedPhase{
         }
     }
 
-    private fun prepareEvaluateAndSave(ind: RestIndividual) {
+    private fun prepareEvaluateAndSave(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
         ind.modifySampleType(SampleType.HTTP_SEMANTICS)
         ind.ensureFlattenedStructure()
 
         val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
         if (evaluatedIndividual == null) {
             log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
-            return
+            return null
         }
 
         archive.addIfNeeded(evaluatedIndividual)
+        return evaluatedIndividual
     }
 
 
@@ -532,7 +535,11 @@ class HttpSemanticsService : TimeBoxedPhase{
                 creator?.saveAndLinkLocationTo(getAfter)
                 ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
-                prepareEvaluateAndSave(ind)
+                val ei = prepareEvaluateAndSave(ind)
+                if (ei != null && DetectedFaultUtils.getDetectedFaultCategories(ei)
+                        .contains(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+                    return@forEach
+                }
             }
         }
     }
