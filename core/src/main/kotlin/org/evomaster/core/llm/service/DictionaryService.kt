@@ -19,7 +19,7 @@ class DictionaryService {
         private const val location = "/llm_dictionary.jsonl"
 
         /**
-         * WARNING: possibly quite expensive... should only be used for debugging/testing/statistics
+         * in theory expensive, but on a Mac M4 took less than 1 sec to load
          */
         fun loadAll() : Map<String, Set<String>> {
 
@@ -147,8 +147,6 @@ class DictionaryService {
         if(!isActive()){
             throw IllegalStateException("Dictionary service is not active")
         }
-
-        //TODO check how expensive this is... put on thread if too expensive
 
         val result = searchForNames(fields.map { it.name })
 
