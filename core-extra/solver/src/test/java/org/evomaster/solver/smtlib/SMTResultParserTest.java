@@ -1,9 +1,8 @@
 package org.evomaster.solver.smtlib;
 
+import org.evomaster.solver.Z3Solution;
 import org.evomaster.solver.smtlib.value.*;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,21 +11,21 @@ public class SMTResultParserTest {
     @Test
     public void testParseEmptyResponse() {
         String response = "";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testParseMalformedResponse() {
         String response = "sat\n(id_1 2)";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testParseSimpleIntValue() {
         String response = "sat\n((id_1 2))";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(1, result.size());
         assertTrue(result.get("id_1") instanceof LongValue);
         assertEquals(2, ((LongValue) result.get("id_1")).getValue());
@@ -35,7 +34,7 @@ public class SMTResultParserTest {
     @Test
     public void testParseSimpleStringValue() {
         String response = "sat\n((name_1 \"example\"))";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(1, result.size());
         assertTrue(result.get("name_1") instanceof StringValue);
         assertEquals("example", ((StringValue) result.get("name_1")).getValue());
@@ -44,7 +43,7 @@ public class SMTResultParserTest {
     @Test
     public void testParseSimpleRealValue() {
         String response = "sat\n((pi_1 3.14))";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(1, result.size());
         assertTrue(result.get("pi_1") instanceof RealValue);
         assertEquals(3.14, ((RealValue) result.get("pi_1")).getValue());
@@ -55,7 +54,7 @@ public class SMTResultParserTest {
         String response = "sat\n" +
                 "((y 0))\n" +
                 "((x (- 4)))";
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(2, result.size());
         assertTrue(result.get("y") instanceof LongValue);
         assertEquals(0, ((LongValue) result.get("y")).getValue());
@@ -67,7 +66,7 @@ public class SMTResultParserTest {
     public void testParseComposedType() {
         String response = "sat\n((users1 (id-document-name-age-points 4 2 \"Alice\" 31 7)))";
 
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
 
         assertEquals(1, result.size());
         assertTrue(result.get("users1") instanceof StructValue);
@@ -93,7 +92,7 @@ public class SMTResultParserTest {
                 "((users1 (id-document-name-age-points 4 2 \"Alice\" 31 7)))\n" +
                 "((users2 (id-document-name-age-points 6 3 \"Bob\" 91 7)))\n";
 
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(4, result.size());
 
         assertTrue(result.get("products1") instanceof StructValue);
@@ -163,7 +162,7 @@ public class SMTResultParserTest {
                 "  \"true\"\n" +
                 "  2)))\n";
 
-        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
         assertEquals(2, result.size());
 
         assertTrue(result.get("documents_specs1") instanceof StructValue);

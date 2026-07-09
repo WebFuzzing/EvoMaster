@@ -74,6 +74,10 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
     companion object {
         private const val MAX_CACHE_SIZE = 500
+
+        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
+        // epoch<->string conversions round-trip consistently.
+        private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
     }
 
     @Inject
@@ -292,7 +296,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
                             )
                             val formatted = localDateTime.format(
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                                DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
                             )
                             ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                         } else {

@@ -27,12 +27,9 @@ public class Z3SolverEMTest extends SpringTestBase {
                 "com.foo.spring.rest.h2.z3solver.Z3SolverEvoMaster",
                 50,
                 (args) -> {
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--generateSqlDataWithZ3");
-                    args.add("true");
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "false");
+                    setOption(args, "generateSqlDataWithZ3", "true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

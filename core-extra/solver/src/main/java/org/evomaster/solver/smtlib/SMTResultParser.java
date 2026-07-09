@@ -1,5 +1,6 @@
 package org.evomaster.solver.smtlib;
 
+import org.evomaster.solver.Z3Solution;
 import org.evomaster.solver.smtlib.value.*;
 
 import java.util.HashMap;
@@ -9,7 +10,8 @@ import java.util.regex.Pattern;
 
 /**
  * The SMTResultParser class is responsible for parsing responses from the Z3 solver.
- * It converts the raw SMT-LIB response into a map of variable names and their corresponding values.
+ * It converts the raw SMT-LIB response into a {@link Z3Solution} of variable names and
+ * their corresponding values.
  */
 public class SMTResultParser {
 
@@ -17,9 +19,9 @@ public class SMTResultParser {
      * Parses the Z3 solver response and extracts variable values.
      *
      * @param z3Response the raw response from Z3 solver
-     * @return a map where keys are variable names and values are SMTLibValue objects representing the parsed values
+     * @return a {@link Z3Solution} mapping variable names to the {@link SMTLibValue} objects Z3 assigned to them
      */
-    public static Map<String, SMTLibValue> parseZ3Response(String z3Response) {
+    public static Z3Solution parseZ3Response(String z3Response) {
         Map<String, SMTLibValue> results = new HashMap<>();
 
         // Regular expression for matching simple value assignments, including negative numbers
@@ -91,7 +93,7 @@ public class SMTResultParser {
                 buffer.setLength(0); // Clear the buffer after processing
             }
         }
-        return results; // Return the map of parsed results
+        return new Z3Solution(results); // Return the parsed assignments as a solution
     }
 
     /**

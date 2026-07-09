@@ -31,6 +31,10 @@ public class JSqlVisitor implements ExpressionVisitor {
     private static final String LOWER = "LOWER";
     private static final String UPPER = "UPPER";
 
+    private static final String SINGLE_QUOTE_CHAR = "'";
+
+    private static final String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
     @Override
@@ -143,7 +147,7 @@ public class JSqlVisitor implements ExpressionVisitor {
         String notEscapedValue = stringValue.getNotExcapedValue();
 
         String notEscapedValueNoQuotes;
-        if (notEscapedValue.startsWith("'") && notEscapedValue.endsWith("'")) {
+        if (notEscapedValue.startsWith(SINGLE_QUOTE_CHAR) && notEscapedValue.endsWith(SINGLE_QUOTE_CHAR)) {
             notEscapedValueNoQuotes = notEscapedValue.substring(1, notEscapedValue.length() - 1);
         } else {
             notEscapedValueNoQuotes = notEscapedValue;
@@ -617,13 +621,13 @@ public class JSqlVisitor implements ExpressionVisitor {
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
         if (dateTimeLiteralExpression.getType() == DateTimeLiteralExpression.DateTime.TIMESTAMP) {
             String value = dateTimeLiteralExpression.getValue();
-            if (value.startsWith("'") && value.endsWith("'")) {
+            if (value.startsWith(SINGLE_QUOTE_CHAR) && value.endsWith(SINGLE_QUOTE_CHAR)) {
                 value = value.substring(1, value.length() - 1);
             }
             // Treat the timestamp string as UTC to match the UTC-based decoder in
             // SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
             long epochSeconds = java.time.LocalDateTime.parse(value,
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT))
                     .toEpochSecond(ZoneOffset.UTC);
             stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
             return;

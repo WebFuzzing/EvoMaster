@@ -1,14 +1,12 @@
 package org.evomaster.solver;
 
 import org.evomaster.solver.smtlib.SMTResultParser;
-import org.evomaster.solver.smtlib.value.SMTLibValue;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -21,6 +19,11 @@ public class Z3DockerExecutor implements AutoCloseable {
     public static final String Z3_DOCKER_IMAGE = "ghcr.io/z3prover/z3:ubuntu-20.04-bare-z3-sha-ba8d8f0";
     // The Docker entrypoint that keeps it running indefinitely
     public static final String ENTRYPOINT = "while :; do sleep 1000 ; done";
+
+    // SMT-LIB (check-sat) response tokens returned by Z3
+    private static final String SAT = "sat";
+    private static final String UNSAT = "unsat";
+    private static final String UNKNOWN = "unknown";
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?> z3Prover;
 
@@ -89,21 +92,20 @@ public class Z3DockerExecutor implements AutoCloseable {
             }
 
             String trimmed = stdout.trim();
-            if (trimmed.startsWith("unsat")) {
+            if (trimmed.startsWith(UNSAT)) {
                 return Z3Result.unsat();
             }
             // "unknown" means Z3 could not decide (e.g. incomplete theory or timeout).
             // It must be handled explicitly: otherwise it would fall through and be parsed
             // as an empty model, silently masquerading as SAT.
-            if (trimmed.startsWith("unknown")) {
+            if (trimmed.startsWith(UNKNOWN)) {
                 return Z3Result.unknown();
             }
-            if (!trimmed.startsWith("sat")) {
+            if (!trimmed.startsWith(SAT)) {
                 return Z3Result.error("Unexpected Z3 output for file " + fileName + ": " + stdout);
             }
 
-            Map<String, SMTLibValue> assignments = SMTResultParser.parseZ3Response(stdout);
-            return Z3Result.sat(new MapBasedZ3Solution(assignments));
+            return Z3Result.sat(SMTResultParser.parseZ3Response(stdout));
 
         } catch (IOException | InterruptedException e) {
             return Z3Result.error("I/O or interruption error running Z3 on " + fileName + ": " + e.getMessage());

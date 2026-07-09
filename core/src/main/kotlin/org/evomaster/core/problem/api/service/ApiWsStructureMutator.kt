@@ -344,17 +344,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     ): MutableList<List<SqlAction>>? {
 
         if (config.generateSqlDataWithSearch) {
-            return handleSearch(ind, sampler, mutatedGenes, fw)
+            return generateSqlDataWithSearch(ind, sampler, mutatedGenes, fw)
         }
         
         if (config.generateSqlDataWithZ3) {
-            return handleZ3(ind, sampler, failedWhereQueries)
+            return generateSqlDataWithZ3(ind, sampler, failedWhereQueries)
         }
 
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleSearch(
+    private fun <T : ApiWsIndividual> generateSqlDataWithSearch(
         ind: T,
         sampler: ApiWsSampler<T>,
         mutatedGenes: MutatedGeneSpecification?,
@@ -436,7 +436,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedSqlInsertions
     }
 
-    private fun <T : ApiWsIndividual> handleZ3(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
+    private fun <T : ApiWsIndividual> generateSqlDataWithZ3(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
 
