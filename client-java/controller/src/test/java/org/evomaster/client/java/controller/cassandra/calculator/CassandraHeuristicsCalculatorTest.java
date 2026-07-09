@@ -1,29 +1,30 @@
-package org.evomaster.client.java.controller.cassandra;
+package org.evomaster.client.java.controller.cassandra.calculator;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.junit.jupiter.api.Test;
 
-import com.datastax.oss.driver.api.core.data.CqlDuration;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CassandraHeuristicsCalculatorTest {
 
     private final CassandraHeuristicsCalculator calc = new CassandraHeuristicsCalculator();
 
-    private static Map<String, Object> row(Object... kv) {
+    private static CassandraRow row(Object... kv) {
         Map<String, Object> m = new LinkedHashMap<>();
         for (int i = 0; i < kv.length; i += 2) m.put((String) kv[i], kv[i + 1]);
-        return m;
+        return new CassandraRow(m);
     }
 
-    @SafeVarargs
-    private final double dist(String cql, Map<String, Object>... rows) {
+    private double dist(String cql, CassandraRow... rows) {
         return calc.computeDistance(cql, Arrays.asList(rows));
     }
 

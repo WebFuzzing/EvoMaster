@@ -33,4 +33,6 @@ To upgrade to latest release, use:
 
 `pip install --upgrade evomaster`
 
+If you are using a Mac, some users found calling `pip install` directly to be unreliable, and recommend should rather use:
 
+`python3 -m pip install --upgrade evomaster`
