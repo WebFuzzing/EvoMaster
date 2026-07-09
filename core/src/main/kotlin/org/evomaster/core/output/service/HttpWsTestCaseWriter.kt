@@ -707,6 +707,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = \"$body\"")
                 }
+                format.isPlaywright() -> {
+                    // In Playwright, use the options object field instead of chained calls
+                    lines.add("data: \"$body\",")
+                }
                 else -> lines.add(".$send(\"$body\")")
             }
         } else if (bodyParam.isXml()) {
