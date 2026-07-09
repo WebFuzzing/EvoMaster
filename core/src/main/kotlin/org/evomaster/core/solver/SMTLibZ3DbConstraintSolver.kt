@@ -139,11 +139,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
-        stats?.reportSqlZ3QuerySeen(sqlQuery.hashCode())
-
         val cacheKey = Pair(sqlQuery, numberOfRows)
+        // Track "seen" against the same key the cache uses, so unique/duplicate counts
+        // line up with actual cache granularity.
+        stats?.reportSqlZ3QuerySeen(cacheKey.hashCode())
+
         val cached = z3ResultCache?.get(cacheKey)
         if (cached != null) {
+            stats?.reportSqlZ3CacheHit()
             return when (cached.status) {
                 Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.solution)
                 else -> emptyList()

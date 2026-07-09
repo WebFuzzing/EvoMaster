@@ -87,7 +87,11 @@ class Statistics : SearchListener {
     private val sqlRowsAverageCalculator = IncrementalAverage()
 
     // Z3-based SQL data generation statistics
-    private var sqlZ3TotalQueriesProcessed = 0
+    // Invariant: sqlZ3QueriesSeenCount == sqlZ3CacheHitCount + sqlZ3CacheMissCount
+    // (every solve() call is either served from the memoization cache or handled as a miss).
+    private var sqlZ3QueriesSeenCount = 0
+    private var sqlZ3CacheHitCount = 0
+    private var sqlZ3CacheMissCount = 0
     private var sqlZ3SatCount = 0
     private var sqlZ3UnsatCount = 0
     private var sqlZ3UnknownCount = 0
@@ -244,31 +248,31 @@ class Statistics : SearchListener {
     }
 
     fun reportSqlZ3Sat(z3TimeMs: Long) {
-        sqlZ3TotalQueriesProcessed++
+        sqlZ3CacheMissCount++
         sqlZ3SatCount++
         sqlZ3TimeMs += z3TimeMs
     }
 
     fun reportSqlZ3Unsat(z3TimeMs: Long) {
-        sqlZ3TotalQueriesProcessed++
+        sqlZ3CacheMissCount++
         sqlZ3UnsatCount++
         sqlZ3TimeMs += z3TimeMs
     }
 
     fun reportSqlZ3Unknown(z3TimeMs: Long) {
-        sqlZ3TotalQueriesProcessed++
+        sqlZ3CacheMissCount++
         sqlZ3UnknownCount++
         sqlZ3TimeMs += z3TimeMs
     }
 
     fun reportSqlZ3Error(z3TimeMs: Long) {
-        sqlZ3TotalQueriesProcessed++
+        sqlZ3CacheMissCount++
         sqlZ3ErrorCount++
         sqlZ3TimeMs += z3TimeMs
     }
 
     fun reportSqlZ3ParseFailure() {
-        sqlZ3TotalQueriesProcessed++
+        sqlZ3CacheMissCount++
         sqlZ3ParseFailureCount++
     }
 
@@ -278,10 +282,21 @@ class Statistics : SearchListener {
     }
 
     fun reportSqlZ3QuerySeen(queryHash: Int) {
+        sqlZ3QueriesSeenCount++
         if (sqlZ3SeenQueryHashes.add(queryHash)) {
             sqlZ3UniqueQueriesCount++
         }
     }
+
+    fun reportSqlZ3CacheHit() {
+        sqlZ3CacheHitCount++
+    }
+
+    // Exposed for tests: verify the memoization accounting invariant
+    // (seen == cacheHits + cacheMisses).
+    internal fun getSqlZ3QueriesSeenCount() = sqlZ3QueriesSeenCount
+    internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
+    internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
     fun reportSqlZ3CorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
         sqlZ3CorrectnessCheckCount++
@@ -459,9 +474,11 @@ class Statistics : SearchListener {
 
             // statistics info for Z3-based SQL data generation (only emitted when collectSqlZ3Stats=true)
             if (config.collectSqlZ3Stats) {
-                add(Pair("sqlZ3TotalQueries", "$sqlZ3TotalQueriesProcessed"))
+                add(Pair("sqlZ3QueriesSeen", "$sqlZ3QueriesSeenCount"))
                 add(Pair("sqlZ3UniqueQueries", "$sqlZ3UniqueQueriesCount"))
-                add(Pair("sqlZ3DuplicateQueries", "${sqlZ3TotalQueriesProcessed - sqlZ3ParseFailureCount - sqlZ3UniqueQueriesCount}"))
+                add(Pair("sqlZ3DuplicateQueries", "${sqlZ3QueriesSeenCount - sqlZ3UniqueQueriesCount}"))
+                add(Pair("sqlZ3CacheHits", "$sqlZ3CacheHitCount"))
+                add(Pair("sqlZ3CacheMisses", "$sqlZ3CacheMissCount"))
                 add(Pair("sqlZ3Sat", "$sqlZ3SatCount"))
                 add(Pair("sqlZ3Unsat", "$sqlZ3UnsatCount"))
                 add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
