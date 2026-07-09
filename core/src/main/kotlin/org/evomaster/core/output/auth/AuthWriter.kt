@@ -31,8 +31,12 @@ object AuthWriter {
         placeHolderResolver: PlaceHolderResolver?
     ) {
 
-        // Special handling for Playwright: build request with options object instead of chained calls
+        // Compute placeholder replacements for PLaywright (used for dynamic user data)
         if (format.isPlaywright()) {
+            val replacements: List<String>? = placeHolderResolver?.placeHolders?.entries?.map {
+                val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
+                ".replace(\"${placeholder}\", ${it.value})"
+            }
             val verb = k.verb.name.lowercase()
             lines.add(".$verb(")
             if (k.externalEndpointURL != null) {
@@ -64,10 +68,17 @@ object AuthWriter {
                 if (contentType != null) {
                     when (contentType) {
                         ContentType.X_WWW_FORM_URLENCODED -> {
-                            lines.add("data: \"${k.payload}\",")
+                            if (replacements == null) {
+                                lines.add("data: \"${k.payload}\",")
+                            } else {
+                                lines.add("data: \"${k.payload}\"")
+                                // Apply string replacements for placeholders
+                                replacements.forEach { lines.append(it) }
+                                lines.append(",")
+                            }
                         }
                         ContentType.JSON -> {
-                            testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                            testCaseWriter.printSendJsonBody(k.payload!!, lines, functionsOnString = replacements)
                             // printSendJsonBody for Playwright appends a trailing comma
                         }
                         else -> throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")

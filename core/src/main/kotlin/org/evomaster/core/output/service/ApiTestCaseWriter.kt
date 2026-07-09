@@ -666,12 +666,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             return ".body(containsString(\"$content\"))"
         }
 
+        if (format.isPlaywright()) {
+            return "expect(await $responseVariableName.text()).toContain(\"$content\");"
+        }
+
         if (format.isJavaScript()) {
             return "expect($responseVariableName.text).toContain(\"$content\");"        }
-
-        if (format.isPlaywright()) {
-            return "await $responseVariableName.text();"
-        }
 
         if (format.isCsharp()) {
             val k = when {
