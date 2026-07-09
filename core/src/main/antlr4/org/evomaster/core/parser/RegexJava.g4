@@ -129,7 +129,6 @@ quoteChar
  | E
 ;
 
-//TODO
 CharacterEscape
  : SLASH ControlEscape
  | SLASH 'c' ControlLetter
@@ -138,8 +137,7 @@ CharacterEscape
  | SLASH OctalEscapeSequence
  | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
                                                         // as on JS this is allowed only while certain flags are enabled
-
- //| IdentityEscape
+ | SLASH ~[a-zA-Z0-9] // identity escape
  ;
 
 // Instead of listing all unicode scripts, blocks, etc. the parser allows anything
@@ -163,13 +161,6 @@ fragment ControlEscape
 fragment ControlLetter
  : [?-_a-z]
  ;
-
-
-//TODO
-//fragment IdentityEscape ::
-//SourceCharacter but not IdentifierPart
-//<ZWJ>
-//<ZWNJ>
 
 //TODO
 //DecimalEscape
@@ -261,7 +252,6 @@ classEscape
 atomEscape
  : CharacterClassEscape
  | CharacterEscape
- | SyntaxEscapes
  | BackReference
  | NamedBackReference
  ;
@@ -282,11 +272,6 @@ CharacterClassEscape
   // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
   // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
   : SLASH [dDsSwWvVhH]
- ;
-
-
-SyntaxEscapes
- : SLASH [^$\\.*+?()[\]{}|/\-,:<>=!]
  ;
 
 CARET                      : '^';
