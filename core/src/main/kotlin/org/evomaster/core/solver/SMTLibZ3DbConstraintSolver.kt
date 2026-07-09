@@ -187,6 +187,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
         stats?.reportSqlZ3SmtlibGenTime(smtlibGenMs, smtlibBytes)
 
+        // If a WHERE/JOIN condition could not be translated, it was dropped from the SMT problem, so the
+        // generated data may not satisfy the original query. Record it: this failure mode is otherwise
+        // invisible in the stats (Z3 typically still returns SAT on the weakened formula).
+        if (generator.skippedQueryConstraints > 0) {
+            stats?.reportSqlZ3PartialTranslation()
+        }
+
         val fileName = storeToTmpFile(smtLib)
 
         val z3Start = System.currentTimeMillis()

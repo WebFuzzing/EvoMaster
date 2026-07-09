@@ -97,6 +97,7 @@ class Statistics : SearchListener {
     private var sqlZ3UnknownCount = 0
     private var sqlZ3ErrorCount = 0
     private var sqlZ3ParseFailureCount = 0
+    private var sqlZ3PartialTranslationCount = 0
     private var sqlZ3TimeMs = 0L
     private var sqlZ3SmtlibGenTimeMs = 0L
     private val sqlZ3SmtlibSizeBytes = IncrementalAverage()
@@ -274,6 +275,15 @@ class Statistics : SearchListener {
     fun reportSqlZ3ParseFailure() {
         sqlZ3CacheMissCount++
         sqlZ3ParseFailureCount++
+    }
+
+    /**
+     * A query whose WHERE/JOIN condition could not be fully translated to SMT-LIB (the untranslatable
+     * part was dropped). Counted independently of the SAT/UNSAT outcome, since the weakened formula is
+     * usually still SAT: the generated data may not satisfy the original query.
+     */
+    fun reportSqlZ3PartialTranslation() {
+        sqlZ3PartialTranslationCount++
     }
 
     fun reportSqlZ3SmtlibGenTime(ms: Long, sizeBytes: Int) {
@@ -484,6 +494,7 @@ class Statistics : SearchListener {
                 add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
                 add(Pair("sqlZ3Errors", "$sqlZ3ErrorCount"))
                 add(Pair("sqlZ3ParseFailures", "$sqlZ3ParseFailureCount"))
+                add(Pair("sqlZ3PartialTranslations", "$sqlZ3PartialTranslationCount"))
                 add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
                 add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
                 add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))

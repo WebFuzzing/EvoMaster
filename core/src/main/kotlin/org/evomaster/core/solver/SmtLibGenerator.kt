@@ -32,6 +32,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private var parser = JSqlConditionParser()
 
+    /**
+     * Number of query constraints (WHERE conditions, JOIN ON conditions) that could not be translated
+     * to SMT-LIB and were skipped during [generateSMT]. When greater than 0, the generated formula is
+     * weaker than the original query, so Z3 may return SAT with rows that do not satisfy the dropped
+     * predicate. Exposed so the caller can record it in the solver statistics.
+     */
+    var skippedQueryConstraints = 0
+        private set
+
     private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
     private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
 
@@ -420,6 +429,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     smt.addNode(constraint)
                 }
             } catch (e: RuntimeException) {
+                skippedQueryConstraints++
                 LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
             }
         }
@@ -457,6 +467,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                                 smt.addNode(constraint)
                             }
                         } catch (e: RuntimeException) {
+                            skippedQueryConstraints++
                             LoggingUtil.getInfoLogger().warn("Could not translate JOIN ON clause to SMT-LIB, skipping: ${onExpression}. Reason: ${e.message}")
                         }
                     }
