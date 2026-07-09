@@ -18,6 +18,11 @@ public class SMTResultParser {
     /**
      * Parses the Z3 solver response and extracts variable values.
      *
+     * FRAGILITY: parsing is regex- and position-based and assumes Z3's textual get-value layout
+     * (one struct per line, constructor name split on '-', values split on whitespace). It therefore
+     * assumes string values contain no spaces, hyphens, quotes or parentheses; such values would be
+     * mis-split. Hardening the parser (or requesting values in a more robust format) is future work.
+     *
      * @param z3Response the raw response from Z3 solver
      * @return a {@link Z3Solution} mapping variable names to the {@link SMTLibValue} objects Z3 assigned to them
      */

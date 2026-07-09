@@ -13,8 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -95,21 +93,31 @@ public class Z3DockerExecutorTest {
         assertEquals(Z3Result.Status.SAT, result.getStatus(), "Response should be SAT for composed_types.smt");
 
         assertTrue(result.getSolution().containsKey("users1"), "Response should contain users1");
-        Map<String, SMTLibValue> users1Expected = new HashMap<>();
-        users1Expected.put("ID", new LongValue(3L));
-        users1Expected.put("NAME", new StringValue("Alice"));
-        users1Expected.put("AGE", new LongValue(31L));
-        users1Expected.put("POINTS", new LongValue(7L));
-
-        assertEquals(new StructValue(users1Expected), result.getSolution().get("users1"), "The value for users1 is incorrect");
-
         assertTrue(result.getSolution().containsKey("users2"), "Response should contain users2");
-        Map<String, SMTLibValue> users2Expected = new HashMap<>();
-        users2Expected.put("ID", new LongValue(3L));
-        users2Expected.put("NAME", new StringValue("Bob"));
-        users2Expected.put("AGE", new LongValue(31L));
-        users2Expected.put("POINTS", new LongValue(7L));
-        assertEquals(new StructValue(users2Expected), result.getSolution().get("users2"), "The value for users2 is incorrect");
+
+        // NOTE: assert the individual field VALUES, not StructValue equality: StructValue.equals only
+        // compares the set of field names, so a whole-struct assertEquals would pass regardless of the
+        // actual values Z3 returned. We assert the fully-constrained fields exactly (NAME, POINTS) and
+        // the underconstrained fields against their SMT-LIB constraints (AGE range, distinct IDs).
+        StructValue users1 = (StructValue) result.getSolution().get("users1");
+        StructValue users2 = (StructValue) result.getSolution().get("users2");
+
+        // NAME and POINTS are pinned by the SMT-LIB (NAME = "Alice"/"Bob", POINTS = 7), so deterministic.
+        assertEquals(new StringValue("Alice"), users1.getField("NAME"), "NAME users1");
+        assertEquals(new StringValue("Bob"), users2.getField("NAME"), "NAME users2");
+        assertEquals(new LongValue(7L), users1.getField("POINTS"), "POINTS users1");
+        assertEquals(new LongValue(7L), users2.getField("POINTS"), "POINTS users2");
+
+        // AGE is constrained to (30, 100): assert the constraint holds rather than a specific value.
+        long age1 = ((LongValue) users1.getField("AGE")).getValue();
+        long age2 = ((LongValue) users2.getField("AGE")).getValue();
+        assertTrue(age1 > 30 && age1 < 100, "AGE users1 out of range: " + age1);
+        assertTrue(age2 > 30 && age2 < 100, "AGE users2 out of range: " + age2);
+
+        // IDs must be distinct (the 'distinct' assertion over the PK).
+        long id1 = ((LongValue) users1.getField("ID")).getValue();
+        long id2 = ((LongValue) users2.getField("ID")).getValue();
+        assertNotEquals(id1, id2, "user IDs must be distinct");
     }
 
     /**

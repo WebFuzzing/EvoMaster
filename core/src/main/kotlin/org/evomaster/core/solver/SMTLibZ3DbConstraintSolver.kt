@@ -70,6 +70,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
     // Schema is assumed stable within a single run, so only query + row count form the key.
     // Null until Z3 SQL generation is enabled in postConstruct — avoids allocating the map in runs where Z3 SQL generation is off.
+    //
+    // THREAD-SAFETY: this is an access-ordered LinkedHashMap (LRU), whose get() mutates internal order,
+    // so it is NOT thread-safe. It relies on solve() being called from a single thread, which holds today
+    // because the MIO search loop (and thus fitness evaluation / structure mutation) is single-threaded.
+    // If fitness evaluation is ever parallelized, this cache must be synchronized or replaced with a
+    // concurrent LRU, otherwise concurrent access would corrupt it (lost entries / ConcurrentModificationException).
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
     companion object {
@@ -206,6 +212,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                      * (SELECT, DELETE, UPDATE). In the future this could be extended to verify
                      * that the generated rows satisfy insertion preconditions such as FK constraints
                      * or NOT NULL columns that Z3 SQL generation currently leaves unconstrained.
+                     *
+                     * Note: SqlHeuristicsCalculator is SELECT-oriented. For DELETE/UPDATE the distance
+                     * computation may fail and be reported as an evaluation failure (sqlDistanceEvaluationFailure)
+                     * rather than a real distance; such failures are counted separately and are excluded
+                     * from the average, so they do not distort the correctness metric.
                      */
                     val distResult = computeCorrectnessDistance(sqlQuery, schemaDto, sqlActions)
                     if (distResult.sqlDistanceEvaluationFailure) {
