@@ -53,14 +53,14 @@ public class SMTResultParser {
             // Defensive: Z3DockerExecutor already classifies 'unsat'/'unknown' before invoking this
             // parser, so in practice only 'sat' models reach here. This guard is kept as a safety net
             // in case the parser is ever called directly with an unsat response.
-            if (line.startsWith("unsat")) {
+            if (line.startsWith(CheckSatResponse.UNSAT)) {
                 throw new RuntimeException("Unsatisfiable problem");
             }
             if (line.trim().isEmpty()) {
                 continue; // Skip empty lines
             }
 
-            if (line.startsWith("sat")) {
+            if (line.startsWith(CheckSatResponse.SAT)) {
                 buffer.setLength(0); // Reset buffer if a new result starts
                 continue;
             }

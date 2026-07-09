@@ -1,5 +1,6 @@
 package org.evomaster.solver;
 
+import org.evomaster.solver.smtlib.CheckSatResponse;
 import org.evomaster.solver.smtlib.SMTResultParser;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
@@ -20,10 +21,10 @@ public class Z3DockerExecutor implements AutoCloseable {
     // The Docker entrypoint that keeps it running indefinitely
     public static final String ENTRYPOINT = "while :; do sleep 1000 ; done";
 
-    // SMT-LIB (check-sat) response tokens returned by Z3
-    private static final String SAT = "sat";
-    private static final String UNSAT = "unsat";
-    private static final String UNKNOWN = "unknown";
+    // Z3 CLI invocation
+    private static final String Z3_COMMAND = "z3";
+    // Soft per-query timeout flag: "-t:<ms>" makes (check-sat) return 'unknown' on expiry
+    private static final String TIMEOUT_FLAG_PREFIX = "-t:";
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?> z3Prover;
 
@@ -77,8 +78,8 @@ public class Z3DockerExecutor implements AutoCloseable {
     public Z3Result solveFromFile(String fileName, long timeoutMs) {
         try {
             Container.ExecResult result = timeoutMs > 0
-                    ? z3Prover.execInContainer("z3", "-t:" + timeoutMs, containerPath + fileName)
-                    : z3Prover.execInContainer("z3", containerPath + fileName);
+                    ? z3Prover.execInContainer(Z3_COMMAND, TIMEOUT_FLAG_PREFIX + timeoutMs, containerPath + fileName)
+                    : z3Prover.execInContainer(Z3_COMMAND, containerPath + fileName);
 
             if (result.getExitCode() != 0) {
                 return Z3Result.error("Z3 exited with code " + result.getExitCode()
@@ -92,16 +93,16 @@ public class Z3DockerExecutor implements AutoCloseable {
             }
 
             String trimmed = stdout.trim();
-            if (trimmed.startsWith(UNSAT)) {
+            if (trimmed.startsWith(CheckSatResponse.UNSAT)) {
                 return Z3Result.unsat();
             }
             // "unknown" means Z3 could not decide (e.g. incomplete theory or timeout).
             // It must be handled explicitly: otherwise it would fall through and be parsed
             // as an empty model, silently masquerading as SAT.
-            if (trimmed.startsWith(UNKNOWN)) {
+            if (trimmed.startsWith(CheckSatResponse.UNKNOWN)) {
                 return Z3Result.unknown();
             }
-            if (!trimmed.startsWith(SAT)) {
+            if (!trimmed.startsWith(CheckSatResponse.SAT)) {
                 return Z3Result.error("Unexpected Z3 output for file " + fileName + ": " + stdout);
             }
 

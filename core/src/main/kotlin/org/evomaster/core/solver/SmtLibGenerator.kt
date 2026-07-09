@@ -169,20 +169,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
             for (column in smtTable.dto.columns) {
-                if (column.type.equals("BOOLEAN", ignoreCase = true)) {
+                if (column.type.equals(BOOLEAN_TYPE, ignoreCase = true)) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
                     for (i in 1..numberOfRows) {
                         smt.addNode(
                             AssertSMTNode(
                                 OrAssertion(
-                                    listOf(
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"true\"")),
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"True\"")),
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"TRUE\"")),
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"false\"")),
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"False\"")),
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"FALSE\""))
-                                    )
+                                    BOOLEAN_LITERALS.map { literal ->
+                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"$literal\""))
+                                    }
                                 )
                             )
                         )
@@ -195,17 +190,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
             for (column in smtTable.dto.columns) {
-                if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
+                if (column.type.equals(TIMESTAMP_TYPE, ignoreCase = true)) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
-                    val lowerBound = 0 // Example for Unix epoch start
-                    val upperBound = 32503680000 // Example for year 3000 in seconds
 
                     for (i in 1..numberOfRows) {
                         smt.addNode(
                             AssertSMTNode(
                                 GreaterThanOrEqualsAssertion(
                                     "($columnName ${smtTable.smtName}$i)",
-                                    lowerBound.toString()
+                                    TIMESTAMP_EPOCH_LOWER_BOUND.toString()
                                 )
                             )
                         )
@@ -213,7 +206,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                             AssertSMTNode(
                                 LessThanOrEqualsAssertion(
                                     "($columnName ${smtTable.smtName}$i)",
-                                    upperBound.toString()
+                                    TIMESTAMP_EPOCH_UPPER_BOUND.toString()
                                 )
                             )
                         )
@@ -604,44 +597,62 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     companion object {
 
+        // Bounds for TIMESTAMP columns, encoded as epoch seconds (SMT Int).
+        private const val TIMESTAMP_EPOCH_LOWER_BOUND = 0L            // Unix epoch start
+        private const val TIMESTAMP_EPOCH_UPPER_BOUND = 32503680000L  // ~year 3000, in seconds
+
+        // SMT-LIB sorts used as TYPE_MAP targets.
+        private const val SMT_INT = "Int"
+        private const val SMT_REAL = "Real"
+        private const val SMT_STRING = "String"
+
+        // SQL type names that need special interpretation beyond their SMT sort: BOOLEAN is encoded as an
+        // SMT String and TIMESTAMP as an SMT Int, so gene reconstruction must consult the original type.
+        // Shared with the comparison sites in this class and referenced by SMTLibZ3DbConstraintSolver.
+        const val BOOLEAN_TYPE = "BOOLEAN"
+        const val TIMESTAMP_TYPE = "TIMESTAMP"
+
+        // The string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
+        private val BOOLEAN_LITERALS = listOf("true", "True", "TRUE", "false", "False", "FALSE")
+
         // Maps database column types to SMT-LIB types.
         // FUTURE WORK: this is one of three independent type vocabularies interpreting ColumnDto.type
         // (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). They can
         // silently disagree when a backend reports a variant spelling; consolidating them into a single
         // source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
         private val TYPE_MAP = mapOf(
-            "BIGINT" to "Int",
-            "BIT" to "Int",
-            "INTEGER" to "Int",
-            "INT" to "Int",
-            "INT2" to "Int",
-            "INT4" to "Int",
-            "INT8" to "Int",
-            "TINYINT" to "Int",
-            "SMALLINT" to "Int",
+            "BIGINT" to SMT_INT,
+            "BIT" to SMT_INT,
+            "INTEGER" to SMT_INT,
+            "INT" to SMT_INT,
+            "INT2" to SMT_INT,
+            "INT4" to SMT_INT,
+            "INT8" to SMT_INT,
+            "TINYINT" to SMT_INT,
+            "SMALLINT" to SMT_INT,
             // KNOWN LIMITATION: NUMERIC is mapped to Int, so any fractional part is truncated. This is
             // inconsistent with DECIMAL (mapped to Real). Mapping NUMERIC to Real (to preserve decimals)
             // is future work.
-            "NUMERIC" to "Int",
-            "SERIAL" to "Int",
-            "SMALLSERIAL" to "Int",
-            "BIGSERIAL" to "Int",
-            "TIMESTAMP" to "Int",
-            "DATE" to "Int",
-            "FLOAT" to "Real",
-            "DOUBLE" to "Real",
-            "DECIMAL" to "Real",
-            "REAL" to "Real",
-            "CHARACTER VARYING" to "String",
-            "CHAR" to "String",
-            "VARCHAR" to "String",
-            "TEXT" to "String",
-            "CHARACTER LARGE OBJECT" to "String",
-            "BOOLEAN" to "String",
-            "BOOL" to "String",
-            "UUID" to "String",
-            "JSONB" to "String",
-            "BYTEA" to "String",
+            "NUMERIC" to SMT_INT,
+            "SERIAL" to SMT_INT,
+            "SMALLSERIAL" to SMT_INT,
+            "BIGSERIAL" to SMT_INT,
+            TIMESTAMP_TYPE to SMT_INT,
+            "DATE" to SMT_INT,
+            "FLOAT" to SMT_REAL,
+            "DOUBLE" to SMT_REAL,
+            "DECIMAL" to SMT_REAL,
+            "REAL" to SMT_REAL,
+            "CHARACTER VARYING" to SMT_STRING,
+            "CHAR" to SMT_STRING,
+            "VARCHAR" to SMT_STRING,
+            "TEXT" to SMT_STRING,
+            "CHARACTER LARGE OBJECT" to SMT_STRING,
+            BOOLEAN_TYPE to SMT_STRING,
+            "BOOL" to SMT_STRING,
+            "UUID" to SMT_STRING,
+            "JSONB" to SMT_STRING,
+            "BYTEA" to SMT_STRING,
         )
     }
 }

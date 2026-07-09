@@ -303,14 +303,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 var gene: Gene = IntegerGene(dbColumnName, 0)
                 when (val columnValue = columns.getField(smtColumn)) {
                     is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "BOOLEAN")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
                             BooleanGene(dbColumnName, toBoolean(columnValue.value))
                         } else {
                             StringGene(dbColumnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "TIMESTAMP")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
                             val epochSeconds = columnValue.value.toLong()
                             val localDateTime = LocalDateTime.ofInstant(
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
