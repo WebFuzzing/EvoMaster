@@ -138,6 +138,8 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
 
 * _Schema_: REST APIs must provide a schema in [OpenAPI format](https://www.openapis.org/). We support versions _2.0_, _3.0_ and _3.1_. Unfortunately, support for version _3.2_ is currently on hold due to [swagger-parser](https://github.com/swagger-api/swagger-parser/issues/2248).
 
+* _OAI Overlay_: for REST APIs, we natively support [Overlay](https://github.com/OAI/Overlay-Specification) transformations. This is needed for testers that want to add test data via "examples" entries without modifying the OpenAPI scheme directly, [see documentation](./docs/overlay.md).
+
 * _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either _Java_ or _Kotlin_, as well as test suites in _Python_ and _JavaScript_. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
   Some examples are: PYTHON_UNITTEST, KOTLIN_JUNIT_5, JAVA_JUNIT_4 and JS_JEST.
   Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
