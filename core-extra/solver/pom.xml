@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-core-extra</artifactId>
-        <version>6.1.1</version>
+        <version>6.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>solver</artifactId>
