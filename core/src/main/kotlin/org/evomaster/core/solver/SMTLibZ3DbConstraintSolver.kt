@@ -167,7 +167,16 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
         val smtlibGenStart = System.currentTimeMillis()
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
-        val smtLib = generator.generateSMT(queryStatement)
+        // SMT-LIB generation can throw for unsupported column types or query shapes it cannot handle
+        // (e.g. a cast failure on an unexpected statement structure). Degrade gracefully to an empty
+        // result instead of letting the exception propagate into the structure mutator.
+        val smtLib = try {
+            generator.generateSMT(queryStatement)
+        } catch (e: RuntimeException) {
+            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
+            stats?.reportSqlZ3ParseFailure()
+            return emptyList()
+        }
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
         val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
         stats?.reportSqlZ3SmtlibGenTime(smtlibGenMs, smtlibBytes)
@@ -325,6 +334,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return value.equals("True", ignoreCase = true)
     }
 
+    /**
+     * Whether the given column's SQL type (as reported in [ColumnDto.type]) equals [expectedType],
+     * compared case-insensitively as a raw string.
+     *
+     * CAVEAT: this relies on [ColumnDto.type] containing the exact spelling passed in (currently
+     * "BOOLEAN" and "TIMESTAMP"). It is needed because the SMT sort alone cannot recover these types
+     * (BOOLEAN is encoded as an SMT String, TIMESTAMP as an SMT Int), so gene reconstruction must
+     * consult the original SQL type. The set of type spellings recognized here must stay consistent
+     * with [SmtLibGenerator.TYPE_MAP]; if a backend reports a variant spelling (e.g. "BOOL" or
+     * "TIMESTAMP WITHOUT TIME ZONE"), the special handling is silently skipped. Consolidating these
+     * type vocabularies into a single source of truth is future work.
+     */
     private fun hasColumnType(
         schemaDto: DbInfoDto,
         table: Table,
@@ -346,13 +367,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Extracts the table name from the key by removing the last character (index).
+     * Extracts the table name from a row-constant key by removing the trailing row index.
+     *
+     * Row constants are named "${smtName}${i}" (e.g. "users1", "users2"). The trailing digits are
+     * stripped so this works for any number of rows (e.g. "users10" -> "users"), not just single-digit
+     * indices. Note: this still assumes table names themselves do not end in a digit.
      *
      * @param key The key containing the table name and index.
      * @return The extracted table name.
      */
     private fun getTableName(key: String): String {
-        return key.substring(0, key.length - 1)
+        return key.replace(Regex("\\d+$"), "")
     }
 
     /**
@@ -444,6 +469,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
     /**
      * Maps column types to ColumnDataType.
+     *
+     * FUTURE WORK: this recognizes only a small subset of SQL type spellings and falls back to
+     * CHARACTER_VARYING for everything else. It is one of three independent type vocabularies that
+     * interpret [ColumnDto.type] — the others being [SmtLibGenerator.TYPE_MAP] (SQL type -> SMT sort)
+     * and [hasColumnType] (BOOLEAN/TIMESTAMP special-casing). These can silently disagree when a
+     * backend reports a variant spelling. They should be consolidated into a single source of truth
+     * so that generation and interpretation cannot drift; see the note on [hasColumnType].
      *
      * @param type The column type as a string.
      * @return The corresponding ColumnDataType.

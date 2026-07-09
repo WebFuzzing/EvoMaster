@@ -312,6 +312,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 findReferencedPKSelector(smtTable.dto, referencedSmtTable.dto, foreignKey)
             )
 
+            // KNOWN LIMITATION: composite foreign keys are not fully supported. Each source column is
+            // matched independently against a single referenced column, rather than constraining the
+            // whole tuple of source columns to match a referenced tuple. This is correct for
+            // single-column FKs (the common case) but under-models multi-column FKs. Fully supporting
+            // composite FKs (as a tuple-level OR over referenced rows) is future work.
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
                     smtTable.smtColumnName(sourceColumn), smtTable.smtName,
@@ -442,10 +447,18 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 for (join in joins) {
                     val onExpressions = join.onExpressions
                     if (onExpressions.isNotEmpty()) {
+                        // KNOWN LIMITATION: only the first ON expression is used; a composite ON
+                        // (e.g. "a = b AND c = d") drops all but the first conjunct.
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
                             val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            // KNOWN LIMITATION: the ON condition is translated with the SAME row index on
+                            // both sides ("diagonal pairing"): row i of one table is matched only with row i
+                            // of the other. This is sufficient at the default numberOfRows=1 to force a
+                            // non-empty JOIN, but it does not model full INNER JOIN semantics: for
+                            // numberOfRows>=2 it never explores mismatched-index pairs (e.g. users2 with
+                            // products1). Matching arbitrary row combinations is future work.
                             for (i in 1..numberOfRows) {
                                 val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
                                 smt.addNode(constraint)
@@ -591,7 +604,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     companion object {
 
-        // Maps database column types to SMT-LIB types
+        // Maps database column types to SMT-LIB types.
+        // FUTURE WORK: this is one of three independent type vocabularies interpreting ColumnDto.type
+        // (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). They can
+        // silently disagree when a backend reports a variant spelling; consolidating them into a single
+        // source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "BIT" to "Int",
@@ -602,6 +619,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "INT8" to "Int",
             "TINYINT" to "Int",
             "SMALLINT" to "Int",
+            // KNOWN LIMITATION: NUMERIC is mapped to Int, so any fractional part is truncated. This is
+            // inconsistent with DECIMAL (mapped to Real). Mapping NUMERIC to Real (to preserve decimals)
+            // is future work.
             "NUMERIC" to "Int",
             "SERIAL" to "Int",
             "SMALLSERIAL" to "Int",

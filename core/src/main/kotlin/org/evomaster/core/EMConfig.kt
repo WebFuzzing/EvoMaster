@@ -1988,6 +1988,16 @@ class EMConfig {
     @Min(0.0)
     var sqlZ3TimeoutMs = DEFAULT_SQL_Z3_TIMEOUT_MS
 
+    @Experimental
+    @Cfg("Number of rows the Z3 solver generates per table when solving a failed SQL query. " +
+            "The default of 1 is sufficient for the currently supported queries; generating a single " +
+            "row per table already forces the query to return a non-empty result. This will need to be " +
+            "increased once support for more complex JOINs (matching arbitrary row combinations, not just " +
+            "the diagonal pairing of row i with row i) is added. Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3NumberOfRows = 1
+
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true

@@ -442,7 +442,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val newActions = mutableListOf<List<SqlAction>>()
         for (query in failedWhereQueries) {
-            val newActionsForQuery = z3Solver.solve(schemaDto, query)
+            // numberOfRows is kept at 1 by default, which is enough to force a non-empty result for the
+            // currently supported queries. It is configurable to allow experimenting with more rows once
+            // support for complex JOINs (arbitrary row combinations) is added.
+            val newActionsForQuery = z3Solver.solve(schemaDto, query, config.sqlZ3NumberOfRows)
             newActions.addAll(mutableListOf(newActionsForQuery))
             ind.addInitializingDbActions(actions = newActionsForQuery)
         }
