@@ -21,6 +21,7 @@ import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+private const val DEFAULT_VALUE = 'a'
 private const val ANY_CHARACTER_RX_GENE_DEFAULT_NAME = "."
 private const val firstSurrogateChar = '\uD800'
 private const val lastSurrogateChar = '\uDFFF'
@@ -46,7 +47,7 @@ class AnyCharacterRxGene(
         val unixLinesValidRanges = MultiCharacterRange(true, unixLinesModeLineTerminators).intersect(dotAllValidRanges)
     }
 
-    var value: Char = 'a'
+    var value: Char = DEFAULT_VALUE // this default value is throwaway as randomize should be called before first usage
 
     val validRanges = when {
         flags.dotAll -> dotAllValidRanges
