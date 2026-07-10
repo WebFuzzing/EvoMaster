@@ -42,11 +42,15 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2026
 
+* M. T. Shalmani, A. Golmohammadi, J. P. Galeotti, A. Arcuri.
+  *Online Machine Learning Prediction of Failed  Calls to Enhance REST API Fuzzing*.
+  International Conference on the Quality of Information and Communications Technology (QUATIC).
+  _(to appear)_
+
 * M. Zhang, T. Yue, A. Arcuri.
   *Fuzzing Microservices in Face of Intrinsic Uncertainties*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2026_tosem_uncert.pdf)]
-
 
 * H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
   *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
