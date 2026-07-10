@@ -425,10 +425,16 @@ class HttpSemanticsService : TimeBoxedPhase{
         when (k) {
             401 -> modifyCopy.auth = HttpWsNoAuth()
             403 -> {
-                val otherAuths = sampler.authentications
-                    .getAllOthers(getAction.auth.name, HttpWsAuthenticationInfo::class.java)
-                if (otherAuths.isEmpty()) return
-                modifyCopy.auth = otherAuths.first()
+                if(getAction.auth.isNoAuth()){
+                    //in theory shouldn't happen, as should get 401, but API might be faulty... or return
+                    // 403 instead of 404 on non-existing resources
+                    modifyCopy.auth = HttpWsNoAuth()
+                } else {
+                    val otherAuths = sampler.authentications
+                        .getAllOthers(getAction.auth.name, HttpWsAuthenticationInfo::class.java)
+                    if (otherAuths.isEmpty()) return
+                    modifyCopy.auth = otherAuths.first()
+                }
             }
             else -> modifyCopy.auth = getAction.auth
         }

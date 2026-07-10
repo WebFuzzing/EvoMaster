@@ -2,6 +2,7 @@ package org.evomaster.core.problem.httpws.auth
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.action.Action
 
@@ -33,8 +34,7 @@ open class HttpWsAuthenticationInfo(
 
     init {
 
-        //FIXME "NoAuth" constant
-        if(headers.isEmpty() && name != "NoAuth" && endpointCallLogin==null){
+        if(headers.isEmpty() && name != NoAuth.NAME && endpointCallLogin==null){
             throw IllegalArgumentException("Missing info")
         }
     }
