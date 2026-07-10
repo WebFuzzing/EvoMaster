@@ -21,14 +21,15 @@ import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+private const val ANY_CHARACTER_RX_GENE_DEFAULT_NAME = "."
 private const val firstSurrogateChar = '\uD800'
 private const val lastSurrogateChar = '\uDFFF'
-private const val defaultLineTerminators = "\n\r\u0085\u2028\u2029"
-private const val unixLinesModeLineTerminators = "\n"
+private val defaultLineTerminators = listOf('\n', '\r', '\u0085', '\u2028', '\u2029').map{ CharacterRange(it) }
+private val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
 
 class AnyCharacterRxGene(
     val flags: RegexFlags = RegexFlags()
-) : RxAtom, SimpleGene(".") {
+) : RxAtom, SimpleGene(ANY_CHARACTER_RX_GENE_DEFAULT_NAME) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)

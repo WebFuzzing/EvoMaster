@@ -16,14 +16,16 @@ import org.evomaster.core.utils.RegexFlags
 import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.LoggerFactory
 
-private const val firstASCIIChar = 0
-private const val lastASCIIChar = 0x7f
-private const val firstLowerCaseChar = 'a'
-private const val lastLowerCaseChar = 'z'
-private const val firstUpperCaseChar = 'A'
-private const val lastUpperCaseChar = 'Z'
-private const val lastLowerHexChar = 'f'
-private const val lastUpperHexChar = 'F'
+private const val FIRST_ASCII_CHAR = 0
+private const val LAST_ASCII_CHAR = 0x7f
+private const val FIRST_LOWER_CASE_CHAR = 'a'
+private const val LAST_LOWER_CASE_CHAR = 'z'
+private const val FIRST_UPPER_CASE_CHAR = 'A'
+private const val LAST_UPPER_CASE_CHAR = 'Z'
+private const val LAST_LOWER_CASE_HEX_CHAR = 'f'
+private const val LAST_UPPER_CASE_HEX_CHAR = 'F'
+private const val SPACE_CHAR = ' '
+private const val DELETE_CHAR = '\u007f'
 
 private const val WORD = 'w'
 private const val NON_WORD = 'W'
@@ -108,19 +110,27 @@ class CharacterClassEscapeRxGene(
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
 
-        private fun stringToListOfCharacterRanges(s: String) : List<CharacterRange> {
-            return s.map { CharacterRange(it, it) }
-        }
-
         private val digitSet = listOf(CharacterRange('0', '9'))
-        private val asciiLetterSet = listOf(CharacterRange(firstLowerCaseChar, lastLowerCaseChar), CharacterRange(firstUpperCaseChar, lastUpperCaseChar))
+        private val asciiLetterSet = listOf(CharacterRange(FIRST_LOWER_CASE_CHAR, LAST_LOWER_CASE_CHAR),
+            CharacterRange(FIRST_UPPER_CASE_CHAR, LAST_UPPER_CASE_CHAR))
         private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
-        private val spaceSet = stringToListOfCharacterRanges(" \t\r\n\u000C\u000b") // u000b, u000c being line
-        // tabulation (VT) & form feed (FF, \f) respectively
+        private val spaceSet = listOf(SPACE_CHAR, '\t', '\r', '\n', '\u000b', '\u000c').map { CharacterRange(it) }
         private val horizontalSpaceSet = listOf(CharacterRange(0x2000, 0x200a)) +
-                stringToListOfCharacterRanges(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
-        private val verticalSpaceSet = stringToListOfCharacterRanges("\n\u000B\u000C\r\u0085\u2028\u2029")
-        private val punctuationSet = stringToListOfCharacterRanges("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+                listOf(
+                    SPACE_CHAR, '\t',
+                    '\u00A0', '\u1680', '\u180e',
+                    '\u202f', '\u205f', '\u3000'
+                    ).map{ CharacterRange(it) }
+        private val verticalSpaceSet = listOf(
+            '\n', '\u000B', '\u000C',
+            '\r', '\u0085', '\u2028', '\u2029'
+        ).map{ CharacterRange(it) }
+        private val punctuationSet = listOf(
+            '!', '"', '#', '$', '%', '&', '\'', '(',
+            ')', '*', '+', ',', '-', '.', '/', ':',
+            ';', '<', '=', '>', '?', '@', '[', '\\',
+            ']', '^', '_', '`', '{', '|', '}', '~'
+        ).map{ CharacterRange(it) }
 
         private val digitMultiCharRange = MultiCharacterRange(false, digitSet)
         private val wordMultiCharRange = MultiCharacterRange(false, wordSet)
@@ -136,20 +146,20 @@ class CharacterClassEscapeRxGene(
 
         private val posixAsciiMultiCharRange: Map<PosixClass, PosixMultiCharacterRanges> =
             mapOf(
-                PosixClass.LOWER  to listOf(CharacterRange(firstLowerCaseChar, lastLowerCaseChar)),
-                PosixClass.UPPER  to listOf(CharacterRange(firstUpperCaseChar, lastUpperCaseChar)),
-                PosixClass.ASCII  to listOf(CharacterRange(firstASCIIChar, lastASCIIChar)),
+                PosixClass.LOWER  to listOf(CharacterRange(FIRST_LOWER_CASE_CHAR, LAST_LOWER_CASE_CHAR)),
+                PosixClass.UPPER  to listOf(CharacterRange(FIRST_UPPER_CASE_CHAR, LAST_UPPER_CASE_CHAR)),
+                PosixClass.ASCII  to listOf(CharacterRange(FIRST_ASCII_CHAR, LAST_ASCII_CHAR)),
                 PosixClass.ALPHA  to asciiLetterSet,
                 PosixClass.DIGIT  to digitSet,
                 PosixClass.ALNUM  to digitSet + asciiLetterSet,
                 PosixClass.PUNCT  to punctuationSet,
                 PosixClass.GRAPH  to digitSet + asciiLetterSet + punctuationSet,
-                PosixClass.PRINT  to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharacterRanges("\u0020"),
-                PosixClass.BLANK  to stringToListOfCharacterRanges(" \t"),
-                PosixClass.CNTRL  to listOf(CharacterRange(0, 0x1f)) + stringToListOfCharacterRanges("\u007f"),
+                PosixClass.PRINT  to digitSet + asciiLetterSet + punctuationSet + CharacterRange(SPACE_CHAR),
+                PosixClass.BLANK  to listOf(SPACE_CHAR, '\t').map{ CharacterRange(it) },
+                PosixClass.CNTRL  to listOf(CharacterRange(0, 0x1f)) + CharacterRange(DELETE_CHAR),
                 PosixClass.XDIGIT to digitSet + listOf(
-                    CharacterRange(firstLowerCaseChar, lastLowerHexChar),
-                    CharacterRange(firstUpperCaseChar, lastUpperHexChar)
+                    CharacterRange(FIRST_LOWER_CASE_CHAR, LAST_LOWER_CASE_HEX_CHAR),
+                    CharacterRange(FIRST_UPPER_CASE_CHAR, LAST_UPPER_CASE_HEX_CHAR)
                 ),
                 PosixClass.SPACE  to spaceSet,
             ).mapValues { (_, ranges) ->
