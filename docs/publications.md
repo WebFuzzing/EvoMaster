@@ -13,6 +13,10 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* O. Sahin, M. Zhang, A. Poth, O. Rrjolli, A. Faes, P. Teng, K. Xue, W. Ma, A. Arcuri
+  *Using OAI Overlay to Enhance REST API Fuzzing*.
+  [[arXiv](https://arxiv.org/html/2607.04325v1)]
+
 * A. Arcuri, A. Poth, O. Rrjolli, P. Garrett, J. P. Galeotti
   *Fuzzing REST APIs in Industry: Necessary Features and Open Problems*.
   [[arxiv](https://arxiv.org/abs/2604.01759)]
