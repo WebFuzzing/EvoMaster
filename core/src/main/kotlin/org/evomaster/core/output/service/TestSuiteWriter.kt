@@ -798,7 +798,7 @@ class TestSuiteWriter {
         // For Playwright, avoid emitting a top-level test.beforeAll hook to prevent
         // Playwright runner errors when files are imported indirectly. Also, for
         // black-box scenarios the hook would be empty anyway.
-        if (format.isJavaScript() && format.isPlaywright()) {
+        if (format.isPlaywright()) {
             return
         }
 
@@ -869,10 +869,6 @@ class TestSuiteWriter {
                     addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
                 }
-
-                //if (format.isJavaScript() && !format.isPlaywright()) {
-                //    addStatement("process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", lines)
-                //}
 
                 if (format.isJavaOrKotlin()) {
                     // global HTTP client config. The socket timeout MUST match the one used during
