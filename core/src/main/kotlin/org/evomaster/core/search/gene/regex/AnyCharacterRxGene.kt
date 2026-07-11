@@ -85,13 +85,9 @@ class AnyCharacterRxGene(
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val previous = value
 
-        while(tryToForceNewValue && previous == value) {
+        do {
             value = validRanges.sample(randomness)
-            if(validRanges.charCount <= 1){
-                // as a safeguard to infinite loops
-                break;
-            }
-        }
+        } while (tryToForceNewValue && previous == value && validRanges.charCount > 1)
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
