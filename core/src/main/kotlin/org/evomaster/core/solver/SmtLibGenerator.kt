@@ -44,6 +44,92 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
     private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
 
+    companion object {
+
+        /**
+         * Separator inserted between a table's SMT name and its 1-based row index in a row-constant
+         * name (e.g. "users__1"). Using an explicit separator (rather than just appending the index)
+         * keeps table names that end in digits (e.g. "inventory2026") unambiguous when the name is
+         * parsed back into its table part in SMTLibZ3DbConstraintSolver.getTableName.
+         */
+        const val ROW_INDEX_SEPARATOR = "__"
+
+        /** Bounds for TIMESTAMP columns, encoded as epoch seconds (SMT Int). */
+        private const val TIMESTAMP_EPOCH_LOWER_BOUND = 0L            // Unix epoch start
+        private const val TIMESTAMP_EPOCH_UPPER_BOUND = 32503680000L  // ~year 3000, in seconds
+
+        /** SMT-LIB sorts used as TYPE_MAP targets. */
+        private const val SMT_INT = "Int"
+        private const val SMT_REAL = "Real"
+        private const val SMT_STRING = "String"
+
+        /**
+         * SQL type names that need special interpretation beyond their SMT sort: BOOLEAN is encoded as
+         * an SMT String and TIMESTAMP as an SMT Int, so gene reconstruction must consult the original
+         * type. Shared with the comparison sites in this class and referenced by SMTLibZ3DbConstraintSolver.
+         */
+        const val BOOLEAN_TYPE = "BOOLEAN"
+        const val TIMESTAMP_TYPE = "TIMESTAMP"
+
+        /**
+         * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
+         * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
+         * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
+         */
+        private val BOOLEAN_LITERALS = listOf("true", "false")
+
+        /**
+         * Builds the SMT row-constant name for a table's SMT name and a 1-based row index,
+         * e.g. rowConstantName("users", 1) == "users__1". Must be the single source of truth for
+         * this naming so declarations, assertions, get-value nodes and parsing all stay in sync.
+         */
+        fun rowConstantName(smtTableName: String, rowIndex: Int): String =
+            "$smtTableName$ROW_INDEX_SEPARATOR$rowIndex"
+
+        /**
+         * Maps database column types to SMT-LIB types.
+         *
+         * FIXME: this is one of three independent type vocabularies interpreting ColumnDto.type
+         * (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). They can
+         * silently disagree when a backend reports a variant spelling; consolidating them into a single
+         * source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
+         */
+        private val TYPE_MAP = mapOf(
+            "BIGINT" to SMT_INT,
+            "BIT" to SMT_INT,
+            "INTEGER" to SMT_INT,
+            "INT" to SMT_INT,
+            "INT2" to SMT_INT,
+            "INT4" to SMT_INT,
+            "INT8" to SMT_INT,
+            "TINYINT" to SMT_INT,
+            "SMALLINT" to SMT_INT,
+            // FIXME: NUMERIC is mapped to Int, so any fractional part is truncated. This is
+            // inconsistent with DECIMAL (mapped to Real). Mapping NUMERIC to Real (to preserve decimals)
+            // is future work.
+            "NUMERIC" to SMT_INT,
+            "SERIAL" to SMT_INT,
+            "SMALLSERIAL" to SMT_INT,
+            "BIGSERIAL" to SMT_INT,
+            TIMESTAMP_TYPE to SMT_INT,
+            "DATE" to SMT_INT,
+            "FLOAT" to SMT_REAL,
+            "DOUBLE" to SMT_REAL,
+            "DECIMAL" to SMT_REAL,
+            "REAL" to SMT_REAL,
+            "CHARACTER VARYING" to SMT_STRING,
+            "CHAR" to SMT_STRING,
+            "VARCHAR" to SMT_STRING,
+            "TEXT" to SMT_STRING,
+            "CHARACTER LARGE OBJECT" to SMT_STRING,
+            BOOLEAN_TYPE to SMT_STRING,
+            "BOOL" to SMT_STRING,
+            "UUID" to SMT_STRING,
+            "JSONB" to SMT_STRING,
+            "BYTEA" to SMT_STRING,
+        )
+    }
+
     /**
      * Main method to generate SMT-LIB representation from SQL query.
      *
@@ -78,7 +164,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
             // Declare constants for each row
             for (i in 1..numberOfRows) {
-                smt.addNode(DeclareConstSMTNode("${smtTable.smtName}$i", smtTable.dataTypeName))
+                smt.addNode(DeclareConstSMTNode(rowConstantName(smtTable.smtName, i), smtTable.dataTypeName))
             }
         }
     }
@@ -185,7 +271,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                             AssertSMTNode(
                                 OrAssertion(
                                     BOOLEAN_LITERALS.map { literal ->
-                                        EqualsAssertion(listOf("($columnName ${smtTable.smtName}$i)", "\"$literal\""))
+                                        EqualsAssertion(listOf("($columnName ${rowConstantName(smtTable.smtName, i)})", "\"$literal\""))
                                     }
                                 )
                             )
@@ -206,7 +292,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 GreaterThanOrEqualsAssertion(
-                                    "($columnName ${smtTable.smtName}$i)",
+                                    "($columnName ${rowConstantName(smtTable.smtName, i)})",
                                     TIMESTAMP_EPOCH_LOWER_BOUND.toString()
                                 )
                             )
@@ -214,7 +300,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 LessThanOrEqualsAssertion(
-                                    "($columnName ${smtTable.smtName}$i)",
+                                    "($columnName ${rowConstantName(smtTable.smtName, i)})",
                                     TIMESTAMP_EPOCH_UPPER_BOUND.toString()
                                 )
                             )
@@ -266,8 +352,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     AssertSMTNode(
                         DistinctAssertion(
                             listOf(
-                                "(${pkSelector.uppercase()} $tableName$i)",
-                                "(${pkSelector.uppercase()} $tableName$j)"
+                                "(${pkSelector.uppercase()} ${rowConstantName(tableName, i)})",
+                                "(${pkSelector.uppercase()} ${rowConstantName(tableName, j)})"
                             )
                         )
                     )
@@ -291,8 +377,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             for (j in i + 1..numberOfRows) {
                 val columnDistinctness = pkSelectors.map { selector ->
                     DistinctAssertion(listOf(
-                        "(${selector.uppercase()} $tableName$i)",
-                        "(${selector.uppercase()} $tableName$j)"
+                        "(${selector.uppercase()} ${rowConstantName(tableName, i)})",
+                        "(${selector.uppercase()} ${rowConstantName(tableName, j)})"
                     ))
                 }
                 nodes.add(AssertSMTNode(OrAssertion(columnDistinctness)))
@@ -314,7 +400,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 findReferencedPKSelector(smtTable.dto, referencedSmtTable.dto, foreignKey)
             )
 
-            // KNOWN LIMITATION: composite foreign keys are not fully supported. Each source column is
+            // TODO: composite foreign keys are not fully supported. Each source column is
             // matched independently against a single referenced column, rather than constraining the
             // whole tuple of source columns to match a referenced tuple. This is correct for
             // single-column FKs (the common case) but under-models multi-column FKs. Fully supporting
@@ -348,8 +434,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val conditions = (1..numberOfRows).map { j ->
                 EqualsAssertion(
                     listOf(
-                        "(${sourceColumnSelector.uppercase()} $sourceTableName$i)",
-                        "(${referencedColumnSelector.uppercase()} $referencedTableName$j)"
+                        "(${sourceColumnSelector.uppercase()} ${rowConstantName(sourceTableName, i)})",
+                        "(${referencedColumnSelector.uppercase()} ${rowConstantName(referencedTableName, j)})"
                     )
                 )
             }
@@ -450,13 +536,13 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 for (join in joins) {
                     val onExpressions = join.onExpressions
                     if (onExpressions.isNotEmpty()) {
-                        // KNOWN LIMITATION: only the first ON expression is used; a composite ON
+                        // TODO: only the first ON expression is used; a composite ON
                         // (e.g. "a = b AND c = d") drops all but the first conjunct.
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
                             val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                            // KNOWN LIMITATION: the ON condition is translated with the SAME row index on
+                            // TODO: the ON condition is translated with the SAME row index on
                             // both sides ("diagonal pairing"): row i of one table is matched only with row i
                             // of the other. This is sufficient at the default numberOfRows=1 to force a
                             // non-empty JOIN, but it does not model full INNER JOIN semantics: for
@@ -586,7 +672,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         for (smtTable in smtTables) {
             if (tablesMentioned.contains(smtTable.originalName)) {
                 for (i in 1..numberOfRows) {
-                    smt.addNode(GetValueSMTNode("${smtTable.smtName}$i"))
+                    smt.addNode(GetValueSMTNode(rowConstantName(smtTable.smtName, i)))
                 }
             }
         }
@@ -604,66 +690,5 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 ?: throw RuntimeException("Unsupported column type: ${c.type}")
             DeclareConstSMTNode(smtTable.smtColumnName(c.name), smtType)
         }
-    }
-
-    companion object {
-
-        // Bounds for TIMESTAMP columns, encoded as epoch seconds (SMT Int).
-        private const val TIMESTAMP_EPOCH_LOWER_BOUND = 0L            // Unix epoch start
-        private const val TIMESTAMP_EPOCH_UPPER_BOUND = 32503680000L  // ~year 3000, in seconds
-
-        // SMT-LIB sorts used as TYPE_MAP targets.
-        private const val SMT_INT = "Int"
-        private const val SMT_REAL = "Real"
-        private const val SMT_STRING = "String"
-
-        // SQL type names that need special interpretation beyond their SMT sort: BOOLEAN is encoded as an
-        // SMT String and TIMESTAMP as an SMT Int, so gene reconstruction must consult the original type.
-        // Shared with the comparison sites in this class and referenced by SMTLibZ3DbConstraintSolver.
-        const val BOOLEAN_TYPE = "BOOLEAN"
-        const val TIMESTAMP_TYPE = "TIMESTAMP"
-
-        // The string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
-        private val BOOLEAN_LITERALS = listOf("true", "True", "TRUE", "false", "False", "FALSE")
-
-        // Maps database column types to SMT-LIB types.
-        // FUTURE WORK: this is one of three independent type vocabularies interpreting ColumnDto.type
-        // (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). They can
-        // silently disagree when a backend reports a variant spelling; consolidating them into a single
-        // source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
-        private val TYPE_MAP = mapOf(
-            "BIGINT" to SMT_INT,
-            "BIT" to SMT_INT,
-            "INTEGER" to SMT_INT,
-            "INT" to SMT_INT,
-            "INT2" to SMT_INT,
-            "INT4" to SMT_INT,
-            "INT8" to SMT_INT,
-            "TINYINT" to SMT_INT,
-            "SMALLINT" to SMT_INT,
-            // KNOWN LIMITATION: NUMERIC is mapped to Int, so any fractional part is truncated. This is
-            // inconsistent with DECIMAL (mapped to Real). Mapping NUMERIC to Real (to preserve decimals)
-            // is future work.
-            "NUMERIC" to SMT_INT,
-            "SERIAL" to SMT_INT,
-            "SMALLSERIAL" to SMT_INT,
-            "BIGSERIAL" to SMT_INT,
-            TIMESTAMP_TYPE to SMT_INT,
-            "DATE" to SMT_INT,
-            "FLOAT" to SMT_REAL,
-            "DOUBLE" to SMT_REAL,
-            "DECIMAL" to SMT_REAL,
-            "REAL" to SMT_REAL,
-            "CHARACTER VARYING" to SMT_STRING,
-            "CHAR" to SMT_STRING,
-            "VARCHAR" to SMT_STRING,
-            "TEXT" to SMT_STRING,
-            "CHARACTER LARGE OBJECT" to SMT_STRING,
-            BOOLEAN_TYPE to SMT_STRING,
-            "BOOL" to SMT_STRING,
-            "UUID" to SMT_STRING,
-            "JSONB" to SMT_STRING,
-            "BYTEA" to SMT_STRING,
-        )
     }
 }
