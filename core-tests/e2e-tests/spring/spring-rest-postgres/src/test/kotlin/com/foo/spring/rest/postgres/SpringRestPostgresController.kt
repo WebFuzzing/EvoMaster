@@ -1,6 +1,7 @@
 package com.foo.spring.rest.postgres
 
 import org.evomaster.client.java.controller.EmbeddedSutController
+import org.evomaster.client.java.postgres.test.utils.PostgresContainerUtils
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -10,7 +11,6 @@ import org.evomaster.client.java.controller.problem.RestProblem
 import org.springframework.boot.SpringApplication
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jdbc.core.JdbcTemplate
-import org.testcontainers.containers.GenericContainer
 import java.sql.Connection
 
 /**
@@ -22,11 +22,7 @@ abstract class SpringRestPostgresController(
 
     protected var ctx: ConfigurableApplicationContext? = null
 
-    private val POSTGRES_VERSION:String = "14";
-
-    private val postgres : GenericContainer<*> = GenericContainer<Nothing>("postgres:$POSTGRES_VERSION" )
-            .apply{withExposedPorts(5432)}
-            .apply{withEnv("POSTGRES_HOST_AUTH_METHOD","trust")}
+    private val postgres = PostgresContainerUtils.newContainer()
 
 
     var sqlConnection: Connection? = null
@@ -46,9 +42,7 @@ abstract class SpringRestPostgresController(
     override fun startSut(): String {
 
         postgres.start()
-        val host = postgres.getContainerIpAddress()
-        val port = postgres.getMappedPort(5432)
-        val dbUrl = "jdbc:postgresql://$host:$port/postgres"
+        val dbUrl = PostgresContainerUtils.getJdbcUrl(postgres)
 
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
