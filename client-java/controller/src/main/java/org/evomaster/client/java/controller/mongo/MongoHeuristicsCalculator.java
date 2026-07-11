@@ -34,93 +34,92 @@ public class MongoHeuristicsCalculator {
      * @param doc   a document in the database for which we want to calculate the distance
      * @return a branch distance, where 0 means that the document would make the QUERY resolve as true
      */
-    public double computeExpression(Object query, Object doc) {
-
+    public double computeDistance(Object query, Object doc) {
         QueryOperation operation = getOperation(query);
-        return computeHeuristic(operation, doc);
+        return computeHeuristicQueryOperation(operation, doc);
     }
 
     private QueryOperation getOperation(Object query) {
         return new QueryParser().parse(query);
     }
 
-    private double computeHeuristic(QueryOperation operation, Object doc) {
+    private double computeHeuristicQueryOperation(QueryOperation operation, Object doc) {
         if (operation instanceof EqualsOperation<?>) {
-            return calculateDistanceForEquals((EqualsOperation<?>) operation, doc);
+            return computeHeuristic((EqualsOperation<?>) operation, doc);
         } else if (operation instanceof NotEqualsOperation<?>) {
-            return calculateDistanceForNotEquals((NotEqualsOperation<?>) operation, doc);
+            return computeHeuristic((NotEqualsOperation<?>) operation, doc);
         } else if (operation instanceof GreaterThanOperation<?>) {
-            return calculateDistanceForGreaterThan((GreaterThanOperation<?>) operation, doc);
+            return computeHeuristic((GreaterThanOperation<?>) operation, doc);
         } else if (operation instanceof GreaterThanEqualsOperation<?>) {
-            return calculateDistanceForGreaterEqualsThan((GreaterThanEqualsOperation<?>) operation, doc);
+            return computeHeuristic((GreaterThanEqualsOperation<?>) operation, doc);
         } else if (operation instanceof LessThanOperation<?>) {
-            return calculateDistanceForLessThan((LessThanOperation<?>) operation, doc);
+            return computeHeuristic((LessThanOperation<?>) operation, doc);
         } else if (operation instanceof LessThanEqualsOperation<?>) {
-            return calculateDistanceForLessEqualsThan((LessThanEqualsOperation<?>) operation, doc);
+            return computeHeuristic((LessThanEqualsOperation<?>) operation, doc);
         } else if (operation instanceof AndOperation) {
-            return calculateDistanceForAnd((AndOperation) operation, doc);
+            return computeHeuristic((AndOperation) operation, doc);
         } else if (operation instanceof OrOperation) {
-            return calculateDistanceForOr((OrOperation) operation, doc);
+            return computeHeuristic((OrOperation) operation, doc);
         } else if (operation instanceof NorOperation) {
-            return calculateDistanceForNor((NorOperation) operation, doc);
+            return computeHeuristicNor((NorOperation) operation, doc);
         } else if (operation instanceof InOperation<?>) {
-            return calculateDistanceForIn((InOperation<?>) operation, doc);
+            return computeHeuristicIn((InOperation<?>) operation, doc);
         } else if (operation instanceof NotInOperation<?>) {
-            return calculateDistanceForNotIn((NotInOperation<?>) operation, doc);
+            return computeHeuristic((NotInOperation<?>) operation, doc);
         } else if (operation instanceof AllOperation<?>) {
-            return calculateDistanceForAll((AllOperation<?>) operation, doc);
+            return computeHeuristic((AllOperation<?>) operation, doc);
         } else if (operation instanceof InvertedAllOperation<?>) {
             return calculateDistanceForInvertedAll((InvertedAllOperation<?>) operation, doc);
         } else if (operation instanceof SizeOperation) {
-            return calculateDistanceForSize((SizeOperation) operation, doc);
+            return computeHeuristic((SizeOperation) operation, doc);
         } else if (operation instanceof InvertedSizeOperation) {
             return calculateDistanceForInvertedSize((InvertedSizeOperation) operation, doc);
         } else if (operation instanceof ElemMatchOperation) {
-            return calculateDistanceForElemMatch((ElemMatchOperation) operation, doc);
+            return computeHeuristic((ElemMatchOperation) operation, doc);
         } else if (operation instanceof ExistsOperation) {
-            return calculateDistanceForExists((ExistsOperation) operation, doc);
+            return computeHeuristicExists((ExistsOperation) operation, doc);
         } else if (operation instanceof ModOperation) {
-            return calculateDistanceForMod((ModOperation) operation, doc);
+            return computeHeuristicMod((ModOperation) operation, doc);
         } else if (operation instanceof InvertedModOperation) {
             return calculateDistanceForInvertedMod((InvertedModOperation) operation, doc);
         } else if (operation instanceof NotOperation) {
-            return calculateDistanceForNot((NotOperation) operation, doc);
+            return computeHeuristic((NotOperation) operation, doc);
         } else if (operation instanceof TypeOperation) {
-            return calculateDistanceForType((TypeOperation) operation, doc);
+            return computeHeuristic((TypeOperation) operation, doc);
         } else if (operation instanceof InvertedTypeOperation) {
             return calculateDistanceForInvertedType((InvertedTypeOperation) operation, doc);
         } else if (operation instanceof NearSphereOperation) {
-            return calculateDistanceForNearSphere((NearSphereOperation) operation, doc);
+            return computeHeuristicNearSphere((NearSphereOperation) operation, doc);
         } else {
             return Double.MAX_VALUE;
         }
     }
 
-    private double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, (Math::abs));
+    private double computeHeuristic(EqualsOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, (Math::abs));
     }
 
-    private double calculateDistanceForNotEquals(NotEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif != 0.0 ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE));
+    private double computeHeuristic(NotEqualsOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, ((dif) -> dif != 0.0 ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE));
     }
 
-    private double calculateDistanceForGreaterThan(GreaterThanOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif > 0 ? 0.0 : 1.0 - dif));
+    private double computeHeuristic(GreaterThanOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, ((dif) -> dif > 0 ? 0.0 : 1.0 - dif));
     }
 
-    private double calculateDistanceForGreaterEqualsThan(GreaterThanEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif >= 0 ? 0.0 : -dif));
+    private double computeHeuristic(GreaterThanEqualsOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, ((dif) -> dif >= 0 ? 0.0 : -dif));
     }
 
-    private double calculateDistanceForLessThan(LessThanOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif < 0 ? 0.0 : 1.0 + dif));
+    private double computeHeuristic(LessThanOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, ((dif) -> dif < 0 ? 0.0 : 1.0 + dif));
     }
 
-    private double calculateDistanceForLessEqualsThan(LessThanEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif <= 0 ? 0.0 : dif));
+    private double computeHeuristic(LessThanEqualsOperation<?> operation, Object doc) {
+        return computeHeuristicComparison(operation, doc, ((dif) -> dif <= 0 ? 0.0 : dif));
     }
 
-    private double calculateDistanceForComparisonOperation(ComparisonOperation<?> operation, Object doc, DoubleUnaryOperator calculateDistance) {
+    private double computeHeuristicComparison(ComparisonOperation<?> operation, Object doc, DoubleUnaryOperator calculateDistance) {
         Object expectedValue = operation.getValue();
         String field = operation.getFieldName();
 
@@ -134,22 +133,22 @@ public class MongoHeuristicsCalculator {
         return calculateDistance.applyAsDouble(dif);
     }
 
-    private double calculateDistanceForOr(OrOperation operation, Object doc) {
+    private double computeHeuristic(OrOperation operation, Object doc) {
         return operation.getConditions().stream()
-                .mapToDouble(condition -> computeHeuristic(condition, doc))
+                .mapToDouble(condition -> computeHeuristicQueryOperation(condition, doc))
                 .min()
                 .getAsDouble();
     }
 
-    private double calculateDistanceForAnd(AndOperation operation, Object doc) {
+    private double computeHeuristic(AndOperation operation, Object doc) {
         return operation.getConditions()
                 .stream()
                 .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(computeHeuristic(condition, doc)))
+                        TruthnessUtils.normalizeValue(computeHeuristicQueryOperation(condition, doc)))
                 .sum();
     }
 
-    private double calculateDistanceForIn(InOperation<?> operation, Object doc) {
+    private double computeHeuristicIn(InOperation<?> operation, Object doc) {
         List<?> expectedValues = operation.getValues();
         Object actualValue = getValue(doc, operation.getFieldName());
 
@@ -163,7 +162,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForNotIn(NotInOperation<?> operation, Object doc) {
+    private double computeHeuristic(NotInOperation<?> operation, Object doc) {
         List<?> unexpectedValues = operation.getValues();
 
         if (!documentContainsField(doc, operation.getFieldName())) return 0.0;
@@ -175,7 +174,7 @@ public class MongoHeuristicsCalculator {
         return hasUnexpectedElement ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
     }
 
-    private double calculateDistanceForAll(AllOperation<?> operation, Object doc) {
+    private double computeHeuristic(AllOperation<?> operation, Object doc) {
         List<?> expectedValues = operation.getValues();
         Object actualValues = getValue(doc, operation.getFieldName());
 
@@ -202,7 +201,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForSize(SizeOperation operation, Object doc) {
+    private double computeHeuristic(SizeOperation operation, Object doc) {
         Integer expectedSize = operation.getValue();
         Object actualValue = getValue(doc, operation.getFieldName());
 
@@ -226,7 +225,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForElemMatch(ElemMatchOperation operation, Object doc) {
+    private double computeHeuristic(ElemMatchOperation operation, Object doc) {
         Object actualValue = getValue(doc, operation.getFieldName());
 
         if (actualValue instanceof List<?>) {
@@ -235,7 +234,7 @@ public class MongoHeuristicsCalculator {
                     .mapToDouble(elem -> {
                         Object newDoc = newDocument(doc);
                         appendToDocument(newDoc, operation.getFieldName(), elem);
-                        return computeHeuristic(operation.getCondition(), newDoc);
+                        return computeHeuristicQueryOperation(operation.getCondition(), newDoc);
                     })
                     .min()
                     .getAsDouble();
@@ -244,7 +243,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForExists(ExistsOperation operation, Object doc) {
+    private double computeHeuristicExists(ExistsOperation operation, Object doc) {
         String expectedField = operation.getFieldName();
         Set<String> actualFields = documentKeys(doc);
 
@@ -258,7 +257,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForMod(ModOperation operation, Object doc) {
+    private double computeHeuristicMod(ModOperation operation, Object doc) {
         Long expectedRemainder = operation.getRemainder();
         Object actualValue = getValue(doc, operation.getFieldName());
 
@@ -284,25 +283,25 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double calculateDistanceForNot(NotOperation operation, Object doc) {
+    private double computeHeuristic(NotOperation operation, Object doc) {
         String fieldName = operation.getFieldName();
         if (getValue(doc, fieldName) == null) return 0.0;
 
         QueryOperation condition = operation.getCondition();
         QueryOperation invertedOperation = invertOperation(condition);
 
-        return computeHeuristic(invertedOperation, doc);
+        return computeHeuristicQueryOperation(invertedOperation, doc);
     }
 
-    private double calculateDistanceForNor(NorOperation operation, Object doc) {
+    private double computeHeuristicNor(NorOperation operation, Object doc) {
         return operation.getConditions()
                 .stream()
                 .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(computeHeuristic(invertOperation(condition), doc)))
+                        TruthnessUtils.normalizeValue(computeHeuristicQueryOperation(invertOperation(condition), doc)))
                 .sum();
     }
 
-    private double calculateDistanceForType(TypeOperation operation, Object doc) {
+    private double computeHeuristic(TypeOperation operation, Object doc) {
         String field = operation.getFieldName();
         String expectedType = getType(operation.getType());
         Object value = getValue(doc, field);
@@ -320,7 +319,7 @@ public class MongoHeuristicsCalculator {
         return !Objects.equals(actualType, expectedType) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
     }
 
-    private double calculateDistanceForNearSphere(NearSphereOperation operation, Object doc) {
+    private double computeHeuristicNearSphere(NearSphereOperation operation, Object doc) {
         String field = operation.getFieldName();
         Object actualPoint = getValue(doc, field);
 

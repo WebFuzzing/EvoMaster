@@ -158,7 +158,7 @@ public class MongoHandler {
             numberOfEvaluatedDocuments += 1;
             double findDistance;
             try {
-                findDistance = calculator.computeExpression(info.getQuery(), doc);
+                findDistance = calculator.computeDistance(info.getQuery(), doc);
             } catch (Exception ex) {
                 SimpleLogger.uniqueWarn("Failed to compute find: " + info.getQuery() + " with data " + doc);
                 findDistance = Double.MAX_VALUE;

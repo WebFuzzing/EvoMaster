@@ -69,7 +69,7 @@ public class MongoHandlerTest {
         assertEquals(1, documents.size());
 
         final Bson bsonQuery = eq("age", 18);
-        Document queryDocument = MongoHeuristicCalculatorTest.convertToDocument( bsonQuery);
+        Document queryDocument = MongoHeuristicsCalculatorTest.convertToDocument( bsonQuery);
 
         try (MongoCursor<Document> cursor = collection.find(queryDocument).iterator()) {
             assertFalse(cursor.hasNext());
