@@ -1,10 +1,12 @@
 package org.evomaster.client.java.controller.mongo;
 
+import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static java.lang.Math.abs;
@@ -27,6 +29,29 @@ public class MongoHeuristicsCalculator {
         this.taintHandler = taintHandler;
     }
 
+
+    public MongoDistanceWithMetrics computeDistanceDocuments(Object queryDocument, Iterable<?> documents) {
+        double min = Double.MAX_VALUE;
+        int numberOfEvaluatedDocuments = 0;
+        for (Object doc : documents) {
+            numberOfEvaluatedDocuments += 1;
+            double findDistance;
+            try {
+                findDistance = this.computeHeuristicDocument(queryDocument, doc);
+            } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed to compute find: " + queryDocument + " with data " + doc);
+                findDistance = Double.MAX_VALUE;
+            }
+            if (findDistance == 0) {
+                return new MongoDistanceWithMetrics(0, numberOfEvaluatedDocuments);
+            } else if (findDistance < min) {
+                min = findDistance;
+            }
+        }
+        return new MongoDistanceWithMetrics(min, numberOfEvaluatedDocuments);
+
+    }
+
     /**
      * Compute a "branch" distance heuristics.
      *
@@ -34,7 +59,7 @@ public class MongoHeuristicsCalculator {
      * @param doc   a document in the database for which we want to calculate the distance
      * @return a branch distance, where 0 means that the document would make the QUERY resolve as true
      */
-    public double computeDistance(Object query, Object doc) {
+    double computeHeuristicDocument(Object query, Object doc) {
         QueryOperation operation = getOperation(query);
         return computeHeuristicQueryOperation(operation, doc);
     }
@@ -201,9 +226,9 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private double computeHeuristic(SizeOperation operation, Object doc) {
+    private double computeHeuristic(SizeOperation operation, Object bsonDocument) {
         Integer expectedSize = operation.getValue();
-        Object actualValue = getValue(doc, operation.getFieldName());
+        Object actualValue = getValue(bsonDocument, operation.getFieldName());
 
         if (actualValue instanceof List<?>) {
             Integer actualSize = ((List<?>) actualValue).size();

@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db.mongo;
 import com.mongodb.client.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculatorTest;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
