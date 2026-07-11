@@ -57,6 +57,10 @@ private val validClassEscapeChars = setOf(
     POSIX_UPPER_PREFIX
 )
 
+/**
+ * @property pLabel the label used inside the `\p{...}` / `\P{...}` POSIX character class regex
+ * syntax (e.g. "Lower" for `\p{Lower}`).
+ */
 enum class PosixClass(val pLabel: String) {
     LOWER("Lower"),
     UPPER("Upper"),
@@ -76,13 +80,14 @@ enum class PosixClass(val pLabel: String) {
         private val exact = entries.associateBy { it.pLabel }
         private val ignoreCase = entries.associateBy { it.pLabel.lowercase() }
 
-        fun fromPLabel(name: String): PosixClass? =
-            exact[name]
+        fun fromPLabel(pLabel: String): PosixClass? =
+            exact[pLabel]
 
-        fun fromPLabelIgnoreCase(name: String): PosixClass? =
-            ignoreCase[name.lowercase()]
+        fun fromPLabelIgnoreCase(pLabel: String): PosixClass? =
+            ignoreCase[pLabel.lowercase()]
     }
 }
+
 
 private data class PosixMultiCharacterRanges(
     val normal: MultiCharacterRange,
