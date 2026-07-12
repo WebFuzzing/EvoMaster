@@ -116,11 +116,10 @@ class GeneToDto(
         val result = mutableListOf<String>()
         result.add(dtoOutput.getNewListStatement(JSON_PATCH_OPERATION_DTO, listVarName))
 
-        var operationCounter = 1
-        gene.operations.forEach { operation ->
+        gene.operations.forEachIndexed { index, operation ->
             val childCounter = mutableListOf<Int>().apply {
                 addAll(counters)
-                add(operationCounter++)
+                add(index + 1)
             }
             val operationCall = getJsonPatchOperationCall(operation, childCounter)
             result.addAll(operationCall.objectCalls)

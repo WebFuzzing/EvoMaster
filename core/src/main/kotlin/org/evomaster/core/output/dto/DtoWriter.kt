@@ -138,7 +138,6 @@ class DtoWriter(
         dtoClass.addField(GeneToDto.FIELD_PATH, DtoField(GeneToDto.FIELD_PATH, GeneToDto.TYPE_STRING))
         dtoClass.addField(GeneToDto.FIELD_FROM, DtoField(GeneToDto.FIELD_FROM, GeneToDto.TYPE_STRING))
         dtoClass.addField(GeneToDto.FIELD_VALUE, DtoField(GeneToDto.FIELD_VALUE, anyType()))
-        dtoCollector[dtoName] = dtoClass
 
         gene.operations.filterIsInstance<JsonPatchPathValueGene>().forEach { operation ->
             when (val valueGene = operation.pathValueChoice.activeGene().second.getLeafGene()) {
