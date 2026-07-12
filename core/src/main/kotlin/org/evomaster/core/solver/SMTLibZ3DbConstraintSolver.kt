@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.insert.Insert
 import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -12,6 +13,12 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.client.java.sql.DataRow
+import org.evomaster.client.java.sql.QueryResult
+import org.evomaster.client.java.sql.QueryResultSet
+import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator
+import org.evomaster.client.java.sql.heuristic.TableColumnResolver
+import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -205,7 +212,33 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             Z3Result.Status.SAT -> {
                 stats?.reportSqlZ3Sat(z3TimeMs)
                 z3ResultCache?.set(cacheKey, z3Result)
-                toSqlActionList(schemaDto, z3Result.solution)
+                val sqlActions = toSqlActionList(schemaDto, z3Result.solution)
+                if (::config.isInitialized && config.measureSqlZ3Correctness && queryStatement !is Insert) {
+                    /*
+                     * INSERT statements have no WHERE clause, so SqlHeuristicsCalculator has no
+                     * predicate to evaluate distance against and will always report a failure.
+                     * Correctness measurement only makes sense for queries that filter rows
+                     * (SELECT, DELETE, UPDATE). In the future this could be extended to verify
+                     * that the generated rows satisfy insertion preconditions such as FK constraints
+                     * or NOT NULL columns that Z3 SQL generation currently leaves unconstrained.
+                     *
+                     * Note: SqlHeuristicsCalculator is SELECT-oriented. For DELETE/UPDATE the distance
+                     * computation may fail and be reported as an evaluation failure (sqlDistanceEvaluationFailure)
+                     * rather than a real distance; such failures are counted separately and are excluded
+                     * from the average, so they do not distort the correctness metric.
+                     */
+                    val distResult = computeCorrectnessDistance(sqlQuery, schemaDto, sqlActions)
+                    if (distResult.sqlDistanceEvaluationFailure) {
+                        LoggingUtil.getInfoLogger().warn("SQL-Z3: correctness evaluation failure for query '$sqlQuery'")
+                    } else if (distResult.sqlDistance != 0.0) {
+                        LoggingUtil.getInfoLogger().warn("SQL-Z3: non-zero correctness distance (${distResult.sqlDistance}) for query '$sqlQuery'")
+                    }
+                    statisticsRef?.get()?.reportSqlZ3CorrectnessDistance(
+                        distResult.sqlDistance,
+                        distResult.sqlDistanceEvaluationFailure
+                    )
+                }
+                sqlActions
             }
             Z3Result.Status.UNSAT -> {
                 stats?.reportSqlZ3Unsat(z3TimeMs)
@@ -519,4 +552,60 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     private fun leadingBarResourcesFolder() = if (resourcesFolder.endsWith("/")) resourcesFolder else "$resourcesFolder/"
+
+    private fun computeCorrectnessDistance(
+        sqlQuery: String,
+        schemaDto: DbInfoDto,
+        sqlActions: List<SqlAction>
+    ): SqlDistanceWithMetrics {
+        val queryResultSet = toQueryResultSet(schemaDto, sqlActions)
+        val calculator = SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder()
+            .withTableColumnResolver(TableColumnResolver(schemaDto))
+            .withSourceQueryResultSet(queryResultSet)
+            .build()
+        return calculator.computeDistance(sqlQuery)
+    }
+
+    private fun toQueryResultSet(schemaDto: DbInfoDto, sqlActions: List<SqlAction>): QueryResultSet {
+        val queryResultSet = QueryResultSet()
+        val byTable = sqlActions.groupBy { it.table.id.name }
+        for ((tableName, actions) in byTable) {
+            val columnNames = actions.first().seeTopGenes().map { it.name }
+            val queryResult = QueryResult(columnNames, tableName)
+            for (action in actions) {
+                val values: List<Any?> = action.seeTopGenes().map { gene -> extractGeneValue(gene) }
+                queryResult.addRow(DataRow(tableName, columnNames, values))
+            }
+            queryResultSet.addQueryResult(queryResult)
+        }
+        // Tables not present in Z3's SAT model (e.g. the optional side of a LEFT OUTER JOIN)
+        // still need an (empty) QueryResult, otherwise SqlHeuristicsCalculator NPEs when it
+        // looks them up unconditionally while walking the FROM/JOIN clause.
+        for (table in schemaDto.tables) {
+            if (table.id.name !in byTable.keys) {
+                val columnNames = table.columns.map { it.name }
+                queryResultSet.addQueryResult(QueryResult(columnNames, table.id.name))
+            }
+        }
+        return queryResultSet
+    }
+
+    private fun extractGeneValue(gene: Gene): Any? {
+        val inner = if (gene is SqlPrimaryKeyGene) gene.gene else gene
+        return when (inner) {
+            is IntegerGene             -> inner.value
+            is LongGene                -> inner.value
+            is StringGene              -> inner.value
+            is DoubleGene              -> inner.value
+            is BooleanGene             -> inner.value
+            is ImmutableDataHolderGene -> inner.value
+            else -> {
+                LoggingUtil.getInfoLogger().warn(
+                    "SQL-Z3: extractGeneValue() fallback to raw string for unhandled gene type " +
+                            "${inner.javaClass.name} (outer: ${gene.javaClass.name}, name: ${gene.name})"
+                )
+                inner.getValueAsRawString()
+            }
+        }
+    }
 }

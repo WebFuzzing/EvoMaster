@@ -104,6 +104,13 @@ class Statistics : SearchListener {
     private val sqlZ3SeenQueryHashes = mutableSetOf<Int>()
     private var sqlZ3UniqueQueriesCount = 0
 
+    // Z3-based SQL data generation correctness distance statistics (only when measureSqlZ3Correctness=true)
+    private var sqlZ3CorrectnessCheckCount = 0
+    private var sqlZ3CorrectnessZeroDistanceCount = 0
+    private var sqlZ3CorrectnessNonZeroDistanceCount = 0
+    private val sqlZ3CorrectnessAvgDistance = IncrementalAverage()
+    private var sqlZ3CorrectnessEvalFailureCount = 0
+
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
     private var mongoHeuristicEvaluationFailureCount = 0
@@ -301,6 +308,22 @@ class Statistics : SearchListener {
     internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
     internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
+    fun reportSqlZ3CorrectnessDistance(sqlDistance: Double, evaluationFailure: Boolean) {
+        sqlZ3CorrectnessCheckCount++
+        if (evaluationFailure) {
+            // sqlDistance is a sentinel value (e.g. Double.MAX_VALUE) in this case,
+            // and must not pollute the average of real distances
+            sqlZ3CorrectnessEvalFailureCount++
+            return
+        }
+        if (sqlDistance == 0.0) {
+            sqlZ3CorrectnessZeroDistanceCount++
+        } else {
+            sqlZ3CorrectnessNonZeroDistanceCount++
+        }
+        sqlZ3CorrectnessAvgDistance.addValue(sqlDistance)
+    }
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -475,6 +498,15 @@ class Statistics : SearchListener {
                 add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
                 add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
                 add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))
+            }
+
+            // correctness distance stats (only emitted when measureSqlZ3Correctness=true)
+            if (config.measureSqlZ3Correctness) {
+                add(Pair("sqlZ3CorrectnessChecks",      "$sqlZ3CorrectnessCheckCount"))
+                add(Pair("sqlZ3CorrectnessZeroDistance", "$sqlZ3CorrectnessZeroDistanceCount"))
+                add(Pair("sqlZ3CorrectnessNonZero",      "$sqlZ3CorrectnessNonZeroDistanceCount"))
+                add(Pair("sqlZ3CorrectnessAvgDist",      "%.4f".format(sqlZ3CorrectnessAvgDistance.mean)))
+                add(Pair("sqlZ3CorrectnessEvalFailures", "$sqlZ3CorrectnessEvalFailureCount"))
             }
 
             for(phase in ExecutionPhaseController.Phase.entries){

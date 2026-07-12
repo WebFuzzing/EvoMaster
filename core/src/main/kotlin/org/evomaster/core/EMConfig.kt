@@ -1973,6 +1973,14 @@ class EMConfig {
     var collectSqlZ3Stats = false
 
     @Experimental
+    @Cfg("Measure the correctness of Z3-generated SQL inserts by computing the heuristic " +
+            "distance between the original failing WHERE query and the generated INSERT data. " +
+            "Distance=0 means the insert satisfies the WHERE; distance>0 means it does not. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    var measureSqlZ3Correctness = false
+
+    @Experimental
     @Cfg("Soft timeout, in milliseconds, for each Z3 solver invocation when generating SQL data. " +
             "If a query exceeds it, Z3 returns 'unknown' for that query instead of running unbounded. " +
             "A value of 0 disables the timeout. Only meaningful when generateSqlDataWithZ3=true.")
