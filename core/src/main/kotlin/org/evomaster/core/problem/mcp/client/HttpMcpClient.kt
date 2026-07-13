@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.mcp.client
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.problem.mcp.McpConst
 import org.evomaster.core.remote.HttpClientFactory
 import java.util.concurrent.atomic.AtomicInteger
 import javax.ws.rs.client.Client
@@ -35,7 +36,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     /** Send a JSON-RPC message. [id] is omitted for notifications. */
     private fun sendJsonRpc(method: String, params: Map<String, Any?>, id: Int?, acceptEventStream: Boolean): Response {
         val payload = mutableMapOf<String, Any?>(
-            "jsonrpc" to "2.0",
+            "jsonrpc" to McpConst.JSONRPC_VERSION,
             "method" to method,
             "params" to params
         )
@@ -44,7 +45,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
         val acceptTypes = if (acceptEventStream) arrayOf("application/json", "text/event-stream") else arrayOf("application/json")
         var builder = client.target(baseUrl).request(*acceptTypes)
-        sessionId?.let { builder = builder.header("Mcp-Session-Id", it) }
+        sessionId?.let { builder = builder.header(McpConst.SESSION_ID_HEADER, it) }
 
         return builder.buildPost(Entity.entity(body, MediaType.APPLICATION_JSON_TYPE)).invoke()
     }
@@ -57,7 +58,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         val response = sendJsonRpc(
             "initialize",
             mapOf(
-                "protocolVersion" to "2024-11-05",
+                "protocolVersion" to McpConst.PROTOCOL_VERSION,
                 "capabilities" to emptyMap<String, Any>(),
                 "clientInfo" to mapOf("name" to "EvoMaster", "version" to "1.0.0")
             ),
@@ -71,7 +72,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             )
         }
         // Capture session ID before reading the body
-        response.getHeaderString("Mcp-Session-Id")?.let { sessionId = it }
+        response.getHeaderString(McpConst.SESSION_ID_HEADER)?.let { sessionId = it }
         val responseBody = response.readEntity(String::class.java)
         if (responseBody.isBlank()) {
             throw IllegalStateException("MCP initialize handshake returned empty body")
