@@ -31,6 +31,68 @@ object AuthWriter {
         placeHolderResolver: PlaceHolderResolver?
     ) {
 
+        // Compute placeholder replacements for PLaywright (used for dynamic user data)
+        if (format.isPlaywright()) {
+            val replacements: List<String>? = placeHolderResolver?.placeHolders?.entries?.map {
+                val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
+                ".replace(\"${placeholder}\", ${it.value})"
+            }
+            val verb = k.verb.name.lowercase()
+            lines.add(".$verb(")
+            if (k.externalEndpointURL != null) {
+                lines.append("\"${k.externalEndpointURL}\"")
+            } else {
+                lines.append("$baseUrlOfSut + \"")
+                lines.append("${k.endpoint}\"")
+            }
+            lines.append(", {")
+            lines.addEmpty()
+            lines.indented {
+                // headers block
+                lines.add("headers: {")
+                lines.indented {
+                    // content-type header if present
+                    val contentType = k.contentType
+                    if (contentType != null) {
+                        lines.add("'content-type': \"${contentType.defaultValue}\",")
+                    }
+                    // any additional headers
+                    for (header in k.headers) {
+                        lines.add("'${header.name}': \"${header.value}\",")
+                    }
+                }
+                lines.add("},")
+
+                // body/payload
+                val contentType = k.contentType
+                if (contentType != null) {
+                    when (contentType) {
+                        ContentType.X_WWW_FORM_URLENCODED -> {
+                            if (replacements == null) {
+                                lines.add("data: \"${k.payload}\",")
+                            } else {
+                                lines.add("data: \"${k.payload}\"")
+                                // Apply string replacements for placeholders
+                                replacements.forEach { lines.append(it) }
+                                lines.append(",")
+                            }
+                        }
+                        ContentType.JSON -> {
+                            testCaseWriter.printSendJsonBody(k.payload!!, lines, functionsOnString = replacements)
+                            // printSendJsonBody for Playwright appends a trailing comma
+                        }
+                        else -> throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                    }
+                }
+
+                // disable redirections and ignore HTTPS errors
+                lines.add("maxRedirects: 0,")
+                lines.add("ignoreHTTPSErrors: true,")
+            }
+            lines.add("})")
+            return
+        }
+
         if(format.isJavaScript()) {
             callEndpoint(lines, k, format, baseUrlOfSut)
         }
@@ -97,8 +159,8 @@ object AuthWriter {
             }
         }
 
-        if (format.isJavaScript()){
-            // disable redirections
+        // Disable redirections where supported (SuperAgent/Frisby style only)
+        if (format.isJavaScript() && !format.isPlaywright()){
             lines.add(".redirects(0)")
         }
 

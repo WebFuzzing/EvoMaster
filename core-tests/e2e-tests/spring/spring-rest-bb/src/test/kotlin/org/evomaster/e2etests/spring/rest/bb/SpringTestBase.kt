@@ -150,7 +150,6 @@ abstract class SpringTestBase : RestTestBase() {
         }
     }
 
-
     fun runBlackBoxEM(
         outputFormat: OutputFormat,
         outputFolderName: String,
@@ -172,6 +171,7 @@ abstract class SpringTestBase : RestTestBase() {
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
 
         when{
+            outputFormat.isPlaywright() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), true)
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)

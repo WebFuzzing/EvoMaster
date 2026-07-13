@@ -18,6 +18,7 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
+    JS_PLAYWRIGHT,
     //CSHARP_XUNIT, //no longer supported, but there is still legacy code not removed
     PYTHON_UNITTEST
     ;
@@ -27,6 +28,8 @@ enum class OutputFormat {
     fun isKotlin() = this.name.startsWith("kotlin_", true)
 
     fun isJavaScript() = this.name.startsWith("js_", true)
+
+    fun isPlaywright() = this.name.endsWith("_playwright", true)
 
     fun isJavaOrKotlin() = isJava() || isKotlin()
 
@@ -40,5 +43,4 @@ enum class OutputFormat {
     fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
 
     fun isPython() = this.name.startsWith("python_", true)
-
 }

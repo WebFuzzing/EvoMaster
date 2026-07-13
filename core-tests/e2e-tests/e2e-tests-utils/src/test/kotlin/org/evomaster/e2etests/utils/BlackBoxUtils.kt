@@ -36,7 +36,6 @@ object BlackBoxUtils {
 
     private fun mvn() = if (isWindows()) "mvn.cmd" else "mvn"
 
-
     private fun runNpmInstall() {
         val command = listOf(npm(), "ci")
 
@@ -106,7 +105,7 @@ object BlackBoxUtils {
         }
     }
 
-    fun runNpmTests(folderRelativePath: String) {
+    fun runNpmTests(folderRelativePath: String, isPlaywright: Boolean = false) {
         runNpmInstall()
 
         val path = if(folderRelativePath.endsWith("/")){
@@ -116,8 +115,12 @@ object BlackBoxUtils {
             "$folderRelativePath/"
         }
 
-        val command = listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
-        runTestsCommand(command, JS_BASE_PATH, "NPM")
+        val command = if (isPlaywright) {
+            listOf(npm(), "run", "test:playwright", "--", path)
+        } else {
+            listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
+        }
+        runTestsCommand(command, JS_BASE_PATH, if (isPlaywright) "Playwright" else "NPM")
     }
 
     fun runPythonTests(folderRelativePath: String) {

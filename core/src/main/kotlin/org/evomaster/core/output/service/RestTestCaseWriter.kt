@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -34,6 +35,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     companion object {
         private val log = LoggerFactory.getLogger(RestTestCaseWriter::class.java)
     }
+
+    // Local extension/helper to avoid depending on OutputFormat.isJsBased from elsewhere
+    private fun OutputFormat.isJsBasedLocal(): Boolean = this.isJavaScript() || this.isPlaywright()
 
     @Inject
     private lateinit var partialOracles: PartialOracles
@@ -201,7 +205,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         when {
             format.isJava() -> lines.add("String $name = ")
             format.isKotlin() -> lines.add("val $name : String? = ")
-            format.isJavaScript() -> lines.add("const $name = ")
+            format.isJsBasedLocal() -> lines.add("const $name = ")
             format.isPython() -> {lines.add("$name = ")}
             // should never happen
             else -> throw IllegalStateException("Unsupported format $format")
@@ -217,14 +221,26 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val call = _call as RestCallAction
         val verb = call.verb.name.lowercase()
 
-        if (format.isCsharp()) {
-            lines.append(".${StringUtils.capitalization(verb)}Async(")
-        } else {
-            if (verb == "trace" && format.isJavaOrKotlin()) {
-                //currently, RestAssured does not have a trace() method
-                lines.add(".request(io.restassured.http.Method.TRACE, ")
-            } else {
-                lines.add(".$verb(")
+        when {
+            format.isPlaywright() -> {
+                val verbToUse = call.verb.name.lowercase()
+                // Playwright provides direct helpers for common verbs. For the rest, use fetch with explicit method.
+                val hasDirectHelper = setOf("get", "post", "put", "patch", "delete", "head").contains(verbToUse)
+                if (!hasDirectHelper) {
+                    lines.add("await request.fetch(")
+                } else {
+                    lines.add("await request.$verbToUse(")
+                }
+                // Note: the options object is appended in HttpWsTestCaseWriter.makeHttpCall.
+            }
+            format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
+            else -> {
+                if (verb == "trace" && format.isJavaOrKotlin()) {
+                    //currently, RestAssured does not have a trace() method
+                    lines.add(".request(io.restassured.http.Method.TRACE, ")
+                } else {
+                    lines.add(".$verb(")
+                }
             }
         }
 
@@ -405,7 +421,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        lines.add("const $location = $resVarName.header['location'];")
+
+                        if (format.isPlaywright()) {
+                            lines.add("const $location = $resVarName")
+                            lines.append(".headers()['location'];")
+                        } else {
+                            lines.add("const $location = $resVarName.header['location'];")
+                        }
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
@@ -437,7 +459,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val extract = extractValueFromJsonResponse(resVarName, idPointer)
 
                 when{
-                    format.isJavaScript() -> lines.add("const ")
+                    format.isJsBasedLocal() -> lines.add("const ")
                     format.isJava() -> lines.add("String ")
                     format.isKotlin() -> lines.add("val ")
                     format.isPython()  -> lines.add("")/* nothing to do in Python */

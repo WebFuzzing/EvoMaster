@@ -81,6 +81,13 @@ abstract class TestCaseWriter {
 
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
+    /**
+     * Compute the list of Playwright fixtures to destructure in the test signature.
+     * For REST-only generation we currently need only the `request` fixture.
+     * This helper makes it easy to extend later (e.g., include `page`) without touching call sites.
+     */
+    private fun playwrightFixturesFor(test: TestCase): String = "request"
+
     fun convertToCompilableTestCode(
             test: TestCase,
             baseUrlOfSut: String,
@@ -125,6 +132,10 @@ abstract class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
+            format.isPlaywright() -> {
+                val fixtures = playwrightFixturesFor(test)
+                lines.add("test(\"${test.name}\", async ({ $fixtures }) => {")
+            }
             format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
             format.isPython() -> lines.add("def ${test.name}(self):")
@@ -318,6 +329,12 @@ abstract class TestCaseWriter {
         testSuitePath: Path?,
         baseUrlOfSut: String
     ) {
+        val playwrightExpectException = format.isPlaywright() && shouldFailIfExceptionNotThrown(res)
+        val hasThrownVar = if (playwrightExpectException) "hasThrown_${counter++}" else ""
+
+        if (playwrightExpectException) {
+            lines.add("let $hasThrownVar = false;")
+        }
         when {
             /*
                 TODO do we need to handle differently in JS due to Promises?
@@ -389,6 +406,12 @@ abstract class TestCaseWriter {
             format.isPython() -> lines.add("except Exception as e:")
         }
 
+        if (playwrightExpectException) {
+            lines.indented {
+                lines.add("$hasThrownVar = true;")
+            }
+        }
+
         lines.indented {
             res.getErrorMessage()?.let {
                 lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
@@ -400,6 +423,9 @@ abstract class TestCaseWriter {
 
         if (!format.isPython()) {
             lines.add("}")
+        }
+        if (playwrightExpectException) {
+            lines.add("expect($hasThrownVar).toBe(true);")
         }
     }
 
