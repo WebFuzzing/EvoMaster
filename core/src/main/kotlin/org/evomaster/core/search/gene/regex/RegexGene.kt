@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
 import java.util.regex.Pattern
 
 /**
@@ -29,12 +30,13 @@ class RegexGene(
      * so, this is a reasonable workaround
      */
     var fixedValue: String? = null,
-    var usingFixedValue: Boolean = false
+    var usingFixedValue: Boolean = false,
+    val externalRegexFlags: RegexFlags = RegexFlags()
 ) : CompositeFixedGene(name, disjunctions) {
 
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
