@@ -204,6 +204,23 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
         return intersect(this, other)
     }
 
+    /**
+     * Check if [c] is contained in this [MultiCharacterRange].
+     */
+    fun contains(c: Char): Boolean {
+        if (isEmpty) return false
+        // binary search as MultiCharacterRange's ranges are ordered and non-overlapping
+        return ranges.binarySearch { (start, end) ->
+            if(c in start..end) {
+                0
+            } else if (c < start) {
+                -1
+            } else {
+                1
+            }
+        } >= 0
+    }
+
     val isEmpty: Boolean get() = ranges.isEmpty()
     val isNotEmpty: Boolean get() = ranges.isNotEmpty()
     val size: Int get() = ranges.size
