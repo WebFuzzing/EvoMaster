@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
@@ -240,4 +239,50 @@ class QuantifierRxGene(
             true
         }
     }
+
+    override fun absorbableCount(value: String): Int {
+        if (value.isEmpty() || atoms.isEmpty()) return 0
+        val absTemplate = template as? RxAbsorbable ?: return 0
+        var consumed = 0
+        var slotsUsed = 0
+        while (consumed < value.length && slotsUsed < atoms.size) {
+            val perSlot = absTemplate.absorbableCount(value.substring(consumed))
+            if (perSlot == 0) break
+            consumed += perSlot
+            slotsUsed++
+        }
+        return consumed
+    }
+
+    override fun canBeZeroWidth(): Boolean =
+        min == 0 || (template as? RxAbsorbable)?.canBeZeroWidth() == true
+
+    override fun tryForce(value: String): Int {
+        val absTemplate = template as RxAbsorbable
+        var remaining = value
+        // we first determine pieces for each atom before mutating, storing them on a list.
+        val plannedAtomValues = mutableListOf<String>()
+        while (remaining.isNotEmpty() && plannedAtomValues.size < atoms.size) {
+            val canTake = absTemplate.absorbableCount(remaining)
+            if (canTake == 0) break
+            plannedAtomValues.add(remaining.take(canTake))
+            remaining = remaining.substring(canTake)
+        }
+        if (plannedAtomValues.isNotEmpty()) {
+            for (i in plannedAtomValues.indices) {
+                val atom = atoms[i] as RxAbsorbable
+                atom.tryForce(plannedAtomValues[i])
+            }
+            return value.length - remaining.length
+        }
+        if (canBeZeroWidth()) {
+            if (min == 0) {
+                killAllChildren()
+            } else {
+                atoms.forEach { (it as RxAbsorbable).tryForce("") }
+            }
+        }
+        return 0
+    }
+
 }

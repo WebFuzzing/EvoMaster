@@ -102,4 +102,11 @@ class AssertionRxGene(
             innerGene == null && other.innerGene == null
         }
     }
+
+    override fun canBeZeroWidth(): Boolean = true
+
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return 0
+    }
 }

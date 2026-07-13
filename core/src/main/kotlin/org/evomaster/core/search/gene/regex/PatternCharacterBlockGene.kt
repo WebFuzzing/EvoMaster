@@ -115,4 +115,31 @@ class PatternCharacterBlockGene(
         return containsSameValueAs(other)
     }
 
+    override fun absorbableCount(value: String): Int {
+        var i = 0
+        while (i < value.length && i < stringBlock.length) {
+            val c = stringBlock[i]
+            val matches = if (flags.isCaseable(c))
+                value[i].equals(c, ignoreCase = true)
+            else
+                value[i] == c
+            if (!matches) return 0
+            i++
+        }
+        return i
+    }
+
+    override fun canBeZeroWidth(): Boolean = stringBlock.isEmpty()
+
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        val n = absorbableCount(value)
+        require(n == stringBlock.length || n == value.length || n==0)
+        for (i in 0 until n) {
+            if (flags.isCaseable(stringBlock[i])) {
+                caseChoices[i] = value[i].isUpperCase()
+            }
+        }
+        return n
+    }
 }
