@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.mcp.client
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.mcp.McpConst
 import org.evomaster.core.remote.HttpClientFactory
@@ -111,9 +112,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             items.filterIsInstance<Map<String, Any?>>().forEach { t ->
                 tools.add(
                     McpToolDefinition(
-                        name = t["name"] as? String ?: "",
-                        description = t["description"] as? String ?: "",
-                        inputSchema = t["inputSchema"] as? Map<String, Any?> ?: emptyMap()
+                        name = t["name"] as String,
+                        description = t["description"] as String,
+                        inputSchema = mapper.valueToTree(t["inputSchema"])
                     )
                 )
             }
@@ -133,8 +134,8 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             items.filterIsInstance<Map<String, Any?>>().forEach { r ->
                 resources.add(
                     McpResourceDefinition(
-                        uri = r["uri"] as? String ?: "",
-                        name = r["name"] as? String ?: "",
+                        uri = r["uri"] as String,
+                        name = r["name"] as String,
                         description = r["description"] as? String ?: "",
                         mimeType = r["mimeType"] as? String
                     )

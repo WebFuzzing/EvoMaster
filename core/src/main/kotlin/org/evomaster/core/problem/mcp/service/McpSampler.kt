@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.mcp.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.remote.SutProblemException
@@ -51,7 +52,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     @PostConstruct
     fun initialize() {
         val name = McpSampler::class.simpleName
-        val url = config.bbTargetUrl
+        val url = config.base
         log.debug("Initializing {}", name)
 
 
@@ -66,19 +67,12 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
             mcpClient.initialize()
         } catch (e: Exception) {
             throw SutProblemException(
-                "Failed to initialize MCP session at '${config.bbTargetUrl}'. Cause: ${e.message}"
+                "Failed to initialize MCP session at '${config.base}'. Cause: ${e.message}"
             )
         }
 
         // Discover tools
-        val tools = try {
-            mcpClient.listTools()
-        } catch (e: Exception) {
-            throw SutProblemException(
-                "Failed to connect to MCP server at '${config.bbTargetUrl}'. " +
-                "Make sure the server is running and the URL is correct. Cause: ${e.message}"
-            )
-        }
+        val tools = mcpClient.listTools()
         for (tool in tools) {
             val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
             val action = McpToolCallAction(
@@ -200,8 +194,8 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
      * Supported types: string, integer, number, boolean, object, array.
      * Unknown or missing types fall back to [StringGene].
      */
-    internal fun buildGeneFromSchema(name: String, schema: Map<String, Any?>): Gene {
-        val type = schema["type"] as? String
+    internal fun buildGeneFromSchema(name: String, schema: JsonNode): Gene {
+        val type = schema["type"]?.asText()
 
         return when (type) {
             "string" -> StringGene(name)
@@ -214,15 +208,14 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     }
 
     /**
-     * Build an [ObjectGene] from a JSON Schema map.
+     * Build an [ObjectGene] from a JSON Schema node.
      * If the schema has no "properties" key, returns an empty [ObjectGene].
      */
-    internal fun buildObjectGeneFromSchema(name: String, schema: Map<String, Any?>): ObjectGene {
-        val properties = schema["properties"] as? Map<String, Any?> ?: emptyMap()
-        val fields = properties.entries.map { (propName, propSchema) ->
-            val propSchemaMap = propSchema as? Map<String, Any?> ?: emptyMap()
-            buildGeneFromSchema(propName, propSchemaMap)
-        }
+    internal fun buildObjectGeneFromSchema(name: String, schema: JsonNode): ObjectGene {
+        val properties = schema["properties"] ?: return ObjectGene(name, emptyList())
+        val fields = properties.fields().asSequence().map { (propName, propSchema) ->
+            buildGeneFromSchema(propName, propSchema)
+        }.toList()
         return ObjectGene(name, fields)
     }
 
