@@ -6,7 +6,6 @@ import org.evomaster.client.java.controller.cassandra.operations.*;
 import org.evomaster.client.java.controller.cassandra.parser.CqlDurationLiteralParser;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.InetAddress;
 import java.time.*;
@@ -14,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.evomaster.client.java.controller.cassandra.calculator.CassandraHeuristicsCalculator.*;
 
@@ -26,6 +26,17 @@ import static org.evomaster.client.java.controller.cassandra.calculator.Cassandr
 public class CassandraOperationEvaluator {
 
     private enum ComparisonType { EQUALS, GT, GTE, LT, LTE }
+
+    /**
+     * Each entry attempts to parse a timestamp string under a different format, returning null
+     * if that format doesn't match, so {@link #parseTimestampString} can fall through to the next one.
+     */
+    private static final List<Function<String, Instant>> TIMESTAMP_PARSERS = Arrays.asList(
+            CassandraOperationEvaluator::tryParseIsoInstant,
+            CassandraOperationEvaluator::tryParseWithTimestampFormatters,
+            CassandraOperationEvaluator::tryParseDateWithOffset,
+            CassandraOperationEvaluator::tryParseDateOnly
+    );
 
     private static final DateTimeFormatter[] TIMESTAMP_FORMATTERS = {
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXX"),
@@ -155,12 +166,9 @@ public class CassandraOperationEvaluator {
             return compareTemporal(rowValue, literalValue, comparisonType);
         } else if (isCqlDuration(rowValue)) {
             return compareDuration(rowValue, literalValue, comparisonType);
+        } else {
+            throw new IllegalArgumentException("Unsupported row value type: " + rowValue.getClass().getName());
         }
-
-        SimpleLogger.uniqueWarn("CassandraHeuristicsCalculator: unsupported type "
-                + rowValue.getClass().getName() + " — returning FALSE_TRUTHNESS");
-
-        return FALSE_TRUTHNESS;
     }
 
     private Truthness compareNumeric(Object rowValue, Object literalValue, ComparisonType comparisonType) {
@@ -271,29 +279,57 @@ public class CassandraOperationEvaluator {
     }
 
     private static Instant parseTimestampString(String rowValue) {
+        for (Function<String, Instant> parser : TIMESTAMP_PARSERS) {
+            Instant parsed = parser.apply(rowValue);
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+
+        throw new IllegalArgumentException("Cannot parse timestamp string: " + rowValue);
+    }
+
+    private static Instant tryParseIsoInstant(String rowValue) {
         try {
             return Instant.parse(rowValue);
-        } catch (DateTimeParseException ignored) {}
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
 
+    private static Instant tryParseWithTimestampFormatters(String rowValue) {
         for (DateTimeFormatter formatter : TIMESTAMP_FORMATTERS) {
             try {
                 return OffsetDateTime.parse(rowValue, formatter).toInstant();
             } catch (DateTimeParseException ignored) {}
         }
+        return null;
+    }
 
-        // date-only with offset ("2011-02-03+0000"): OffsetDateTime.parse fails without a time
-        // component, so extract LocalDate and ZoneOffset from the TemporalAccessor directly.
+    /**
+     * Parses date-only strings with an offset (e.g. {@code "2011-02-03+0000"}), which {@link
+     * OffsetDateTime#parse} rejects since they carry no time component. The {@link LocalDate}
+     * and {@link ZoneOffset} are extracted from the parsed {@link TemporalAccessor} directly.
+     */
+    private static Instant tryParseDateWithOffset(String rowValue) {
         try {
             TemporalAccessor accessor = DATE_WITH_OFFSET.parse(rowValue);
             return LocalDate.from(accessor).atStartOfDay(ZoneOffset.from(accessor)).toInstant();
-        } catch (DateTimeParseException ignored) {}
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
 
-        // date-only without offset ("2011-02-03"): treat as midnight UTC
+    /**
+     * Parses date-only strings without an offset (e.g. {@code "2011-02-03"}), treating them as
+     * midnight UTC.
+     */
+    private static Instant tryParseDateOnly(String rowValue) {
         try {
             return LocalDate.parse(rowValue).atStartOfDay(ZoneOffset.UTC).toInstant();
-        } catch (DateTimeParseException ignored) {}
-
-        throw new IllegalArgumentException("Cannot parse timestamp string: " + rowValue);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private static boolean isCqlDuration(Object rowValue) {

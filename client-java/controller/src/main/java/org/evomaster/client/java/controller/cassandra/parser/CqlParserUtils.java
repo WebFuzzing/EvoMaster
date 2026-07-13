@@ -17,6 +17,10 @@ public class CqlParserUtils {
 
     private CqlParserUtils() {}
 
+    private static final String KEYWORD_SELECT = "SELECT";
+    private static final String KEYWORD_UPDATE = "UPDATE";
+    private static final String KEYWORD_DELETE = "DELETE";
+
     /**
      * Parses a CQL command string into its ANTLR parse tree, with no validity checks
      * performed on the result (assumes {@link #canParseCqlCommand} was used first).
@@ -51,7 +55,7 @@ public class CqlParserUtils {
      * @return {@code true} if {@code cqlCommand} is a SELECT statement
      */
     public static boolean isSelect(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("SELECT");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_SELECT);
     }
 
     /**
@@ -59,7 +63,7 @@ public class CqlParserUtils {
      * @return {@code true} if {@code cqlCommand} is an UPDATE statement
      */
     public static boolean isUpdate(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("UPDATE");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_UPDATE);
     }
 
     /**
@@ -67,7 +71,7 @@ public class CqlParserUtils {
      * @return {@code true} if {@code cqlCommand} is a DELETE statement
      */
     public static boolean isDelete(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("DELETE");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_DELETE);
     }
 
     /**
