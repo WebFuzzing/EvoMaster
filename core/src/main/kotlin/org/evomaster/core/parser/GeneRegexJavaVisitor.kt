@@ -420,7 +420,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         }
 
         if(ctx.DOT() != null){
-            return VisitResult(AnyCharacterRxGene())
+            return VisitResult(AnyCharacterRxGene(currentFlags))
         }
 
         if(ctx.characterClass() != null){
