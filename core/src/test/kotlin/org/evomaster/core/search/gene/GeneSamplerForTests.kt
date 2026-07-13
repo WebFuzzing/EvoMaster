@@ -481,7 +481,7 @@ object GeneSamplerForTests {
                 .filter {
                     (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
                     && it.java != BackReferenceRxGene::class.java && it.java != AssertionRxGene::class.java) // as this also contains a DisjunctionListRxGene within
-                            || rand.nextBoolean()
+                            || rand.nextBoolean(0.2)
                 }
 
         val numberOfTerms = rand.nextInt(1, 3)
