@@ -11,29 +11,29 @@ enum class ExperimentalFaultCategory(
 
     //9xx for experimental, work-in-progress oracles
 
-
-    HTTP_INVALID_PAYLOAD_SYNTAX(911, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
+    HTTP_NONWORKING_DELETE(900,"Resource Still Accessible After Successful DELETE", "deleteDoesNotWork",
+        "If a resource is deleted, and the API responds that such request was successful, then such" +
+                " resource should no longer being available." +
+                " New requests to access it should fail." +
+                " Otherwise, if it is still possible to access the resource, then it was not really deleted." +
+                " Then, as such, it means that the delete operation is faulty."),
+    HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(901, "A Failed PUT or PATCH Must Not Change The Resource", "sideEffectsFailedModification",
         "TODO"),
-    HTTP_INVALID_LOCATION(912, "Invalid Location HTTP Header", "returnsInvalidLocationHeader",
+    HTTP_REPEATED_CREATE_PUT(902, "Repeated PUT Creates Resource With 201 Instead of Updating", "repeatedCreatePut",
         "TODO"),
-    HTTP_NONWORKING_DELETE(913,"DELETE Method Does Not Work", "deleteDoesNotWork",
+    HTTP_MISLEADING_CREATE_PUT(903, "Misleading PUT 201 Creates When Resource Already Exists", "misleadingCreatePut",
         "TODO"),
-    HTTP_REPEATED_CREATE_PUT(914, "Repeated PUT Creates Resource With 201", "repeatedCreatePut",
+    HTTP_PARTIAL_UPDATE_PUT(904, "The Verb PUT Must Make a Full Replacement", "partialUpdatePut",
         "TODO"),
-    HTTP_SIDE_EFFECTS_FAILED_MODIFICATION(915, "A failed PUT or PATCH must not change the resource", "sideEffectsFailedModification",
+    HTTP_NON_IDEMPOTENT_PUT(905, "PUT Implementation Must be Idempotent", "nonIdempotentPut",
         "TODO"),
-    HTTP_PARTIAL_UPDATE_PUT(916, "The verb PUT makes a full replacement", "partialUpdatePut",
+    HTTP_INVALID_MERGE_PATCH(906, "Invalid JSON Merge Patch", "invalidMergePatch",
         "TODO"),
-    HTTP_MISLEADING_CREATE_PUT(917, "PUT if creating, must get 201", "misleadingCreatePut",
+    HTTP_INVALID_LOCATION(907, "Invalid Location HTTP Header", "returnsInvalidLocationHeader",
         "TODO"),
-
-    HTTP_NON_IDEMPOTENT_PUT(918, "PUT is idempotent", "nonIdempotentPut",
+    HTTP_INVALID_ALLOW(908, "Invalid Allow HTTP Header", "invalidAllow",
         "TODO"),
-    HTTP_INVALID_ALLOW(919, "Invalid allow", "invalidAllow",
-        "TODO"),
-    HTTP_TIMEOUT(921, "Timeout", "timeout", "TODO"),
-    HTTP_INVALID_MERGE_PATCH(922, "JSON Merge Patch changes untouched fields", "invalidMergePatch",
-        "TODO"),
+    HTTP_TIMEOUT(909, "Request Timeout", "requestTimeout", "TODO"),
 
     HTTP_STATUS_NO_NON_STANDARD_CODES(950, "HTTP/REST-Design Violation: no-non-standard-codes", "invalidStatusCode", "TODO"),
     HTTP_STATUS_NO_201_IF_DELETE(951, "HTTP/REST-Design Violation: no-201-if-delete", "201OnDelete",  "TODO"),
@@ -52,8 +52,17 @@ enum class ExperimentalFaultCategory(
     HTTP_STATUS_NO_205_IF_CONTENT(964,"HTTP/REST-Design Violation: no-205-if-content","205WhenContent", "TODO"),
     HTTP_STATUS_NO_426_IF_NO_UPGRADE(965,"HTTP/REST-Design Violation: no-426-if-no-upgrade","426MissingUpgrade", "TODO"),
 
+
+    /*
+     TODO Is this one still relevant? or subsumed by SCHEMA_INVALID_RESPONSE?
+     old comment was:
+     syntactically invalid response (eg, non-quoted text when expecting JSON. this happens in pet-clinic for example)
+  */
+    HTTP_INVALID_PAYLOAD_SYNTAX(929, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
+        "TODO"),
+
     //3xx: GraphQL
-    GQL_ERROR_FIELD(920, "Error Field", "returnedErrors",
+    GQL_ERROR_FIELD(930, "Error Field", "returnedErrors",
         "TODO"),
 
     //4xx: RPC
