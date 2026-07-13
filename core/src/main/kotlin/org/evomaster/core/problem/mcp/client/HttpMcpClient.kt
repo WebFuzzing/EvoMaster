@@ -89,14 +89,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         try { response.close() } catch (_: Exception) {}
     }
 
-    /** Send a JSON-RPC request. Returns null on 4xx (method not supported). */
+    /** Send a JSON-RPC request and parse the response. */
     private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
         val response = sendJsonRpc(method, params, nextId(), acceptEventStream = true)
-        val status = response.status
-        if (status == 400 || status == 404 || status == 405) {
-            response.close()
-            return null
-        }
         val responseBody = response.readEntity(String::class.java)
         return mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
     }
