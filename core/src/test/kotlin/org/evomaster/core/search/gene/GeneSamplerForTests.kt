@@ -143,6 +143,7 @@ object GeneSamplerForTests {
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
             BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
+            AssertionRxGene::class -> sampleAssertionRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -428,6 +429,12 @@ object GeneSamplerForTests {
         )
     }
 
+    fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {
+        val innerGene = sampleDisjunctionListRxGene(rand)
+        innerGene.doInitialize(rand)
+        return AssertionRxGene(innerGene=innerGene)
+    }
+
     fun sampleRegexGene(rand: Randomness): RegexGene {
         return RegexGene(
             name = "rand RegexGene",
@@ -473,7 +480,7 @@ object GeneSamplerForTests {
                 //let's avoid huge trees...
                 .filter {
                     (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
-                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
+                    && it.java != BackReferenceRxGene::class.java && it.java != AssertionRxGene::class.java) // as this also contains a DisjunctionListRxGene within
                             || rand.nextBoolean()
                 }
 
