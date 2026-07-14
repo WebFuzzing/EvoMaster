@@ -11,7 +11,10 @@ import java.net.InetAddress;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.function.Function;
 
@@ -332,42 +335,37 @@ public class CassandraOperationEvaluator {
         }
     }
 
+    /**
+     * Identifies the driver's {@code CqlDuration} by checking for its distinctive combination of supported temporal
+     * units rather than {@code instanceof}, since other JDK types (e.g. {@link Period}) also implement {@link TemporalAmount}.
+     */
     private static boolean isCqlDuration(Object rowValue) {
-        return rowValue.getClass().getName()
-                .equals("com.datastax.oss.driver.api.core.data.CqlDuration");
-    }
-
-    private static int getDurationMonths(Object durationRowValue) throws Exception {
-        return (int) durationRowValue.getClass().getMethod("getMonths").invoke(durationRowValue);
-    }
-
-    private static int getDurationDays(Object durationRowValue) throws Exception {
-        return (int) durationRowValue.getClass().getMethod("getDays").invoke(durationRowValue);
-    }
-
-    private static long getDurationNanos(Object durationRowValue) throws Exception {
-        return (long) durationRowValue.getClass().getMethod("getNanoseconds").invoke(durationRowValue);
+        if (!(rowValue instanceof TemporalAmount)) {
+            return false;
+        } else {
+            List<TemporalUnit> units = ((TemporalAmount) rowValue).getUnits();
+            return units.contains(ChronoUnit.MONTHS)
+                    && units.contains(ChronoUnit.DAYS)
+                    && units.contains(ChronoUnit.NANOS);
+        }
     }
 
     private Truthness compareDuration(Object rowValue, Object literalValue, ComparisonType comparisonType) {
         if (comparisonType != ComparisonType.EQUALS) {
             throw new IllegalArgumentException("Unsupported operator for duration literals: " + comparisonType);
-        }
-
-        try {
-            int  months = getDurationMonths(rowValue);
-            int  days = getDurationDays(rowValue);
-            long nanos = getDurationNanos(rowValue);
+        } else {
+            TemporalAmount duration = (TemporalAmount) rowValue;
+            long months = duration.get(ChronoUnit.MONTHS);
+            long days = duration.get(ChronoUnit.DAYS);
+            long nanos = duration.get(ChronoUnit.NANOS);
 
             CqlDurationLiteral literalDurationValue = CqlDurationLiteralParser.parse((String) literalValue);
 
             return TruthnessUtils.buildAndAggregationTruthness(
-                    TruthnessUtils.getEqualityTruthness((long) months, (long) literalDurationValue.months),
-                    TruthnessUtils.getEqualityTruthness((long) days, (long) literalDurationValue.days),
+                    TruthnessUtils.getEqualityTruthness(months, literalDurationValue.months),
+                    TruthnessUtils.getEqualityTruthness(days, literalDurationValue.days),
                     TruthnessUtils.getEqualityTruthness(nanos, literalDurationValue.nanos)
             );
-        } catch (Exception e) {
-            return FALSE_TRUTHNESS;
         }
     }
 
