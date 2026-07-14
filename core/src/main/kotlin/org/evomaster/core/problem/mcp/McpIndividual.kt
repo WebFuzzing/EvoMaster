@@ -2,7 +2,6 @@ package org.evomaster.core.problem.mcp
 
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
-import org.evomaster.core.problem.enterprise.EnterpriseIndividual.Companion.getEnterpriseTopGroups
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual

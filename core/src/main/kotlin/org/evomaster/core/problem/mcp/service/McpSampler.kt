@@ -149,7 +149,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     override fun hasSpecialInitForSmartSampler(): Boolean = adHocInitialIndividuals.isNotEmpty()
 
     override fun initSeededTests(infoDto: SutInfoDto?) {
-        // Not supported in Phase 3
+        throw UnsupportedOperationException("MCP seeded testing is not yet supported")
     }
 
     // -------------------------------------------------------------------------
@@ -159,15 +159,8 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     private fun customizeAdHocInitialIndividuals() {
         adHocInitialIndividuals.clear()
 
-        for ((_, action) in toolActionCluster) {
-            val copy = action.copy() as McpAction
-            copy.doInitialize(randomness)
-            val ind = McpIndividual(SampleType.RANDOM, mutableListOf(makeGroup(copy)))
-            ind.doGlobalInitialize(searchGlobalState)
-            adHocInitialIndividuals.add(ind)
-        }
-
-        for ((_, action) in resourceActionCluster) {
+        val mcpActions = toolActionCluster.values + resourceActionCluster.values
+        for (action in mcpActions) {
             val copy = action.copy() as McpAction
             copy.doInitialize(randomness)
             val ind = McpIndividual(SampleType.RANDOM, mutableListOf(makeGroup(copy)))
@@ -203,7 +196,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
             "boolean" -> BooleanGene(name)
             "object" -> buildObjectGeneFromSchema(name, schema)
             "array" -> ArrayGene(name, StringGene("element"))
-            else -> StringGene(name) // fallback for unknown/null types
+            else -> throw IllegalArgumentException("Unsupported type in tool $name input schema: $type")
         }
     }
 

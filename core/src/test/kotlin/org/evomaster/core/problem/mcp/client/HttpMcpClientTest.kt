@@ -39,7 +39,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `listTools parses tool definitions correctly`() {
+    fun testListToolsParsesDefinitionsCorrectly() {
         stubPost(
             """{"jsonrpc":"2.0","result":{"tools":[{"name":"foo","description":"bar","inputSchema":{}}]},"id":1}"""
         )
@@ -52,7 +52,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `listTools handles pagination with nextCursor`() {
+    fun testListToolsHandlesPagination() {
         // First page
         wm.stubFor(
             WireMock.post(urlEqualTo("/mcp"))
@@ -91,7 +91,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `callTool with isError false returns success result`() {
+    fun testCallToolReturnsSuccessResult() {
         stubPost(
             """{"jsonrpc":"2.0","result":{"content":[{"type":"text","text":"hello"}],"isError":false},"id":1}"""
         )
@@ -105,7 +105,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `callTool with isError true returns error result`() {
+    fun testCallToolReturnsErrorResult() {
         stubPost(
             """{"jsonrpc":"2.0","result":{"content":[{"type":"text","text":"error message"}],"isError":true},"id":1}"""
         )
@@ -118,7 +118,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `callTool with missing result returns isError true`() {
+    fun testCallToolWithMissingResultReturnsError() {
         stubPost(
             """{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":1}"""
         )
@@ -130,21 +130,21 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `readResource parses content correctly`() {
+    fun testReadResourceParsesContentCorrectly() {
         stubPost(
-            """{"jsonrpc":"2.0","result":{"contents":[{"type":"text","text":"resource content","uri":"file:///data/res"}]},"id":1}"""
+            """{"jsonrpc":"2.0","result":{"contents":[{"text":"resource content","uri":"file:///data/res","mimeType":"text/plain"}]},"id":1}"""
         )
 
         val result = client.readResource("file:///data/res")
 
         assertEquals(1, result.contents.size)
-        assertEquals("text", result.contents[0].type)
         assertEquals("resource content", result.contents[0].text)
         assertEquals("file:///data/res", result.contents[0].uri)
+        assertEquals("text/plain", result.contents[0].mimeType)
     }
 
     @Test
-    fun `readResource with missing result returns empty contents`() {
+    fun testReadResourceWithMissingResultReturnsEmpty() {
         stubPost(
             """{"jsonrpc":"2.0","error":{"code":-32602,"message":"Invalid params"},"id":1}"""
         )
@@ -155,7 +155,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `listResources parses resource definitions correctly`() {
+    fun testListResourcesParsesDefinitionsCorrectly() {
         stubPost(
             """{"jsonrpc":"2.0","result":{"resources":[{"uri":"file:///data","name":"data","description":"A data resource","mimeType":"application/json"}]},"id":1}"""
         )
@@ -169,7 +169,7 @@ class HttpMcpClientTest {
     }
 
     @Test
-    fun `listResourceTemplates parses templates correctly`() {
+    fun testListResourceTemplatesParsesTemplatesCorrectly() {
         stubPost(
             """{"jsonrpc":"2.0","result":{"resourceTemplates":[{"uriTemplate":"file:///{path}","name":"fileTemplate","description":"A file template"}]},"id":1}"""
         )
