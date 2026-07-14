@@ -85,10 +85,13 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
     }
 
     private void processPatternElement(Cypher25Parser.PatternElementContext ctx, PatternAcc acc) {
-        // Walk children in source order so nodes and relationships pair up correctly:
-        // (n0) -rel0- (n1) -rel1- (n2) ...
+        // Walk children in source order so nodes/relationships/QPPs splice together correctly:
+        // (n0) -rel0- (n1) -rel1- (n2) ... , where a parenthesizedPath (QPP) can stand in for a node.
         String previousNode = null;
         RelInfo pendingRel = null;
+        // Index into acc.quantifiedPaths of the most recently added QPP still waiting for its exit
+        // variable (the node, or synthesized join, that comes after it); -1 when none is pending.
+        int pendingQppIndex = -1;
 
         for (ParseTree child : children(ctx)) {
             if (child instanceof Cypher25Parser.NodePatternContext) {
@@ -97,15 +100,40 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
                     addEdge(pendingRel, previousNode, current, acc);
                     pendingRel = null;
                 }
+                if (pendingQppIndex >= 0) {
+                    bindQppExit(acc, pendingQppIndex, current);
+                    pendingQppIndex = -1;
+                }
                 previousNode = current;
             } else if (child instanceof Cypher25Parser.RelationshipPatternContext) {
                 pendingRel = processRelationship((Cypher25Parser.RelationshipPatternContext) child);
             } else if (child instanceof Cypher25Parser.QuantifierContext && pendingRel != null) {
                 applyQuantifier(pendingRel, (Cypher25Parser.QuantifierContext) child);
             } else if (child instanceof Cypher25Parser.ParenthesizedPathContext) {
-                acc.quantifiedPaths.add(processParenthesizedPath((Cypher25Parser.ParenthesizedPathContext) child));
+                QuantifiedPathPattern qpp = processParenthesizedPath((Cypher25Parser.ParenthesizedPathContext) child);
+                String entry = previousNode;
+                if (entry == null && pendingQppIndex >= 0) {
+                    // Two QPPs directly adjacent with no node between them: the grammar still requires
+                    // the graph to be continuous there, so synthesize the shared join variable both
+                    // QPPs bind to (same mechanism as an anonymous node, just not written by the user).
+                    entry = "_anon_qpp_join_" + (anonNodeCounter++);
+                    bindQppExit(acc, pendingQppIndex, entry);
+                }
+                acc.quantifiedPaths.add(qpp.withBoundary(entry, null));
+                pendingQppIndex = acc.quantifiedPaths.size() - 1;
+                // A QPP can never be followed directly by a relationshipPattern (the grammar only
+                // allows one after a nodePattern), so previousNode is only ever read again either by
+                // the next nodePattern (which overwrites it unconditionally) or the adjacency check
+                // above (which relies on it being null here to detect two QPPs touching).
+                previousNode = null;
             }
         }
+    }
+
+    /** Rebinds the exit variable of an already-added QPP, keeping its entry variable unchanged. */
+    private void bindQppExit(PatternAcc acc, int index, String exitVariable) {
+        QuantifiedPathPattern qpp = acc.quantifiedPaths.get(index);
+        acc.quantifiedPaths.set(index, qpp.withBoundary(qpp.getEntryVariable(), exitVariable));
     }
 
     private QuantifiedPathPattern processParenthesizedPath(Cypher25Parser.ParenthesizedPathContext ctx) {
