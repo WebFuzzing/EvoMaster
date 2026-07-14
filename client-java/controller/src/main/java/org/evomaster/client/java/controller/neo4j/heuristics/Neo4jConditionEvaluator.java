@@ -21,8 +21,9 @@ import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeurist
  * structural mapping {@code m}, recursively over the typed boolean tree the parser produces
  * (And/Or/Xor/Not, comparisons, label/type/property leaves).
  * <p>
- * A condition that cannot be valuated under the mapping and is skipped by the caller's aggregation,
- * treated as an operand that cannot be valuated.
+ * Returns {@code null} when a condition cannot be valuated under the mapping (e.g. an absent
+ * property, an unbound variable, or an opaque/raw operand); the caller's aggregation skips
+ * {@code null} results.
  */
 class Neo4jConditionEvaluator {
 
