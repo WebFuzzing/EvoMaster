@@ -263,7 +263,7 @@ class RestPath(path: String) {
             return false
         }
 
-        return (0 until this.elements.size).none { other.elements[it] != this.elements[it] }
+        return this.elements.indices.none { other.elements[it] != this.elements[it] }
     }
 
 
