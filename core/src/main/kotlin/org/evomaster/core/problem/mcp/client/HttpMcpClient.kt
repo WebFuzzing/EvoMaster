@@ -96,71 +96,74 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         return mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
     }
 
-    override fun listTools(): List<McpToolDefinition> {
-        val tools = mutableListOf<McpToolDefinition>()
+    /**
+     * Fetches all pages from an MCP server response
+     *
+     * @param method the MCP method name
+     * @param resultKey the key in the result map containing the list of items
+     * @param transform function to convert each raw response to the target type
+     * @return list of all items
+     */
+    private fun <T> fetchPaginatedList(
+        method: String,
+        resultKey: String,
+        transform: (Map<String, Any?>) -> T
+    ): List<T> {
+        val results = mutableListOf<T>()
         var cursor: String? = null
+
         do {
-            val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("tools/list", params) ?: break
-            val result = response["result"] as? Map<String, Any?> ?: break
-            val items = result["tools"] as? List<*> ?: emptyList<Any>()
-            items.filterIsInstance<Map<String, Any?>>().forEach { t ->
-                tools.add(
-                    McpToolDefinition(
-                        name = t["name"] as String,
-                        description = t["description"] as String,
-                        inputSchema = mapper.valueToTree(t["inputSchema"])
-                    )
-                )
+            // On first request cursor is null.
+            // On subsequent requests, include the cursor returned by the previous response.
+            val params = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
+
+            val response = post(method, params)
+                ?: throw IllegalStateException("$method request failed: received null response")
+
+            val result = response["result"] as? Map<String, Any?>
+                ?: throw IllegalStateException("$method response missing 'result' field or invalid type")
+
+            val items = result[resultKey] as? List<Map<String, Any?>> ?: emptyList()
+            items.forEach { item ->
+                results.add(transform(item))
             }
+
+            // Extract cursor for next page
             cursor = result["nextCursor"] as? String
         } while (cursor != null)
-        return tools
+
+        return results
+    }
+
+    override fun listTools(): List<McpToolDefinition> {
+        return fetchPaginatedList("tools/list", "tools", { tool ->
+            McpToolDefinition(
+                name = tool["name"] as String,
+                description = tool["description"] as String,
+                inputSchema = mapper.valueToTree(tool["inputSchema"])
+            )
+        })
     }
 
     override fun listResources(): List<McpResourceDefinition> {
-        val resources = mutableListOf<McpResourceDefinition>()
-        var cursor: String? = null
-        do {
-            val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("resources/list", params) ?: break
-            val result = response["result"] as? Map<String, Any?> ?: break
-            val items = result["resources"] as? List<*> ?: emptyList<Any>()
-            items.filterIsInstance<Map<String, Any?>>().forEach { r ->
-                resources.add(
-                    McpResourceDefinition(
-                        uri = r["uri"] as String,
-                        name = r["name"] as String,
-                        description = r["description"] as? String ?: "",
-                        mimeType = r["mimeType"] as? String
-                    )
-                )
-            }
-            cursor = result["nextCursor"] as? String
-        } while (cursor != null)
-        return resources
+        return fetchPaginatedList("resources/list", "resources", { resource ->
+            McpResourceDefinition(
+                uri = resource["uri"] as String,
+                name = resource["name"] as String,
+                description = resource["description"] as? String ?: "",
+                mimeType = resource["mimeType"] as? String
+            )
+        })
     }
 
     override fun listResourceTemplates(): List<McpResourceTemplate> {
-        val templates = mutableListOf<McpResourceTemplate>()
-        var cursor: String? = null
-        do {
-            val params: Map<String, Any?> = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
-            val response = post("resources/templates/list", params) ?: break
-            val result = response["result"] as? Map<String, Any?> ?: break
-            val items = result["resourceTemplates"] as? List<*> ?: emptyList<Any>()
-            items.filterIsInstance<Map<String, Any?>>().forEach { t ->
-                templates.add(
-                    McpResourceTemplate(
-                        uriTemplate = t["uriTemplate"] as? String ?: "",
-                        name = t["name"] as? String ?: "",
-                        description = t["description"] as? String ?: ""
-                    )
-                )
-            }
-            cursor = result["nextCursor"] as? String
-        } while (cursor != null)
-        return templates
+        return fetchPaginatedList("resources/templates/list", "resourceTemplates", { template ->
+            McpResourceTemplate(
+                uriTemplate = template["uriTemplate"] as String,
+                name = template["name"] as String,
+                description = template["description"] as? String ?: ""
+            )
+        })
     }
 
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
