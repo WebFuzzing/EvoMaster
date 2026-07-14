@@ -37,7 +37,7 @@ data class McpResourceResult(
 
 /** Content item within a tool or resource response. */
 data class McpContent(
-    val type: String,
+    val type: String? = null,
     val text: String? = null,
     val uri: String? = null,
     val mimeType: String? = null

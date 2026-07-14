@@ -9,6 +9,9 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.String
+import kotlin.collections.List
+import kotlin.collections.Map
 
 /**
  * [McpClient] implementation that uses the Streamable HTTP transport.
@@ -170,10 +173,12 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         val response = post("tools/call", mapOf("name" to name, "arguments" to arguments))
             ?: return McpToolResult(isError = true)
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
-        val rawContent = result["content"] as? List<*> ?: emptyList<Any>()
-        val content = rawContent.filterIsInstance<Map<String, Any?>>().map { c ->
+        val rawContent = result["content"] as? List<Map<String, Any?>> ?: emptyList()
+        val content = rawContent.map { c ->
+            val type = c["type"] as? String
+                ?: throw IllegalStateException("tools/call response content item missing required 'type' field")
             McpContent(
-                type = c["type"] as? String ?: "text",
+                type = type,
                 text = c["text"] as? String,
                 uri = c["uri"] as? String,
                 mimeType = c["mimeType"] as? String
@@ -189,10 +194,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         val response = post("resources/read", mapOf("uri" to uri))
             ?: return McpResourceResult()
         val result = response["result"] as? Map<String, Any?> ?: return McpResourceResult()
-        val rawContents = result["contents"] as? List<*> ?: emptyList<Any>()
-        val contents = rawContents.filterIsInstance<Map<String, Any?>>().map { c ->
+        val rawContents = result["contents"] as? List<Map<String, Any?>> ?: emptyList()
+        val contents = rawContents.map { c ->
             McpContent(
-                type = c["type"] as? String ?: "text",
                 text = c["text"] as? String,
                 uri = c["uri"] as? String,
                 mimeType = c["mimeType"] as? String
