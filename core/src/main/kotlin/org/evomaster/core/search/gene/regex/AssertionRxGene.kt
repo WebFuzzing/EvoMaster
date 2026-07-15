@@ -109,4 +109,8 @@ class AssertionRxGene(
         require(value.isNotEmpty())
         return 0
     }
+
+    override fun forceZeroWidth() {
+        // already always zero-width, nothing to do
+    }
 }

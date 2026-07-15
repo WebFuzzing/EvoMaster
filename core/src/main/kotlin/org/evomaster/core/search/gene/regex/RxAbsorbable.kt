@@ -9,9 +9,6 @@ package org.evomaster.core.search.gene.regex
  * around the assertion in its parent [DisjunctionRxGene]'s terms list,
  * asking each gene how much of the remaining candidate it can absorb and committing
  * that amount before moving to the next gene.
- *
- * Regex genes that do not override the defaults are treated as non-absorbable (return 0,
- * throw on force attempt).
  */
 interface RxAbsorbable {
 
@@ -22,9 +19,9 @@ interface RxAbsorbable {
     fun absorbableCount(value: String): Int = 0
 
     /**
-     * Places as many of [value]'s leading characters as possible, making the same
-     * decision [absorbableCount] would for this same [value]. This mutates internal state in
-     * place, and returns how many characters were actually placed.
+     * Places as many of [value]'s leading characters as possible and returns how many characters were actually placed.
+     *
+     * Precondition: [value] is not empty.
      */
     fun tryForce(value: String): Int {
         throw IllegalStateException(
@@ -33,8 +30,18 @@ interface RxAbsorbable {
     }
 
     /**
-     * Read-only: could tryForce("") succeed on this gene right now, without actually
-     * calling it? Default false.
+     * Read-only: could [forceZeroWidth] succeed on this gene right now? Default false.
      */
     fun canBeZeroWidth(): Boolean = false
+
+    /**
+     * Forces this gene to render as "". Unlike [tryForce], there is nothing to plan or report.
+     *
+     * Precondition: [canBeZeroWidth]
+     */
+    fun forceZeroWidth() {
+        throw IllegalStateException(
+            "${this::class.simpleName} cannot be zero-width but forceZeroWidth was called"
+        )
+    }
 }

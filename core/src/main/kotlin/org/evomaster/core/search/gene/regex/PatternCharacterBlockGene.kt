@@ -142,4 +142,9 @@ class PatternCharacterBlockGene(
         }
         return n
     }
+
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth())
+        // stringBlock is empty, so there is nothing to place - already zero-width.
+    }
 }
