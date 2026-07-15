@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.rest.service.sampler
 
 import com.google.inject.Inject
-import org.evomaster.arazzo.access.ArazzoAccess
-import org.evomaster.arazzo.models.domain.Workflow
-import org.evomaster.arazzo.parser.ArazzoParser
+import com.webfuzzing.arazzo.access.ArazzoAccess
+import com.webfuzzing.arazzo.models.domain.Workflow
+import com.webfuzzing.arazzo.parser.ArazzoParser
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName

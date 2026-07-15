@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.service.sampler
 
-import org.evomaster.arazzo.models.domain.Step
-import org.evomaster.arazzo.models.domain.Workflow
+import com.webfuzzing.arazzo.models.domain.Step
+import com.webfuzzing.arazzo.models.domain.Workflow
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
