@@ -49,7 +49,7 @@ assertion
  //TODO
 //// | '\\' 'b'
 //// | '\\' 'B'
-//// | '(' '?' '=' disjunction ')'
+ | PAREN_open QUESTION EQUAL disjunction PAREN_close
 //// | '(' '?' '!' disjunction ')'
  ;
 
@@ -179,7 +179,7 @@ patternCharacter
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
- | COLON
+ | COLON | EQUAL
  | DOUBLE_AMPERSAND // char class intersection not supported by default in JS, only supported if "v" flag is turned on.
  ;
 
@@ -231,7 +231,7 @@ classAtomNoDash
  | DecimalDigit
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
- | COLON
+ | COLON | EQUAL
  // should be interpreted literally:
  // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
  // steps to interpret them correctly given the context.
@@ -274,6 +274,7 @@ CharacterClassEscape
   : SLASH [dDsSwWvVhH]
  ;
 
+EQUAL                      : '=';
 CARET                      : '^';
 DOLLAR                     : '$';
 SLASH                      : '\\';
@@ -298,7 +299,7 @@ E: 'E';
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9:,^$\\.*+?()[\]{}|-]
+ : ~[0-9:,^$\\.*+?()[\]{}|=-]
  ;
 
 fragment OctalEscapeSequence

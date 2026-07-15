@@ -87,6 +87,24 @@ class GeneRegexJavaVisitor(val externalRegexFlags: RegexFlags = RegexFlags()) : 
         return disjList
     }
 
+    /**
+     * Walks up [ctx]'s ancestry towards the top-level pattern, throwing as soon as it
+     * finds one of the currently-unsupported ways an assertion's ancestry can appear (nested).
+     * Returns normally if it reaches the top-level pattern without hitting either.
+     */
+    private fun rejectIfNestedAssertion(ctx: RegexJavaParser.AssertionContext) {
+        var current = ctx.parent
+        while (current != null && current !is RegexJavaParser.PatternContext) {
+            if (current is RegexJavaParser.AssertionContext) {
+                throw IllegalStateException("Nested assertions not supported")
+            }
+            if (current is RegexJavaParser.AtomContext && current.disjunction() != null) {
+                throw IllegalStateException("Assertions inside groups are not currently supported")
+            }
+            current = current.parent
+        }
+    }
+
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -232,7 +250,15 @@ class GeneRegexJavaVisitor(val externalRegexFlags: RegexFlags = RegexFlags()) : 
         val res = VisitResult()
 
         if(ctx.assertion() != null){
-            res.data = ctx.assertion().text
+            val assertionCtx = ctx.assertion()
+            if (assertionCtx.CARET() != null || assertionCtx.DOLLAR() != null) {
+                res.data = ctx.assertion().text
+            } else {
+                rejectIfNestedAssertion(ctx.assertion())
+                val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
+                val assertionGene = AssertionRxGene(innerDisjList)
+                res.genes.add(assertionGene)
+            }
             return res
         }
 
