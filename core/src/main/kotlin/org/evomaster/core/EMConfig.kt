@@ -3366,8 +3366,8 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("arazzo example location")
-    var arazzoExampleLocation = "./core/src/main/resources/arazzo_pet.yaml"
+    @Cfg("arazzo location in disk")
+    var arazzoLocation = ""
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){

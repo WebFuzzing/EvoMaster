@@ -509,7 +509,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * Parse Arazzo and looking for Workflows
      */
     private fun readWorkflowsArazzo(): List<Workflow> {
-        val arazzoText = ArazzoAccess.readFromDisk(config.arazzoExampleLocation)
+        val arazzoText = ArazzoAccess.readFromDisk(config.arazzoLocation)
         return ArazzoParser.parse(arazzoText, schemaHolder.main.schemaParsed).workflows
     }
 

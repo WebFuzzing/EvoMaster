@@ -15,11 +15,14 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.core.BaseModule
 import org.evomaster.core.Main
 import org.evomaster.core.problem.rest.SamplerVerifierTest.FakeRemoteController
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.module.ArazzoRestModule
 import org.evomaster.core.problem.rest.service.sampler.ArazzoSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -34,8 +37,51 @@ class ArazzoSamplerVerifierTest {
 
     @Test
     fun testArazzoSamplerProducesValidIndividuals() {
-        val openApiPath = testResourcePath("openapi/openapi_pet.json")
-        val arazzoPath = testResourcePath("arazzo/arazzo_pet.yaml")
+        val sampler = createSampler()
+
+        assertTrue(sampler.workflowsArazzo.isNotEmpty(), "Arazzo workflows should be loaded at init")
+        assertTrue(sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
+
+        repeat(10) {
+            checkInvariant(sampler.sample(forceRandomSample = true))
+        }
+    }
+
+    @Test
+    fun testArazzoSamplerGeneratesValidIndividualWorkflows() {
+        val sampler = createSampler()
+
+        //apply-coupon
+        var workflow = sampler.workflowsArazzoById["apply-coupon"]!!
+        var ind = sampler.buildIndividualFromWorkflow(workflow)
+        var actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        assertEquals(listOf("findPetsByTags", "getPetCoupons", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags", "/pet/{petId}/coupons", "/store/order"), actions.map { it.path.toString() })
+
+        //buy-available-pet
+        workflow = sampler.workflowsArazzoById["buy-available-pet"]!!
+        ind = sampler.buildIndividualFromWorkflow(workflow)
+        actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        assertEquals(listOf("findPetsByStatus", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
+
+        //place-order
+        workflow = sampler.workflowsArazzoById["place-order"]!!
+        ind = sampler.buildIndividualFromWorkflow(workflow)
+        actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        assertEquals(listOf("placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/store/order"), actions.map { it.path.toString() })
+    }
+
+    private fun createSampler(): ArazzoSampler {
+        val openApiPath = testResourcePath("openapi/pet-coupons-openapi.yaml")
+        val arazzoPath = testResourcePath("arazzo/pet-coupons-arazzo.yaml")
 
         val sutInfo = SutInfoDto()
         sutInfo.baseUrlOfSUT = "http://localhost:8080"
@@ -46,20 +92,14 @@ class ArazzoSamplerVerifierTest {
         val controllerInfo = ControllerInfoDto()
 
         val args = listOf(
+            "--blackBox", "false",
             "--seed", "42",
             "--arazzoStrategy", "ENABLED",
-            "--arazzoExampleLocation", arazzoPath,
+            "--arazzoLocation", arazzoPath,
         )
 
         val injector = getInjector(sutInfo, controllerInfo, args)
-        val sampler = injector.getInstance(ArazzoSampler::class.java)
-
-        assertTrue(sampler.workflowsArazzo.isNotEmpty(), "Arazzo workflows should be loaded at init")
-        assertTrue(sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
-
-        repeat(10) {
-            checkInvariant(sampler.sample(forceRandomSample = true))
-        }
+        return injector.getInstance(ArazzoSampler::class.java)
     }
 
     private fun testResourcePath(relativePath: String): String {

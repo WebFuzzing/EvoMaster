@@ -8,7 +8,7 @@ info:
     c) orders the pet while applying the coupons from step b.
 sourceDescriptions:
   - name: pet-coupons
-    url: ./pet-coupons.openapi.yaml
+    url: ../openapi/pet-coupons-openapi.yaml
     type: openapi
 workflows:
   - workflowId: apply-coupon

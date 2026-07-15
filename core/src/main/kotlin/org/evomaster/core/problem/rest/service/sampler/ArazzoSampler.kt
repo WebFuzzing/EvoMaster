@@ -25,7 +25,7 @@ class ArazzoSampler : AbstractRestSampler() {
     /**
      * Create workflows individuals
      */
-    private fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
+    fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
         val actions = workflow.steps
             .flatMap { resolveStep(it) }
             .onEach {
