@@ -67,7 +67,6 @@ class RegexGene(
             return
         }
 
-        // this sourceRegex may have preprocessing steps applied... should do this with the original string...
         val pattern = compiledPattern(sourceRegex, externalRegexFlags)
 
         repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->

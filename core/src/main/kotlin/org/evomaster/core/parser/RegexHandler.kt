@@ -44,7 +44,7 @@ object RegexHandler {
 
         val pattern = parser.pattern()
 
-        val res = GeneRegexJavaVisitor(externalRegexFlags).visit(pattern)
+        val res = GeneRegexJavaVisitor(regex, externalRegexFlags).visit(pattern)
 
         val gene= res.genes.first() as RegexGene
         cacheJVM[key] = gene.copy() as RegexGene
