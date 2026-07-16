@@ -12,7 +12,13 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.RegexWithExternalFlags
 import java.util.regex.Pattern
+
+/**
+ * How many times we try to resample the whole [RegexGene] and attempt repairing before we give up.
+ */
+const val MAX_TREE_REPAIR_ATTEMPTS = 10
 
 /**
  * A gene representing a regular expression (regex).
@@ -39,13 +45,43 @@ class RegexGene(
         return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
     }
 
+    companion object {
+        private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
+
+        private fun compiledPattern(sourceRegex: String, flags: RegexFlags): Pattern {
+            return patternCache.computeIfAbsent(RegexWithExternalFlags(sourceRegex, flags)) {
+                Pattern.compile(sourceRegex, flags.toJavaFlagBitmask())
+            }
+        }
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         usingFixedValue = if(fixedValue == null){
             false
         } else {
             randomness.nextBoolean()
         }
-        disjunctions.randomize(randomness, tryToForceNewValue)
+
+        if (regexType != RegexType.JVM) {
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            return
+        }
+
+        // this sourceRegex may have preprocessing steps applied... should do this with the original string...
+        val pattern = compiledPattern(sourceRegex, externalRegexFlags)
+
+        repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                return
+            }
+            disjunctions.attemptAssertionRepair(randomness)
+            if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                return
+            }
+        }
+
+        throw IllegalStateException("Could not repair regex value")
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
@@ -68,7 +104,7 @@ class RegexGene(
 
         if(regexType == RegexType.JVM){
             val matcher = try{
-                Pattern.compile(sourceRegex).matcher(fixedValue!!)
+                compiledPattern(sourceRegex, externalRegexFlags).matcher(fixedValue!!)
             }catch(e: Exception){
                 return false
             }
