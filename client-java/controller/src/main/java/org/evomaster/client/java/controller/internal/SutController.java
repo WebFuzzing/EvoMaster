@@ -563,10 +563,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.NEO4J,
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.neo4jCommand,
-                                    p.neo4jDistanceWithMetrics.neo4jDistance,
-                                    p.neo4jDistanceWithMetrics.numberOfEvaluatedNodes,
-                                    p.neo4jDistanceWithMetrics.neo4jDistanceEvaluationFailure
+                                    p.getNeo4jCommand(),
+                                    p.getNeo4jDistanceWithMetrics().getNeo4jDistance(),
+                                    p.getNeo4jDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                    p.getNeo4jDistanceWithMetrics().isNeo4jDistanceEvaluationFailure()
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }

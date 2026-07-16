@@ -7,11 +7,11 @@ package org.evomaster.client.java.controller.internal.db.neo4j;
  */
 public class Neo4jDistanceWithMetrics {
 
-    public final double neo4jDistance;
+    private final double neo4jDistance;
 
-    public final int numberOfEvaluatedNodes;
+    private final int numberOfEvaluatedNodes;
 
-    public final boolean neo4jDistanceEvaluationFailure;
+    private final boolean neo4jDistanceEvaluationFailure;
 
     public Neo4jDistanceWithMetrics(double neo4jDistance, int numberOfEvaluatedNodes,
                                     boolean neo4jDistanceEvaluationFailure) {
@@ -25,5 +25,17 @@ public class Neo4jDistanceWithMetrics {
         this.neo4jDistance = neo4jDistance;
         this.numberOfEvaluatedNodes = numberOfEvaluatedNodes;
         this.neo4jDistanceEvaluationFailure = neo4jDistanceEvaluationFailure;
+    }
+
+    public double getNeo4jDistance() {
+        return neo4jDistance;
+    }
+
+    public int getNumberOfEvaluatedNodes() {
+        return numberOfEvaluatedNodes;
+    }
+
+    public boolean isNeo4jDistanceEvaluationFailure() {
+        return neo4jDistanceEvaluationFailure;
     }
 }

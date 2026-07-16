@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.neo4j.heuristics;
 
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 import org.evomaster.client.java.controller.neo4j.operations.MatchPattern;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
 import org.evomaster.client.java.controller.neo4j.operations.PatternNode;
@@ -54,8 +54,8 @@ class Neo4jStructuralMatcher {
         }
 
         PatternEdge edge = edges.get(index);
-        for (Neo4jRelationship rel : graph.getRelationships()) {
-            if (current.usesRelationship(rel)) {
+        for (Neo4jEdge rel : graph.getEdges()) {
+            if (current.usesEdge(rel)) {
                 continue;
             }
             tryOrientation(current, edge, rel, rel.getSourceId(), rel.getTargetId(),
@@ -74,7 +74,7 @@ class Neo4jStructuralMatcher {
      * Binds {@code edge} to {@code rel} with the given endpoint orientation, if consistent with the
      * bindings already in {@code current}, then recurses to the next edge.
      */
-    private void tryOrientation(Neo4jMapping current, PatternEdge edge, Neo4jRelationship rel,
+    private void tryOrientation(Neo4jMapping current, PatternEdge edge, Neo4jEdge rel,
                                 String sourceNodeId, String targetNodeId,
                                 List<PatternEdge> edges, int index, MatchPattern pattern,
                                 Neo4jGraph graph, List<Neo4jMapping> results) {

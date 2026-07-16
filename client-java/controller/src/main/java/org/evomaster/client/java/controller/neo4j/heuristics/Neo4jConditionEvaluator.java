@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.neo4j.heuristics;
 
 import org.evomaster.client.java.controller.neo4j.conditions.*;
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
@@ -58,7 +58,7 @@ class Neo4jConditionEvaluator {
         }
         if (condition instanceof TypeCondition) {
             TypeCondition tc = (TypeCondition) condition;
-            Neo4jRelationship rel = mapping.getEdge(tc.getVariableName());
+            Neo4jEdge rel = mapping.getEdge(tc.getVariableName());
             if (rel == null) {
                 return null;
             }
@@ -258,7 +258,7 @@ class Neo4jConditionEvaluator {
         if (node != null) {
             return node.hasProperty(key) ? node.getProperty(key) : UNRESOLVED;
         }
-        Neo4jRelationship rel = mapping.getEdge(variable);
+        Neo4jEdge rel = mapping.getEdge(variable);
         if (rel != null) {
             return rel.hasProperty(key) ? rel.getProperty(key) : UNRESOLVED;
         }

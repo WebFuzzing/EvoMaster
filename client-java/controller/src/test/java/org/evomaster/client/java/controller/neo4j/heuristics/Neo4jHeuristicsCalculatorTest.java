@@ -4,9 +4,9 @@ import org.evomaster.client.java.controller.neo4j.conditions.ComparisonCondition
 import org.evomaster.client.java.controller.neo4j.conditions.CypherCondition;
 import org.evomaster.client.java.controller.neo4j.conditions.PropertyOperand;
 import org.evomaster.client.java.controller.neo4j.conditions.TypeCondition;
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
 import org.evomaster.client.java.controller.neo4j.parser.CypherParser;
@@ -46,9 +46,9 @@ class Neo4jHeuristicsCalculatorTest {
         Neo4jNode n2 = node("n2", labels("Person"), props("age", n2Age, "name", "Luis"));
         Neo4jNode n3 = node("n3", labels("Animal"), props("age", 5, "name", "Rex"));
         Neo4jNode n4 = node("n4", labels("Person"), props("age", 40, "name", "Carlos"));
-        Neo4jRelationship e1 = rel("e1", "KNOWS", "n1", "n2");
-        Neo4jRelationship e2 = rel("e2", "LIKES", "n1", "n3");
-        Neo4jRelationship e3 = rel("e3", "KNOWS", "n3", "n4");
+        Neo4jEdge e1 = rel("e1", "KNOWS", "n1", "n2");
+        Neo4jEdge e2 = rel("e2", "LIKES", "n1", "n3");
+        Neo4jEdge e3 = rel("e3", "KNOWS", "n3", "n4");
         return new Neo4jGraph(Arrays.asList(n1, n2, n3, n4), Arrays.asList(e1, e2, e3));
     }
 
@@ -96,8 +96,8 @@ class Neo4jHeuristicsCalculatorTest {
         Neo4jNode n1 = node("n1", labels("Person"), props("age", 27, "name", "Ana"));
         Neo4jNode n2 = node("n2", labels("Person"), props("age", 35, "name", "Luis"));
         Neo4jNode n3 = node("n3", labels("Person"), props("age", 22, "name", "Maria"));
-        Neo4jRelationship e1 = rel("e1", "LIKES", "n1", "n2");
-        Neo4jRelationship e2 = rel("e2", "KNOWS", "n2", "n3");
+        Neo4jEdge e1 = rel("e1", "LIKES", "n1", "n2");
+        Neo4jEdge e2 = rel("e2", "KNOWS", "n2", "n3");
         return new Neo4jGraph(Arrays.asList(n1, n2, n3), Arrays.asList(e1, e2));
     }
 
@@ -402,8 +402,8 @@ class Neo4jHeuristicsCalculatorTest {
         return new Neo4jNode(id, labels, props);
     }
 
-    private static Neo4jRelationship rel(String id, String type, String from, String to) {
-        return new Neo4jRelationship(id, type, from, to, Collections.emptyMap());
+    private static Neo4jEdge rel(String id, String type, String from, String to) {
+        return new Neo4jEdge(id, type, from, to, Collections.emptyMap());
     }
 
     private static Set<String> labels(String... ls) {

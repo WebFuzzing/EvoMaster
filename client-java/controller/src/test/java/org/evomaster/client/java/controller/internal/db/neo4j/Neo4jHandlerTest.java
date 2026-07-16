@@ -47,11 +47,11 @@ class Neo4jHandlerTest {
 
         assertEquals(1, evaluated.size());
         Neo4jCommandWithDistance result = evaluated.get(0);
-        assertEquals(MATCH_QUERY, result.neo4jCommand);
-        assertFalse(result.neo4jDistanceWithMetrics.neo4jDistanceEvaluationFailure);
-        assertEquals(4, result.neo4jDistanceWithMetrics.numberOfEvaluatedNodes);
+        assertEquals(MATCH_QUERY, result.getNeo4jCommand());
+        assertFalse(result.getNeo4jDistanceWithMetrics().isNeo4jDistanceEvaluationFailure());
+        assertEquals(4, result.getNeo4jDistanceWithMetrics().getNumberOfEvaluatedNodes());
         // distance = 1 - ofTrue; ofTrue ≈ 0.939 → distance ≈ 0.061.
-        assertEquals(0.061, result.neo4jDistanceWithMetrics.neo4jDistance, 0.005);
+        assertEquals(0.061, result.getNeo4jDistanceWithMetrics().getNeo4jDistance(), 0.005);
     }
 
     @Test
@@ -64,7 +64,7 @@ class Neo4jHandlerTest {
         List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedCommands();
         // The write query does not parse as a MATCH and is skipped; only the read query is scored.
         assertEquals(1, evaluated.size());
-        assertEquals(MATCH_QUERY, evaluated.get(0).neo4jCommand);
+        assertEquals(MATCH_QUERY, evaluated.get(0).getNeo4jCommand());
     }
 
     @Test

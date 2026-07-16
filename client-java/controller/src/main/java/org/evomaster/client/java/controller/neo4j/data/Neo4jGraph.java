@@ -14,12 +14,12 @@ import java.util.Map;
 public class Neo4jGraph {
 
     private final List<Neo4jNode> nodes;
-    private final List<Neo4jRelationship> relationships;
+    private final List<Neo4jEdge> edges;
     private final Map<String, Neo4jNode> nodesById;
 
-    public Neo4jGraph(List<Neo4jNode> nodes, List<Neo4jRelationship> relationships) {
+    public Neo4jGraph(List<Neo4jNode> nodes, List<Neo4jEdge> edges) {
         this.nodes = nodes != null ? new ArrayList<>(nodes) : new ArrayList<>();
-        this.relationships = relationships != null ? new ArrayList<>(relationships) : new ArrayList<>();
+        this.edges = edges != null ? new ArrayList<>(edges) : new ArrayList<>();
         this.nodesById = new LinkedHashMap<>();
         for (Neo4jNode n : this.nodes) {
             nodesById.put(n.getId(), n);
@@ -30,8 +30,8 @@ public class Neo4jGraph {
         return Collections.unmodifiableList(nodes);
     }
 
-    public List<Neo4jRelationship> getRelationships() {
-        return Collections.unmodifiableList(relationships);
+    public List<Neo4jEdge> getEdges() {
+        return Collections.unmodifiableList(edges);
     }
 
     public int nodeCount() {
@@ -44,6 +44,6 @@ public class Neo4jGraph {
 
     @Override
     public String toString() {
-        return "Neo4jGraph{nodes=" + nodes.size() + ", relationships=" + relationships.size() + "}";
+        return "Neo4jGraph{nodes=" + nodes.size() + ", edges=" + edges.size() + "}";
     }
 }

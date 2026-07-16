@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.neo4j.heuristics;
 
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,14 +17,14 @@ import java.util.Map;
 class Neo4jMapping {
 
     private final Map<String, Neo4jNode> nodeBindings;
-    private final Map<String, Neo4jRelationship> edgeBindings;
+    private final Map<String, Neo4jEdge> edgeBindings;
 
     Neo4jMapping() {
         this.nodeBindings = new LinkedHashMap<>();
         this.edgeBindings = new LinkedHashMap<>();
     }
 
-    private Neo4jMapping(Map<String, Neo4jNode> nodeBindings, Map<String, Neo4jRelationship> edgeBindings) {
+    private Neo4jMapping(Map<String, Neo4jNode> nodeBindings, Map<String, Neo4jEdge> edgeBindings) {
         this.nodeBindings = new LinkedHashMap<>(nodeBindings);
         this.edgeBindings = new LinkedHashMap<>(edgeBindings);
     }
@@ -37,7 +37,7 @@ class Neo4jMapping {
         return nodeBindings.get(variable);
     }
 
-    Neo4jRelationship getEdge(String variable) {
+    Neo4jEdge getEdge(String variable) {
         return edgeBindings.get(variable);
     }
 
@@ -49,16 +49,16 @@ class Neo4jMapping {
         nodeBindings.put(variable, node);
     }
 
-    void bindEdge(String variable, Neo4jRelationship relationship) {
-        edgeBindings.put(variable, relationship);
+    void bindEdge(String variable, Neo4jEdge edge) {
+        edgeBindings.put(variable, edge);
     }
 
     /**
-     * True when this graph relationship is already used by some pattern edge in this mapping. Cypher
+     * True when this graph edge is already used by some pattern edge in this mapping. Cypher
      * enforces relationship uniqueness within a single MATCH, so the enumerator avoids reusing one.
      */
-    boolean usesRelationship(Neo4jRelationship relationship) {
-        return edgeBindings.containsValue(relationship);
+    boolean usesEdge(Neo4jEdge edge) {
+        return edgeBindings.containsValue(edge);
     }
 
     @Override

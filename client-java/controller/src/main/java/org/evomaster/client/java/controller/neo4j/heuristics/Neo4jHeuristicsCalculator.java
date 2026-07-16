@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller.neo4j.heuristics;
 
 import org.evomaster.client.java.controller.neo4j.conditions.CypherCondition;
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
 import org.evomaster.client.java.controller.neo4j.operations.MatchPattern;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
@@ -131,7 +131,7 @@ public class Neo4jHeuristicsCalculator {
         if (source == null || target == null) {
             return FALSE_TRUTHNESS;
         }
-        for (Neo4jRelationship rel : graph.getRelationships()) {
+        for (Neo4jEdge rel : graph.getEdges()) {
             boolean forward = rel.getSourceId().equals(source.getId())
                     && rel.getTargetId().equals(target.getId());
             boolean backward = !edge.isDirected()

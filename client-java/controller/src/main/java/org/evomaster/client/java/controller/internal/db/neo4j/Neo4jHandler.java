@@ -77,32 +77,31 @@ public class Neo4jHandler {
             return commandsWithDistances;
         }
 
-        Neo4jGraph graph = null;
+        Neo4jGraph graph;
+        try {
+            graph = graphReader.read(neo4jConnection);
+        } catch (Exception e) {
+            SimpleLogger.uniqueWarn("Failed to read the Neo4j graph to compute heuristics: " + e.getMessage());
+            operations.clear();
+            return commandsWithDistances;
+        }
 
         for (Neo4JRunCommand op : operations) {
             String query = op.getQuery();
             if (query == null) {
                 continue;
             }
-            final MatchOperation parsed;
+            final MatchOperation parsedQuery;
             try {
-                parsed = parser.parse(query);
+                parsedQuery = parser.parse(query);
             } catch (CypherParserException e) {
+                SimpleLogger.uniqueWarn("Failed to parse Cypher query for Neo4j heuristics: " + e.getMessage());
                 continue;
-            }
-
-            if (graph == null) {
-                try {
-                    graph = graphReader.read(neo4jConnection);
-                } catch (Exception e) {
-                    SimpleLogger.uniqueWarn("Failed to read the Neo4j graph to compute heuristics: " + e.getMessage());
-                    break;
-                }
             }
 
             Neo4jDistanceWithMetrics metrics;
             try {
-                double distance = calculator.computeDistance(parsed, graph);
+                double distance = calculator.computeDistance(parsedQuery, graph);
                 metrics = new Neo4jDistanceWithMetrics(distance, graph.nodeCount(), false);
             } catch (Exception e) {
                 SimpleLogger.uniqueWarn("Failed to compute Neo4j heuristic for query: " + query);

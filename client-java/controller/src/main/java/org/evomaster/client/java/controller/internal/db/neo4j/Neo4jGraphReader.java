@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
+import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
-import org.evomaster.client.java.controller.neo4j.data.Neo4jRelationship;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -38,8 +38,8 @@ public class Neo4jGraphReader {
         Object session = invoke(driver, "session");
         try {
             List<Neo4jNode> nodes = readNodes(session);
-            List<Neo4jRelationship> relationships = readRelationships(session);
-            return new Neo4jGraph(nodes, relationships);
+            List<Neo4jEdge> edges = readEdges(session);
+            return new Neo4jGraph(nodes, edges);
         } finally {
             invoke(session, "close");
         }
@@ -56,17 +56,17 @@ public class Neo4jGraphReader {
         return nodes;
     }
 
-    private List<Neo4jRelationship> readRelationships(Object session) {
-        List<Neo4jRelationship> relationships = new ArrayList<>();
+    private List<Neo4jEdge> readEdges(Object session) {
+        List<Neo4jEdge> edges = new ArrayList<>();
         for (Object record : runAndList(session, REL_QUERY)) {
             String id = asString(get(record, "id"));
             String type = asString(get(record, "type"));
             String src = asString(get(record, "src"));
             String tgt = asString(get(record, "tgt"));
             Map<String, Object> props = asMap(get(record, "props"));
-            relationships.add(new Neo4jRelationship(id, type, src, tgt, props));
+            edges.add(new Neo4jEdge(id, type, src, tgt, props));
         }
-        return relationships;
+        return edges;
     }
 
     private List<?> runAndList(Object session, String query) {
