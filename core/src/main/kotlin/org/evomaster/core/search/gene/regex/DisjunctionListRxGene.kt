@@ -15,6 +15,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+private data class BranchRanking(val absorbableCount: Int, val branchIndex: Int)
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
@@ -211,7 +212,7 @@ class DisjunctionListRxGene(
      * Ranks all branches by how much of [value] they can absorb, without mutating
      * anything.
      */
-    private fun rankBranches(value: String): Pair<Int, Int>? {
+    private fun rankBranches(value: String): BranchRanking? {
         if (value.isEmpty() || disjunctions.isEmpty()) return null
         var bestCount = disjunctions[activeDisjunction].absorbableCount(value)
         var bestIndex = activeDisjunction
@@ -224,17 +225,17 @@ class DisjunctionListRxGene(
                 bestIndex = i
             }
         }
-        return bestCount to bestIndex
+        return BranchRanking(bestCount, bestIndex)
     }
 
     override fun absorbableCount(value: String): Int =
-        rankBranches(value)?.first ?: 0
+        rankBranches(value)?.absorbableCount ?: 0
 
     override fun canBeZeroWidth(): Boolean = disjunctions.any { it.canBeZeroWidth() }
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        val (bestCount, bestIndex) = rankBranches(value) ?: (0 to activeDisjunction)
+        val (bestCount, bestIndex) = rankBranches(value) ?: BranchRanking(0, activeDisjunction)
 
         if (bestCount > 0) {
             if (bestIndex != activeDisjunction) {
