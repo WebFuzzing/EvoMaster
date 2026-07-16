@@ -40,7 +40,7 @@ public class Neo4jHeuristicsCalculator {
         this.evaluator = new Neo4jConditionEvaluator(taintHandler);
     }
 
-    public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
+    Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
         Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(query);
         MatchPattern pattern = expanded.pattern;
         List<CypherCondition> conditions = expanded.conditions;
@@ -51,8 +51,8 @@ public class Neo4jHeuristicsCalculator {
             return TRUE_TRUTHNESS;
         }
 
-        Truthness hMatch = hMatch(pattern, graph, mappings);
-        Truthness hWhere = hWhere(conditions, mappings);
+        Truthness hMatch = computeHeuristicPattern(pattern, graph, mappings);
+        Truthness hWhere = computeHeuristicWhere(conditions, mappings);
         return TruthnessUtils.buildAndAggregationTruthness(hMatch, hWhere);
     }
 
@@ -64,9 +64,9 @@ public class Neo4jHeuristicsCalculator {
         return 1.0d - computeHeuristic(query, graph).getOfTrue();
     }
 
-    private Truthness hMatch(MatchPattern pattern, Neo4jGraph graph, List<Neo4jMapping> mappings) {
-        Truthness nodes = hMatchNodes(pattern.nodeCount(), graph.nodeCount());
-        Truthness edges = hMatchEdges(pattern.getEdges(), graph, mappings);
+    private Truthness computeHeuristicPattern(MatchPattern pattern, Neo4jGraph graph, List<Neo4jMapping> mappings) {
+        Truthness nodes = computeHeuristicMatchNodes(pattern.nodeCount(), graph.nodeCount());
+        Truthness edges = computeHeuristicMatchEdges(pattern.getEdges(), graph, mappings);
         return TruthnessUtils.buildAndAggregationTruthness(nodes, edges);
     }
 
@@ -74,7 +74,7 @@ public class Neo4jHeuristicsCalculator {
      * Count-based node availability: enough graph nodes to bind the pattern's nodes. Pure cardinality,
      * no label/property check (those are conditions evaluated by H_where).
      */
-    Truthness hMatchNodes(int required, int available) {
+    Truthness computeHeuristicMatchNodes(int required, int available) {
         if (required == 0) {
             return TRUE_TRUTHNESS;
         }
@@ -91,8 +91,8 @@ public class Neo4jHeuristicsCalculator {
      * Edge availability: the best, over all node mappings, of whether every pattern edge has a
      * matching graph relationship under that mapping. Empty edge set is vacuously satisfied.
      */
-    private Truthness hMatchEdges(List<PatternEdge> patternEdges, Neo4jGraph graph,
-                                  List<Neo4jMapping> mappings) {
+    private Truthness computeHeuristicMatchEdges(List<PatternEdge> patternEdges, Neo4jGraph graph,
+                                                 List<Neo4jMapping> mappings) {
         if (mappings.isEmpty()) {
             return FALSE_TRUTHNESS;
         }
@@ -149,7 +149,7 @@ public class Neo4jHeuristicsCalculator {
      * fully, the best partial score scaled from base {@code C}. No mappings means the structure was
      * absent, so the conditions cannot hold: FALSE.
      */
-    private Truthness hWhere(List<CypherCondition> conditions, List<Neo4jMapping> mappings) {
+    private Truthness computeHeuristicWhere(List<CypherCondition> conditions, List<Neo4jMapping> mappings) {
         if (mappings.isEmpty()) {
             return FALSE_TRUTHNESS;
         }
@@ -174,7 +174,7 @@ public class Neo4jHeuristicsCalculator {
     private Truthness matchConditions(List<CypherCondition> conditions, Neo4jMapping mapping) {
         List<Truthness> truths = new ArrayList<>();
         for (CypherCondition c : conditions) {
-            Truthness t = evaluator.rho(c, mapping);
+            Truthness t = evaluator.evaluateCondition(c, mapping);
             if (t != null) {
                 truths.add(t);
             }

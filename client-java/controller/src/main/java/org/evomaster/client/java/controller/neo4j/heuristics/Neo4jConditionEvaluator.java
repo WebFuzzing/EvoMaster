@@ -21,7 +21,7 @@ import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeurist
  * structural mapping {@code m}, recursively over the typed boolean tree the parser produces
  * (And/Or/Xor/Not, comparisons, label/type/property leaves).
  * <p>
- * Returns {@code null} when a condition cannot be valuated under the mapping (e.g. an absent
+ * Returns {@code null} when a condition cannot be evaluated under the mapping (e.g. an absent
  * property, an unbound variable, or an opaque/raw operand); the caller's aggregation skips
  * {@code null} results.
  */
@@ -40,10 +40,10 @@ class Neo4jConditionEvaluator {
     }
 
     /**
-     * Returns {@code ρ(condition, mapping)}, or {@code null} when the condition cannot be valuated
+     * Returns {@code ρ(condition, mapping)}, or {@code null} when the condition cannot be evaluated
      * and must be skipped by the aggregation.
      */
-    Truthness rho(CypherCondition condition, Neo4jMapping mapping) {
+    Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
         if (condition instanceof LabelCondition) {
             LabelCondition lc = (LabelCondition) condition;
             Neo4jNode node = mapping.getNode(lc.getVariableName());
@@ -66,10 +66,10 @@ class Neo4jConditionEvaluator {
             return stringEqualityTruthness(rel.getType(), tc.getType());
         }
         if (condition instanceof PropertyCondition) {
-            return rhoProperty((PropertyCondition) condition, mapping);
+            return evaluateProperty((PropertyCondition) condition, mapping);
         }
         if (condition instanceof ComparisonCondition) {
-            return rhoComparison((ComparisonCondition) condition, mapping);
+            return evaluateComparison((ComparisonCondition) condition, mapping);
         }
         if (condition instanceof AndCondition) {
             return aggregate(((AndCondition) condition).getConditions(), mapping, true);
@@ -78,47 +78,47 @@ class Neo4jConditionEvaluator {
             return aggregate(((OrCondition) condition).getConditions(), mapping, false);
         }
         if (condition instanceof XorCondition) {
-            return rhoXor(((XorCondition) condition).getConditions(), mapping);
+            return evaluateXor(((XorCondition) condition).getConditions(), mapping);
         }
         if (condition instanceof NotCondition) {
-            Truthness inner = rho(((NotCondition) condition).getCondition(), mapping);
+            Truthness inner = evaluateCondition(((NotCondition) condition).getCondition(), mapping);
             return inner == null ? null : inner.invert();
         }
         return null;
     }
 
-    private Truthness rhoProperty(PropertyCondition pc, Neo4jMapping mapping) {
+    private Truthness evaluateProperty(PropertyCondition pc, Neo4jMapping mapping) {
         Object actual = resolveProperty(pc.getVariableName(), pc.getPropertyKey(), mapping);
         if (actual == UNRESOLVED) {
             return null;
         }
-        Object expected = valuate(pc.getValue(), mapping);
+        Object expected = resolveOperandValue(pc.getValue(), mapping);
         if (expected == UNRESOLVED) {
             return null;
         }
         return equalityTruthness(actual, expected);
     }
 
-    private Truthness rhoComparison(ComparisonCondition cc, Neo4jMapping mapping) {
+    private Truthness evaluateComparison(ComparisonCondition cc, Neo4jMapping mapping) {
         switch (cc.getOperator()) {
             case IS_NULL:
                 return presenceTruthness(cc.getLeft(), mapping, /*wantPresent=*/false);
             case IS_NOT_NULL:
                 return presenceTruthness(cc.getLeft(), mapping, /*wantPresent=*/true);
             case IN:
-                return rhoIn(cc, mapping);
+                return evaluateIn(cc, mapping);
             case STARTS_WITH:
             case ENDS_WITH:
             case CONTAINS:
-                return rhoStringPredicate(cc, mapping);
+                return evaluateStringPredicate(cc, mapping);
             default:
-                return rhoBinary(cc, mapping);
+                return evaluateBinaryComparison(cc, mapping);
         }
     }
 
-    private Truthness rhoBinary(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = valuate(cc.getLeft(), mapping);
-        Object r = valuate(cc.getRight(), mapping);
+    private Truthness evaluateBinaryComparison(ComparisonCondition cc, Neo4jMapping mapping) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping);
+        Object r = resolveOperandValue(cc.getRight(), mapping);
         if (l == UNRESOLVED || r == UNRESOLVED || l == null || r == null) {
             return null;
         }
@@ -144,15 +144,15 @@ class Neo4jConditionEvaluator {
         }
     }
 
-    private Truthness rhoIn(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = valuate(cc.getLeft(), mapping);
+    private Truthness evaluateIn(ComparisonCondition cc, Neo4jMapping mapping) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping);
         if (l == UNRESOLVED || l == null || !(cc.getRight() instanceof ListOperand)) {
             return null;
         }
         List<Operand> elements = ((ListOperand) cc.getRight()).getElements();
         List<Truthness> truths = new ArrayList<>();
         for (Operand element : elements) {
-            Object ev = valuate(element, mapping);
+            Object ev = resolveOperandValue(element, mapping);
             if (ev == UNRESOLVED || ev == null) {
                 continue;
             }
@@ -164,9 +164,9 @@ class Neo4jConditionEvaluator {
         return TruthnessUtils.buildOrAggregationTruthness(truths.toArray(new Truthness[0]));
     }
 
-    private Truthness rhoStringPredicate(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = valuate(cc.getLeft(), mapping);
-        Object r = valuate(cc.getRight(), mapping);
+    private Truthness evaluateStringPredicate(ComparisonCondition cc, Neo4jMapping mapping) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping);
+        Object r = resolveOperandValue(cc.getRight(), mapping);
         if (!(l instanceof String) || !(r instanceof String)) {
             return null;
         }
@@ -182,10 +182,10 @@ class Neo4jConditionEvaluator {
         }
     }
 
-    private Truthness rhoXor(List<CypherCondition> conditions, Neo4jMapping mapping) {
+    private Truthness evaluateXor(List<CypherCondition> conditions, Neo4jMapping mapping) {
         Truthness acc = null;
         for (CypherCondition c : conditions) {
-            Truthness t = rho(c, mapping);
+            Truthness t = evaluateCondition(c, mapping);
             if (t == null) {
                 continue;
             }
@@ -194,11 +194,11 @@ class Neo4jConditionEvaluator {
         return acc;
     }
 
-    /** AND/OR aggregation over a child list, skipping children that cannot be valuated. */
+    /** AND/OR aggregation over a child list, skipping children that cannot be evaluated. */
     private Truthness aggregate(List<CypherCondition> conditions, Neo4jMapping mapping, boolean and) {
         List<Truthness> truths = new ArrayList<>();
         for (CypherCondition c : conditions) {
-            Truthness t = rho(c, mapping);
+            Truthness t = evaluateCondition(c, mapping);
             if (t != null) {
                 truths.add(t);
             }
@@ -212,11 +212,11 @@ class Neo4jConditionEvaluator {
     }
 
     /**
-     * Valuates an operand under the mapping. Returns {@link #UNRESOLVED} for an absent property,
-     * an opaque {@link RawOperand}, a list (handled only inside IN), an unbound variable, or an
-     * arithmetic expression over a non-numeric / unresolved side.
+     * Resolves an operand's value ({@code v(x)} in {@code Formalizing.md}) under the mapping. Returns
+     * {@link #UNRESOLVED} for an absent property, an opaque {@link RawOperand}, a list (handled only
+     * inside IN), an unbound variable, or an arithmetic expression over a non-numeric / unresolved side.
      */
-    private Object valuate(Operand operand, Neo4jMapping mapping) {
+    private Object resolveOperandValue(Operand operand, Neo4jMapping mapping) {
         if (operand instanceof LiteralOperand) {
             return ((LiteralOperand) operand).getValue();
         }
@@ -225,19 +225,19 @@ class Neo4jConditionEvaluator {
             return resolveProperty(po.getVariableName(), po.getPropertyKey(), mapping);
         }
         if (operand instanceof ArithmeticOperand) {
-            return valuateArithmetic((ArithmeticOperand) operand, mapping);
+            return resolveArithmeticOperandValue((ArithmeticOperand) operand, mapping);
         }
         return UNRESOLVED;
     }
 
-    private Object valuateArithmetic(ArithmeticOperand ao, Neo4jMapping mapping) {
+    private Object resolveArithmeticOperandValue(ArithmeticOperand ao, Neo4jMapping mapping) {
         if (ao.getOperator() == ArithmeticOperator.NEGATE) {
-            Object v = valuate(ao.getLeft(), mapping);
+            Object v = resolveOperandValue(ao.getLeft(), mapping);
             Double d = asDouble(v);
             return d == null ? UNRESOLVED : -d;
         }
-        Double l = asDouble(valuate(ao.getLeft(), mapping));
-        Double r = asDouble(valuate(ao.getRight(), mapping));
+        Double l = asDouble(resolveOperandValue(ao.getLeft(), mapping));
+        Double r = asDouble(resolveOperandValue(ao.getRight(), mapping));
         if (l == null || r == null) {
             return UNRESOLVED;
         }

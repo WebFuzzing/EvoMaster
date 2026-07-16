@@ -37,8 +37,12 @@ class Neo4jStructuralMatcher {
         }
 
         if (results.size() >= MAX_NUM_MAPPINGS) {
+            // The message includes the pattern so uniqueWarn's dedup is keyed per distinct pattern,
+            // not globally: otherwise the first pattern to ever hit the cap would silently suppress
+            // the warning for every other, different pattern that hits it later in the same run.
             SimpleLogger.uniqueWarn("Neo4j structural matching hit the cap of " + MAX_NUM_MAPPINGS
-                    + " mappings; the heuristic is computed over a partial set of mappings.");
+                    + " mappings for pattern " + pattern
+                    + "; the heuristic is computed over a partial set of mappings.");
         }
         return results;
     }

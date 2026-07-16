@@ -355,15 +355,15 @@ class Neo4jHeuristicsCalculatorTest {
     @Test
     void testHMatchNodesCountBased() {
         // enough nodes → TRUE
-        assertTrue(calculator.hMatchNodes(2, 4).isTrue());
-        assertTrue(calculator.hMatchNodes(2, 2).isTrue());
+        assertTrue(calculator.computeHeuristicMatchNodes(2, 4).isTrue());
+        assertTrue(calculator.computeHeuristicMatchNodes(2, 2).isTrue());
         // no nodes in graph → FALSE
-        assertEquals(1.0, calculator.hMatchNodes(2, 0).getOfFalse(), 1e-9);
-        assertFalse(calculator.hMatchNodes(2, 0).isTrue());
+        assertEquals(1.0, calculator.computeHeuristicMatchNodes(2, 0).getOfFalse(), 1e-9);
+        assertFalse(calculator.computeHeuristicMatchNodes(2, 0).isTrue());
         // no nodes required → TRUE
-        assertTrue(calculator.hMatchNodes(0, 0).isTrue());
+        assertTrue(calculator.computeHeuristicMatchNodes(0, 0).isTrue());
         // partial availability → scaled in (C, 1)
-        Truthness partial = calculator.hMatchNodes(4, 2);
+        Truthness partial = calculator.computeHeuristicMatchNodes(4, 2);
         assertEquals(1.0, partial.getOfFalse(), 1e-9);
         assertEquals(Neo4jHeuristicsCalculator.C + 0.9 * (2.0 / 4.0), partial.getOfTrue(), 1e-9);
     }
