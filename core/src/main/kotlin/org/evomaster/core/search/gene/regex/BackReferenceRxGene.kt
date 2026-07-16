@@ -81,4 +81,9 @@ class BackReferenceRxGene(
         // nothing to copy, as the value comes from the capture group
         return containsSameValueAs(other)
     }
+
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return 0
+    }
 }

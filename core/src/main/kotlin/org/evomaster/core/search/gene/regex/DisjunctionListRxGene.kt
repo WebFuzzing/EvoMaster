@@ -206,4 +206,65 @@ class DisjunctionListRxGene(
 
         return true
     }
+
+    /**
+     * Ranks all branches by how much of [value] they can absorb, without mutating
+     * anything.
+     */
+    private fun rankBranches(value: String): Pair<Int, Int>? {
+        if (value.isEmpty() || disjunctions.isEmpty()) return null
+        var bestCount = disjunctions[activeDisjunction].absorbableCount(value)
+        var bestIndex = activeDisjunction
+        for (i in disjunctions.indices) {
+            if (i == activeDisjunction) continue
+            if (bestCount == value.length) break
+            val can = disjunctions[i].absorbableCount(value)
+            if (can > bestCount) {
+                bestCount = can
+                bestIndex = i
+            }
+        }
+        return bestCount to bestIndex
+    }
+
+    override fun absorbableCount(value: String): Int =
+        rankBranches(value)?.first ?: 0
+
+    override fun canBeZeroWidth(): Boolean = disjunctions.any { it.canBeZeroWidth() }
+
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        val (bestCount, bestIndex) = rankBranches(value) ?: (0 to activeDisjunction)
+
+        if (bestCount > 0) {
+            if (bestIndex != activeDisjunction) {
+                activeDisjunction = bestIndex
+                tryToActivateGene(disjunctions[bestIndex])
+            }
+            return disjunctions[bestIndex].tryForce(value)
+        }
+
+        return 0
+    }
+
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth())
+        // try the active branch first to avoid an unnecessary switch
+        val order = listOf(activeDisjunction) + disjunctions.indices.filter { it != activeDisjunction }
+        val target = order.first { disjunctions[it].canBeZeroWidth() }
+        disjunctions[target].forceZeroWidth()
+        if (target != activeDisjunction) {
+            activeDisjunction = target
+            tryToActivateGene(disjunctions[target])
+        }
+    }
+
+    /**
+     * Delegates assertion repair to whichever branch is currently active, as only that
+     * branch's rendered value is ever observed, so only it needs repairing. See
+     * [DisjunctionRxGene.attemptAssertionRepair] for the actual repair logic.
+     */
+    fun attemptAssertionRepair(randomness: Randomness) {
+        disjunctions.getOrNull(activeDisjunction)?.attemptAssertionRepair(randomness)
+    }
 }
