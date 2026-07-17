@@ -94,9 +94,6 @@ MINUS                      : '-';
 COMMA                      : ',';
 COLON                      : ':';
 
-Q: 'Q';
-E: 'E';
-
 BaseChar
  // practically all chars but the ones used for control and digits
  : ~[0-9:,^$\\.*+?()[\]{}|-]
@@ -133,4 +130,34 @@ fragment OctalDigit:
 // \k<name>, first character must be letter, following characters may be letters or digits
 NamedBackReference
  : SLASH 'k<' [a-zA-Z] [a-zA-Z0-9]* '>'
+ ;
+
+// Special for Java: \Q...\E literal quoting.
+// Matching '\Q' switches the lexer into QUOTE_MODE (see below).
+QUOTE_OPEN
+ : '\\' 'Q' -> pushMode(QUOTE_MODE)
+ ;
+
+
+
+// --------------------------------------------------------------------------------
+// QUOTE_MODE: everything after \Q and before an optional \E is literal text.
+// By using lexer modes we skip having to explicitly allow all lexer tokens to appear
+// within quotes. This works by having a different set of tokens available when inside
+// a quote block, the default mode and the QUOTE_MODE each keep their own set of tokens.
+// QUOTE_MODE only has the lexer tokens defined below.
+// --------------------------------------------------------------------------------
+mode QUOTE_MODE;
+
+// The only way out of a \Q...\E block. In Java the first literal "\E" sequence ends quoting.
+QUOTE_CLOSE
+ : '\\' 'E' -> popMode
+ ;
+
+// One or more characters that do not form a "\E" sequence, so either:
+// - a backslash immediately followed by something other than 'E',
+// - any single non-backslash character.
+// Note that this cannot consume the sequence QUOTE_CLOSE.
+QUOTE_CONTENT
+ : ( '\\' ~[E] | ~[\\] )+
  ;

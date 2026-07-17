@@ -103,19 +103,7 @@ atom
 
 // Special for Java
 quote
- : SLASH Q quoteBlock SLASH E
-;
-
-quoteBlock
-  : quoteChar*
-;
-
-quoteChar
- : classAtom
- | SLASH
- | BRACKET_close
- | Q
- | E
+ : QUOTE_OPEN QUOTE_CONTENT? QUOTE_CLOSE? // both the content and closing the quote is optional in java regex.
 ;
 
 patternCharacter
@@ -125,7 +113,6 @@ patternCharacter
  | COMMA
  | MINUS
  | DecimalDigit
- | E | Q
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
