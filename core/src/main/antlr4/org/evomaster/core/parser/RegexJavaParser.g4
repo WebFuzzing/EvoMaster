@@ -20,6 +20,9 @@ parser grammar RegexJavaParser;
 
 options { tokenVocab = RegexJavaLexer; }
 
+// NOTE: if IntelliJ shows errors in this file its because it does not have a recognizer for the lexer, to solve this:
+// Right click the lexer file and press "Generate ANTLR Recognizer", after a few seconds it should stop showing errors.
+
 //------ PARSER ------------------------------
 // Parser rules have first letter in lower-case
 

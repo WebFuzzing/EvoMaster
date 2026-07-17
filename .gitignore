@@ -33,6 +33,8 @@ client-java/instrumentation-shared/target/
 client-java/database-spy/target/
 client-java/ci-utils/target
 core/target/
+# IntelliJ ANTLR plugin recognizer default location:
+core/gen/
 /core-tests/e2e-tests/dropwizard-examples/target/
 /core-tests/e2e-tests/e2e-tests-utils/target/
 /core-tests/e2e-tests/spring/spring-rest-openapi-v2/target/
