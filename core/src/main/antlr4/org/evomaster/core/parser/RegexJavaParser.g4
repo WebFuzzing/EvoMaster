@@ -167,7 +167,7 @@ classAtomNoDash
  | BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR
  | COLON
  // should be interpreted literally:
  // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
