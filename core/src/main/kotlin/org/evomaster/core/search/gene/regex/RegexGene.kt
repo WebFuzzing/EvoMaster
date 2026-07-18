@@ -55,6 +55,9 @@ class RegexGene(
         }
     }
 
+    private val pattern: Pattern? =
+        if (regexType == RegexType.JVM) compiledPattern(sourceRegex, externalRegexFlags) else null
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         usingFixedValue = if(fixedValue == null){
             false
@@ -67,11 +70,9 @@ class RegexGene(
             return
         }
 
-        val pattern = compiledPattern(sourceRegex, externalRegexFlags)
-
         repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
             disjunctions.randomize(randomness, tryToForceNewValue)
-            if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+            if (pattern!!.matcher(disjunctions.getValueAsPrintableString()).find()) {
                 return
             }
             disjunctions.attemptAssertionRepair(randomness)
@@ -103,7 +104,7 @@ class RegexGene(
 
         if(regexType == RegexType.JVM){
             val matcher = try{
-                compiledPattern(sourceRegex, externalRegexFlags).matcher(fixedValue!!)
+                pattern!!.matcher(fixedValue!!)
             }catch(e: Exception){
                 return false
             }
