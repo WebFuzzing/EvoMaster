@@ -109,8 +109,8 @@ class SearchProcessMonitor: SearchListener {
 
     @PostConstruct
     fun postConstruct(){
-        initMonitorProcessOutputs()
         if(config.enableProcessMonitor){
+            initMonitorProcessOutputs()
             time.addListener(this)
             if (config.processFormat == EMConfig.ProcessDataFormat.TEST_IND || config.processFormat == EMConfig.ProcessDataFormat.TARGET_TEST_IND){
                 val dto = try {
