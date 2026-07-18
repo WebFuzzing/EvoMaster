@@ -470,8 +470,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?=(\\d|\\s|d))(\\d|\\s|d)*")
         checkSameAsJava("(?=a*)\\w*")
         checkSameAsJava("(?=xbcde)x(bcdX|bc)de")
-        checkSameAsJava("(?=.*[A-Z])(?=.*[a-z])[a-zA-Z]{4,8}")
+        checkSameAsJava("^(?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?$")
         checkSameAsJava("(?=ababc)(ab|abc)+")
+    }
+
+    @Test
+    fun testUnsatisfiableLookaheads() {
         assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
