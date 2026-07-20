@@ -78,7 +78,7 @@ public class CassandraOperationEvaluator {
         } else if (op instanceof ContainsKeyOperation<?>) {
             return evaluateContainsKey((ContainsKeyOperation<?>) op, candidateRow);
         } else {
-            return FALSE_TRUTHNESS;
+            throw new IllegalArgumentException("Unsupported operation: " + op.getClass().getName());
         }
     }
 
@@ -168,7 +168,7 @@ public class CassandraOperationEvaluator {
         } else if (isTemporalType(rowValue)) {
             return compareTemporal(rowValue, literalValue, comparisonType);
         } else if (isCqlDuration(rowValue)) {
-            return compareDuration(rowValue, literalValue, comparisonType);
+            return compareDuration((TemporalAmount) rowValue, literalValue, comparisonType);
         } else {
             throw new IllegalArgumentException("Unsupported row value type: " + rowValue.getClass().getName());
         }
@@ -184,33 +184,33 @@ public class CassandraOperationEvaluator {
     private Truthness compareString(Object rowValue, Object literalValue, ComparisonType comparisonType) {
         if (comparisonType != ComparisonType.EQUALS) {
             throw new IllegalArgumentException("Unsupported operator for string literals: " + comparisonType);
-        } else {
-            String a = (rowValue instanceof InetAddress)
-                    ? ((InetAddress) rowValue).getHostAddress()
-                    : (String) rowValue;
-            String b = (String) literalValue;
-
-            return TruthnessUtils.getStringEqualityTruthness(a, b);
         }
+
+        String a = (rowValue instanceof InetAddress)
+                ? ((InetAddress) rowValue).getHostAddress()
+                : (String) rowValue;
+        String b = (String) literalValue;
+
+        return TruthnessUtils.getStringEqualityTruthness(a, b);
     }
 
     private Truthness compareBoolean(Object rowValue, Object literalValue, ComparisonType comparisonType) {
         if (comparisonType != ComparisonType.EQUALS) {
             throw new IllegalArgumentException("Unsupported operator for boolean literals: " + comparisonType);
-        } else {
-            double x = ((Boolean) rowValue)   ? 1.0 : 0.0;
-            double y = ((Boolean) literalValue) ? 1.0 : 0.0;
-
-            return TruthnessUtils.getEqualityTruthness(x, y);
         }
+
+        double x = ((Boolean) rowValue)   ? 1.0 : 0.0;
+        double y = ((Boolean) literalValue) ? 1.0 : 0.0;
+
+        return TruthnessUtils.getEqualityTruthness(x, y);
     }
 
     private Truthness compareUuid(Object rowValue, Object literalValue, ComparisonType comparisonType) {
         if (comparisonType != ComparisonType.EQUALS) {
             throw new IllegalArgumentException("Unsupported operator for UUID literals: " + comparisonType);
-        } else {
-            return TruthnessUtils.getEqualityTruthness((UUID) rowValue, (UUID) literalValue);
         }
+
+        return TruthnessUtils.getEqualityTruthness((UUID) rowValue, (UUID) literalValue);
     }
 
     private static boolean isTemporalType(Object rowValue) {
@@ -226,7 +226,7 @@ public class CassandraOperationEvaluator {
 
             return getTruthnessForNumeric(comparisonType, x, y);
         } catch (Exception e) {
-            return FALSE_TRUTHNESS;
+            throw new IllegalArgumentException("Failed to compare temporal values: " + e.getMessage(), e);
         }
     }
 
@@ -350,23 +350,26 @@ public class CassandraOperationEvaluator {
         }
     }
 
-    private Truthness compareDuration(Object rowValue, Object literalValue, ComparisonType comparisonType) {
+    private Truthness compareDuration(TemporalAmount rowValue, Object literalValue, ComparisonType comparisonType) {
         if (comparisonType != ComparisonType.EQUALS) {
             throw new IllegalArgumentException("Unsupported operator for duration literals: " + comparisonType);
-        } else {
-            TemporalAmount duration = (TemporalAmount) rowValue;
-            long months = duration.get(ChronoUnit.MONTHS);
-            long days = duration.get(ChronoUnit.DAYS);
-            long nanos = duration.get(ChronoUnit.NANOS);
-
-            CqlDurationLiteral literalDurationValue = CqlDurationLiteralParser.parse((String) literalValue);
-
-            return TruthnessUtils.buildAndAggregationTruthness(
-                    TruthnessUtils.getEqualityTruthness(months, literalDurationValue.months),
-                    TruthnessUtils.getEqualityTruthness(days, literalDurationValue.days),
-                    TruthnessUtils.getEqualityTruthness(nanos, literalDurationValue.nanos)
-            );
         }
+
+        long months = rowValue.get(ChronoUnit.MONTHS);
+        long days = rowValue.get(ChronoUnit.DAYS);
+        long nanos = rowValue.get(ChronoUnit.NANOS);
+
+        CqlDurationLiteral literalDurationValue = CqlDurationLiteralParser.parse((String) literalValue);
+
+        Truthness monthsTruthness = TruthnessUtils.getEqualityTruthness(months, literalDurationValue.months);
+        Truthness daysTruthness = TruthnessUtils.getEqualityTruthness(days, literalDurationValue.days);
+        Truthness nanosTruthness = TruthnessUtils.getEqualityTruthness(nanos, literalDurationValue.nanos);
+
+        return TruthnessUtils.buildAndAggregationTruthness(
+                monthsTruthness,
+                daysTruthness,
+                nanosTruthness
+        );
     }
 
     private Truthness any(Object value, List<?> candidates) {

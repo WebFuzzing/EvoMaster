@@ -53,6 +53,8 @@ public class CqlDurationLiteralParser {
     private static final String ISO_DURATION_PREFIX_UPPER = "P";
     private static final String ISO_DURATION_PREFIX_LOWER = "p";
     private static final String ISO_WEEK_SUFFIX = "W";
+    private static final String MINUS_SIGN = "-";
+    private static final String ISO8601_ALTERNATIVE_DATE_SEPARATOR = "-";
 
     /**
      * Matches the standard Cassandra format: an optional digit sequence followed by a unit
@@ -105,7 +107,7 @@ public class CqlDurationLiteralParser {
             if (t.isEmpty()) {
                 throw new IllegalArgumentException("Empty duration literal");
             } else {
-                boolean isNegative = t.startsWith("-");
+                boolean isNegative = t.startsWith(MINUS_SIGN);
                 String unsigned = isNegative ? t.substring(1) : t;
                 if (unsigned.isEmpty()) {
                     throw new IllegalArgumentException("Empty duration literal");
@@ -134,7 +136,7 @@ public class CqlDurationLiteralParser {
             String upper = unsigned.toUpperCase();
             if (upper.endsWith(ISO_WEEK_SUFFIX)) {
                 return parseIso8601WeekPattern(upper);
-            } else if (upper.contains("-")) {
+            } else if (upper.contains(ISO8601_ALTERNATIVE_DATE_SEPARATOR)) {
                 return parseIso8601AlternativePattern(upper);
             } else {
                 return parseIso8601Pattern(upper);
