@@ -13,9 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,13 +40,13 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void satisfiabilityExample() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("example.smt");
+        Z3Result result = executor.solveFromFile("example.smt");
 
-        assertTrue(response.isPresent());
-        assertEquals(2, response.get().size());
+        assertEquals(Z3Result.Status.SAT, result.getStatus());
+        assertEquals(2, result.getSolution().size());
 
-        assertEquals(new LongValue(0L), response.get().get("y"));
-        assertEquals(new LongValue((long) -4), response.get().get("x"));
+        assertEquals(new LongValue(0L), result.getSolution().get("y"));
+        assertEquals(new LongValue((long) -4), result.getSolution().get("x"));
     }
 
     /**
@@ -64,14 +61,14 @@ public class Z3DockerExecutorTest {
 
         Files.copy(originalPath, copied, StandardCopyOption.REPLACE_EXISTING);
 
-        Optional<Map<String, SMTLibValue>> response;
+        Z3Result result;
         try {
-            response = executor.solveFromFile("example2.smt");
+            result = executor.solveFromFile("example2.smt");
         } finally {
-            Files.deleteIfExists(copied); // Ensure the file is deleted
+            Files.deleteIfExists(copied);
         }
 
-        assertTrue(response.isPresent());
+        assertEquals(Z3Result.Status.SAT, result.getStatus());
     }
 
     /**
@@ -79,11 +76,11 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void uniqueUInt() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("unique_uint.smt");
+        Z3Result result = executor.solveFromFile("unique_uint.smt");
 
-        assertTrue(response.isPresent(), "Response should be present for unique_uint.smt");
-        assertEquals(new LongValue(2L), response.get().get("id_1"), "The value for id_1 should be 2");
-        assertEquals(new LongValue(3L), response.get().get("id_2"), "The value for id_2 should be 3");
+        assertEquals(Z3Result.Status.SAT, result.getStatus(), "Response should be SAT for unique_uint.smt");
+        assertEquals(new LongValue(2L), result.getSolution().get("id_1"), "The value for id_1 should be 2");
+        assertEquals(new LongValue(3L), result.getSolution().get("id_2"), "The value for id_2 should be 3");
     }
 
     /**
@@ -91,47 +88,66 @@ public class Z3DockerExecutorTest {
      */
     @Test
     public void composedTypes() {
-        Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("composed_types.smt");
+        Z3Result result = executor.solveFromFile("composed_types.smt");
 
-        assertTrue(response.isPresent(), "Response should be present for composed_types.smt");
+        assertEquals(Z3Result.Status.SAT, result.getStatus(), "Response should be SAT for composed_types.smt");
 
-        assertTrue(response.get().containsKey("users1"), "Response should contain users1");
-        Map<String, SMTLibValue> users1Expected = new HashMap<>();
-        users1Expected.put("ID", new LongValue(3L));
-        users1Expected.put("NAME", new StringValue("agus"));
-        users1Expected.put("AGE", new LongValue(31L));
-        users1Expected.put("POINTS", new LongValue(7L));
+        assertTrue(result.getSolution().containsKey("users1"), "Response should contain users1");
+        assertTrue(result.getSolution().containsKey("users2"), "Response should contain users2");
 
-        assertEquals(new StructValue(users1Expected), response.get().get("users1"), "The value for users1 is incorrect");
+        // NOTE: assert the individual field VALUES, not StructValue equality: StructValue.equals only
+        // compares the set of field names, so a whole-struct assertEquals would pass regardless of the
+        // actual values Z3 returned. We assert the fully-constrained fields exactly (NAME, POINTS) and
+        // the underconstrained fields against their SMT-LIB constraints (AGE range, distinct IDs).
+        StructValue users1 = (StructValue) result.getSolution().get("users1");
+        StructValue users2 = (StructValue) result.getSolution().get("users2");
 
-        assertTrue(response.get().containsKey("users2"), "Response should contain users2");
-        Map<String, SMTLibValue> users2Expected = new HashMap<>();
-        users2Expected.put("ID", new LongValue(3L));
-        users2Expected.put("NAME", new StringValue("agus"));
-        users2Expected.put("AGE", new LongValue(31L));
-        users2Expected.put("POINTS", new LongValue(7L));
-        assertEquals(new StructValue(users2Expected), response.get().get("users2"), "The value for users2 is incorrect");
+        // NAME and POINTS are pinned by the SMT-LIB (NAME = "Alice"/"Bob", POINTS = 7), so deterministic.
+        assertEquals(new StringValue("Alice"), users1.getField("NAME"), "NAME users1");
+        assertEquals(new StringValue("Bob"), users2.getField("NAME"), "NAME users2");
+        assertEquals(new LongValue(7L), users1.getField("POINTS"), "POINTS users1");
+        assertEquals(new LongValue(7L), users2.getField("POINTS"), "POINTS users2");
+
+        // AGE is constrained to (30, 100): assert the constraint holds rather than a specific value.
+        long age1 = ((LongValue) users1.getField("AGE")).getValue();
+        long age2 = ((LongValue) users2.getField("AGE")).getValue();
+        assertTrue(age1 > 30 && age1 < 100, "AGE users1 out of range: " + age1);
+        assertTrue(age2 > 30 && age2 < 100, "AGE users2 out of range: " + age2);
+
+        // IDs must be distinct (the 'distinct' assertion over the PK).
+        long id1 = ((LongValue) users1.getField("ID")).getValue();
+        long id2 = ((LongValue) users2.getField("ID")).getValue();
+        assertNotEquals(id1, id2, "user IDs must be distinct");
     }
 
     /**
      * Test solving with an invalid file to ensure proper error handling
      */
     @Test
-    public void whenSolvingInvalidFileItFails() {
-        assertThrows(
-                RuntimeException.class,
-                () -> executor.solveFromFile("invalid.smt")
-        );
+    public void whenSolvingInvalidFileItReturnsError() {
+        Z3Result result = executor.solveFromFile("invalid.smt");
+        assertEquals(Z3Result.Status.ERROR, result.getStatus());
+        assertNotNull(result.getErrorMessage());
     }
 
     /**
      * Test handling an empty file
      */
     @Test
-    public void whenSolvingEmptyFileItFails() {
-        assertThrows(
-                RuntimeException.class,
-                () -> executor.solveFromFile("empty.smt")
-        );
+    public void whenSolvingEmptyFileItReturnsError() {
+        Z3Result result = executor.solveFromFile("empty.smt");
+        assertEquals(Z3Result.Status.ERROR, result.getStatus());
+        assertNotNull(result.getErrorMessage());
+    }
+
+    /**
+     * A hard non-linear problem solved with a small soft timeout: Z3 cannot decide
+     * in time and returns 'unknown', which must be reported as UNKNOWN (not SAT).
+     */
+    @Test
+    public void whenTimeoutExceededItReturnsUnknown() {
+        Z3Result result = executor.solveFromFile("hard_factoring.smt", 1);
+        assertEquals(Z3Result.Status.UNKNOWN, result.getStatus());
+        assertNull(result.getSolution());
     }
 }
