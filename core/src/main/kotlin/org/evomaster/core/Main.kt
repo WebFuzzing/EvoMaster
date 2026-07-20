@@ -25,6 +25,8 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
+import org.evomaster.core.problem.mcp.McpIndividual
+import org.evomaster.core.problem.mcp.service.McpBlackBoxModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
@@ -615,7 +617,10 @@ class Main {
                 }
 
                 EMConfig.ProblemType.MCP -> {
-                    throw IllegalStateException("MCP server analysis is not yet supported")
+                    if (!config.blackBox) {
+                        throw IllegalStateException("MCP only supports black-box mode")
+                    }
+                    McpBlackBoxModule(false)
                 }
 
                 //this should never happen, unless we add new type and forget to add it here
@@ -825,6 +830,28 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyMcp(config: EMConfig): Key<out SearchAlgorithm<McpIndividual>> {
+
+            return when (config.algorithm) {
+                EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<McpIndividual>>() {})
+
+                EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<McpIndividual>>() {})
+
+                EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<McpIndividual>>() {})
+
+                EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<McpIndividual>>() {})
+
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<McpIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm} for MCP")
+            }
+        }
+
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
             return when (config.algorithm) {
@@ -896,6 +923,7 @@ class Main {
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
                 EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
                 EMConfig.ProblemType.WEBFRONTEND -> getAlgorithmKeyWeb(config)
+                EMConfig.ProblemType.MCP -> getAlgorithmKeyMcp(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 
