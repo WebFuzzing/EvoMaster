@@ -30,7 +30,7 @@ object AssertionRepairWalk {
                 consumed += canTake
                 continue
             }
-            if (absorbable.canBeZeroWidth()) {
+            if (absorbable.canBeZeroWidth) {
                 continue
             }
             return 0
@@ -55,7 +55,7 @@ object AssertionRepairWalk {
             val remaining = value.substring(consumed)
             val placed = absorbable.tryForce(remaining)
             if (placed == 0) {
-                if (absorbable.canBeZeroWidth()) {
+                if (absorbable.canBeZeroWidth) {
                     absorbable.forceZeroWidth()
                     continue
                 } else {

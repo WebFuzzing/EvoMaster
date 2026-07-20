@@ -30,9 +30,9 @@ interface RxAbsorbable {
     }
 
     /**
-     * Read-only: could [forceZeroWidth] succeed on this gene right now? Default false.
+     * Read-only: could [forceZeroWidth] succeed on this gene right now?
      */
-    fun canBeZeroWidth(): Boolean = false
+    val canBeZeroWidth: Boolean
 
     /**
      * Forces this gene to render as "". Unlike [tryForce], there is nothing to plan or report.

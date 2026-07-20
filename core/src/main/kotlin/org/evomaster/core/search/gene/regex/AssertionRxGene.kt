@@ -95,7 +95,7 @@ class AssertionRxGene(
         }
     }
 
-    override fun canBeZeroWidth(): Boolean = true
+    override val canBeZeroWidth: Boolean = true
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())

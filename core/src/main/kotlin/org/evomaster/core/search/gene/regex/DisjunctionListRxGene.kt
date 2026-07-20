@@ -237,7 +237,7 @@ class DisjunctionListRxGene(
     override fun absorbableCount(value: String): Int =
         rankBranches(value)?.absorbableCount ?: 0
 
-    override fun canBeZeroWidth(): Boolean = disjunctions.any { it.canBeZeroWidth() }
+    override val canBeZeroWidth: Boolean = disjunctions.any { it.canBeZeroWidth }
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
@@ -255,10 +255,10 @@ class DisjunctionListRxGene(
     }
 
     override fun forceZeroWidth() {
-        require(canBeZeroWidth())
+        require(canBeZeroWidth)
         // try the active branch first to avoid an unnecessary switch
         val order = listOf(activeDisjunction) + disjunctions.indices.filter { it != activeDisjunction }
-        val target = order.first { disjunctions[it].canBeZeroWidth() }
+        val target = order.first { disjunctions[it].canBeZeroWidth }
         disjunctions[target].forceZeroWidth()
         if (target != activeDisjunction) {
             activeDisjunction = target

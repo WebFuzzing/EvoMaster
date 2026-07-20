@@ -82,6 +82,8 @@ class BackReferenceRxGene(
         return containsSameValueAs(other)
     }
 
+    override val canBeZeroWidth: Boolean = false
+
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         return 0

@@ -132,7 +132,7 @@ class PatternCharacterBlockGene(
         return i
     }
 
-    override fun canBeZeroWidth(): Boolean = stringBlock.isEmpty()
+    override val canBeZeroWidth: Boolean = stringBlock.isEmpty()
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
@@ -147,7 +147,7 @@ class PatternCharacterBlockGene(
     }
 
     override fun forceZeroWidth() {
-        require(canBeZeroWidth())
+        require(canBeZeroWidth)
         // stringBlock is empty, so there is nothing to place - already zero-width.
     }
 }

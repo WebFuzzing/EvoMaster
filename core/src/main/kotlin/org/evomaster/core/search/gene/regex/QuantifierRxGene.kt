@@ -244,8 +244,8 @@ class QuantifierRxGene(
     override fun absorbableCount(value: String): Int =
         AssertionRepairWalk.absorbableCount(atoms, value)
 
-    override fun canBeZeroWidth(): Boolean =
-        min == 0 || (template as? RxAbsorbable)?.canBeZeroWidth() == true
+    override val canBeZeroWidth: Boolean =
+        min == 0 || (template as? RxAbsorbable)?.canBeZeroWidth == true
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
@@ -253,7 +253,7 @@ class QuantifierRxGene(
     }
 
     override fun forceZeroWidth() {
-        require(canBeZeroWidth())
+        require(canBeZeroWidth)
         if (min == 0) {
             killAllChildren()
         } else {

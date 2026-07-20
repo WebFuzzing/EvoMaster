@@ -193,20 +193,20 @@ class DisjunctionRxGene(
     override fun absorbableCount(value: String): Int =
         AssertionRepairWalk.absorbableCount(terms, value)
 
-    override fun canBeZeroWidth(): Boolean =
-        terms.all { (it as RxAbsorbable).canBeZeroWidth() }
+    override val canBeZeroWidth: Boolean =
+        terms.all { (it as RxAbsorbable).canBeZeroWidth }
 
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val placed = AssertionRepairWalk.tryForce(terms, value)
-        if (placed == 0 && canBeZeroWidth()) {
+        if (placed == 0 && canBeZeroWidth) {
             forceZeroWidth()
         }
         return placed
     }
 
     override fun forceZeroWidth() {
-        require(canBeZeroWidth())
+        require(canBeZeroWidth)
         terms.forEach { (it as RxAbsorbable).forceZeroWidth() }
     }
 

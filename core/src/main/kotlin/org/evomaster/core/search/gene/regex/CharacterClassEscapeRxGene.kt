@@ -373,6 +373,8 @@ class CharacterClassEscapeRxGene(
         return 0
     }
 
+    override val canBeZeroWidth: Boolean = false
+
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val n = absorbableCount(value)
