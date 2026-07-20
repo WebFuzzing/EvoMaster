@@ -47,6 +47,10 @@ class ArazzoSamplerVerifierTest {
         }
     }
 
+    /**
+     * It is a test that validates the correct formation of expected workflows from a specific Arazzo document.
+     * Linear workflows only
+     */
     @Test
     fun testArazzoSamplerGeneratesValidIndividualWorkflows() {
         val sampler = createSampler()
