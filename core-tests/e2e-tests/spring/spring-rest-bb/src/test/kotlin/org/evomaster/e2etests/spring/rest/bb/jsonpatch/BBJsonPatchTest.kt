@@ -86,7 +86,7 @@ class BBJsonPatchTest : SpringTestBase() {
         )
 
         runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBJsonPatchEM_NoSupport", 1000, 3, false) { args ->
-            setOption(args, "enableJsonPatchGeneSupport", "false")
+            setOption(args, "disableJsonPatchSupport", "true")
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.size >= 1)
@@ -100,7 +100,7 @@ class BBJsonPatchTest : SpringTestBase() {
 
         assertFalse(
             CoveredTargets.areCovered(specificOpTargets),
-            "Without enableJsonPatchGeneSupport, EvoMaster should NOT cover all JSON Patch operation targets"
+            "With disableJsonPatchSupport=true, EvoMaster should NOT cover all JSON Patch operation targets"
         )
     }
 }

@@ -116,9 +116,9 @@ object RestActionBuilderV3 {
 
         val inferFormatFromNames: Boolean = true,
 
-        val enableJsonPatchGeneSupport: Boolean = true,
+        val disableJsonPatchSupport: Boolean = false,
 
-        val enableXmlBodyGeneSupport: Boolean = true,
+        val disableXMLSupport: Boolean = false,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -128,8 +128,8 @@ object RestActionBuilderV3 {
             usingWhiteBox = !config.blackBox,
             enableAdvancedFormats = config.enableAdvancedFormats,
             inferFormatFromNames = config.inferFormatFromNames,
-            enableJsonPatchGeneSupport = config.enableJsonPatchGeneSupport,
-            enableXmlBodyGeneSupport = config.enableXmlBodyGeneSupport,
+            disableJsonPatchSupport = config.disableJsonPatchSupport,
+            disableXMLSupport = config.disableXMLSupport,
         )
 
         init {
@@ -754,7 +754,7 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        val isJsonPatch = options.enableJsonPatchGeneSupport &&
+        val isJsonPatch = !options.disableJsonPatchSupport &&
                 verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
 
         val name: String
@@ -781,7 +781,7 @@ object RestActionBuilderV3 {
             }
             gene = JsonPatchDocumentGene(name, resourceGene)
         } else {
-            if (options.enableXmlBodyGeneSupport) {
+            if (!options.disableXMLSupport) {
                 // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
                 val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
                 name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"

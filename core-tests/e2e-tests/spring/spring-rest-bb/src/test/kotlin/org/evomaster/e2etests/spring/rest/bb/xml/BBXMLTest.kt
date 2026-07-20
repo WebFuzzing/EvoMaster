@@ -74,7 +74,7 @@ class BBXMLTest : SpringTestBase() {
     @Test
     fun testBlackBoxWithoutXmlBodySupport() {
         // These targets require a well-formed XML body to reach a 200 response.
-        // With enableXmlBodyGeneSupport=false, EvoMaster falls back to generic field
+        // With disableXMLSupport=true, EvoMaster falls back to generic field
         // naming (schema ref name or 'body') instead of the actual JAXB element names,
         // so Spring's XML deserializer receives structurally wrong documents and returns
         // 400 for most requests → the 200-branch targets stay uncovered.
@@ -90,7 +90,7 @@ class BBXMLTest : SpringTestBase() {
         )
 
         runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBXmlEM_NoSupport", 1000, 3, false) { args ->
-            setOption(args, "enableXmlBodyGeneSupport", "false")
+            setOption(args, "disableXMLSupport", "true")
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.size >= 1)
@@ -104,7 +104,7 @@ class BBXMLTest : SpringTestBase() {
 
         assertFalse(
             CoveredTargets.areCovered(xmlBodyTargets),
-            "Without enableXmlBodyGeneSupport, EvoMaster should NOT cover all XML body targets"
+            "With disableXMLSupport=true, EvoMaster should NOT cover all XML body targets"
         )
     }
 }
