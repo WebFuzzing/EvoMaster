@@ -60,6 +60,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
      */
     private var currentFlags = externalRegexFlags
 
+    private var hasAssertions = false
+
     /**
      * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
      */
@@ -127,7 +129,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             disjList,
             sourceRegex,
             RegexType.JVM,
-            externalRegexFlags = externalRegexFlags
+            externalRegexFlags = externalRegexFlags,
+            hasAssertions = hasAssertions
         )
 
         return VisitResult(gene)
@@ -257,6 +260,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 rejectIfNestedAssertion(ctx.assertion())
                 val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
                 val assertionGene = AssertionRxGene(innerDisjList)
+                hasAssertions = true
                 res.genes.add(assertionGene)
             }
             return res

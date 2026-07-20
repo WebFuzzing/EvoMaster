@@ -37,7 +37,8 @@ class RegexGene(
      */
     var fixedValue: String? = null,
     var usingFixedValue: Boolean = false,
-    val externalRegexFlags: RegexFlags = RegexFlags()
+    val externalRegexFlags: RegexFlags = RegexFlags(),
+    val hasAssertions: Boolean = false
 ) : CompositeFixedGene(name, disjunctions) {
 
 
@@ -75,9 +76,11 @@ class RegexGene(
             if (pattern!!.matcher(disjunctions.getValueAsPrintableString()).find()) {
                 return
             }
-            disjunctions.attemptAssertionRepair(randomness)
-            if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
-                return
+            if (hasAssertions) {
+                disjunctions.attemptAssertionRepair(randomness)
+                if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                    return
+                }
             }
         }
 
