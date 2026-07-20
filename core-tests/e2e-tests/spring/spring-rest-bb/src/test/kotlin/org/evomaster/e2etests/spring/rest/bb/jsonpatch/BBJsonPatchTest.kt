@@ -5,8 +5,11 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
+import org.evomaster.e2etests.utils.CoveredTargets
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
@@ -68,5 +71,36 @@ class BBJsonPatchTest : SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/pets/{id}/sequence", "sequence patched")
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 400, "/pets/{id}/sequence", null)
         }
+    }
+
+    @Test
+    fun testBlackBoxWithoutJsonPatchSupport() {
+        val specificOpTargets = listOf(
+            "JSON_PATCH_ADD",
+            "JSON_PATCH_REMOVE",
+            "JSON_PATCH_REPLACE",
+            "JSON_PATCH_MOVE",
+            "JSON_PATCH_COPY",
+            "JSON_PATCH_TEST",
+            "JSON_PATCH_SEQUENCE"
+        )
+
+        runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBJsonPatchEM_NoSupport", 1000, 3, false) { args ->
+            setOption(args, "disableJsonPatchSupport", "true")
+
+            val solution = initAndRun(args)
+            assertTrue(solution.individuals.size >= 1)
+        }
+
+        val coveredWithFlagOff = specificOpTargets.count { CoveredTargets.isCovered(it) }
+        println("=== Flag OFF: $coveredWithFlagOff/${specificOpTargets.size} operation-specific targets covered ===")
+        specificOpTargets.forEach { target ->
+            println("  [${ if (CoveredTargets.isCovered(target)) "X" else " " }] $target")
+        }
+
+        assertFalse(
+            CoveredTargets.areCovered(specificOpTargets),
+            "With disableJsonPatchSupport=true, EvoMaster should NOT cover all JSON Patch operation targets"
+        )
     }
 }

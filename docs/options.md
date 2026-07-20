@@ -279,6 +279,8 @@ There are 3 types of options:
 |`callbackURLHostname`| __String__. HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname. *Default value*: `localhost`.|
 |`cgaNeighborhoodModel`| __Enum__. Cellular GA: neighborhood model (RING, L5, C9, C13). *Valid values*: `RING, L5, C9, C13`. *Default value*: `RING`.|
 |`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+|`disableJsonPatchSupport`| __Boolean__. Disable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'. When true, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced. *Default value*: `false`.|
+|`disableXMLSupport`| __Boolean__. Disable XML-aware field naming for body genes when the request Content-Type is XML. When true, body gene names fall back to the pre-feature behavior (schema ref name or 'body'). *Default value*: `false`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|

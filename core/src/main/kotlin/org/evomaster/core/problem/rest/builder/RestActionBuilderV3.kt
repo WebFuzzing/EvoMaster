@@ -115,6 +115,10 @@ object RestActionBuilderV3 {
         val enableAdvancedFormats: Boolean = true,
 
         val inferFormatFromNames: Boolean = true,
+
+        val disableJsonPatchSupport: Boolean = false,
+
+        val disableXMLSupport: Boolean = false,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -123,7 +127,9 @@ object RestActionBuilderV3 {
             probUseExamples = config.probRestExamples,
             usingWhiteBox = !config.blackBox,
             enableAdvancedFormats = config.enableAdvancedFormats,
-            inferFormatFromNames = config.inferFormatFromNames
+            inferFormatFromNames = config.inferFormatFromNames,
+            disableJsonPatchSupport = config.disableJsonPatchSupport,
+            disableXMLSupport = config.disableXMLSupport,
         )
 
         init {
@@ -748,7 +754,8 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        val isJsonPatch = verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
+        val isJsonPatch = !options.disableJsonPatchSupport &&
+                verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
 
         val name: String
         var gene: Gene
@@ -774,9 +781,13 @@ object RestActionBuilderV3 {
             }
             gene = JsonPatchDocumentGene(name, resourceGene)
         } else {
-            // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
-            val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
-            name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            if (!options.disableXMLSupport) {
+                // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
+                val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
+                name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            } else {
+                name = obj.schema.`$ref`?.substringAfterLast("/") ?: "body"
+            }
             gene = getGene(name, obj.schema, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
         }
 
