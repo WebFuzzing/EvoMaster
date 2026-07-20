@@ -16,17 +16,23 @@ object AssertionRepairWalk {
      * left-to-right, without mutating anything.
      */
     fun absorbableCount(genes: List<Gene>, value: String): Int {
-        if (value.isEmpty()) return 0
+        if (value.isEmpty()) {
+            return 0
+        }
         var consumed = 0
         for (gene in genes) {
-            if (consumed >= value.length) break
+            if (consumed >= value.length) {
+                break
+            }
             val absorbable = gene as RxAbsorbable
             val canTake = absorbable.absorbableCount(value.substring(consumed))
             if (canTake > 0) {
                 consumed += canTake
                 continue
             }
-            if (absorbable.canBeZeroWidth()) continue
+            if (absorbable.canBeZeroWidth()) {
+                continue
+            }
             return 0
         }
         return consumed
@@ -37,10 +43,14 @@ object AssertionRepairWalk {
      * gene in place using each gene's [RxAbsorbable.tryForce]. Returns total characters placed.
      */
     fun tryForce(genes: List<Gene>, value: String): Int {
-        if (value.isEmpty()) return 0
+        if (value.isEmpty()) {
+            return 0
+        }
         var consumed = 0
         for (gene in genes) {
-            if (consumed >= value.length) break
+            if (consumed >= value.length) {
+                break
+            }
             val absorbable = gene as RxAbsorbable
             val remaining = value.substring(consumed)
             val placed = absorbable.tryForce(remaining)

@@ -71,17 +71,23 @@ class AssertionRxGene(
      * inner gene to sample from.
      */
     fun sampledInnerValue(): String? {
-        if (innerGene == null) return null
+        if (innerGene == null) {
+            return null
+        }
         return innerGene.getValueAsPrintableString(targetFormat = null)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is AssertionRxGene) return false
+        if (other !is AssertionRxGene) {
+            return false
+        }
         return sampledInnerValue() == other.sampledInnerValue()
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is AssertionRxGene) return false
+        if (other !is AssertionRxGene) {
+            return false
+        }
         return if (innerGene != null && other.innerGene != null) {
             innerGene.unsafeCopyValueFrom(other.innerGene)
         } else {

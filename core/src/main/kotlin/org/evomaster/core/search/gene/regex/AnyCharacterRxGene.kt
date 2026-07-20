@@ -132,8 +132,14 @@ class AnyCharacterRxGene(
     }
 
     override fun absorbableCount(value: String): Int {
-        if (value.isEmpty()) return 0
-        return if (validRanges.contains(value[0])) 1 else 0
+        if (value.isEmpty()) {
+            return 0
+        }
+        return if (validRanges.contains(value[0])) {
+            1
+        } else {
+            0
+        }
     }
 
     override fun tryForce(value: String): Int {

@@ -30,7 +30,11 @@ class CharacterRangeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
 
         private fun Char.swapCase(): Char =
-            if (this.isUpperCase()) this.lowercaseChar() else this.uppercaseChar()
+            if (this.isUpperCase()) {
+                this.lowercaseChar()
+            } else {
+                this.uppercaseChar()
+            }
     }
 
     // '\u0000' is a placeholder for the unsatisfiable case (empty MCR with no valid ranges).
@@ -185,10 +189,16 @@ class CharacterRangeRxGene(
     }
 
     override fun absorbableCount(value: String): Int {
-        if (value.isEmpty()) return 0
+        if (value.isEmpty()) {
+            return 0
+        }
         val c = value[0]
-        if (validRanges.contains(c)) return 1
-        if (flags.isCaseable(c) && validRanges.contains(c.swapCase())) return 1
+        if (validRanges.contains(c)) {
+            return 1
+        }
+        if (flags.isCaseable(c) && validRanges.contains(c.swapCase())) {
+            return 1
+        }
         return 0
     }
 

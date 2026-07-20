@@ -119,11 +119,14 @@ class PatternCharacterBlockGene(
         var i = 0
         while (i < value.length && i < stringBlock.length) {
             val c = stringBlock[i]
-            val matches = if (flags.isCaseable(c))
+            val matches = if (flags.isCaseable(c)) {
                 value[i].equals(c, ignoreCase = true)
-            else
+            } else {
                 value[i] == c
-            if (!matches) return 0
+            }
+            if (!matches) {
+                return 0
+            }
             i++
         }
         return i

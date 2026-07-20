@@ -216,14 +216,20 @@ class DisjunctionRxGene(
      * value onto the genes that follow it within [terms].
      */
     fun attemptAssertionRepair(randomness: Randomness) {
-        if (terms.none { it is AssertionRxGene }) return
+        if (terms.none { it is AssertionRxGene }) {
+            return
+        }
 
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            if (assertion.innerGene == null) continue
+            if (assertion.innerGene == null) {
+                continue
+            }
 
             val genesAfter = terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
-            if (genesAfter.isEmpty()) return
+            if (genesAfter.isEmpty()) {
+                return
+            }
 
             var satisfied = false
             for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
@@ -234,7 +240,9 @@ class DisjunctionRxGene(
                     break
                 }
             }
-            if (!satisfied) return
+            if (!satisfied) {
+                return
+            }
         }
     }
 }

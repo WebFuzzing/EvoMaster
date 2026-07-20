@@ -57,7 +57,11 @@ class RegexGene(
     }
 
     private val pattern: Pattern? =
-        if (regexType == RegexType.JVM) compiledPattern(sourceRegex, externalRegexFlags) else null
+        if (regexType == RegexType.JVM) {
+            compiledPattern(sourceRegex, externalRegexFlags)
+        } else {
+            null
+        }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         usingFixedValue = if(fixedValue == null){

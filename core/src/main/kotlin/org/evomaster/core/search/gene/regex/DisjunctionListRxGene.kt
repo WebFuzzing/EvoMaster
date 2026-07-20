@@ -213,12 +213,18 @@ class DisjunctionListRxGene(
      * anything.
      */
     private fun rankBranches(value: String): BranchRanking? {
-        if (value.isEmpty() || disjunctions.isEmpty()) return null
+        if (value.isEmpty() || disjunctions.isEmpty()) {
+            return null
+        }
         var bestCount = disjunctions[activeDisjunction].absorbableCount(value)
         var bestIndex = activeDisjunction
         for (i in disjunctions.indices) {
-            if (i == activeDisjunction) continue
-            if (bestCount == value.length) break
+            if (i == activeDisjunction) {
+                continue
+            }
+            if (bestCount == value.length) {
+                break
+            }
             val can = disjunctions[i].absorbableCount(value)
             if (can > bestCount) {
                 bestCount = can

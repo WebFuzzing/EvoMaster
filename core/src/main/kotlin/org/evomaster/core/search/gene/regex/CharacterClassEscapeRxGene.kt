@@ -116,7 +116,11 @@ class CharacterClassEscapeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
 
         private fun Char.swapCase(): Char =
-            if (this.isUpperCase()) this.lowercaseChar() else this.uppercaseChar()
+            if (this.isUpperCase()) {
+                this.lowercaseChar()
+            } else {
+                this.uppercaseChar()
+            }
 
         private val digitSet = listOf(CharacterRange('0', '9'))
         private val asciiLetterSet = listOf(CharacterRange(FIRST_LOWER_CASE_CHAR, LAST_LOWER_CASE_CHAR),
@@ -356,10 +360,16 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun absorbableCount(value: String): Int {
-        if (value.isEmpty()) return 0
+        if (value.isEmpty()) {
+            return 0
+        }
         val c = value[0]
-        if (multiCharRange.contains(c)) return 1
-        if (flags.isCaseable(c) && multiCharRange.contains(c.swapCase())) return 1
+        if (multiCharRange.contains(c)) {
+            return 1
+        }
+        if (flags.isCaseable(c) && multiCharRange.contains(c.swapCase())) {
+            return 1
+        }
         return 0
     }
 
