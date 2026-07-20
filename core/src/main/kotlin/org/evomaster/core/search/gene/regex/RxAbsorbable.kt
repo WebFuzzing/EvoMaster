@@ -13,7 +13,7 @@ package org.evomaster.core.search.gene.regex
 interface RxAbsorbable {
 
     /**
-     * Maximum number of leading characters of [value] this gene can be forced to
+     * Read-only: maximum number of leading characters of [value] this gene can be forced to
      * produce, or already produces without needing to change. Default 0 = cannot help.
      */
     fun absorbableCount(value: String): Int = 0
@@ -30,7 +30,7 @@ interface RxAbsorbable {
     }
 
     /**
-     * Read-only: could [forceZeroWidth] succeed on this gene right now?
+     * Read-only: could [forceZeroWidth] succeed on this gene (i.e.: "" can match this expression)?
      */
     val canBeZeroWidth: Boolean
 
