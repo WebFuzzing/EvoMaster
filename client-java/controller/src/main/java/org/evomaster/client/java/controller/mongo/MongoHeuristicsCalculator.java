@@ -20,7 +20,7 @@ public class MongoHeuristicsCalculator {
     private final TaintHandler taintHandler;
 
     public MongoHeuristicsCalculator() {
-       this(null);
+        this(null);
     }
 
     public MongoHeuristicsCalculator(TaintHandler taintHandler) {
@@ -35,63 +35,65 @@ public class MongoHeuristicsCalculator {
      * @return a branch distance, where 0 means that the document would make the QUERY resolve as true
      */
     public double computeExpression(Object query, Object doc) {
+
         QueryOperation operation = getOperation(query);
-        return calculateDistance(operation, doc);
+        return computeHeuristic(operation, doc);
     }
 
     private QueryOperation getOperation(Object query) {
         return new QueryParser().parse(query);
     }
 
-    private double calculateDistance(QueryOperation operation, Object doc) {
-        if (operation instanceof EqualsOperation<?>)
+    private double computeHeuristic(QueryOperation operation, Object doc) {
+        if (operation instanceof EqualsOperation<?>) {
             return calculateDistanceForEquals((EqualsOperation<?>) operation, doc);
-        if (operation instanceof NotEqualsOperation<?>)
+        } else if (operation instanceof NotEqualsOperation<?>) {
             return calculateDistanceForNotEquals((NotEqualsOperation<?>) operation, doc);
-        if (operation instanceof GreaterThanOperation<?>)
+        } else if (operation instanceof GreaterThanOperation<?>) {
             return calculateDistanceForGreaterThan((GreaterThanOperation<?>) operation, doc);
-        if (operation instanceof GreaterThanEqualsOperation<?>)
+        } else if (operation instanceof GreaterThanEqualsOperation<?>) {
             return calculateDistanceForGreaterEqualsThan((GreaterThanEqualsOperation<?>) operation, doc);
-        if (operation instanceof LessThanOperation<?>)
+        } else if (operation instanceof LessThanOperation<?>) {
             return calculateDistanceForLessThan((LessThanOperation<?>) operation, doc);
-        if (operation instanceof LessThanEqualsOperation<?>)
+        } else if (operation instanceof LessThanEqualsOperation<?>) {
             return calculateDistanceForLessEqualsThan((LessThanEqualsOperation<?>) operation, doc);
-        if (operation instanceof AndOperation)
+        } else if (operation instanceof AndOperation) {
             return calculateDistanceForAnd((AndOperation) operation, doc);
-        if (operation instanceof OrOperation)
+        } else if (operation instanceof OrOperation) {
             return calculateDistanceForOr((OrOperation) operation, doc);
-        if (operation instanceof NorOperation)
+        } else if (operation instanceof NorOperation) {
             return calculateDistanceForNor((NorOperation) operation, doc);
-        if (operation instanceof InOperation<?>)
+        } else if (operation instanceof InOperation<?>) {
             return calculateDistanceForIn((InOperation<?>) operation, doc);
-        if (operation instanceof NotInOperation<?>)
+        } else if (operation instanceof NotInOperation<?>) {
             return calculateDistanceForNotIn((NotInOperation<?>) operation, doc);
-        if (operation instanceof AllOperation<?>)
+        } else if (operation instanceof AllOperation<?>) {
             return calculateDistanceForAll((AllOperation<?>) operation, doc);
-        if (operation instanceof InvertedAllOperation<?>)
+        } else if (operation instanceof InvertedAllOperation<?>) {
             return calculateDistanceForInvertedAll((InvertedAllOperation<?>) operation, doc);
-        if (operation instanceof SizeOperation)
+        } else if (operation instanceof SizeOperation) {
             return calculateDistanceForSize((SizeOperation) operation, doc);
-        if (operation instanceof InvertedSizeOperation)
+        } else if (operation instanceof InvertedSizeOperation) {
             return calculateDistanceForInvertedSize((InvertedSizeOperation) operation, doc);
-        if (operation instanceof ElemMatchOperation)
+        } else if (operation instanceof ElemMatchOperation) {
             return calculateDistanceForElemMatch((ElemMatchOperation) operation, doc);
-        if (operation instanceof ExistsOperation)
+        } else if (operation instanceof ExistsOperation) {
             return calculateDistanceForExists((ExistsOperation) operation, doc);
-        if (operation instanceof ModOperation)
+        } else if (operation instanceof ModOperation) {
             return calculateDistanceForMod((ModOperation) operation, doc);
-        if (operation instanceof InvertedModOperation)
+        } else if (operation instanceof InvertedModOperation) {
             return calculateDistanceForInvertedMod((InvertedModOperation) operation, doc);
-        if (operation instanceof NotOperation)
+        } else if (operation instanceof NotOperation) {
             return calculateDistanceForNot((NotOperation) operation, doc);
-        if (operation instanceof TypeOperation)
+        } else if (operation instanceof TypeOperation) {
             return calculateDistanceForType((TypeOperation) operation, doc);
-        if (operation instanceof InvertedTypeOperation)
+        } else if (operation instanceof InvertedTypeOperation) {
             return calculateDistanceForInvertedType((InvertedTypeOperation) operation, doc);
-        if (operation instanceof NearSphereOperation)
+        } else if (operation instanceof NearSphereOperation) {
             return calculateDistanceForNearSphere((NearSphereOperation) operation, doc);
-
-        return Double.MAX_VALUE;
+        } else {
+            return Double.MAX_VALUE;
+        }
     }
 
     private double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
@@ -134,7 +136,7 @@ public class MongoHeuristicsCalculator {
 
     private double calculateDistanceForOr(OrOperation operation, Object doc) {
         return operation.getConditions().stream()
-                .mapToDouble(condition -> calculateDistance(condition, doc))
+                .mapToDouble(condition -> computeHeuristic(condition, doc))
                 .min()
                 .getAsDouble();
     }
@@ -143,7 +145,7 @@ public class MongoHeuristicsCalculator {
         return operation.getConditions()
                 .stream()
                 .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(calculateDistance(condition, doc)))
+                        TruthnessUtils.normalizeValue(computeHeuristic(condition, doc)))
                 .sum();
     }
 
@@ -233,7 +235,7 @@ public class MongoHeuristicsCalculator {
                     .mapToDouble(elem -> {
                         Object newDoc = newDocument(doc);
                         appendToDocument(newDoc, operation.getFieldName(), elem);
-                        return calculateDistance(operation.getCondition(), newDoc);
+                        return computeHeuristic(operation.getCondition(), newDoc);
                     })
                     .min()
                     .getAsDouble();
@@ -289,14 +291,14 @@ public class MongoHeuristicsCalculator {
         QueryOperation condition = operation.getCondition();
         QueryOperation invertedOperation = invertOperation(condition);
 
-        return calculateDistance(invertedOperation, doc);
+        return computeHeuristic(invertedOperation, doc);
     }
 
     private double calculateDistanceForNor(NorOperation operation, Object doc) {
         return operation.getConditions()
                 .stream()
                 .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(calculateDistance(invertOperation(condition), doc)))
+                        TruthnessUtils.normalizeValue(computeHeuristic(invertOperation(condition), doc)))
                 .sum();
     }
 
@@ -332,7 +334,7 @@ public class MongoHeuristicsCalculator {
           type key is case-sensitive.
           (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4) for more details.
          */
-        if (isDocument(actualPoint) && getValue(actualPoint, "type").equals("Point") && getValue(actualPoint, "coordinates") instanceof List<?>) {
+        if (isBsonDocument(actualPoint) && getValue(actualPoint, "type").equals("Point") && getValue(actualPoint, "coordinates") instanceof List<?>) {
 
             List<?> coordinates = (List<?>) getValue(actualPoint, "coordinates");
             x2 = Math.toRadians((Double) coordinates.get(0));
@@ -465,8 +467,8 @@ public class MongoHeuristicsCalculator {
 
         if (val1 instanceof String && val2 instanceof String) {
 
-            if(taintHandler!=null){
-                taintHandler.handleTaintForStringEquals((String)val1,(String)val2, false);
+            if (taintHandler != null) {
+                taintHandler.handleTaintForStringEquals((String) val1, (String) val2, false);
             }
 
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, (String) val2);
@@ -477,15 +479,15 @@ public class MongoHeuristicsCalculator {
         }
 
         if (val1 instanceof String && isObjectId(val2)) {
-            if(taintHandler!=null){
-                taintHandler.handleTaintForStringEquals((String)val1,val2.toString(),false);
+            if (taintHandler != null) {
+                taintHandler.handleTaintForStringEquals((String) val1, val2.toString(), false);
             }
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, val2.toString());
         }
 
         if (val2 instanceof String && isObjectId(val1)) {
-            if(taintHandler!=null){
-                taintHandler.handleTaintForStringEquals(val1.toString(),val2.toString(),false);
+            if (taintHandler != null) {
+                taintHandler.handleTaintForStringEquals(val1.toString(), val2.toString(), false);
             }
             return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), (String) val2);
         }
