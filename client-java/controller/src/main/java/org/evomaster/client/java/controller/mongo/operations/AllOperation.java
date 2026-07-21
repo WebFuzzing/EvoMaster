@@ -6,17 +6,12 @@ import java.util.List;
  * Represent $all operation.
  * Matches arrays that contain all elements specified in the query.
  */
-public class AllOperation<V> extends QueryOperation{
-    private final String fieldName;
+public class AllOperation<V> extends QueryOperationWithField {
     private final List<V> values;
 
     public AllOperation(String fieldName, List<V> values) {
-        this.fieldName = fieldName;
+        super(fieldName);
         this.values = values;
-    }
-
-    public String getFieldName() {
-        return fieldName;
     }
 
     public List<V> getValues() {

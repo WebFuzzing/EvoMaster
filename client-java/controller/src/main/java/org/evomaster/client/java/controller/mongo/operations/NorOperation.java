@@ -6,7 +6,7 @@ import java.util.List;
  * Represent $nor operation.
  * Selects the documents that fail all the query expressions in the array.
  */
-public class NorOperation extends QueryOperation{
+public class NorOperation extends QueryOperation {
     private final List<QueryOperation> conditions;
 
     public NorOperation(List<QueryOperation> conditions) {

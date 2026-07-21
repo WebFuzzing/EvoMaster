@@ -4,8 +4,7 @@ package org.evomaster.client.java.controller.mongo.operations;
  * Represent $nearSphere operation.
  * Specifies a point for which a geospatial query returns the documents from nearest to farthest.
  */
-public class NearSphereOperation extends QueryOperation {
-    private final String fieldName;
+public class NearSphereOperation extends QueryOperationWithField {
     private final Double longitude;
     private final Double latitude;
     private final Double maxDistance;
@@ -13,15 +12,11 @@ public class NearSphereOperation extends QueryOperation {
 
 
     public NearSphereOperation(String fieldName, Double longitude, Double latitude, Double maxDistance, Double minDistance) {
-        this.fieldName = fieldName;
+        super(fieldName);
         this.longitude = longitude;
         this.latitude = latitude;
         this.maxDistance = maxDistance;
         this.minDistance = minDistance;
-    }
-
-    public String getFieldName() {
-        return fieldName;
     }
 
     public Double getLongitude() {
