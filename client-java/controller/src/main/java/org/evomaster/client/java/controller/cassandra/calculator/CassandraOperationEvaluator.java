@@ -113,6 +113,9 @@ public class CassandraOperationEvaluator {
 
     private Truthness evaluateIn(InOperation op, CassandraRow candidateRow) {
         Object rowValue = candidateRow.getValue(op.getColumnName());
+        if (rowValue == null) {
+            return FALSE_TRUTHNESS;
+        }
 
         return any(rowValue, op.getValues());
     }
@@ -121,9 +124,9 @@ public class CassandraOperationEvaluator {
         Object rawCol = candidateRow.getValue(op.getColumnName());
         if (rawCol == null) {
             return FALSE_TRUTHNESS;
-        } else {
-            return any(op.getValue(), toElementList(rawCol));
         }
+
+        return any(op.getValue(), toElementList(rawCol));
     }
 
     private Truthness evaluateContainsKey(ContainsKeyOperation<?> op, CassandraRow candidateRow) {
@@ -131,7 +134,7 @@ public class CassandraOperationEvaluator {
         if (rawCol == null) {
             return FALSE_TRUTHNESS;
         } else if (!(rawCol instanceof Map<?, ?>)) {
-            return FALSE_TRUTHNESS;
+            throw new IllegalArgumentException("CONTAINS KEY is only supported on map columns, got: " + rawCol.getClass().getName());
         } else {
             List<?> keys = new ArrayList<>(((Map<?, ?>) rawCol).keySet());
             return any(op.getValue(), keys);
@@ -142,10 +145,8 @@ public class CassandraOperationEvaluator {
         Object rowValue   = candidateRow.getValue(op.getColumnName());
         Object queryValue = op.getValue();
 
-        if (rowValue == null && queryValue == null) {
+        if (rowValue == null) {
             return FALSE_TRUTHNESS;
-        } else if (rowValue == null || queryValue == null) {
-            return FALSE_TRUTHNESS_BETTER;
         } else {
             Truthness typeResult = compareByType(rowValue, queryValue, type);
             if (typeResult.isTrue()) {
@@ -385,18 +386,12 @@ public class CassandraOperationEvaluator {
     }
 
     private Truthness evaluateEquals(Object a, Object b) {
-        if (a == null && b == null) {
-            return FALSE_TRUTHNESS;
-        } else if (a == null || b == null) {
-            return FALSE_TRUTHNESS_BETTER;
-        } else {
-            Truthness raw = compareByType(a, b, ComparisonType.EQUALS);
-            if (raw.isTrue()) {
-                return raw;
-            } else {
-                return TruthnessUtils.buildScaledTruthness(C_BETTER, raw.getOfTrue());
-            }
+        Truthness unscaledTruthness = compareByType(a, b, ComparisonType.EQUALS);
+        if (unscaledTruthness.isTrue()) {
+            return unscaledTruthness;
         }
+
+        return TruthnessUtils.buildScaledTruthness(C_BETTER, unscaledTruthness.getOfTrue());
     }
 
     private static List<?> toElementList(Object collection) {
