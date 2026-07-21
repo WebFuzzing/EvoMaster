@@ -29,6 +29,7 @@ public class ReplacementList {
                     new Base64DecoderClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
+                    new CassandraTemplateClassReplacement(),
                     new CharacterClassReplacement(),
                     new CollectionClassReplacement(),
                     new CqlSessionClassReplacement(),
