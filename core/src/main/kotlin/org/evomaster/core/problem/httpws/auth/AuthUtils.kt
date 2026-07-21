@@ -347,7 +347,7 @@ object AuthUtils {
      * Check if we have valid credentials, but got 401
      */
      fun checkUnauthorizedWithAuth(status: Int, a: HttpWsAction) : Boolean{
-        if (status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
+        if (status == 401 && !a.auth.isNoAuth() && !a.auth.requireMockHandling) {
             /*
                 if the endpoint itself is to get auth info, we might exclude auth check for it
                 eg,

@@ -38,7 +38,8 @@ class SMTConditionVisitor(
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${convertToAscii(columnName).uppercase()} ${convertToAscii(tableName).lowercase()}$rowIndex)"
+        val rowConstant = SmtLibGenerator.rowConstantName(convertToAscii(tableName).lowercase(), rowIndex)
+        return "(${convertToAscii(columnName).uppercase()} $rowConstant)"
     }
 
     /**
