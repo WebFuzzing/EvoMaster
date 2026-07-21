@@ -386,6 +386,7 @@ public class EMController {
                         noKillSwitch(() -> sutController.initSqlHandler());
                         noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded(true));
                         noKillSwitch(() -> sutController.initMongoHandler());
+                        noKillSwitch(() -> sutController.initNeo4jHandler());
                         noKillSwitch(() -> sutController.initOpenSearchHandler());
                         noKillSwitch(() -> sutController.initRedisHandler());
                     } else {
