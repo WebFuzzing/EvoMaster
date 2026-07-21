@@ -20,7 +20,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Validates {@link Neo4jHeuristicsCalculator} end-to-end (parser → calculator) against two worked
+ * Validates {@link Neo4jHeuristicsCalculator} end-to-end (parser -> calculator) against two worked
  * examples, plus unit checks of the building blocks. Queries here are already in canonical form (no
  * quantified path patterns, no variable-length edges) — that expansion is a separate, later step.
  * <p>
@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * flips the query to satisfied).
  */
 class Neo4jHeuristicsCalculatorTest {
+
+    private static final double DELTA = 1e-9;
 
     private final CypherParser parser = CypherParserFactory.buildParser();
     private final Neo4jHeuristicsCalculator calculator = new Neo4jHeuristicsCalculator();
@@ -62,7 +64,7 @@ class Neo4jHeuristicsCalculatorTest {
 
         // Not satisfied: b.age (28) is not > 30 on any mapping.
         assertFalse(h.isTrue());
-        assertEquals(1.0, h.getOfFalse(), 1e-9);
+        assertEquals(1.0, h.getOfFalse(), DELTA);
         // Structure fully available and the best mapping satisfies 4 of 5 conditions: close to satisfied.
         assertTrue(h.getOfTrue() > 0.9);
     }
@@ -73,17 +75,17 @@ class Neo4jHeuristicsCalculatorTest {
         Neo4jGraph g = example1Graph(28);
         // The distance reported to the fitness DTO is 1 - ofTrue, and is positive for an unsatisfied query.
         double distance = calculator.computeDistance(q, g);
-        assertEquals(1.0 - calculator.computeHeuristic(q, g).getOfTrue(), distance, 1e-9);
+        assertEquals(1.0 - calculator.computeHeuristic(q, g).getOfTrue(), distance, DELTA);
         assertTrue(distance > 0);
     }
 
     @Test
     void testExample1SatisfiedAfterAgeMutation() throws CypherParserException {
         MatchOperation q = parser.parse(EXAMPLE_QUERY);
-        // Mutating Luis's age 28 → 31 makes the best mapping (a→n1, b→n2) fully satisfy the query.
+        // Mutating Luis age 28 -> 31 makes the best mapping (a->n1, b->n2) fully satisfy the query.
         Truthness h = calculator.computeHeuristic(q, example1Graph(31));
         assertTrue(h.isTrue());
-        assertEquals(1.0, h.getOfTrue(), 1e-9);
+        assertEquals(1.0, h.getOfTrue(), DELTA);
     }
 
     // Worked example 2: partial match, clear gradient
@@ -103,7 +105,7 @@ class Neo4jHeuristicsCalculatorTest {
         Truthness h = calculator.computeHeuristic(q, example2Graph());
 
         assertFalse(h.isTrue());
-        assertEquals(1.0, h.getOfFalse(), 1e-9);
+        assertEquals(1.0, h.getOfFalse(), DELTA);
         // Partial match: a clear gradient, well above the unsatisfiable floor.
         assertTrue(h.getOfTrue() > 0.8);
     }
@@ -129,33 +131,31 @@ class Neo4jHeuristicsCalculatorTest {
         Neo4jGraph g = new Neo4jGraph(Arrays.asList(a, b), Collections.emptyList());
         Truthness h = calculator.computeHeuristic(q, g);
         assertFalse(h.isTrue());
-        assertEquals(1.0, h.getOfFalse(), 1e-9);
+        assertEquals(1.0, h.getOfFalse(), DELTA);
         assertTrue(h.getOfTrue() > Neo4jHeuristicsCalculator.C);
     }
 
-    // Unit checks of the building blocks
-
     @Test
     void testHMatchNodesCountBased() {
-        // enough nodes → TRUE
+        // enough nodes -> TRUE
         assertTrue(calculator.computeHeuristicMatchNodes(2, 4).isTrue());
         assertTrue(calculator.computeHeuristicMatchNodes(2, 2).isTrue());
-        // no nodes in graph → FALSE
-        assertEquals(1.0, calculator.computeHeuristicMatchNodes(2, 0).getOfFalse(), 1e-9);
+        // no nodes in graph -> FALSE
+        assertEquals(1.0, calculator.computeHeuristicMatchNodes(2, 0).getOfFalse(), DELTA);
         assertFalse(calculator.computeHeuristicMatchNodes(2, 0).isTrue());
-        // no nodes required → TRUE
+        // no nodes required -> TRUE
         assertTrue(calculator.computeHeuristicMatchNodes(0, 0).isTrue());
-        // partial availability → scaled in (C, 1)
+        // partial availability -> scaled in (C, 1)
         Truthness partial = calculator.computeHeuristicMatchNodes(4, 2);
-        assertEquals(1.0, partial.getOfFalse(), 1e-9);
-        assertEquals(Neo4jHeuristicsCalculator.C + 0.9 * (2.0 / 4.0), partial.getOfTrue(), 1e-9);
+        assertEquals(1.0, partial.getOfFalse(), DELTA);
+        assertEquals(Neo4jHeuristicsCalculator.C + 0.9 * (2.0 / 4.0), partial.getOfTrue(), DELTA);
     }
 
     @Test
     void testStringEqualityTruthness() {
         assertTrue(Neo4jConditionEvaluator.stringEqualityTruthness("KNOWS", "KNOWS").isTrue());
         Truthness diff = Neo4jConditionEvaluator.stringEqualityTruthness("KNOWS", "LIKES");
-        assertEquals(1.0, diff.getOfFalse(), 1e-9);
+        assertEquals(1.0, diff.getOfFalse(), DELTA);
         assertTrue(diff.getOfTrue() < 1.0);
     }
 
@@ -163,11 +163,11 @@ class Neo4jHeuristicsCalculatorTest {
     void testLabelInSet() {
         assertTrue(Neo4jConditionEvaluator.labelInSet("Person", labels("Person")).isTrue());
         assertEquals(1.0,
-                Neo4jConditionEvaluator.labelInSet("Person", labels()).getOfFalse(), 1e-9);
+                Neo4jConditionEvaluator.labelInSet("Person", labels()).getOfFalse(), DELTA);
         assertFalse(Neo4jConditionEvaluator.labelInSet("Person", labels()).isTrue());
-        // present-but-different label: scaled, never reaches 1
+        // present but different label: scaled, never reaches 1
         Truthness t = Neo4jConditionEvaluator.labelInSet("Person", labels("Animal"));
-        assertEquals(1.0, t.getOfFalse(), 1e-9);
+        assertEquals(1.0, t.getOfFalse(), DELTA);
         assertTrue(t.getOfTrue() >= Neo4jHeuristicsCalculator.C && t.getOfTrue() < 1.0);
     }
 
@@ -175,11 +175,9 @@ class Neo4jHeuristicsCalculatorTest {
     void testStartsWith() {
         assertTrue(Neo4jConditionEvaluator.getStartsWith("hello", "hel").isTrue());
         Truthness t = Neo4jConditionEvaluator.getStartsWith("hello", "xyz");
-        assertEquals(1.0, t.getOfFalse(), 1e-9);
+        assertEquals(1.0, t.getOfFalse(), DELTA);
         assertTrue(t.getOfTrue() >= Neo4jHeuristicsCalculator.C && t.getOfTrue() < 1.0);
     }
-
-    // helpers
 
     private static Neo4jNode node(String id, Set<String> labels, Map<String, Object> props) {
         return new Neo4jNode(id, labels, props);
