@@ -474,6 +474,62 @@ class Cypher25AntlrParserTest {
         assertEquals(4, op.getPattern().nodeCount());   // start, a, b, end
         assertEquals(2, op.getPattern().edgeCount());   // the two plain edges
         assertEquals(1, op.getPattern().quantifiedPathCount());
+
+        QuantifiedPathPattern qpp = op.getPattern().getQuantifiedPaths().get(0);
+        assertEquals("a", qpp.getEntryVariable());
+        assertEquals("b", qpp.getExitVariable());
+    }
+
+    @Test
+    void testQuantifiedPathAtPatternStart() {
+        MatchOperation op = parse("MATCH ((a)-[:KNOWS]->(b))+ (c) RETURN a");
+        QuantifiedPathPattern qpp = op.getPattern().getQuantifiedPaths().get(0);
+        assertNull(qpp.getEntryVariable());
+        assertEquals("c", qpp.getExitVariable());
+    }
+
+    @Test
+    void testQuantifiedPathAtPatternEnd() {
+        MatchOperation op = parse("MATCH (c) ((a)-[:KNOWS]->(b))+ RETURN a");
+        QuantifiedPathPattern qpp = op.getPattern().getQuantifiedPaths().get(0);
+        assertEquals("c", qpp.getEntryVariable());
+        assertNull(qpp.getExitVariable());
+    }
+
+    @Test
+    void testQuantifiedPathAsWholePatternHasNoBoundary() {
+        QuantifiedPathPattern qpp = parse("MATCH ((a)-[:KNOWS]->(b))+ RETURN a")
+                .getPattern().getQuantifiedPaths().get(0);
+        assertNull(qpp.getEntryVariable());
+        assertNull(qpp.getExitVariable());
+    }
+
+    @Test
+    void testAdjacentQuantifiedPathsShareSynthesizedBoundary() {
+        MatchOperation op = parse("MATCH ((a)-[:LIKES]->(b))+ ((c)-[:KNOWS]->(d))+ RETURN a, d");
+        assertEquals(2, op.getPattern().quantifiedPathCount());
+
+        QuantifiedPathPattern qpp1 = op.getPattern().getQuantifiedPaths().get(0);
+        QuantifiedPathPattern qpp2 = op.getPattern().getQuantifiedPaths().get(1);
+        assertNull(qpp1.getEntryVariable());
+        assertNotNull(qpp1.getExitVariable());
+        assertEquals(qpp1.getExitVariable(), qpp2.getEntryVariable());
+        assertNull(qpp2.getExitVariable());
+    }
+
+    @Test
+    void testThreeAdjacentQuantifiedPathsChainBoundaries() {
+        MatchOperation op = parse("MATCH ((a)-[:R]->(b))+ ((c)-[:S]->(d))+ ((e)-[:T]->(f))+ RETURN a");
+        QuantifiedPathPattern qpp1 = op.getPattern().getQuantifiedPaths().get(0);
+        QuantifiedPathPattern qpp2 = op.getPattern().getQuantifiedPaths().get(1);
+        QuantifiedPathPattern qpp3 = op.getPattern().getQuantifiedPaths().get(2);
+
+        assertNull(qpp1.getEntryVariable());
+        assertEquals(qpp1.getExitVariable(), qpp2.getEntryVariable());
+        assertEquals(qpp2.getExitVariable(), qpp3.getEntryVariable());
+        assertNull(qpp3.getExitVariable());
+
+        assertNotEquals(qpp1.getExitVariable(), qpp2.getExitVariable());
     }
 
     @Test
@@ -485,12 +541,17 @@ class Cypher25AntlrParserTest {
         assertEquals(1, outer.getMin());
         assertEquals(3, outer.getMax().intValue());
         assertEquals(1, outer.getSubPattern().quantifiedPathCount());
+        assertNull(outer.getEntryVariable());
+        assertNull(outer.getExitVariable());
 
         QuantifiedPathPattern inner = outer.getSubPattern().getQuantifiedPaths().get(0);
         assertEquals(1, inner.getMin());
         assertEquals(2, inner.getMax().intValue());
         assertEquals(2, inner.getSubPattern().nodeCount());
         assertEquals(1, inner.getSubPattern().edgeCount());
+
+        assertNull(inner.getEntryVariable());
+        assertNull(inner.getExitVariable());
     }
 
     @Test
