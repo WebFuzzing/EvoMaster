@@ -2,6 +2,8 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
@@ -120,6 +122,9 @@ class HttpSemanticsService : TimeBoxedPhase{
         partialUpdatePut()
 
         if(hasPhaseTimedOut()) return
+        mergePatchSideEffect()
+
+        if(hasPhaseTimedOut()) return
         misleadingCreatePut()
 
         if(hasPhaseTimedOut()) return
@@ -199,17 +204,18 @@ class HttpSemanticsService : TimeBoxedPhase{
         }
     }
 
-    private fun prepareEvaluateAndSave(ind: RestIndividual) {
+    private fun prepareEvaluateAndSave(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
         ind.modifySampleType(SampleType.HTTP_SEMANTICS)
         ind.ensureFlattenedStructure()
 
         val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
         if (evaluatedIndividual == null) {
             log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
-            return
+            return null
         }
 
         archive.addIfNeeded(evaluatedIndividual)
+        return evaluatedIndividual
     }
 
 
@@ -477,6 +483,64 @@ class HttpSemanticsService : TimeBoxedPhase{
             ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
             prepareEvaluateAndSave(ind)
+        }
+    }
+
+    /**
+     * HTTP_INVALID_MERGE_PATCH oracle (RFC 7386): a partial merge-patch must not change fields
+     * absent from the request body. Slice an individual at a 2xx PATCH (keeping the creation),
+     * then wrap that PATCH with a GET before and after:
+     *   [...create...]  GET /X  ->  PATCH /X (2xx)  ->  GET /X
+     */
+    private fun mergePatchSideEffect() {
+
+        val patchOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PATCH)
+
+        patchOperations.forEach { patchOp ->
+
+            if (hasPhaseTimedOut()) return
+
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == patchOp.path }
+                ?: return@forEach
+
+            val successPatches = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx
+            )
+            if (successPatches.isEmpty()) return@forEach
+
+            for (candidate in successPatches.sortedBy { it.individual.size() }) {
+
+                if (hasPhaseTimedOut()) return
+
+                val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    candidate, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx
+                )
+
+                val patch = ind.seeMainExecutableActions().last()
+                val size = ind.seeMainExecutableActions().size
+
+                // bind the GET to the PATCH's resolved path (so usingSameResolvedPath holds). if the
+                // PATCH takes its id from a creation's Location header, also link the GET to it
+                val creator = patch.usePreviousLocationId?.let { locId ->
+                    ind.seeMainExecutableActions().firstOrNull {
+                        (it.verb == HttpVerb.POST || it.verb == HttpVerb.PUT)
+                            && it.saveCreatedResourceLocation && it.creationLocationId() == locId
+                    }
+                }
+                val getBefore = builder.createBoundActionFor(getDef, patch)
+                creator?.saveAndLinkLocationTo(getBefore)
+                ind.addMainActionInEmptyEnterpriseGroup(size - 1, getBefore)
+
+                val getAfter = builder.createBoundActionFor(getDef, patch)
+                creator?.saveAndLinkLocationTo(getAfter)
+                ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+                val ei = prepareEvaluateAndSave(ind)
+                if (ei != null && DetectedFaultUtils.getDetectedFaultCategories(ei)
+                        .contains(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+                    return@forEach
+                }
+            }
         }
     }
 

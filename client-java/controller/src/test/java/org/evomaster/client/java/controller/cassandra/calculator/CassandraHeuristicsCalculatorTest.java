@@ -1,9 +1,10 @@
-package org.evomaster.client.java.controller.cassandra;
+package org.evomaster.client.java.controller.cassandra.calculator;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
+import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.junit.jupiter.api.Test;
 
-import com.datastax.oss.driver.api.core.data.CqlDuration;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,14 +17,13 @@ public class CassandraHeuristicsCalculatorTest {
 
     private final CassandraHeuristicsCalculator calc = new CassandraHeuristicsCalculator();
 
-    private static Map<String, Object> row(Object... kv) {
+    private static CassandraRow row(Object... kv) {
         Map<String, Object> m = new LinkedHashMap<>();
         for (int i = 0; i < kv.length; i += 2) m.put((String) kv[i], kv[i + 1]);
-        return m;
+        return new CassandraRow(m);
     }
 
-    @SafeVarargs
-    private final double dist(String cql, Map<String, Object>... rows) {
+    private double dist(String cql, CassandraRow... rows) {
         return calc.computeDistance(cql, Arrays.asList(rows));
     }
 
@@ -32,6 +32,15 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     private static final double DELTA = 1e-9;
+
+    /**
+     * Expected distance for a single-row table whose WHERE-clause condition evaluates to
+     * {@code FALSE_TRUTHNESS} for that row (e.g. because the queried column is absent from it).
+     * H-Row-set is definitely true (one row is present), so H-Query is the average of
+     * {@code 1.0} and H-Condition, i.e. {@code buildScaledTruthness(C, C).ofTrue}.
+     */
+    private static final double MISSING_COLUMN_DISTANCE =
+            1.0 - (1.0 + (DistanceHelper.H_NOT_NULL + (1 - DistanceHelper.H_NOT_NULL) * DistanceHelper.H_NOT_NULL)) / 2.0;
 
     @Test
     void noWhere_emptyTable_maxDistance() {
@@ -352,13 +361,10 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     @Test
-    void in_nullRowValue_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col IN (1, 2, 3)", row("col", null)) > 0.0);
-    }
-
-    @Test
     void in_missingColumn_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col IN (1, 2, 3)", row("other", 99L)) > 0.0);
+        assertEquals(MISSING_COLUMN_DISTANCE,
+                dist("SELECT * FROM t WHERE col IN (1, 2, 3)", row("other", 99L)),
+                DELTA);
     }
 
     // CONTAINS operator
@@ -412,13 +418,10 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     @Test
-    void contains_nullColumn_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col CONTAINS 1", row("col", null)) > 0.0);
-    }
-
-    @Test
     void contains_missingColumn_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col CONTAINS 1", row("other", 99L)) > 0.0);
+        assertEquals(MISSING_COLUMN_DISTANCE,
+                dist("SELECT * FROM t WHERE col CONTAINS 1", row("other", 99L)),
+                DELTA);
     }
 
     @Test
@@ -474,45 +477,26 @@ public class CassandraHeuristicsCalculatorTest {
     }
 
     @Test
-    void containsKey_nullColumn_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col CONTAINS KEY 'x'", row("col", null)) > 0.0);
+    void containsKey_missingColumn_nonZeroDistance() {
+        assertEquals(MISSING_COLUMN_DISTANCE,
+                dist("SELECT * FROM t WHERE col CONTAINS KEY 'x'", row("other", 99L)),
+                DELTA);
     }
 
     @Test
-    void containsKey_nonMapColumn_nonZeroDistance() {
-        assertTrue(dist("SELECT * FROM t WHERE col CONTAINS KEY 'x'",
-                row("col", Arrays.asList("a", "b"))) > 0.0);
+    void containsKey_nonMapColumn_throws() {
+        CassandraRow row = row("col", Arrays.asList("a", "b"));
+        assertThrows(IllegalArgumentException.class,
+                () -> dist("SELECT * FROM t WHERE col CONTAINS KEY 'x'", row));
     }
 
-    // NULL handling
-
-    @Test
-    void nullRowValue_returnsHighDistance() {
-        double d = dist("SELECT * FROM t WHERE col = 1", row("col", null));
-        assertTrue(d > 0.0);
-    }
+    // Missing column handling
 
     @Test
     void missingColumn_returnsHighDistance() {
-        double d = dist("SELECT * FROM t WHERE col = 1", row("other", 99L));
-        assertTrue(d > 0.0);
-    }
-
-    @Test
-    void nullCell_notWorseThanMissingColumn() {
-        // NULL cell → FALSE_TRUTHNESS_BETTER (C_BETTER=0.15 > C=0.1)
-        // Missing column → FALSE_TRUTHNESS (C=0.1)
-        // So NULL cell ofTrue > missing column ofTrue → distance(null) < distance(missing)
-        double dNull    = dist("SELECT * FROM t WHERE col = 1", row("col", null));
-        double dMissing = dist("SELECT * FROM t WHERE col = 1", row("other", 99L));
-        assertTrue(dNull <= dMissing);
-    }
-
-    @Test
-    void bothNullQueryAndRow_falseDistance() {
-        // Both NULL → FALSE_TRUTHNESS, not zero distance
-        double d = dist("SELECT * FROM t WHERE col = NULL", row("col", null));
-        assertTrue(d > 0.0);
+        assertEquals(MISSING_COLUMN_DISTANCE,
+                dist("SELECT * FROM t WHERE col = 1", row("other", 99L)),
+                DELTA);
     }
 
     // Multi-row scenarios

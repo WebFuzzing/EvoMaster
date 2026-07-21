@@ -26,6 +26,23 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     private static final String RESULT_SET_CLASS = "com.datastax.oss.driver.api.core.cql.ResultSet";
     private static final String STATEMENT_CLASS = "com.datastax.oss.driver.api.core.cql.Statement";
 
+    // a CQL identifier: either quoted+case-sensitive (e.g. "Tbl") or unquoted (e.g. tbl)
+    private static final String IDENTIFIER = "(?:\"[^\"]+\"|[A-Za-z_]\\w*)";
+    // clause keywords that introduce a table reference (SELECT/DELETE ... FROM, INSERT ... INTO, UPDATE ...)
+    private static final String CLAUSE_KEYWORDS = "(?:FROM|INTO|UPDATE)";
+
+    /**
+     * Matches the keyspace/table reference after FROM (SELECT/DELETE), INTO (INSERT), or
+     * UPDATE, e.g. "FROM ks.tbl", "INTO tbl", "UPDATE \"Ks\".\"Tbl\"". Group "first" is the
+     * keyspace when a "keyspace.table" qualifier ("second") is present, otherwise it's the
+     * table name on its own.
+     */
+    private static final Pattern TABLE_REFERENCE_PATTERN = Pattern.compile(
+            "(?i)\\b" + CLAUSE_KEYWORDS + "\\s+"
+                    + "(?<first>" + IDENTIFIER + ")"
+                    + "(?:\\s*\\.\\s*(?<second>" + IDENTIFIER + "))?"
+    );
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "com.datastax.oss.driver.api.core.CqlSession";
@@ -70,14 +87,6 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
-     * Matches the keyspace/table reference after FROM (SELECT/DELETE), INTO (INSERT), or
-     * UPDATE, e.g. "FROM ks.tbl", "INTO tbl", "UPDATE \"Ks\".\"Tbl\"".
-     */
-    private static final Pattern TABLE_REFERENCE_PATTERN = Pattern.compile(
-            "(?i)\\b(?:FROM|INTO|UPDATE)\\s+(\"[^\"]+\"|[A-Za-z_]\\w*)(?:\\s*\\.\\s*(\"[^\"]+\"|[A-Za-z_]\\w*))?"
-    );
-
-    /**
      * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
      * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
      * (eg DDL, batches).
@@ -86,22 +95,25 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
         if (query == null) {
             return new TableReference(null, null);
         }
+
         Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
         if (!matcher.find()) {
             return new TableReference(null, null);
+        } else {
+            String first = stripQuotes(matcher.group("first"));
+            String second = matcher.group("second") != null ? stripQuotes(matcher.group("second")) : null;
+            // if there is an "a.b" qualifier, "a" is the keyspace and "b" is the table;
+            // otherwise the single identifier is the table, and the keyspace is the session default
+            return second != null ? new TableReference(first, second) : new TableReference(null, first);
         }
-        String first = stripQuotes(matcher.group(1));
-        String second = matcher.group(2) != null ? stripQuotes(matcher.group(2)) : null;
-        // if there is a "a.b" qualifier, a is the keyspace and b is the table;
-        // otherwise the single identifier is the table, and the keyspace is the session default
-        return second != null ? new TableReference(first, second) : new TableReference(null, first);
     }
 
     private static String stripQuotes(String identifier) {
         if (identifier.length() >= 2 && identifier.charAt(0) == '"' && identifier.charAt(identifier.length() - 1) == '"') {
             return identifier.substring(1, identifier.length() - 1);
+        } else {
+            return identifier;
         }
-        return identifier;
     }
 
     private static class TableReference {
@@ -125,6 +137,7 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
         } catch (ReflectiveOperationException e) {
             // not a SimpleStatement (eg BoundStatement) -- fall through
         }
+
         try {
             Method getPreparedStatement = statement.getClass().getMethod("getPreparedStatement");
             Object prepared = getPreparedStatement.invoke(statement);

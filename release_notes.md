@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version 6.1.1
+
 ### New Features
 - REST APIs: native support for Overlay. It is now possible to provide as input one or more OAI Overlay files, which are automatically applied to the OpenAPI schema of the tested API.  
 - Support of WFC 0.6.0 for dynamic creation of users in auth configurations. 
@@ -16,6 +18,10 @@ Under development in `master` branch.
 - Resolved issue of wrong handling of empty bodies in PUT/PATCH/POST requests. 
 - Fixed sending of wrong content-type header when type is not supported in EvoMaster.
 
+
+# Version 6.1.0
+
+Botched release
 
 # Version 6.0.0
 
