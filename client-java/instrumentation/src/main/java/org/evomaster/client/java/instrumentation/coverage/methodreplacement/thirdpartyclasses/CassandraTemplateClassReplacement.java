@@ -30,6 +30,8 @@ public class CassandraTemplateClassReplacement extends ThirdPartyMethodReplaceme
     }
 
     private static final String INSERT_ID = "insert";
+    private static final String SELECT_ONE_ID = "selectOneString";
+    private static final String SELECT_ID = "selectString";
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
@@ -50,8 +52,6 @@ public class CassandraTemplateClassReplacement extends ThirdPartyMethodReplaceme
         }
     }
 
-    private static final String SELECT_ONE_ID = "selectOneString";
-
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = SELECT_ONE_ID,
@@ -70,8 +70,6 @@ public class CassandraTemplateClassReplacement extends ThirdPartyMethodReplaceme
             throw (RuntimeException) e.getCause();
         }
     }
-
-    private static final String SELECT_ID = "selectString";
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,

@@ -24,6 +24,8 @@ public class MappingCassandraEntityInformationClassReplacement extends ThirdPart
     private static final MappingCassandraEntityInformationClassReplacement singleton = new MappingCassandraEntityInformationClassReplacement();
     private static ThreadLocal<Object> instance = new ThreadLocal<>();
 
+    public static final String CONSTRUCTOR_ENTITY_CONVERTER_ID = "constructorEntityConverter";
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "org.springframework.data.cassandra.repository.support.MappingCassandraEntityInformation";
@@ -50,13 +52,13 @@ public class MappingCassandraEntityInformationClassReplacement extends ThirdPart
             replacingConstructor = true,
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.CASSANDRA,
-            id = "constructorEntityConverter",
+            id = CONSTRUCTOR_ENTITY_CONVERTER_ID,
             castTo = "org.springframework.data.cassandra.repository.support.MappingCassandraEntityInformation"
     )
     public static void MappingCassandraEntityInformation(
             @ThirdPartyCast(actualType = "org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity") Object entity,
             @ThirdPartyCast(actualType = "org.springframework.data.cassandra.core.convert.CassandraConverter") Object converter) {
-        Constructor original = getOriginalConstructor(singleton, "constructorEntityConverter");
+        Constructor original = getOriginalConstructor(singleton, CONSTRUCTOR_ENTITY_CONVERTER_ID);
 
         try {
             Object mappingCassandraEntityInformation = original.newInstance(entity, converter);
