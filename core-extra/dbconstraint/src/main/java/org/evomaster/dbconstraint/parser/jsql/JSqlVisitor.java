@@ -13,6 +13,10 @@ import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.dbconstraint.ast.*;
 
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -23,6 +27,13 @@ public class JSqlVisitor implements ExpressionVisitor {
     private static final String SIMILAR_TO = "similar_to";
     private static final String SIMILAR_ESCAPE = "similar_escape";
     private static final String SIMILAR_TO_ESCAPE = "similar_to_escape";
+
+    private static final String LOWER = "LOWER";
+    private static final String UPPER = "UPPER";
+
+    private static final String SINGLE_QUOTE_CHAR = "'";
+
+    private static final String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
@@ -45,7 +56,14 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(Function function) {
-        // TODO This translation should be implemented
+        String name = function.getName().toUpperCase();
+        if ((name.equals(LOWER) || name.equals(UPPER))
+                && function.getParameters() != null
+                && function.getParameters().size() == 1) {
+            // Treat LOWER(col)/UPPER(col) as the column itself (case-folding is dropped as an approximation)
+            function.getParameters().get(0).accept(this);
+            return;
+        }
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
@@ -113,8 +131,10 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(TimestampValue timestampValue) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        // Treat the timestamp string as UTC so the epoch round-trips consistently with the
+        // UTC-based decoder in SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+        long epochSeconds = timestampValue.getValue().toLocalDateTime().toEpochSecond(ZoneOffset.UTC);
+        stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
     }
 
     @Override
@@ -127,7 +147,7 @@ public class JSqlVisitor implements ExpressionVisitor {
         String notEscapedValue = stringValue.getNotExcapedValue();
 
         String notEscapedValueNoQuotes;
-        if (notEscapedValue.startsWith("'") && notEscapedValue.endsWith("'")) {
+        if (notEscapedValue.startsWith(SINGLE_QUOTE_CHAR) && notEscapedValue.endsWith(SINGLE_QUOTE_CHAR)) {
             notEscapedValueNoQuotes = notEscapedValue.substring(1, notEscapedValue.length() - 1);
         } else {
             notEscapedValueNoQuotes = notEscapedValue;
@@ -599,7 +619,19 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-        // TODO This translation should be implemented
+        if (dateTimeLiteralExpression.getType() == DateTimeLiteralExpression.DateTime.TIMESTAMP) {
+            String value = dateTimeLiteralExpression.getValue();
+            if (value.startsWith(SINGLE_QUOTE_CHAR) && value.endsWith(SINGLE_QUOTE_CHAR)) {
+                value = value.substring(1, value.length() - 1);
+            }
+            // Treat the timestamp string as UTC to match the UTC-based decoder in
+            // SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+            long epochSeconds = java.time.LocalDateTime.parse(value,
+                    DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT))
+                    .toEpochSecond(ZoneOffset.UTC);
+            stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
+            return;
+        }
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
