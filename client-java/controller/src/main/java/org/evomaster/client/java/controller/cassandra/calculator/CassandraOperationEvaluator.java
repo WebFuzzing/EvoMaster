@@ -111,6 +111,10 @@ public class CassandraOperationEvaluator {
         return evaluateComparison(op, candidateRow, ComparisonType.LTE);
     }
 
+    // In CQL, a stored NULL and an absent/never-set column are the same thing at read time
+    // (writing NULL creates a tombstone, identical to never having written the column), so
+    // none of the null checks below (here and in evaluateContains, evaluateContainsKey and
+    // evaluateComparison) can tell these two cases apart.
     private Truthness evaluateIn(InOperation op, CassandraRow candidateRow) {
         Object rowValue = candidateRow.getValue(op.getColumnName());
         if (rowValue == null) {
