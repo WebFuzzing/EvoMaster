@@ -15,13 +15,25 @@ abstract public class QuerySelector {
      */
     public abstract QueryOperation getOperation(Object query);
 
+    /**
+     * Determines if the given map contains exactly one entry.
+     *
+     * @param map the map to be checked for uniqueness of entries; must not be null
+     * @return true if the map contains exactly one entry; false otherwise
+     */
     protected Boolean isUniqueEntry(Map<?, ?> map) {
         return map.size() == 1;
     }
 
+    /**
+     * Determines if the given query has the expected operator associated with the selector.
+     *
+     * @param query the query object whose operator needs to be checked; must not be null
+     * @return true if the query contains the expected operator; false otherwise
+     */
     protected Boolean hasTheExpectedOperator(Object query) {
         String actualOperator = extractOperator(query);
-        return actualOperator.equals(operator());
+        return actualOperator != null && actualOperator.equals(operator());
     }
 
     /**

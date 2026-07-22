@@ -124,7 +124,8 @@ public class SqlHeuristicsCalculator {
             double distanceToTrue = 1.0d - t.getOfTrue();
             return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
         } catch (Exception ex) {
-            SimpleLogger.uniqueWarn("Failed to compute complete SQL heuristics for: " + sqlCommand);
+            SimpleLogger.uniqueWarn("Failed to compute complete SQL heuristics for: " + sqlCommand
+                    + " | cause: " + ex.getClass().getName() + ": " + ex.getMessage());
             return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
         }
     }

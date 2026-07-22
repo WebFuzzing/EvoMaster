@@ -9,6 +9,9 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getTyp
  * { field: { $type: BSON type } }
  */
 public class TypeSelector extends SingleConditionQuerySelector {
+
+    public static final String TYPE_OPERATOR = "$type";
+
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         if (value instanceof Integer) return new TypeOperation(fieldName, getTypeFromNumber((Integer) value));
@@ -18,6 +21,6 @@ public class TypeSelector extends SingleConditionQuerySelector {
 
     @Override
     protected String operator() {
-        return "$type";
+        return TYPE_OPERATOR;
     }
 }

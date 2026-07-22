@@ -29,8 +29,8 @@ class SmtLibGeneratorTest {
                 )
             )
         )
-        addNode(DeclareConstSMTNode("products1", "ProductsRow"))
-        addNode(DeclareConstSMTNode("products2", "ProductsRow"))
+        addNode(DeclareConstSMTNode("products__1", "ProductsRow"))
+        addNode(DeclareConstSMTNode("products__2", "ProductsRow"))
         addNode(
             DeclareDatatypeSMTNode(
                 "UsersRow", ImmutableList.of(
@@ -43,27 +43,27 @@ class SmtLibGeneratorTest {
                 )
             )
         )
-        addNode(DeclareConstSMTNode("users1", "UsersRow"))
-        addNode(DeclareConstSMTNode("users2", "UsersRow"))
+        addNode(DeclareConstSMTNode("users__1", "UsersRow"))
+        addNode(DeclareConstSMTNode("users__2", "UsersRow"))
         addNode(
-            AssertSMTNode(DistinctAssertion(listOf("(DOCUMENT users1)", "(DOCUMENT users2)")))
+            AssertSMTNode(DistinctAssertion(listOf("(DOCUMENT users__1)", "(DOCUMENT users__2)")))
         )
         addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(NAME users1)", "\"agus\""))
+                EqualsAssertion(listOf("(NAME users__1)", "\"Alice\""))
             )
         )
         addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(NAME users2)", "\"agus\""))
+                EqualsAssertion(listOf("(NAME users__2)", "\"Alice\""))
             )
         )
         addNode(
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        LessThanAssertion("(POINTS users1)", "4"),
-                        GreaterThanAssertion("(POINTS users1)", "6")
+                        LessThanAssertion("(POINTS users__1)", "4"),
+                        GreaterThanAssertion("(POINTS users__1)", "6")
                     )
                 )
             )
@@ -72,8 +72,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        LessThanAssertion("(POINTS users2)", "4"),
-                        GreaterThanAssertion("(POINTS users2)", "6")
+                        LessThanAssertion("(POINTS users__2)", "4"),
+                        GreaterThanAssertion("(POINTS users__2)", "6")
                     )
                 )
             )
@@ -82,8 +82,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users1)", "18"),
-                        LessThanAssertion("(AGE users1)", "100")
+                        GreaterThanAssertion("(AGE users__1)", "18"),
+                        LessThanAssertion("(AGE users__1)", "100")
                     )
                 )
             )
@@ -92,38 +92,38 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users2)", "18"),
-                        LessThanAssertion("(AGE users2)", "100")
+                        GreaterThanAssertion("(AGE users__2)", "18"),
+                        LessThanAssertion("(AGE users__2)", "100")
                     )
                 )
             )
         )
         addNode(
             AssertSMTNode(
-                LessThanOrEqualsAssertion("(POINTS users1)", "10")
+                LessThanOrEqualsAssertion("(POINTS users__1)", "10")
             )
         )
         addNode(
             AssertSMTNode(
-                LessThanOrEqualsAssertion("(POINTS users2)", "10")
+                LessThanOrEqualsAssertion("(POINTS users__2)", "10")
             )
         )
         addNode(
             AssertSMTNode(
-                GreaterThanOrEqualsAssertion("(POINTS users1)", "0")
+                GreaterThanOrEqualsAssertion("(POINTS users__1)", "0")
             )
         )
         addNode(
             AssertSMTNode(
-                GreaterThanOrEqualsAssertion("(POINTS users2)", "0")
+                GreaterThanOrEqualsAssertion("(POINTS users__2)", "0")
             )
         )
         addNode(
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        EqualsAssertion(listOf("(USER_ID products1)", "(ID users1)")),
-                        EqualsAssertion(listOf("(USER_ID products1)", "(ID users2)"))
+                        EqualsAssertion(listOf("(USER_ID products__1)", "(ID users__1)")),
+                        EqualsAssertion(listOf("(USER_ID products__1)", "(ID users__2)"))
                     )
                 )
             )
@@ -132,8 +132,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        EqualsAssertion(listOf("(USER_ID products2)", "(ID users1)")),
-                        EqualsAssertion(listOf("(USER_ID products2)", "(ID users2)"))
+                        EqualsAssertion(listOf("(USER_ID products__2)", "(ID users__1)")),
+                        EqualsAssertion(listOf("(USER_ID products__2)", "(ID users__2)"))
                     )
                 )
             )
@@ -142,8 +142,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 DistinctAssertion(
                     listOf(
-                        "(ID users1)",
-                        "(ID users2)"
+                        "(ID users__1)",
+                        "(ID users__2)"
                     )
                 )
             )
@@ -152,12 +152,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"true\"")),
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"True\"")),
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"TRUE\"")),
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"false\"")),
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"False\"")),
-                        EqualsAssertion(listOf("(LUCKY users1)", "\"FALSE\""))
+                        EqualsAssertion(listOf("(LUCKY users__1)", "\"true\"")),
+                        EqualsAssertion(listOf("(LUCKY users__1)", "\"false\""))
                     )
                 )
             )
@@ -166,12 +162,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 OrAssertion(
                     listOf(
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"true\"")),
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"True\"")),
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"TRUE\"")),
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"false\"")),
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"False\"")),
-                        EqualsAssertion(listOf("(LUCKY users2)", "\"FALSE\""))
+                        EqualsAssertion(listOf("(LUCKY users__2)", "\"true\"")),
+                        EqualsAssertion(listOf("(LUCKY users__2)", "\"false\""))
                     )
                 )
             )
@@ -192,7 +184,7 @@ class SmtLibGeneratorTest {
                     "ALTER TABLE users add CHECK (points<=10);\n" +
                     "ALTER TABLE users add CHECK (points>=0);\n" +
                     "ALTER TABLE users add CHECK (points<4 OR points>6);\n" +
-                    "ALTER TABLE users add CHECK (name = 'agus');\n" +
+                    "ALTER TABLE users add CHECK (name = 'Alice');\n" +
                     "ALTER TABLE users ADD UNIQUE (document);\n" +
                     "CREATE TABLE products(price int not null, min_price int not null, stock int not null, user_id bigint not null);\n" +
                     "ALTER TABLE products add constraint userIdKey foreign key (user_id) REFERENCES users;\n")
@@ -221,11 +213,11 @@ class SmtLibGeneratorTest {
         val response: SMTLib = generator.generateSMT(selectStatement)
 
         val expected = tableConstraints
-        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users1)", "30"))))
-        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users2)", "30"))))
+        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users__1)", "30"))))
+        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users__2)", "30"))))
         expected.addNode(CheckSatSMTNode())
-        expected.addNode(GetValueSMTNode("users1"))
-        expected.addNode(GetValueSMTNode("users2"))
+        expected.addNode(GetValueSMTNode("users__1"))
+        expected.addNode(GetValueSMTNode("users__2"))
 
         assertEquals(expected, response)
     }
@@ -247,8 +239,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users1)", "30"),
-                        EqualsAssertion(listOf("7", "(POINTS users1)"))
+                        GreaterThanAssertion("(AGE users__1)", "30"),
+                        EqualsAssertion(listOf("7", "(POINTS users__1)"))
                     )
                 )
             )
@@ -257,8 +249,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users2)", "30"),
-                        EqualsAssertion(listOf("7", "(POINTS users2)"))
+                        GreaterThanAssertion("(AGE users__2)", "30"),
+                        EqualsAssertion(listOf("7", "(POINTS users__2)"))
                     )
                 )
             )
@@ -266,8 +258,8 @@ class SmtLibGeneratorTest {
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
-            GetValueSMTNode("users1"),
-            GetValueSMTNode("users2")
+            GetValueSMTNode("users__1"),
+            GetValueSMTNode("users__2")
         )
 
         for (constraint in satConstraints) {
@@ -293,8 +285,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users1)", "30"),
-                        EqualsAssertion(listOf("(POINTS users1)", "7"))
+                        GreaterThanAssertion("(AGE users__1)", "30"),
+                        EqualsAssertion(listOf("(POINTS users__1)", "7"))
                     )
                 )
             )
@@ -303,8 +295,8 @@ class SmtLibGeneratorTest {
             AssertSMTNode(
                 AndAssertion(
                     listOf(
-                        GreaterThanAssertion("(AGE users2)", "30"),
-                        EqualsAssertion(listOf("(POINTS users2)", "7"))
+                        GreaterThanAssertion("(AGE users__2)", "30"),
+                        EqualsAssertion(listOf("(POINTS users__2)", "7"))
                     )
                 )
             )
@@ -312,8 +304,8 @@ class SmtLibGeneratorTest {
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
-            GetValueSMTNode("users1"),
-            GetValueSMTNode("users2")
+            GetValueSMTNode("users__1"),
+            GetValueSMTNode("users__2")
         )
 
         for (constraint in satConstraints) {
@@ -338,12 +330,12 @@ class SmtLibGeneratorTest {
         // JOIN ON constraints
         expected.addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(ID users1)", "(USER_ID products1)"))
+                EqualsAssertion(listOf("(ID users__1)", "(USER_ID products__1)"))
             )
         )
         expected.addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(ID users2)", "(USER_ID products2)"))
+                EqualsAssertion(listOf("(ID users__2)", "(USER_ID products__2)"))
             )
         )
 
@@ -356,14 +348,14 @@ class SmtLibGeneratorTest {
                             listOf(
                                 AndAssertion(
                                     listOf(
-                                        GreaterThanAssertion("(AGE users1)", "30"),
-                                        EqualsAssertion(listOf("(POINTS users1)", "7"))
+                                        GreaterThanAssertion("(AGE users__1)", "30"),
+                                        EqualsAssertion(listOf("(POINTS users__1)", "7"))
                                     )
                                 ),
-                            GreaterThanAssertion("(MIN_PRICE products1)", "500")
+                            GreaterThanAssertion("(MIN_PRICE products__1)", "500")
                             )
                         ),
-                        EqualsAssertion(listOf("(STOCK products1)", "8"))
+                        EqualsAssertion(listOf("(STOCK products__1)", "8"))
                     )
                 )
             )
@@ -376,14 +368,14 @@ class SmtLibGeneratorTest {
                             listOf(
                                 AndAssertion(
                                     listOf(
-                                        GreaterThanAssertion("(AGE users2)", "30"),
-                                        EqualsAssertion(listOf("(POINTS users2)", "7"))
+                                        GreaterThanAssertion("(AGE users__2)", "30"),
+                                        EqualsAssertion(listOf("(POINTS users__2)", "7"))
                                     )
                                 ),
-                                GreaterThanAssertion("(MIN_PRICE products2)", "500")
+                                GreaterThanAssertion("(MIN_PRICE products__2)", "500")
                             )
                         ),
-                        EqualsAssertion(listOf("(STOCK products2)", "8"))
+                        EqualsAssertion(listOf("(STOCK products__2)", "8"))
                     )
                 )
             )
@@ -391,10 +383,10 @@ class SmtLibGeneratorTest {
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
-            GetValueSMTNode("products1"),
-            GetValueSMTNode("products2"),
-            GetValueSMTNode("users1"),
-            GetValueSMTNode("users2")
+            GetValueSMTNode("products__1"),
+            GetValueSMTNode("products__2"),
+            GetValueSMTNode("users__1"),
+            GetValueSMTNode("users__2")
         )
 
         for (constraint in satConstraints) {
@@ -417,13 +409,13 @@ class SmtLibGeneratorTest {
 
         val expected = tableConstraints
         // The NULL comparison is skipped; only the non-null constraint is emitted
-        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users1)", "30")))
-        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users2)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
-            GetValueSMTNode("users1"),
-            GetValueSMTNode("users2")
+            GetValueSMTNode("users__1"),
+            GetValueSMTNode("users__2")
         )
         for (constraint in satConstraints) {
             expected.addNode(constraint)
@@ -460,21 +452,17 @@ class SmtLibGeneratorTest {
                     )
                 )
             )
-            expected.addNode(DeclareConstSMTNode("flags1", "FlagsRow"))
-            expected.addNode(DeclareConstSMTNode("flags2", "FlagsRow"))
+            expected.addNode(DeclareConstSMTNode("flags__1", "FlagsRow"))
+            expected.addNode(DeclareConstSMTNode("flags__2", "FlagsRow"))
             // Primary key distinct constraint
-            expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(ID flags1)", "(ID flags2)"))))
+            expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(ID flags__1)", "(ID flags__2)"))))
             // Boolean value constraints (generated because H2 reports BIT as BOOLEAN)
             expected.addNode(
                 AssertSMTNode(
                     OrAssertion(
                         listOf(
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"true\"")),
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"True\"")),
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"TRUE\"")),
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"false\"")),
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"False\"")),
-                            EqualsAssertion(listOf("(FLAG flags1)", "\"FALSE\""))
+                            EqualsAssertion(listOf("(FLAG flags__1)", "\"true\"")),
+                            EqualsAssertion(listOf("(FLAG flags__1)", "\"false\""))
                         )
                     )
                 )
@@ -483,22 +471,18 @@ class SmtLibGeneratorTest {
                 AssertSMTNode(
                     OrAssertion(
                         listOf(
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"true\"")),
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"True\"")),
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"TRUE\"")),
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"false\"")),
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"False\"")),
-                            EqualsAssertion(listOf("(FLAG flags2)", "\"FALSE\""))
+                            EqualsAssertion(listOf("(FLAG flags__2)", "\"true\"")),
+                            EqualsAssertion(listOf("(FLAG flags__2)", "\"false\""))
                         )
                     )
                 )
             )
             // Query constraint: id > 0
-            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID flags1)", "0")))
-            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID flags2)", "0")))
+            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID flags__1)", "0")))
+            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID flags__2)", "0")))
             expected.addNode(CheckSatSMTNode())
-            expected.addNode(GetValueSMTNode("flags1"))
-            expected.addNode(GetValueSMTNode("flags2"))
+            expected.addNode(GetValueSMTNode("flags__1"))
+            expected.addNode(GetValueSMTNode("flags__2"))
 
             assertEquals(expected, response)
         } finally {
@@ -534,25 +518,100 @@ class SmtLibGeneratorTest {
                     )
                 )
             )
-            expected.addNode(DeclareConstSMTNode("events1", "EventsRow"))
-            expected.addNode(DeclareConstSMTNode("events2", "EventsRow"))
+            expected.addNode(DeclareConstSMTNode("events__1", "EventsRow"))
+            expected.addNode(DeclareConstSMTNode("events__2", "EventsRow"))
             // Primary key distinct constraint
-            expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(ID events1)", "(ID events2)"))))
+            expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(ID events__1)", "(ID events__2)"))))
             // Timestamp range constraints (Unix epoch start to year 3000 in seconds)
-            expected.addNode(AssertSMTNode(GreaterThanOrEqualsAssertion("(CREATED_AT events1)", "0")))
-            expected.addNode(AssertSMTNode(LessThanOrEqualsAssertion("(CREATED_AT events1)", "32503680000")))
-            expected.addNode(AssertSMTNode(GreaterThanOrEqualsAssertion("(CREATED_AT events2)", "0")))
-            expected.addNode(AssertSMTNode(LessThanOrEqualsAssertion("(CREATED_AT events2)", "32503680000")))
+            expected.addNode(AssertSMTNode(GreaterThanOrEqualsAssertion("(CREATED_AT events__1)", "0")))
+            expected.addNode(AssertSMTNode(LessThanOrEqualsAssertion("(CREATED_AT events__1)", "32503680000")))
+            expected.addNode(AssertSMTNode(GreaterThanOrEqualsAssertion("(CREATED_AT events__2)", "0")))
+            expected.addNode(AssertSMTNode(LessThanOrEqualsAssertion("(CREATED_AT events__2)", "32503680000")))
             // Query constraint: id > 0
-            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID events1)", "0")))
-            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID events2)", "0")))
+            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID events__1)", "0")))
+            expected.addNode(AssertSMTNode(GreaterThanAssertion("(ID events__2)", "0")))
             expected.addNode(CheckSatSMTNode())
-            expected.addNode(GetValueSMTNode("events1"))
-            expected.addNode(GetValueSMTNode("events2"))
+            expected.addNode(GetValueSMTNode("events__1"))
+            expected.addNode(GetValueSMTNode("events__2"))
 
             assertEquals(expected, response)
         } finally {
             conn.close()
         }
+    }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun compositePkEmitsDisjunctiveDistinctness() {
+        val conn = DriverManager.getConnection("jdbc:h2:mem:composite_pk_test", "sa", "")
+        try {
+            SqlScriptRunner.execCommand(
+                conn,
+                "CREATE TABLE assignments(employee_id int not null, project_id int not null, PRIMARY KEY (employee_id, project_id));"
+            )
+            val schemaDto = DbInfoExtractor.extract(conn)
+            val compositePkGenerator = SmtLibGenerator(schemaDto, 2)
+
+            val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM assignments")
+            val response: SMTLib = compositePkGenerator.generateSMT(selectStatement)
+
+            val expected = SMTLib()
+            expected.addNode(
+                DeclareDatatypeSMTNode(
+                    "AssignmentsRow", ImmutableList.of(
+                        DeclareConstSMTNode("EMPLOYEE_ID", "Int"),
+                        DeclareConstSMTNode("PROJECT_ID", "Int")
+                    )
+                )
+            )
+            expected.addNode(DeclareConstSMTNode("assignments__1", "AssignmentsRow"))
+            expected.addNode(DeclareConstSMTNode("assignments__2", "AssignmentsRow"))
+            // Composite PK: at least one column must differ between row pairs — not each column individually.
+            expected.addNode(AssertSMTNode(OrAssertion(listOf(
+                DistinctAssertion(listOf("(EMPLOYEE_ID assignments__1)", "(EMPLOYEE_ID assignments__2)")),
+                DistinctAssertion(listOf("(PROJECT_ID assignments__1)", "(PROJECT_ID assignments__2)"))
+            ))))
+            expected.addNode(CheckSatSMTNode())
+            expected.addNode(GetValueSMTNode("assignments__1"))
+            expected.addNode(GetValueSMTNode("assignments__2"))
+
+            assertEquals(expected, response)
+        } finally {
+            conn.close()
+        }
+    }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun deleteFromUsersWithWhereClause() {
+        val deleteStatement: Statement = CCJSqlParserUtil.parse("DELETE FROM users WHERE age > 30")
+
+        val response: SMTLib = generator.generateSMT(deleteStatement)
+
+        val expected = tableConstraints
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
+        expected.addNode(CheckSatSMTNode())
+        expected.addNode(GetValueSMTNode("users__1"))
+        expected.addNode(GetValueSMTNode("users__2"))
+
+        assertEquals(expected, response)
+    }
+
+    @Test
+    @Throws(JSQLParserException::class)
+    fun updateUsersWithWhereClause() {
+        val updateStatement: Statement = CCJSqlParserUtil.parse("UPDATE users SET points = 5 WHERE age > 30")
+
+        val response: SMTLib = generator.generateSMT(updateStatement)
+
+        val expected = tableConstraints
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
+        expected.addNode(CheckSatSMTNode())
+        expected.addNode(GetValueSMTNode("users__1"))
+        expected.addNode(GetValueSMTNode("users__2"))
+
+        assertEquals(expected, response)
     }
 }
