@@ -188,7 +188,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return evaluationStack.peek();
     }
 
-    private enum ComparisonOperatorType {
+    public enum ComparisonOperatorType {
         EQUALS_TO,
         NOT_EQUALS_TO,
         GREATER_THAN,
@@ -296,6 +296,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
                 truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, comparisonOperatorType);
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
+                taintForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
                 truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
             } else if (concreteLeftValue instanceof Boolean || concreteRightValue instanceof Boolean) {
                 truthnessOfExpression = calculateTruthnessForBooleanComparison(convertToBoolean(concreteLeftValue), convertToBoolean(concreteRightValue), comparisonOperatorType);
@@ -410,7 +411,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
+    private void taintForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftString);
         Objects.requireNonNull(rightString);
 
@@ -419,6 +420,23 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(leftString, rightString, false);
                 }
+            case NOT_EQUALS_TO:
+            case GREATER_THAN:
+            case GREATER_THAN_EQUALS:
+            case MINOR_THAN:
+            case MINOR_THAN_EQUALS:
+            default:
+                break;
+        }
+    }
+
+
+    public static Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(leftString);
+        Objects.requireNonNull(rightString);
+
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
                 return getEqualityTruthness(leftString, rightString);
             case NOT_EQUALS_TO:
                 return getEqualityTruthness(leftString, rightString).invert();
@@ -436,7 +454,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftNumber);
         Objects.requireNonNull(rightNumber);
 
