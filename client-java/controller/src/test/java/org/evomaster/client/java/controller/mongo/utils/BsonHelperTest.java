@@ -81,24 +81,25 @@ class BsonHelperTest {
 
     @Test
     void testGetTypeMappedTypes() {
-        assertEquals(BsonHelper.NULL_TYPE, BsonHelper.getType(BsonType.NULL));
-        assertEquals(List.class.getTypeName(), BsonHelper.getType(BsonType.ARRAY));
-        assertEquals(Binary.class.getTypeName(), BsonHelper.getType(BsonType.BINARY));
         assertEquals(Boolean.class.getTypeName(), BsonHelper.getType(BsonType.BOOLEAN));
         assertEquals(Date.class.getTypeName(), BsonHelper.getType(BsonType.DATE_TIME));
-        assertEquals(org.bson.BsonDbPointer.class.getTypeName(), BsonHelper.getType(BsonType.DB_POINTER));
-        assertEquals(Document.class.getTypeName(), BsonHelper.getType(BsonType.DOCUMENT));
         assertEquals(Double.class.getTypeName(), BsonHelper.getType(BsonType.DOUBLE));
         assertEquals(Integer.class.getTypeName(), BsonHelper.getType(BsonType.INT32));
         assertEquals(Long.class.getTypeName(), BsonHelper.getType(BsonType.INT64));
         assertEquals(Decimal128.class.getTypeName(), BsonHelper.getType(BsonType.DECIMAL128));
+        assertEquals(ObjectId.class.getTypeName(), BsonHelper.getType(BsonType.OBJECT_ID));
+        assertEquals(String.class.getTypeName(), BsonHelper.getType(BsonType.STRING));
+
+        assertEquals(BsonHelper.NULL_TYPE, BsonHelper.getType(BsonType.NULL));
+        assertEquals(List.class.getTypeName(), BsonHelper.getType(BsonType.ARRAY));
+        assertEquals(Binary.class.getTypeName(), BsonHelper.getType(BsonType.BINARY));
+        assertEquals(org.bson.BsonDbPointer.class.getTypeName(), BsonHelper.getType(BsonType.DB_POINTER));
+        assertEquals(Document.class.getTypeName(), BsonHelper.getType(BsonType.DOCUMENT));
         assertEquals(MaxKey.class.getTypeName(), BsonHelper.getType(BsonType.MAX_KEY));
         assertEquals(MinKey.class.getTypeName(), BsonHelper.getType(BsonType.MIN_KEY));
         assertEquals(Code.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT));
         assertEquals(CodeWithScope.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT_WITH_SCOPE));
-        assertEquals(ObjectId.class.getTypeName(), BsonHelper.getType(BsonType.OBJECT_ID));
         assertEquals(org.bson.BsonRegularExpression.class.getTypeName(), BsonHelper.getType(BsonType.REGULAR_EXPRESSION));
-        assertEquals(String.class.getTypeName(), BsonHelper.getType(BsonType.STRING));
         assertEquals(Symbol.class.getTypeName(), BsonHelper.getType(BsonType.SYMBOL));
         assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
         assertEquals(org.bson.BsonUndefined.class.getTypeName(), BsonHelper.getType(BsonType.UNDEFINED));
@@ -131,5 +132,14 @@ class BsonHelperTest {
         assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(null, "a"));
         assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(doc, null));
         assertThrows(NullPointerException.class, () -> BsonHelper.documentKeys(null));
+    }
+
+    @Test
+    void testIsObjectId() {
+        ObjectId objectId = new ObjectId();
+        assertTrue(BsonHelper.isObjectId(objectId));
+
+        String notObjectId = "not an ObjectId";
+        assertFalse(BsonHelper.isObjectId(notObjectId));
     }
 }

@@ -95,6 +95,19 @@ public class BsonHelper {
         return value != null && value.getClass().getName().equals(ORG_BSON_DOCUMENT);
     }
 
+    private static final String ORG_BSON_TYPES_OBJECT_ID = "org.bson.types.ObjectId";
+
+    /**
+     * Determines whether the given object is a BSON ObjectId.
+     *
+     * @param obj the object to check; should be non-null to determine if it is a BSON ObjectId
+     * @return true if the object is a BSON ObjectId, false otherwise
+     */
+    public static boolean isObjectId(Object obj) {
+        return obj!=null && obj.getClass().getName().equals(ORG_BSON_TYPES_OBJECT_ID);
+    }
+
+
     public static String getType(Object bsonType) {
         Objects.requireNonNull(bsonType);
         try {
