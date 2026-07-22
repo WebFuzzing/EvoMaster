@@ -17,6 +17,8 @@ public class BsonHelper {
 
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
     private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
+    public static final String NULL_TYPE = "null";
+    public static final String BSON_TYPE_NULL = "NULL";
 
     public static Object newDocument(Object bsonDocument) {
         Objects.requireNonNull(bsonDocument);
@@ -94,18 +96,25 @@ public class BsonHelper {
     }
 
     public static String getType(Object bsonType) {
+        Objects.requireNonNull(bsonType);
         try {
             ClassLoader bsonTypeClassLoader = bsonType.getClass().getClassLoader();
-            Class<?> bsonTypeClassMapClass = bsonTypeClassLoader.loadClass("org.bson.codecs.BsonTypeClassMap");
             Class<?> bsonTypeClass = bsonTypeClassLoader.loadClass(ORG_BSON_BSON_TYPE);
-            Object bsonTypeClassMap = bsonTypeClassMapClass.getDeclaredConstructor().newInstance();
-            Method get = bsonTypeClassMapClass.getMethod(GET_METHOD, bsonTypeClass);
-            Object type = get.invoke(bsonTypeClassMap, bsonType);
-            return (String) type.getClass().getMethod(GET_TYPE_NAME_METHOD).invoke(type, null);
+            Object bsonNullTypeInstance = Enum.valueOf(bsonTypeClass.asSubclass(Enum.class), BSON_TYPE_NULL);
+            if (bsonType.equals(bsonNullTypeInstance)) {
+                return NULL_TYPE;
+            } else {
+                Class<?> bsonTypeClassMapClass = bsonTypeClassLoader.loadClass("org.bson.codecs.BsonTypeClassMap");
+                Object bsonTypeClassMap = bsonTypeClassMapClass.getDeclaredConstructor().newInstance();
+                Method get = bsonTypeClassMapClass.getMethod(GET_METHOD, bsonTypeClass);
+                Object type = get.invoke(bsonTypeClassMap, bsonType);
+                return (String) type.getClass().getMethod(GET_TYPE_NAME_METHOD).invoke(type, null);
+            }
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     public static Object getTypeFromNumber(Integer number) {
