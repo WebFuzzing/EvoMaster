@@ -5,13 +5,19 @@ import org.bson.*;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.bson.types.Decimal128;
+import org.bson.types.ObjectId;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -401,6 +407,150 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(distanceNotMatch.isFalse());
     }
 
+    @Test
+    public void testTypeString() {
+        Document doc = new Document().append("name", "John");
+        Bson bsonTrue = Filters.type("name", BsonType.STRING);
+        Bson bsonFalse = Filters.type("name", BsonType.BOOLEAN);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testTypeBoolean() {
+        Document doc = new Document().append("active", true);
+        Bson bsonTrue = Filters.type("active", BsonType.BOOLEAN);
+        Bson bsonFalse = Filters.type("active", BsonType.STRING);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsBoolean() {
+        Document doc = new Document().append("active", true);
+        Bson bsonTrue = Filters.eq("active", true);
+        Bson bsonFalse = Filters.eq("active", false);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsString() {
+        Document doc = new Document().append("name", "Bob");
+        Bson bsonTrue = Filters.eq("name", "Bob");
+        Bson bsonFalse = Filters.eq("name", "Alice");
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsDouble() {
+        Document doc = new Document().append("score", 10.5d);
+        Bson bsonTrue = Filters.eq("score", 10.5d);
+        Bson bsonFalse = Filters.eq("score", 20.5d);
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Truthness distanceMatch = calculator.computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = calculator.computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsInt64() {
+        Document doc = new Document().append("big", 10L);
+        Bson bsonTrue = Filters.eq("big", 10L);
+        Bson bsonFalse = Filters.eq("big", 11L);
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Truthness distanceMatch = calculator.computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = calculator.computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsDecimal128() {
+        Decimal128 value = new Decimal128(new BigDecimal("12.34"));
+        Decimal128 otherValue = new Decimal128(new BigDecimal("56.78"));
+
+        Document doc = new Document().append("amount", value);
+        Bson bsonTrue = Filters.eq("amount", value);
+        Bson bsonFalse = Filters.eq("amount", otherValue);
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Truthness distanceMatch = calculator.computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = calculator.computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+
+    }
+
+    @Test
+    public void testEqualsObjectId() {
+        ObjectId value = new ObjectId("64b7f3b5e13823708a6a1234");
+        ObjectId otherValue = new ObjectId("64b7f3b5e13823708a6a5678");
+
+        Document doc = new Document().append("_id", value);
+        Bson bsonTrue = Filters.eq("_id", value);
+        Bson bsonFalse = Filters.eq("_id", otherValue);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsDate() throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        Date startDate = dateFormat.parse("2025-01-14");
+        Date anotherStartDate = dateFormat.parse("2025-02-14");
+
+
+        Document doc = new Document().append("startDate", startDate);
+        Bson bsonTrue = Filters.eq("startDate", startDate);
+        Bson bsonFalse = Filters.eq("startDate", anotherStartDate);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Disabled
+    @Test
+    public void testEqualsLists() {
+        Document doc = new Document().append("employees", Arrays.asList("Alice", "Bob"));
+        Bson bsonTrue = Filters.eq("employees", Arrays.asList("Alice", "Bob"));
+        Bson bsonFalse = Filters.eq("employees", Arrays.asList("Alice"));
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testSizeStringList() {
+        Document doc = new Document().append("tags", Arrays.asList("qa", "api", "db"));
+        Bson bsonTrue = Filters.size("tags", 3);
+        Bson bsonFalse = Filters.size("tags", 2);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
     @Disabled
     @Test
     public void testNearSphere() {
@@ -561,4 +711,5 @@ public class MongoHeuristicsCalculatorTest {
         DocumentCodec documentCodec = new DocumentCodec();
         return documentCodec.decode(bsonDocument.asBsonReader(), DecoderContext.builder().build());
     }
+
 }

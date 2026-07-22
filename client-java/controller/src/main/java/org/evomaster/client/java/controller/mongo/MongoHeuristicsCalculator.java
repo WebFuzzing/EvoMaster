@@ -2,12 +2,14 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
+import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
 
 import java.util.*;
 import java.util.stream.StreamSupport;
@@ -18,7 +20,6 @@ public class MongoHeuristicsCalculator {
     public static final Truthness TRUE_C = new Truthness(1.0, C);
     public static final Truthness C_FALSE = new Truthness(C, 1.0);
 
-    private static final String ORG_BSON_TYPES_OBJECT_ID = "org.bson.types.ObjectId";
 
     private final TaintHandler taintHandler;
 
@@ -146,6 +147,12 @@ public class MongoHeuristicsCalculator {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison((Number) actualValue, (Number) expectedValue, comparisonOperatorType);
         } else if (actualValue instanceof String && expectedValue instanceof String) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison((String) actualValue, (String) expectedValue, comparisonOperatorType);
+        } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
+        }  else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualValue.toString(), expectedValue.toString(), comparisonOperatorType);
+        } else if (actualValue instanceof Date || expectedValue instanceof Date) {
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
         } else {
             throw new IllegalArgumentException("Unsupported value type: " + actualValue.getClass().getName());
         }
