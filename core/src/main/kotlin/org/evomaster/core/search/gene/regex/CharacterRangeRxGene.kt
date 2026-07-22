@@ -188,6 +188,11 @@ class CharacterRangeRxGene(
         return false
     }
 
+    /**
+     * 1 if [value]'s first character (or its case-swapped counterpart, when caseable) is
+     * within [validRanges], else 0.
+     * @see [RxAbsorbable.absorbableCount]
+     */
     override fun absorbableCount(value: String): Int {
         if (value.isEmpty()) {
             return 0
@@ -202,8 +207,17 @@ class CharacterRangeRxGene(
         return 0
     }
 
+    /**
+     * Always false: a character range always renders exactly one character.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = false
 
+    /**
+     * Forces [value]'s first character onto this gene, swapping case if that's what
+     * matched; mirrors [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val n = absorbableCount(value)

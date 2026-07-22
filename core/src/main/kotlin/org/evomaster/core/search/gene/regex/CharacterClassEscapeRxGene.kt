@@ -359,6 +359,11 @@ class CharacterClassEscapeRxGene(
         return false
     }
 
+    /**
+     * 1 if [value]'s first character (or its case-swapped counterpart, when caseable) is
+     * within [multiCharRange], else 0.
+     * @see [RxAbsorbable.absorbableCount]
+     */
     override fun absorbableCount(value: String): Int {
         if (value.isEmpty()) {
             return 0
@@ -373,8 +378,17 @@ class CharacterClassEscapeRxGene(
         return 0
     }
 
+    /**
+     * Always false: a character-class escape always renders exactly one character.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = false
 
+    /**
+     * Forces [value]'s first character onto this gene, swapping case if that's what
+     * matched; mirrors [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val n = absorbableCount(value)

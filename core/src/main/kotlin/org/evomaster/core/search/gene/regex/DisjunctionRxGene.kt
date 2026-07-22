@@ -190,12 +190,27 @@ class DisjunctionRxGene(
         return ok
     }
 
+    /**
+     * Delegates to a forward walk over [terms].
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [AssertionRepairWalk.absorbableCount]
+     */
     override fun absorbableCount(value: String): Int =
         AssertionRepairWalk.absorbableCount(terms, value)
 
+    /**
+     * True only if every term can independently render "", as this disjunction's own value is
+     * the concatenation of all of them.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean =
         terms.all { (it as RxAbsorbable).canBeZeroWidth }
 
+    /**
+     * Delegates to a forward walk over [terms], mirroring [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     * @see [AssertionRepairWalk.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val placed = AssertionRepairWalk.tryForce(terms, value)
@@ -205,6 +220,10 @@ class DisjunctionRxGene(
         return placed
     }
 
+    /**
+     * Forces every term to zero width individually.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
     override fun forceZeroWidth() {
         require(canBeZeroWidth)
         terms.forEach { (it as RxAbsorbable).forceZeroWidth() }

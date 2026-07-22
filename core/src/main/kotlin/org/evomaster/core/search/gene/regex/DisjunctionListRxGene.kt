@@ -234,11 +234,27 @@ class DisjunctionListRxGene(
         return BranchRanking(bestCount, bestIndex)
     }
 
+    /**
+     * Ranks every branch by how much of [value] it could absorb, without mutating, and
+     * reports the best [RxAbsorbable.absorbableCount].
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [rankBranches]
+     */
     override fun absorbableCount(value: String): Int =
         rankBranches(value)?.absorbableCount ?: 0
 
+    /**
+     * True if at least one branch can render "", as we can select that branch and force it.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = disjunctions.any { it.canBeZeroWidth }
 
+    /**
+     * Activates whichever branch can best absorb [value] (switching [activeDisjunction] if
+     * needed) and forces it there.
+     * @see [RxAbsorbable.tryForce]
+     * @see [rankBranches]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val (bestCount, bestIndex) = rankBranches(value) ?: BranchRanking(0, activeDisjunction)
@@ -254,6 +270,11 @@ class DisjunctionListRxGene(
         return 0
     }
 
+    /**
+     * Forces the active branch to zero width if it can; otherwise switches to the first
+     * branch that can and forces that one instead.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
     override fun forceZeroWidth() {
         require(canBeZeroWidth)
         // try the active branch first to avoid an unnecessary switch

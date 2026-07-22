@@ -82,8 +82,17 @@ class BackReferenceRxGene(
         return containsSameValueAs(other)
     }
 
+    /**
+     * Returns false as we do not want backreferences to mutate a previous group.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = false
 
+    /**
+     * Always 0: a backreference's value is derived entirely from a previous [captureGroup],
+     * so unlike an ordinary leaf it can not be forced to absorb arbitrary candidate text.
+     * @see [RxAbsorbable.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         return 0

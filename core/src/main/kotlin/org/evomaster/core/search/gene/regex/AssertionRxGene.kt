@@ -99,13 +99,27 @@ class AssertionRxGene(
         }
     }
 
+    /**
+     * Always true: an assertion never renders characters ([getValueAsPrintableString] is
+     * always ""), so it can always collapse to zero width.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = true
 
+    /**
+     * Always 0: an assertion never absorbs candidate text into itself, it only supplies a
+     * candidate for its siblings to absorb, via [sampledInnerValue].
+     * @see [RxAbsorbable.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         return 0
     }
 
+    /**
+     * No-op: already always zero-width, so there's nothing to force.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
     override fun forceZeroWidth() {
         // already always zero-width, nothing to do
     }

@@ -115,6 +115,12 @@ class PatternCharacterBlockGene(
         return containsSameValueAs(other)
     }
 
+    /**
+     * How many of [stringBlock]'s leading characters match [value]'s leading characters,
+     * case-insensitively wherever [flags] allows it. 0 when a character does not match,
+     * one of the strings must be consumed completely.
+     * @see [RxAbsorbable.absorbableCount]
+     */
     override fun absorbableCount(value: String): Int {
         var i = 0
         while (i < value.length && i < stringBlock.length) {
@@ -132,8 +138,17 @@ class PatternCharacterBlockGene(
         return i
     }
 
+    /**
+     * True only when [stringBlock] is empty, as a non-empty literal can never render "".
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
     override val canBeZeroWidth: Boolean = stringBlock.isEmpty()
 
+    /**
+     * Commits the matching leading characters' case to match [value]; mirrors
+     * [absorbableCount] exactly.
+     * @see [RxAbsorbable.tryForce]
+     */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         val n = absorbableCount(value)
@@ -146,8 +161,11 @@ class PatternCharacterBlockGene(
         return n
     }
 
+    /**
+     * No-op: only reachable when [stringBlock] is empty, so there's nothing to place.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
     override fun forceZeroWidth() {
         require(canBeZeroWidth)
-        // stringBlock is empty, so there is nothing to place - already zero-width.
     }
 }
