@@ -336,7 +336,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftInstant);
         Objects.requireNonNull(rightInstant);
         final long leftInstantMillis = leftInstant.toEpochMilli();
@@ -344,7 +344,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return calculateTruthnessForDoubleComparison(leftInstantMillis, rightInstantMillis, comparisonOperatorType);
     }
 
-    private static Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(concreteLeftValue);
         Objects.requireNonNull(concreteRightValue);
 
