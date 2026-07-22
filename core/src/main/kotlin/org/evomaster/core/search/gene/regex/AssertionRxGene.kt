@@ -22,6 +22,10 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * the source pattern and found not to match.
  */
 class AssertionRxGene(
+    /**
+     * The assertion's inner disjunction gene, can be null as the disjunction can be unsatisfiable,
+     * in that case [innerGene] is null.
+     */
     val innerGene: DisjunctionListRxGene?
 ) : RxTerm, SimpleGene("assertion") {
 

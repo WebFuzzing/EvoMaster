@@ -90,21 +90,20 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     }
 
     /**
-     * Walks up [ctx]'s ancestry towards the top-level pattern, throwing as soon as it
-     * finds one of the currently-unsupported ways an assertion's ancestry can appear (nested).
-     * Returns normally if it reaches the top-level pattern without hitting either.
+     * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
+     * the currently-unsupported ways an assertion's ancestry can appear (nested).
+     * Returns true if it reaches the top-level pattern without hitting either, false otherwise.
      */
-    private fun rejectIfNestedAssertion(ctx: RegexJavaParser.AssertionContext) {
+    private fun isAssertionNested(ctx: RegexJavaParser.AssertionContext): Boolean {
         var current = ctx.parent
         while (current != null && current !is RegexJavaParser.PatternContext) {
-            if (current is RegexJavaParser.AssertionContext) {
-                throw IllegalStateException("Nested assertions not supported")
-            }
-            if (current is RegexJavaParser.AtomContext && current.disjunction() != null) {
-                throw IllegalStateException("Assertions inside groups are not currently supported")
+            if (current is RegexJavaParser.AssertionContext
+                || (current is RegexJavaParser.AtomContext && current.disjunction() != null)) {
+                return true
             }
             current = current.parent
         }
+        return false
     }
 
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
@@ -257,7 +256,9 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             if (assertionCtx.CARET() != null || assertionCtx.DOLLAR() != null) {
                 res.data = ctx.assertion().text
             } else {
-                rejectIfNestedAssertion(ctx.assertion())
+                require(!isAssertionNested(ctx.assertion())){
+                    "Nested assertions are not currently supported."
+                }
                 val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
                 val assertionGene = AssertionRxGene(innerDisjList)
                 hasAssertions = true
