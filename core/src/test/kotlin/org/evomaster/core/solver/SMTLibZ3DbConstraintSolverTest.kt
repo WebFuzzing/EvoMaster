@@ -5,7 +5,7 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -53,7 +53,7 @@ class SMTLibZ3DbConstraintSolverTest {
     @Test
     fun selectFromUsers() {
 
-        val newActions = solver.solve(schemaDto, "SELECT * FROM Users WHERE name = 'agus';", 2)
+        val newActions = solver.solve(schemaDto, "SELECT * FROM Users WHERE name = 'Alice';", 2)
 
         assertEquals(2, newActions.size)
 
@@ -66,15 +66,15 @@ class SMTLibZ3DbConstraintSolverTest {
                 "ID" -> {
                     assertTrue(gene is SqlPrimaryKeyGene)
                     val child = gene.getViewOfChildren().first()
-                    assertEquals(4, (child as IntegerGene).value)
+                    assertEquals(4L, (child as LongGene).value)
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
-                    assertEquals("agus", (gene as StringGene).value)
+                    assertEquals("Alice", (gene as StringGene).value)
                 }
                 "AGE" -> {
-                    assertTrue(gene is IntegerGene)
-                    assertEquals(5, (gene as IntegerGene).value)
+                    assertTrue(gene is LongGene)
+                    assertEquals(5L, (gene as LongGene).value)
                 }
                 "POINTS" -> {
                     assertTrue(gene is BooleanGene)
@@ -107,15 +107,15 @@ class SMTLibZ3DbConstraintSolverTest {
                 "ID" -> {
                     assertTrue(gene is SqlPrimaryKeyGene)
                     val child = gene.getViewOfChildren().first()
-                    assertEquals(2, (child as IntegerGene).value)
+                    assertEquals(2L, (child as LongGene).value)
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
-                    assertEquals("agus", (gene as StringGene).value)
+                    assertEquals("Alice", (gene as StringGene).value)
                 }
                 "AGE" -> {
-                    assertTrue(gene is IntegerGene)
-                    assertEquals(3, (gene as IntegerGene).value)
+                    assertTrue(gene is LongGene)
+                    assertEquals(3L, (gene as LongGene).value)
                 }
                 "POINTS" -> {
                     assertTrue(gene is BooleanGene)

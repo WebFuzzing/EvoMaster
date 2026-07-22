@@ -29,9 +29,12 @@ import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.output.dto.GeneToDto
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -1709,6 +1712,40 @@ public void test() throws Exception {
             assertTrue(contains("numberMatches(3000000001L)"))
             assertTrue(contains("numberMatches(3000000002L)"))
         }
+    }
+
+    @Test
+    fun testJsonPatchBodyRenderedAsDto() {
+        val format = OutputFormat.KOTLIN_JUNIT_5
+        val baseUrlOfSut = "baseUrlOfSut"
+
+        val schema = ObjectGene("body", listOf(StringGene("name"), IntegerGene("age")))
+        val typeGene = EnumGene("contentType", listOf("application/json-patch+json")).apply { index = 0 }
+        val bodyParam = BodyParam(gene = JsonPatchDocumentGene("patch", schema), typeGene = typeGene)
+
+        val action = RestCallAction("1", HttpVerb.PATCH, RestPath("/items/1"), mutableListOf(bodyParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual, Randomness().apply { updateSeed(42L) })
+
+        val fitnessVal = FitnessValue(0.0)
+        val result = RestCallResult(action.getLocalId()).apply { setStatusCode(200) }
+        val ei = EvaluatedIndividual(fitnessVal, individual, listOf(result))
+
+        val config = getConfig(format)
+        config.dtoForRequestPayload = true
+        config.problemType = EMConfig.ProblemType.REST
+
+        val test = TestCase(test = ei, name = "test")
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val output = writer.convertToCompilableTestCode(test, baseUrlOfSut).toString()
+
+        // The JSON Patch body must be rendered as a DTO list, not as a raw JSON string.
+        assertTrue(output.contains("list_${GeneToDto.JSON_PATCH_OPERATION_DTO}_"),
+            "Expected DTO list variable in generated output")
+        assertTrue(output.contains(".body(list_${GeneToDto.JSON_PATCH_OPERATION_DTO}_"),
+            "Expected DTO variable passed as body argument")
+        assertFalse(output.contains("{\"op\":"),
+            "Body must not contain raw JSON string representation of a patch operation")
     }
 
     @Test

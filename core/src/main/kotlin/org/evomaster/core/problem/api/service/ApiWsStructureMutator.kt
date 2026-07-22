@@ -344,17 +344,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     ): MutableList<List<SqlAction>>? {
 
         if (config.generateSqlDataWithSearch) {
-            return handleSearch(ind, sampler, mutatedGenes, fw)
+            return generateSqlDataWithSearch(ind, sampler, mutatedGenes, fw)
         }
         
-        if (config.generateSqlDataWithDSE) {
-            return handleDSE(ind, sampler, failedWhereQueries)
+        if (config.generateSqlDataWithZ3) {
+            return generateSqlDataWithZ3(ind, sampler, failedWhereQueries)
         }
 
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleSearch(
+    private fun <T : ApiWsIndividual> generateSqlDataWithSearch(
         ind: T,
         sampler: ApiWsSampler<T>,
         mutatedGenes: MutatedGeneSpecification?,
@@ -436,13 +436,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedSqlInsertions
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
+    private fun <T : ApiWsIndividual> generateSqlDataWithZ3(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
 
         val newActions = mutableListOf<List<SqlAction>>()
         for (query in failedWhereQueries) {
-            val newActionsForQuery = z3Solver.solve(schemaDto, query)
+            // numberOfRows is kept at 1 by default, which is enough to force a non-empty result for the
+            // currently supported queries. It is configurable to allow experimenting with more rows once
+            // support for complex JOINs (arbitrary row combinations) is added.
+            val newActionsForQuery = z3Solver.solve(schemaDto, query, config.sqlZ3NumberOfRows)
             newActions.addAll(mutableListOf(newActionsForQuery))
             ind.addInitializingDbActions(actions = newActionsForQuery)
         }

@@ -1401,6 +1401,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             if (a.verb != HttpVerb.OPTIONS) continue
 
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            // The Allow header can only be trusted on an authorized, successful response.
+            // On non-2xx (eg 401/403/404) it may be absent or reflect an error, so skip it.
+            if (!StatusGroup.G_2xx.isInGroup(r.getStatusCode())) continue
             // The Allow header is not mandatory in an OPTIONS response
             // (see https://httpwg.org/specs/rfc9110.html#OPTIONS), so if it is
             // missing we cannot conclude anything, ie it is not a fault.
