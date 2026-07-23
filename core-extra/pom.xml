@@ -16,5 +16,6 @@
     <modules>
         <module>dbconstraint</module>
         <module>solver</module>
+        <module>arazzo-parser</module>
     </modules>
 </project>
