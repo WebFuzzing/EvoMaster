@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A single structural mapping {@code m = (μ, ε)} from a query pattern {@code P_s} onto a graph
@@ -25,8 +26,8 @@ class Neo4jMapping {
     }
 
     private Neo4jMapping(Map<String, Neo4jNode> nodeBindings, Map<String, Neo4jEdge> edgeBindings) {
-        this.nodeBindings = new LinkedHashMap<>(nodeBindings);
-        this.edgeBindings = new LinkedHashMap<>(edgeBindings);
+        this.nodeBindings = new LinkedHashMap<>(Objects.requireNonNull(nodeBindings, "nodeBindings must not be null"));
+        this.edgeBindings = new LinkedHashMap<>(Objects.requireNonNull(edgeBindings, "edgeBindings must not be null"));
     }
 
     Neo4jMapping copy() {
@@ -46,10 +47,14 @@ class Neo4jMapping {
     }
 
     void bindNode(String variable, Neo4jNode node) {
+        Objects.requireNonNull(variable, "variable must not be null");
+        Objects.requireNonNull(node, "node must not be null");
         nodeBindings.put(variable, node);
     }
 
     void bindEdge(String variable, Neo4jEdge edge) {
+        Objects.requireNonNull(variable, "variable must not be null");
+        Objects.requireNonNull(edge, "edge must not be null");
         edgeBindings.put(variable, edge);
     }
 

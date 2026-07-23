@@ -10,6 +10,7 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator.C;
@@ -41,23 +42,47 @@ class Neo4jConditionEvaluator {
 
     /**
      * Returns {@code ρ(condition, mapping)}, or {@code null} when the condition cannot be evaluated
-     * and must be skipped by the aggregation.
+     * under the mapping and must be skipped by the aggregation (an absent property, an unbound
+     * variable, or an opaque {@link RawCondition}). Dispatch is done with a
+     * {@link CypherConditionVisitor} so every condition type is handled explicitly — there is no
+     * {@code instanceof} chain and no silent fall-through for an unhandled type.
      */
     Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
-        if (condition instanceof LabelCondition) {
-            LabelCondition lc = (LabelCondition) condition;
+        Objects.requireNonNull(condition, "condition must not be null");
+        Objects.requireNonNull(mapping, "mapping must not be null");
+        return condition.accept(new TruthnessVisitor(mapping));
+    }
+
+    /**
+     * Computes {@code ρ} for one condition under a fixed mapping. A fresh instance is created per
+     * top-level condition (it carries the mapping), and it recurses through {@link #evaluateCondition}
+     * for the boolean-tree children, so nested conditions dispatch through the same visitor.
+     */
+    private final class TruthnessVisitor implements CypherConditionVisitor<Truthness> {
+
+        private final Neo4jMapping mapping;
+
+        private TruthnessVisitor(Neo4jMapping mapping) {
+            this.mapping = mapping;
+        }
+
+        @Override
+        public Truthness visitLabel(LabelCondition lc) {
             Neo4jNode node = mapping.getNode(lc.getVariableName());
             return node == null ? null : labelInSet(lc.getLabel(), node.getLabels());
         }
-        if (condition instanceof AnyLabelCondition) {
-            Neo4jNode node = mapping.getNode(((AnyLabelCondition) condition).getVariableName());
+
+        @Override
+        public Truthness visitAnyLabel(AnyLabelCondition ac) {
+            Neo4jNode node = mapping.getNode(ac.getVariableName());
             if (node == null) {
                 return null;
             }
             return node.getLabels().isEmpty() ? FALSE_TRUTHNESS : TRUE_TRUTHNESS;
         }
-        if (condition instanceof TypeCondition) {
-            TypeCondition tc = (TypeCondition) condition;
+
+        @Override
+        public Truthness visitType(TypeCondition tc) {
             Neo4jEdge rel = mapping.getEdge(tc.getVariableName());
             if (rel == null) {
                 return null;
@@ -65,26 +90,45 @@ class Neo4jConditionEvaluator {
             taintStringEquals(rel.getType(), tc.getType());
             return stringEqualityTruthness(rel.getType(), tc.getType());
         }
-        if (condition instanceof PropertyCondition) {
-            return evaluateProperty((PropertyCondition) condition, mapping);
+
+        @Override
+        public Truthness visitProperty(PropertyCondition pc) {
+            return evaluateProperty(pc, mapping);
         }
-        if (condition instanceof ComparisonCondition) {
-            return evaluateComparison((ComparisonCondition) condition, mapping);
+
+        @Override
+        public Truthness visitComparison(ComparisonCondition cc) {
+            return evaluateComparison(cc, mapping);
         }
-        if (condition instanceof AndCondition) {
-            return aggregate(((AndCondition) condition).getConditions(), mapping, true);
+
+        @Override
+        public Truthness visitAnd(AndCondition ac) {
+            return aggregate(ac.getConditions(), mapping, true);
         }
-        if (condition instanceof OrCondition) {
-            return aggregate(((OrCondition) condition).getConditions(), mapping, false);
+
+        @Override
+        public Truthness visitOr(OrCondition oc) {
+            return aggregate(oc.getConditions(), mapping, false);
         }
-        if (condition instanceof XorCondition) {
-            return evaluateXor(((XorCondition) condition).getConditions(), mapping);
+
+        @Override
+        public Truthness visitXor(XorCondition xc) {
+            return evaluateXor(xc.getConditions(), mapping);
         }
-        if (condition instanceof NotCondition) {
-            Truthness inner = evaluateCondition(((NotCondition) condition).getCondition(), mapping);
+
+        @Override
+        public Truthness visitNot(NotCondition nc) {
+            Truthness inner = evaluateCondition(nc.getCondition(), mapping);
             return inner == null ? null : inner.invert();
         }
-        return null;
+
+        @Override
+        public Truthness visitRaw(RawCondition rc) {
+            // A RawCondition is a WHERE predicate the parser kept as raw text because it could not
+            // break it into operands. With no resolved operands there is no value to measure a distance
+            // against.
+            return null;
+        }
     }
 
     private Truthness evaluateProperty(PropertyCondition pc, Neo4jMapping mapping) {
@@ -277,6 +321,13 @@ class Neo4jConditionEvaluator {
         return satisfied ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
     }
 
+    /**
+     * ρ for an equality {@code a = b} where either side is an already-valuated operand. The
+     * right-hand value may be the Cypher {@code null} literal (a {@link LiteralOperand} whose value
+     * is {@code null}); a {@code null} on either side yields {@code null} here, mirroring Cypher's
+     * ternary logic where any comparison against {@code null} is {@code null} (unknown) rather than
+     * true or false, so the aggregation skips it instead of scoring a gradient.
+     */
     private Truthness equalityTruthness(Object a, Object b) {
         if (a == null || b == null) {
             return null;
@@ -300,7 +351,15 @@ class Neo4jConditionEvaluator {
         }
     }
 
+    /**
+     * ρ for {@code a < b} on numeric operands. Both are required to be non-null: the caller only
+     * reaches this after resolving each side to a present value (a {@code null}/absent operand is
+     * filtered out before dispatch). A non-numeric value still yields {@code null} — there is no
+     * numeric gradient to compute — but a {@code null} argument is a contract violation, not that case.
+     */
     private Truthness numericLessThan(Object a, Object b) {
+        Objects.requireNonNull(a, "left operand must not be null");
+        Objects.requireNonNull(b, "right operand must not be null");
         Double da = asDouble(a);
         Double db = asDouble(b);
         if (da == null || db == null) {
@@ -314,11 +373,14 @@ class Neo4jConditionEvaluator {
      * is the left-alignment edit distance scaled from base {@code C} (so it never drops below {@code C})
      * and {@code ofFalse = 1}. Used where a string is compared for equality on its own — relationship
      * types and string-valued property/WHERE equality.
+     * <p>
+     * Both arguments must be non-null: this is only reached with two resolved strings (a relationship
+     * type, or two string values already confirmed present by {@link #equalityTruthness}). A Cypher
+     * {@code null} literal never reaches here — it is handled one level up by {@link #equalityTruthness}.
      */
     static Truthness stringEqualityTruthness(String a, String b) {
-        if (a == null || b == null) {
-            return null;
-        }
+        Objects.requireNonNull(a, "a must not be null");
+        Objects.requireNonNull(b, "b must not be null");
         if (a.equals(b)) {
             return TRUE_TRUTHNESS;
         }
@@ -334,9 +396,8 @@ class Neo4jConditionEvaluator {
      * on the label path (applying it here as well would double-count it).
      */
     static Truthness stringSimilarityTruthness(String a, String b) {
-        if (a == null || b == null) {
-            return null;
-        }
+        Objects.requireNonNull(a, "a must not be null");
+        Objects.requireNonNull(b, "b must not be null");
         long distance = DistanceHelper.getLeftAlignmentDistance(a, b);
         double ofTrue = 1d - TruthnessUtils.normalizeValue((double) distance);
         return new Truthness(ofTrue, a.equals(b) ? 0d : 1d);
@@ -371,6 +432,8 @@ class Neo4jConditionEvaluator {
     }
 
     static Truthness getStartsWith(String str, String prefix) {
+        Objects.requireNonNull(str, "str must not be null");
+        Objects.requireNonNull(prefix, "prefix must not be null");
         if (str.startsWith(prefix)) {
             return TRUE_TRUTHNESS;
         }
@@ -382,6 +445,8 @@ class Neo4jConditionEvaluator {
     }
 
     static Truthness getEndsWith(String str, String suffix) {
+        Objects.requireNonNull(str, "str must not be null");
+        Objects.requireNonNull(suffix, "suffix must not be null");
         if (str.endsWith(suffix)) {
             return TRUE_TRUTHNESS;
         }
@@ -394,6 +459,8 @@ class Neo4jConditionEvaluator {
     }
 
     static Truthness getContains(String str, String substring) {
+        Objects.requireNonNull(str, "str must not be null");
+        Objects.requireNonNull(substring, "substring must not be null");
         if (str.contains(substring)) {
             return TRUE_TRUTHNESS;
         }

@@ -179,6 +179,27 @@ class Neo4jHeuristicsCalculatorTest {
         assertTrue(t.getOfTrue() >= Neo4jHeuristicsCalculator.C && t.getOfTrue() < 1.0);
     }
 
+    @Test
+    void testEqualityAgainstNullLiteralIsSkipped() throws CypherParserException {
+        // Cypher's null semantics: any comparison against null is null (unknown), never true or
+        // false, so `= null` is unsatisfiable.
+        Neo4jNode a = node("a", labels("Person"), props("name", "Ann"));
+        Neo4jNode b = node("b", labels("Person"), props("name", "Bob"));
+        Neo4jGraph g = new Neo4jGraph(Arrays.asList(a, b),
+                Collections.singletonList(rel("e", "KNOWS", "a", "b")));
+
+        Truthness baseline = calculator.computeHeuristic(
+                parser.parse("MATCH (a)-[r]->(b) RETURN b"), g);
+        Truthness whereNull = calculator.computeHeuristic(
+                parser.parse("MATCH (a)-[r]->(b) WHERE b.name = null RETURN b"), g);
+        Truthness inlineNull = calculator.computeHeuristic(
+                parser.parse("MATCH (a)-[r]->(b {name: null}) RETURN b"), g);
+
+        assertTrue(baseline.isTrue());
+        assertEquals(baseline.getOfTrue(), whereNull.getOfTrue(), DELTA);
+        assertEquals(baseline.getOfTrue(), inlineNull.getOfTrue(), DELTA);
+    }
+
     private static Neo4jNode node(String id, Set<String> labels, Map<String, Object> props) {
         return new Neo4jNode(id, labels, props);
     }

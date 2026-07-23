@@ -64,7 +64,8 @@ public class Neo4jHeuristicsCalculator {
      * {@code [0,1]}, where 0 means the query is satisfied.
      */
     public double computeDistance(MatchOperation query, Neo4jGraph graph) {
-        return 1.0d - computeHeuristic(query, graph).getOfTrue();
+        Truthness heuristic = computeHeuristic(query, graph);
+        return 1.0d - heuristic.getOfTrue();
     }
 
     private Truthness computeHeuristicPattern(MatchPattern pattern, Neo4jGraph graph, List<Neo4jMapping> mappings) {
@@ -78,6 +79,10 @@ public class Neo4jHeuristicsCalculator {
      * no label/property check (those are conditions evaluated by H_where).
      */
     Truthness computeHeuristicMatchNodes(int required, int available) {
+        if (required < 0 || available < 0) {
+            throw new IllegalArgumentException(
+                    "node counts must be non-negative, got required=" + required + ", available=" + available);
+        }
         if (required == 0) {
             return TRUE_TRUTHNESS;
         }
