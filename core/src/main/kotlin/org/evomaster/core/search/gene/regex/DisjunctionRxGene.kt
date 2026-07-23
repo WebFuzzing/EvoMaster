@@ -213,11 +213,7 @@ class DisjunctionRxGene(
      */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        val placed = AssertionRepairWalk.tryForce(terms, value)
-        if (placed == 0 && canBeZeroWidth) {
-            forceZeroWidth()
-        }
-        return placed
+        return AssertionRepairWalk.tryForce(terms, value)
     }
 
     /**
