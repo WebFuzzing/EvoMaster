@@ -25,6 +25,11 @@ public class LabelCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitLabel(this);
+    }
+
+    @Override
     public String toString() {
         return variableName + ":" + label;
     }

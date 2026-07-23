@@ -21,6 +21,11 @@ public class XorCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitXor(this);
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
         for (int i = 0; i < conditions.size(); i++) {

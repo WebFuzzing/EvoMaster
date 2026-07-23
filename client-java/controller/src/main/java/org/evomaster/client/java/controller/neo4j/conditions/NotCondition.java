@@ -18,6 +18,11 @@ public class NotCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitNot(this);
+    }
+
+    @Override
     public String toString() {
         return "NOT " + condition;
     }

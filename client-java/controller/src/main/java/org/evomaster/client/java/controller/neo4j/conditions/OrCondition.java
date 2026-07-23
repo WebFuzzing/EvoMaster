@@ -21,6 +21,11 @@ public class OrCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitOr(this);
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
         for (int i = 0; i < conditions.size(); i++) {

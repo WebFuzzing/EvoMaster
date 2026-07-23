@@ -25,6 +25,11 @@ public class TypeCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitType(this);
+    }
+
+    @Override
     public String toString() {
         return "type(" + variableName + ") = " + type;
     }
