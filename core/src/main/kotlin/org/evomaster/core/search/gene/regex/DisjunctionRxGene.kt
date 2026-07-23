@@ -250,7 +250,11 @@ class DisjunctionRxGene(
             for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
                 assertion.randomize(randomness, false)
                 val candidate = assertion.sampledInnerValue() ?: break
-                if (candidate.isEmpty() || AssertionRepairWalk.tryForce(genesAfter, candidate) == candidate.length) {
+                if (candidate.isEmpty()
+                    || AssertionRepairWalk.absorbableCount(genesAfter, candidate) == candidate.length) {
+                    if (candidate.isNotEmpty()) {
+                        AssertionRepairWalk.tryForce(genesAfter, candidate)
+                    }
                     satisfied = true
                     break
                 }
