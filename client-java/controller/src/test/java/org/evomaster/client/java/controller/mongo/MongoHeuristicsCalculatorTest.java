@@ -720,37 +720,47 @@ public class MongoHeuristicsCalculatorTest {
 
     @Test
     public void testTaintHandlerCalledForStringEquals() {
-        TaintHandler taintHandler = new TaintHandlerExecutionTracer();
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+        ExecutionTracer.reset();
+        try {
+            TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+            MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
 
-        Document doc = new Document().append("name", "_EM_1111_XYZ_");
-        Bson filter = Filters.eq("name", "bar");
+            Document doc = new Document().append("name", "_EM_1111_XYZ_");
+            Bson filter = Filters.eq("name", "bar");
 
-        calculator.computeHeuristicDocument(convertToDocument(filter), doc);
-        final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
-        assertEquals(1, additionalInfos.size());
-        final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
-        assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
-        assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
-        assertEquals("bar", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+            calculator.computeHeuristicDocument(convertToDocument(filter), doc);
+            final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfos.size());
+            final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
+            assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
+            assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
+            assertEquals("bar", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+        } finally {
+            ExecutionTracer.reset();
+        }
     }
 
     @Test
     public void testTaintHandlerCalledForObjectIdEquals() {
-        TaintHandler taintHandler = new TaintHandlerExecutionTracer();
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+        ExecutionTracer.reset();
+        try {
+            TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+            MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
 
-        Document doc = new Document().append("name", "_EM_1111_XYZ_");
-        ObjectId objectId = new ObjectId("64b7f3b5e13823708a6a1234");
-        Bson filter = Filters.eq("name", objectId);
+            Document doc = new Document().append("name", "_EM_1111_XYZ_");
+            ObjectId objectId = new ObjectId("64b7f3b5e13823708a6a1234");
+            Bson filter = Filters.eq("name", objectId);
 
-        calculator.computeHeuristicDocument(convertToDocument(filter), doc);
-        final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
-        assertEquals(1, additionalInfos.size());
-        final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
-        assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
-        assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
-        assertEquals("64b7f3b5e13823708a6a1234", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+            calculator.computeHeuristicDocument(convertToDocument(filter), doc);
+            final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfos.size());
+            final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
+            assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
+            assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
+            assertEquals("64b7f3b5e13823708a6a1234", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+        } finally {
+            ExecutionTracer.reset();
+        }
     }
 
 
