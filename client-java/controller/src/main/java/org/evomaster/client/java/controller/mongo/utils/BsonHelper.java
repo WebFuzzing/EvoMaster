@@ -81,7 +81,8 @@ public class BsonHelper {
         try {
             return (Set<String>) bsonDocument.getClass().getMethod(KEY_SET_METHOD).invoke(bsonDocument);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            return null;
+            // This exception shouldn't go unnoticed.
+            throw new RuntimeException(e);
         }
     }
 
