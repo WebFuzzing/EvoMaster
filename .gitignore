@@ -118,6 +118,7 @@ Migrations/
 /core-tests/client-java/distance-heuristics/target/
 /em.toml
 
+/core-extra/arazzo-parser/target/
 /core-extra/solver/target/
 /em.yaml
 /core-tests/e2e-tests/spring/spring-rest-openapi-v2/em.yaml
