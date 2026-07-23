@@ -7,19 +7,22 @@ import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
+import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 
 public class MongoHeuristicsCalculatorTest {
@@ -714,6 +717,43 @@ public class MongoHeuristicsCalculatorTest {
         Truthness result = calculator.computeHeuristicDocument(convertToDocument(emptyFilter), document);
         assertTrue(result.isTrue());
     }
+
+    @Test
+    public void testTaintHandlerCalledForStringEquals() {
+        TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+
+        Document doc = new Document().append("name", "_EM_1111_XYZ_");
+        Bson filter = Filters.eq("name", "bar");
+
+        calculator.computeHeuristicDocument(convertToDocument(filter), doc);
+        final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfos.size());
+        final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
+        assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
+        assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
+        assertEquals("bar", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+    }
+
+    @Test
+    public void testTaintHandlerCalledForObjectIdEquals() {
+        TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+
+        Document doc = new Document().append("name", "_EM_1111_XYZ_");
+        ObjectId objectId = new ObjectId("64b7f3b5e13823708a6a1234");
+        Bson filter = Filters.eq("name", objectId);
+
+        calculator.computeHeuristicDocument(convertToDocument(filter), doc);
+        final List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfos.size());
+        final Map<String, Set<StringSpecializationInfo>> stringSpecializationsView = additionalInfos.get(0).getStringSpecializationsView();
+        assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
+        assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
+        assertEquals("64b7f3b5e13823708a6a1234", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+    }
+
+
 
     public static Document convertToDocument(Bson filter) {
         BsonDocument bsonDocument = filter.toBsonDocument();

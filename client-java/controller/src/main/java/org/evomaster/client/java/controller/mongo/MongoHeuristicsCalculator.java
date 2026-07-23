@@ -153,7 +153,7 @@ public class MongoHeuristicsCalculator {
         return TRUE_C;
     }
 
-    private static Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
+    private Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(expectedValue);
 
@@ -161,11 +161,21 @@ public class MongoHeuristicsCalculator {
         if (actualValue instanceof Number && expectedValue instanceof Number) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison((Number) actualValue, (Number) expectedValue, comparisonOperatorType);
         } else if (actualValue instanceof String && expectedValue instanceof String) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison((String) actualValue, (String) expectedValue, comparisonOperatorType);
+            String actualString = (String) actualValue;
+            String expectedString = (String) expectedValue;
+            if(taintHandler!=null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
+                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
+            }
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
         } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
         }  else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualValue.toString(), expectedValue.toString(), comparisonOperatorType);
+            String actualString = actualValue.toString();
+            String expectedString = expectedValue.toString();
+            if(taintHandler!=null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
+                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
+            }
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
         } else if (actualValue instanceof Date || expectedValue instanceof Date) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
         } else {
