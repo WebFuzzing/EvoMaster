@@ -481,5 +481,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
+        checkSameAsJava("abc|(?=[a&&b])def")
     }
 }

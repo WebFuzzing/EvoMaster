@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.root.SimpleGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -27,7 +27,12 @@ class AssertionRxGene(
      * in that case [innerGene] is null.
      */
     val innerGene: DisjunctionListRxGene?
-) : RxTerm, SimpleGene("assertion") {
+) : RxTerm, CompositeFixedGene("assertion", listOfNotNull(innerGene)) {
+
+    /**
+     *  To handle null [innerGene], in which case the assertion is unsatisfiable.
+     */
+    override fun canBeChildless() = true
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
@@ -45,8 +50,13 @@ class AssertionRxGene(
         innerGene?.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun setValueWithRawString(value: String) {
-        innerGene?.setFromStringValue(value)
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
     override fun shallowMutate(
