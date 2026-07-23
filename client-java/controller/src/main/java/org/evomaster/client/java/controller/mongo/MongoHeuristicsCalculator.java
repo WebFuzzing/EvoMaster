@@ -133,9 +133,24 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((TypeOperation) operation, document);
         } else if (operation instanceof NearSphereOperation) {
             return computeHeuristic((NearSphereOperation) operation, document);
+        } else if (operation instanceof TrueOperation) {
+            return computeHeuristic((TrueOperation) operation, document);
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
         }
+    }
+
+    /**
+     * This one-line implementation is kept for consistency with the other computeHeuristic methods,
+     * even though it always returns TRUE_C.
+     *
+     * @param operation
+     * @param document
+     * @return
+     */
+    private Truthness computeHeuristic(TrueOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+        return TRUE_C;
     }
 
     private static Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {

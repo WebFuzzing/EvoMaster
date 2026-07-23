@@ -37,13 +37,34 @@ public class QueryParser {
     );
 
     public QueryOperation parse(Object bsonDocument) {
+        if (bsonDocument == null) {
+            return null;
+        }
+
         List<QueryOperation> results = selectors.stream()
                 .map(selector -> selector.getOperation(bsonDocument))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        if (results.size() != 1) {
+        if (results.isEmpty()) {
             return null;
+        }
+
+        if (results.size() > 1) {
+            // If multiple selectors match, prioritize those that are NOT ImplicitSelector
+            List<QueryOperation> nonImplicit = selectors.stream()
+                    .filter(s -> !(s instanceof ImplicitSelector))
+                    .map(selector -> selector.getOperation(bsonDocument))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (nonImplicit.size() == 1) {
+                return nonImplicit.get(0);
+            }
+            // If still ambiguous or none, we might have a problem, but let's return the first one
+            // or null if it's really ambiguous.
+            // For now, return the first non-implicit, or first result.
+            return nonImplicit.isEmpty() ? results.get(0) : nonImplicit.get(0);
         }
 
         return results.get(0);

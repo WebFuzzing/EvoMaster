@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -497,7 +497,7 @@ class QueryParserTest {
     void testParseImplicitEqualsWithEmptyDocument() {
         Document query = new Document();
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertTrue(operation instanceof TrueOperation);
     }
 
     @Test
@@ -813,6 +813,31 @@ class QueryParserTest {
         assertEquals("results", all.getFieldName());
         assertEquals(new ArrayList<>(), all.getValues());
 
+    }
+
+    @Test
+    void testParseTrueOperation() {
+        Document query = new Document();
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof TrueOperation);
+
+    }
+
+    @Test
+    void testParseNorTrueOperation() {
+        Document query = new Document(
+                "$nor",
+                Collections.singletonList(new Document())
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof NorOperation);
+        NorOperation nor = (NorOperation) operation;
+        assertEquals(1, nor.getConditions().size());
+        assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
     }
 
 }

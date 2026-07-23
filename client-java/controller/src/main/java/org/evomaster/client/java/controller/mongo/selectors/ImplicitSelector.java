@@ -25,6 +25,11 @@ public class ImplicitSelector extends QuerySelector {
             return null;
         }
 
+        Set<String> keys = documentKeys(query);
+        if (keys.isEmpty()) {
+            return new TrueOperation(); // Represents the "{}" MongoDB query, which matches all documents
+        }
+
         if (!isUniqueEntry((Map<?, ?>) query)) {
             return handleMultipleFields(query);
         } else {
@@ -38,8 +43,12 @@ public class ImplicitSelector extends QuerySelector {
         }
 
         Set<String> keys = documentKeys(query);
-        if (keys == null || keys.isEmpty()) {
+        if (keys == null) {
             return false;
+        }
+
+        if (keys.isEmpty()) {
+            return true;
         }
 
         // If any key starts with $, this is not an implicit query

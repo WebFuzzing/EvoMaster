@@ -706,6 +706,15 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(existsFalse), docNull).isFalse());
     }
 
+    @Test
+    public void testTrueOperation() {
+        Document document = new Document().append("name", "Bob");
+        Bson emptyFilter = Filters.empty();
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Truthness result = calculator.computeHeuristicDocument(convertToDocument(emptyFilter), document);
+        assertTrue(result.isTrue());
+    }
+
     public static Document convertToDocument(Bson filter) {
         BsonDocument bsonDocument = filter.toBsonDocument();
         DocumentCodec documentCodec = new DocumentCodec();
