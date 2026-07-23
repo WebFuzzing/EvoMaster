@@ -1,0 +1,375 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "2.0.0",
+    "title": "API for REST News"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "country-api",
+      "description": "API for country data."
+    },
+    {
+      "name": "news-rest-api",
+      "description": "Handling of creating and retrieving news"
+    }
+  ],
+  "paths": {
+    "/countries": {
+      "get": {
+        "tags": [
+          "country-api"
+        ],
+        "summary": "Retrieve list of country names",
+        "operationId": "getUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/news": {
+      "get": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Get all the news",
+        "operationId": "getUsingGET_1",
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "authorId",
+            "in": "query",
+            "description": "The id of the author who wrote the news",
+            "required": false,
+            "type": "string",
+            "allowEmptyValue": false
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "description": "The country name",
+            "required": false,
+            "type": "string",
+            "allowEmptyValue": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NewsDto"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Create a news",
+        "operationId": "createNewsUsingPOST",
+        "consumes": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "Text of news, plus author id and country. Should not specify id or creation time",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/NewsDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/news/{id}": {
+      "get": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Get a single news specified by id",
+        "operationId": "getNewsUsingGET",
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The numeric id of the news",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/NewsDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Update an existing news",
+        "operationId": "updateUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "The news that will replace the old one. Cannot change its id though.",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/NewsDto"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The numeric id of the news",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Delete a news with the given id",
+        "operationId": "deleteUsingDELETE",
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The numeric id of the news",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/news/{id}/text": {
+      "put": {
+        "tags": [
+          "news-rest-api"
+        ],
+        "summary": "Update the text content of an existing news",
+        "operationId": "updateTextUsingPUT",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/vnd.tsdes.news+json;charset=UTF-8;version=2",
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The numeric id of the news",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "text",
+            "description": "The new text which will replace the old one",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "NewsDto": {
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "description": "The id of the author that wrote/created this news"
+        },
+        "country": {
+          "type": "string",
+          "description": "The country this news is related to"
+        },
+        "creationTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the news was first created/published"
+        },
+        "id": {
+          "type": "string",
+          "description": "Deprecated. Use newsId instead"
+        },
+        "newsId": {
+          "type": "string",
+          "description": "The id of the news"
+        },
+        "text": {
+          "type": "string",
+          "description": "The text of the news"
+        }
+      },
+      "title": "NewsDto"
+    }
+  }
+}

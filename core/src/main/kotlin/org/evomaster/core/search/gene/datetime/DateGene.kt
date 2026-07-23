@@ -112,9 +112,14 @@ class DateGene(
         extraCheck: Boolean
     ): String {
         return if (mode == GeneUtils.EscapeMode.EJSON) {
-            val millis = LocalDate.of(year.value, month.value, day.value).atStartOfDay().atZone(ZoneId.systemDefault())
-                .toInstant().toEpochMilli()
-            "{\"\$date\":{\"\$numberLong\":\"$millis\"}}"
+            val millis = try{
+                LocalDate.of(year.value, month.value, day.value).atStartOfDay().atZone(ZoneId.systemDefault())
+                    .toInstant().toEpochMilli()
+            }catch (e : Exception){
+                //this can happen if date is invalid
+                -1
+            }
+            $$"{\"$date\":{\"$numberLong\":\"$$millis\"}}"
         } else {
             "\"${getValueAsRawString()}\""
         }
@@ -209,4 +214,18 @@ class DateGene(
         return false
     }
 
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DD")
+        val date = try{
+            LocalDate.parse(value, formatter)
+        }catch (ex: DateTimeParseException){
+            return false
+        }
+
+        year.value = date.year
+        month.value = date.monthValue
+        day.value = date.dayOfMonth
+        return true
+    }
 }

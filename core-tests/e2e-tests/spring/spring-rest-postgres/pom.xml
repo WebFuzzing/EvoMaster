@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests-spring</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring-rest-postgres</artifactId>
@@ -114,6 +114,10 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-postgres-test-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

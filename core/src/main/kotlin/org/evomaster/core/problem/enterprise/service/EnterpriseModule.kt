@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.AbstractModule
+import org.evomaster.core.llm.service.DictionaryService
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
@@ -11,9 +12,6 @@ abstract class EnterpriseModule : AbstractModule() {
         super.configure()
 
         bind(WFCReportWriter::class.java)
-            .asEagerSingleton()
-
-        bind(LlmService::class.java)
             .asEagerSingleton()
 
         bind(SSRFAnalyser::class.java)

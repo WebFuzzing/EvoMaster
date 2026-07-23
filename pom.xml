@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>6.0.1-SNAPSHOT</version>
+    <version>6.1.2-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -212,19 +212,23 @@
         <addOpens> --add-opens java.base/jdk.internal.access.foreign=ALL-UNNAMED  --add-opens java.base/java.nio=ALL-UNNAMED  --add-opens java.base/java.lang.ref=ALL-UNNAMED --add-opens java.base/sun.nio.cs=ALL-UNNAMED --add-opens java.base/java.nio.charset=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--
+            Max heap for the test JVMs (surefire/failsafe). Declared as a property so a submodule
+            can override just the value in its own <properties> without redeclaring the plugin argLine.
+        -->
+        <testHeapXmx>4096m</testHeapXmx>
         <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
         <!--  SpringBoot 2.x does not like JDK 21 -->
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.5.1</wfc.version>
+        <wfc.version>0.6.0</wfc.version>
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <slf4j.version>1.7.24</slf4j.version>
-        <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <!--
             Using latest, eg 2.16.0, breaks build, as Maven Shade Plugin
@@ -363,6 +367,11 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-test-utils-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-postgres-test-utils</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -579,38 +588,6 @@
                 <version>${jetty.version}</version>
             </dependency>
 
-            <!-- Jersey -->
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-servlet-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-jetty-http</artifactId>
-                <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.inject</groupId>
-                <artifactId>jersey-hk2</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
 
             <!-- Jackson -->
             <dependency>
@@ -868,7 +845,7 @@
             <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
-                <version>4.3.0</version>
+                <version>5.5.7</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1098,7 +1075,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx${testHeapXmx} -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <runOrder>alphabetical</runOrder>
                         <excludes>
                             <!-- Do NOT run integration tests with surefire... use failsafe!!!-->
@@ -1118,7 +1095,7 @@
                         <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <trimStackTrace>false</trimStackTrace>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx${testHeapXmx} -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                     <executions>
@@ -1231,7 +1208,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.1</version>
+                    <version>3.6.2</version>
                 </plugin>
 
                 <!-- To sign Jar files before uploading them to Maven Central -->

@@ -9,6 +9,7 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -44,6 +45,13 @@ abstract class TestCaseWriter {
 
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
+
+
+        /**
+        * message for the assertion that flags a missing expected timeout (Java/Kotlin/C#)
+        * JS uses await expect(...).rejects.toThrow() and Python uses with self.assertRaises(...)
+        */
+        private const val EXPECTED_TIMEOUT_MSG = "Expected a timeout"
     }
 
 
@@ -320,10 +328,19 @@ abstract class TestCaseWriter {
             format.isPython() -> lines.add("try:")
         }
 
+        // a HTTP_TIMEOUT fault means the call is expected to time out (client timeout == fuzzing
+        // tcpTimeoutMs). if no timeout exception is thrown, the fault did not reproduce -> fail
+        val timeoutFault = res is EnterpriseActionResult
+                && res.getFaults().any { it.category == ExperimentalFaultCategory.HTTP_TIMEOUT }
+
         lines.indented {
             addActionLines(call,index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
 
-            if (shouldFailIfExceptionNotThrown(res)) {
+            if (timeoutFault) {
+                // only Java/Kotlin/C# reach here; JS uses expect(...).rejects.toThrow() and
+                // Python uses with self.assertRaises(...), neither wrapped in this try/catch
+                lines.add("fail(\"$EXPECTED_TIMEOUT_MSG\");")
+            } else if (shouldFailIfExceptionNotThrown(res)) {
                 if (!format.isJavaScript()) {
                     /*
                         TODO need a way to do it for JS, see
@@ -372,17 +389,16 @@ abstract class TestCaseWriter {
             format.isPython() -> lines.add("except Exception as e:")
         }
 
-        res.getErrorMessage()?.let {
-            lines.indented {
+        lines.indented {
+            res.getErrorMessage()?.let {
                 lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
+            }
+            if (format.isPython()) {
+                lines.add("pass")
             }
         }
 
-        if (format.isPython()) {
-            lines.indented {
-                lines.add("pass")
-            }
-        } else {
+        if (!format.isPython()) {
             lines.add("}")
         }
     }

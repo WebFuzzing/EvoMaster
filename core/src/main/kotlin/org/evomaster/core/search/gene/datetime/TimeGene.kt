@@ -16,6 +16,9 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
  * Using RFC3339
@@ -254,4 +257,20 @@ class TimeGene(
         return !onlyValidTimes || isValidTime()
     }
 
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        val formatter = DateTimeFormatter.ofPattern("HH:MM:SS")
+        val localTime = try{
+            LocalTime.parse(value, formatter)
+        }catch(ex: DateTimeParseException){
+            return false
+        }
+
+        hour.value = localTime.hour
+        minute.value = localTime.minute
+        second.value = localTime.second
+
+        //TODO milliseconds and offset
+        return true
+    }
 }

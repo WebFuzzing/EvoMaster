@@ -10,6 +10,7 @@ import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.AuthenticationRequiredException
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -196,7 +197,7 @@ object OpenApiAccess {
         for (i in 0 until attempts) {
             try {
 
-                 val client = ClientBuilder.newClient()
+                 val client = HttpClientFactory.createTrustingJerseyClient()
                  val builder = client.target(openApiUrl)
                      .request("*/*") //cannot assume it is in JSON... could be YAML as well
 
@@ -211,16 +212,20 @@ object OpenApiAccess {
                       */
                      val baseUrl = "${url.protocol}://${url.host}:${url.port}"
 
+                     //TODO should handle CreateUsers here?
+
                      val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(
                          client,
                          baseUrl,
-                         listOf(ecl)
+                         listOf(ecl),
+                         listOf()
                      )
                         else mapOf()
                      val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(
                          client,
                          baseUrl,
-                         listOf(ecl)
+                         listOf(ecl),
+                         listOf()
                      )
                         else mapOf()
 

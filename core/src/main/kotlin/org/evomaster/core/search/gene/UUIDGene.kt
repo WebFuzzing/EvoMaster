@@ -97,4 +97,16 @@ class UUIDGene(
         return this.mostSigBits.unsafeCopyValueFrom(gene.mostSigBits)
                 && this.leastSigBits.unsafeCopyValueFrom(gene.leastSigBits)
     }
+
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        val uuid = try{
+            UUID.fromString(value)
+        } catch (e: IllegalArgumentException){
+            return false
+        }
+        mostSigBits.value = uuid.mostSignificantBits
+        leastSigBits.value = uuid.leastSignificantBits
+        return true
+    }
 }

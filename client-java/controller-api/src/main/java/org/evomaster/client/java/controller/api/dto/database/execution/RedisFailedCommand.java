@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Each time a Redis command is executed and returns no data, we keep track of which keys were involved,
  * as well as relevant information such as the command type.
@@ -12,20 +15,26 @@ public class RedisFailedCommand {
     public String command;
 
     /**
-     * Command type. Corresponds to a RedisCommandType dataType.
+     * Keys involved. Could be null if the command does not have any key in the arguments. For example: KEYS (pattern).
      */
-    public String type;
+    public List<String> keys;
 
     /**
-     * Key involved. Could be null if the command does not have a key in the arguments. For example: KEYS (pattern).
+     * Pattern involved. It'd only apply to commands with pattern like KEYS.
      */
-    public String key;
+    public String pattern;
+
+    /**
+     * Field involved. It'd only apply to hash commands with a field like HGET.
+     */
+    public String field;
 
     public RedisFailedCommand() {}
 
-    public RedisFailedCommand(String command, String key, String type) {
+    public RedisFailedCommand(String command, List<String> keys, String pattern, String field) {
         this.command = command;
-        this.key = key;
-        this.type = type;
+        this.keys =  new ArrayList<>(keys);
+        this.pattern = pattern;
+        this.field = field;
     }
 }

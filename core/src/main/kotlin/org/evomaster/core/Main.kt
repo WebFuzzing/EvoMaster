@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
 import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
@@ -450,7 +451,7 @@ class Main {
                     epc.markStartingFlakiness()
 
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
-                    flakinessDetector.reexecuteToDetectFlakiness()
+                    flakinessDetector.applyPhase()
                 } else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
@@ -611,6 +612,10 @@ class Main {
                 EMConfig.ProblemType.WEBFRONTEND -> {
                     //TODO black-box mode
                     WebModule()
+                }
+
+                EMConfig.ProblemType.MCP -> {
+                    throw IllegalStateException("MCP server analysis is not yet supported")
                 }
 
                 //this should never happen, unless we add new type and forget to add it here
@@ -902,9 +907,16 @@ class Main {
                                 snapshotTimestamp: String ->
                 writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
             }.also {
+                /*
+                    TODO should have a better way to specify that some services need to be shutdown
+                 */
                 if (config.isEnabledHarvestingActualResponse()) {
                     val hp = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
                     hp.shutdown()
+                }
+                if(config.llm){
+                    val llm = injector.getInstance(LlmService::class.java)
+                    llm.shutdown()
                 }
             }
         }

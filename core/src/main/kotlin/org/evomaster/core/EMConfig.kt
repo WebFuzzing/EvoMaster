@@ -59,6 +59,12 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
+        /**
+         * Default soft timeout, in milliseconds, for each Z3 solver invocation
+         * when generating SQL data. See [sqlZ3TimeoutMs].
+         */
+        const val DEFAULT_SQL_Z3_TIMEOUT_MS = 5000
+
         private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
@@ -79,7 +85,7 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
+        private val defaultTestCaseNamingStrategy = NamingStrategy.DETERMINISTIC
 
         private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
@@ -711,6 +717,9 @@ class EMConfig {
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
+            if (problemType == ProblemType.MCP && base.isBlank()) {
+                throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
+            }
         }
 
         if (!blackBox && bbExperiments) {
@@ -749,8 +758,8 @@ class EMConfig {
             throw ConfigProblemException("Cannot generate SQL data if you not enable " +
                     "collecting heuristics with 'heuristicsForSQL'")
         }
-        if (generateSqlDataWithDSE && generateSqlDataWithSearch) {
-            throw ConfigProblemException("Cannot generate SQL data with both DSE and search")
+        if (generateSqlDataWithZ3 && generateSqlDataWithSearch) {
+            throw ConfigProblemException("Cannot generate SQL data with both Z3 and search")
         }
 
         if (heuristicsForSQL && !extractSqlExecutionInfo) {
@@ -869,6 +878,10 @@ class EMConfig {
                 throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
             if (sutJarEnvVarName.isEmpty())
                 throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
+
+        if(namingStrategy == NamingStrategy.LLM && !llm){
+            throw ConfigProblemException("Naming strategy LLM require the setup and use of an LLM")
         }
     }
 
@@ -997,7 +1010,7 @@ class EMConfig {
 
 
 
-    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
+    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
@@ -1393,6 +1406,41 @@ class EMConfig {
             " file per type is generated.")
     var maxTestsPerTestSuite = 200
 
+    @Important(8.1)
+    @Cfg("Comma-separated list of response field names to skip when generating assertions." +
+            " This is useful when some fields have non-stable responses that can lead to test flakiness." +
+            " Note that EvoMaster has some systems to automatically handle flakiness." +
+            " This option is an extra layer of protection to force skipping some fields that EvoMaster is not" +
+            " currently able to automatically handle.")
+    var fieldsToSkipInAssertions = ""
+
+    @Important(9.0)
+    @ExistingPath(true,false)
+    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
+            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
+            " a given list of configurable suffixes." +
+            " Each Overlay will be applied to the target OpenAPI schema." +
+            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
+    var overlay = ""
+
+    @Important(9.1)
+    @Cfg("Comma ',' separated list of file name suffixes." +
+            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
+            " suffixes will be loaded and applied." +
+            " For example, '.json' could be used to match all JSON files." +
+            " If the folder contains also other types of files with same extension, you might need to define" +
+            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
+            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
+    var overlayFileSuffixes = ".json,.yaml,.yml"
+
+    @Important(9.2)
+    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
+            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
+            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
+            " This option can be used to override such behavior, and let the fuzzing go on without" +
+            " applying any overlay.")
+    var overlayLenient = false
+
 
     //-------- other options -------------
 
@@ -1442,7 +1490,8 @@ class EMConfig {
         REST(experimental = false),
         GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEBFRONTEND(experimental = true);
+        WEBFRONTEND(experimental = true),
+        MCP(experimental = true);
 
         override fun isExperimental() = experimental
     }
@@ -1912,9 +1961,34 @@ class EMConfig {
     var extractRedisExecutionInfo = false
 
     @Experimental
-    @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
+    @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
     @DependsOnFalseFor("blackBox")
-    var generateSqlDataWithDSE = false
+    var generateSqlDataWithZ3 = false
+
+    @Experimental
+    @Cfg("Collect detailed statistics for Z3-based SQL generation: SAT/UNSAT/error counts, " +
+            "query uniqueness, Z3 execution time, and SMT-LIB generation time. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    var collectSqlZ3Stats = false
+
+    @Experimental
+    @Cfg("Soft timeout, in milliseconds, for each Z3 solver invocation when generating SQL data. " +
+            "If a query exceeds it, Z3 returns 'unknown' for that query instead of running unbounded. " +
+            "A value of 0 disables the timeout. Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(0.0)
+    var sqlZ3TimeoutMs = DEFAULT_SQL_Z3_TIMEOUT_MS
+
+    @Experimental
+    @Cfg("Number of rows the Z3 solver generates per table when solving a failed SQL query. " +
+            "The default of 1 is sufficient for the currently supported queries; generating a single " +
+            "row per table already forces the query to return a non-empty result. This will need to be " +
+            "increased once support for more complex JOINs (matching arbitrary row combinations, not just " +
+            "the diagonal pairing of row i with row i) is added. Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3NumberOfRows = 1
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
@@ -2034,6 +2108,7 @@ class EMConfig {
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
+
 
     @Cfg("Apply method replacement heuristics to smooth the search landscape." +
             " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
@@ -2790,6 +2865,17 @@ class EMConfig {
     var handleFlakiness = false
 
     @Experimental
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
+    var enableStaticFlakyInference = true
+
+    @Experimental
+    @Min(0.0)
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
+    var execNumForDetectFlakiness = 1
+
+    @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
             "This is necessary when the generated tests are executed on the different machine. " +
             "Note that this setting only affects the generated test cases.")
@@ -2902,6 +2988,10 @@ class EMConfig {
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     var enableSchemaConstraintHandling = true
 
+    @Experimental
+    @Cfg("Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0")
+    var enableAdvancedFormats = false
+
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
     @Probability(activating = true)
     var probOfEnablingSingleInsertionForTable = 0.5
@@ -3009,6 +3099,12 @@ class EMConfig {
 
     @Experimental
     @DependsOnTrueFor("llm")
+    @Cfg("The number of threads to use when making calls towards an LLM, in configured." +
+            " If connecting to Ollama, this value is ignored, and only 1 thread is used.")
+    var llmThreads = 4
+
+    @Experimental
+    @DependsOnTrueFor("llm")
     @Cfg("LLM external service URL. If not specified, default will be based on the LLM provider.")
     var llmURL: String? = null
 
@@ -3099,31 +3195,35 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    @Experimental
+    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
+    var useResponseDataPool = true
+
     @Cfg("How much data elements, per key, can be stored in the Data Pool." +
             " Once limit is reached, new old will replace old data. ")
     @Min(1.0)
     var maxSizeDataPool = 100
 
-    @Experimental
     @Cfg("Threshold of Levenshtein Distance for key-matching in Data Pool")
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = true
-
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for black-box (bb) mode")
     var bbProbabilityUseDataPool = 0.8
 
-    @Experimental
     @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Experimental
+    @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
+            " If so, those will be added to the data pool.")
+    var useDictionaryDataPool = false
+
+    @Cfg("Feed the individual entries of object examples to the data pool.")
+    var useObjectExampleDataPool = true
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
@@ -3208,32 +3308,7 @@ class EMConfig {
             " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
-    @Experimental
-    @ExistingPath(true,false)
-    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
-            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
-            " a given list of configurable suffixes." +
-            " Each Overlay will be applied to the target OpenAPI schema." +
-            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
-    var overlay = ""
 
-    @Experimental
-    @Cfg("Comma ',' separated list of file name suffixes." +
-            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
-            " suffixes will be loaded and applied." +
-            " For example, '.json' could be used to match all JSON files." +
-            " If the folder contains also other types of files with same extension, you might need to define" +
-            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
-            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
-    var overlayFileSuffixes = ".json,.yaml,.yml"
-
-    @Experimental
-    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
-            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
-            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
-            " This option can be used to override such behavior, and let the fuzzing go on without" +
-            " applying any overlay.")
-    var overlayLenient = false
 
 
     @Min(0.0)
@@ -3241,6 +3316,15 @@ class EMConfig {
             " If no info is provided in the response, or it is not valid, then wait for a certain amount of time" +
             " before attempting again to make any call")
     var defaultDelayInSecondsFor429 = 10
+
+
+    @Experimental
+    @Cfg("When dealing with string data, infer constraints based on the name or description." +
+            " For example, a string field called 'uuid' likely is going to represent an UUID." +
+            " A string property referring to 'ISO 8601' in its description might be a date." +
+            " And so on." +
+            " This is just an heuristics though, and unrestricted strings would still be sampled with a given probability.")
+    var inferFormatFromNames = false
 
 
     fun getProbabilityUseDataPool() : Double{

@@ -1,8 +1,11 @@
 package org.evomaster.core.problem.httpws.auth
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.checkerframework.checker.units.qual.g
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.CreateUsersWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -11,6 +14,7 @@ import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.Individual
+import org.evomaster.test.utils.EMTestUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
@@ -25,33 +29,33 @@ object AuthUtils {
     private val log: Logger = LoggerFactory.getLogger(AuthUtils::class.java)
 
 
-    fun getTokens(client: Client, baseUrl: String, ind: Individual): Map<String, String>{
+    fun getTokens(client: Client, baseUrl: String, ind: Individual, placeholders: List<PlaceHolderResolver>): Map<String, String> {
         val tokensLogin = TokenWriter.getTokenLoginAuth(ind)
-        return getTokens(client, baseUrl, tokensLogin)
+        return getTokens(client, baseUrl, tokensLogin, placeholders)
     }
 
     /**
      * If any action needs auth based on tokens via JSON, do a "login" before
      * running the actions, and store the tokens
      */
-    fun getTokens(client: Client, baseUrl: String, tokensLogin: List<EndpointCallLogin>): Map<String, String>{
+    fun getTokens(client: Client, baseUrl: String, tokensLogin: List<EndpointCallLogin>, placeholders: List<PlaceHolderResolver>): Map<String, String> {
 
         //from userId to Token
         val map = mutableMapOf<String, String>()
 
-        for(tl in tokensLogin){
+        for (tl in tokensLogin) {
 
-            if(tl.expectsCookie()){
+            if (tl.expectsCookie()) {
                 throw IllegalArgumentException("Token based login does not expect cookies")
             }
             val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
-            val response = makeCall(client, tl, baseUrl)
+            val response = makeCall(client, tl.name, tl.call, baseUrl,placeholders)
                 ?: continue
 
-            var token = when(data.extractFrom){
+            var token = when (data.extractFrom) {
                 TokenHandling.ExtractFrom.BODY -> {
-                    if(! response.hasEntity()){
+                    if (!response.hasEntity()) {
                         log.warn("Login request failed, with no body response from which to extract the auth token")
                         continue
                     }
@@ -62,16 +66,17 @@ object AuthUtils {
                     val jackson = ObjectMapper()
                     val tree = jackson.readTree(body)
                     val token = tree.at(tl.token!!.extractSelector).asText()
-                    if(token == null || token.isEmpty()){
+                    if (token == null || token.isEmpty()) {
                         log.warn("Failed login. Cannot extract token '${data.extractSelector}' from response: $body")
                         continue
                     }
                     token
                 }
+
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = response.getHeaderString(data.extractSelector)
                     response.close()
-                    if(header == null || header.isEmpty()){
+                    if (header == null || header.isEmpty()) {
                         log.warn("Failed login. No token to extract from header '${data.extractSelector}'")
                         continue
                     }
@@ -79,8 +84,8 @@ object AuthUtils {
                 }
             }
 
-            if(data.sendTemplate.isNotEmpty()){
-                token = data.sendTemplate.replace("{token}",  token)
+            if (data.sendTemplate.isNotEmpty()) {
+                token = data.sendTemplate.replace("{token}", token)
             }
 
             map[tl.name] = token
@@ -90,10 +95,9 @@ object AuthUtils {
     }
 
 
-    fun getCookies(client: Client, baseUrl: String, ind: Individual): Map<String, List<NewCookie>> {
-
+    fun getCookies(client: Client, baseUrl: String, ind: Individual, placeholders: List<PlaceHolderResolver>): Map<String, List<NewCookie>> {
         val cookieLogins = CookieWriter.getCookieLoginAuth(ind)
-        return getCookies(client, baseUrl, cookieLogins)
+        return getCookies(client, baseUrl, cookieLogins, placeholders)
     }
 
     /**
@@ -102,18 +106,22 @@ object AuthUtils {
      *
      * @return a map from username to auth cookie for those users
      */
-    fun getCookies(client: Client, baseUrl: String, cookieLogins: List<EndpointCallLogin>): Map<String, List<NewCookie>> {
+    fun getCookies(
+        client: Client,
+        baseUrl: String,
+        cookieLogins: List<EndpointCallLogin>,
+        placeholders: List<PlaceHolderResolver>
+    ): Map<String, List<NewCookie>> {
 
         val map: MutableMap<String, List<NewCookie>> = mutableMapOf()
 
         for (cl in cookieLogins) {
 
-            if(!cl.expectsCookie()){
+            if (!cl.expectsCookie()) {
                 throw IllegalArgumentException("Cookie based login expects cookies")
             }
 
-
-            val response = makeCall(client, cl, baseUrl)
+            val response = makeCall(client, cl.name, cl.call, baseUrl, placeholders)
                 ?: continue
             response.close()
 
@@ -129,32 +137,132 @@ object AuthUtils {
     }
 
 
+    fun createUsers(
+        client: Client,
+        baseUrl: String,
+        individual: Individual
+    ) : List<PlaceHolderResolver> {
+        return createUsers(client, baseUrl, CreateUsersWriter.getCreateUsersAuth(individual))
+    }
 
-    private fun makeCall(client: Client, x: EndpointCallLogin, baseUrl: String) : Response?{
+    /**
+     * Make calls to create new users.
+     * Each user will be chosen with info based on the declared generators.
+     */
+    fun createUsers(
+        client: Client,
+        baseUrl: String,
+        createUsersList: List<CreateUsers>
+    ): List<PlaceHolderResolver> {
 
-        val mediaType = when (x.contentType) {
+        val results = mutableListOf<PlaceHolderResolver>()
+
+        for(c in createUsersList) {
+
+            var payload = c.call.payload!! //TODO will need to handle headers, where payload could be null
+            val placeHolders = mutableMapOf<String,String>()
+
+            for(g in c.generators) {
+                val generated = EMTestUtils.createString(g.minLength, g.maxLength, g.prefix, g.postfix)
+                placeHolders[g.placeHolder] = generated
+                payload = payload.replace(g.placeHolder, generated)
+            }
+
+            val response = makeCall(
+                client,
+                baseUrl,
+                c.name,
+                c.call.verb,
+                c.call.contentType,
+                payload,
+                listOf(),
+                c.call.endpoint,
+                c.call.externalEndpointURL)
+                ?: continue
+            response.close()
+
+            results.add(PlaceHolderResolver(c.name, placeHolders))
+        }
+
+        return results
+    }
+
+    fun constructUrl(baseUrl: String, endpoint: String?, externalEndpointURL: String?): String {
+
+        if (externalEndpointURL != null) {
+            return externalEndpointURL
+        }
+
+        val s = baseUrl.trim()
+
+        if (!s.startsWith("http://", true) && !s.startsWith("https://")) {
+            throw IllegalArgumentException("baseUrl should use HTTP(S): $baseUrl")
+        }
+
+        if(endpoint == null || !endpoint.startsWith("/")) {
+            throw IllegalArgumentException("Invalid endpoint when externalEndpointURL is null -> $endpoint")
+        }
+
+        return if (s.endsWith("/")) {
+            s.substring(0, s.length - 1) + endpoint
+        } else {
+            s + endpoint
+        }
+    }
+
+
+    private fun makeCall(client: Client, name: String, x: CallToEndpoint, baseUrl: String, placeholders: List<PlaceHolderResolver>): Response?{
+
+        val resolver = placeholders.firstOrNull { it.name == name }
+        val payload = if(resolver == null){
+            x.payload
+        } else {
+            var modified = x.payload
+            if(modified != null) {
+                for (p in resolver.placeHolders.entries) {
+                    modified = modified!!.replace(p.key, p.value)
+                }
+            }
+            modified
+        }
+
+        return makeCall(client, baseUrl, name, x.verb, x.contentType, payload, x.headers, x.endpoint, x.externalEndpointURL)
+    }
+
+    private fun makeCall(
+        client: Client,
+        baseUrl: String,
+        name: String,
+        verb: HttpVerb,
+        contentType: ContentType?,
+        payload: String?,
+        headers: List<AuthenticationHeader>,
+        endpoint: String?,
+        externalEndpointURL: String?
+        ) : Response?{
+
+        val mediaType = when (contentType) {
             ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
             ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
             null -> null
         }
 
         val bodyEntity = if(mediaType != null) {
-            Entity.entity(x.payload, mediaType)
+            Entity.entity(payload, mediaType)
         } else {
             null
         }
 
-        val builder =  client.target(x.getUrl(baseUrl)).request()
+        val builder =  client.target(constructUrl(baseUrl,endpoint,externalEndpointURL)).request()
 
-        x.headers.forEach { builder.header(it.name, it.value) }
+        headers.forEach { builder.header(it.name, it.value) }
 
         if(mediaType!=null){
             builder.header("Content-Type", mediaType)
         }
 
-        //TODO duplicated code, should put in a utility
         val invocation = if(bodyEntity != null) {
-            when (x.verb) {
+            when (verb) {
                 HttpVerb.GET -> builder.buildGet()
                 HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
                 HttpVerb.POST -> builder.buildPost(bodyEntity)
@@ -165,13 +273,13 @@ object AuthUtils {
                 HttpVerb.TRACE -> builder.build("TRACE")
             }
         } else {
-            builder.build(x.verb.toString())
+            builder.build(verb.toString())
         }
 
         val response = try {
             invocation.invoke()
         } catch (e: Exception) {
-            log.warn("Failed to login for ${x.name}: $e")
+            log.warn("Failed to login for ${name}: $e")
             return null
         }
 
@@ -188,12 +296,12 @@ object AuthUtils {
             if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
                 val location = response.getHeaderString("location")
                 if (location != null && (location.contains("error", true) || location.contains("login", true))) {
-                    log.warn("Login request failed with ${response.status} redirection toward $location")
+                    log.warn("Auth request failed with ${response.status} redirection toward $location")
                     response.close()
                     return null
                 }
             } else {
-                log.warn("Login request failed with status ${response.status}")
+                log.warn("Auth request failed with status ${response.status}")
                 response.close()
                 return null
             }
@@ -239,7 +347,7 @@ object AuthUtils {
      * Check if we have valid credentials, but got 401
      */
      fun checkUnauthorizedWithAuth(status: Int, a: HttpWsAction) : Boolean{
-        if (status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
+        if (status == 401 && !a.auth.isNoAuth() && !a.auth.requireMockHandling) {
             /*
                 if the endpoint itself is to get auth info, we might exclude auth check for it
                 eg,

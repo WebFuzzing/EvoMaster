@@ -93,6 +93,10 @@ object TcpUtils {
         return e.cause is ConnectException && checkText(e.cause!!, "Connection refused")
     }
 
+    fun isNotSupportingSSL(e: ProcessingException) : Boolean{
+        return e.cause is javax.net.ssl.SSLException &&
+                (checkText(e.cause!!, "unsupported") || checkText(e.cause!!, "unrecognized"))
+    }
 
     fun isUnknownHost(e: ProcessingException) : Boolean{
         return e.cause is java.net.UnknownHostException

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java</artifactId>
@@ -25,6 +25,7 @@
         <module>distance-heuristics</module>
         <module>test-utils-java</module>
         <module>test-old-libraries</module>
+        <module>postgres-test-utils</module>
     </modules>
 
     <licenses>
@@ -36,6 +37,12 @@
     </licenses>
 
     <properties>
+        <!-- 2.x latest using JDK 8. 3.x needs JDK 11, 4.x needs JDK 17.
+             Also, 3.x switches package from javax to jakarta, so actually
+             hopefully it should help with split between core and client-java.
+             Note that branch 2.x is still maintained with new updated versions
+         -->
+        <jersey.version>2.48</jersey.version>
         <!--  THOSE ARE ONLY FOR TESTING -->
         <springboot.version>2.5.4</springboot.version>
     </properties>
@@ -60,6 +67,41 @@
                 <artifactId>javax.servlet-api</artifactId>
                 <version>3.1.0</version>
             </dependency>
+
+
+            <!-- Jersey -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-jetty-http</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

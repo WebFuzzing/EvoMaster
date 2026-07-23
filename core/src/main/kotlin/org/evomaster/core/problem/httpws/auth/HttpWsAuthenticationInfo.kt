@@ -2,6 +2,7 @@ package org.evomaster.core.problem.httpws.auth
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.action.Action
 
@@ -24,13 +25,16 @@ open class HttpWsAuthenticationInfo(
      * for auth in following requests.
      */
     val endpointCallLogin: EndpointCallLogin?,
-    val requireMockHandling: Boolean
+    val requireMockHandling: Boolean,
+    /**
+     * Represent information on to create new users on-the-fly
+     */
+    val createUsers: CreateUsers?
 ): AuthenticationInfo(name) {
 
     init {
 
-        //FIXME "NoAuth" constant
-        if(headers.isEmpty() && name != "NoAuth" && endpointCallLogin==null){
+        if(headers.isEmpty() && name != NoAuth.NAME && endpointCallLogin==null){
             throw IllegalArgumentException("Missing info")
         }
     }
@@ -71,7 +75,17 @@ open class HttpWsAuthenticationInfo(
 
             val requireMockHandling = dto.requireMockHandling != null && dto.requireMockHandling
 
-           return HttpWsAuthenticationInfo(dto.name.trim(), headers, endpointCallLogin, requireMockHandling)
+            val createUsers = if (dto.createUsers != null){
+                try {
+                    CreateUsers.fromDto(dto.name, dto.createUsers)
+                }catch (e: Exception){
+                    throw IllegalArgumentException("Issue when parsing auth info for '${dto.name}': ${e.message}")
+                }
+            } else {
+                null
+            }
+
+           return HttpWsAuthenticationInfo(dto.name.trim(), headers, endpointCallLogin, requireMockHandling, createUsers)
         }
     }
 
@@ -81,7 +95,7 @@ open class HttpWsAuthenticationInfo(
      */
     fun excludeAuthCheck(action: Action) : Boolean{
         if (action is RestCallAction && endpointCallLogin != null){
-            return action.getName() == "POST:${endpointCallLogin.endpoint}"
+            return action.getName() == "POST:${endpointCallLogin.call.endpoint}"
         }
         return false
     }

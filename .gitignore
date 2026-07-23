@@ -13,6 +13,10 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# IntelliJ ANTLR plugin recognizer default locations:
+core/gen/
+core/src/main/antlr4/org/evomaster/core/parser/gen
+
 **/*.DS_Store
 /.idea/
 .idea/
@@ -129,6 +133,16 @@ Migrations/
 /core-tests/e2e-tests/spring/spring-rest-bb/javascript/node_modules/
 /core-tests/e2e-tests/spring/spring-rest-bb/javascript/generated/
 /core-tests/e2e-tests/spring/spring-rest-bb/python/generated/
+
+/core-tests/e2e-tests/python-rest-bb/target/
+/core-tests/e2e-tests/python-rest-bb/python/generated/
+/core-tests/e2e-tests/python-rest-bb/maven/src/
+/core-tests/e2e-tests/python-rest-bb/maven/target/
+/core-tests/e2e-tests/python-rest-bb/javascript/node_modules/
+/core-tests/e2e-tests/python-rest-bb/javascript/generated/
+/core-tests/e2e-tests/python-rest-bb/sut/django/db.sqlite3
+/core-tests/e2e-tests/python-rest-bb/sut/django/.venv/
+/core-tests/e2e-tests/python-rest-bb/sut/django/**/__pycache__/
 
 /client-java/test-utils-java/target/
 

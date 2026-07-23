@@ -15,6 +15,10 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
     private List<RedisInsertionDto> list = new ArrayList<>();
     private final List<RedisInsertionDto> previousInsertionDtos = new ArrayList<>();
 
+    private static final String HSET = "HSET";
+    private static final String SADD = "SADD";
+    private static final String SET = "SET";
+
     private RedisDsl() {}
 
     private RedisDsl(List<RedisInsertionDto>... previous) {
@@ -46,8 +50,44 @@ public class RedisDsl implements RedisSequenceDsl, RedisStatementDsl {
             throw new IllegalArgumentException("Unspecified key");
         }
         RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = SET;
         dto.key = key;
         dto.value = value;
+        list.add(dto);
+        return this;
+    }
+
+    @Override
+    public RedisStatementDsl hset(String key, String field, String value) {
+        checkDsl();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified key");
+        }
+        if (field == null || field.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified field");
+        }
+        RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = HSET;
+        dto.key = key;
+        dto.field = field;
+        dto.value = value;
+        list.add(dto);
+        return this;
+    }
+
+    @Override
+    public RedisStatementDsl sadd(String key, String member) {
+        checkDsl();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified key");
+        }
+        if (member == null || member.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified member");
+        }
+        RedisInsertionDto dto = new RedisInsertionDto();
+        dto.command = SADD;
+        dto.key = key;
+        dto.value = member;
         list.add(dto);
         return this;
     }

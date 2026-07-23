@@ -18,8 +18,6 @@ abstract class ActionTestCaseNamingStrategy(
     protected val maxTestCaseNameLength: Int
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
-    private val testCasesSize = solution.individuals.size
-
     protected val on = "on"
     protected val throws = "throws"
     protected val returns = "returns"
@@ -91,11 +89,6 @@ abstract class ActionTestCaseNamingStrategy(
             addActionResult(individual.evaluatedMainActions().last(), nameTokens, remainingNameChars)
         }
         addEnvironmentActions(individual, nameTokens, newRemainingNameChars)
-    }
-
-    protected fun namePrefixChars(): Int {
-        val digitsUsedForTestNumbering = testCasesSize.toString().length
-        return "test_".length + digitsUsedForTestNumbering + 1
     }
 
     protected fun addNameTokensIfAllowed(nameTokens: MutableList<String>, targetStrings: List<String>, remainingNameChars: Int): Int {

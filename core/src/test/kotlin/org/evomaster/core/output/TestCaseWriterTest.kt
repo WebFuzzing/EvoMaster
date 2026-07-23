@@ -13,9 +13,11 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
@@ -27,8 +29,12 @@ import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.output.dto.GeneToDto
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -103,6 +109,41 @@ class TestCaseWriterTest : WriterTestBase(){
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+
+    @Test
+    fun testTextAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleTextPlainTextAssertion(
+            "Unable to obtain a new access token for resource &#39;null&#39;.", // observed in the catwatch
+            null,
+            lines,
+            null
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJsonStringAssertionWithHtmlEntityUsesStableFragment() {
+        val format = OutputFormat.JAVA_JUNIT_4
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = Lines(format)
+
+        writer.handleJsonStringAssertion(
+            "{\"message\":\"Unable to obtain a new access token for resource &#39;null&#39;.\"}",
+            null,
+            lines,
+            null,
+            false
+        )
+
+        assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
+        assertFalse(lines.toString().contains("&#39"))
+    }
 
 
 
@@ -1282,6 +1323,35 @@ public void test() throws Exception {
 
 
     @Test
+    fun testJavaObjectAssertionInArrayUsesGPathIndex() {
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_4
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("[{}]") // example in restcountries
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+
+        assertTrue(lines.toString().contains(".body(\"[0].isEmpty()\", is(true))"))
+        assertFalse(lines.toString().contains(".body(\"'[0]'.isEmpty()\", is(true))"))
+    }
+
+
+    @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
@@ -1331,7 +1401,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1404,7 +1475,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1462,7 +1534,8 @@ public void test() throws Exception {
             test("test", async () => {
                 
                 const res_0 = await superagent
-                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .get(baseUrlOfSut + "/foo")
+                        .timeout({response: ${TestSuiteWriter.httpTimeoutVarMs}, deadline: ${TestSuiteWriter.httpTimeoutVarMs}}).set('Accept', "*/*")
                         .ok(res => res.status);
                 
                 expect(res_0.status).toBe(200);
@@ -1642,6 +1715,40 @@ public void test() throws Exception {
     }
 
     @Test
+    fun testJsonPatchBodyRenderedAsDto() {
+        val format = OutputFormat.KOTLIN_JUNIT_5
+        val baseUrlOfSut = "baseUrlOfSut"
+
+        val schema = ObjectGene("body", listOf(StringGene("name"), IntegerGene("age")))
+        val typeGene = EnumGene("contentType", listOf("application/json-patch+json")).apply { index = 0 }
+        val bodyParam = BodyParam(gene = JsonPatchDocumentGene("patch", schema), typeGene = typeGene)
+
+        val action = RestCallAction("1", HttpVerb.PATCH, RestPath("/items/1"), mutableListOf(bodyParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual, Randomness().apply { updateSeed(42L) })
+
+        val fitnessVal = FitnessValue(0.0)
+        val result = RestCallResult(action.getLocalId()).apply { setStatusCode(200) }
+        val ei = EvaluatedIndividual(fitnessVal, individual, listOf(result))
+
+        val config = getConfig(format)
+        config.dtoForRequestPayload = true
+        config.problemType = EMConfig.ProblemType.REST
+
+        val test = TestCase(test = ei, name = "test")
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val output = writer.convertToCompilableTestCode(test, baseUrlOfSut).toString()
+
+        // The JSON Patch body must be rendered as a DTO list, not as a raw JSON string.
+        assertTrue(output.contains("list_${GeneToDto.JSON_PATCH_OPERATION_DTO}_"),
+            "Expected DTO list variable in generated output")
+        assertTrue(output.contains(".body(list_${GeneToDto.JSON_PATCH_OPERATION_DTO}_"),
+            "Expected DTO variable passed as body argument")
+        assertFalse(output.contains("{\"op\":"),
+            "Body must not contain raw JSON string representation of a patch operation")
+    }
+
+    @Test
     fun testInActiveBodyParamInTest(){
         val stringGene = StringGene("stringGene")
         val optionalGene = OptionalGene(stringGene.name, stringGene)
@@ -1678,5 +1785,67 @@ public void test() throws Exception {
 
         assertFalse(lines.toString().contains(".body()"))
 
+    }
+
+    @Test
+    fun testNonAsciiInPathParamIsEncoded() {
+        // non-ASCII characters in path parameter values must be percent-encoded in generated test output.
+        val format = OutputFormat.KOTLIN_JUNIT_5
+
+        val pathParam = PathParam("key", CustomMutationRateGene("key", StringGene("key", "聚"), 1.0))
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/api/{key}"), mutableListOf(pathParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual)
+
+        val result = RestCallResult(action.getLocalId())
+        result.setTimedout(false)
+        result.setStatusCode(200)
+        val ei = EvaluatedIndividual(FitnessValue(0.0), individual, listOf(result))
+
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), "baseUrlOfSut")
+        val output = lines.toString()
+
+        assertFalse(output.contains("聚"),
+            "Non-ASCII character must not appear raw in generated test output, got:\n$output")
+
+        assertTrue(output.contains("%E8%81%9A"),
+            "Non-ASCII character must be percent-encoded as %E8%81%9A in generated test output, got:\n$output")
+    }
+
+    @Test
+    fun testStringWithDollarKotlin() {
+        // A StringGene value containing '$' must be escaped as '\$' in generated Kotlin source. Currently,
+        // SqlWriter.getPrintableValue applies StringEscapeUtils.escapeJava() after GeneUtils.applyEscapes(),
+        // which doubles the backslash and leaves '$' bare, causing a Kotlin string template compile error.
+        val aColumn = Column("name", VARCHAR, 10, databaseType = DatabaseType.H2)
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+        val gene = StringGene("name", "v\$t")
+        val insertAction = SqlAction(aTable, setOf(aColumn), 0L, mutableListOf(gene))
+
+        val (_, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertAction))
+
+        val format = OutputFormat.KOTLIN_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val lines = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), baseUrlOfSut)
+
+        val expectedLines = Lines(format).apply {
+            add("@Test")
+            add("fun test()  {")
+            indent()
+            add("val insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"name\", \"\\\"v\\\$t\\\"\")")
+            deindent()
+            add(".dtos()")
+            deindent()
+            add("val insertionsresult = controller.execInsertionsIntoDatabase(insertions)")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
     }
 }

@@ -228,8 +228,21 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         val dto = RedisDbActionTransformer.transform(allRedisActions)
 
         val results = rc.executeRedisDatabaseInsertions(dto)
-        results?.executionResults?.forEachIndexed { index, b ->
-            redisResults[index].setInsertExecutionResult(b)
+        if (results?.executionResults != null) {
+            var dtoIndex = 0
+            allRedisActions.forEachIndexed { actionIndex, action ->
+                // Now actions such as SaddFromSinter have multiple insertion dtos related.
+                val count = action.insertionsCount()
+                val success = (dtoIndex until dtoIndex + count).all {
+                    results.executionResults[it]
+                }
+                if (!success) {
+                    log.warn("FAILED insertion $actionIndex: ${action.getName()}")
+                    assert(false)
+                }
+                redisResults[actionIndex].setInsertExecutionResult(success)
+                dtoIndex += count
+            }
         }
 
         return true

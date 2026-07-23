@@ -10,8 +10,8 @@ import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
-import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
@@ -58,9 +58,17 @@ class TestSuiteWriter {
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
 
+        /**
+         * Names of the variables, generated into each test suite, holding the per-HTTP-call
+         * client timeout. Same source as the fuzzing 'tcpTimeoutMs' option. Two unit-specific
+         * variants, as different output formats need different units.
+         */
+        const val httpTimeoutVarMs = "EM_HTTP_TIMEOUT_MS"     // milliseconds (JS/superagent)
+        const val httpTimeoutVarSeconds = "EM_HTTP_TIMEOUT_S" // seconds (Python/requests)
+
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
-        private const val baseUrlOfSut = "baseUrlOfSut"
+        const val baseUrlOfSut = "baseUrlOfSut"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
@@ -94,6 +102,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
+
+    @Inject
+    private lateinit var llmService: LlmService
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -137,8 +148,7 @@ class TestSuiteWriter {
     ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
-        val testSuiteOrganizer = TestSuiteOrganizer()
-        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
+        val testSuiteOrganizer = TestSuiteOrganizer(config, llmService)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -153,19 +163,7 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        //catch any sorting problems (see NPE is SortingHelper on Trello)
-        val tests = try {
-            // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
-        } catch (ex: Exception) {
-            log.warn(
-                "A failure has occurred with the test sorting. Reverting to default settings. \n"
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-            )
-            // fallback to numbered naming strategy upon failure
-            NumberedTestCaseNamingStrategy(solution).getTestCases()
-        }
+        val tests = testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -475,6 +473,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
+                addImport("io.restassured.config.HttpClientConfig", lines)
             }
 
             if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
@@ -512,17 +511,19 @@ class TestSuiteWriter {
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
             }
 
+            if (useRestAssured()) {
+                addImport("io.restassured.config.JsonConfig", lines)
+                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                addImport("io.restassured.config.EncoderConfig", lines)
+                addImport("io.restassured.http.ContentType", lines)
+            }
+
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers", lines, false)
                     addImport("org.hamcrest.Matchers.*", lines, true)
-                }
-
-                //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()) {
-                    addImport("io.restassured.config.JsonConfig", lines)
-                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
                 }
 
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
@@ -539,7 +540,10 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
+            lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             lines.add("const superagent = require(\"superagent\");")
+            // HTTP client timeout (ms)
+            lines.add("const $httpTimeoutVarMs = ${config.tcpTimeoutMs};")
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -594,6 +598,8 @@ class TestSuiteWriter {
                 }
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
+            // HTTP client timeout (seconds)
+            lines.add("$httpTimeoutVarSeconds = ${config.tcpTimeoutMs / 1000.0}")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
@@ -847,11 +853,23 @@ class TestSuiteWriter {
                     addStatement("RestAssured.urlEncodingEnabled = false", lines)
                 }
 
-                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                if (format.isJavaOrKotlin()) {
+                    // global HTTP client config. The socket timeout MUST match the one used during
+                    // fuzzing (tcpTimeoutMs), so that timeout faults are reproduced consistently
                     lines.add("RestAssured.config = RestAssured.config()")
                     lines.indented {
+                        if (config.enableBasicAssertions) {
+                            lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                            lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        }
+                        lines.add(".httpClient(HttpClientConfig.httpClientConfig()")
+                        lines.indented {
+                            lines.add(".setParam(\"http.socket.timeout\", ${config.tcpTimeoutMs})")
+                            lines.add(".setParam(\"http.connection.timeout\", ${config.tcpTimeoutMs}))")
+                        }
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
                     }
                     lines.appendSemicolon()
                 }

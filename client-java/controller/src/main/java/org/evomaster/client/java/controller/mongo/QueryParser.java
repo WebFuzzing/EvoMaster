@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.mongo.selectors.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Determines to which operation a query correspond.
@@ -35,11 +36,16 @@ public class QueryParser {
             new ImplicitSelector()
     );
 
-    public QueryOperation parse(Object query) {
-        return selectors.stream()
-                .map(selector -> selector.getOperation(query))
+    public QueryOperation parse(Object bsonDocument) {
+        List<QueryOperation> results = selectors.stream()
+                .map(selector -> selector.getOperation(bsonDocument))
                 .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+                .collect(Collectors.toList());
+
+        if (results.size() != 1) {
+            return null;
+        }
+
+        return results.get(0);
     }
 }

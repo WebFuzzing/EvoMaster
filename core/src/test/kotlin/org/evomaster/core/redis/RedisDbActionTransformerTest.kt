@@ -1,5 +1,6 @@
 package org.evomaster.core.redis
 
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -7,54 +8,87 @@ import org.junit.jupiter.api.Test
 class RedisDbActionTransformerTest {
 
     @Test
-    fun testTransformSingleAction() {
-        val action = RedisDbAction(
-            key = "user:1",
-            valueGene = StringGene("value", "Alice"),
-            dataType = RedisDbAction.RedisDataType.STRING
-        )
-
+    fun testTransformSetAction() {
+        val action = RedisSetAction(key = "user:1", valueGene = StringGene("value", "Alice"))
         val dto = RedisDbActionTransformer.transform(listOf(action))
 
         assertEquals(1, dto.insertions.size)
-        assertEquals("user:1", dto.insertions[0].key)
-        assertEquals("Alice", dto.insertions[0].value)
+        with(dto.insertions[0]) {
+            assertEquals("SET", command)
+            assertEquals("user:1", key)
+            assertEquals("Alice", value)
+        }
     }
 
     @Test
-    fun testTransformMultipleActions() {
-        val actions = listOf(
-            RedisDbAction("product:1", StringGene("value", "chair"), RedisDbAction.RedisDataType.STRING),
-            RedisDbAction("product:2", StringGene("value", "table"), RedisDbAction.RedisDataType.STRING)
+    fun testTransformHsetAction() {
+        val action = RedisHsetAction(key = "user:1", field = "name", valueGene = StringGene("value", "Alice"))
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(1, dto.insertions.size)
+        with(dto.insertions[0]) {
+            assertEquals("HSET", command)
+            assertEquals("user:1", key)
+            assertEquals("name", field)
+            assertEquals("Alice", value)
+        }
+    }
+
+    @Test
+    fun testTransformSetFromPatternAction() {
+        val keyGene = RegexHandler.createGeneForJVM("^user:.*$")
+        keyGene.fixedValue = "user:123"
+        keyGene.usingFixedValue = true
+        val action = RedisSetFromPatternAction(keyGene = keyGene, valueGene = StringGene("value", "data"))
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(1, dto.insertions.size)
+        with(dto.insertions[0]) {
+            assertEquals("SET", command)
+            assertEquals("user:123", key)
+            assertEquals("data", value)
+        }
+    }
+
+    @Test
+    fun testTransformSaddAction() {
+        val action = RedisSaddAction(key = "myset", memberGene = StringGene("member", "item1"))
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(1, dto.insertions.size)
+        with(dto.insertions[0]) {
+            assertEquals("SADD", command)
+            assertEquals("myset", key)
+            assertEquals("item1", value)
+        }
+    }
+
+    @Test
+    fun testTransformSaddFromSinterExpandsToOneInsertionPerKey() {
+        val action = RedisSaddFromSinterAction(
+            keys = listOf("set1", "set2", "set3"),
+            memberGene = StringGene("member", "shared")
         )
+        val dto = RedisDbActionTransformer.transform(listOf(action))
 
+        assertEquals(3, dto.insertions.size)
+        dto.insertions.forEach { assertEquals("SADD", it.command) }
+        dto.insertions.forEach { assertEquals("shared", it.value) }
+        assertEquals(setOf("set1", "set2", "set3"), dto.insertions.map { it.key }.toSet())
+    }
+
+    @Test
+    fun testTransformMixedActions() {
+        val actions = listOf(
+            RedisSetAction(key = "k1", valueGene = StringGene("value", "v1")),
+            RedisHsetAction(key = "k2", field = "f", valueGene = StringGene("value", "v2"))
+        )
         val dto = RedisDbActionTransformer.transform(actions)
-
         assertEquals(2, dto.insertions.size)
-        assertEquals("product:1", dto.insertions[0].key)
-        assertEquals("chair", dto.insertions[0].value)
-        assertEquals("product:2", dto.insertions[1].key)
-        assertEquals("table", dto.insertions[1].value)
     }
 
     @Test
     fun testTransformEmptyList() {
-        val dto = RedisDbActionTransformer.transform(emptyList())
-
-        assertEquals(0, dto.insertions.size)
-    }
-
-    @Test
-    fun testTransformPreservesOrder() {
-        val keys = listOf("a", "b", "c", "d")
-        val actions = keys.map {
-            RedisDbAction(it, StringGene("value", "v_$it"), RedisDbAction.RedisDataType.STRING)
-        }
-
-        val dto = RedisDbActionTransformer.transform(actions)
-
-        keys.forEachIndexed { index, key ->
-            assertEquals(key, dto.insertions[index].key)
-        }
+        assertEquals(0, RedisDbActionTransformer.transform(emptyList()).insertions.size)
     }
 }

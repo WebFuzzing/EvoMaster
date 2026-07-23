@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-core-parent</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.1.2-SNAPSHOT</version>
         <relativePath>../core-parent</relativePath>
     </parent>
 
@@ -14,12 +14,25 @@
 
     <properties>
         <skipTests>${skipCore}</skipTests>
+        <!--
+            core has the heaviest gene test suite (GeneRandomizedTest: 1001 seeds × ~100 gene types).
+            On CI runners where algorithm tests complete faster than usual, less GC activity
+            accumulates before gene tests run, leaving the heap more fragmented and full.
+            5120m (vs the global 4096m) provides the headroom to survive runner variability.
+            GitHub Actions ubuntu-latest has 7 GB RAM: 5 GB heap + 1 GB Maven + 1 GB OS = 7 GB.
+            Overrides the root-pom testHeapXmx to avoid duplicating the surefire/failsafe argLine.
+        -->
+        <testHeapXmx>5120m</testHeapXmx>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-test-utils-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-postgres-test-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
@@ -422,7 +435,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>shade</id>

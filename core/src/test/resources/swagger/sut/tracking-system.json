@@ -1,0 +1,3156 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Manage and track commits transactions by Employees and their Managers on a specific project.\n- Employees can be assigned to projects created and managed by their managers, can add a new commits to a specific project so manager can track its progression\n- Managers can create, edit & delete projects, also assign them to their employees and track them efficiently & easily\n- Admin manages all Employees as well as their credentials & departments\nFor more, you can check more on our GitHub repositories : \n- Selim Horri: https://github.com/SelimHorri \n- Imen Toukebri: https://github.com/imen1012 \n- Bader Idoudi: https://github.com/Bader1996 \n",
+    "version": "9.0",
+    "title": "Project Tracking System",
+    "termsOfService": "Terms of service",
+    "contact": {
+      "name": "Selim Horri, Imen Touk, Badr Idoudi",
+      "url": "https://github.com/SelimHorri/project-tracking-system-backend-app",
+      "email": "springabcxyz@gmail.com"
+    },
+    "license": {
+      "name": "Apache Licence version 2.0",
+      "url": "https://apache.org/license.html"
+    }
+  },
+  "host": "localhost:31106",
+  "basePath": "/app",
+  "tags": [
+    {
+      "name": "assignment-resource",
+      "description": "Assignment Resource"
+    },
+    {
+      "name": "authentication-resource",
+      "description": "Authentication Resource"
+    },
+    {
+      "name": "credential-resource",
+      "description": "Credential Resource"
+    },
+    {
+      "name": "department-resource",
+      "description": "Department Resource"
+    },
+    {
+      "name": "employee-resource",
+      "description": "Employee Resource"
+    },
+    {
+      "name": "location-resource",
+      "description": "Location Resource"
+    },
+    {
+      "name": "project-resource",
+      "description": "Project Resource"
+    }
+  ],
+  "paths": {
+    "/api/assignments": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Assignment»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "assignment",
+            "description": "assignment",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "assignment",
+            "description": "assignment",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_1",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Assignment»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/data/project-commit/{employeeId}/{projectId}": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findByEmployeeIdAndProjectId",
+        "operationId": "findByEmployeeIdAndProjectIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«ProjectCommit»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/data/project-commit/{employeeId}/{projectId}/{commitDate}": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findByEmployeeIdAndProjectIdAndCommitDate",
+        "operationId": "findByEmployeeIdAndProjectIdAndCommitDateUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "commitDate",
+            "in": "path",
+            "description": "commitDate",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ProjectCommit"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/data/project-commit/{projectId}": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findByProjectId",
+        "operationId": "findByProjectIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«ProjectCommit»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/delete/{employeeId}/{projectId}/{commitDate}": {
+      "delete": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "commitDate",
+            "in": "path",
+            "description": "commitDate",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/save": {
+      "post": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "assignment",
+            "description": "assignment",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/update": {
+      "put": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "assignment",
+            "description": "assignment",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/{employeeId}/{projectId}": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findAllByEmployeeIdAndManagerId",
+        "operationId": "findAllByEmployeeIdAndManagerIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Assignment»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/assignments/{employeeId}/{projectId}/{commitDate}": {
+      "get": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "commitDate",
+            "in": "path",
+            "description": "commitDate",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Assignment"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "assignment-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_1",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "commitDate",
+            "in": "path",
+            "description": "commitDate",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "projectId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/authenticate": {
+      "post": {
+        "tags": [
+          "authentication-resource"
+        ],
+        "summary": "authenticate",
+        "operationId": "authenticateUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "authenticationRequest",
+            "description": "authenticationRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AuthenticationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AuthenticationResponse"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/authenticate/": {
+      "post": {
+        "tags": [
+          "authentication-resource"
+        ],
+        "summary": "authenticate",
+        "operationId": "authenticateUsingPOST_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "authenticationRequest",
+            "description": "authenticationRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AuthenticationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AuthenticationResponse"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials": {
+      "get": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Credential»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_2",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "credential",
+            "description": "credential",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_2",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "credential",
+            "description": "credential",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/": {
+      "get": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_3",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Credential»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/delete/{id}": {
+      "delete": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/save": {
+      "post": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_3",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "credential",
+            "description": "credential",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/update": {
+      "put": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_3",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "credential",
+            "description": "credential",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/username/{username}": {
+      "get": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "findByUsername",
+        "operationId": "findByUsernameUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "deleteByUsername",
+        "operationId": "deleteByUsernameUsingDELETE",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/credentials/{id}": {
+      "get": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET_1",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Credential"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "credential-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_3",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_4",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Department»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_4",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "department",
+            "description": "department",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_4",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "department",
+            "description": "department",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments/": {
+      "get": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_5",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Department»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments/delete/{id}": {
+      "delete": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_4",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments/save": {
+      "post": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_5",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "department",
+            "description": "department",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments/update": {
+      "put": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_5",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "department",
+            "description": "department",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/departments/{id}": {
+      "get": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Department"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "department-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_5",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_6",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Employee»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_6",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "employee",
+            "description": "employee",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_6",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "employee",
+            "description": "employee",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_7",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Employee»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/data/department/{departmentId}": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findByDepartmentId",
+        "operationId": "findByDepartmentIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "path",
+            "description": "departmentId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Employee»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/data/employee-project-data/{employeeId}": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findByEmployeeProjectDataEmployeeId",
+        "operationId": "findByEmployeeProjectDataEmployeeIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«EmployeeProjectData»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/data/manager-project-data/{employeeId}": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findManagerProjectDataByEmployeeId",
+        "operationId": "findManagerProjectDataByEmployeeIdUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "employeeId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«ManagerProjectData»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/delete/{id}": {
+      "delete": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_6",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/save": {
+      "post": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_7",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "employee",
+            "description": "employee",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/update": {
+      "put": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_7",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "employee",
+            "description": "employee",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/username/{username}": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findByUsername",
+        "operationId": "findByUsernameUsingGET_1",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "deleteByUsername",
+        "operationId": "deleteByUsernameUsingDELETE_1",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/employees/{id}": {
+      "get": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET_3",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Employee"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "employee-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_7",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations": {
+      "get": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_8",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Location»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_8",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "location",
+            "description": "location",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_8",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "location",
+            "description": "location",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations/": {
+      "get": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_9",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Location»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations/delete/{id}": {
+      "delete": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_8",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations/save": {
+      "post": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_9",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "location",
+            "description": "location",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations/update": {
+      "put": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_9",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "location",
+            "description": "location",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/locations/{id}": {
+      "get": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET_4",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Location"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_9",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_10",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Project»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_10",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "project",
+            "description": "project",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_10",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "project",
+            "description": "project",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects/": {
+      "get": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET_11",
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DtoCollection«Project»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects/delete/{id}": {
+      "delete": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_10",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects/save": {
+      "post": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "save",
+        "operationId": "saveUsingPOST_11",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "project",
+            "description": "project",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects/update": {
+      "put": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_11",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "project",
+            "description": "project",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET_5",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "project-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE_11",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "Assignment": {
+      "type": "object",
+      "properties": {
+        "commitDate": {
+          "type": "string",
+          "example": "dd-MM-yyyyHH:mm:ss"
+        },
+        "commitEmpDesc": {
+          "type": "string"
+        },
+        "commitMgrDesc": {
+          "type": "string"
+        },
+        "employee": {
+          "$ref": "#/definitions/Employee"
+        },
+        "employeeId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "Assignment"
+    },
+    "AuthenticationRequest": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "title": "AuthenticationRequest"
+    },
+    "AuthenticationResponse": {
+      "type": "object",
+      "properties": {
+        "isEligible": {
+          "type": "boolean"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "title": "AuthenticationResponse"
+    },
+    "Credential": {
+      "type": "object",
+      "properties": {
+        "credentialId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "password": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "title": "Credential"
+    },
+    "Department": {
+      "type": "object",
+      "properties": {
+        "departmentId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "departmentName": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        }
+      },
+      "title": "Department"
+    },
+    "DtoCollection«Assignment»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Assignment"
+          }
+        }
+      },
+      "title": "DtoCollection«Assignment»"
+    },
+    "DtoCollection«Credential»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Credential"
+          }
+        }
+      },
+      "title": "DtoCollection«Credential»"
+    },
+    "DtoCollection«Department»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Department"
+          }
+        }
+      },
+      "title": "DtoCollection«Department»"
+    },
+    "DtoCollection«EmployeeProjectData»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmployeeProjectData"
+          }
+        }
+      },
+      "title": "DtoCollection«EmployeeProjectData»"
+    },
+    "DtoCollection«Employee»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Employee"
+          }
+        }
+      },
+      "title": "DtoCollection«Employee»"
+    },
+    "DtoCollection«Location»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Location"
+          }
+        }
+      },
+      "title": "DtoCollection«Location»"
+    },
+    "DtoCollection«ManagerProjectData»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagerProjectData"
+          }
+        }
+      },
+      "title": "DtoCollection«ManagerProjectData»"
+    },
+    "DtoCollection«ProjectCommit»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProjectCommit"
+          }
+        }
+      },
+      "title": "DtoCollection«ProjectCommit»"
+    },
+    "DtoCollection«Project»": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        }
+      },
+      "title": "DtoCollection«Project»"
+    },
+    "Employee": {
+      "type": "object",
+      "properties": {
+        "credential": {
+          "$ref": "#/definitions/Credential"
+        },
+        "department": {
+          "$ref": "#/definitions/Department"
+        },
+        "email": {
+          "type": "string"
+        },
+        "employeeId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "hiredate": {
+          "type": "string",
+          "example": "dd-MM-yyyy"
+        },
+        "job": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "manager": {
+          "$ref": "#/definitions/Employee"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "salary": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "title": "Employee"
+    },
+    "EmployeeProjectData": {
+      "type": "object",
+      "properties": {
+        "endDate": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startDate": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "title": "EmployeeProjectData"
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "adr": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "locationId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "postalCode": {
+          "type": "string"
+        }
+      },
+      "title": "Location"
+    },
+    "ManagerProjectData": {
+      "type": "object",
+      "properties": {
+        "endDate": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startDate": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "title": "ManagerProjectData"
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "endDate": {
+          "type": "string",
+          "example": "dd-MM-yyyy"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startDate": {
+          "type": "string",
+          "example": "dd-MM-yyyy"
+        },
+        "status": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "title": "Project"
+    },
+    "ProjectCommit": {
+      "type": "object",
+      "properties": {
+        "commitDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "commitEmpDesc": {
+          "type": "string"
+        },
+        "commitMgrDesc": {
+          "type": "string"
+        },
+        "employeeId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ProjectCommit"
+    }
+  }
+}

@@ -45,8 +45,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -623,6 +625,10 @@ public abstract class EnterpriseTestBase {
         assertTextInTests(outputFolder,className, l -> l.contains(content));
     }
 
+    protected void assertTextNotInTests(String outputFolder, String className, String content) {
+        assertTextNotInTests(outputFolder, className, l -> l.contains(content));
+    }
+
         /**
          * assert a certain text in the generated tests
          * @param outputFolder the folder where the test is
@@ -639,7 +645,49 @@ public abstract class EnterpriseTestBase {
         }catch (IOException e){
             throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
         }
+    }
 
+    /**
+     * Assert that a certain text is not present in the generated tests.
+     * @param outputFolder the folder where the test is
+     * @param className the complete test name
+     * @param condition is the content to check
+     */
+    protected void assertTextNotInTests(String outputFolder, String className, Predicate<String> condition) {
+        String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
+        Path test = Paths.get(path);
+        try {
+            boolean ok = Files.lines(test).noneMatch(condition);
+            String msg = "Found line with forbidden condition in "+className+" in "+outputFolder;
+            assertTrue(ok, msg);
+        }catch (IOException e){
+            throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
+        }
+    }
+
+    protected List<String> getFunctionNames(String outputFolder, String className){
+
+        //this specific on how we create tests
+        String regex = "\\s*fun\\s.*\\(\\)\\s*\\{\\s*";
+        Pattern pattern = Pattern.compile(regex);
+
+        String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
+        Path test = Paths.get(path);
+        try {
+            return Files.lines(test)
+                    .filter(it -> {
+                        Matcher matcher = pattern.matcher(it);
+                        return matcher.find();
+                    } )
+                    .map(it -> {
+                        int start = it.indexOf("fun") + 3;
+                        int end = it.indexOf("()");
+                        return it.substring(start, end).trim();
+                    })
+                    .collect(Collectors.toList());
+        }catch (IOException e){
+            throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
+        }
     }
 
     /**

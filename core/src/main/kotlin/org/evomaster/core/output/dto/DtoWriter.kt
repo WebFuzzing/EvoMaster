@@ -22,6 +22,8 @@ import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchDocumentGene
+import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -118,11 +120,35 @@ class DtoWriter(
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
             gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
+            gene is JsonPatchDocumentGene -> calculateDtoFromJsonPatch(gene)
             isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
         }
+    }
+
+    /**
+     * Registers the shared JsonPatchOperation DTO and collects nested DTOs for object/array values.
+     */
+    private fun calculateDtoFromJsonPatch(gene: JsonPatchDocumentGene) {
+        val dtoName = GeneToDto.JSON_PATCH_OPERATION_DTO
+        val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(it) }
+        dtoClass.addField(GeneToDto.FIELD_OP, DtoField(GeneToDto.FIELD_OP, GeneToDto.TYPE_STRING))
+        dtoClass.addField(GeneToDto.FIELD_PATH, DtoField(GeneToDto.FIELD_PATH, GeneToDto.TYPE_STRING))
+        dtoClass.addField(GeneToDto.FIELD_FROM, DtoField(GeneToDto.FIELD_FROM, GeneToDto.TYPE_STRING))
+        dtoClass.addField(GeneToDto.FIELD_VALUE, DtoField(GeneToDto.FIELD_VALUE, anyType()))
+
+        gene.operations.filterIsInstance<JsonPatchPathValueGene>().forEach { operation ->
+            when (val valueGene = operation.pathValueChoice.activeGene().second.getLeafGene()) {
+                is ObjectGene -> calculateDtoFromObject(valueGene, GeneToDto.FIELD_VALUE)
+                is ArrayGene<*> -> calculateDtoFromArray(valueGene, GeneToDto.FIELD_VALUE)
+            }
+        }
+    }
+
+    private fun anyType(): String {
+        return if (outputFormat.isJava()) GeneToDto.TYPE_JAVA_OBJECT else GeneToDto.TYPE_KOTLIN_ANY
     }
 
     private fun calculateDtoFromFixedMapGene(gene: FixedMapGene<*, *>, actionName: String) {

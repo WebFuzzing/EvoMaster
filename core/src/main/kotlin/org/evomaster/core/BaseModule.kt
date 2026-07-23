@@ -3,6 +3,8 @@ package org.evomaster.core
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
+import org.evomaster.core.llm.service.DictionaryService
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.evomaster.core.search.service.*
@@ -93,6 +95,12 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
             .asEagerSingleton()
 
         bind(WarningsAggregator::class.java)
+            .asEagerSingleton()
+
+        bind(LlmService::class.java)
+            .asEagerSingleton()
+
+        bind(DictionaryService::class.java)
             .asEagerSingleton()
 
         //no longer needed if TestSuiteWriter is moved out?

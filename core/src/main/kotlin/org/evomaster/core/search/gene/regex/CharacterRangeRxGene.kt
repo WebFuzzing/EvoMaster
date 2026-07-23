@@ -15,7 +15,7 @@ import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.RegexFlags
 import org.slf4j.LoggerFactory
 
-class CharacterRangeRxGene private constructor(
+class CharacterRangeRxGene(
     /**
      * this represents the valid ranges for a character class, removing overlaps and applying negation
      */
@@ -30,13 +30,18 @@ class CharacterRangeRxGene private constructor(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    var value : Char = validRanges[0].start
+    // '\u0000' is a placeholder for the unsatisfiable case (empty MCR with no valid ranges).
+    // This gene will never be randomized or mutated when isUnsatisfiable() is true, as it would be immutable.
+    // getValueAsPrintableString throws when isUnsatisfiable, so that value should be unreachable.
+    var value : Char = if (isUnsatisfiable()) '\u0000' else validRanges[0].start
 
     /**
      * Whether to output the character in uppercase.
      * Only meaningful when flags.caseInsensitive is true.
      */
     var useUpperCase: Boolean = false
+
+    override fun isUnsatisfiable(): Boolean = validRanges.isEmpty
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return validRanges.any {
@@ -49,6 +54,9 @@ class CharacterRangeRxGene private constructor(
     }
 
     override fun isMutable(): Boolean {
+        if (isUnsatisfiable()) {
+            return false
+        }
         // check if there is more than one character or if the character is caseable
         return validRanges.charCount > 1 || flags.isCaseable(value)
     }
@@ -134,6 +142,9 @@ class CharacterRangeRxGene private constructor(
             TODO should \ be handled specially?
             In any case, would have same handling as AnyCharacterRxGene
          */
+        if (isUnsatisfiable()) {
+            throw IllegalStateException("Cannot get value from empty CharacterRange")
+        }
         return if (!flags.isCaseable(value)) {
             value.toString()
         }
