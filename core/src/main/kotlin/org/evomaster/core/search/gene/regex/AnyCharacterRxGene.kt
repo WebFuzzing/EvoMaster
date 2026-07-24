@@ -131,4 +131,38 @@ class AnyCharacterRxGene(
         return true
     }
 
+    /**
+     * 1 if [value]'s first character is within [validRanges] (i.e. one `.` itself could
+     * render, given the current flags), else 0.
+     * @see [RxAbsorbable.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int {
+        if (value.isEmpty()) {
+            return 0
+        }
+        return if (validRanges.contains(value[0])) {
+            1
+        } else {
+            0
+        }
+    }
+
+    /** Always false: `.` always renders exactly one character.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean = false
+
+    /**
+     * Forces [value]'s first character onto this gene if `.` could render it; mirrors
+     * [absorbableCount], so it never mutates when [absorbableCount] would return 0.
+     * @see [RxAbsorbable.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        val n = absorbableCount(value)
+        if (n == 1) {
+            this.value = value[0]
+        }
+        return n
+    }
 }

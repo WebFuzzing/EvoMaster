@@ -11,7 +11,7 @@ private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
-class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
+class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
 
     private val hexEscapePrefixes = setOf('x', 'u')
 
@@ -60,6 +60,8 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
      */
     private var currentFlags = externalRegexFlags
 
+    private var hasAssertions = false
+
     /**
      * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
      */
@@ -87,6 +89,23 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         return disjList
     }
 
+    /**
+     * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
+     * the currently-unsupported ways an assertion's ancestry can appear (nested).
+     * Returns true if it reaches the top-level pattern without hitting either, false otherwise.
+     */
+    private fun isAssertionNested(ctx: RegexJavaParser.AssertionContext): Boolean {
+        var current = ctx.parent
+        while (current != null && current !is RegexJavaParser.PatternContext) {
+            if (current is RegexJavaParser.AssertionContext
+                || (current is RegexJavaParser.AtomContext && current.disjunction() != null)) {
+                return true
+            }
+            current = current.parent
+        }
+        return false
+    }
+
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -107,8 +126,10 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         val gene = RegexGene(
             "regex",
             disjList,
-            text.substring(0, text.length - EOF_TOKEN.length),
-            RegexType.JVM
+            sourceRegex,
+            RegexType.JVM,
+            externalRegexFlags = externalRegexFlags,
+            hasAssertions = hasAssertions
         )
 
         return VisitResult(gene)
@@ -231,7 +252,18 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         val res = VisitResult()
 
         if(ctx.assertion() != null){
-            res.data = ctx.assertion().text
+            val assertionCtx = ctx.assertion()
+            if (assertionCtx.CARET() != null || assertionCtx.DOLLAR() != null) {
+                res.data = ctx.assertion().text
+            } else {
+                require(!isAssertionNested(ctx.assertion())){
+                    "Nested assertions are not currently supported."
+                }
+                val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
+                val assertionGene = AssertionRxGene(innerDisjList)
+                hasAssertions = true
+                res.genes.add(assertionGene)
+            }
             return res
         }
 

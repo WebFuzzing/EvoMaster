@@ -4,6 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -14,6 +15,11 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * How many times a single [DisjunctionRxGene] tries to fix one of its own direct-term
+ * assertions, see [DisjunctionRxGene.attemptAssertionRepair].
+ */
+const val MAX_LOCAL_ASSERTION_ATTEMPTS = 20
 
 class DisjunctionRxGene(
         name: String,
@@ -184,4 +190,78 @@ class DisjunctionRxGene(
         return ok
     }
 
+    /**
+     * Delegates to a forward walk over [terms].
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [AssertionRepairWalk.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int =
+        AssertionRepairWalk.absorbableCount(terms, value)
+
+    /**
+     * True only if every term can independently render "", as this disjunction's own value is
+     * the concatenation of all of them.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean =
+        terms.all { (it as RxAbsorbable).canBeZeroWidth }
+
+    /**
+     * Delegates to a forward walk over [terms], mirroring [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     * @see [AssertionRepairWalk.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForce(terms, value)
+    }
+
+    /**
+     * Forces every term to zero width individually.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth)
+        terms.forEach { (it as RxAbsorbable).forceZeroWidth() }
+    }
+
+    /**
+     * Attempts to repair this disjunction's own value so that each of its direct-term
+     * [AssertionRxGene]s is actually satisfied, by forcing the assertion's sampled inner
+     * value onto the genes that follow it within [terms].
+     */
+    fun attemptAssertionRepair(randomness: Randomness) {
+        if (terms.none { it is AssertionRxGene }) {
+            return
+        }
+
+        for (idx in terms.indices) {
+            val assertion = terms[idx] as? AssertionRxGene ?: continue
+            if (assertion.innerGene == null) {
+                continue
+            }
+
+            val genesAfter = terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
+            if (genesAfter.isEmpty()) {
+                return
+            }
+
+            var satisfied = false
+            for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
+                assertion.randomize(randomness, false)
+                val candidate = assertion.sampledInnerValue() ?: break
+                if (candidate.isEmpty()
+                    || AssertionRepairWalk.absorbableCount(genesAfter, candidate) == candidate.length) {
+                    if (candidate.isNotEmpty()) {
+                        AssertionRepairWalk.tryForce(genesAfter, candidate)
+                    }
+                    satisfied = true
+                    break
+                }
+            }
+            if (!satisfied) {
+                return
+            }
+        }
+    }
 }

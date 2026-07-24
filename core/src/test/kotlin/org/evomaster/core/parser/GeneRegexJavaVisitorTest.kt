@@ -453,4 +453,35 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testUnicodeCharClassFlagImpliesUnicodeCase(){
         checkCanSample("(?iU)Å", "å", 100)
     }
+
+    @Test
+    fun testSimpleLookaheads() {
+        checkSameAsJava("(?=aaa5)aaa\\d")
+        checkSameAsJava("(?=.*\\d).{4,8}")
+        checkSameAsJava("(?=.*[A-Z])[a-zA-Z]{4,8}")
+        checkSameAsJava("(?=.*[a-z])[a-zA-Z]{4,8}")
+        checkSameAsJava("foo(?=.*\\d)[a-z\\d]{3,6}")
+        checkSameAsJava("(?=.*\\d)\\w{6,12}")
+        checkSameAsJava("(?=.*[^A-Za-z0-9])\\w{6,12}$")
+        checkSameAsJava("^(?=.*\\d)[a-zA-Z\\d]{8,16}$")
+        checkSameAsJava("(?=\\d)\\d{1,5}")
+        checkSameAsJava("(?=.*\\d)([a-z]+|\\d+){2,4}")
+        checkSameAsJava("(?=(!.*[a-z]+))\\1")
+        checkSameAsJava("(?=(\\d|\\s|d))(\\d|\\s|d)*")
+        checkSameAsJava("(?=a*)\\w*")
+        checkSameAsJava("(?=xbcde)x(bcdX|bc)de")
+        checkSameAsJava("^(?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?$")
+        checkSameAsJava("(?=ababc)(ab|abc)+")
+    }
+
+    @Test
+    fun testUnsatisfiableLookaheads() {
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
+        checkSameAsJava("abc|(?=[a&&b])def")
+    }
 }

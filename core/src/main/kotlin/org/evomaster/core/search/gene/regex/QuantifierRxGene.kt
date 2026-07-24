@@ -1,9 +1,9 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -238,6 +238,46 @@ class QuantifierRxGene(
                 this.addChild(a)
             }
             true
+        }
+    }
+
+    /**
+     * Delegates to a forward walk over [atoms], this gene has no absorption logic beyond
+     * what its repeated atoms can each individually take.
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [AssertionRepairWalk.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int =
+        AssertionRepairWalk.absorbableCount(atoms, value)
+
+    /**
+     * True if zero repetitions are allowed ([min] == 0), or if [template] can itself render "".
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean =
+        min == 0 || (template as? RxAbsorbable)?.canBeZeroWidth == true
+
+    /**
+     * Delegates to a forward walk over [atoms], mirroring [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     * @see [AssertionRepairWalk.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForce(atoms, value)
+    }
+
+    /**
+     * Collapses to zero repetitions if [min] == 0 (removing every atom), otherwise forces
+     * each existing atom to zero width individually.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth)
+        if (min == 0) {
+            killAllChildren()
+        } else {
+            atoms.forEach { (it as RxAbsorbable).forceZeroWidth() }
         }
     }
 }
