@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.controller.cassandra.model.CqlDurationLiteral;
 import org.evomaster.client.java.controller.cassandra.operations.*;
 import org.evomaster.client.java.controller.cassandra.parser.CqlDurationLiteralParser;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 
@@ -18,7 +19,7 @@ import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.evomaster.client.java.controller.cassandra.calculator.CassandraHeuristicsCalculator.*;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
 
 /**
  * Computes CQL-heuristics {@link Truthness} for a {@link CqlQueryOperation} against a
@@ -111,10 +112,12 @@ public class CassandraOperationEvaluator {
         return evaluateComparison(op, candidateRow, ComparisonType.LTE);
     }
 
-    // In CQL, a stored NULL and an absent/never-set column are the same thing at read time
-    // (writing NULL creates a tombstone, identical to never having written the column), so
-    // none of the null checks below (here and in evaluateContains, evaluateContainsKey and
-    // evaluateComparison) can tell these two cases apart.
+    /**
+     * In CQL, a stored NULL and an absent/never-set column are the same thing at read time
+     * (writing NULL creates a tombstone, identical to never having written the column), so
+     * none of the null checks below (here and in {@link #evaluateContains}, {@link #evaluateContainsKey}
+     * and {@link #evaluateComparison}) can tell these two cases apart.
+     */
     private Truthness evaluateIn(InOperation op, CassandraRow candidateRow) {
         Object rowValue = candidateRow.getValue(op.getColumnName());
         if (rowValue == null) {
@@ -156,7 +159,7 @@ public class CassandraOperationEvaluator {
             if (typeResult.isTrue()) {
                 return typeResult;
             } else {
-                return TruthnessUtils.buildScaledTruthness(C_BETTER, typeResult.getOfTrue());
+                return TruthnessUtils.buildScaledTruthness(DistanceHelper.C_BETTER, typeResult.getOfTrue());
             }
         }
     }
@@ -395,7 +398,7 @@ public class CassandraOperationEvaluator {
             return unscaledTruthness;
         }
 
-        return TruthnessUtils.buildScaledTruthness(C_BETTER, unscaledTruthness.getOfTrue());
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.C_BETTER, unscaledTruthness.getOfTrue());
     }
 
     private static List<?> toElementList(Object collection) {

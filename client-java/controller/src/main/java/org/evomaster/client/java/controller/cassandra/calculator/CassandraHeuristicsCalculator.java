@@ -10,6 +10,9 @@ import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_TRUTHNESS;
+
 /**
  * Calculator designed to compute a branch-distance-based heuristic for a CQL (Cassandra Query Language) query,
  * given the rows returned by executing that query against the database.
@@ -19,13 +22,6 @@ import java.util.List;
  * that makes the executed queries return non-empty results during the execution of generated tests.
  */
 public class CassandraHeuristicsCalculator {
-
-    public static final double C        = DistanceHelper.H_NOT_NULL;
-    public static final double C_BETTER = 0.15;
-
-    public static final Truthness TRUE_TRUTHNESS         = new Truthness(1.0, C);
-    public static final Truthness FALSE_TRUTHNESS        = new Truthness(C, 1.0);
-    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(C_BETTER, 1.0);
 
     private final CassandraOperationEvaluator evaluator = new CassandraOperationEvaluator();
 
@@ -84,7 +80,7 @@ public class CassandraHeuristicsCalculator {
             }
         }
 
-        return TruthnessUtils.buildScaledTruthness(C, maxOfTrue);
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.C, maxOfTrue);
     }
 
     private static List<CassandraRow> toList(Iterable<CassandraRow> iterable) {
