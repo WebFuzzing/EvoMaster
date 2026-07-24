@@ -31,6 +31,13 @@ public class DistanceHelper {
 
     public static final double H_NOT_EMPTY = H_NOT_NULL;
 
+    /**
+     * Base heuristic value used when a boolean condition is not satisfied, so that
+     * it is still possible to discriminate "how far" it is from being true.
+     */
+    public static final double C = 0.1d;
+    public static final double C_BETTER = C + (C / 2);
+
 
     //2^16=65536, max distance for a char
     public static final int MAX_CHAR_DISTANCE = 65_536;

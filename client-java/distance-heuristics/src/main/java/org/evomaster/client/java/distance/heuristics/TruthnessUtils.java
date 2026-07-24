@@ -7,6 +7,22 @@ import java.util.UUID;
 public class TruthnessUtils {
 
     /**
+     * A {@link Truthness} representing a condition that is fully satisfied.
+     */
+    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, DistanceHelper.C);
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied at all.
+     */
+    public static final Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied, but that provides a
+     * better (ie, higher) base value than {@link #FALSE_TRUTHNESS}.
+     */
+    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.C_BETTER, 1);
+
+    /**
      * Scales to a positive double value to the [0,1] range
      *
      * @param v a non-negative double value

@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.cassandra.parser;
 
 import org.evomaster.client.java.controller.cassandra.model.CqlDurationLiteral;
+import org.evomaster.client.java.utils.IsoDuration;
+import org.evomaster.client.java.utils.IsoDurationParser;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,18 +45,9 @@ public class CqlDurationLiteralParser {
     private static final long NANOS_PER_MILLISECOND = 1_000_000L;
     private static final long NANOS_PER_MICROSECOND = 1_000L;
 
-    private static final char ISO_TIME_SEPARATOR = 'T';
-    private static final char ISO_YEAR_DESIGNATOR = 'Y';
-    private static final char ISO_MONTH_OR_MINUTE_DESIGNATOR = 'M';
-    private static final char ISO_DAY_DESIGNATOR = 'D';
-    private static final char ISO_HOUR_DESIGNATOR = 'H';
-    private static final char ISO_SECOND_DESIGNATOR = 'S';
-
     private static final String ISO_DURATION_PREFIX_UPPER = "P";
     private static final String ISO_DURATION_PREFIX_LOWER = "p";
-    private static final String ISO_WEEK_SUFFIX = "W";
     private static final String MINUS_SIGN = "-";
-    private static final String ISO8601_ALTERNATIVE_DATE_SEPARATOR = "-";
 
     /**
      * Matches the standard Cassandra format: an optional digit sequence followed by a unit
@@ -65,29 +58,6 @@ public class CqlDurationLiteralParser {
             "(\\d+)(" + String.join("|", UNIT_MONTH, UNIT_MILLISECOND, UNIT_MICROSECOND_MU,
                     UNIT_MICROSECOND, UNIT_NANOSECOND, UNIT_YEAR, UNIT_WEEK, UNIT_DAY, UNIT_HOUR, UNIT_MINUTE, UNIT_SECOND) + ")",
             Pattern.CASE_INSENSITIVE);
-
-    /**
-     * Matches the general ISO 8601 format, e.g. {@code P1Y2M3DT4H5M6S}. Every component is
-     * optional, mirroring the driver's own grammar, so bare {@code P} or {@code PT} are valid
-     * (zero-length) durations.
-     */
-    private static final Pattern ISO8601_PATTERN = Pattern.compile(
-            ISO_DURATION_PREFIX_UPPER
-                    + "(?:(\\d+)" + ISO_YEAR_DESIGNATOR + ")?"
-                    + "(?:(\\d+)" + ISO_MONTH_OR_MINUTE_DESIGNATOR + ")?"
-                    + "(?:(\\d+)" + ISO_DAY_DESIGNATOR + ")?"
-                    + "(?:" + ISO_TIME_SEPARATOR
-                    + "(?:(\\d+)" + ISO_HOUR_DESIGNATOR + ")?"
-                    + "(?:(\\d+)" + ISO_MONTH_OR_MINUTE_DESIGNATOR + ")?"
-                    + "(?:(\\d+)" + ISO_SECOND_DESIGNATOR + ")?)?");
-
-    /** Matches the ISO 8601 weeks-only format, e.g. {@code P3W}. */
-    private static final Pattern ISO8601_WEEK_PATTERN =
-            Pattern.compile(ISO_DURATION_PREFIX_UPPER + "(\\d+)" + ISO_WEEK_SUFFIX);
-
-    /** Matches the ISO 8601 alternative format, e.g. {@code P0001-02-03T04:05:06}. */
-    private static final Pattern ISO8601_ALTERNATIVE_PATTERN = Pattern.compile(
-            ISO_DURATION_PREFIX_UPPER + "(\\d{4})-(\\d{2})-(\\d{2})" + ISO_TIME_SEPARATOR + "(\\d{2}):(\\d{2}):(\\d{2})");
 
     /**
      * Parses a CQL duration literal into a {@link CqlDurationLiteral}. A leading {@code -} is
@@ -123,25 +93,28 @@ public class CqlDurationLiteralParser {
     }
 
     /**
-     * Routes to one of the four pattern-specific parsers, mirroring the format detection in the
-     * driver's {@code CqlDuration.from(String)}: non-{@code P}-prefixed input is the standard
-     * Cassandra format; {@code P}-prefixed input ending in {@code W} is the ISO week-only format;
-     * {@code P}-prefixed input containing {@code -} is the ISO alternative format; anything else
-     * {@code P}-prefixed is the general ISO 8601 format.
+     * Routes to either the standard Cassandra format parser or, for {@code P}/{@code p}-prefixed
+     * input, delegates to {@link IsoDurationParser} for the three ISO-8601 duration formats,
+     * mirroring the format detection in the driver's {@code CqlDuration.from(String)}.
      */
     private static CqlDurationLiteral parseUnsigned(String unsigned) {
         if (!unsigned.startsWith(ISO_DURATION_PREFIX_UPPER) && !unsigned.startsWith(ISO_DURATION_PREFIX_LOWER)) {
             return parseStandardPattern(unsigned);
         } else {
-            String upper = unsigned.toUpperCase();
-            if (upper.endsWith(ISO_WEEK_SUFFIX)) {
-                return parseIso8601WeekPattern(upper);
-            } else if (upper.contains(ISO8601_ALTERNATIVE_DATE_SEPARATOR)) {
-                return parseIso8601AlternativePattern(upper);
-            } else {
-                return parseIso8601Pattern(upper);
-            }
+            return toCqlDurationLiteral(IsoDurationParser.parse(unsigned));
         }
+    }
+
+    /**
+     * Combines the raw ISO-8601 components into Cassandra's specific months/days/nanos
+     * decomposition: years are folded into months, weeks into days, and hours/minutes/seconds
+     * into a single nanosecond count.
+     */
+    private static CqlDurationLiteral toCqlDurationLiteral(IsoDuration iso) {
+        int months = (int) (iso.years * MONTHS_PER_YEAR + iso.months);
+        int days = (int) (iso.weeks * DAYS_PER_WEEK + iso.days);
+        long nanos = iso.hours * NANOS_PER_HOUR + iso.minutes * NANOS_PER_MINUTE + iso.seconds * NANOS_PER_SECOND;
+        return new CqlDurationLiteral(months, days, nanos);
     }
 
     private static CqlDurationLiteral parseStandardPattern(String text) {
@@ -190,55 +163,5 @@ public class CqlDurationLiteralParser {
             }
         }
         return new CqlDurationLiteral(months, days, nanos);
-    }
-
-    private static CqlDurationLiteral parseIso8601Pattern(String isoDuration) {
-        Matcher matcher = ISO8601_PATTERN.matcher(isoDuration);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Unable to parse duration literal '" + isoDuration + "'");
-        } else {
-            int years   = groupAsInt(matcher, 1);
-            int months  = groupAsInt(matcher, 2);
-            int days    = groupAsInt(matcher, 3);
-            int hours   = groupAsInt(matcher, 4);
-            int minutes = groupAsInt(matcher, 5);
-            int seconds = groupAsInt(matcher, 6);
-
-            long nanos = hours * NANOS_PER_HOUR + minutes * NANOS_PER_MINUTE + seconds * NANOS_PER_SECOND;
-            return new CqlDurationLiteral(years * MONTHS_PER_YEAR + months, days, nanos);
-        }
-    }
-
-    /** Returns the matched group as an {@code int}, or {@code 0} if the (optional) group didn't participate. */
-    private static int groupAsInt(Matcher matcher, int group) {
-        String value = matcher.group(group);
-        return value == null ? 0 : Integer.parseInt(value);
-    }
-
-    private static CqlDurationLiteral parseIso8601WeekPattern(String isoDuration) {
-        Matcher matcher = ISO8601_WEEK_PATTERN.matcher(isoDuration);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Unable to parse duration literal '" + isoDuration + "'");
-        } else {
-            int weeks = Integer.parseInt(matcher.group(1));
-            return new CqlDurationLiteral(0, weeks * DAYS_PER_WEEK, 0L);
-        }
-    }
-
-    private static CqlDurationLiteral parseIso8601AlternativePattern(String isoDuration) {
-        Matcher matcher = ISO8601_ALTERNATIVE_PATTERN.matcher(isoDuration);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Unable to parse duration literal '" + isoDuration + "'");
-        } else {
-            int years   = Integer.parseInt(matcher.group(1));
-            int months  = Integer.parseInt(matcher.group(2));
-            int days    = Integer.parseInt(matcher.group(3));
-            int hours   = Integer.parseInt(matcher.group(4));
-            int minutes = Integer.parseInt(matcher.group(5));
-            int seconds = Integer.parseInt(matcher.group(6));
-
-            long nanos = hours * NANOS_PER_HOUR + minutes * NANOS_PER_MINUTE + seconds * NANOS_PER_SECOND;
-            return new CqlDurationLiteral(years * MONTHS_PER_YEAR + months, days, nanos);
-        }
     }
 }
