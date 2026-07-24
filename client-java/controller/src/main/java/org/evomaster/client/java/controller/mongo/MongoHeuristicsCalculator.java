@@ -156,10 +156,17 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(expectedValue);
+        if (!isTypeSupportedForComparison(actualValue)) {
+            throw new IllegalArgumentException("Unsupported type: " + actualValue.getClass().getName());
+        }
+        if (!isTypeSupportedForComparison(expectedValue)) {
+            throw new IllegalArgumentException("Unsupported type: " + expectedValue.getClass().getName());
+        }
 
         final Truthness truthnessOfComparison;
         if (actualValue instanceof Number && expectedValue instanceof Number) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison((Number) actualValue, (Number) expectedValue, comparisonOperatorType);
+
         } else if (actualValue instanceof String && expectedValue instanceof String) {
             String actualString = (String) actualValue;
             String expectedString = (String) expectedValue;
@@ -167,8 +174,18 @@ public class MongoHeuristicsCalculator {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+
         } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
+
+        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
+            truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
+
+        } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
+            long actualTimestamp = BsonHelper.getBsonTimestampValue(actualValue);
+            long expectedTimestamp = BsonHelper.getBsonTimestampValue(expectedValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(actualTimestamp, expectedTimestamp, comparisonOperatorType);
+
         } else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
             String actualString = actualValue.toString();
             String expectedString = expectedValue.toString();
@@ -176,14 +193,34 @@ public class MongoHeuristicsCalculator {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+
         } else if (actualValue instanceof Date || expectedValue instanceof Date) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
-        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
-            truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
+
         } else {
-            throw new IllegalArgumentException("Unsupported value type: " + actualValue.getClass().getName());
+            // If both types are supported, but no actual comparison logic is defined,
+            // we considered them to be incompatible, therefore the comparison returns false.
+            truthnessOfComparison = C_FALSE;
         }
         return truthnessOfComparison;
+    }
+
+    /**
+     * Checks if the provided value is of a supported type for comparison.
+     *
+     * @param value
+     * @return
+     */
+    private static boolean isTypeSupportedForComparison(Object value) {
+        Objects.requireNonNull(value);
+
+        return value instanceof String ||
+                value instanceof Number ||
+                value instanceof Boolean ||
+                value instanceof Date ||
+                value instanceof List<?> ||
+                BsonHelper.isObjectId(value) ||
+                BsonHelper.isBsonTimestamp(value);
     }
 
     /**

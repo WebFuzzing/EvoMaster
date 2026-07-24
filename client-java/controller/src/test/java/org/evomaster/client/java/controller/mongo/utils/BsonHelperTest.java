@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.mongo.utils;
 
+import org.bson.BsonTimestamp;
 import org.bson.BsonType;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
@@ -141,5 +142,25 @@ class BsonHelperTest {
 
         String notObjectId = "not an ObjectId";
         assertFalse(BsonHelper.isObjectId(notObjectId));
+    }
+
+    @Test
+    void testIsBsonTimestamp() {
+        assertTrue(BsonHelper.isBsonTimestamp(new BsonTimestamp(1, 2)));
+        assertFalse(BsonHelper.isBsonTimestamp("not a BsonTimestamp"));
+        assertFalse(BsonHelper.isBsonTimestamp(null));
+    }
+
+    @Test
+    void testGetBsonTimestampValue() {
+        BsonTimestamp timestamp = new BsonTimestamp(1, 2);
+
+        assertEquals(timestamp.getValue(), BsonHelper.getBsonTimestampValue(timestamp));
+    }
+
+    @Test
+    void testGetBsonTimestampValueRejectsInvalidType() {
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.getBsonTimestampValue(new Object()));
+        assertThrows(NullPointerException.class, () -> BsonHelper.getBsonTimestampValue(null));
     }
 }

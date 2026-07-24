@@ -434,6 +434,17 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testTypeTimestamp() {
+        Document doc = new Document().append("timestamp", new BsonTimestamp(1, 1));
+        Bson bsonTrue = Filters.type("timestamp", BsonType.TIMESTAMP);
+        Bson bsonFalse = Filters.type("timestamp", BsonType.DATE_TIME);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
     public void testEqualsBoolean() {
         Document doc = new Document().append("active", true);
         Bson bsonTrue = Filters.eq("active", true);
@@ -453,6 +464,26 @@ public class MongoHeuristicsCalculatorTest {
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
         assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsStringOnIntegerField() {
+        Document doc = new Document().append("value", 42);
+        Bson bson = Filters.eq("value", "42");
+
+        Truthness distance = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bson), doc);
+
+        assertTrue(distance.isFalse());
+    }
+
+    @Test
+    public void testEqualsStringOnBooleanField() {
+        Document doc = new Document().append("value", true);
+        Bson bson = Filters.eq("value", "bar");
+
+        Truthness distance = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bson), doc);
+
+        assertTrue(distance.isFalse());
     }
 
     @Test
@@ -509,6 +540,20 @@ public class MongoHeuristicsCalculatorTest {
         Document doc = new Document().append("_id", value);
         Bson bsonTrue = Filters.eq("_id", value);
         Bson bsonFalse = Filters.eq("_id", otherValue);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testEqualsTimestamp() {
+        BsonTimestamp value = new BsonTimestamp(1, 1);
+        BsonTimestamp otherValue = new BsonTimestamp(1, 2);
+
+        Document doc = new Document().append("timestamp", value);
+        Bson bsonTrue = Filters.eq("timestamp", value);
+        Bson bsonFalse = Filters.eq("timestamp", otherValue);
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
