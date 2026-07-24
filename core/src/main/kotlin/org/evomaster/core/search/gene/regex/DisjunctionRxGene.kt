@@ -246,7 +246,9 @@ class DisjunctionRxGene(
     /**
      * Attempts to repair this disjunction's own value so that each of its direct-term
      * [AssertionRxGene]s is actually satisfied, by forcing the assertion's sampled inner
-     * value onto the genes that follow it within [terms].
+     * value onto the genes on the appropriate side of it within [terms]:
+     * - Forward, onto [terms] after it, for [AssertionType.LOOKAHEAD]
+     * - Backward, onto [terms] before it, for [AssertionType.LOOKBEHIND].
      */
     fun attemptAssertionRepair(randomness: Randomness) {
         if (terms.none { it is AssertionRxGene }) {
@@ -255,23 +257,37 @@ class DisjunctionRxGene(
 
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            if (assertion.innerGene == null) {
-                continue
+            val innerGene = assertion.innerGene ?: continue
+
+            val target = if (assertion.assertionType == AssertionType.LOOKBEHIND) {
+                terms.subList(0, idx).filter { it !is AssertionRxGene }
+            } else {
+                terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
             }
 
-            val genesAfter = terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
-            if (genesAfter.isEmpty()) {
+            // we may not be able to force genes as target is empty but if the lookaround can be zero-width it is fine.
+            if (target.isEmpty()) {
+                if (innerGene.canBeZeroWidth) {
+                    innerGene.forceZeroWidth()
+                    continue
+                }
                 return
             }
+
+            val (countFunction, forceFunction) =
+                if (assertion.assertionType == AssertionType.LOOKBEHIND) {
+                    AssertionRepairWalk::absorbableSuffixCount to AssertionRepairWalk::tryForceSuffix
+                } else {
+                    AssertionRepairWalk::absorbableCount to AssertionRepairWalk::tryForce
+                }
 
             var satisfied = false
             for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
                 assertion.randomize(randomness, false)
                 val candidate = assertion.sampledInnerValue() ?: break
-                if (candidate.isEmpty()
-                    || AssertionRepairWalk.absorbableCount(genesAfter, candidate) == candidate.length) {
+                if (candidate.isEmpty() || countFunction(target, candidate) == candidate.length) {
                     if (candidate.isNotEmpty()) {
-                        AssertionRepairWalk.tryForce(genesAfter, candidate)
+                        forceFunction(target, candidate)
                     }
                     satisfied = true
                     break
