@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb.parsers;
 
+import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 
@@ -23,7 +24,7 @@ public class QueryApiMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+    public Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
         String tableName = readValidTableName(ddbRequest);
         if (tableName == null) {
             return Collections.emptyMap();
@@ -37,12 +38,12 @@ public class QueryApiMethodParser extends DynamoDbBaseApiMethodParser {
                 names,
                 values
         );
-        QueryOperation filterCondition = parseExpression(
+        QueryOperation filterExpression = parseExpression(
                 readString(ddbRequest, METHOD_FILTER_EXPRESSION),
                 names,
                 values
         );
 
-        return singleTableResult(tableName, combineWithAnd(keyCondition, filterCondition));
+        return buildSingleTableRequestMap(tableName, keyCondition, filterExpression);
     }
 }

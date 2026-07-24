@@ -23,6 +23,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
     public void testParseByTableGuards() {
         assertTrue(parser.parseByTable(null, DynamoDbOperationNames.QUERY).isEmpty());
         assertTrue(parser.parseByTable(QueryRequest.builder().tableName("players").build(), null).isEmpty());
+        assertTrue(parser.parseByTable(
+                QueryRequest.builder().tableName("players").build(),
+                DynamoDbOperationNames.QUERY
+        ).isEmpty());
 
         QueryRequest request = QueryRequest.builder()
                 .tableName("players")
@@ -30,8 +34,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .expressionAttributeValues(attributeValues(":id", stringValue("messi-10")))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
-        assertComparison(operation, EqualsOperation.class, "id", "messi-10");
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
+        assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "messi-10");
+        assertNull(parsedRequest.getFilterExpression());
     }
 
     @Test
@@ -52,13 +58,12 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 ))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
-        AndOperation topAnd = castAs(operation, AndOperation.class);
-        assertEquals(2, topAnd.getConditions().size());
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
 
-        assertComparison(topAnd.getConditions().get(0), EqualsOperation.class, "id", "messi-10");
+        assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "messi-10");
 
-        OrOperation filterOr = castAs(topAnd.getConditions().get(1), OrOperation.class);
+        OrOperation filterOr = castAs(parsedRequest.getFilterExpression(), OrOperation.class);
         assertEquals(2, filterOr.getConditions().size());
 
         AndOperation nestedAnd = castAs(filterOr.getConditions().get(0), AndOperation.class);
@@ -82,12 +87,11 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .filterExpression("caps > 1.5e2 AND active = TRUE AND note = NULL")
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
-        AndOperation topAnd = castAs(operation, AndOperation.class);
-        assertEquals(2, topAnd.getConditions().size());
-        assertComparison(topAnd.getConditions().get(0), EqualsOperation.class, "id", "ronaldo-7");
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.QUERY).get("players");
+        assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "ronaldo-7");
 
-        AndOperation filterAnd = castAs(topAnd.getConditions().get(1), AndOperation.class);
+        AndOperation filterAnd = castAs(parsedRequest.getFilterExpression(), AndOperation.class);
         assertEquals(3, filterAnd.getConditions().size());
 
         ComparisonOperation<?> greater = castAs(filterAnd.getConditions().get(0), GreaterThanOperation.class);
@@ -110,8 +114,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 ))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.SCAN).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.SCAN).get("players");
+        assertNull(parsedRequest.getKeyCondition());
+        AndOperation and = castAs(parsedRequest.getFilterExpression(), AndOperation.class);
         assertEquals(2, and.getConditions().size());
 
         ContainsOperation contains = castAs(and.getConditions().get(0), ContainsOperation.class);
@@ -152,8 +158,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .expressionAttributeValues(attributeValues(":old", stringValue("RETIRED")))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.PUT_ITEM).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.PUT_ITEM).get("players");
+        assertNull(parsedRequest.getKeyCondition());
+        AndOperation and = castAs(parsedRequest.getFilterExpression(), AndOperation.class);
         assertEquals(2, and.getConditions().size());
 
         ExistsOperation exists = castAs(and.getConditions().get(0), ExistsOperation.class);
@@ -175,7 +183,7 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
     }
 
     @Test
-    public void testDeleteItemCombinesKeyAndCondition() {
+    public void testDeleteItemSeparatesKeyAndFilterExpression() {
         DeleteItemRequest request = DeleteItemRequest.builder()
                 .tableName("players")
                 .key(attributeValues(
@@ -186,20 +194,18 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .expressionAttributeValues(attributeValues(":v", numberValue("7")))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.DELETE_ITEM).get("players");
-        AndOperation topAnd = castAs(operation, AndOperation.class);
-        assertEquals(2, topAnd.getConditions().size());
-
-        AndOperation keyAnd = castAs(topAnd.getConditions().get(0), AndOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.DELETE_ITEM).get("players");
+        AndOperation keyAnd = castAs(parsedRequest.getKeyCondition(), AndOperation.class);
         assertEquals(2, keyAnd.getConditions().size());
         assertComparison(keyAnd.getConditions().get(0), EqualsOperation.class, "id", "maradona-10");
         assertComparison(keyAnd.getConditions().get(1), EqualsOperation.class, "tenant", "Argentina");
 
-        assertComparison(topAnd.getConditions().get(1), EqualsOperation.class, "version", 7L);
+        assertComparison(parsedRequest.getFilterExpression(), EqualsOperation.class, "version", 7L);
     }
 
     @Test
-    public void testUpdateItemCombinesKeyAndCondition() {
+    public void testUpdateItemSeparatesKeyAndFilterExpression() {
         UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName("players")
                 .key(attributeValues("id", stringValue("ronaldo-7")))
@@ -211,12 +217,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 ))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.UPDATE_ITEM).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
-        assertEquals(2, and.getConditions().size());
-
-        assertComparison(and.getConditions().get(0), EqualsOperation.class, "id", "ronaldo-7");
-        BetweenOperation between = castAs(and.getConditions().get(1), BetweenOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.UPDATE_ITEM).get("players");
+        assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "ronaldo-7");
+        BetweenOperation between = castAs(parsedRequest.getFilterExpression(), BetweenOperation.class);
         assertEquals("age", between.getFieldName());
         assertEquals(38L, between.getLowerBound());
         assertEquals(41L, between.getUpperBound());
@@ -238,12 +242,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 ))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.UPDATE_ITEM).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
-        assertEquals(2, and.getConditions().size());
-
-        assertComparison(and.getConditions().get(0), EqualsOperation.class, "id", "messi-10");
-        BetweenOperation between = castAs(and.getConditions().get(1), BetweenOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.UPDATE_ITEM).get("players");
+        assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "messi-10");
+        BetweenOperation between = castAs(parsedRequest.getFilterExpression(), BetweenOperation.class);
         assertEquals("profilePhoto", between.getFieldName());
         assertArrayEquals(lowerBound.asByteArray(), ((SdkBytes) between.getLowerBound()).asByteArray());
         assertArrayEquals(upperBound.asByteArray(), ((SdkBytes) between.getUpperBound()).asByteArray());
@@ -259,8 +261,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 ))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.GET_ITEM).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.GET_ITEM).get("players");
+        assertNull(parsedRequest.getFilterExpression());
+        AndOperation and = castAs(parsedRequest.getKeyCondition(), AndOperation.class);
         assertEquals(2, and.getConditions().size());
         assertComparison(and.getConditions().get(0), EqualsOperation.class, "id", "pele-10");
         assertComparison(and.getConditions().get(1), EqualsOperation.class, "tenant", "brazil");
@@ -296,15 +300,16 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .requestItems(requestItems)
                 .build();
 
-        Map<String, QueryOperation> parsed = parser.parseByTable(request, DynamoDbOperationNames.BATCH_GET_ITEM);
+        Map<String, ParsedDynamoDbRequest> parsed =
+                parser.parseByTable(request, DynamoDbOperationNames.BATCH_GET_ITEM);
         assertEquals(2, parsed.size());
 
-        OrOperation players = castAs(parsed.get("players"), OrOperation.class);
+        OrOperation players = castAs(parsed.get("players").getKeyCondition(), OrOperation.class);
         assertEquals(2, players.getConditions().size());
         assertComparison(players.getConditions().get(0), EqualsOperation.class, "id", "messi-10");
         assertComparison(players.getConditions().get(1), EqualsOperation.class, "id", "ronaldo-7");
 
-        AndOperation matches = castAs(parsed.get("matches"), AndOperation.class);
+        AndOperation matches = castAs(parsed.get("matches").getKeyCondition(), AndOperation.class);
         assertEquals(2, matches.getConditions().size());
         assertComparison(matches.getConditions().get(0), EqualsOperation.class, "matchId", "wc-final-1986");
         assertComparison(matches.getConditions().get(1), EqualsOperation.class, "tenant", "Mexico");
@@ -338,8 +343,9 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
                 .expressionAttributeValues(attributeValues(":s1", stringValue("LEGEND")))
                 .build();
 
-        QueryOperation operation = parser.parseByTable(request, DynamoDbOperationNames.PUT_ITEM).get("players");
-        AndOperation and = castAs(operation, AndOperation.class);
+        ParsedDynamoDbRequest parsedRequest =
+                parser.parseByTable(request, DynamoDbOperationNames.PUT_ITEM).get("players");
+        AndOperation and = castAs(parsedRequest.getFilterExpression(), AndOperation.class);
         assertEquals(2, and.getConditions().size());
 
         TypeOperation type = castAs(and.getConditions().get(0), TypeOperation.class);

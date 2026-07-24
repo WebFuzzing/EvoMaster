@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.dynamodb.parsers;
 
 import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeValueHelper;
+import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.OrOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
@@ -28,13 +29,13 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+    public Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
         Object requestItemsObj = invokeNoArg(ddbRequest, METHOD_REQUEST_ITEMS);
         if (!(requestItemsObj instanceof Map<?, ?>)) {
             return Collections.emptyMap();
         }
 
-        Map<String, QueryOperation> result = new LinkedHashMap<>();
+        Map<String, ParsedDynamoDbRequest> result = new LinkedHashMap<>();
         Map<?, ?> requestItems = (Map<?, ?>) requestItemsObj;
         for (Map.Entry<?, ?> entry : requestItems.entrySet()) {
             String tableName = entry.getKey() == null ? null : String.valueOf(entry.getKey());
@@ -60,7 +61,7 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
 
             QueryOperation tableOperation = combineWithOr(keyConditions);
             if (tableOperation != null) {
-                result.put(tableName, tableOperation);
+                result.put(tableName, new ParsedDynamoDbRequest(tableOperation, null));
             }
         }
 

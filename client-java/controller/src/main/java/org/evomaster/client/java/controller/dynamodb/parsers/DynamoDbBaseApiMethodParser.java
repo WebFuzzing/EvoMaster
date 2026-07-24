@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.dynamodb.parsers;
 
 import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeValueHelper;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbExpressionParser;
+import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
@@ -71,17 +72,6 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
         List<QueryOperation> conditions = new ArrayList<>();
         values.forEach((key, value) -> conditions.add(new EqualsOperation<>(key, value)));
         return combineWithAnd(conditions);
-    }
-
-    /**
-     * Combines two operations with AND semantics.
-     *
-     * @param left left operation
-     * @param right right operation
-     * @return combined operation
-     */
-    protected QueryOperation combineWithAnd(QueryOperation left, QueryOperation right) {
-        return combineWithAnd(Arrays.asList(left, right));
     }
 
     /**
@@ -177,19 +167,23 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Builds a singleton result map for one table/operation pair.
+     * Builds a singleton result map for one table/request pair.
      *
      * @param tableName table name
-     * @param operation parsed operation
+     * @param keyCondition parsed key condition
+     * @param filterExpression parsed filter or condition expression
      * @return singleton map or empty map when invalid
      */
-    protected Map<String, QueryOperation> singleTableResult(String tableName, QueryOperation operation) {
-        if (tableName == null || operation == null) {
+    protected Map<String, ParsedDynamoDbRequest> buildSingleTableRequestMap(
+            String tableName,
+            QueryOperation keyCondition,
+            QueryOperation filterExpression) {
+        if (tableName == null || (keyCondition == null && filterExpression == null)) {
             return Collections.emptyMap();
         }
 
-        Map<String, QueryOperation> result = new LinkedHashMap<>();
-        result.put(tableName, operation);
+        Map<String, ParsedDynamoDbRequest> result = new LinkedHashMap<>();
+        result.put(tableName, new ParsedDynamoDbRequest(keyCondition, filterExpression));
         return result;
     }
 }

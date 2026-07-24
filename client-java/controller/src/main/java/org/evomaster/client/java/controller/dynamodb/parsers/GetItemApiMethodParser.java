@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb.parsers;
 
+import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 
@@ -22,9 +23,9 @@ public class GetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, QueryOperation> parseRequest(Object ddbRequest) {
+    public Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
         String tableName = readValidTableName(ddbRequest);
         QueryOperation keyCondition = parseKeyCondition(ddbRequest);
-        return singleTableResult(tableName, keyCondition);
+        return buildSingleTableRequestMap(tableName, keyCondition, null);
     }
 }

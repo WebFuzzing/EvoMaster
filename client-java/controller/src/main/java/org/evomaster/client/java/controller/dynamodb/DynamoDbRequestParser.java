@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.dynamodb;
 
-import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.controller.dynamodb.parsers.*;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 
@@ -35,10 +34,10 @@ public class DynamoDbRequestParser {
      * @param ddbRequest DynamoDB SDK ddbRequest object (see comment on DynamoDbBaseApiMethodParser)
      * @param apiMethodName DynamoDB API method name from enum type
      *
-     * @return a map of parsed QueryOperations by table name.
+     * @return a map of parsed requests by table name.
      * Unsupported operations intentionally yield an empty map.
      */
-    public Map<String, QueryOperation> parseByTable(Object ddbRequest, DynamoDbOperationNames apiMethodName) {
+    public Map<String, ParsedDynamoDbRequest> parseByTable(Object ddbRequest, DynamoDbOperationNames apiMethodName) {
         if (ddbRequest == null || apiMethodName == null) {
             return Collections.emptyMap();
         }
@@ -48,7 +47,7 @@ public class DynamoDbRequestParser {
             return Collections.emptyMap();
         }
 
-        Map<String, QueryOperation> parsed = parser.parseRequest(ddbRequest);
+        Map<String, ParsedDynamoDbRequest> parsed = parser.parseRequest(ddbRequest);
         return parsed == null ? Collections.emptyMap() : parsed;
     }
 
