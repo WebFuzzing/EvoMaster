@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
@@ -22,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Timestamp;
 import java.util.*;
 
-import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_TRUTHNESS;
 import static org.junit.jupiter.api.Assertions.*;
 
 import net.sf.jsqlparser.schema.Column;
@@ -63,7 +64,7 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(SqlHeuristicsCalculator.C, 1d)).getOfTrue();
+        double expectedOfTrue = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(DistanceHelper.C, 1d)).getOfTrue();
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -243,7 +244,7 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = SqlHeuristicsCalculator.C;
+        double expectedOfTrue = DistanceHelper.C;
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
@@ -271,7 +272,7 @@ public class SqlHeuristicsCalculatorTest {
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = SqlHeuristicsCalculator.C;
+        double expectedOfTrue = DistanceHelper.C;
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
@@ -350,7 +351,7 @@ public class SqlHeuristicsCalculatorTest {
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-        double expectedOfTrue = SqlHeuristicsCalculator.C;
+        double expectedOfTrue = DistanceHelper.C;
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 

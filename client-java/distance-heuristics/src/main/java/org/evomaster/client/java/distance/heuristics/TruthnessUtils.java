@@ -7,6 +7,22 @@ import java.util.UUID;
 public class TruthnessUtils {
 
     /**
+     * A {@link Truthness} representing a condition that is fully satisfied.
+     */
+    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, DistanceHelper.C);
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied at all.
+     */
+    public static final Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied, but that provides a
+     * better (ie, higher) base value than {@link #FALSE_TRUTHNESS}.
+     */
+    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.C_BETTER, 1);
+
+    /**
      * Scales to a positive double value to the [0,1] range
      *
      * @param v a non-negative double value
@@ -317,6 +333,28 @@ public class TruthnessUtils {
                 1d - normalizedDistance,
                 !left.equals(right) ? 1d : 0d
         );
+    }
+
+    /**
+     * Computes the {@link Truthness} of the predicate {@code a.equals(b)}.
+     * If the strings are equal, {@code ofTrue} is maximal (1.0). Otherwise, {@code ofTrue} is
+     * derived from a left-alignment distance between the two strings (via
+     * {@link DistanceHelper#getLeftAlignmentDistance}), so that strings sharing a longer common
+     * prefix yield a higher (closer-to-true) heuristic value.
+     *
+     * @param a the first string, must not be {@code null}
+     * @param b the second string, must not be {@code null}
+     * @return the Truthness of {@code a} and {@code b} being equal
+     */
+    public static Truthness getStringEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        if (a.equals(b)) {
+            return new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        }
+        long dist = DistanceHelper.getLeftAlignmentDistance(a, b);
+        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, (double) dist);
+        return new Truthness(ofTrue, 1d);
     }
 
 }

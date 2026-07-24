@@ -20,19 +20,20 @@ import org.evomaster.client.java.sql.*;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
-import org.evomaster.client.java.sql.internal.*;
-
+import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.sql.Timestamp;
-import java.time.*;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
 import static org.evomaster.client.java.sql.heuristic.SqlCastHelper.castTo;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
-import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
 
 public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
@@ -315,7 +316,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (truthnessOfExpression.isTrue()) {
                 truthness = truthnessOfExpression;
             } else {
-                truthness = buildScaledTruthness(C_BETTER, truthnessOfExpression.getOfTrue());
+                truthness = buildScaledTruthness(DistanceHelper.C_BETTER, truthnessOfExpression.getOfTrue());
             }
         }
         return truthness;
@@ -396,20 +397,6 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return (booleanValue ? 1d : 0d);
     }
 
-    public static Truthness getEqualityTruthness(String a, String b) {
-        Objects.requireNonNull(a);
-        Objects.requireNonNull(b);
-
-        if (a.equals(b)) {
-            return TRUE_TRUTHNESS;
-        } else {
-            final double base = C;
-            final double distance = DistanceHelper.getLeftAlignmentDistance(a, b);
-            final double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
-            return new Truthness(h, 1d);
-        }
-    }
-
     private Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftString);
         Objects.requireNonNull(rightString);
@@ -419,9 +406,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(leftString, rightString, false);
                 }
-                return getEqualityTruthness(leftString, rightString);
+                return TruthnessUtils.getStringEqualityTruthness(leftString, rightString);
             case NOT_EQUALS_TO:
-                return getEqualityTruthness(leftString, rightString).invert();
+                return TruthnessUtils.getStringEqualityTruthness(leftString, rightString).invert();
             case GREATER_THAN:
                 return leftString.compareTo(rightString) > 0 ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
             case GREATER_THAN_EQUALS:
