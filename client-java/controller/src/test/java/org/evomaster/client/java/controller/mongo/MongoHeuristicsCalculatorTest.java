@@ -531,12 +531,22 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(distanceNotMatch.isFalse());
     }
 
-    @Disabled
     @Test
     public void testEqualsLists() {
         Document doc = new Document().append("employees", Arrays.asList("Alice", "Bob"));
         Bson bsonTrue = Filters.eq("employees", Arrays.asList("Alice", "Bob"));
         Bson bsonFalse = Filters.eq("employees", Arrays.asList("Alice"));
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testNotEqualsLists() {
+        Document doc = new Document().append("employees", Arrays.asList("Alice"));
+        Bson bsonTrue = Filters.ne("employees", Arrays.asList("Alice", "Bob"));
+        Bson bsonFalse = Filters.ne ("employees", Arrays.asList("Alice"));
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());

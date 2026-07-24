@@ -120,7 +120,6 @@ class QueryParserTest {
     }
 
 
-
     @Test
     void testParseExists() {
         Document query = new Document(
@@ -789,6 +788,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertNull(operation);
     }
+
     @Test
     void testParseInvalidEmptyNor() {
         Document query = new Document(
@@ -840,4 +840,29 @@ class QueryParserTest {
         assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
     }
 
+    @Test
+    void testParseEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                new Document("$eq", Arrays.asList("Bob", "Alice")));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
+
+    @Test
+    void testParseImplicitEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                Arrays.asList("Bob", "Alice"));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
 }

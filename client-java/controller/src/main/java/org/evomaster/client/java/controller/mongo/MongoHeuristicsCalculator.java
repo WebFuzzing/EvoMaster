@@ -10,8 +10,10 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
+import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.FALSE_TRUTHNESS;
 
 import java.util.*;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class MongoHeuristicsCalculator {
@@ -123,8 +125,6 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((AllOperation<?>) operation, document);
         } else if (operation instanceof SizeOperation) {
             return computeHeuristic((SizeOperation) operation, document);
-        } else if (operation instanceof ElemMatchOperation) {
-            return computeHeuristic((ElemMatchOperation) operation, document);
         } else if (operation instanceof ModOperation) {
             return computeHeuristic((ModOperation) operation, document);
         } else if (operation instanceof NotOperation) {
@@ -133,6 +133,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((TypeOperation) operation, document);
         } else if (operation instanceof NearSphereOperation) {
             return computeHeuristic((NearSphereOperation) operation, document);
+        } else if (operation instanceof ElemMatchOperation) {
+            return computeHeuristic((ElemMatchOperation) operation, document);
         } else if (operation instanceof TrueOperation) {
             return computeHeuristic((TrueOperation) operation, document);
         } else {
@@ -163,21 +165,23 @@ public class MongoHeuristicsCalculator {
         } else if (actualValue instanceof String && expectedValue instanceof String) {
             String actualString = (String) actualValue;
             String expectedString = (String) expectedValue;
-            if(taintHandler!=null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
+            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
         } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
-        }  else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
+        } else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
             String actualString = actualValue.toString();
             String expectedString = expectedValue.toString();
-            if(taintHandler!=null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
+            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
         } else if (actualValue instanceof Date || expectedValue instanceof Date) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
+        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
+            truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
         } else {
             throw new IllegalArgumentException("Unsupported value type: " + actualValue.getClass().getName());
         }
@@ -575,5 +579,34 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristic(NearSphereOperation operation, Object document) {
         throw new IllegalArgumentException("Not implemented yet");
     }
+
+    private Truthness calculateTruthnessForListComparison(List<?> actualList, List<?> expectedList, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(actualList);
+        Objects.requireNonNull(expectedList);
+
+        final Truthness truthness;
+        if (actualList.size() != expectedList.size()) {
+            truthness = C_FALSE;
+        } else {
+            Truthness[] arrayOfTruthnesses = new Truthness[actualList.size()];
+            for (int i = 0; i < actualList.size(); i++) {
+                arrayOfTruthnesses[i] = computeHeuristicComparisonNullableValues(
+                        actualList.get(i),
+                        expectedList.get(i),
+                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
+            }
+            Truthness unscaledTruthness = buildAndAggregationTruthness(arrayOfTruthnesses);
+            truthness = buildSafeScaledTruthness(unscaledTruthness);
+        }
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
+                return truthness;
+            case NOT_EQUALS_TO:
+                return truthness.invert();
+            default:
+                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
+        }
+    }
+
 
 }
