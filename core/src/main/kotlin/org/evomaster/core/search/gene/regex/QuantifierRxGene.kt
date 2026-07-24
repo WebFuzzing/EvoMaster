@@ -251,6 +251,14 @@ class QuantifierRxGene(
         AssertionRepairWalk.absorbableCount(atoms, value)
 
     /**
+     * Delegates to a backward walk over [atoms], mirroring [absorbableCount] in the
+     * opposite direction.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int =
+        AssertionRepairWalk.absorbableSuffixCount(atoms, value)
+
+    /**
      * True if zero repetitions are allowed ([min] == 0), or if [template] can itself render "".
      * @see [RxAbsorbable.canBeZeroWidth]
      */
@@ -265,6 +273,15 @@ class QuantifierRxGene(
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         return AssertionRepairWalk.tryForce(atoms, value)
+    }
+
+    /**
+     * Delegates to a backward walk over [atoms], mirroring [tryForce].
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForceSuffix(atoms, value)
     }
 
     /**

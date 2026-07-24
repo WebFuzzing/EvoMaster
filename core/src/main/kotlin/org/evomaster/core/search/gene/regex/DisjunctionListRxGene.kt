@@ -210,13 +210,17 @@ class DisjunctionListRxGene(
 
     /**
      * Ranks all branches by how much of [value] they can absorb, without mutating
-     * anything.
+     * anything. Shared by both directions: [absorb] is [DisjunctionRxGene.absorbableCount]
+     * for lookahead's ranking, [DisjunctionRxGene.absorbableSuffixCount] for lookbehind's.
      */
-    private fun rankBranches(value: String): BranchRanking? {
+    private fun rankBranches(
+        value: String,
+        absorb: (DisjunctionRxGene, String) -> Int
+    ): BranchRanking? {
         if (value.isEmpty() || disjunctions.isEmpty()) {
             return null
         }
-        var bestCount = disjunctions[activeDisjunction].absorbableCount(value)
+        var bestCount = absorb(disjunctions[activeDisjunction], value)
         var bestIndex = activeDisjunction
         for (i in disjunctions.indices) {
             if (i == activeDisjunction) {
@@ -225,7 +229,7 @@ class DisjunctionListRxGene(
             if (bestCount == value.length) {
                 break
             }
-            val can = disjunctions[i].absorbableCount(value)
+            val can = absorb(disjunctions[i], value)
             if (can > bestCount) {
                 bestCount = can
                 bestIndex = i
@@ -241,7 +245,7 @@ class DisjunctionListRxGene(
      * @see [rankBranches]
      */
     override fun absorbableCount(value: String): Int =
-        rankBranches(value)?.absorbableCount ?: 0
+        rankBranches(value){ disjunction, value -> disjunction.absorbableCount(value) }?.absorbableCount ?: 0
 
     /**
      * True if at least one branch can render "", as we can select that branch and force it.
@@ -257,7 +261,8 @@ class DisjunctionListRxGene(
      */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        val (bestCount, bestIndex) = rankBranches(value) ?: BranchRanking(0, activeDisjunction)
+        val (bestCount, bestIndex) = rankBranches(value){ disjunction, value -> disjunction.absorbableCount(value) }
+            ?: BranchRanking(0, activeDisjunction)
 
         if (bestCount > 0) {
             if (bestIndex != activeDisjunction) {
@@ -265,6 +270,35 @@ class DisjunctionListRxGene(
                 tryToActivateGene(disjunctions[bestIndex])
             }
             return disjunctions[bestIndex].tryForce(value)
+        }
+
+        return 0
+    }
+
+    /**
+     * Suffix counterpart of [absorbableCount]: ranks every branch by how much of
+     * [value]'s trailing characters it could absorb, without mutating.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int =
+        rankBranches(value) { d, v -> d.absorbableSuffixCount(v) }?.absorbableCount ?: 0
+
+    /**
+     * Suffix counterpart of [tryForce]: activates whichever branch can best absorb
+     * [value]'s trailing characters and forces it there, walking right-to-left.
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        val (bestCount, bestIndex) = rankBranches(value, { d, v -> d.absorbableSuffixCount(v) })
+            ?: BranchRanking(0, activeDisjunction)
+
+        if (bestCount > 0) {
+            if (bestIndex != activeDisjunction) {
+                activeDisjunction = bestIndex
+                tryToActivateGene(disjunctions[bestIndex])
+            }
+            return disjunctions[bestIndex].tryForceSuffix(value)
         }
 
         return 0

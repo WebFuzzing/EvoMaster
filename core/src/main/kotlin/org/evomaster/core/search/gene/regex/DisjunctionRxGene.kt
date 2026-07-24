@@ -199,6 +199,14 @@ class DisjunctionRxGene(
         AssertionRepairWalk.absorbableCount(terms, value)
 
     /**
+     * Delegates to a backward walk over [terms]. Mirrors [absorbableCount], walking
+     * right-to-left since lookbehind's target sits before the assertion.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int =
+        AssertionRepairWalk.absorbableSuffixCount(terms, value)
+
+    /**
      * True only if every term can independently render "", as this disjunction's own value is
      * the concatenation of all of them.
      * @see [RxAbsorbable.canBeZeroWidth]
@@ -214,6 +222,16 @@ class DisjunctionRxGene(
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
         return AssertionRepairWalk.tryForce(terms, value)
+    }
+
+    /**
+     * Delegates to a backward walk over [terms], mirroring [tryForce] in the opposite
+     * direction.
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForceSuffix(terms, value)
     }
 
     /**
