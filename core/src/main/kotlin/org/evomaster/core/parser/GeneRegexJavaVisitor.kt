@@ -260,7 +260,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                     "Nested assertions are not currently supported."
                 }
                 val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
-                val assertionGene = AssertionRxGene(innerDisjList)
+                val assertionGene = AssertionRxGene(innerDisjList, AssertionType.LOOKAHEAD)
                 hasAssertions = true
                 res.genes.add(assertionGene)
             }

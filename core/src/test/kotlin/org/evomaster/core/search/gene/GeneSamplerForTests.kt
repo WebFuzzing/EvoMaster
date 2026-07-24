@@ -432,7 +432,7 @@ object GeneSamplerForTests {
     fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {
         val innerGene = sampleDisjunctionListRxGene(rand)
         innerGene.doInitialize(rand)
-        return AssertionRxGene(innerGene=innerGene)
+        return AssertionRxGene(innerGene=innerGene, AssertionType.LOOKAHEAD)
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
