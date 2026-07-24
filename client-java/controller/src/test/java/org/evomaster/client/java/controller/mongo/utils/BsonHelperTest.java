@@ -90,6 +90,7 @@ class BsonHelperTest {
         assertEquals(Decimal128.class.getTypeName(), BsonHelper.getType(BsonType.DECIMAL128));
         assertEquals(ObjectId.class.getTypeName(), BsonHelper.getType(BsonType.OBJECT_ID));
         assertEquals(String.class.getTypeName(), BsonHelper.getType(BsonType.STRING));
+        assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
 
         assertEquals(BsonHelper.NULL_TYPE, BsonHelper.getType(BsonType.NULL));
         assertEquals(List.class.getTypeName(), BsonHelper.getType(BsonType.ARRAY));
@@ -102,7 +103,6 @@ class BsonHelperTest {
         assertEquals(CodeWithScope.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT_WITH_SCOPE));
         assertEquals(org.bson.BsonRegularExpression.class.getTypeName(), BsonHelper.getType(BsonType.REGULAR_EXPRESSION));
         assertEquals(Symbol.class.getTypeName(), BsonHelper.getType(BsonType.SYMBOL));
-        assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
         assertEquals(org.bson.BsonUndefined.class.getTypeName(), BsonHelper.getType(BsonType.UNDEFINED));
     }
 

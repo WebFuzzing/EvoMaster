@@ -176,10 +176,17 @@ public class MongoHeuristicsCalculator {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
 
         } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
+            int actualIntValue = toIntValue((Boolean) actualValue);
+            int expectedIntValue = toIntValue((Boolean) expectedValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(
+                    actualIntValue, expectedIntValue, comparisonOperatorType);
 
         } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
             truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
+
+        } else if (actualValue instanceof Date && expectedValue instanceof Date) {
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
+
 
         } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
             long actualTimestamp = BsonHelper.getBsonTimestampValue(actualValue);
@@ -194,15 +201,16 @@ public class MongoHeuristicsCalculator {
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
 
-        } else if (actualValue instanceof Date || expectedValue instanceof Date) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
-
         } else {
             // If both types are supported, but no actual comparison logic is defined,
             // we considered them to be incompatible, therefore the comparison returns false.
             truthnessOfComparison = C_FALSE;
         }
         return truthnessOfComparison;
+    }
+
+    private static int toIntValue(Boolean actualValue) {
+        return actualValue ? 1 : 0;
     }
 
     /**
