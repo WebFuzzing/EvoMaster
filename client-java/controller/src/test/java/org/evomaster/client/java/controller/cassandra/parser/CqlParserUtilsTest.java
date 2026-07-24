@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.cassandra.parser;
 
+import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.operations.*;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,10 @@ public class CqlParserUtilsTest {
 
     private static CqlQueryOperation parseWhere(String cql) {
         return CqlParserUtils.getWhereOperation(CqlParserUtils.parseCqlCommand(cql));
+    }
+
+    private static CqlTableReference parseTableReference(String cql) {
+        return CqlParserUtils.getTableReference(CqlParserUtils.parseCqlCommand(cql));
     }
 
     private static Object extractValue(CqlQueryOperation op) {
@@ -458,5 +463,74 @@ public class CqlParserUtilsTest {
         assertEquals(1L,              ((EqualsOperation<?>) conditions.get(0)).getValue());
         assertEquals("clustering_key", ((EqualsOperation<?>) conditions.get(1)).getColumnName());
         assertEquals("abc",            ((EqualsOperation<?>) conditions.get(1)).getValue());
+    }
+
+    // -------------------------------------------------------------------------
+    // getTableReference
+    // -------------------------------------------------------------------------
+
+    @Test
+    void tableReference_select_unqualifiedTable() {
+        CqlTableReference ref = parseTableReference("SELECT * FROM t WHERE id = 1");
+        assertNull(ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_select_keyspaceQualified() {
+        CqlTableReference ref = parseTableReference("SELECT * FROM ks.t WHERE id = 1");
+        assertEquals("ks", ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_select_quotedCaseSensitiveTable() {
+        CqlTableReference ref = parseTableReference("SELECT * FROM ks.\"MyTable\" WHERE id = 1");
+        assertEquals("ks", ref.getKeyspaceName());
+        // the quotes are preserved, so a case-sensitive lookup can tell "MyTable" apart from mytable
+        assertEquals("\"MyTable\"", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_select_quotedKeyspaceAndTable() {
+        CqlTableReference ref = parseTableReference("SELECT * FROM \"Ks\".\"Tbl\" WHERE id = 1");
+        assertEquals("\"Ks\"", ref.getKeyspaceName());
+        assertEquals("\"Tbl\"", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_delete_unqualifiedTable() {
+        CqlTableReference ref = parseTableReference("DELETE FROM t WHERE id = 1");
+        assertNull(ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_delete_keyspaceQualified() {
+        CqlTableReference ref = parseTableReference("DELETE FROM ks.t WHERE id = 1");
+        assertEquals("ks", ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_update_unqualifiedTable() {
+        // UPDATE inlines (keyspace DOT)? table directly, a different grammar shape than fromSpec
+        CqlTableReference ref = parseTableReference("UPDATE t SET val = 'x' WHERE id = 1");
+        assertNull(ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_update_keyspaceQualified() {
+        CqlTableReference ref = parseTableReference("UPDATE ks.t SET val = 'x' WHERE id = 1");
+        assertEquals("ks", ref.getKeyspaceName());
+        assertEquals("t", ref.getTableName());
+    }
+
+    @Test
+    void tableReference_update_quotedCaseSensitiveTable() {
+        CqlTableReference ref = parseTableReference("UPDATE ks.\"MyTable\" SET val = 'x' WHERE id = 1");
+        assertEquals("ks", ref.getKeyspaceName());
+        assertEquals("\"MyTable\"", ref.getTableName());
     }
 }
