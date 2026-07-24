@@ -43,7 +43,7 @@ class RegexGene(
 
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
     }
 
     companion object {
