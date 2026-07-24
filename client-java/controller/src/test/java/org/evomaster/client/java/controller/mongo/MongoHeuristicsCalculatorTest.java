@@ -7,6 +7,7 @@ import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
+import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -726,6 +727,47 @@ public class MongoHeuristicsCalculatorTest {
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
         Truthness result = calculator.computeHeuristicDocument(convertToDocument(emptyFilter), document);
         assertTrue(result.isTrue());
+    }
+
+    @Test
+    public void testComputeDistanceDocumentsEmptyCollection() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Bson filter = Filters.eq("age", 10);
+
+        MongoDistanceWithMetrics result = calculator.computeDistanceDocuments(convertToDocument(filter), Collections.emptyList());
+
+        assertEquals(0, result.numberOfEvaluatedDocuments);
+        assertTrue(result.mongoDistance > 0d);
+    }
+
+    @Test
+    public void testComputeDistanceDocumentsWithMatchingDocument() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Bson filter = Filters.eq("age", 10);
+        List<Document> documents = Arrays.asList(
+                new Document().append("age", 1),
+                new Document().append("age", 10)
+        );
+
+        MongoDistanceWithMetrics result = calculator.computeDistanceDocuments(convertToDocument(filter), documents);
+
+        assertEquals(2, result.numberOfEvaluatedDocuments);
+        assertEquals(0d, result.mongoDistance, 0.000001d);
+    }
+
+    @Test
+    public void testComputeDistanceDocumentsWithNonMatchingDocuments() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Bson filter = Filters.eq("age", 10);
+        List<Document> documents = Arrays.asList(
+                new Document().append("age", 1),
+                new Document().append("age", 2)
+        );
+
+        MongoDistanceWithMetrics result = calculator.computeDistanceDocuments(convertToDocument(filter), documents);
+
+        assertEquals(2, result.numberOfEvaluatedDocuments);
+        assertTrue(result.mongoDistance > 0d);
     }
 
     @Test

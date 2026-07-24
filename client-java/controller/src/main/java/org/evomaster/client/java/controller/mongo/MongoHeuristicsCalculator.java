@@ -10,10 +10,8 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
-import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.FALSE_TRUTHNESS;
 
 import java.util.*;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class MongoHeuristicsCalculator {
