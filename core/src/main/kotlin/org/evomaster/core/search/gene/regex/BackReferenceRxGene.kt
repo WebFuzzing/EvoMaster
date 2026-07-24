@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -20,12 +20,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 class BackReferenceRxGene(
     val groupIndex: Int,
     val captureGroup: DisjunctionListRxGene?
-) : RxAtom, CompositeFixedGene("\\$groupIndex", listOfNotNull(captureGroup)) {
-
-    /**
-     *  To handle null [captureGroup], in which case the back reference is unsatisfiable.
-     */
-    override fun canBeChildless() = true
+) : RxAtom, SimpleGene("\\$groupIndex") {
 
     override fun isUnsatisfiable(): Boolean {
         return captureGroup == null || captureGroup.isUnsatisfiable()
@@ -44,17 +39,14 @@ class BackReferenceRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        throw IllegalStateException("Cannot randomize a BackReferenceRxGene, randomize the capture group instead.")
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException(
+            "Cannot set value directly on a BackReferenceRxGene, set the capture group instead."
+        )
     }
 
-    override fun customShouldApplyShallowMutation(
-        randomness: Randomness,
-        selectionStrategy: SubsetGeneMutationSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        return false
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        throw IllegalStateException("Cannot randomize a BackReferenceRxGene, randomize the capture group instead.")
     }
 
     override fun shallowMutate(
