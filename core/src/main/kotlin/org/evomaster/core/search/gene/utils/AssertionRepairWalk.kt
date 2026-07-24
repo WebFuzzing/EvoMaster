@@ -12,37 +12,16 @@ import org.evomaster.core.search.gene.regex.RxAbsorbable
  */
 object AssertionRepairWalk {
     /**
-     * Maximum leading characters of [value] that can be absorbed across [genes]
-     * left-to-right, without mutating anything.
+     * Shared algorithm behind all public functions below, these differ only in:
+     * - [absorb]: which [RxAbsorbable] operation to call per gene (a read-only count, or a mutating force)
+     * - [onZeroWidth]: what to do when [absorb] returns 0 and the gene [RxAbsorbable.canBeZeroWidth]
      */
-    fun absorbableCount(genes: List<Gene>, value: String): Int {
-        if (value.isEmpty()) {
-            return 0
-        }
-        var consumed = 0
-        for (gene in genes) {
-            if (consumed >= value.length) {
-                break
-            }
-            val absorbable = gene as RxAbsorbable
-            val canTake = absorbable.absorbableCount(value.substring(consumed))
-            if (canTake > 0) {
-                consumed += canTake
-                continue
-            }
-            if (absorbable.canBeZeroWidth) {
-                continue
-            }
-            return 0
-        }
-        return consumed
-    }
-
-    /**
-     * Forces as much of [value] as possible into [genes] left-to-right, mutating each
-     * gene in place using each gene's [RxAbsorbable.tryForce]. Returns total characters placed.
-     */
-    fun tryForce(genes: List<Gene>, value: String): Int {
+    private fun walk(
+        genes: List<Gene>,
+        value: String,
+        absorb: (RxAbsorbable, String) -> Int,
+        onZeroWidth: (RxAbsorbable) -> Unit
+    ): Int {
         if (value.isEmpty()) {
             return 0
         }
@@ -53,17 +32,36 @@ object AssertionRepairWalk {
             }
             val absorbable = gene as RxAbsorbable
             val remaining = value.substring(consumed)
-            val placed = absorbable.tryForce(remaining)
-            if (placed == 0) {
+            val amount = absorb(absorbable, remaining)
+            if (amount == 0) {
                 if (absorbable.canBeZeroWidth) {
-                    absorbable.forceZeroWidth()
+                    onZeroWidth(absorbable)
                     continue
-                } else {
-                    return 0
                 }
+                return 0
             }
-            consumed += placed
+            consumed += amount
         }
         return consumed
     }
+
+    /**
+     * Maximum leading characters of [value] that can be absorbed across [genes]
+     * left-to-right, without mutating anything.
+     */
+    fun absorbableCount(genes: List<Gene>, value: String): Int =
+        walk(genes, value,
+            absorb = { gene, value -> gene.absorbableCount(value) },
+            onZeroWidth = {}
+        )
+
+    /**
+     * Forces as much of [value] as possible into [genes] left-to-right, mutating each
+     * gene in place using each gene's [RxAbsorbable.tryForce]. Returns total characters placed.
+     */
+    fun tryForce(genes: List<Gene>, value: String): Int =
+        walk(genes, value,
+            absorb = { gene, value -> gene.tryForce(value) },
+            onZeroWidth = { it.forceZeroWidth() }
+        )
 }
