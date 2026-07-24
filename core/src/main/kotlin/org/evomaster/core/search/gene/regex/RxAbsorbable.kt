@@ -44,4 +44,29 @@ interface RxAbsorbable {
             "${this::class.simpleName} cannot be zero-width but forceZeroWidth was called"
         )
     }
+
+    /**
+     * Suffix-anchored counterpart of [absorbableCount], used by lookbehind repair: how many of
+     * [value]'s trailing characters could this gene be forced to produce.
+     *
+     * Default delegates to [absorbableCount] fed reversed [value]. This default is
+     * used by genes that produce exactly one character, like [AnyCharacterRxGene].
+     */
+    fun absorbableSuffixCount(value: String): Int =
+        if (value.isEmpty()) 0 else absorbableCount(value.reversed())
+
+    /**
+     * Suffix-anchored counterpart of [tryForce]: places as many of [value]'s trailing characters
+     * as possible and returns how many were actually placed.
+     *
+     * Default delegates to [tryForce] fed reversed [value], in a similar way to [absorbableSuffixCount].
+     *
+     * Precondition: [value] is not empty.
+     */
+    fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        val n = absorbableSuffixCount(value)
+        if (n > 0) tryForce(value.reversed())
+        return n
+    }
 }
