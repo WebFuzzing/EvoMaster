@@ -59,6 +59,12 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
+        /**
+         * Default soft timeout, in milliseconds, for each Z3 solver invocation
+         * when generating SQL data. See [sqlZ3TimeoutMs].
+         */
+        const val DEFAULT_SQL_Z3_TIMEOUT_MS = 5000
+
         private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
@@ -752,8 +758,8 @@ class EMConfig {
             throw ConfigProblemException("Cannot generate SQL data if you not enable " +
                     "collecting heuristics with 'heuristicsForSQL'")
         }
-        if (generateSqlDataWithDSE && generateSqlDataWithSearch) {
-            throw ConfigProblemException("Cannot generate SQL data with both DSE and search")
+        if (generateSqlDataWithZ3 && generateSqlDataWithSearch) {
+            throw ConfigProblemException("Cannot generate SQL data with both Z3 and search")
         }
 
         if (heuristicsForSQL && !extractSqlExecutionInfo) {
@@ -1004,7 +1010,7 @@ class EMConfig {
 
 
 
-    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
+    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
@@ -1955,9 +1961,34 @@ class EMConfig {
     var extractRedisExecutionInfo = false
 
     @Experimental
-    @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
+    @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
     @DependsOnFalseFor("blackBox")
-    var generateSqlDataWithDSE = false
+    var generateSqlDataWithZ3 = false
+
+    @Experimental
+    @Cfg("Collect detailed statistics for Z3-based SQL generation: SAT/UNSAT/error counts, " +
+            "query uniqueness, Z3 execution time, and SMT-LIB generation time. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    var collectSqlZ3Stats = false
+
+    @Experimental
+    @Cfg("Soft timeout, in milliseconds, for each Z3 solver invocation when generating SQL data. " +
+            "If a query exceeds it, Z3 returns 'unknown' for that query instead of running unbounded. " +
+            "A value of 0 disables the timeout. Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(0.0)
+    var sqlZ3TimeoutMs = DEFAULT_SQL_Z3_TIMEOUT_MS
+
+    @Experimental
+    @Cfg("Number of rows the Z3 solver generates per table when solving a failed SQL query. " +
+            "The default of 1 is sufficient for the currently supported queries; generating a single " +
+            "row per table already forces the query to return a non-empty result. This will need to be " +
+            "increased once support for more complex JOINs (matching arbitrary row combinations, not just " +
+            "the diagonal pairing of row i with row i) is added. Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3NumberOfRows = 1
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")

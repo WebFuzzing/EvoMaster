@@ -11,7 +11,7 @@ private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
-class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaBaseVisitor<VisitResult>(){
+class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
 
     private val hexEscapePrefixes = setOf('x', 'u')
 
@@ -366,8 +366,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         if(ctx.quote() != null){
 
-            val block = ctx.quote().quoteBlock().quoteChar().map { it.text }
-                    .joinToString("")
+            val block = ctx.quote().QUOTE_CONTENT()?.text ?: ""
 
             val name = if(block.isBlank()) "blankBlock" else block
 
@@ -420,7 +419,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         }
 
         if(ctx.DOT() != null){
-            return VisitResult(AnyCharacterRxGene())
+            return VisitResult(AnyCharacterRxGene(currentFlags))
         }
 
         if(ctx.characterClass() != null){

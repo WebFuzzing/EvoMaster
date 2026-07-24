@@ -67,7 +67,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         config.heuristicsForSQL = false
         config.generateSqlDataWithSearch = false
-        config.generateSqlDataWithDSE = false
+        config.generateSqlDataWithZ3 = false
         config.geneMutationStrategy = EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
     }
 

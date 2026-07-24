@@ -1479,7 +1479,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
             creationEndpoint.path
         )
         val creationAction = creationIndividual.individual.seeMainExecutableActions()[actionIndexForCreation]
-        assert(creationAction.auth !is NoAuth)
+        assert(!creationAction.auth.isNoAuth())
 
         //we don't need anything after the creation action
         val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(

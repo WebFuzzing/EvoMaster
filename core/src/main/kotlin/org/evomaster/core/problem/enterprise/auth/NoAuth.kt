@@ -1,4 +1,9 @@
 package org.evomaster.core.problem.enterprise.auth
 
 
-interface NoAuth
+interface NoAuth{
+
+    companion object{
+        const val NAME = "NoAuth"
+    }
+}

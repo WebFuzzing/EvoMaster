@@ -86,6 +86,24 @@ class Statistics : SearchListener {
     private var sqlHeuristicEvaluationFailureCount = 0;
     private val sqlRowsAverageCalculator = IncrementalAverage()
 
+    // Z3-based SQL data generation statistics
+    // Invariant: sqlZ3QueriesSeenCount == sqlZ3CacheHitCount + sqlZ3CacheMissCount
+    // (every solve() call is either served from the memoization cache or handled as a miss).
+    private var sqlZ3QueriesSeenCount = 0
+    private var sqlZ3CacheHitCount = 0
+    private var sqlZ3CacheMissCount = 0
+    private var sqlZ3SatCount = 0
+    private var sqlZ3UnsatCount = 0
+    private var sqlZ3UnknownCount = 0
+    private var sqlZ3ErrorCount = 0
+    private var sqlZ3ParseFailureCount = 0
+    private var sqlZ3PartialTranslationCount = 0
+    private var sqlZ3TimeMs = 0L
+    private var sqlZ3SmtlibGenTimeMs = 0L
+    private val sqlZ3SmtlibSizeBytes = IncrementalAverage()
+    private val sqlZ3SeenQueryHashes = mutableSetOf<Int>()
+    private var sqlZ3UniqueQueriesCount = 0
+
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
     private var mongoHeuristicEvaluationFailureCount = 0
@@ -222,6 +240,66 @@ class Statistics : SearchListener {
     fun reportRedisHeuristicEvaluationFailure() {
         redisHeuristicEvaluationFailureCount++
     }
+
+    fun reportSqlZ3Sat(z3TimeMs: Long) {
+        sqlZ3CacheMissCount++
+        sqlZ3SatCount++
+        sqlZ3TimeMs += z3TimeMs
+    }
+
+    fun reportSqlZ3Unsat(z3TimeMs: Long) {
+        sqlZ3CacheMissCount++
+        sqlZ3UnsatCount++
+        sqlZ3TimeMs += z3TimeMs
+    }
+
+    fun reportSqlZ3Unknown(z3TimeMs: Long) {
+        sqlZ3CacheMissCount++
+        sqlZ3UnknownCount++
+        sqlZ3TimeMs += z3TimeMs
+    }
+
+    fun reportSqlZ3Error(z3TimeMs: Long) {
+        sqlZ3CacheMissCount++
+        sqlZ3ErrorCount++
+        sqlZ3TimeMs += z3TimeMs
+    }
+
+    fun reportSqlZ3ParseFailure() {
+        sqlZ3CacheMissCount++
+        sqlZ3ParseFailureCount++
+    }
+
+    /**
+     * A query whose WHERE/JOIN condition could not be fully translated to SMT-LIB (the untranslatable
+     * part was dropped). Counted independently of the SAT/UNSAT outcome, since the weakened formula is
+     * usually still SAT: the generated data may not satisfy the original query.
+     */
+    fun reportSqlZ3PartialTranslation() {
+        sqlZ3PartialTranslationCount++
+    }
+
+    fun reportSqlZ3SmtlibGenTime(ms: Long, sizeBytes: Int) {
+        sqlZ3SmtlibGenTimeMs += ms
+        sqlZ3SmtlibSizeBytes.addValue(sizeBytes)
+    }
+
+    fun reportSqlZ3QuerySeen(queryHash: Int) {
+        sqlZ3QueriesSeenCount++
+        if (sqlZ3SeenQueryHashes.add(queryHash)) {
+            sqlZ3UniqueQueriesCount++
+        }
+    }
+
+    fun reportSqlZ3CacheHit() {
+        sqlZ3CacheHitCount++
+    }
+
+    // Exposed for tests: verify the memoization accounting invariant
+    // (seen == cacheHits + cacheMisses).
+    internal fun getSqlZ3QueriesSeenCount() = sqlZ3QueriesSeenCount
+    internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
+    internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
@@ -380,6 +458,24 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
+
+            // statistics info for Z3-based SQL data generation (only emitted when collectSqlZ3Stats=true)
+            if (config.collectSqlZ3Stats) {
+                add(Pair("sqlZ3QueriesSeen", "$sqlZ3QueriesSeenCount"))
+                add(Pair("sqlZ3UniqueQueries", "$sqlZ3UniqueQueriesCount"))
+                add(Pair("sqlZ3DuplicateQueries", "${sqlZ3QueriesSeenCount - sqlZ3UniqueQueriesCount}"))
+                add(Pair("sqlZ3CacheHits", "$sqlZ3CacheHitCount"))
+                add(Pair("sqlZ3CacheMisses", "$sqlZ3CacheMissCount"))
+                add(Pair("sqlZ3Sat", "$sqlZ3SatCount"))
+                add(Pair("sqlZ3Unsat", "$sqlZ3UnsatCount"))
+                add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
+                add(Pair("sqlZ3Errors", "$sqlZ3ErrorCount"))
+                add(Pair("sqlZ3ParseFailures", "$sqlZ3ParseFailureCount"))
+                add(Pair("sqlZ3PartialTranslations", "$sqlZ3PartialTranslationCount"))
+                add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
+                add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
+                add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))
+            }
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
