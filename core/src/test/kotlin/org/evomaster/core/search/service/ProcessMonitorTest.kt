@@ -72,25 +72,34 @@ class ProcessMonitorTest{
 
     @Test
     fun testDisableProcessMonitor(){
+        val output = Files.createTempDirectory("process-monitor-disabled-")
+        val marker = output.resolve("marker")
+        Files.createFile(marker)
 
-        config.enableProcessMonitor = false
-        config.showProgress = true
+        try {
+            config.processFiles = output.toString()
+            config.enableProcessMonitor = false
+            config.showProgress = true
 
-        processMonitor.postConstruct()
-        assertFalse(Files.exists(Paths.get(config.processFiles)))
+            processMonitor.postConstruct()
+            assertTrue(Files.exists(marker))
 
-        val a = OneMaxIndividual(2)
-        TestUtils.doInitializeIndividualForTesting(a,randomness)
-        a.setValue(0, 1.0)
+            val a = OneMaxIndividual(2)
+            TestUtils.doInitializeIndividualForTesting(a,randomness)
+            a.setValue(0, 1.0)
 
-        val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
-        processMonitor.eval = eval
-        processMonitor.newActionsEvaluated(1)
+            val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
+            processMonitor.eval = eval
+            processMonitor.newActionsEvaluated(1)
 
-        val added = archive.addIfNeeded(eval)
-        processMonitor.record(added, true, eval)
+            val added = archive.addIfNeeded(eval)
+            processMonitor.record(added, true, eval)
 
-        assertFalse(Files.exists(Paths.get(config.processFiles)))
+            assertTrue(Files.exists(marker))
+        } finally {
+            Files.deleteIfExists(marker)
+            Files.deleteIfExists(output)
+        }
     }
 
     @Test
