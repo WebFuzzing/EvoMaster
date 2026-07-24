@@ -125,6 +125,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((SizeOperation) operation, document);
         } else if (operation instanceof ModOperation) {
             return computeHeuristic((ModOperation) operation, document);
+        } else if (operation instanceof BitsOperation) {
+            return computeHeuristic((BitsOperation) operation, document);
         } else if (operation instanceof NotOperation) {
             return computeHeuristic((NotOperation) operation, document);
         } else if (operation instanceof TypeOperation) {
@@ -575,6 +577,40 @@ public class MongoHeuristicsCalculator {
             long actualRemainder = ((Number) actualValue).longValue() % divisor;
             Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
             return buildSafeScaledTruthness(res);
+        }
+    }
+
+    private Truthness computeHeuristic(BitsOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+
+        String fieldName = operation.getFieldName();
+        if (!documentContainsField(document, fieldName)) {
+            return C_FALSE;
+        }
+
+        Object actualValue = getValue(document, fieldName);
+        if (!(actualValue instanceof Number)) {
+            return C_FALSE;
+        }
+
+        final long bitmask = operation.getBitmask();
+        final long maskedValue = ((Number) actualValue).longValue() & bitmask;
+        final int numberOfSetBits = Long.bitCount(maskedValue);
+        final int numberOfBitsInMask = Long.bitCount(bitmask);
+        if (operation instanceof BitsAllClearOperation) {
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            return buildSafeScaledTruthness(equalityTruthness);
+        } else if (operation instanceof BitsAllSetOperation) {
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            return buildSafeScaledTruthness(equalityTruthness);
+        } else if (operation instanceof BitsAnyClearOperation) {
+            Truthness allSetTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            return buildSafeScaledTruthness(allSetTruthness).invert();
+        } else if (operation instanceof BitsAnySetOperation) {
+            Truthness allClearTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            return buildSafeScaledTruthness(allClearTruthness).invert();
+        } else {
+            throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
         }
     }
 

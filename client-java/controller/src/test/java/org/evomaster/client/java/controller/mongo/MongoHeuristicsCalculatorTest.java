@@ -338,6 +338,74 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(mod), docUndefined).isFalse());
     }
 
+    @Test
+    public void testBitsAllClear() {
+        Document doc = new Document().append("flags", 0b1010L);
+        Bson bsonTrue = Filters.bitsAllClear("flags", 0b0101L);
+        Bson bsonFalse = Filters.bitsAllClear("flags", 0b0010L);
+        Bson bsonFurtherFromMatch = Filters.bitsAllClear("flags", 0b1010L);
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        Truthness distanceFurtherFromMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromMatch), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+        assertTrue(distanceFurtherFromMatch.isFalse());
+        assertTrue(distanceNotMatch.getOfTrue() > distanceFurtherFromMatch.getOfTrue());
+    }
+
+    @Test
+    public void testBitsAllSet() {
+        Document doc = new Document().append("flags", 0b1010L);
+        Bson bsonTrue = Filters.bitsAllSet("flags", 0b1010L);
+        Bson bsonFalse = Filters.bitsAllSet("flags", 0b1110L);
+        Bson bsonFurtherFromMatch = Filters.bitsAllSet("flags", 0b1111L);
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        Truthness distanceFurtherFromMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromMatch), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+        assertTrue(distanceFurtherFromMatch.isFalse());
+        assertTrue(distanceNotMatch.getOfTrue() > distanceFurtherFromMatch.getOfTrue());
+    }
+
+    @Test
+    public void testBitsAnyClear() {
+        Document doc = new Document().append("flags", 0b1010L);
+        Bson bsonTrue = Filters.bitsAnyClear("flags", 0b1110L);
+        Bson bsonFalse = Filters.bitsAnyClear("flags", 0b1010L);
+        Bson bsonFurtherFromFalse = Filters.bitsAnyClear("flags", 0b1111L);
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        Truthness distanceFurtherFromFalse = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+        assertTrue(distanceFurtherFromFalse.isTrue());
+        assertTrue(distanceMatch.getOfFalse() > distanceFurtherFromFalse.getOfFalse());
+    }
+
+    @Test
+    public void testBitsAnySet() {
+        Document doc = new Document().append("flags", 0b1010L);
+        Bson bsonTrue = Filters.bitsAnySet("flags", 0b0010L);
+        Bson bsonFalse = Filters.bitsAnySet("flags", 0b0101L);
+        Bson bsonFurtherFromFalse = Filters.bitsAnySet("flags", 0b1010L);
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        Truthness distanceFurtherFromFalse = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+        assertTrue(distanceFurtherFromFalse.isTrue());
+        assertTrue(distanceMatch.getOfFalse() > distanceFurtherFromFalse.getOfFalse());
+    }
+
 
     @Test
     public void testNot() {
