@@ -284,6 +284,7 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
+                <version>${antlr.version}</version>
                 <configuration>
                     <listener>false</listener>
                     <visitor>true</visitor>
@@ -387,14 +388,7 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <!-- Generates the Cypher and Cql parsers from the Neo4j Cypher25 grammar and the Cql grammar respectively -->
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-            </plugin>
-
-        </plugins>
+          </plugins>
     </build>
 
 </project>

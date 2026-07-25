@@ -32,6 +32,7 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
     public Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
         Object requestItemsObj = invokeNoArg(ddbRequest, METHOD_REQUEST_ITEMS);
         if (!(requestItemsObj instanceof Map<?, ?>)) {
+            SimpleLogger.uniqueWarn("Unexpected object type from requestItems in a BatchGetItem DynamoDB query");
             return Collections.emptyMap();
         }
 
