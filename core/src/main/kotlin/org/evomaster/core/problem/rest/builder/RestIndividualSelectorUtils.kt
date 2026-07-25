@@ -60,10 +60,10 @@ object RestIndividualSelectorUtils {
 
         if(authenticated != null) {
             // authenticated or not
-            if (authenticated == true && action.auth is NoAuth) {
+            if (authenticated && action.auth.isNoAuth()) {
                 return false
             }
-            if(authenticated == false && action.auth !is NoAuth) {
+            if(!authenticated && !action.auth.isNoAuth()) {
                 return false
             }
         }

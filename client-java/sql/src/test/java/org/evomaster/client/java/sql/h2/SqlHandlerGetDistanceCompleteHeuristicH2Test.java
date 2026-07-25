@@ -2,7 +2,7 @@ package org.evomaster.client.java.sql.h2;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.sql.heuristic.SqlHandlerGetDistanceTestBase;
+import org.evomaster.client.java.sql.heuristic.SqlHandlerGetDistanceCompleteHeuristicTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -11,7 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class SqlHandlerGetDistanceH2Test extends SqlHandlerGetDistanceTestBase {
+public class SqlHandlerGetDistanceCompleteHeuristicH2Test extends SqlHandlerGetDistanceCompleteHeuristicTestBase {
 
     private static Connection connection;
 

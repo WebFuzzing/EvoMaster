@@ -17,6 +17,20 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>
+
+        <!--
+            All dependencies here are, and should be, marked as "provided".
+            This module is imported directly from generated test cases, and so it
+            is used as well from outside EvoMaster.
+            If some generated tests do not need to use some libraries, there is no point in bringing
+            them over in the user's build setup.
+            Furthermore, the users might want to use own versions, without ending up with conflict
+            declarations here that would require "<exclusions>" rules.
+
+            Still, users might need those dependencies if they do not have them already.
+            But, for those cases, we do have the "evomaster-client-java-dependencies" module.
+        -->
+
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-remote-driver</artifactId>

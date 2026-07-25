@@ -200,6 +200,10 @@ class MultiCharacterRange internal constructor(val ranges: List<CharacterRange>)
         throw IllegalStateException("Cannot sample characters from an empty char range")
     }
 
+    fun intersect(other: MultiCharacterRange): MultiCharacterRange {
+        return intersect(this, other)
+    }
+
     val isEmpty: Boolean get() = ranges.isEmpty()
     val isNotEmpty: Boolean get() = ranges.isNotEmpty()
     val size: Int get() = ranges.size
