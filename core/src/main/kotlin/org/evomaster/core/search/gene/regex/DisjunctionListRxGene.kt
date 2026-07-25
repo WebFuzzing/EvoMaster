@@ -254,6 +254,28 @@ class DisjunctionListRxGene(
     override val canBeZeroWidth: Boolean = disjunctions.any { it.canBeZeroWidth }
 
     /**
+     * Shared rank-then-force logic behind [tryForce]/[tryForceSuffix]: ranks all branches via
+     * [absorb], switches [activeDisjunction] to the winner if needed, then delegates to [force]
+     * on that branch.
+     */
+    private fun forceBestBranch(
+        value: String,
+        absorb: (DisjunctionRxGene, String) -> Int,
+        force: (DisjunctionRxGene, String) -> Int
+    ): Int {
+        val (bestCount, bestIndex) = rankBranches(value, absorb) ?: BranchRanking(0, activeDisjunction)
+
+        if (bestCount > 0) {
+            if (bestIndex != activeDisjunction) {
+                activeDisjunction = bestIndex
+                tryToActivateGene(disjunctions[bestIndex])
+            }
+            return force(disjunctions[bestIndex], value)
+        }
+        return 0
+    }
+
+    /**
      * Activates whichever branch can best absorb [value] (switching [activeDisjunction] if
      * needed) and forces it there.
      * @see [RxAbsorbable.tryForce]
@@ -261,18 +283,10 @@ class DisjunctionListRxGene(
      */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        val (bestCount, bestIndex) = rankBranches(value){ disjunction, value -> disjunction.absorbableCount(value) }
-            ?: BranchRanking(0, activeDisjunction)
-
-        if (bestCount > 0) {
-            if (bestIndex != activeDisjunction) {
-                activeDisjunction = bestIndex
-                tryToActivateGene(disjunctions[bestIndex])
-            }
-            return disjunctions[bestIndex].tryForce(value)
-        }
-
-        return 0
+        return forceBestBranch(value,
+            absorb = { d, v -> d.absorbableCount(v) },
+            force = { d, v -> d.tryForce(v) }
+        )
     }
 
     /**
@@ -290,18 +304,10 @@ class DisjunctionListRxGene(
      */
     override fun tryForceSuffix(value: String): Int {
         require(value.isNotEmpty())
-        val (bestCount, bestIndex) = rankBranches(value, { d, v -> d.absorbableSuffixCount(v) })
-            ?: BranchRanking(0, activeDisjunction)
-
-        if (bestCount > 0) {
-            if (bestIndex != activeDisjunction) {
-                activeDisjunction = bestIndex
-                tryToActivateGene(disjunctions[bestIndex])
-            }
-            return disjunctions[bestIndex].tryForceSuffix(value)
-        }
-
-        return 0
+        return forceBestBranch(value,
+            absorb = { d, v -> d.absorbableSuffixCount(v) },
+            force = { d, v -> d.tryForceSuffix(v) }
+        )
     }
 
     /**

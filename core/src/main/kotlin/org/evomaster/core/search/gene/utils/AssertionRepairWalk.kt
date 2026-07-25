@@ -15,33 +15,33 @@ object AssertionRepairWalk {
      * Shared algorithm behind all public functions below, these differ only in:
      * - [absorb]: which [RxAbsorbable] operation to call per gene (a read-only count, or a mutating force)
      * - [onZeroWidth]: what to do when [absorb] returns 0 and the gene [RxAbsorbable.canBeZeroWidth]
-     * - [forward]: whether to walk [genes] left-to-right for lookahead or right-to-left for lookbehind
+     * - [reversed]: whether to walk [genes] right-to-left for lookbehind or left-to-right for lookahead
      */
     private fun walk(
         genes: List<Gene>,
         value: String,
         absorb: (RxAbsorbable, String) -> Int,
         onZeroWidth: (RxAbsorbable) -> Unit,
-        forward: Boolean
+        reversed: Boolean
     ): Int {
         if (value.isEmpty()) {
             return 0
         }
         var consumed = 0
-        val walkTarget = if (forward) {
-            genes
-        } else {
+        val walkTarget = if (reversed) {
             genes.asReversed()
+        } else {
+            genes
         }
         for (gene in walkTarget) {
             if (consumed >= value.length) {
                 break
             }
             val absorbable = gene as RxAbsorbable
-            val remaining = if (forward) {
-                value.substring(consumed)
-            } else {
+            val remaining = if (reversed) {
                 value.dropLast(consumed)
+            } else {
+                value.substring(consumed)
             }
             val amount = absorb(absorbable, remaining)
             if (amount == 0) {
@@ -61,7 +61,7 @@ object AssertionRepairWalk {
      * left-to-right, without mutating anything.
      */
     fun absorbableCount(genes: List<Gene>, value: String): Int =
-        walk(genes, value, forward = true,
+        walk(genes, value, reversed = false,
             absorb = { gene, value -> gene.absorbableCount(value) },
             onZeroWidth = {}
         )
@@ -71,7 +71,7 @@ object AssertionRepairWalk {
      * gene in place using each gene's [RxAbsorbable.tryForce]. Returns total characters placed.
      */
     fun tryForce(genes: List<Gene>, value: String): Int =
-        walk(genes, value, forward = true,
+        walk(genes, value, reversed = false,
             absorb = { gene, value -> gene.tryForce(value) },
             onZeroWidth = { it.forceZeroWidth() }
         )
@@ -83,7 +83,7 @@ object AssertionRepairWalk {
      * last one in [genes]), without mutating anything.
      */
     fun absorbableSuffixCount(genes: List<Gene>, value: String): Int =
-        walk(genes, value, forward = false,
+        walk(genes, value, reversed = true,
             absorb = { gene, value -> gene.absorbableSuffixCount(value) },
             onZeroWidth = {}
         )
@@ -94,7 +94,7 @@ object AssertionRepairWalk {
      * gene in place using [RxAbsorbable.tryForceSuffix]. Returns total characters placed.
      */
     fun tryForceSuffix(genes: List<Gene>, value: String): Int =
-        walk(genes, value, forward = false,
+        walk(genes, value, reversed = true,
             absorb = { gene, value -> gene.tryForceSuffix(value) },
             onZeroWidth = { it.forceZeroWidth() }
         )
