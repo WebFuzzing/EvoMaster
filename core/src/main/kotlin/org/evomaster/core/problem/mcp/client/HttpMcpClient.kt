@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.mcp.client
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.mcp.McpConst
 import org.evomaster.core.remote.HttpClientFactory
@@ -9,9 +8,6 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import kotlin.String
-import kotlin.collections.List
-import kotlin.collections.Map
 
 /**
  * [McpClient] implementation that uses the Streamable HTTP transport.
@@ -36,6 +32,10 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     @Volatile private var sessionId: String? = null
 
     private fun nextId() = idCounter.getAndIncrement()
+
+    /** EvoMaster's version */
+    private fun emVersion(): String =
+        this::class.java.`package`?.implementationVersion ?: "SNAPSHOT"
 
     /** Send a JSON-RPC message. [id] is omitted for notifications. */
     private fun sendJsonRpc(method: String, params: Map<String, Any?>, id: Int?, acceptEventStream: Boolean): Response {
@@ -64,7 +64,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             mapOf(
                 "protocolVersion" to McpConst.PROTOCOL_VERSION,
                 "capabilities" to emptyMap<String, Any>(),
-                "clientInfo" to mapOf("name" to "EvoMaster", "version" to "1.0.0")
+                "clientInfo" to mapOf("name" to "EvoMaster", "version" to emVersion())
             ),
             nextId(),
             acceptEventStream = true
@@ -138,6 +138,50 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         return results
     }
 
+    private fun getToolResponseContent(name: String, mcpResponse: Map<String, Any?>?) : List<McpToolContent> {
+        val content = mcpResponse?.get("content") as? List<Map<String, Any?>> ?: emptyList()
+        return content.map { item ->
+            val type = item["type"] as? String
+                ?: throw IllegalStateException("Tool: $name response content item is missing required 'type' field")
+            when (type) {
+                "text" -> McpTextToolContent(item["text"] as? String ?: "")
+                "image" -> McpImageToolContent(
+                    data = item["data"] as? String ?: "",
+                    mimeType = item["mimeType"] as? String ?: ""
+                )
+                "audio" -> McpAudioToolContent(
+                    data = item["data"] as? String ?: "",
+                    mimeType = item["mimeType"] as? String ?: ""
+                )
+                "resource_link" -> McpResourceLinkToolContent(
+                    uri = item["uri"] as? String ?: "",
+                    name = item["name"] as? String ?: "",
+                    description = item["description"] as? String,
+                    mimeType = item["mimeType"] as? String
+                )
+                "resource" -> McpEmbeddedResourceToolContent(
+                    parseResourceContent(item["resource"] as? Map<String, Any?> ?: emptyMap())
+                )
+                else -> throw IllegalStateException("Tool: $name response has unsupported content type '$type'")
+            }
+        }
+    }
+
+    private fun getResourceResponseContent(mcpResponse: Map<String, Any?>?) : List<McpResourceContent> {
+        val contents = mcpResponse?.get("contents") as? List<Map<String, Any?>> ?: emptyList()
+        return contents.map { parseResourceContent(it) }
+    }
+
+    /** Parse a single resource-content object into its text/blob variant. */
+    private fun parseResourceContent(item: Map<String, Any?>): McpResourceContent {
+        val uri = item["uri"] as? String
+        val mimeType = item["mimeType"] as? String
+        return when {
+            item["blob"] != null -> McpBlobResourceContent(uri, mimeType, item["blob"] as String)
+            else -> McpTextResourceContent(uri, mimeType, item["text"] as? String ?: "")
+        }
+    }
+
     override fun listTools(): List<McpToolDefinition> {
         return fetchPaginatedList("tools/list", "tools", { tool ->
             McpToolDefinition(
@@ -173,19 +217,11 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         val response = post("tools/call", mapOf("name" to name, "arguments" to arguments))
             ?: return McpToolResult(isError = true)
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
-        val rawContent = result["content"] as? List<Map<String, Any?>> ?: emptyList()
-        val content = rawContent.map { c ->
-            val type = c["type"] as? String
-                ?: throw IllegalStateException("tools/call response content item missing required 'type' field")
-            McpContent(
-                type = type,
-                text = c["text"] as? String,
-                uri = c["uri"] as? String,
-                mimeType = c["mimeType"] as? String
-            )
-        }
+        val content = getToolResponseContent(name, result)
+        val structuredContent = result["structuredContent"] as? Map<String, Any?>
         return McpToolResult(
             content = content,
+            structuredContent = structuredContent,
             isError = result["isError"] as? Boolean ?: false
         )
     }
@@ -194,14 +230,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         val response = post("resources/read", mapOf("uri" to uri))
             ?: return McpResourceResult()
         val result = response["result"] as? Map<String, Any?> ?: return McpResourceResult()
-        val rawContents = result["contents"] as? List<Map<String, Any?>> ?: emptyList()
-        val contents = rawContents.map { c ->
-            McpContent(
-                text = c["text"] as? String,
-                uri = c["uri"] as? String,
-                mimeType = c["mimeType"] as? String
-            )
-        }
+        val contents = getResourceResponseContent(result)
         return McpResourceResult(contents = contents)
     }
 }

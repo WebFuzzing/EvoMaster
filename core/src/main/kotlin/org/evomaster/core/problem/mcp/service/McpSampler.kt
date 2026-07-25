@@ -49,6 +49,44 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     /** Pre-built single-call individuals, drained first in smartSample() */
     private val adHocInitialIndividuals: MutableList<McpIndividual> = mutableListOf()
 
+    /** Builds the tool actions cluster as part of the initialization process */
+    private fun discoverTools() {
+        val tools = mcpClient.listTools()
+        for (tool in tools) {
+            val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
+            val action = McpToolCallAction(
+                toolName = tool.name,
+                inputSchema = inputGene
+            )
+            toolActionCluster[action.id] = action
+            actionCluster[action.id] = action
+        }
+    }
+
+    /** Builds the resource actions cluster as part of the initialization process */
+    private fun discoverResources() {
+        val resources = mcpClient.listResources()
+        for (resource in resources) {
+            val action = McpResourceReadAction(uriTemplate = resource.uri, uriParams = emptyList(), isTemplate = false)
+            resourceActionCluster[action.id] = action
+            actionCluster[action.id] = action
+        }
+    }
+
+    /** Add templatized resources tho the resource actions cluster as part of the initialization process */
+    private fun discoverResourceTemplates() {
+        val templates = mcpClient.listResourceTemplates()
+        for (template in templates) {
+            val paramNames = Regex("""\{(\w+)}""").findAll(template.uriTemplate).map { it.groupValues[1] }.toList()
+            val uriParams = paramNames.map { McpUriParam(it, StringGene(it)) }
+            val action = McpResourceReadAction(uriTemplate = template.uriTemplate, uriParams = uriParams, isTemplate = true)
+            // Use "template:" prefix to avoid collision with static resource keys
+            val key = "template:${template.uriTemplate}"
+            resourceActionCluster[key] = action
+            actionCluster[key] = action
+        }
+    }
+
     @PostConstruct
     fun initialize() {
         val name = McpSampler::class.simpleName
@@ -71,45 +109,13 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
             )
         }
 
-        // Discover tools
-        val tools = mcpClient.listTools()
-        for (tool in tools) {
-            val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
-            val action = McpToolCallAction(
-                toolName = tool.name,
-                inputSchema = inputGene
-            )
-            toolActionCluster[action.id] = action
-            actionCluster[action.id] = action
-        }
+        // Discover server capabilities
+        discoverTools()
+        discoverResources()
+        discoverResourceTemplates()
 
-        // Discover static resources
-        val resources = mcpClient.listResources()
-        for (resource in resources) {
-            val action = McpResourceReadAction(uriTemplate = resource.uri, uriParams = emptyList(), isTemplate = false)
-            resourceActionCluster[action.id] = action
-            actionCluster[action.id] = action
-        }
-
-        // Discover resource templates
-        val templates = mcpClient.listResourceTemplates()
-        for (template in templates) {
-            val paramNames = Regex("""\{(\w+)}""").findAll(template.uriTemplate).map { it.groupValues[1] }.toList()
-            val uriParams = paramNames.map { McpUriParam(it, StringGene(it)) }
-            val action = McpResourceReadAction(uriTemplate = template.uriTemplate, uriParams = uriParams, isTemplate = true)
-            // Use "template:" prefix to avoid collision with static resource keys
-            val key = "template:${template.uriTemplate}"
-            resourceActionCluster[key] = action
-            actionCluster[key] = action
-        }
-
+        // Builds the initial individuals
         customizeAdHocInitialIndividuals()
-
-        val toolQuantity = toolActionCluster.size
-        val resourceQuantity = resourceActionCluster.size
-
-        log.debug("Done initializing {} — {} tools, {} resources",
-            name, toolQuantity, resourceQuantity)
     }
 
     // -------------------------------------------------------------------------
@@ -127,8 +133,9 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
             return ind
         }
 
-        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
-        val groups: MutableList<ActionComponent> = (0 until n).map {
+        // Build a random-sized test by picking N random actions, each wrapped in its own group
+        val numberOfActions = randomness.nextInt(1, getMaxTestSizeDuringSampler())
+        val groups: MutableList<ActionComponent> = (0 until numberOfActions).map {
             val action = randomness.choose(allActions).copy() as McpAction
             action.doInitialize(randomness)
             makeGroup(action)

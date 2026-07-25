@@ -101,7 +101,7 @@ class HttpMcpClientTest {
         assertFalse(result.isError)
         assertEquals(1, result.content.size)
         assertEquals("text", result.content[0].type)
-        assertEquals("hello", result.content[0].text)
+        assertEquals("hello", (result.content[0] as McpTextToolContent).text)
     }
 
     @Test
@@ -114,7 +114,7 @@ class HttpMcpClientTest {
 
         assertTrue(result.isError)
         assertEquals(1, result.content.size)
-        assertEquals("error message", result.content[0].text)
+        assertEquals("error message", (result.content[0] as McpTextToolContent).text)
     }
 
     @Test
@@ -138,7 +138,7 @@ class HttpMcpClientTest {
         val result = client.readResource("file:///data/res")
 
         assertEquals(1, result.contents.size)
-        assertEquals("resource content", result.contents[0].text)
+        assertEquals("resource content", (result.contents[0] as McpTextResourceContent).text)
         assertEquals("file:///data/res", result.contents[0].uri)
         assertEquals("text/plain", result.contents[0].mimeType)
     }
