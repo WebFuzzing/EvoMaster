@@ -52,6 +52,14 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testMultipleQuotes(){
+        checkSameAsJava("^(\\Q6\\E(n|N)(u|U)(a|A)(q|Q)(w|W)(b|B)\\Q51\\E(y|Y)(w|W)\\Q1\\E(e|E)(r|R)(n|N))$")
+        checkSameAsJava("^((z|Z)(l|L)(q|Q)\\Q9\\E(r|R)(e|E)(k|K)(q|Q)(b|B)\\Q6\\E(e|E)(q|Q)(u|U))$")
+        checkSameAsJava("^(\\Q81\\E(x|X)(a|A)\\Q3\\E(p|P)(x|X)(d|D))$")
+        checkSameAsJava("a{1}\\Qa{1}\\Qabcd")
+    }
+
+    @Test
     fun testIssueWithControlCharactersInIgnoreCase(){
         val s = "a[](){}\\\"^$.b"
         checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.uppercase(), s.lowercase()), 200)

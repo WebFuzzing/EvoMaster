@@ -5,20 +5,23 @@ import org.evomaster.client.java.controller.mongo.QueryParser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * { $or: [ { expression1 }, { expression2 }, ... , { expressionN } ] }
  */
 public class OrSelector extends MultiConditionQuerySelector {
+
+    public static final String OR_OPERATOR = "$or";
+
     @Override
-    protected QueryOperation parseConditions(List<?> value) {
-        ArrayList<QueryOperation> conditions = new ArrayList<>();
-        value.forEach(condition -> conditions.add(new QueryParser().parse(condition)));
+    protected QueryOperation composeConditions(List<QueryOperation> conditions) {
+        Objects.requireNonNull(conditions);
         return conditions.isEmpty()? null : new OrOperation(conditions);
     }
 
     @Override
     protected String operator() {
-        return "$or";
+        return OR_OPERATOR;
     }
 }

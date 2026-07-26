@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import com.google.inject.Inject
+
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
@@ -15,17 +16,22 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
+import org.evomaster.solver.Z3Result
+import org.evomaster.solver.Z3Solution
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -54,13 +60,56 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    // Schema is assumed stable within a single run, so only query + row count form the key.
+    // Null until Z3 SQL generation is enabled in postConstruct — avoids allocating the map in runs where Z3 SQL generation is off.
+    //
+    // THREAD-SAFETY: the backing map is an access-ordered LinkedHashMap (a bounded LRU, whose get() mutates
+    // internal order), wrapped in Collections.synchronizedMap so every operation is guarded by the map's
+    // intrinsic lock. This is the standard idiom for a thread-safe bounded LRU (a plain ConcurrentHashMap
+    // cannot do access-order eviction). Compound get-then-put in solve() is intentionally not atomic: at
+    // worst two threads recompute the same query concurrently, which is harmless (idempotent), and never
+    // corrupts the map. This makes the cache safe for the parallelized fitness evaluation that is planned.
+    private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
+
+    companion object {
+        private const val MAX_CACHE_SIZE = 500
+
+        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
+        // epoch<->string conversions round-trip consistently.
+        private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+    }
+
     @Inject
     private lateinit var config: EMConfig
 
+    /*
+        Held WEAKLY on purpose. This solver has @PreDestroy, so each instance is
+        retained by Governator's predestroy-monitor thread (a GC root) for the whole
+        lifetime of the JVM. A strong reference to Statistics would therefore pin
+        Statistics -> Archive -> every individual, leaking across every injector ever
+        created. That is harmless in production (a single injector, process exits) but
+        OOMs test suites that build thousands of injectors (RestIndividualTestBase,
+        SamplerVerifierTest). A weak reference lets that graph be collected once the
+        owning injector is otherwise unreachable, while still resolving fine during an
+        active search (Statistics is strongly held by SearchTimeController then).
+     */
+    private var statisticsRef: WeakReference<Statistics>? = null
+
+    @Inject(optional = true)
+    fun setStatistics(statistics: Statistics) {
+        this.statisticsRef = WeakReference(statistics)
+    }
+
     @PostConstruct
     private fun postConstruct() {
-        if (config.generateSqlDataWithDSE) {
+        if (config.generateSqlDataWithZ3) {
             initializeExecutor()
+            val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                    size > MAX_CACHE_SIZE
+            }
+            z3ResultCache = Collections.synchronizedMap(lru)
         }
     }
 
@@ -73,7 +122,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     @PreDestroy
     override fun close() {
-        executor.close()
+        if (::executor.isInitialized) {
+            executor.close()
+        }
         try {
             FileUtils.cleanDirectory(File(resourcesFolder))
         } catch (e: IOException) {
@@ -86,18 +137,94 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * and returns a list of SqlActions that satisfy the query.
      *
      * @param sqlQuery The SQL query to solve.
-     * @return A list of SQL actions that can be executed to satisfy the query.
+     * @return A list of SQL actions that can be executed to satisfy the query,
+     *         or an empty list if the problem is UNSAT, unparseable, or an error occurred.
      */
     override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
-        // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
+        val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
+        val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
+        val cacheKey = Pair(sqlQuery, numberOfRows)
+        // Track "seen" against the same key the cache uses, so unique/duplicate counts
+        // line up with actual cache granularity.
+        stats?.reportSqlZ3QuerySeen(cacheKey.hashCode())
+
+        val cached = z3ResultCache?.get(cacheKey)
+        if (cached != null) {
+            stats?.reportSqlZ3CacheHit()
+            return when (cached.status) {
+                Z3Result.Status.SAT -> toSqlActionList(schemaDto, cached.solution)
+                else -> emptyList()
+            }
+        }
+
+        val queryStatement = try {
+            parseStatement(sqlQuery)
+        } catch (e: RuntimeException) {
+            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
+            stats?.reportSqlZ3ParseFailure()
+            return emptyList()
+        }
+
+        val smtlibGenStart = System.currentTimeMillis()
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
-        val queryStatement = parseStatement(sqlQuery)
-        val smtLib = generator.generateSMT(queryStatement)
-        val fileName = storeToTmpFile(smtLib)
-        val z3Response = executor.solveFromFile(fileName)
+        // SMT-LIB generation can throw for unsupported column types or query shapes it cannot handle
+        // (e.g. a cast failure on an unexpected statement structure). Degrade gracefully to an empty
+        // result instead of letting the exception propagate into the structure mutator.
+        val smtLib = try {
+            generator.generateSMT(queryStatement)
+        } catch (e: RuntimeException) {
+            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
+            stats?.reportSqlZ3ParseFailure()
+            return emptyList()
+        }
+        val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
+        val smtlibGenMs = System.currentTimeMillis() - smtlibGenStart
+        stats?.reportSqlZ3SmtlibGenTime(smtlibGenMs, smtlibBytes)
 
-        return toSqlActionList(schemaDto, z3Response)
+        // If a WHERE/JOIN condition could not be translated, it was dropped from the SMT problem, so the
+        // generated data may not satisfy the original query. Record it: this failure mode is otherwise
+        // invisible in the stats (Z3 typically still returns SAT on the weakened formula).
+        if (generator.skippedQueryConstraints > 0) {
+            stats?.reportSqlZ3PartialTranslation()
+        }
+
+        val fileName = storeToTmpFile(smtLib)
+
+        val z3Start = System.currentTimeMillis()
+        val z3Timeout = if (::config.isInitialized) config.sqlZ3TimeoutMs.toLong()
+            else EMConfig.DEFAULT_SQL_Z3_TIMEOUT_MS.toLong()
+        val z3Result = try {
+            executor.solveFromFile(fileName, z3Timeout)
+        } finally {
+            Files.deleteIfExists(Paths.get(leadingBarResourcesFolder() + fileName))
+        }
+        val z3TimeMs = System.currentTimeMillis() - z3Start
+
+        return when (z3Result.status) {
+            Z3Result.Status.SAT -> {
+                stats?.reportSqlZ3Sat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                toSqlActionList(schemaDto, z3Result.solution)
+            }
+            Z3Result.Status.UNSAT -> {
+                stats?.reportSqlZ3Unsat(z3TimeMs)
+                z3ResultCache?.set(cacheKey, z3Result)
+                emptyList()
+            }
+            Z3Result.Status.UNKNOWN -> {
+                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
+                stats?.reportSqlZ3Unknown(z3TimeMs)
+                // Not cached: an 'unknown' may be timeout-driven and therefore transient
+                emptyList()
+            }
+            Z3Result.Status.ERROR -> {
+                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                stats?.reportSqlZ3Error(z3TimeMs)
+                // Errors are not cached — they may be transient Docker failures
+                emptyList()
+            }
+        }
     }
 
     /**
@@ -125,35 +252,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Converts Z3's response to a list of SqlActions.
+     * Converts Z3's solution to a list of SqlActions.
      *
-     * @param z3Response The response from Z3.
+     * @param solution The satisfying assignment from Z3 (non-null, status must be SAT).
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbInfoDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
-        if (!z3Response.isPresent) {
-            return emptyList()
-        }
-
+    private fun toSqlActionList(schemaDto: DbInfoDto, solution: Z3Solution): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
 
-        for (row in z3Response.get()) {
+        for (row in solution.assignments) {
             val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
-            // Find table from schema and create SQL actions
             val table = findTableByName(schemaDto, tableName)
 
-            /*
-             * The invariant requires that action.insertionId == primaryKey.uniqueId (and same for FK).
-             * So we must use the same id for the action and all its PK/FK genes.
-             */
             val actionId = idCounter
             idCounter++
 
-            // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            // smtColumn is the Ascii version from SmtLib; resolve back to original DB column name
             for (smtColumn in columns.fields) {
                 val dbColumn = table.columns.firstOrNull {
                     convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
@@ -163,24 +279,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 var gene: Gene = IntegerGene(dbColumnName, 0)
                 when (val columnValue = columns.getField(smtColumn)) {
                     is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "BOOLEAN")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
                             BooleanGene(dbColumnName, toBoolean(columnValue.value))
                         } else {
                             StringGene(dbColumnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "TIMESTAMP")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
                             val epochSeconds = columnValue.value.toLong()
                             val localDateTime = LocalDateTime.ofInstant(
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
                             )
                             val formatted = localDateTime.format(
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                                DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
                             )
                             ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                         } else {
-                            IntegerGene(dbColumnName, columnValue.value.toInt())
+                            LongGene(dbColumnName, columnValue.value.toLong())
                         }
                     }
                     is RealValue -> {
@@ -205,6 +321,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return value.equals("True", ignoreCase = true)
     }
 
+    /**
+     * Whether the given column's SQL type (as reported in [ColumnDto.type]) equals [expectedType],
+     * compared case-insensitively as a raw string.
+     *
+     * CAVEAT: this relies on [ColumnDto.type] containing the exact spelling passed in (currently
+     * "BOOLEAN" and "TIMESTAMP"). It is needed because the SMT sort alone cannot recover these types
+     * (BOOLEAN is encoded as an SMT String, TIMESTAMP as an SMT Int), so gene reconstruction must
+     * consult the original SQL type. The set of type spellings recognized here must stay consistent
+     * with [SmtLibGenerator.TYPE_MAP]; if a backend reports a variant spelling (e.g. "BOOL" or
+     * "TIMESTAMP WITHOUT TIME ZONE"), the special handling is silently skipped. Consolidating these
+     * type vocabularies into a single source of truth is future work.
+     */
     private fun hasColumnType(
         schemaDto: DbInfoDto,
         table: Table,
@@ -226,13 +354,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Extracts the table name from the key by removing the last character (index).
+     * Extracts the table name from a row-constant key by removing the trailing row index.
+     *
+     * Row constants are named "${smtName}${SEP}${i}" (e.g. "users__1", "users__2"; see
+     * [SmtLibGenerator.rowConstantName]). Splitting on the last separator recovers the table name
+     * unambiguously even when the table name itself ends in digits (e.g. "inventory2026__1" -> "inventory2026").
      *
      * @param key The key containing the table name and index.
      * @return The extracted table name.
      */
     private fun getTableName(key: String): String {
-        return key.substring(0, key.length - 1) // Remove last character
+        return key.substringBeforeLast(SmtLibGenerator.ROW_INDEX_SEPARATOR)
     }
 
     /**
@@ -247,7 +379,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
-            findColumns(schema,tableDto), // Convert columns from DTO
+            findColumns(schema, tableDto),
             findForeignKeys(tableDto) // TODO: Implement this method
         )
     }
@@ -325,6 +457,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Maps column types to ColumnDataType.
      *
+     * TODO: this recognizes only a small subset of SQL type spellings and falls back to
+     * CHARACTER_VARYING for everything else. It is one of three independent type vocabularies that
+     * interpret [ColumnDto.type] — the others being [SmtLibGenerator.TYPE_MAP] (SQL type -> SMT sort)
+     * and [hasColumnType] (BOOLEAN/TIMESTAMP special-casing). These can silently disagree when a
+     * backend reports a variant spelling. They should be consolidated into a single source of truth
+     * so that generation and interpretation cannot drift; see the note on [hasColumnType].
+     *
      * @param type The column type as a string.
      * @return The corresponding ColumnDataType.
      */
@@ -337,13 +476,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             "TIMESTAMP" -> ColumnDataType.TIMESTAMP
             "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
             "CHAR" -> ColumnDataType.CHAR
-            else -> ColumnDataType.CHARACTER_VARYING // Default type
+            else -> ColumnDataType.CHARACTER_VARYING
         }
     }
 
     // TODO: Implement this method
     private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet() // Placeholder
+        return emptySet()
     }
 
     /**
@@ -358,23 +497,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val fileExtension = ".smt2"
 
         try {
-            // Create dir if it doesn't exist
             val directory = Paths.get(directoryPath)
             if (!directory.exists()) {
                 directory.createDirectories()
             }
 
-            // Generate a unique file name
             var fileName = "$fileNameBase$fileExtension"
             var filePath = directory.resolve(fileName)
             if (filePath.exists()) {
-                // Add a random suffix to the file name if it already exists
                 val randomSuffix = (1000..9999).random()
                 fileName = "${fileNameBase}_$randomSuffix$fileExtension"
                 filePath = directory.resolve(fileName)
             }
 
-            // Write the SMTLib content to the file
             Files.write(filePath, smtLib.toString().toByteArray(StandardCharsets.UTF_8))
 
             return fileName
