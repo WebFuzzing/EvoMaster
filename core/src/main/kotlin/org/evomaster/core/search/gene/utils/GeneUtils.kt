@@ -295,6 +295,12 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
+        if (format.isJava()) {
+            // Java translates eligible Unicode escapes before tokenizing string literals.
+            // Keep the even source-backslash count so a backslash-u sequence stays literal.
+            return ret
+        }
+
         if (format.isKotlin()) return ret.replace("\$", "\\\$")
                 .replace("\\\\u", "\\u")
         //.replace("\$", "\${\'\$\'}")
