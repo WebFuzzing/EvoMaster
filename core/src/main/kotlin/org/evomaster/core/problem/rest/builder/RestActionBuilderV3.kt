@@ -1144,8 +1144,14 @@ object RestActionBuilderV3 {
                     }
 
                     // Use the XML name from schema.xml.name (the name of the array element in XML)
-                    // if available, otherwise fallback to name + "_item"
-                    val itemName = schema.xml?.name ?: (name + "_item")
+                    // if available, otherwise fallback to name + "_item".
+                    // When XML support is disabled, ignore xml.name and always use the generic
+                    // fallback, so we emulate the pre-XML-support behaviour of EvoMaster.
+                    val itemName = if (!options.disableXMLSupport) {
+                        schema.xml?.name ?: (name + "_item")
+                    } else {
+                        name + "_item"
+                    }
                     val template = getGene(
                         itemName,
                         arrayType,
@@ -1177,9 +1183,16 @@ object RestActionBuilderV3 {
             "object" -> {
                 val properties = schema.properties ?: emptyMap()
 
-                val attributeNames = properties
-                    .filterValues { it.xml?.attribute == true }
-                    .keys
+                // Only detect XML attribute fields when XML support is enabled. When disabled,
+                // this stays empty so we fall back to a plain ObjectGene (attributes rendered as
+                // child elements), matching how EvoMaster behaved before ObjectWithAttributesGene.
+                val attributeNames = if (!options.disableXMLSupport) {
+                    properties
+                        .filterValues { it.xml?.attribute == true }
+                        .keys
+                } else {
+                    emptySet()
+                }
 
                 if (attributeNames.isNotEmpty()) {
                     val fields = properties.map { (propName, propSchema) ->
@@ -1566,10 +1579,16 @@ object RestActionBuilderV3 {
                 valueTemplate.copy())
         }
 
-        val attributeNames = schema.properties
-            ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
-            ?.map { it.key }
-            ?: emptyList()
+        // Same as above: skip XML attribute detection when XML support is disabled, so the object
+        // is assembled as a plain ObjectGene (pre-XML-support behaviour).
+        val attributeNames = if (!options.disableXMLSupport) {
+            schema.properties
+                ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
+                ?.map { it.key }
+                ?: emptyList()
+        } else {
+            emptyList()
+        }
 
         if (attributeNames.isNotEmpty()) {
             return ObjectWithAttributesGene(
