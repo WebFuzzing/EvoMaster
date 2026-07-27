@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -48,13 +49,19 @@ internal class GeneUtilsEscapeTest {
     }
 
     @Test
-    fun bodyEscapesKeepLiteralBackslashUForJava() {
+    fun bodyEscapesKeepLiteralBackslashUForJvmFormats() {
         val cases = mapOf(
             "\\uquWOnj" to "\\\\uquWOnj",
             "\\\\uquWOnj" to "\\\\\\\\uquWOnj"
         )
 
-        listOf(OutputFormat.JAVA_JUNIT_4, OutputFormat.JAVA_JUNIT_5).forEach { format ->
+        val formats = listOf(
+            OutputFormat.JAVA_JUNIT_4,
+            OutputFormat.JAVA_JUNIT_5,
+            OutputFormat.KOTLIN_JUNIT_4,
+            OutputFormat.KOTLIN_JUNIT_5
+        )
+        formats.forEach { format ->
             cases.forEach { (body, expected) ->
                 assertEquals(
                     expected,
@@ -65,10 +72,8 @@ internal class GeneUtilsEscapeTest {
     }
 
     @Test
-    fun bodyEscapesKeepExistingUnicodeHandlingForNonJavaFormats() {
+    fun bodyEscapesKeepExistingUnicodeHandlingForNonJvmFormats() {
         val formats = listOf(
-            OutputFormat.KOTLIN_JUNIT_4,
-            OutputFormat.KOTLIN_JUNIT_5,
             OutputFormat.JS_JEST,
             OutputFormat.PYTHON_UNITTEST
         )
@@ -92,6 +97,46 @@ internal class GeneUtilsEscapeTest {
             val slashCount = titleLine.substring(0, uIndex).takeLastWhile { it == '\\' }.length
 
             assertEquals(4, slashCount)
+        }
+    }
+
+    @Test
+    fun kotlinBodyWriterPreservesLiteralBackslashUAtRuntime() {
+        val cases = listOf(
+            "\\uquWOnj",
+            "\\u0041",
+            "\\\\uquWOnj",
+            "price-\$value"
+        )
+        val className = "KotlinBodyEscapeProbe"
+        val methods = cases.mapIndexed { index, body ->
+            val literal = TestWriterUtils.formatJsonWithEscapes(
+                body,
+                OutputFormat.KOTLIN_JUNIT_5,
+                extraSpace = ""
+            ).single()
+            "fun value$index(): String = $literal"
+        }
+        val code = buildString {
+            appendLine("class $className {")
+            methods.forEach { appendLine("    $it") }
+            appendLine("}")
+        }
+
+        CompilerForTestGenerated.compile(
+            OutputFormat.KOTLIN_JUNIT_5,
+            code,
+            className
+        )
+
+        val instance = this.javaClass.classLoader.loadClass(className)
+            .getDeclaredConstructor()
+            .newInstance()
+        cases.forEachIndexed { index, expected ->
+            assertEquals(
+                expected,
+                instance.javaClass.getDeclaredMethod("value$index").invoke(instance)
+            )
         }
     }
 }

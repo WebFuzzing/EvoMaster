@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package org.evomaster.core.output
 
 import org.apache.commons.lang3.StringEscapeUtils
