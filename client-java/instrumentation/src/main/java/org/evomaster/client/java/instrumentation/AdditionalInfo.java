@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -118,7 +119,7 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
-    private final Set<CassandraTableSchema> cassandraTableSchemaData = new CopyOnWriteArraySet<>();
+    private final Set<CassandraTableMetadata> cassandraTableMetadataData = new CopyOnWriteArraySet<>();
 
     public Set<ExecutedSqlCommand> getSqlInfoData(){
         return Collections.unmodifiableSet(executedSqlCommandData);
@@ -152,8 +153,8 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
-    public Set<CassandraTableSchema> getCassandraTableTypeData(){
-        return Collections.unmodifiableSet(cassandraTableSchemaData);
+    public Set<CassandraTableMetadata> getCassandraTableMetadataData(){
+        return Collections.unmodifiableSet(cassandraTableMetadataData);
     }
 
     public void addSqlInfo(ExecutedSqlCommand info){
@@ -188,8 +189,8 @@ public class AdditionalInfo implements Serializable {
         mongoCollectionSchemaData.add(mongoCollectionSchema);
     }
 
-    public void addCassandraTableType(CassandraTableSchema cassandraTableSchema){
-        cassandraTableSchemaData.add(cassandraTableSchema);
+    public void addCassandraTableMetadata(CassandraTableMetadata cassandraTableMetadata){
+        cassandraTableMetadataData.add(cassandraTableMetadata);
     }
 
     public Set<String> getParsedDtoNamesView(){

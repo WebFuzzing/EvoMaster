@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
@@ -8,6 +9,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -76,6 +78,9 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
             long end = System.currentTimeMillis();
             long executionTime = end - start;
             TableReference ref = extractTableReference(queryForTracking);
+            if (ref.rawTableName != null) {
+                captureTableSchema(cqlSession, ref);
+            }
             ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, ref.keyspaceName, ref.tableName, false, executionTime);
             ExecutionTracer.addCqlInfo(info);
             return result;
@@ -87,24 +92,43 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
+     * Best-effort: caches the queried table's schema, read directly from the driver's own
+     * metadata, so it's available later without depending on Spring Data. Uses the raw,
+     * quote-preserving keyspace/table text (not the lower-cased, quote-stripped fields on
+     * {@link TableReference} used for {@link ExecutedCqlCommand}), since CQL treats quoted
+     * identifiers as case-sensitive. Never lets a schema-capture failure break the SUT's own query.
+     */
+    private static void captureTableSchema(Object cqlSession, TableReference ref) {
+        try {
+            CassandraSchemaTracer.resolve(cqlSession, ref.rawKeyspaceName, ref.rawTableName);
+        } catch (RuntimeException e) {
+            SimpleLogger.uniqueWarn("Failed to capture Cassandra schema for table " + ref.rawTableName);
+        }
+    }
+
+    /**
      * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
      * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
      * (eg DDL, batches).
      */
     private static TableReference extractTableReference(String query) {
         if (query == null) {
-            return new TableReference(null, null);
+            return new TableReference(null, null, null, null);
         }
 
         Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
         if (!matcher.find()) {
-            return new TableReference(null, null);
+            return new TableReference(null, null, null, null);
         } else {
-            String first = stripQuotes(matcher.group("first"));
-            String second = matcher.group("second") != null ? stripQuotes(matcher.group("second")) : null;
+            String rawFirst = matcher.group("first");
+            String rawSecond = matcher.group("second");
+            String first = stripQuotes(rawFirst);
+            String second = rawSecond != null ? stripQuotes(rawSecond) : null;
             // if there is an "a.b" qualifier, "a" is the keyspace and "b" is the table;
             // otherwise the single identifier is the table, and the keyspace is the session default
-            return second != null ? new TableReference(first, second) : new TableReference(null, first);
+            return second != null
+                    ? new TableReference(first, second, rawFirst, rawSecond)
+                    : new TableReference(null, first, null, rawFirst);
         }
     }
 
@@ -119,10 +143,19 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     private static class TableReference {
         final String keyspaceName;
         final String tableName;
+        /**
+         * Same keyspace/table, but as the raw, quote-preserving text matched in the CQL string
+         * (not lower-cased/quote-stripped), needed to resolve the table correctly against the
+         * driver's own (quote-sensitive) metadata.
+         */
+        final String rawKeyspaceName;
+        final String rawTableName;
 
-        TableReference(String keyspaceName, String tableName) {
+        TableReference(String keyspaceName, String tableName, String rawKeyspaceName, String rawTableName) {
             this.keyspaceName = keyspaceName;
             this.tableName = tableName;
+            this.rawKeyspaceName = rawKeyspaceName;
+            this.rawTableName = rawTableName;
         }
     }
 
