@@ -1,9 +1,12 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -43,5 +46,97 @@ internal class GeneUtilsEscapeTest {
         OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin))
         OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatJava5))
 
+    }
+
+    @Test
+    fun bodyEscapesKeepLiteralBackslashUForJvmFormats() {
+        val cases = mapOf(
+            "\\uquWOnj" to "\\\\uquWOnj",
+            "\\\\uquWOnj" to "\\\\\\\\uquWOnj"
+        )
+
+        val formats = listOf(
+            OutputFormat.JAVA_JUNIT_4,
+            OutputFormat.JAVA_JUNIT_5,
+            OutputFormat.KOTLIN_JUNIT_4,
+            OutputFormat.KOTLIN_JUNIT_5
+        )
+        formats.forEach { format ->
+            cases.forEach { (body, expected) ->
+                assertEquals(
+                    expected,
+                    GeneUtils.applyEscapes(body, GeneUtils.EscapeMode.BODY, format)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun bodyEscapesKeepExistingUnicodeHandlingForNonJvmFormats() {
+        val formats = listOf(
+            OutputFormat.JS_JEST,
+            OutputFormat.PYTHON_UNITTEST
+        )
+
+        formats.forEach { format ->
+            assertEquals(
+                "\\uquWOnj",
+                GeneUtils.applyEscapes("\\uquWOnj", GeneUtils.EscapeMode.BODY, format)
+            )
+        }
+    }
+
+    @Test
+    fun jsonBodyWriterKeepsTheOriginalFailureSequenceJavaSafe() {
+        listOf(OutputFormat.JAVA_JUNIT_4, OutputFormat.JAVA_JUNIT_5).forEach { format ->
+            val titleLine = TestWriterUtils.formatJsonWithEscapes(
+                """{"title":"EWE\\uquWOnj"}""",
+                format
+            ).single { it.contains("uquWOnj") }
+            val uIndex = titleLine.indexOf("uquWOnj")
+            val slashCount = titleLine.substring(0, uIndex).takeLastWhile { it == '\\' }.length
+
+            assertEquals(4, slashCount)
+        }
+    }
+
+    @Test
+    fun kotlinBodyWriterPreservesLiteralBackslashUAtRuntime() {
+        val cases = listOf(
+            "\\uquWOnj",
+            "\\u0041",
+            "\\\\uquWOnj",
+            "price-\$value"
+        )
+        val className = "KotlinBodyEscapeProbe"
+        val methods = cases.mapIndexed { index, body ->
+            val literal = TestWriterUtils.formatJsonWithEscapes(
+                body,
+                OutputFormat.KOTLIN_JUNIT_5,
+                extraSpace = ""
+            ).single()
+            "fun value$index(): String = $literal"
+        }
+        val code = buildString {
+            appendLine("class $className {")
+            methods.forEach { appendLine("    $it") }
+            appendLine("}")
+        }
+
+        CompilerForTestGenerated.compile(
+            OutputFormat.KOTLIN_JUNIT_5,
+            code,
+            className
+        )
+
+        val instance = this.javaClass.classLoader.loadClass(className)
+            .getDeclaredConstructor()
+            .newInstance()
+        cases.forEachIndexed { index, expected ->
+            assertEquals(
+                expected,
+                instance.javaClass.getDeclaredMethod("value$index").invoke(instance)
+            )
+        }
     }
 }
