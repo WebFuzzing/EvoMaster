@@ -113,7 +113,7 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
      */
     private static TableReference extractTableReference(String query) {
         if (query == null) {
-            return new TableReference(null, null, null, null);
+            throw new IllegalArgumentException("query cannot be null");
         }
 
         Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
