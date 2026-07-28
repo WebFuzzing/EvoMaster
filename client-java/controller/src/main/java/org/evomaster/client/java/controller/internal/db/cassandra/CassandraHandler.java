@@ -6,8 +6,10 @@ import org.evomaster.client.java.controller.cassandra.calculator.CassandraHeuris
 import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.parser.CqlParserUtils;
-import org.evomaster.client.java.instrumentation.CassandraTableSchema;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -31,6 +33,24 @@ public class CassandraHandler {
      */
     public static final String SESSION_INTERFACE = "com.datastax.oss.driver.api.core.CqlSession";
 
+    /*
+        Names of the driver methods invoked via reflection throughout this class.
+     */
+    public static final String METHOD_EXECUTE = "execute";
+    public static final String METHOD_GET_COLUMN_DEFINITIONS = "getColumnDefinitions";
+    public static final String METHOD_GET_NAME = "getName";
+    public static final String METHOD_AS_INTERNAL = "asInternal";
+    public static final String METHOD_GET_OBJECT = "getObject";
+
+    /*
+        Constants used during schema description
+     */
+    public static final String PARTITION_KEY_COLUMN_SUFFIX = " PARTITION KEY";
+    public static final String CLUSTERING_COLUMN_SUFFIX = " CLUSTERING";
+
+
+    public static final String SELECT_ALL_PREFIX = "SELECT * FROM ";
+
     /**
      * Live CqlSession from the SUT. Held as {@code Object} to avoid a hard compile-time
      * dependency on the Cassandra driver.
@@ -51,10 +71,11 @@ public class CassandraHandler {
     private final List<ExecutedCqlCommand> emptyTableQueries = new ArrayList<>();
 
     /**
-     * Table name to row schema, populated from {@link CassandraTableSchema} instances captured
-     * while the SUT starts up (e.g. via Spring Data Cassandra repositories).
+     * Table name to column schema, populated from {@link CassandraTableMetadata} instances read
+     * directly off the Cassandra driver's own metadata (see {@link CassandraSchemaTracer}), the
+     * first time a query references that table.
      */
-    private final Map<String, String> tableSchemas = new HashMap<>();
+    private final Map<String, CassandraTableMetadata> tableSchemas = new HashMap<>();
 
     private volatile boolean extractCqlExecution = true;
 
@@ -64,14 +85,14 @@ public class CassandraHandler {
 
     /**
      * Clears the CQL commands and empty-table queries buffered for the current action, along
-     * with their computed distances. Table schemas are not cleared, since they are captured once
-     * while the SUT starts up rather than per action.
+     * with their computed distances. Table schemas are not cleared: each table's schema is
+     * captured once, the first time it's queried, and does not change from one action to the next.
      */
     public void reset() {
         operations.clear();
         cqlCommandWithDistances.clear();
         emptyTableQueries.clear();
-        // tableSchemas is not cleared: it is captured once while the SUT is starting
+        // tableSchemas is not cleared: each table's schema is captured once, the first time it's queried
     }
 
     public void setCqlSession(Object cqlSession) {
@@ -106,13 +127,13 @@ public class CassandraHandler {
     }
 
     /**
-     * Records the row schema of a table, captured while the SUT starts up (e.g. via Spring Data
-     * Cassandra repositories), so it can later be attached to empty-table hints in
-     * {@link #getExecutionDto()}.
+     * Records a table's column schema, read directly off the Cassandra driver's own metadata the
+     * first time a query references that table (see {@link CassandraSchemaTracer}), so it can
+     * later be attached to empty-table hints in {@link #getExecutionDto()}.
      */
-    public void handle(CassandraTableSchema info) {
+    public void handle(CassandraTableMetadata info) {
         if (extractCqlExecution) {
-            tableSchemas.put(info.getTableName(), info.getTableSchema());
+            tableSchemas.put(info.getTableName(), info);
         }
     }
 
@@ -150,9 +171,33 @@ public class CassandraHandler {
     }
 
     private CassandraFailedQuery extractRelevantInfo(ExecutedCqlCommand info) {
-        String schema = tableSchemas.get(info.getTableName());
+        CassandraTableMetadata schema = tableSchemas.get(info.getTableName());
+        String tableSchema = schema != null ? describeTableSchema(schema) : null;
 
-        return new CassandraFailedQuery(info.getKeyspaceName(), info.getTableName(), schema);
+        return new CassandraFailedQuery(info.getKeyspaceName(), info.getTableName(), tableSchema);
+    }
+
+    /**
+     * Renders a table's columns as {@code name type [PARTITION KEY|CLUSTERING]} entries, so the
+     * schema can be attached to a {@link CassandraFailedQuery} (a plain string, to keep
+     * controller-api free of a dependency on the instrumentation module's
+     * {@link CassandraTableMetadata}).
+     */
+    private static String describeTableSchema(CassandraTableMetadata schema) {
+        return schema.getColumns().stream()
+                .map(CassandraHandler::describeColumn)
+                .collect(Collectors.joining(", "));
+    }
+
+    private static String describeColumn(CassandraColumnMetadata column) {
+        StringBuilder description = new StringBuilder(column.getName()).append(' ').append(column.getCqlType());
+        if (column.isPartitionKey()) {
+            description.append(PARTITION_KEY_COLUMN_SUFFIX);
+        }
+        if (column.isClusteringColumn()) {
+            description.append(CLUSTERING_COLUMN_SUFFIX);
+        }
+        return description.toString();
     }
 
     private CqlDistanceWithMetrics computeQueryDistance(ExecutedCqlCommand info) {
@@ -212,7 +257,7 @@ public class CassandraHandler {
         Object resultSet;
         ExecutionTracer.setExecutingInitCassandra(true);
         try {
-            Method execute = detectSessionInterface().getMethod("execute", String.class);
+            Method execute = detectSessionInterface().getMethod(METHOD_EXECUTE, String.class);
             resultSet = execute.invoke(cqlSession, selectAll);
         } finally {
             ExecutionTracer.setExecutingInitCassandra(false);
@@ -224,9 +269,9 @@ public class CassandraHandler {
 
     private static String buildSelectAll(CqlTableReference tableReference) {
         String keyspaceName = tableReference.getKeyspaceName();
-        String prefix = keyspaceName != null ? keyspaceName + "." : "";
+        String maybeKeyspace = keyspaceName != null ? keyspaceName + "." : "";
 
-        return "SELECT * FROM " + prefix + tableReference.getTableName();
+        return SELECT_ALL_PREFIX + maybeKeyspace + tableReference.getTableName();
     }
 
     private Class<?> detectSessionInterface() throws ClassNotFoundException {
@@ -238,14 +283,14 @@ public class CassandraHandler {
     }
 
     private static List<String> extractColumnNames(Object resultSet) throws ReflectiveOperationException {
-        Method getColumnDefinitions = resultSet.getClass().getMethod("getColumnDefinitions");
+        Method getColumnDefinitions = resultSet.getClass().getMethod(METHOD_GET_COLUMN_DEFINITIONS);
         Iterable<?> columnDefinitions = (Iterable<?>) getColumnDefinitions.invoke(resultSet);
 
         List<String> names = new ArrayList<>();
         for (Object columnDefinition : columnDefinitions) {
-            Method getName = columnDefinition.getClass().getMethod("getName");
+            Method getName = columnDefinition.getClass().getMethod(METHOD_GET_NAME);
             Object cqlIdentifier = getName.invoke(columnDefinition);
-            Method asInternal = cqlIdentifier.getClass().getMethod("asInternal");
+            Method asInternal = cqlIdentifier.getClass().getMethod(METHOD_AS_INTERNAL);
             names.add((String) asInternal.invoke(cqlIdentifier));
         }
 
@@ -263,7 +308,7 @@ public class CassandraHandler {
     }
 
     private static Map<String, Object> rowToMap(Object row, List<String> columnNames) throws ReflectiveOperationException {
-        Method getObject = row.getClass().getMethod("getObject", int.class);
+        Method getObject = row.getClass().getMethod(METHOD_GET_OBJECT, int.class);
         Map<String, Object> map = new LinkedHashMap<>();
 
         for (int i = 0; i < columnNames.size(); i++) {

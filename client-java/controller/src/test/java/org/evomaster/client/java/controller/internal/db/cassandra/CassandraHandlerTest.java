@@ -3,8 +3,9 @@ package org.evomaster.client.java.controller.internal.db.cassandra;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import org.evomaster.client.java.controller.api.dto.database.execution.CassandraExecutionsDto;
-import org.evomaster.client.java.instrumentation.CassandraTableSchema;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,6 +68,11 @@ public class CassandraHandlerTest {
 
     private static ExecutedCqlCommand command(String cql) {
         return new ExecutedCqlCommand(cql, KEYSPACE, TABLE, false, 1);
+    }
+
+    private static CassandraTableMetadata tableSchema(String tableName) {
+        return new CassandraTableMetadata(KEYSPACE, tableName,
+                Collections.singletonList(new CassandraColumnMetadata("id", "int", true, false)));
     }
 
     @Test
@@ -161,7 +168,7 @@ public class CassandraHandlerTest {
     public void testEmptyTable_recordedAsFailedQueryWithSchema() {
         CassandraHandler handler = new CassandraHandler();
         handler.setCqlSession(session);
-        handler.handle(new CassandraTableSchema(TABLE, "{\"id\":\"int\"}"));
+        handler.handle(tableSchema(TABLE));
 
         String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1";
         handler.handle(command(cql));
@@ -172,7 +179,7 @@ public class CassandraHandlerTest {
         assertEquals(1, dto.failedQueries.size());
         assertEquals(KEYSPACE, dto.failedQueries.get(0).getKeyspaceName());
         assertEquals(TABLE, dto.failedQueries.get(0).getTableName());
-        assertEquals("{\"id\":\"int\"}", dto.failedQueries.get(0).getTableSchema());
+        assertEquals("id int PARTITION KEY", dto.failedQueries.get(0).getTableSchema());
     }
 
     /**
@@ -243,7 +250,7 @@ public class CassandraHandlerTest {
         CassandraHandler handler = new CassandraHandler();
         handler.setCqlSession(session);
         handler.setExtractCqlExecution(false);
-        handler.handle(new CassandraTableSchema(TABLE, "{\"id\":\"int\"}"));
+        handler.handle(tableSchema(TABLE));
 
         // re-enable so the (still empty) table is actually evaluated and tracked as a failed query
         handler.setExtractCqlExecution(true);
