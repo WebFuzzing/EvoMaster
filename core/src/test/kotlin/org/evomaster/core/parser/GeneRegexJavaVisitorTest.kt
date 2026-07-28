@@ -484,4 +484,28 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
         checkSameAsJava("abc|(?=[a&&b])def")
     }
+
+    @Test
+    fun testSimpleLookbehinds() {
+        checkSameAsJava("foo(?<=oo)\\d+")
+        checkSameAsJava("\\d(?<=[13579])")
+        checkSameAsJava("a(?<=a)b")
+        checkSameAsJava("\\w*(?<=z)c")
+        checkSameAsJava("[a-z]+(?<=aa|bb)cc")
+        checkSameAsJava("a(?<=a)b")
+        checkSameAsJava("(abc|ab|a)(?<=abc)")
+        checkSameAsJava("(?<name>a)\\k<name>")
+    }
+
+    @Test
+    fun testLookbehindRepairAcrossDirections() {
+        checkSameAsJava("\\w+(?<=X*)m(?=z)\\w")
+        checkSameAsJava("^(?<=X*)m(?=z)(a|z)")
+    }
+
+    @Test
+    fun testUnsatisfiableLookbehinds() {
+        assertThrows<IllegalStateException> { checkSameAsJava("(?<=X)a") }
+        assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
+    }
 }

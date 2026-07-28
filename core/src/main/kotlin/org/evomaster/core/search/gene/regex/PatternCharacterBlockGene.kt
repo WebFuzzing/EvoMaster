@@ -116,19 +116,30 @@ class PatternCharacterBlockGene(
     }
 
     /**
-     * How many of [stringBlock]'s leading characters match [value]'s leading characters,
-     * case-insensitively wherever [flags] allows it. 0 when a character does not match,
-     * one of the strings must be consumed completely.
-     * @see [RxAbsorbable.absorbableCount]
+     * Maps a forward walk-position [index] to the real index into [value], depending on [reversed].
      */
-    override fun absorbableCount(value: String): Int {
+    private fun realIndex(reversed: Boolean, value: String, index: Int): Int =
+        if (reversed) {
+            value.lastIndex - index
+        } else {
+            index
+        }
+
+    /**
+     * Shared body behind [absorbableCount]/[absorbableSuffixCount], they differ only in which
+     * end of [stringBlock] and [value] the walk anchors to, via [reversed]. No partial matches,
+     * returns 0 or the shortest string's length (which was matched).
+     */
+    private fun matchCount(value: String, reversed: Boolean): Int {
         var i = 0
         while (i < value.length && i < stringBlock.length) {
-            val c = stringBlock[i]
+            val blockIdx = realIndex(reversed, stringBlock, i)
+            val valueIdx = realIndex(reversed, value, i)
+            val c = stringBlock[blockIdx]
             val matches = if (flags.isCaseable(c)) {
-                value[i].equals(c, ignoreCase = true)
+                value[valueIdx].equals(c, ignoreCase = true)
             } else {
-                value[i] == c
+                value[valueIdx] == c
             }
             if (!matches) {
                 return 0
@@ -137,6 +148,29 @@ class PatternCharacterBlockGene(
         }
         return i
     }
+
+    /**
+     * Shared body behind [tryForce]/[tryForceSuffix]: commits the case (upper/lower) of the
+     * first (or last if [reversed]) [matchedLength] characters of [stringBlock] to match
+     * [value]'s corresponding characters.
+     */
+    private fun applyForce(value: String, matchedLength: Int, reversed: Boolean) {
+        for (i in 0 until matchedLength) {
+            val blockIdx = realIndex(reversed, stringBlock, i)
+            val valueIdx = realIndex(reversed, value, i)
+            if (flags.isCaseable(stringBlock[blockIdx])) {
+                caseChoices[blockIdx] = value[valueIdx].isUpperCase()
+            }
+        }
+    }
+
+    /**
+     * How many of [stringBlock]'s leading characters match [value]'s leading characters,
+     * case-insensitively wherever [flags] allows it. 0 when a character does not match,
+     * one of the strings must be consumed completely.
+     * @see [RxAbsorbable.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int = matchCount(value, reversed = false)
 
     /**
      * True only when [stringBlock] is empty, as a non-empty literal can never render "".
@@ -151,13 +185,9 @@ class PatternCharacterBlockGene(
      */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        val n = absorbableCount(value)
-        require(n == stringBlock.length || n == value.length || n==0)
-        for (i in 0 until n) {
-            if (flags.isCaseable(stringBlock[i])) {
-                caseChoices[i] = value[i].isUpperCase()
-            }
-        }
+        val n = matchCount(value, reversed = false)
+        require(n == stringBlock.length || n == value.length || n == 0)
+        applyForce(value, matchedLength = n, reversed = false)
         return n
     }
 
@@ -167,5 +197,26 @@ class PatternCharacterBlockGene(
      */
     override fun forceZeroWidth() {
         require(canBeZeroWidth)
+    }
+
+    /**
+     * Suffix-anchored mirror of [absorbableCount]: how many of [stringBlock]'s trailing characters
+     * match [value]'s trailing characters, case-insensitively wherever [flags] allows it.
+     * 0 when a character does not match, one of the strings must be consumed completely.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int = matchCount(value, reversed = true)
+
+    /**
+     * Suffix-anchored mirror of [tryForce]: Commits the matching trailing characters' case to
+     * match [value]; mirrors [absorbableSuffixCount] exactly.
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        val n = matchCount(value, reversed = true)
+        require(n == stringBlock.length || n == value.length || n == 0)
+        applyForce(value, matchedLength = n, reversed = true)
+        return n
     }
 }

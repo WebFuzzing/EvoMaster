@@ -11,6 +11,11 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
+ * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
+ */
+enum class AssertionType { LOOKAHEAD, LOOKBEHIND }
+
+/**
  * Represents a zero-width assertion in the regex gene tree.
  *
  * This gene is placed in the tree at the position where the assertion appeared in the
@@ -19,15 +24,18 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  *
  * Repair is triggered from [DisjunctionRxGene.attemptAssertionRepair], invoked by
  * [RegexGene.randomize] after the disjunction's own sampled value is checked against
- * the source pattern and found not to match.
+ * the source pattern and found not to match. [assertionType] determines which side of
+ * the enclosing disjunction's terms the candidate gets forced onto. This gene's own
+ * methods stay direction-agnostic.
  */
 class AssertionRxGene(
     /**
      * The assertion's inner disjunction gene, can be null as the disjunction can be unsatisfiable,
      * in that case [innerGene] is null.
      */
-    val innerGene: DisjunctionListRxGene?
-) : RxTerm, CompositeFixedGene("assertion", listOfNotNull(innerGene)) {
+    val innerGene: DisjunctionListRxGene?,
+    val assertionType: AssertionType
+) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
     /**
      *  To handle null [innerGene], in which case the assertion is unsatisfiable.
@@ -41,7 +49,7 @@ class AssertionRxGene(
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 
     override fun copyContent(): Gene {
-        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene)
+        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene, assertionType)
         copy.name = this.name
         return copy
     }
@@ -95,11 +103,14 @@ class AssertionRxGene(
         if (other !is AssertionRxGene) {
             return false
         }
+        if (assertionType != other.assertionType) {
+            return false
+        }
         return sampledInnerValue() == other.sampledInnerValue()
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is AssertionRxGene) {
+        if (other !is AssertionRxGene || assertionType != other.assertionType) {
             return false
         }
         return if (innerGene != null && other.innerGene != null) {
