@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * The captured shape of a Cassandra table: its full column list, with CQL types and
@@ -46,16 +45,12 @@ public class CassandraTableMetadata implements Serializable {
         if (!(o instanceof CassandraTableMetadata)) return false;
         CassandraTableMetadata that = (CassandraTableMetadata) o;
         return Objects.equals(keyspaceName, that.keyspaceName)
-                && Objects.equals(tableName, that.tableName)
-                && Objects.equals(asSet(columns), asSet(that.columns));
+                && Objects.equals(tableName, that.tableName) && Objects.equals(new HashSet<>(columns), new HashSet<CassandraColumnMetadata>(that.columns));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(keyspaceName, tableName, asSet(columns));
+        return Objects.hash(keyspaceName, tableName, new HashSet<>(columns));
     }
 
-    private static Set<CassandraColumnMetadata> asSet(List<CassandraColumnMetadata> columns) {
-        return new HashSet<>(columns);
-    }
 }
