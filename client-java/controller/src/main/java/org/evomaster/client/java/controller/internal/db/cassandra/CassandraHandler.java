@@ -121,6 +121,9 @@ public class CassandraHandler {
      * towards (an INSERT/DDL command has no WHERE to compute a distance against).
      */
     public void handle(ExecutedCqlCommand info) {
+        Objects.requireNonNull(info);
+        Objects.requireNonNull(info.getCqlCommand());
+
         if (extractCqlExecution && isDistanceEvaluable(info.getCqlCommand())) {
             operations.add(info);
         }
@@ -132,6 +135,8 @@ public class CassandraHandler {
      * later be attached to empty-table hints in {@link #getExecutionDto()}.
      */
     public void handle(CassandraTableMetadata info) {
+        Objects.requireNonNull(info);
+
         if (extractCqlExecution) {
             tableSchemas.put(info.getTableName(), info);
         }
@@ -201,6 +206,10 @@ public class CassandraHandler {
     }
 
     private CqlDistanceWithMetrics computeQueryDistance(ExecutedCqlCommand info) {
+        if (cqlSession == null) {
+            throw new IllegalStateException("Trying to calculate CQL distance with no CqlSession set");
+        }
+
         String cql = info.getCqlCommand();
 
         CqlTableReference tableReference = resolveTableReference(cql);

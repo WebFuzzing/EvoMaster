@@ -397,4 +397,39 @@ public class CassandraHandlerTest {
         assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
         assertTrue(results.get(1).cqlDistanceWithMetrics.cqlDistance > 0.0);
     }
+
+    @Test
+    public void testNoCqlSessionSet_throwsIllegalStateException() {
+        CassandraHandler handler = new CassandraHandler();
+        // deliberately not calling handler.setCqlSession(...)
+
+        handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
+
+        assertThrows(IllegalStateException.class, handler::getEvaluatedCqlCommands);
+    }
+
+    @Test
+    public void testHandleExecutedCqlCommand_nullInfo_throwsNullPointerException() {
+        CassandraHandler handler = new CassandraHandler();
+        handler.setCqlSession(session);
+
+        assertThrows(NullPointerException.class, () -> handler.handle((ExecutedCqlCommand) null));
+    }
+
+    @Test
+    public void testHandleExecutedCqlCommand_nullCqlCommand_throwsNullPointerException() {
+        CassandraHandler handler = new CassandraHandler();
+        handler.setCqlSession(session);
+
+        assertThrows(NullPointerException.class,
+                () -> handler.handle(new ExecutedCqlCommand(null, KEYSPACE, TABLE, false, 1)));
+    }
+
+    @Test
+    public void testHandleTableSchema_nullInfo_throwsNullPointerException() {
+        CassandraHandler handler = new CassandraHandler();
+        handler.setCqlSession(session);
+
+        assertThrows(NullPointerException.class, () -> handler.handle((CassandraTableMetadata) null));
+    }
 }
