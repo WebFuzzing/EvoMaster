@@ -25,12 +25,6 @@ public class CassandraFailedQuery {
         this.tableSchema = tableSchema;
     }
 
-    public CassandraFailedQuery() {
-        this.keyspaceName = "";
-        this.tableName = "";
-        this.tableSchema = "";
-    }
-
     public String getKeyspaceName() {
         return keyspaceName;
     }
