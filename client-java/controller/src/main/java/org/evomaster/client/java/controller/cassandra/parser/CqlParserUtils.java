@@ -142,7 +142,7 @@ public class CqlParserUtils {
     public static CqlTableReference getTableReference(CqlParser.RootContext root) {
         CqlParser.CqlContext cql = root.cqls() != null ? root.cqls().cql(0) : null;
         if (cql == null) {
-            return null;
+            throw new IllegalStateException("CQL query cannot be null");
         } else if (cql.select_() != null) {
             return parseFromSpec(cql.select_().fromSpec());
         } else if (cql.delete_() != null) {
