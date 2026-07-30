@@ -34,15 +34,32 @@ class Neo4jMapping {
         return new Neo4jMapping(nodeBindings, edgeBindings);
     }
 
+    /**
+     * The graph node bound to the given pattern variable, or {@code null} if this mapping does not
+     * bind one. A {@code null} return is a normal outcome, not an error: it is how
+     * {@code resolveProperty} tells a node variable from a relationship variable, and how a condition
+     * on an unbound variable is detected (it yields no {@code ρ}, and the aggregation skips it).
+     * <p>
+     * The variable itself is never {@code null} — the parser names every pattern element, and every
+     * condition, operand and edge endpoint guards its variable name at construction. Guarding it here
+     * keeps a {@code null} name, which would be a bug, from silently looking like an unbound variable.
+     */
     Neo4jNode getNode(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return nodeBindings.get(variable);
     }
 
+    /**
+     * The graph relationship bound to the given pattern variable, or {@code null} when this mapping
+     * does not bind it. Same contract as {@link #getNode(String)}.
+     */
     Neo4jEdge getEdge(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return edgeBindings.get(variable);
     }
 
     boolean isNodeBound(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return nodeBindings.containsKey(variable);
     }
 
@@ -63,6 +80,7 @@ class Neo4jMapping {
      * enforces relationship uniqueness within a single MATCH, so the enumerator avoids reusing one.
      */
     boolean usesEdge(Neo4jEdge edge) {
+        Objects.requireNonNull(edge, "edge must not be null");
         return edgeBindings.containsValue(edge);
     }
 
