@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.mcp.service
 
-import com.fasterxml.jackson.databind.JsonNode
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.remote.SutProblemException
@@ -13,11 +12,7 @@ import org.evomaster.core.problem.mcp.McpToolCallAction
 import org.evomaster.core.problem.mcp.McpUriParam
 import org.evomaster.core.problem.mcp.client.HttpMcpClient
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -53,7 +48,9 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     private fun discoverTools() {
         val tools = mcpClient.listTools()
         for (tool in tools) {
-            val inputGene = buildObjectGeneFromSchema("input", tool.inputSchema)
+            // TODO: build the input gene from tool.inputSchema via a dedicated
+            //  McpActionBuilder (similar to GraphQLActionBuilder)
+            val inputGene = ObjectGene("input", emptyList())
             val action = McpToolCallAction(
                 toolName = tool.name,
                 inputSchema = inputGene
@@ -182,41 +179,6 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
      */
     private fun makeGroup(action: McpAction): EnterpriseActionGroup<McpAction> {
         return EnterpriseActionGroup(action)
-    }
-
-    // -------------------------------------------------------------------------
-    // Gene building from JSON Schema
-    // -------------------------------------------------------------------------
-
-    /**
-     * Recursively build a [Gene] from a JSON Schema node.
-     *
-     * Supported types: string, integer, number, boolean, object, array.
-     * Unknown or missing types fall back to [StringGene].
-     */
-    internal fun buildGeneFromSchema(name: String, schema: JsonNode): Gene {
-        val type = schema["type"]?.asText()
-
-        return when (type) {
-            "string" -> StringGene(name)
-            "integer", "number" -> IntegerGene(name)
-            "boolean" -> BooleanGene(name)
-            "object" -> buildObjectGeneFromSchema(name, schema)
-            "array" -> ArrayGene(name, StringGene("element"))
-            else -> throw IllegalArgumentException("Unsupported type in tool $name input schema: $type")
-        }
-    }
-
-    /**
-     * Build an [ObjectGene] from a JSON Schema node.
-     * If the schema has no "properties" key, returns an empty [ObjectGene].
-     */
-    internal fun buildObjectGeneFromSchema(name: String, schema: JsonNode): ObjectGene {
-        val properties = schema["properties"] ?: return ObjectGene(name, emptyList())
-        val fields = properties.fields().asSequence().map { (propName, propSchema) ->
-            buildGeneFromSchema(propName, propSchema)
-        }.toList()
-        return ObjectGene(name, fields)
     }
 
     // -------------------------------------------------------------------------
