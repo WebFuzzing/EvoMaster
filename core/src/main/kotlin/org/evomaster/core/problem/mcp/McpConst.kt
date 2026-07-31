@@ -17,4 +17,28 @@ object McpConst {
      * returned by the server after a successful initialize handshake.
      */
     const val SESSION_ID_HEADER = "Mcp-Session-Id"
+
+    /**
+     * Message sent by the client on successful initialization with the server
+     */
+    const val INITIALIZED_NOTIFICATION = "notifications/initialized"
+
+    /**
+     * method names for the MCP requests.
+     */
+    const val METHOD_INITIALIZE = "initialize"
+    const val METHOD_TOOLS_LIST = "tools/list"
+    const val METHOD_TOOLS_CALL = "tools/call"
+    const val METHOD_RESOURCES_LIST = "resources/list"
+    const val METHOD_RESOURCES_READ = "resources/read"
+    const val METHOD_RESOURCE_TEMPLATES_LIST = "resources/templates/list"
+
+    /**
+     * Possible content types of tool responses.
+     */
+    const val CONTENT_TYPE_TEXT = "text"
+    const val CONTENT_TYPE_IMAGE = "image"
+    const val CONTENT_TYPE_AUDIO = "audio"
+    const val CONTENT_TYPE_RESOURCE_LINK = "resource_link"
+    const val CONTENT_TYPE_RESOURCE = "resource"
 }

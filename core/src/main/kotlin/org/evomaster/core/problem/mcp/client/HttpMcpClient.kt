@@ -3,6 +3,8 @@ package org.evomaster.core.problem.mcp.client
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.mcp.McpConst
 import org.evomaster.core.remote.HttpClientFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
@@ -23,6 +25,10 @@ import javax.ws.rs.core.Response
  * @param readTimeoutMs read timeout (in milliseconds) for the underlying Jersey client.
  */
 class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : McpClient {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(HttpMcpClient::class.java)
+    }
 
     private val mapper: ObjectMapper = ObjectMapper()
     private val idCounter = AtomicInteger(1)
@@ -60,7 +66,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
      */
     fun initialize() {
         val response = sendJsonRpc(
-            "initialize",
+            McpConst.METHOD_INITIALIZE,
             mapOf(
                 "protocolVersion" to McpConst.PROTOCOL_VERSION,
                 "capabilities" to emptyMap<String, Any>(),
@@ -82,14 +88,18 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             throw IllegalStateException("MCP initialize handshake returned empty body")
         }
         // Send the required follow-up notification (fire-and-forget)
-        postNotification("notifications/initialized", emptyMap())
+        postNotification(McpConst.INITIALIZED_NOTIFICATION, emptyMap())
     }
 
     /** Send a JSON-RPC notification (no response expected). */
     private fun postNotification(method: String, params: Map<String, Any?>) {
         val response = sendJsonRpc(method, params, id = null, acceptEventStream = false)
         // Discard the response to complete the HTTP exchange and release the connection
-        try { response.close() } catch (_: Exception) {}
+        try {
+            response.close()
+        } catch (e: Exception) {
+            log.trace("Failed to close MCP notification response for '$method'", e)
+        }
     }
 
     /** Send a JSON-RPC request and parse the response. */
@@ -144,22 +154,22 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             val type = item["type"] as? String
                 ?: throw IllegalStateException("Tool: $name response content item is missing required 'type' field")
             when (type) {
-                "text" -> McpTextToolContent(item["text"] as? String ?: "")
-                "image" -> McpImageToolContent(
+                McpConst.CONTENT_TYPE_TEXT -> McpTextToolContent(item["text"] as? String ?: "")
+                McpConst.CONTENT_TYPE_IMAGE -> McpImageToolContent(
                     data = item["data"] as? String ?: "",
                     mimeType = item["mimeType"] as? String ?: ""
                 )
-                "audio" -> McpAudioToolContent(
+                McpConst.CONTENT_TYPE_AUDIO -> McpAudioToolContent(
                     data = item["data"] as? String ?: "",
                     mimeType = item["mimeType"] as? String ?: ""
                 )
-                "resource_link" -> McpResourceLinkToolContent(
+                McpConst.CONTENT_TYPE_RESOURCE_LINK -> McpResourceLinkToolContent(
                     uri = item["uri"] as? String ?: "",
                     name = item["name"] as? String ?: "",
                     description = item["description"] as? String,
                     mimeType = item["mimeType"] as? String
                 )
-                "resource" -> McpEmbeddedResourceToolContent(
+                McpConst.CONTENT_TYPE_RESOURCE -> McpEmbeddedResourceToolContent(
                     parseResourceContent(item["resource"] as? Map<String, Any?> ?: emptyMap())
                 )
                 else -> throw IllegalStateException("Tool: $name response has unsupported content type '$type'")
@@ -183,7 +193,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     }
 
     override fun listTools(): List<McpToolDefinition> {
-        return fetchPaginatedList("tools/list", "tools", { tool ->
+        return fetchPaginatedList(McpConst.METHOD_TOOLS_LIST, "tools", { tool ->
             McpToolDefinition(
                 name = tool["name"] as String,
                 description = tool["description"] as String,
@@ -193,7 +203,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     }
 
     override fun listResources(): List<McpResourceDefinition> {
-        return fetchPaginatedList("resources/list", "resources", { resource ->
+        return fetchPaginatedList(McpConst.METHOD_RESOURCES_LIST, "resources", { resource ->
             McpResourceDefinition(
                 uri = resource["uri"] as String,
                 name = resource["name"] as String,
@@ -204,7 +214,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     }
 
     override fun listResourceTemplates(): List<McpResourceTemplate> {
-        return fetchPaginatedList("resources/templates/list", "resourceTemplates", { template ->
+        return fetchPaginatedList(McpConst.METHOD_RESOURCE_TEMPLATES_LIST, "resourceTemplates", { template ->
             McpResourceTemplate(
                 uriTemplate = template["uriTemplate"] as String,
                 name = template["name"] as String,
@@ -214,7 +224,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     }
 
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
-        val response = post("tools/call", mapOf("name" to name, "arguments" to arguments))
+        val response = post(McpConst.METHOD_TOOLS_CALL, mapOf("name" to name, "arguments" to arguments))
             ?: return McpToolResult(isError = true)
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
         val content = getToolResponseContent(name, result)
@@ -227,7 +237,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     }
 
     override fun readResource(uri: String): McpResourceResult {
-        val response = post("resources/read", mapOf("uri" to uri))
+        val response = post(McpConst.METHOD_RESOURCES_READ, mapOf("uri" to uri))
             ?: return McpResourceResult()
         val result = response["result"] as? Map<String, Any?> ?: return McpResourceResult()
         val contents = getResourceResponseContent(result)
