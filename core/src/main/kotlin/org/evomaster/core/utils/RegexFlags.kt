@@ -48,15 +48,12 @@ data class ParsedFlagExpression(
 }
 
 data class RegexFlags(
-    // currently implemented
     val caseInsensitive: Boolean = false,        // i
     val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
-
-    // recognised but not yet implemented, validate() throws on these
     val dotAll: Boolean = false,                 // s
-    val multiline: Boolean = false,              // m
     val unixLines: Boolean = false,              // d
     val unicodeCharacterClass: Boolean = false,  // U
+    val multiline: Boolean = false,              // m
     val comments: Boolean = false,               // x
 ) {
 
@@ -166,10 +163,7 @@ data class RegexFlags(
      * Call this after merging, before recursing into the flagged disjunction.
      */
     fun validate() {
-        if (dotAll)                throw IllegalStateException("Regex flag 's' (DOTALL) is not yet supported")
-        if (multiline)             throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
-        if (unixLines)             throw IllegalStateException("Regex flag 'd' (UNIX_LINES) is not yet supported")
-        if (unicodeCharacterClass) throw IllegalStateException("Regex flag 'U' (UNICODE_CHARACTER_CLASS) is not yet supported")
+        if (multiline) throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
     }
 
     /**
@@ -186,7 +180,8 @@ data class RegexFlags(
      * and unicodeCase flag values.
      */
     fun isCaseable(codePoint: Int): Boolean {
-        return if (caseInsensitive && unicodeCase) {
+        // unicodeCharacterClass implies also unicodeCase
+        return if (caseInsensitive && (unicodeCase || unicodeCharacterClass)) {
             Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
         }
         else if (caseInsensitive) {

@@ -52,6 +52,14 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testMultipleQuotes(){
+        checkSameAsJava("^(\\Q6\\E(n|N)(u|U)(a|A)(q|Q)(w|W)(b|B)\\Q51\\E(y|Y)(w|W)\\Q1\\E(e|E)(r|R)(n|N))$")
+        checkSameAsJava("^((z|Z)(l|L)(q|Q)\\Q9\\E(r|R)(e|E)(k|K)(q|Q)(b|B)\\Q6\\E(e|E)(q|Q)(u|U))$")
+        checkSameAsJava("^(\\Q81\\E(x|X)(a|A)\\Q3\\E(p|P)(x|X)(d|D))$")
+        checkSameAsJava("a{1}\\Qa{1}\\Qabcd")
+    }
+
+    @Test
     fun testIssueWithControlCharactersInIgnoreCase(){
         val s = "a[](){}\\\"^$.b"
         checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.uppercase(), s.lowercase()), 200)
@@ -97,6 +105,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testPosixCharacterClasses(){
         checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
             |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
+        checkSameAsJava("""(?U)\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
+            |\p{pRINT}\p{BLANK}\p{cNtRl}\p{XdIgIt}\p{space}""".trimMargin())
     }
 
     @Test
@@ -137,6 +147,19 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""\P{Lower}\P{Upper}\P{ASCII}\P{Alpha}\P{Digit}\P{Alnum}\P{Punct}\P{Graph}
             |\P{Print}\P{Blank}\P{Cntrl}\P{XDigit}\P{Space}""".trimMargin())
         checkSameAsJava("""\P{Pe}""")
+        checkSameAsJava("""(?U)\P{Lower}""")
+        checkSameAsJava("""(?U)\P{Upper}""")
+        checkSameAsJava("""(?U)\P{ASCII}""")
+        checkSameAsJava("""(?U)\P{Alpha}""")
+        checkSameAsJava("""(?U)\P{Digit}""")
+        checkSameAsJava("""(?U)\P{Alnum}""")
+        checkSameAsJava("""(?U)\P{Punct}""")
+        checkSameAsJava("""(?U)\P{Graph}""")
+        checkSameAsJava("""(?U)\P{Print}""")
+        checkSameAsJava("""(?U)\P{Blank}""")
+        checkSameAsJava("""(?U)\P{Cntrl}""")
+        checkSameAsJava("""(?U)\P{XDigit}""")
+        checkSameAsJava("""(?U)\P{Space}""")
     }
 
     @Test
@@ -236,6 +259,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^((?iu)@.+)$")
         checkSameAsJava("^(?iu)")
         checkSameAsJava("(?iu)")
+        checkSameAsJava("(?s).+")
+        checkSameAsJava("(?d).+")
+        checkSameAsJava("(?ds).+")
     }
 
     @Test
@@ -421,5 +447,10 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("\\Q#not a comment\\E", commentsOn)
         checkSameAsJava("a b(?-x: c d(?x: e f)g h)i j", commentsOn)
         checkSameAsJava("a b(?-x: c d(?x: e f (?-x) #no (?x: a b))g h)i j", commentsOn)
+    }
+
+    @Test
+    fun testUnicodeCharClassFlagImpliesUnicodeCase(){
+        checkCanSample("(?iU)Å", "å", 100)
     }
 }

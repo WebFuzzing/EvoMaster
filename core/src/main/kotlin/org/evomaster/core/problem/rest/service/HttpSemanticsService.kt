@@ -154,18 +154,36 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             if (hasPhaseTimedOut()) return
 
-            val pathVariables = a.parameters
-                .filterIsInstance<PathParam>()
-                .map { it.copy() }
-                .toMutableList()
+            // own auth first, then every other user: on 401/403 retry until authorized
+            val authCandidates = mutableListOf(a.auth)
+            authCandidates.addAll(
+                sampler.authentications.getOfType(HttpWsAuthenticationInfo::class.java)
+                    .filter { it.name != a.auth.name }
+            )
 
-            val path = a.path.copy()
-            val options = RestCallAction("${HttpVerb.OPTIONS}:$path", HttpVerb.OPTIONS, path, pathVariables, a.auth)
-            options.doInitialize(randomness)
+            for (auth in authCandidates) {
 
-            val ind = RestIndividual(mutableListOf(options), SampleType.HTTP_SEMANTICS)
-            ind.doGlobalInitialize(globalState)
-            prepareEvaluateAndSave(ind)
+                if (hasPhaseTimedOut()) return
+
+                val pathVariables = a.parameters
+                    .filterIsInstance<PathParam>()
+                    .map { it.copy() }
+                    .toMutableList()
+
+                val path = a.path.copy()
+                val options = RestCallAction("${HttpVerb.OPTIONS}:$path", HttpVerb.OPTIONS, path, pathVariables, auth)
+                options.doInitialize(randomness)
+
+                val ind = RestIndividual(mutableListOf(options), SampleType.HTTP_SEMANTICS)
+                ind.doGlobalInitialize(globalState)
+
+                val ei = evaluate(ind) ?: continue
+                val status = (ei.evaluatedMainActions().firstOrNull()?.result as? RestCallResult)?.getStatusCode()
+
+                if (status == 401 || status == 403) continue // try next user, discard attempt
+                archive.addIfNeeded(ei)
+                break
+            }
         }
     }
 
@@ -204,7 +222,7 @@ class HttpSemanticsService : TimeBoxedPhase{
         }
     }
 
-    private fun prepareEvaluateAndSave(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    private fun evaluate(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
         ind.modifySampleType(SampleType.HTTP_SEMANTICS)
         ind.ensureFlattenedStructure()
 
@@ -213,7 +231,11 @@ class HttpSemanticsService : TimeBoxedPhase{
             log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
             return null
         }
+        return evaluatedIndividual
+    }
 
+    private fun prepareEvaluateAndSave(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+        val evaluatedIndividual = evaluate(ind) ?: return null
         archive.addIfNeeded(evaluatedIndividual)
         return evaluatedIndividual
     }
