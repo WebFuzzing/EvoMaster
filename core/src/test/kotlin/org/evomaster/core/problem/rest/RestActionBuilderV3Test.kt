@@ -46,6 +46,14 @@ class RestActionBuilderV3Test{
         RestActionBuilderV3.cleanCache()
     }
 
+    @Test
+    fun testMultipartFormDataSupportOptionDefaultsToDisabled(){
+        val config = EMConfig()
+
+        assertTrue(config.disableMultipartFormDataSupport)
+        assertTrue(RestActionBuilderV3.Options(config).disableMultipartFormDataSupport)
+        assertFalse(RestActionBuilderV3.Options(disableMultipartFormDataSupport = false).disableMultipartFormDataSupport)
+    }
 
     @Test
     fun testDtoIssueWithWronglyHandledField(){

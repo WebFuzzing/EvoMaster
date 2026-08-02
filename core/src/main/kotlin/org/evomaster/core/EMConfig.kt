@@ -1378,6 +1378,11 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Experimental
+    @Cfg("Disable multipart/form-data support when building REST actions. " +
+            "This feature is disabled by default and can be enabled through RestActionBuilder options.")
+    var disableMultipartFormDataSupport = true
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
