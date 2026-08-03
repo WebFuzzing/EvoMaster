@@ -10,9 +10,10 @@ import org.evomaster.core.problem.mcp.McpIndividual
 import org.evomaster.core.problem.mcp.McpResourceReadAction
 import org.evomaster.core.problem.mcp.McpToolCallAction
 import org.evomaster.core.problem.mcp.McpUriParam
+import org.evomaster.core.problem.mcp.builder.McpActionBuilder
 import org.evomaster.core.problem.mcp.client.HttpMcpClient
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -47,17 +48,10 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     /** Builds the tool actions cluster as part of the initialization process */
     private fun discoverTools() {
         val tools = mcpClient.listTools()
-        for (tool in tools) {
-            // TODO: build the input gene from tool.inputSchema via a dedicated
-            //  McpActionBuilder (similar to GraphQLActionBuilder)
-            val inputGene = ObjectGene("input", emptyList())
-            val action = McpToolCallAction(
-                toolName = tool.name,
-                inputSchema = inputGene
-            )
-            toolActionCluster[action.id] = action
-            actionCluster[action.id] = action
-        }
+        val options = RestActionBuilderV3.Options(config)
+        val messages = McpActionBuilder.addActionsFromToolList(tools, toolActionCluster, options)
+        messages.forEach { log.warn(it) }
+        toolActionCluster.values.forEach { actionCluster[it.id] = it }
     }
 
     /** Builds the resource actions cluster as part of the initialization process */
