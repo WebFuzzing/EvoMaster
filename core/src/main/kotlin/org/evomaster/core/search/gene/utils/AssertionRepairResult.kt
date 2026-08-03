@@ -25,8 +25,36 @@ data class AssertionRepairResult(
         }
     }
 
+    /**
+     * Combines this result with [next], the outcome of resolving one more requirement in the
+     * same scope. Failure on either side wins outright, otherwise [next]'s own
+     * [neededPrefix]/[neededPostfix] each take priority over this result's, falling back to
+     * this result's own value when [next] did not set one of them.
+     */
+    fun mergedWith(next: AssertionRepairResult): AssertionRepairResult {
+        if (!success || !next.success) {
+            return FAILURE
+        }
+        return AssertionRepairResult(
+            success = true,
+            neededPrefix = next.neededPrefix ?: neededPrefix,
+            neededPostfix = next.neededPostfix ?: neededPostfix
+        )
+    }
+
     companion object {
         val SUCCESS = AssertionRepairResult(success = true)
         val FAILURE = AssertionRepairResult(success = false)
+
+        /**
+         * A successful result whose only outcome is [remainder] still being needed by whatever
+         * lies further out, depending on [backward].
+         */
+        fun stillNeeded(remainder: String, backward: Boolean): AssertionRepairResult =
+            if (backward) {
+                AssertionRepairResult(success = true, neededPrefix = remainder)
+            } else {
+                AssertionRepairResult(success = true, neededPostfix = remainder)
+            }
     }
 }

@@ -256,48 +256,96 @@ class DisjunctionRxGene(
             return AssertionRepairResult.SUCCESS
         }
 
+        return repairDirectAssertions(randomness)
+    }
+
+    /**
+     * Repairs every direct-term assertion in [terms].
+     */
+    private fun repairDirectAssertions(randomness: Randomness): AssertionRepairResult {
+        var pending = AssertionRepairResult.SUCCESS
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            val innerGene = assertion.innerGene ?: continue
+            val backward = assertion.assertionType == AssertionType.LOOKBEHIND
+            val target = if (backward) genesBefore(idx) else genesAfter(idx)
 
-            val target = if (assertion.assertionType == AssertionType.LOOKBEHIND) {
-                terms.subList(0, idx).filter { it !is AssertionRxGene }
+            val resolution = if (target.isEmpty()) {
+                repairAssertionWithNoTarget(assertion, backward, randomness)
             } else {
-                terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
+                repairAssertionAgainstTarget(assertion, target, backward, randomness)
             }
-
-            // we may not be able to force genes as target is empty but if the lookaround can be zero-width it is fine.
-            if (target.isEmpty()) {
-                if (innerGene.canBeZeroWidth) {
-                    innerGene.forceZeroWidth()
-                    continue
-                }
-                return AssertionRepairResult.FAILURE
-            }
-
-            val (countFunction, forceFunction) =
-                if (assertion.assertionType == AssertionType.LOOKBEHIND) {
-                    AssertionRepairWalk::absorbableSuffixCount to AssertionRepairWalk::tryForceSuffix
-                } else {
-                    AssertionRepairWalk::absorbableCount to AssertionRepairWalk::tryForce
-                }
-
-            var satisfied = false
-            for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
-                assertion.randomize(randomness, false)
-                val candidate = assertion.sampledInnerValue() ?: break
-                if (candidate.isEmpty() || countFunction(target, candidate).consumed == candidate.length) {
-                    if (candidate.isNotEmpty()) {
-                        forceFunction(target, candidate)
-                    }
-                    satisfied = true
-                    break
-                }
-            }
-            if (!satisfied) {
+            pending = pending.mergedWith(resolution)
+            if (!pending.success) {
                 return AssertionRepairResult.FAILURE
             }
         }
-        return AssertionRepairResult.SUCCESS
+        return pending
+    }
+
+    /**
+     * Handles an assertion with nothing local to force onto: escapes zero-width if the assertion
+     * itself allows it.
+     */
+    private fun repairAssertionWithNoTarget(assertion: AssertionRxGene, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        val innerGene = assertion.innerGene!!
+        if (innerGene.canBeZeroWidth) {
+            innerGene.forceZeroWidth()
+            return AssertionRepairResult.SUCCESS
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
+     * Resamples [assertion] up to [MAX_LOCAL_ASSERTION_ATTEMPTS] times looking for a candidate
+     * [target] fully absorbs.
+     */
+    private fun repairAssertionAgainstTarget(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        val countFunction = countWalkFunction(backward)
+        val forceFunction = forceWalkFunction(backward)
+
+        for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
+            assertion.randomize(randomness, false)
+            val candidate = assertion.sampledInnerValue()!!
+            if (candidate.isEmpty()) {
+                return AssertionRepairResult.SUCCESS
+            }
+            if (countFunction(target, candidate).consumed == candidate.length) {
+                forceFunction(target, candidate)
+                return AssertionRepairResult.SUCCESS
+            }
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
+     * The genes in [terms] lying before index [idx], excluding other assertions. This is the forcing
+     * target for a [AssertionType.LOOKBEHIND] assertion sitting at [idx].
+     */
+    private fun genesBefore(idx: Int): List<Gene> =
+        terms.subList(0, idx).filter { it !is AssertionRxGene }
+
+    /**
+     * The genes in [terms] lying after index [idx], excluding other assertions. This is the forcing
+     * target for a [AssertionType.LOOKAHEAD] assertion sitting at [idx].
+     */
+    private fun genesAfter(idx: Int): List<Gene> =
+        terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
+
+    /**
+     * The read-only walk function for [backward].
+     */
+    private fun countWalkFunction(backward: Boolean) = if (backward) {
+        AssertionRepairWalk::absorbableSuffixCount
+    } else {
+        AssertionRepairWalk::absorbableCount
+    }
+
+    /**
+     * The mutating counterpart of [countWalkFunction], for the same [backward] direction.
+     */
+    private fun forceWalkFunction(backward: Boolean) = if (backward) {
+        AssertionRepairWalk::tryForceSuffix
+    } else {
+        AssertionRepairWalk::tryForce
     }
 }
