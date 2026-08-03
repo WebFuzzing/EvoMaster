@@ -476,9 +476,9 @@ class DisjunctionRxGene(
         return if (consumed == requirement.length) {
             AssertionRepairResult.SUCCESS
         } else {
-            val reminder = if (backward) requirement.dropLast(consumed) else requirement.drop(consumed)
+            val remainder = if (backward) requirement.dropLast(consumed) else requirement.drop(consumed)
             AssertionRepairResult.stillNeeded(
-                reminder,
+                remainder,
                 backward
             )
         }

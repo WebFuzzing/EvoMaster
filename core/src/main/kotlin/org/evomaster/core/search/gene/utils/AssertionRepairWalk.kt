@@ -10,7 +10,6 @@ import org.evomaster.core.search.gene.regex.RxAbsorbable
  * simply wrong here; `false` means the gene list just ran out of room with no mismatch,
  * so the leftover is still worth trying to escape outwards.
  */
-
 data class WalkOutcome(val consumed: Int, val hardMismatch: Boolean)
 
 /**
