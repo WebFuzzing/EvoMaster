@@ -508,4 +508,20 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("(?<=X)a") }
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
+
+    @Test
+    fun testNestedAssertionInGroupLocallySatisfied() {
+        checkSameAsJava("^(a(?=bc)bc)d$")
+        checkSameAsJava("^(a(?<=a)b)c$")
+        checkSameAsJava("^((?<name>x)(?=y)y)z$")
+        checkSameAsJava("^(a(?=ok)(o|k|a|y)*)$")
+    }
+
+    @Test
+    fun testNestedAssertionOutwardEscape() {
+        checkSameAsJava("""^a((?=b\d)b)\d$""")
+        checkSameAsJava("""^\d(x(?<=\dx))y$""")
+        assertThrows<IllegalStateException> { checkSameAsJava("""^a((?=b\d)b)y$""") }
+        assertThrows<IllegalStateException> { checkSameAsJava("^(a(?=bc)d)e$") }
+    }
 }
