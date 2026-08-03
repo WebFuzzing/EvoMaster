@@ -4,6 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
@@ -250,9 +251,9 @@ class DisjunctionRxGene(
      * - Forward, onto [terms] after it, for [AssertionType.LOOKAHEAD]
      * - Backward, onto [terms] before it, for [AssertionType.LOOKBEHIND].
      */
-    fun attemptAssertionRepair(randomness: Randomness) {
+    fun attemptAssertionRepair(randomness: Randomness): AssertionRepairResult {
         if (terms.none { it is AssertionRxGene }) {
-            return
+            return AssertionRepairResult.SUCCESS
         }
 
         for (idx in terms.indices) {
@@ -271,7 +272,7 @@ class DisjunctionRxGene(
                     innerGene.forceZeroWidth()
                     continue
                 }
-                return
+                return AssertionRepairResult.FAILURE
             }
 
             val (countFunction, forceFunction) =
@@ -294,8 +295,9 @@ class DisjunctionRxGene(
                 }
             }
             if (!satisfied) {
-                return
+                return AssertionRepairResult.FAILURE
             }
         }
+        return AssertionRepairResult.SUCCESS
     }
 }

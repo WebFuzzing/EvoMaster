@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -326,11 +327,11 @@ class DisjunctionListRxGene(
     }
 
     /**
-     * Delegates assertion repair to whichever branch is currently active, as only that
-     * branch's rendered value is ever observed, so only it needs repairing. See
-     * [DisjunctionRxGene.attemptAssertionRepair] for the actual repair logic.
+     * Delegates to whichever branch is currently active, as only that branch's rendered
+     * value is ever observed, so only it needs repairing. See [DisjunctionRxGene.attemptAssertionRepair] for
+     * the actual repair logic and what its return value means.
      */
-    fun attemptAssertionRepair(randomness: Randomness) {
-        disjunctions.getOrNull(activeDisjunction)?.attemptAssertionRepair(randomness)
+    fun attemptAssertionRepair(randomness: Randomness): AssertionRepairResult {
+        return disjunctions[activeDisjunction].attemptAssertionRepair(randomness)
     }
 }
