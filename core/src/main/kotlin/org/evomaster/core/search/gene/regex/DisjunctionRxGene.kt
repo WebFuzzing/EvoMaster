@@ -196,7 +196,7 @@ class DisjunctionRxGene(
      * @see [AssertionRepairWalk.absorbableCount]
      */
     override fun absorbableCount(value: String): Int =
-        AssertionRepairWalk.absorbableCount(terms, value)
+        AssertionRepairWalk.absorbableCount(terms, value).consumed
 
     /**
      * Delegates to a backward walk over [terms]. Mirrors [absorbableCount], walking
@@ -204,7 +204,7 @@ class DisjunctionRxGene(
      * @see [RxAbsorbable.absorbableSuffixCount]
      */
     override fun absorbableSuffixCount(value: String): Int =
-        AssertionRepairWalk.absorbableSuffixCount(terms, value)
+        AssertionRepairWalk.absorbableSuffixCount(terms, value).consumed
 
     /**
      * True only if every term can independently render "", as this disjunction's own value is
@@ -221,7 +221,7 @@ class DisjunctionRxGene(
      */
     override fun tryForce(value: String): Int {
         require(value.isNotEmpty())
-        return AssertionRepairWalk.tryForce(terms, value)
+        return AssertionRepairWalk.tryForce(terms, value).consumed
     }
 
     /**
@@ -231,7 +231,7 @@ class DisjunctionRxGene(
      */
     override fun tryForceSuffix(value: String): Int {
         require(value.isNotEmpty())
-        return AssertionRepairWalk.tryForceSuffix(terms, value)
+        return AssertionRepairWalk.tryForceSuffix(terms, value).consumed
     }
 
     /**
@@ -285,7 +285,7 @@ class DisjunctionRxGene(
             for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
                 assertion.randomize(randomness, false)
                 val candidate = assertion.sampledInnerValue() ?: break
-                if (candidate.isEmpty() || countFunction(target, candidate) == candidate.length) {
+                if (candidate.isEmpty() || countFunction(target, candidate).consumed == candidate.length) {
                     if (candidate.isNotEmpty()) {
                         forceFunction(target, candidate)
                     }
