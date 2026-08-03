@@ -22,6 +22,13 @@ import org.slf4j.LoggerFactory
  */
 const val MAX_LOCAL_ASSERTION_ATTEMPTS = 20
 
+/**
+ * One nested group's own unresolved requirement, as settled by [DisjunctionRxGene.settleNestedGroups]
+ * and resolved by [DisjunctionRxGene.resolveNestedGroupRequirements]. [termIndex] is that group's
+ * own index in [DisjunctionRxGene.terms].
+ */
+private data class NestedGroupRequirement(val termIndex: Int, val result: AssertionRepairResult)
+
 class DisjunctionRxGene(
         name: String,
         val terms: List<Gene>,
@@ -249,18 +256,94 @@ class DisjunctionRxGene(
      * [AssertionRxGene]s is actually satisfied, by forcing the assertion's sampled inner
      * value onto the genes on the appropriate side of it within [terms]:
      * - Forward, onto [terms] after it, for [AssertionType.LOOKAHEAD]
-     * - Backward, onto [terms] before it, for [AssertionType.LOOKBEHIND].
+     * - Backward, onto [terms] before it, for [AssertionType.LOOKBEHIND]
+     *
+     * Also, recurses into any direct term that is itself a nested group repairing
+     * it first, and resolving whatever it couldn't satisfy locally against this scope's own
+     * neighboring terms. Runs as three passes, in order: [settleNestedGroups],
+     * [resolveNestedGroupRequirements], [repairDirectAssertions].
+     *
+     * @return whether repair succeeded, with possible outside requirements.
      */
     fun attemptAssertionRepair(randomness: Randomness): AssertionRepairResult {
-        if (terms.none { it is AssertionRxGene }) {
+        if (terms.none { it is AssertionRxGene || it is DisjunctionListRxGene }) {
             return AssertionRepairResult.SUCCESS
         }
 
-        return repairDirectAssertions(randomness)
+        val nestedGroupRequirements = settleNestedGroups(randomness)
+            ?: return AssertionRepairResult.FAILURE
+
+        val nestedResult = resolveNestedGroupRequirements(nestedGroupRequirements)
+        if (!nestedResult.success) {
+            return AssertionRepairResult.FAILURE
+        }
+
+        val directResult = repairDirectAssertions(randomness)
+        if (!directResult.success) {
+            return AssertionRepairResult.FAILURE
+        }
+
+        return AssertionRepairResult(
+            success = true,
+            neededPrefix = directResult.neededPrefix ?: nestedResult.neededPrefix,
+            neededPostfix = directResult.neededPostfix ?: nestedResult.neededPostfix
+        )
     }
 
     /**
-     * Repairs every direct-term assertion in [terms].
+     * Pass 1 of [attemptAssertionRepair]: settles every nested group's own internal repair,
+     * left to right, before anything in this scope uses it as a forcing target.
+     *
+     * @return the outward requirements for each nested group's own term index, in ascending index order
+     * (left to right, matching [terms] itself). `null` if any nested group's own repair failed outright.
+     */
+    private fun settleNestedGroups(randomness: Randomness): List<NestedGroupRequirement>? {
+        val nestedGroupRequirements = mutableListOf<NestedGroupRequirement>()
+        for (idx in terms.indices) {
+            val term = terms[idx] as? DisjunctionListRxGene ?: continue
+            val result = term.attemptAssertionRepair(randomness)
+            if (!result.success) {
+                return null
+            }
+            if (result.neededPrefix != null || result.neededPostfix != null) {
+                nestedGroupRequirements.add(NestedGroupRequirement(idx, result))
+            }
+        }
+        return nestedGroupRequirements
+    }
+
+    /**
+     * Pass 2 of [attemptAssertionRepair]: resolves each nested group's own outward requirement
+     * (as settled by [settleNestedGroups]) against this scope's own neighboring terms.
+     *
+     * @return [AssertionRepairResult.FAILURE] if resolving any of them failed outright; otherwise
+     * a successful result carrying whatever this scope itself must still propagate outward.
+     */
+    private fun resolveNestedGroupRequirements(nestedGroupRequirements: List<NestedGroupRequirement>): AssertionRepairResult {
+        var pending = AssertionRepairResult.SUCCESS
+        for ((idx, requirement) in nestedGroupRequirements) {
+            requirement.neededPrefix?.let { requirement ->
+                pending = pending.mergedWith(resolveOutwardRequirement(requirement, genesBefore(idx), backward = true))
+            }
+            if (!pending.success) {
+                return AssertionRepairResult.FAILURE
+            }
+            requirement.neededPostfix?.let { requirement ->
+                pending = pending.mergedWith(resolveOutwardRequirement(requirement, genesAfter(idx), backward = false))
+            }
+            if (!pending.success) {
+                return AssertionRepairResult.FAILURE
+            }
+        }
+        return pending
+    }
+
+    /**
+     * Pass 3 of [attemptAssertionRepair]: repairs every direct-term assertion in [terms].
+     *
+     * @return [AssertionRepairResult.FAILURE] if repairing any of them failed outright; otherwise
+     * a successful result carrying whatever this scope's own assertions still need propagated
+     * outward.
      */
     private fun repairDirectAssertions(randomness: Randomness): AssertionRepairResult {
         var pending = AssertionRepairResult.SUCCESS
@@ -284,7 +367,7 @@ class DisjunctionRxGene(
 
     /**
      * Handles an assertion with nothing local to force onto: escapes zero-width if the assertion
-     * itself allows it.
+     * itself allows it, otherwise samples once and escapes the whole candidate outward.
      */
     private fun repairAssertionWithNoTarget(assertion: AssertionRxGene, backward: Boolean, randomness: Randomness): AssertionRepairResult {
         val innerGene = assertion.innerGene!!
@@ -292,17 +375,21 @@ class DisjunctionRxGene(
             innerGene.forceZeroWidth()
             return AssertionRepairResult.SUCCESS
         }
-        return AssertionRepairResult.FAILURE
+        assertion.randomize(randomness, false)
+        val candidate = assertion.sampledInnerValue()!!
+        return AssertionRepairResult.stillNeeded(candidate, backward)
     }
 
     /**
      * Resamples [assertion] up to [MAX_LOCAL_ASSERTION_ATTEMPTS] times looking for a candidate
-     * [target] fully absorbs.
+     * [target] fully absorbs; if none does, escapes the last candidate tried outwards. This mirrors
+     * the same outcome [resolveOutwardRequirement] produces.
      */
     private fun repairAssertionAgainstTarget(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
         val countFunction = countWalkFunction(backward)
         val forceFunction = forceWalkFunction(backward)
 
+        var lastCandidate: String? = null
         for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
             assertion.randomize(randomness, false)
             val candidate = assertion.sampledInnerValue()!!
@@ -313,20 +400,24 @@ class DisjunctionRxGene(
                 forceFunction(target, candidate)
                 return AssertionRepairResult.SUCCESS
             }
+            // Read-only for now, try to force full match before escaping partial match.
+            lastCandidate = candidate
         }
-        return AssertionRepairResult.FAILURE
+
+        val candidate = lastCandidate ?: return AssertionRepairResult.FAILURE
+        return resolveOutwardRequirement(candidate, target, backward)
     }
 
     /**
      * The genes in [terms] lying before index [idx], excluding other assertions. This is the forcing
-     * target for a [AssertionType.LOOKBEHIND] assertion sitting at [idx].
+     * target for a [AssertionType.LOOKBEHIND] assertion (or an outward requirement) sitting at [idx].
      */
     private fun genesBefore(idx: Int): List<Gene> =
         terms.subList(0, idx).filter { it !is AssertionRxGene }
 
     /**
      * The genes in [terms] lying after index [idx], excluding other assertions. This is the forcing
-     * target for a [AssertionType.LOOKAHEAD] assertion sitting at [idx].
+     * target for a [AssertionType.LOOKAHEAD] assertion (or an outward requirement) sitting at [idx].
      */
     private fun genesAfter(idx: Int): List<Gene> =
         terms.subList(idx + 1, terms.size).filter { it !is AssertionRxGene }
@@ -347,5 +438,49 @@ class DisjunctionRxGene(
         AssertionRepairWalk::tryForceSuffix
     } else {
         AssertionRepairWalk::tryForce
+    }
+
+    /**
+     * Resolves a "" (empty) requirement: every gene in [target] must collapse to zero width.
+     */
+    private fun resolveEmptyRequirement(target: List<Gene>): AssertionRepairResult {
+        if (target.any { !(it as RxAbsorbable).canBeZeroWidth }) {
+            return AssertionRepairResult.FAILURE
+        }
+        target.forEach { (it as RxAbsorbable).forceZeroWidth() }
+        return AssertionRepairResult.SUCCESS
+    }
+
+    /**
+     * Resolves an outward [requirement] against [target], a list of this scope's own genes lying to one
+     * side of wherever the requirement originated. [backward] selects which direction [target] is walked.
+     */
+    private fun resolveOutwardRequirement(requirement: String, target: List<Gene>, backward: Boolean): AssertionRepairResult {
+        if (requirement.isEmpty()) {
+            return resolveEmptyRequirement(target)
+        }
+        if (target.isEmpty()) {
+            return AssertionRepairResult.stillNeeded(requirement, backward)
+        }
+
+        val countFunction = countWalkFunction(backward)
+        val outcome = countFunction(target, requirement)
+        if (outcome.hardMismatch) {
+            return AssertionRepairResult.FAILURE
+        }
+
+        val forceFunction = forceWalkFunction(backward)
+        forceFunction(target, requirement)
+
+        val consumed = outcome.consumed
+        return if (consumed == requirement.length) {
+            AssertionRepairResult.SUCCESS
+        } else {
+            val reminder = if (backward) requirement.dropLast(consumed) else requirement.drop(consumed)
+            AssertionRepairResult.stillNeeded(
+                reminder,
+                backward
+            )
+        }
     }
 }
