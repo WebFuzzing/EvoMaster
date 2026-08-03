@@ -263,6 +263,9 @@ class DisjunctionRxGene(
      * neighboring terms. Runs as three passes, in order: [settleNestedGroups],
      * [resolveNestedGroupRequirements], [repairDirectAssertions].
      *
+     *  Note: forcing here is sequential and uncoordinated, so a later force can overwrite an
+     *  earlier one. Still sound as the top-level pattern check catches any resulting mismatch.
+     *
      * @return whether repair succeeded, with possible outside requirements.
      */
     fun attemptAssertionRepair(randomness: Randomness): AssertionRepairResult {
