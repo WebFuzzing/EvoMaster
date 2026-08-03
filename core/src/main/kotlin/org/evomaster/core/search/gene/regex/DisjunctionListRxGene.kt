@@ -267,7 +267,6 @@ class DisjunctionListRxGene(
 
         if (bestCount > 0) {
             if (bestIndex != activeDisjunction) {
-                activeDisjunction = bestIndex
                 tryToActivateGene(disjunctions[bestIndex])
             }
             return force(disjunctions[bestIndex], value)
@@ -322,7 +321,6 @@ class DisjunctionListRxGene(
         val target = order.first { disjunctions[it].canBeZeroWidth }
         disjunctions[target].forceZeroWidth()
         if (target != activeDisjunction) {
-            activeDisjunction = target
             tryToActivateGene(disjunctions[target])
         }
     }
