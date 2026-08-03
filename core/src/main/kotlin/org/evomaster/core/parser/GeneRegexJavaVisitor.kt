@@ -97,9 +97,16 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     private fun isAssertionNested(ctx: RegexJavaParser.AssertionContext): Boolean {
         var current = ctx.parent
         while (current != null && current !is RegexJavaParser.PatternContext) {
-            if (current is RegexJavaParser.AssertionContext
-                || (current is RegexJavaParser.AtomContext && current.disjunction() != null)) {
+            if (current is RegexJavaParser.AssertionContext) {
+                // assertion within assertion
                 return true
+            }
+            if (current is RegexJavaParser.AtomContext && current.disjunction() != null) {
+                val enclosingTerm = current.parent as? RegexJavaParser.TermContext
+                if (enclosingTerm?.quantifier() != null) {
+                    // assertion within quantified group
+                    return true
+                }
             }
             current = current.parent
         }
