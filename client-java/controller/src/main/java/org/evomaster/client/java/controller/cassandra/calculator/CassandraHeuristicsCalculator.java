@@ -80,7 +80,7 @@ public class CassandraHeuristicsCalculator {
             }
         }
 
-        return TruthnessUtils.buildScaledTruthness(DistanceHelper.C, maxOfTrue);
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
     }
 
     private static List<CassandraRow> toList(Iterable<CassandraRow> iterable) {

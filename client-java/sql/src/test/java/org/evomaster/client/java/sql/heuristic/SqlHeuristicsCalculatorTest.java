@@ -64,7 +64,7 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(DistanceHelper.C, 1d)).getOfTrue();
+        double expectedOfTrue = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(DistanceHelper.H_NOT_NULL, 1d)).getOfTrue();
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -244,7 +244,7 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = DistanceHelper.C;
+        double expectedOfTrue = DistanceHelper.H_NOT_NULL;
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
@@ -272,7 +272,7 @@ public class SqlHeuristicsCalculatorTest {
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-        double expectedOfTrue = DistanceHelper.C;
+        double expectedOfTrue = DistanceHelper.H_NOT_NULL;
         assertEquals(expectedOfTrue, heuristicResult.getTruthness().getOfTrue());
 
         assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
@@ -351,7 +351,7 @@ public class SqlHeuristicsCalculatorTest {
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-        double expectedOfTrue = DistanceHelper.C;
+        double expectedOfTrue = DistanceHelper.H_NOT_NULL;
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 

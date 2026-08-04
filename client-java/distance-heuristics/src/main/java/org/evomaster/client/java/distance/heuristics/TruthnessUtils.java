@@ -9,7 +9,7 @@ public class TruthnessUtils {
     /**
      * A {@link Truthness} representing a condition that is fully satisfied.
      */
-    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, DistanceHelper.C);
+    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, DistanceHelper.H_NOT_NULL);
 
     /**
      * A {@link Truthness} representing a condition that is not satisfied at all.
@@ -20,7 +20,7 @@ public class TruthnessUtils {
      * A {@link Truthness} representing a condition that is not satisfied, but that provides a
      * better (ie, higher) base value than {@link #FALSE_TRUTHNESS}.
      */
-    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.C_BETTER, 1);
+    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.H_NOT_NULL_BETTER, 1);
 
     /**
      * Scales to a positive double value to the [0,1] range

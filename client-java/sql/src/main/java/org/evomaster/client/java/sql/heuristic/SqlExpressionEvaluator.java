@@ -316,7 +316,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (truthnessOfExpression.isTrue()) {
                 truthness = truthnessOfExpression;
             } else {
-                truthness = buildScaledTruthness(DistanceHelper.C_BETTER, truthnessOfExpression.getOfTrue());
+                truthness = buildScaledTruthness(DistanceHelper.H_NOT_NULL_BETTER, truthnessOfExpression.getOfTrue());
             }
         }
         return truthness;
