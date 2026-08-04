@@ -10,7 +10,7 @@ import java.util.Objects;
  * No case sensitive is considered when comparing column ids within
  * this class.
  */
-public class SqlColumnId {
+public class SqlColumnId implements Comparable<SqlColumnId> {
 
     private final String columnId;
 
@@ -25,6 +25,11 @@ public class SqlColumnId {
 
     public String toString() {
         return columnId;
+    }
+
+    @Override
+    public int compareTo(SqlColumnId o) {
+        return columnId.compareTo(o.columnId);
     }
 
     public boolean equals(Object obj) {

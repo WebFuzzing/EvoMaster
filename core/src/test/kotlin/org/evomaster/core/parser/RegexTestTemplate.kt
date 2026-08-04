@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Assertions
 import java.lang.AssertionError
 import java.lang.IllegalStateException
@@ -18,6 +19,25 @@ abstract class RegexTestTemplate {
     protected fun checkSameAsJava(regex: String) : RegexGene {
         //used when syntax is the same as in Java regex
         return check(regex, regex)
+    }
+
+    protected fun checkSameAsJava(regex: String, externalRegexFlags: RegexFlags = RegexFlags()) : RegexGene {
+        val randomness = Randomness().apply { updateSeed(42) }
+
+        val gene = RegexHandler.createGeneForJVM(regex, externalRegexFlags)
+
+        for(seed in 1..100L) {
+
+            gene.randomize(randomness, false)
+
+            val instance = gene.getValueAsRawString()
+
+            val pattern = Pattern.compile(regex, externalRegexFlags.toJavaFlagBitmask())
+            val matcher = pattern.matcher(instance)
+            Assertions.assertTrue(matcher.find(), "String not matching:\n$regex\n$instance")
+        }
+
+        return gene
     }
 
     protected fun check(regex: String, javaRegex: String) : RegexGene {

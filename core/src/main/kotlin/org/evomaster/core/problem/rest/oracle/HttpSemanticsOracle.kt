@@ -725,6 +725,89 @@ object HttpSemanticsOracle {
         return resFollow.getStatusCode() == 404
     }
 
+    /**
+     * HTTP_INVALID_MERGE_PATCH oracle (RFC 7386): a partial merge-patch update must not
+     * change fields that were NOT part of the request body.
+     *
+     * Sequence checked (last three main actions):
+     *   GET   /path -> 2xx   (state before)
+     *   PATCH /path -> 2xx   (merge-patch, sends only some fields)
+     *   GET   /path -> 2xx   (state after)
+     *
+     * X = fields declared in the PATCH body but NOT sent in this request (undefined;
+     * an explicit null counts as sent, meaning "delete"). Every field in X that had a
+     * value before must read back with the same value after; otherwise the server treated
+     * the partial update as a full replacement.
+     */
+    fun hasInvalidMergePatch(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 3) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val before = actions[actions.size - 3]
+        val patch  = actions[actions.size - 2]
+        val after  = actions[actions.size - 1]
+
+        if (before.verb != HttpVerb.GET) return false
+        if (patch.verb != HttpVerb.PATCH) return false
+        if (after.verb != HttpVerb.GET) return false
+
+        if (!before.usingSameResolvedPath(patch) || !after.usingSameResolvedPath(patch)) return false
+        // the two GETs must use the same auth for a meaningful state comparison
+        if (before.auth.isDifferentFrom(after.auth)) return false
+
+        // merge-patch bodies must be application/merge-patch+json (RFC 7386) or application/json.
+        val bodyParam = patch.parameters.find { it is BodyParam } as BodyParam?
+        if (bodyParam != null) {
+            // can contain parameter like "application/json; charset=utf-8"
+            val contentType = bodyParam.contentType().substringBefore(";").trim().lowercase()
+            if (contentType != "application/json" && contentType != "application/merge-patch+json") return false
+        }
+
+        val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult? ?: return false
+        val resPatch  = actionResults.find { it.sourceLocalId == patch.getLocalId() } as RestCallResult? ?: return false
+        val resAfter  = actionResults.find { it.sourceLocalId == after.getLocalId() } as RestCallResult? ?: return false
+
+        if (!StatusGroup.G_2xx.isInGroup(resBefore.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPatch.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resAfter.getStatusCode())) return false
+
+        // If there are flaky fields, eg, timestamps, there could be a different value between the 2 GETs,
+        // regardless of the PATCH. However, we are only looking at the fields of PATCH. it would be weird
+        // to set a value with a PATCH that the API can change on a whim... not impossible, but most likely
+        // very unlikely. so, in theory field flakiness should not be a problem here
+        val untouched = extractModifiedFieldNames(patch) - extractSentFieldNames(patch)
+        if (untouched.isEmpty()) return false
+
+        val bodyBefore = resBefore.getBody()
+        val bodyAfter = resAfter.getBody()
+        if (bodyBefore.isNullOrEmpty() || bodyAfter.isNullOrEmpty()) return false
+
+        return hasChangedUntouchedFields(bodyBefore, bodyAfter, untouched)
+    }
+
+    /**
+     * True if any field in [untouchedFields] that was present in [bodyBefore] is missing or
+     * has a different value in [bodyAfter]. Fields absent from the before-GET are ignored.
+     */
+    internal fun hasChangedUntouchedFields(
+        bodyBefore: String,
+        bodyAfter: String,
+        untouchedFields: Set<String>
+    ): Boolean {
+        val fieldsBefore = OutputFormatter.JSON_FORMATTER.readFields(bodyBefore, untouchedFields) ?: return false
+        val fieldsAfter  = OutputFormatter.JSON_FORMATTER.readFields(bodyAfter, untouchedFields) ?: return false
+
+        for (field in untouchedFields) {
+            val valueBefore = fieldsBefore[field] ?: continue
+            if (valueBefore != fieldsAfter[field]) return true
+        }
+        return false
+    }
+
     private fun parseFormBody(body: String): Map<String, String> {
         return body.split("&").mapNotNull { pair ->
             val parts = pair.split("=", limit = 2)

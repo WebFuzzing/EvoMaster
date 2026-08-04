@@ -66,7 +66,7 @@ public class Z3SolverTypesRest {
 
     @GetMapping("/products-3")
     public ResponseEntity<Void> getProductsWithName() {
-        Query query = em.createNativeQuery("SELECT (1) FROM products WHERE id = 2 AND name = 'Agus' AND price = 10.0");
+        Query query = em.createNativeQuery("SELECT (1) FROM products WHERE id = 2 AND name = 'Alice' AND price = 10.0");
         List<?> data = query.getResultList();
 
         if (data.isEmpty()) {

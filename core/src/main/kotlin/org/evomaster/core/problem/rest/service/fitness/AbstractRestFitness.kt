@@ -1376,6 +1376,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
             handleInvalidAllow(individual, actionResults, fv)
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+            handleInvalidMergePatch(individual, actionResults, fv)
+        }
     }
 
     /**
@@ -1397,6 +1401,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             if (a.verb != HttpVerb.OPTIONS) continue
 
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult? ?: continue
+            // The Allow header can only be trusted on an authorized, successful response.
+            // On non-2xx (eg 401/403/404) it may be absent or reflect an error, so skip it.
+            if (!StatusGroup.G_2xx.isInGroup(r.getStatusCode())) continue
             // The Allow header is not mandatory in an OPTIONS response
             // (see https://httpwg.org/specs/rfc9110.html#OPTIONS), so if it is
             // missing we cannot conclude anything, ie it is not a fault.
@@ -1516,6 +1523,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
         ar.addFault(DetectedFault(category, put.getName(), null))
+    }
+
+    private fun handleInvalidMergePatch(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!HttpSemanticsOracle.hasInvalidMergePatch(individual, actionResults)) return
+
+        val patch = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PATCH }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, patch.getName()))
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == patch.getLocalId() } as RestCallResult? ?: return
+        ar.addFault(DetectedFault(category, patch.getName(), null))
     }
 
     private fun handleMisleadingCreatePut(

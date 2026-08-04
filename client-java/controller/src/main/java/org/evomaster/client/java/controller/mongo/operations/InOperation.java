@@ -6,17 +6,12 @@ import java.util.List;
  * Represent $in operation.
  * Selects the documents where the value of a field equals any value in the specified array.
  */
-public class InOperation<V> extends QueryOperation{
-    private final String fieldName;
+public class InOperation<V> extends QueryOperationWithField {
     private final List<V> values;
 
     public InOperation(String fieldName, List<V> values) {
-        this.fieldName = fieldName;
+        super(fieldName);
         this.values = values;
-    }
-
-    public String getFieldName() {
-        return fieldName;
     }
 
     public List<V> getValues() {

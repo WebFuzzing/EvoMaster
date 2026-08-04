@@ -24,4 +24,6 @@ abstract class AuthenticationInfo(
      * this forced in [AuthSettings]
      */
     fun isDifferentFrom(other: AuthenticationInfo) = this.name != other.name
+
+    fun isNoAuth() = NoAuth::class.java.isAssignableFrom(this.javaClass)
 }
