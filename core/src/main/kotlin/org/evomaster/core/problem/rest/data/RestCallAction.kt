@@ -203,16 +203,15 @@ class RestCallAction(
      * Check if the resulting path of this action is the same of [other], taking into account dynamic info
      */
     fun usingSameResolvedPath(other: RestCallAction) : Boolean{
-        if(this.path.levels() != other.path.levels()){
+        if(!this.path.isEquivalent(other.path)){
             return false
         }
 
         /*
-            TODO Is this really correct? what about cases of
-            1) /items/{id}/foo
-            2) /items/{id}/bar
-            ???
-            TODO we need to handle the possible non-shared suffix
+            Consider
+            1) /items/{id}/{x=a}
+            1) /items/{id}/{x=b}
+            TODO this should result in different, even if sharing same resource {id}
          */
         if(this.usePreviousLocationId != null && this.usePreviousLocationId == other.usePreviousLocationId){
             return true
