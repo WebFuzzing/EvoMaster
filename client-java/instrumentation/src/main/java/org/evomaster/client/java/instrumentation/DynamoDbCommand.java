@@ -4,9 +4,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Info related to DynamoDB command execution.
+ * Info related to DynamoDB command execution. We made the decision to store the whole DynamoDB request object.
+ * See DynamoDbBaseApiMethodParser for more details.
  */
 public class DynamoDbCommand implements Serializable {
 
@@ -18,11 +20,11 @@ public class DynamoDbCommand implements Serializable {
     /**
      * Name of the operation that was executed
      */
-    private final String operationName;
+    private final DynamoDbOperationNames operationName;
     /**
      * Actual executed operation
      */
-    private final Object request;
+    private final Object ddbRequest;
     /**
      * If the operation was successfully executed
      */
@@ -32,12 +34,12 @@ public class DynamoDbCommand implements Serializable {
      */
     private final long executionTime;
 
-    public DynamoDbCommand(List<String> tableNames, String operationName, Object request, boolean successfullyExecuted, long executionTime) {
+    public DynamoDbCommand(List<String> tableNames, DynamoDbOperationNames operationName, Object ddbRequest, boolean successfullyExecuted, long executionTime) {
         this.tableNames = tableNames == null
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(tableNames));
-        this.operationName = operationName;
-        this.request = request;
+        this.operationName = Objects.requireNonNull(operationName, "operationName cannot be null");
+        this.ddbRequest = ddbRequest;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
@@ -46,12 +48,12 @@ public class DynamoDbCommand implements Serializable {
         return tableNames;
     }
 
-    public String getOperationName() {
+    public DynamoDbOperationNames getOperationName() {
         return operationName;
     }
 
-    public Object getRequest() {
-        return request;
+    public Object getDdbRequest() {
+        return ddbRequest;
     }
 
     public boolean isSuccessfullyExecuted() {
