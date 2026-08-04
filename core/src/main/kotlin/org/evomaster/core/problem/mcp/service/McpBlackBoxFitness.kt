@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.mcp.service
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.problem.mcp.McpCallResult
 import org.evomaster.core.problem.mcp.McpIndividual
@@ -8,12 +10,8 @@ import org.evomaster.core.problem.mcp.McpToolCallAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -32,6 +30,8 @@ class McpBlackBoxFitness : McpFitness() {
 
     @Inject
     private lateinit var sampler: McpSampler
+
+    private val mapper = ObjectMapper()
 
     override fun doCalculateCoverage(
         individual: McpIndividual,
@@ -55,7 +55,7 @@ class McpBlackBoxFitness : McpFitness() {
             try {
                 when (action) {
                     is McpToolCallAction -> {
-                        val args = geneToMap(action.inputSchema)
+                        val args = toolArguments(action.inputSchema)
                         val toolResult = client.callTool(action.toolName, args)
 
                         result.setIsError(toolResult.isError)
@@ -103,26 +103,10 @@ class McpBlackBoxFitness : McpFitness() {
     // -------------------------------------------------------------------------
 
     /**
-     * Convert an [ObjectGene] to a [Map] of argument values suitable for passing
-     * to [McpClient.callTool]. Uses typed gene values when available, falling
-     * back to printable string representation for complex types.
+     * Build the concrete `arguments` object for a `tools/call` from the tool's input [ObjectGene].
      */
-    private fun geneToMap(gene: ObjectGene): Map<String, Any?> {
-        val map = mutableMapOf<String, Any?>()
-        for (field in gene.fields) {
-            map[field.name] = extractGeneValue(field)
-        }
-        return map
-    }
-
-    private fun extractGeneValue(gene: Gene): Any? {
-        return when (gene) {
-            is StringGene -> gene.value
-            is BooleanGene -> gene.value
-            is NumberGene<*> -> gene.value
-            is ObjectGene -> geneToMap(gene)
-            is ArrayGene<*> -> gene.getViewOfElements().map { extractGeneValue(it) }
-            else -> gene.getValueAsPrintableString(listOf(), null, null, false)
-        }
+    private fun toolArguments(gene: ObjectGene): Map<String, Any?> {
+        val json = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
+        return mapper.readValue(json, object : TypeReference<Map<String, Any?>>() {})
     }
 }
