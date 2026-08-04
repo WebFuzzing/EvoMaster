@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -274,7 +275,9 @@ class HttpSemanticsService : TimeBoxedPhase{
             //does it have a previous GET call on it in previous action?
             val hasPreviousGet = okDelete.size() > 1
                     && actions[actions.size - 2].let {
-                        it.verb == HttpVerb.GET && it.path == del.path && it.usingSameResolvedPath(last)
+                        it.verb == HttpVerb.GET
+                                && it.path == del.path
+                                && DynamicPathUtils.doesResolveToSamePath(it,last)
                                 && ! it.auth.isDifferentFrom(last.auth)
                         }
 
@@ -284,7 +287,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
                 getOp.forceNewTaints()
-                getOp.bindToSamePathResolution(last)
+                DynamicPathUtils.bindToSamePathResolution(getOp,last)
                 getOp.auth = last.auth
                 //TODO: what if the GET needs WM handling?
                 okDelete.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getOp)
@@ -619,7 +622,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             putAction.resetLocalIdRecursively()
             putAction.forceNewTaints()
             putAction.auth = getAction.auth
-            putAction.bindToSamePathResolution(getAction)
+            DynamicPathUtils.bindToSamePathResolution(putAction, getAction)
             ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
 
             prepareEvaluateAndSave(ind)

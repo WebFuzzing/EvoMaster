@@ -7,16 +7,14 @@ import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.SQLI_PAYLOADS
@@ -899,7 +897,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
                 parentGetAction.auth = lastAuth
                 // Bind to the same path params from the 404 action to ensure same IDs
                 //FIXME this would currently not work for dynamic parameters
-                parentGetAction.bindToSamePathResolution(action404)
+                DynamicPathUtils.bindToSamePathResolution(parentGetAction,action404)
 
                 final.addResourceCall(
                     restCalls = RestResourceCalls(
@@ -1517,7 +1515,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
         creationAction: RestCallAction,
         targetAction: RestCallAction
     ) {
-        CreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        DynamicPathUtils.linkDynamicCreateResource(creationAction, targetAction)
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }
