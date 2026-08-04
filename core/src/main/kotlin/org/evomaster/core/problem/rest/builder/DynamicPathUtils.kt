@@ -71,6 +71,7 @@ object DynamicPathUtils {
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)
             after.usePreviousLocationId = before.usePreviousLocationId
+            after.weakReference = before.weakReference
         }
     }
 
