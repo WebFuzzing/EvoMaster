@@ -14,6 +14,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,18 +108,23 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
+     * Sentinel {@link TableReference} with all fields {@code null}, returned by
+     * {@link #extractTableReference(String)} when the CQL text doesn't match a recognised
+     * SELECT/INSERT/UPDATE/DELETE table reference shape (eg DDL, batches).
+     */
+    private static final TableReference NO_TABLE_REFERENCE = new TableReference(null, null, null, null);
+
+    /**
      * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
      * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
      * (eg DDL, batches).
      */
     private static TableReference extractTableReference(String query) {
-        if (query == null) {
-            throw new IllegalArgumentException("query cannot be null");
-        }
+        Objects.requireNonNull(query);
 
         Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
         if (!matcher.find()) {
-            return new TableReference(null, null, null, null);
+            return NO_TABLE_REFERENCE;
         } else {
             String rawFirst = matcher.group("first");
             String rawSecond = matcher.group("second");

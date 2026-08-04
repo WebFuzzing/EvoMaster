@@ -108,8 +108,7 @@ public class CassandraSchemaTracer {
 
             CassandraTableMetadata tableMetadata = buildTableMetadata(keyspaceName, tableMetadataObj);
             tables.put(key, tableMetadata);
-            // first time this table is seen: trace its schema, mirroring how it used to be captured
-            // from Spring Data
+            // first time this table is seen: trace its schema
             ExecutionTracer.addCassandraTableMetadata(tableMetadata);
             return tableMetadata;
         } catch (ReflectiveOperationException e) {
