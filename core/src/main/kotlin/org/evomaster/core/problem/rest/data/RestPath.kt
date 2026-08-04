@@ -413,7 +413,9 @@ class RestPath(path: String) {
                             why not using URI also for Query part???
                             it seems unclear how to properly build it as a single string...
                          */
-                        val entry = URI(null, null, path.toString(), null, null).toASCIIString()
+                        val entry = encodeNonAsciiPathCharacters(
+                            URI(null, null, path.toString(), null, null).rawPath
+                        )
                         data.add(Pair(entry, false))
                         path.setLength(0) // clear it
                         data.add(Pair(variable, true))
@@ -446,7 +448,9 @@ class RestPath(path: String) {
         }
 
         if(path.isNotEmpty()){
-            val entry = URI(null, null, path.toString(), null, null).toASCIIString()
+            val entry = encodeNonAsciiPathCharacters(
+                URI(null, null, path.toString(), null, null).rawPath
+            )
             data.add(Pair(entry, false))
         }
 
@@ -469,6 +473,25 @@ class RestPath(path: String) {
      */
     private fun encode(s: String): String {
         return URLEncoder.encode(s, "UTF-8")
+    }
+
+    /**
+     * [URI.rawPath] leaves non-ASCII path characters unencoded. Process them
+     * by code point so valid surrogate pairs are kept together. An isolated
+     * surrogate is encoded by [URLEncoder] as `%3F` instead of failing.
+     */
+    private fun encodeNonAsciiPathCharacters(path: String): String {
+        val result = StringBuilder()
+        var index = 0
+
+        while (index < path.length) {
+            val codePoint = Character.codePointAt(path, index)
+            val value = String(Character.toChars(codePoint))
+            result.append(if (codePoint > 127) encode(value) else value)
+            index += Character.charCount(codePoint)
+        }
+
+        return result.toString()
     }
 
     fun copy(): RestPath {
