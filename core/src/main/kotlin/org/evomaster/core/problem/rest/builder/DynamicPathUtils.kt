@@ -3,6 +3,8 @@ package org.evomaster.core.problem.rest.builder
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 
 /**
@@ -150,5 +152,28 @@ object DynamicPathUtils {
             return false
         }
         return child.startsWith(parent)
+    }
+
+    /**
+     * Try to force [current] to use the same query params as [other], if possible.
+     * Note that the 2 actions could be on DIFFERENT endpoints.
+     * Equivalence is based on query param names.
+     */
+    fun forceSameQueryParams(current: RestCallAction, other: RestCallAction) {
+
+        val x = current.parameters.filterIsInstance<QueryParam>()
+        val y = other.parameters.filterIsInstance<QueryParam>()
+
+        x.forEach { p ->
+            val k = y.find { p.name == it.name }
+            if(k == null || !k.isActive()) {
+                p.primaryGene().getWrappedGene(OptionalGene::class.java)?.forbidSelection()
+            } else {
+                val copied = p.primaryGene().copyValueFrom(k.primaryGene())
+                if(!copied){
+                    p.primaryGene().getWrappedGene(OptionalGene::class.java)?.forbidSelection()
+                }
+            }
+        }
     }
 }
