@@ -4,7 +4,9 @@ import org.bson.Document;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -767,4 +769,50 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertNull(operation);
     }
+
+    @Test
+    void testParseInvalidEmptyAnd() {
+        Document query = new Document(
+                "$and",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseInvalidEmptyOr() {
+        Document query = new Document(
+                "$or",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+    @Test
+    void testParseInvalidEmptyNor() {
+        Document query = new Document(
+                "$nor",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseEmptyAll() {
+        Document query = new Document(
+                "results",
+                new Document("$all", new ArrayList<Document>())
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+
+        assertTrue(operation instanceof AllOperation);
+        AllOperation<?> all = (AllOperation<?>) operation;
+        assertEquals("results", all.getFieldName());
+        assertEquals(new ArrayList<>(), all.getValues());
+
+    }
+
 }
