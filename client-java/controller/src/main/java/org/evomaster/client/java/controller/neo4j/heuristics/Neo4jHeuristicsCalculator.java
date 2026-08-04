@@ -44,7 +44,7 @@ public class Neo4jHeuristicsCalculator {
         this.evaluator = new Neo4jConditionEvaluator(taintHandler);
     }
 
-    Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
+    public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
         MatchPattern pattern = query.getPattern();
         List<CypherCondition> conditions = query.getConditions();
 
@@ -78,7 +78,7 @@ public class Neo4jHeuristicsCalculator {
      * Count-based node availability: enough graph nodes to bind the pattern's nodes. Pure cardinality,
      * no label/property check (those are conditions evaluated by H_where).
      */
-    Truthness computeHeuristicMatchNodes(int required, int available) {
+    public Truthness computeHeuristicMatchNodes(int required, int available) {
         if (required < 0 || available < 0) {
             throw new IllegalArgumentException(
                     "node counts must be non-negative, got required=" + required + ", available=" + available);

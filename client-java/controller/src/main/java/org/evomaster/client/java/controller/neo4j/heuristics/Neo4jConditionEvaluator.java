@@ -26,17 +26,17 @@ import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeurist
  * property, an unbound variable, or an opaque/raw operand); the caller's aggregation skips
  * {@code null} results.
  */
-class Neo4jConditionEvaluator {
+public class Neo4jConditionEvaluator {
 
     private static final Object UNRESOLVED = new Object();
 
     private final TaintHandler taintHandler;
 
-    Neo4jConditionEvaluator() {
+    public Neo4jConditionEvaluator() {
         this(null);
     }
 
-    Neo4jConditionEvaluator(TaintHandler taintHandler) {
+    public Neo4jConditionEvaluator(TaintHandler taintHandler) {
         this.taintHandler = taintHandler;
     }
 
@@ -44,10 +44,10 @@ class Neo4jConditionEvaluator {
      * Returns {@code ρ(condition, mapping)}, or {@code null} when the condition cannot be evaluated
      * under the mapping and must be skipped by the aggregation (an absent property, an unbound
      * variable, or an opaque {@link RawCondition}). Dispatch is done with a
-     * {@link CypherConditionVisitor} so every condition type is handled explicitly — there is no
+     * {@link CypherConditionVisitor} so every condition type is handled explicitly: there is no
      * {@code instanceof} chain and no silent fall-through for an unhandled type.
      */
-    Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
+    public Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
         Objects.requireNonNull(condition, "condition must not be null");
         Objects.requireNonNull(mapping, "mapping must not be null");
         return condition.accept(new TruthnessVisitor(mapping));
@@ -58,11 +58,11 @@ class Neo4jConditionEvaluator {
      * top-level condition (it carries the mapping), and it recurses through {@link #evaluateCondition}
      * for the boolean-tree children, so nested conditions dispatch through the same visitor.
      */
-    private final class TruthnessVisitor implements CypherConditionVisitor<Truthness> {
+    public final class TruthnessVisitor implements CypherConditionVisitor<Truthness> {
 
         private final Neo4jMapping mapping;
 
-        private TruthnessVisitor(Neo4jMapping mapping) {
+        public TruthnessVisitor(Neo4jMapping mapping) {
             this.mapping = mapping;
         }
 
@@ -155,8 +155,15 @@ class Neo4jConditionEvaluator {
             case ENDS_WITH:
             case CONTAINS:
                 return evaluateStringPredicate(cc, mapping);
-            default:
+            case EQUALS:
+            case NOT_EQUALS:
+            case LESS_THAN:
+            case GREATER_THAN:
+            case LESS_THAN_OR_EQUALS:
+            case GREATER_THAN_OR_EQUALS:
                 return evaluateBinaryComparison(cc, mapping);
+            default:
+                throw new IllegalArgumentException("Not supported operator: " + cc.getOperator());
         }
     }
 
@@ -184,7 +191,7 @@ class Neo4jConditionEvaluator {
                 return t == null ? null : t.invert();
             }
             default:
-                return null;
+                throw new IllegalArgumentException("Not supported operator: " + cc.getOperator());
         }
     }
 
@@ -222,7 +229,7 @@ class Neo4jConditionEvaluator {
             case CONTAINS:
                 return getContains((String) l, (String) r);
             default:
-                return null;
+                throw new IllegalArgumentException("Not supported operator: " + cc.getOperator());
         }
     }
 
@@ -292,7 +299,8 @@ class Neo4jConditionEvaluator {
             case DIVIDE: return r == 0d ? UNRESOLVED : l / r;
             case MODULO: return r == 0d ? UNRESOLVED : l % r;
             case POWER: return Math.pow(l, r);
-            default: return UNRESOLVED;
+            default:
+                throw new IllegalArgumentException("Not supported operator: " + ao.getOperator());
         }
     }
 
@@ -354,8 +362,8 @@ class Neo4jConditionEvaluator {
     /**
      * ρ for {@code a < b} on numeric operands. Both are required to be non-null: the caller only
      * reaches this after resolving each side to a present value (a {@code null}/absent operand is
-     * filtered out before dispatch). A non-numeric value still yields {@code null} — there is no
-     * numeric gradient to compute — but a {@code null} argument is a contract violation, not that case.
+     * filtered out before dispatch). A non-numeric value still yields {@code null}, since there is no
+     * numeric gradient to compute, but a {@code null} argument is a contract violation, not that case.
      */
     private Truthness numericLessThan(Object a, Object b) {
         Objects.requireNonNull(a, "left operand must not be null");
@@ -371,14 +379,15 @@ class Neo4jConditionEvaluator {
     /**
      * Direct string equality truthness: {@code TRUE} when the strings are equal, otherwise {@code ofTrue}
      * is the left-alignment edit distance scaled from base {@code C} (so it never drops below {@code C})
-     * and {@code ofFalse = 1}. Used where a string is compared for equality on its own — relationship
+     * and {@code ofFalse = 1}. Used where a string is compared for equality on its own: relationship
      * types and string-valued property/WHERE equality.
      * <p>
      * Both arguments must be non-null: this is only reached with two resolved strings (a relationship
      * type, or two string values already confirmed present by {@link #equalityTruthness}). A Cypher
-     * {@code null} literal never reaches here — it is handled one level up by {@link #equalityTruthness}.
+     * {@code null} literal never reaches here, since it is handled one level up by
+     * {@link #equalityTruthness}.
      */
-    static Truthness stringEqualityTruthness(String a, String b) {
+    public static Truthness stringEqualityTruthness(String a, String b) {
         Objects.requireNonNull(a, "a must not be null");
         Objects.requireNonNull(b, "b must not be null");
         if (a.equals(b)) {
@@ -395,7 +404,7 @@ class Neo4jConditionEvaluator {
      * Kept separate from {@link #stringEqualityTruthness} so the base {@code C} is applied exactly once
      * on the label path (applying it here as well would double-count it).
      */
-    static Truthness stringSimilarityTruthness(String a, String b) {
+    public static Truthness stringSimilarityTruthness(String a, String b) {
         Objects.requireNonNull(a, "a must not be null");
         Objects.requireNonNull(b, "b must not be null");
         long distance = DistanceHelper.getLeftAlignmentDistance(a, b);
@@ -407,7 +416,7 @@ class Neo4jConditionEvaluator {
      * {@code label_in_set(L, labels)}: TRUE if the exact label is present; FALSE if the element has
      * no labels; otherwise the best per-label string similarity scaled from base {@code C}.
      */
-    static Truthness labelInSet(String label, Set<String> labels) {
+    public static Truthness labelInSet(String label, Set<String> labels) {
         if (labels.contains(label)) {
             return TRUE_TRUTHNESS;
         }
@@ -431,7 +440,7 @@ class Neo4jConditionEvaluator {
         return null;
     }
 
-    static Truthness getStartsWith(String str, String prefix) {
+    public static Truthness getStartsWith(String str, String prefix) {
         Objects.requireNonNull(str, "str must not be null");
         Objects.requireNonNull(prefix, "prefix must not be null");
         if (str.startsWith(prefix)) {
@@ -444,7 +453,7 @@ class Neo4jConditionEvaluator {
         return new Truthness(h, 1d);
     }
 
-    static Truthness getEndsWith(String str, String suffix) {
+    public static Truthness getEndsWith(String str, String suffix) {
         Objects.requireNonNull(str, "str must not be null");
         Objects.requireNonNull(suffix, "suffix must not be null");
         if (str.endsWith(suffix)) {
@@ -458,7 +467,7 @@ class Neo4jConditionEvaluator {
         return new Truthness(h, 1d);
     }
 
-    static Truthness getContains(String str, String substring) {
+    public static Truthness getContains(String str, String substring) {
         Objects.requireNonNull(str, "str must not be null");
         Objects.requireNonNull(substring, "substring must not be null");
         if (str.contains(substring)) {
