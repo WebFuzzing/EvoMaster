@@ -16,7 +16,9 @@ import java.util.stream.StreamSupport;
 
 public class MongoHeuristicsCalculator {
 
+    // TODO these constants should be replaced by DistanceHelper constants
     public static final double C = 0.1;
+    // TODO These constants should be refactored by TruthnessUtils constants
     public static final Truthness TRUE_C = new Truthness(1.0, C);
     public static final Truthness C_FALSE = new Truthness(C, 1.0);
 

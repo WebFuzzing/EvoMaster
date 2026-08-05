@@ -404,7 +404,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         if (a.equals(b)) {
             return TRUE_TRUTHNESS;
         } else {
-            final double base = C;
+            final double base = DistanceHelper.H_NOT_NULL;
             final double distance = DistanceHelper.getLeftAlignmentDistance(a, b);
             final double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
             return new Truthness(h, 1d);
