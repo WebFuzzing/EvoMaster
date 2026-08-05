@@ -178,6 +178,45 @@ public class CassandraSchemaTracerTest {
     }
 
     @Test
+    void resolveKeyspaceName_explicitQualifier_returnsItsCanonicalForm() {
+        String keyspaceName = CassandraSchemaTracer.resolveKeyspaceName(cqlSession, KEYSPACE_1);
+
+        assertEquals(KEYSPACE_1, keyspaceName);
+    }
+
+    @Test
+    void resolveKeyspaceName_unqualified_usesSessionCurrentKeyspace() {
+        InetSocketAddress contactPoint =
+                new InetSocketAddress(HOST_NAME, cassandra.getMappedPort(CASSANDRA_PORT));
+        try (CqlSession sessionWithDefaultKeyspace = CqlSession.builder()
+                .addContactPoint(contactPoint)
+                .withLocalDatacenter(DATA_CENTER)
+                .withKeyspace(KEYSPACE_1)
+                .build()) {
+
+            String keyspaceName = CassandraSchemaTracer.resolveKeyspaceName(sessionWithDefaultKeyspace, null);
+
+            assertEquals(KEYSPACE_1, keyspaceName);
+        }
+    }
+
+    @Test
+    void resolveKeyspaceName_unqualified_noCurrentKeyspace_returnsNull() {
+        assertFalse(cqlSession.getKeyspace().isPresent());
+
+        String keyspaceName = CassandraSchemaTracer.resolveKeyspaceName(cqlSession, null);
+
+        assertNull(keyspaceName);
+    }
+
+    @Test
+    void resolveKeyspaceName_nonexistentKeyspace_returnsNull() {
+        String keyspaceName = CassandraSchemaTracer.resolveKeyspaceName(cqlSession, "no_such_keyspace");
+
+        assertNull(keyspaceName);
+    }
+
+    @Test
     void resolve_quotedMixedCaseKeyspaceAndTable_targetsCorrectOne() {
         CassandraTableMetadata mixedCase = CassandraSchemaTracer.resolve(
                 cqlSession, "\"SchemaRepoMixedCaseKs\"", "\"MixedCaseTable\"");
