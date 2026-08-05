@@ -17,9 +17,22 @@ public class CassandraTableMetadata implements Serializable {
     private final List<CassandraColumnMetadata> columns;
 
     public CassandraTableMetadata(String keyspaceName, String tableName, List<CassandraColumnMetadata> columns) {
+        Objects.requireNonNull(tableName);
+        assertNoDuplicateColumns(tableName, columns);
+
         this.keyspaceName = keyspaceName;
         this.tableName = tableName;
         this.columns = Collections.unmodifiableList(columns);
+    }
+
+    private static void assertNoDuplicateColumns(String tableName, List<CassandraColumnMetadata> columns) {
+        if (duplicateColumns(columns)) {
+            throw new IllegalArgumentException("Duplicate column name(s) in table metadata for " + tableName);
+        }
+    }
+
+    private static boolean duplicateColumns(List<CassandraColumnMetadata> columns) {
+        return columns.stream().map(CassandraColumnMetadata::getName).distinct().count() != columns.size();
     }
 
     public String getKeyspaceName() {
