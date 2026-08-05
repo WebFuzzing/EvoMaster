@@ -35,6 +35,8 @@ public class CassandraHandlerTest {
     private static final String KEYSPACE = "my_keyspace";
     private static final String TABLE = "my_table";
 
+    private CassandraHandler handler;
+
     @BeforeAll
     public static void initClass() {
         cassandra.start();
@@ -61,9 +63,12 @@ public class CassandraHandlerTest {
     }
 
     @BeforeEach
-    public void clearTables() {
+    public void setUp() {
         session.execute("TRUNCATE " + KEYSPACE + "." + TABLE);
         session.execute("TRUNCATE " + KEYSPACE + ".\"MyMixedCaseTable\"");
+
+        handler = new CassandraHandler();
+        handler.setCqlSession(session);
     }
 
     private static ExecutedCqlCommand command(String cql) {
@@ -78,9 +83,6 @@ public class CassandraHandlerTest {
     @Test
     public void testSelectDistance_zeroWhenRowMatches() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
-
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
 
         String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30";
         handler.handle(command(cql));
@@ -98,9 +100,6 @@ public class CassandraHandlerTest {
     public void testSelectDistance_nonZeroWhenNoRowMatches() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
 
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 18";
         handler.handle(command(cql));
 
@@ -114,9 +113,6 @@ public class CassandraHandlerTest {
     @Test
     public void testUpdateDistance_evaluatedWithoutMutatingTheRow() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
-
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
 
         String cql = "UPDATE " + KEYSPACE + "." + TABLE + " SET name = 'Changed' WHERE id = 1";
         handler.handle(command(cql));
@@ -135,9 +131,6 @@ public class CassandraHandlerTest {
     public void testDeleteDistance_evaluatedWithoutDeletingTheRow() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
 
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         String cql = "DELETE FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1";
         handler.handle(command(cql));
 
@@ -153,9 +146,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testInsertIsNotBufferedNorEvaluated() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         String cql = "INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (2, 40, 'Jane')";
         handler.handle(command(cql));
 
@@ -166,8 +156,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testEmptyTable_recordedAsFailedQueryWithSchema() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
         handler.handle(tableSchema(TABLE));
 
         String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1";
@@ -191,9 +179,6 @@ public class CassandraHandlerTest {
     public void testQuotedMixedCaseTableName_targetsTheCorrectTable() {
         session.execute("INSERT INTO " + KEYSPACE + ".\"MyMixedCaseTable\" (id, age) VALUES (1, 99)");
 
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         String cql = "SELECT * FROM " + KEYSPACE + ".\"MyMixedCaseTable\" WHERE age = 99";
         // deliberately pass the regex-stripped (unquoted) table name, as instrumentation would:
         // the handler must ignore it and re-parse cqlCommand itself
@@ -208,9 +193,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testReset_clearsComputedDistances() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
         assertEquals(1, handler.getEvaluatedCqlCommands().size());
 
@@ -222,9 +204,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testReset_clearsFailedQueries() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
         handler.getEvaluatedCqlCommands();
         assertEquals(1, handler.getExecutionDto().failedQueries.size());
@@ -236,8 +215,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testExtractCqlExecutionDisabled_commandNotBuffered() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
         handler.setExtractCqlExecution(false);
 
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
@@ -247,8 +224,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testExtractCqlExecutionDisabled_tableSchemaNotRecorded() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
         handler.setExtractCqlExecution(false);
         handler.handle(tableSchema(TABLE));
 
@@ -267,9 +242,6 @@ public class CassandraHandlerTest {
     @Test
     public void testMultipleQueriesEvaluatedInSameRound() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
-
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
 
         String matchingCql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30";
         String nonMatchingCql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 18";
@@ -291,9 +263,6 @@ public class CassandraHandlerTest {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (2, 30, 'B')");
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (3, 50, 'C')");
 
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30"));
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
@@ -306,15 +275,12 @@ public class CassandraHandlerTest {
     public void testCloserMismatchYieldsSmallerDistance() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
 
-        CassandraHandler closeHandler = new CassandraHandler();
-        closeHandler.setCqlSession(session);
-        closeHandler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 29"));
-        double closeDistance = closeHandler.getEvaluatedCqlCommands().get(0).cqlDistanceWithMetrics.cqlDistance;
+        handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 29"));
+        handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 1000"));
 
-        CassandraHandler farHandler = new CassandraHandler();
-        farHandler.setCqlSession(session);
-        farHandler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 1000"));
-        double farDistance = farHandler.getEvaluatedCqlCommands().get(0).cqlDistanceWithMetrics.cqlDistance;
+        List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
+        double closeDistance = results.get(0).cqlDistanceWithMetrics.cqlDistance;
+        double farDistance = results.get(1).cqlDistanceWithMetrics.cqlDistance;
 
         assertTrue(closeDistance > 0.0);
         assertTrue(farDistance < 1.0);
@@ -323,9 +289,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testMalformedSelectCommand_returnsMaxValueDistanceWithoutThrowing() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         // starts with SELECT (so it is buffered) but is not valid CQL beyond that
         handler.handle(command("SELECT"));
 
@@ -338,9 +301,6 @@ public class CassandraHandlerTest {
 
     @Test
     public void testEmptyTable_noSchemaKnown_tableSchemaIsNull() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
         handler.getEvaluatedCqlCommands();
 
@@ -354,8 +314,6 @@ public class CassandraHandlerTest {
     public void testNonEmptyTable_notRecordedAsFailedQuery() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
 
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
         // no row matches, but the table itself is not empty
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 18"));
         handler.getEvaluatedCqlCommands();
@@ -366,9 +324,6 @@ public class CassandraHandlerTest {
     @Test
     public void testInOperator_endToEnd() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
-
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
 
         String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age IN (18, 25, 30)";
         handler.handle(command(cql));
@@ -382,9 +337,6 @@ public class CassandraHandlerTest {
     @Test
     public void testAndOperator_endToEnd() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
-
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
 
         String matchingCql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30 AND name = 'John Doe'";
         String partialMismatchCql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30 AND name = 'Someone Else'";
@@ -400,36 +352,26 @@ public class CassandraHandlerTest {
 
     @Test
     public void testNoCqlSessionSet_throwsIllegalStateException() {
-        CassandraHandler handler = new CassandraHandler();
-        // deliberately not calling handler.setCqlSession(...)
+        CassandraHandler handlerWithoutSession = new CassandraHandler();
 
-        handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
+        handlerWithoutSession.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1"));
 
-        assertThrows(IllegalStateException.class, handler::getEvaluatedCqlCommands);
+        assertThrows(IllegalStateException.class, handlerWithoutSession::getEvaluatedCqlCommands);
     }
 
     @Test
     public void testHandleExecutedCqlCommand_nullInfo_throwsNullPointerException() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         assertThrows(NullPointerException.class, () -> handler.handle((ExecutedCqlCommand) null));
     }
 
     @Test
     public void testHandleExecutedCqlCommand_nullCqlCommand_throwsNullPointerException() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         assertThrows(NullPointerException.class,
                 () -> handler.handle(new ExecutedCqlCommand(null, KEYSPACE, TABLE, false, 1)));
     }
 
     @Test
     public void testHandleTableSchema_nullInfo_throwsNullPointerException() {
-        CassandraHandler handler = new CassandraHandler();
-        handler.setCqlSession(session);
-
         assertThrows(NullPointerException.class, () -> handler.handle((CassandraTableMetadata) null));
     }
 }
