@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -274,7 +275,9 @@ class HttpSemanticsService : TimeBoxedPhase{
             //does it have a previous GET call on it in previous action?
             val hasPreviousGet = okDelete.size() > 1
                     && actions[actions.size - 2].let {
-                        it.verb == HttpVerb.GET && it.path == del.path && it.usingSameResolvedPath(last)
+                        it.verb == HttpVerb.GET
+                                && it.path == del.path
+                                && DynamicPathUtils.doesResolveToSamePath(it,last)
                                 && ! it.auth.isDifferentFrom(last.auth)
                         }
 
@@ -284,7 +287,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
                 getOp.forceNewTaints()
-                getOp.bindToSamePathResolution(last)
+                DynamicPathUtils.bindToSamePathResolution(getOp,last)
                 getOp.auth = last.auth
                 //TODO: what if the GET needs WM handling?
                 okDelete.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getOp)
@@ -292,6 +295,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             } else {
                 actions[actions.size - 2]
             }
+            DynamicPathUtils.forceSameQueryParams(previous, last)
 
             //we want to have same GET call before and after the 2xx DELETE
             val after = previous.copy() as RestCallAction
@@ -375,9 +379,11 @@ class HttpSemanticsService : TimeBoxedPhase{
         val last = actions.last() // the PUT/PATCH [404]
 
         val getBefore = builder.createBoundActionFor(getDef, last)
+        DynamicPathUtils.forceSameQueryParams(getBefore, last)
         ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
 
         val getAfter = builder.createBoundActionFor(getDef, last)
+        DynamicPathUtils.forceSameQueryParams(getAfter, last)
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)
@@ -466,6 +472,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val getAfter = builder.createBoundActionFor(getDef, getAction)
 
+        DynamicPathUtils.forceSameQueryParams(modifyCopy, getAction)
+        DynamicPathUtils.forceSameQueryParams(getAfter, getAction)
+
         ind.addMainActionInEmptyEnterpriseGroup(action = modifyCopy)
         ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
 
@@ -508,6 +517,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             val last = ind.seeMainExecutableActions().last() // the PUT 2xx
             val getAfter = builder.createBoundActionFor(getDef, last)
+            DynamicPathUtils.forceSameQueryParams(getAfter, last)
             ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
             prepareEvaluateAndSave(ind)
@@ -557,10 +567,12 @@ class HttpSemanticsService : TimeBoxedPhase{
                 }
                 val getBefore = builder.createBoundActionFor(getDef, patch)
                 creator?.saveAndLinkLocationTo(getBefore)
+                DynamicPathUtils.forceSameQueryParams(getBefore, patch)
                 ind.addMainActionInEmptyEnterpriseGroup(size - 1, getBefore)
 
                 val getAfter = builder.createBoundActionFor(getDef, patch)
                 creator?.saveAndLinkLocationTo(getAfter)
+                DynamicPathUtils.forceSameQueryParams(getAfter, patch)
                 ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
                 val ei = prepareEvaluateAndSave(ind)
@@ -619,7 +631,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             putAction.resetLocalIdRecursively()
             putAction.forceNewTaints()
             putAction.auth = getAction.auth
-            putAction.bindToSamePathResolution(getAction)
+            DynamicPathUtils.bindToSamePathResolution(putAction, getAction)
             ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
 
             prepareEvaluateAndSave(ind)
@@ -669,6 +681,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             // GET after the 1st PUT: bound to firstPut's resolved path and auth
             val get1 = builder.createBoundActionFor(getDef, firstPut)
+            DynamicPathUtils.forceSameQueryParams(get1, firstPut)
 
             // 2nd PUT: exact copy of the 1st PUT (same body) to test idempotency of that request
             val secondPut = firstPut.copy() as RestCallAction
@@ -676,6 +689,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             // GET after the 2nd PUT
             val get2 = builder.createBoundActionFor(getDef, firstPut)
+            DynamicPathUtils.forceSameQueryParams(get2, firstPut)
 
             ind.addMainActionInEmptyEnterpriseGroup(-1, get1)
             ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)

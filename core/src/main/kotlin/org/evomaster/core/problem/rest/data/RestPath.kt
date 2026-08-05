@@ -173,6 +173,10 @@ class RestPath(path: String) {
         return elements.flatMap { it.tokens }.any { it.isParameter }
     }
 
+    /**
+     * Check if having the exact same structure, base only on static information.
+     * Ie, variable resolution could lead to different resolved paths
+     */
     fun isEquivalent(other: RestPath): Boolean {
         if (this.elements.size != other.elements.size) {
             return false
@@ -263,7 +267,7 @@ class RestPath(path: String) {
             return false
         }
 
-        return (0 until this.elements.size).none { other.elements[it] != this.elements[it] }
+        return this.elements.indices.none { other.elements[it] != this.elements[it] }
     }
 
 
