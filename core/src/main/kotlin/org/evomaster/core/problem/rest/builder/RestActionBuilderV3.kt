@@ -42,6 +42,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.interfaces.UserExamplesGene
+import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -59,6 +60,7 @@ import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigInteger
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
@@ -1400,10 +1402,78 @@ object RestActionBuilderV3 {
             "uuid" -> return UUIDGene(name)
             "uri" -> return UriGene(name)
             "email" -> return createEmailGene(name, options)
-            //TODO all the other cases, and update BBAdvancedFormatsEMTest accordingly
+            //unsigned bounded integers (signed int8/int16/int32/int64)
+            "uint8" -> return IntegerGene(name, min = 0, max = 255)
+            "uint16" -> return IntegerGene(name, min = 0, max = 65535)
+            "uint32" -> return LongGene(name, min = 0L, max = 4294967295L)
+            //BigIntegerGene is internally Long-bounded, so the full uint64 max (2^64-1) is not
+            //representable; cap at Long.MAX_VALUE, which is the effective range the gene supports
+            "uint64" -> return BigIntegerGene(name, min = BigInteger.ZERO, max = BigInteger.valueOf(Long.MAX_VALUE))
+            //string formats sampled via regex. These are not full RFC validators; they just
+            //need to produce syntactically valid values.
+            //idn-hostname allows Unicode, but here we sample the ASCII subset (still valid)
+            "hostname", "idn-hostname" -> return regexGene(name, "^[a-z][a-z0-9]{0,9}(\\.[a-z][a-z0-9]{0,9}){0,3}$")
+            //base64url length cannot be 4k+1; groups of 4 plus a final 2- or 3-char quantum
+            "base64url" -> return regexGene(name, "^(?:[A-Za-z0-9_-]{4})*[A-Za-z0-9_-]{2,3}$")
+            "json-pointer" -> return regexGene(name, "^(/[a-zA-Z0-9]{1,5}){0,4}$")
+            "media-range" -> return regexGene(name, "^[a-z]{1,10}/[a-z0-9][a-z0-9.+-]{0,9}$")
+            //iri-reference allows Unicode; here we sample the ASCII subset (an absolute http/https URI)
+            "uri-reference", "iri-reference" -> return regexGene(name, "^https?://[a-z]{2,8}\\.[a-z]{2,4}(/[a-z0-9]{1,8}){0,3}$")
+            //a trivial literal string is itself a valid ECMA-262 regex
+            "regex" -> return regexGene(name, "^[a-z0-9]{1,10}$")
+            //RFC8941 structured-field boolean is serialized as exactly '?0' or '?1'
+            "sf-boolean" -> return regexGene(name, "^\\?[01]$")
+            //iri allows Unicode; here we sample the ASCII subset (an absolute http/https URI)
+            "iri" -> return regexGene(name, "^https?://[a-z]{2,8}\\.[a-z]{2,4}(/[a-z0-9]{1,8}){0,3}$")
+            //idn-email allows Unicode; here we sample the ASCII subset
+            "idn-email" -> return regexGene(name, "^[a-z0-9]{2,8}@[a-z0-9]{2,8}\\.[a-z]{2,4}$")
+            //relative JSON pointer: a non-negative integer followed by an optional JSON pointer
+            "relative-json-pointer" -> return regexGene(name, "^(0|[1-9][0-9]{0,2})(/[a-zA-Z0-9]{1,5}){0,4}$")
+            //RFC8941 sf-string: printable ASCII wrapped in double quotes
+            "sf-string" -> return regexGene(name, "^\"[a-z0-9 ]{0,10}\"$")
+            //RFC8941 sf-token: starts with ALPHA or '*', then token characters
+            "sf-token" -> return regexGene(name, "^[a-zA-Z*][a-zA-Z0-9!#%&'*+.^_|~:/-]{0,15}$")
+            //RFC8941 sf-binary: standard base64 wrapped in colons
+            "sf-binary" -> return regexGene(name, "^:(?:[A-Za-z0-9+/]{4})+:$")
+            //RFC6570 URI template: http/https URI whose path segments are literals or {var} expressions
+            "uri-template" -> return regexGene(name, "^https?://[a-z]{2,8}\\.[a-z]{2,4}(/(?:[a-z0-9]{1,8}|\\{[a-z][a-z0-9]{0,7}\\})){1,4}$")
+            //decimal numbers as BigDecimalGene (precision = total significant digits, scale = fraction digits)
+            "decimal" -> return BigDecimalGene(name, precision = 12, scale = 4)
+            "decimal128" -> return BigDecimalGene(name, precision = 34, scale = 10)
+            //RFC8941 sf-decimal: at most 12 integer digits and 3 fractional digits
+            "sf-decimal" -> return BigDecimalGene(name, precision = 15, scale = 3)
+            //time and date-time without/with timezone, reusing the existing datetime genes
+            "time" -> return TimeGene(name, format = FormatForDatesAndTimes.RFC3339, onlyValidTimes = !options.invalidData)
+            "time-local" -> return TimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL, onlyValidTimes = !options.invalidData)
+            "date-time-local" -> return DateTimeGene(name, onlyValid = !options.invalidData, format = FormatForDatesAndTimes.ISO_LOCAL)
+            //RFC3339 duration (a full ISO-8601 duration)
+            "duration" -> return regexGene(name, "^P[1-9][0-9]{0,2}Y[1-9][0-9]{0,2}M[1-9][0-9]{0,2}DT[1-9][0-9]{0,2}H[1-9][0-9]{0,2}M[1-9][0-9]{0,2}S$")
+            //RFC7231 IMF-fixdate. Day 01-28 is valid in every month, so the calendar date is always valid.
+            "http-date" -> return regexGene(name, "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), (0[1-9]|1[0-9]|2[0-8]) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] GMT$")
+            //IPv4 via the existing InetGene (four octets 0-255)
+            "ipv4" -> return InetGene(name)
+            //IPv6 in full 8-group form (no '::' compression), which is always valid
+            "ipv6" -> return regexGene(name, "^([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}$")
+            //non-negative epoch seconds
+            "unixtime" -> return LongGene(name, min = 0L)
+            //an integer exactly representable as an IEEE-754 double: |n| <= 2^53
+            "double-int" -> return LongGene(name, min = -9007199254740992L, max = 9007199254740992L)
+            //RFC8941 sf-integer: at most 15 digits
+            "sf-integer" -> return LongGene(name, min = -999999999999999L, max = 999999999999999L)
+            //free-form markup text; any string is valid commonmark/html
+            "commonmark", "html" -> return StringGene(name)
         }
 
         return null
+    }
+
+    /**
+     * Build a gene that samples strings matching the given JVM regex.
+     * Used for advanced string formats where we only need to produce syntactically valid values,
+     * not to strictly validate every RFC edge case.
+     */
+    private fun regexGene(name: String, regex: String): Gene {
+        return RegexHandler.createGeneForJVM(regex).apply { this.name = name }
     }
 
     private fun createEmailGene(
