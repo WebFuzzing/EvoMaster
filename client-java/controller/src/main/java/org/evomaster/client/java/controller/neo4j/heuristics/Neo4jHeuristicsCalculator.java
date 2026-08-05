@@ -176,19 +176,16 @@ public class Neo4jHeuristicsCalculator {
 
     /**
      * AND-aggregates the truthness of every condition under one mapping. Conditions that cannot be
-     * valuated (absent property, opaque/raw) are skipped; if none remain, the mapping vacuously
-     * satisfies the (empty) constraint set.
+     * valuated score {@link Neo4jConditionEvaluator#UNVALUATABLE} and are aggregated like the rest, so
+     * they lower the result instead of being dropped. A query with no conditions is vacuously satisfied.
      */
     private Truthness matchConditions(List<CypherCondition> conditions, Neo4jMapping mapping) {
+        if (conditions.isEmpty()) {
+            return TRUE_TRUTHNESS;
+        }
         List<Truthness> truths = new ArrayList<>();
         for (CypherCondition c : conditions) {
-            Truthness t = evaluator.evaluateCondition(c, mapping);
-            if (t != null) {
-                truths.add(t);
-            }
-        }
-        if (truths.isEmpty()) {
-            return TRUE_TRUTHNESS;
+            truths.add(evaluator.evaluateCondition(c, mapping));
         }
         return TruthnessUtils.buildAndAggregationTruthness(truths.toArray(new Truthness[0]));
     }

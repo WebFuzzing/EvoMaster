@@ -22,13 +22,27 @@ import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeurist
  * structural mapping {@code m}, recursively over the typed boolean tree the parser produces
  * (And/Or/Xor/Not, comparisons, label/type/property leaves).
  * <p>
- * Returns {@code null} when a condition cannot be evaluated under the mapping (e.g. an absent
- * property, an unbound variable, or an opaque/raw operand); the caller's aggregation skips
- * {@code null} results.
+ * A condition that cannot be valuated under the mapping (an absent property, an unbound variable, an
+ * opaque/raw operand) scores {@link #UNVALUATABLE} rather than {@code null}: a low but non-zero
+ * {@code ofTrue} that still takes part in the aggregation. Never returns {@code null}.
  */
 public class Neo4jConditionEvaluator {
 
     private static final Object UNRESOLVED = new Object();
+
+    /**
+     * Score of a condition that cannot be valuated under the mapping. It is aggregated like any other
+     * score, so such a condition lowers the result without hiding the gradient of its siblings.
+     * <p>
+     * Compared by identity, so that NOT can propagate it instead of inverting its low {@code ofTrue}
+     * into a near-true score.
+     */
+    public static final Truthness UNVALUATABLE = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
+
+    /** True when the given truthness is the {@link #UNVALUATABLE} marker, by identity. */
+    private static boolean isUnvaluatable(Truthness t) {
+        return t == UNVALUATABLE;
+    }
 
     private final TaintHandler taintHandler;
 
@@ -41,11 +55,11 @@ public class Neo4jConditionEvaluator {
     }
 
     /**
-     * Returns {@code ρ(condition, mapping)}, or {@code null} when the condition cannot be evaluated
-     * under the mapping and must be skipped by the aggregation (an absent property, an unbound
-     * variable, or an opaque {@link RawCondition}). Dispatch is done with a
-     * {@link CypherConditionVisitor} so every condition type is handled explicitly: there is no
-     * {@code instanceof} chain and no silent fall-through for an unhandled type.
+     * Returns {@code ρ(condition, mapping)}, never {@code null}: a condition that cannot be valuated
+     * (an absent property, an unbound variable, an opaque {@link RawCondition}) scores
+     * {@link #UNVALUATABLE}. Dispatch is done with a {@link CypherConditionVisitor} so every condition
+     * type is handled explicitly: there is no {@code instanceof} chain and no silent fall-through for
+     * an unhandled type.
      */
     public Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
         Objects.requireNonNull(condition, "condition must not be null");
@@ -69,14 +83,14 @@ public class Neo4jConditionEvaluator {
         @Override
         public Truthness visitLabel(LabelCondition lc) {
             Neo4jNode node = mapping.getNode(lc.getVariableName());
-            return node == null ? null : labelInSet(lc.getLabel(), node.getLabels());
+            return node == null ? UNVALUATABLE : labelInSet(lc.getLabel(), node.getLabels());
         }
 
         @Override
         public Truthness visitAnyLabel(AnyLabelCondition ac) {
             Neo4jNode node = mapping.getNode(ac.getVariableName());
             if (node == null) {
-                return null;
+                return UNVALUATABLE;
             }
             return node.getLabels().isEmpty() ? FALSE_TRUTHNESS : TRUE_TRUTHNESS;
         }
@@ -85,7 +99,7 @@ public class Neo4jConditionEvaluator {
         public Truthness visitType(TypeCondition tc) {
             Neo4jEdge rel = mapping.getEdge(tc.getVariableName());
             if (rel == null) {
-                return null;
+                return UNVALUATABLE;
             }
             taintStringEquals(rel.getType(), tc.getType());
             return stringEqualityTruthness(rel.getType(), tc.getType());
@@ -119,7 +133,8 @@ public class Neo4jConditionEvaluator {
         @Override
         public Truthness visitNot(NotCondition nc) {
             Truthness inner = evaluateCondition(nc.getCondition(), mapping);
-            return inner == null ? null : inner.invert();
+            // Cypher's NOT null is null, not true, so negating "no information" keeps it.
+            return isUnvaluatable(inner) ? UNVALUATABLE : inner.invert();
         }
 
         @Override
@@ -127,18 +142,18 @@ public class Neo4jConditionEvaluator {
             // A RawCondition is a WHERE predicate the parser kept as raw text because it could not
             // break it into operands. With no resolved operands there is no value to measure a distance
             // against.
-            return null;
+            return UNVALUATABLE;
         }
     }
 
     private Truthness evaluateProperty(PropertyCondition pc, Neo4jMapping mapping) {
         Object actual = resolveProperty(pc.getVariableName(), pc.getPropertyKey(), mapping);
         if (actual == UNRESOLVED) {
-            return null;
+            return UNVALUATABLE;
         }
         Object expected = resolveOperandValue(pc.getValue(), mapping);
         if (expected == UNRESOLVED) {
-            return null;
+            return UNVALUATABLE;
         }
         return equalityTruthness(actual, expected);
     }
@@ -171,7 +186,7 @@ public class Neo4jConditionEvaluator {
         Object l = resolveOperandValue(cc.getLeft(), mapping);
         Object r = resolveOperandValue(cc.getRight(), mapping);
         if (l == UNRESOLVED || r == UNRESOLVED || l == null || r == null) {
-            return null;
+            return UNVALUATABLE;
         }
         switch (cc.getOperator()) {
             case EQUALS:
@@ -184,11 +199,11 @@ public class Neo4jConditionEvaluator {
                 return numericLessThan(r, l);
             case LESS_THAN_OR_EQUALS: {
                 Truthness t = numericLessThan(r, l);
-                return t == null ? null : t.invert();
+                return isUnvaluatable(t) ? UNVALUATABLE : t.invert();
             }
             case GREATER_THAN_OR_EQUALS: {
                 Truthness t = numericLessThan(l, r);
-                return t == null ? null : t.invert();
+                return isUnvaluatable(t) ? UNVALUATABLE : t.invert();
             }
             default:
                 throw new IllegalArgumentException("Not supported operator: " + cc.getOperator());
@@ -198,7 +213,7 @@ public class Neo4jConditionEvaluator {
     private Truthness evaluateIn(ComparisonCondition cc, Neo4jMapping mapping) {
         Object l = resolveOperandValue(cc.getLeft(), mapping);
         if (l == UNRESOLVED || l == null || !(cc.getRight() instanceof ListOperand)) {
-            return null;
+            return UNVALUATABLE;
         }
         List<Operand> elements = ((ListOperand) cc.getRight()).getElements();
         List<Truthness> truths = new ArrayList<>();
@@ -210,7 +225,7 @@ public class Neo4jConditionEvaluator {
             truths.add(equalityTruthness(l, ev));
         }
         if (truths.isEmpty()) {
-            return null;
+            return UNVALUATABLE;
         }
         return TruthnessUtils.buildOrAggregationTruthness(truths.toArray(new Truthness[0]));
     }
@@ -219,7 +234,7 @@ public class Neo4jConditionEvaluator {
         Object l = resolveOperandValue(cc.getLeft(), mapping);
         Object r = resolveOperandValue(cc.getRight(), mapping);
         if (!(l instanceof String) || !(r instanceof String)) {
-            return null;
+            return UNVALUATABLE;
         }
         switch (cc.getOperator()) {
             case STARTS_WITH:
@@ -233,29 +248,36 @@ public class Neo4jConditionEvaluator {
         }
     }
 
+    /** XOR-folds the children, with the same handling of unvaluatable ones as {@link #aggregate}. */
     private Truthness evaluateXor(List<CypherCondition> conditions, Neo4jMapping mapping) {
         Truthness acc = null;
+        boolean allUnvaluatable = true;
         for (CypherCondition c : conditions) {
             Truthness t = evaluateCondition(c, mapping);
-            if (t == null) {
-                continue;
-            }
+            allUnvaluatable &= isUnvaluatable(t);
             acc = (acc == null) ? t : TruthnessUtils.buildXorAggregationTruthness(acc, t);
         }
-        return acc;
+        if (acc == null) {
+            return UNVALUATABLE;
+        }
+        return allUnvaluatable ? UNVALUATABLE : acc;
     }
 
-    /** AND/OR aggregation over a child list, skipping children that cannot be evaluated. */
+    /**
+     * AND/OR aggregation over a child list. Every child takes part, so an AND is no longer reported as
+     * satisfied just because its only valuatable branch holds. When they are all unvaluatable there is
+     * nothing to measure, and the result is {@link #UNVALUATABLE} itself so the marker survives.
+     */
     private Truthness aggregate(List<CypherCondition> conditions, Neo4jMapping mapping, boolean and) {
         List<Truthness> truths = new ArrayList<>();
+        boolean allUnvaluatable = true;
         for (CypherCondition c : conditions) {
             Truthness t = evaluateCondition(c, mapping);
-            if (t != null) {
-                truths.add(t);
-            }
+            allUnvaluatable &= isUnvaluatable(t);
+            truths.add(t);
         }
-        if (truths.isEmpty()) {
-            return null;
+        if (truths.isEmpty() || allUnvaluatable) {
+            return UNVALUATABLE;
         }
         Truthness[] arr = truths.toArray(new Truthness[0]);
         return and ? TruthnessUtils.buildAndAggregationTruthness(arr)
@@ -320,7 +342,7 @@ public class Neo4jConditionEvaluator {
     /** ρ for IS NULL / IS NOT NULL: a presence check with no gradient. */
     private Truthness presenceTruthness(Operand operand, Neo4jMapping mapping, boolean wantPresent) {
         if (!(operand instanceof PropertyOperand)) {
-            return null;
+            return UNVALUATABLE;
         }
         PropertyOperand po = (PropertyOperand) operand;
         Object value = resolveProperty(po.getVariableName(), po.getPropertyKey(), mapping);
@@ -332,13 +354,13 @@ public class Neo4jConditionEvaluator {
     /**
      * ρ for an equality {@code a = b} where either side is an already-valuated operand. The
      * right-hand value may be the Cypher {@code null} literal (a {@link LiteralOperand} whose value
-     * is {@code null}); a {@code null} on either side yields {@code null} here, mirroring Cypher's
+     * is {@code null}); a {@code null} on either side scores {@link #UNVALUATABLE}, mirroring Cypher's
      * ternary logic where any comparison against {@code null} is {@code null} (unknown) rather than
-     * true or false, so the aggregation skips it instead of scoring a gradient.
+     * true or false.
      */
     private Truthness equalityTruthness(Object a, Object b) {
         if (a == null || b == null) {
-            return null;
+            return UNVALUATABLE;
         }
         Double da = asDouble(a);
         Double db = asDouble(b);
@@ -362,8 +384,8 @@ public class Neo4jConditionEvaluator {
     /**
      * ρ for {@code a < b} on numeric operands. Both are required to be non-null: the caller only
      * reaches this after resolving each side to a present value (a {@code null}/absent operand is
-     * filtered out before dispatch). A non-numeric value still yields {@code null}, since there is no
-     * numeric gradient to compute, but a {@code null} argument is a contract violation, not that case.
+     * filtered out before dispatch). A non-numeric value scores {@link #UNVALUATABLE}, since there is
+     * no numeric gradient to compute, but a {@code null} argument is a contract violation, not that case.
      */
     private Truthness numericLessThan(Object a, Object b) {
         Objects.requireNonNull(a, "left operand must not be null");
@@ -371,7 +393,7 @@ public class Neo4jConditionEvaluator {
         Double da = asDouble(a);
         Double db = asDouble(b);
         if (da == null || db == null) {
-            return null;
+            return UNVALUATABLE;
         }
         return TruthnessUtils.getLessThanTruthness((double) da, (double) db);
     }

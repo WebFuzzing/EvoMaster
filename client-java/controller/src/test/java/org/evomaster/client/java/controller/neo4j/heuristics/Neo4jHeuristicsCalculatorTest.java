@@ -180,9 +180,9 @@ class Neo4jHeuristicsCalculatorTest {
     }
 
     @Test
-    void testEqualityAgainstNullLiteralIsSkipped() throws CypherParserException {
+    void testEqualityAgainstNullLiteralIsNotSatisfied() throws CypherParserException {
         // Cypher's null semantics: any comparison against null is null (unknown), never true or
-        // false, so `= null` is unsatisfiable.
+        // false, so `= null` is unsatisfiable and must not be scored as satisfied.
         Neo4jNode a = node("a", labels("Person"), props("name", "Ann"));
         Neo4jNode b = node("b", labels("Person"), props("name", "Bob"));
         Neo4jGraph g = new Neo4jGraph(Arrays.asList(a, b),
@@ -196,8 +196,88 @@ class Neo4jHeuristicsCalculatorTest {
                 parser.parse("MATCH (a)-[r]->(b {name: null}) RETURN b"), g);
 
         assertTrue(baseline.isTrue());
-        assertEquals(baseline.getOfTrue(), whereNull.getOfTrue(), DELTA);
-        assertEquals(baseline.getOfTrue(), inlineNull.getOfTrue(), DELTA);
+        assertFalse(whereNull.isTrue());
+        assertFalse(inlineNull.isTrue());
+        // Unvaluatable, so scored below the unconstrained baseline, but still above zero so the rest
+        // of the query keeps guiding the search.
+        assertTrue(whereNull.getOfTrue() < baseline.getOfTrue());
+        assertTrue(inlineNull.getOfTrue() < baseline.getOfTrue());
+        assertTrue(whereNull.getOfTrue() > 0);
+    }
+
+    /** A single {@code (:Person {age: 25})} node, no relationships. */
+    private Neo4jGraph singlePersonAged25() {
+        return new Neo4jGraph(
+                Collections.singletonList(node("n1", labels("Person"), props("age", 25))),
+                Collections.emptyList());
+    }
+
+    @Test
+    void testOrWithUnvaluatableBranchIsSatisfiedByTheOtherBranch() throws CypherParserException {
+        // Cypher: `true OR null` is `true`, and Neo4j does return the node, so the query is satisfied
+        // even though the nickname branch cannot be valuated.
+        MatchOperation q = parser.parse(
+                "MATCH (p:Person) WHERE p.age = 25 OR p.nickname = \"bob\" RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertTrue(h.isTrue());
+        assertEquals(0.0, calculator.computeDistance(q, singlePersonAged25()), DELTA);
+    }
+
+    @Test
+    void testAndWithUnvaluatableBranchIsNotSatisfied() throws CypherParserException {
+        // Cypher: `true AND null` is `null`, so the query matches nothing. Skipping the unvaluatable
+        // branch used to report distance 0 here, telling the search it was already done.
+        MatchOperation q = parser.parse(
+                "MATCH (p:Person) WHERE p.age = 25 AND p.nickname = \"bob\" RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertFalse(h.isTrue());
+        assertTrue(calculator.computeDistance(q, singlePersonAged25()) > 0);
+        // The satisfied branch still contributes, so this stays well above the unsatisfiable floor.
+        assertTrue(h.getOfTrue() > Neo4jHeuristicsCalculator.C);
+    }
+
+    @Test
+    void testOnlyUnvaluatableConditionIsNotSatisfied() throws CypherParserException {
+        // The absent property is the only WHERE condition: nothing matches in Neo4j, so the query
+        // must not be scored as satisfied just because the label holds.
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE p.nickname = \"bob\" RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertFalse(h.isTrue());
+        assertTrue(calculator.computeDistance(q, singlePersonAged25()) > 0);
+    }
+
+    @Test
+    void testNotOfUnvaluatableConditionIsNotSatisfied() throws CypherParserException {
+        // Cypher: `NOT null` is `null`, not true. Inverting the unvaluatable score would flip its low
+        // ofTrue into a near-true one and invent a match that Neo4j does not return.
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE NOT (p.nickname = \"bob\") RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertFalse(h.isTrue());
+        assertTrue(calculator.computeDistance(q, singlePersonAged25()) > 0);
+    }
+
+    @Test
+    void testUnvaluatableConditionKeepsTheGradientOfItsSiblings() throws CypherParserException {
+        // The point of scoring instead of flattening: the absent nickname must not stop the search
+        // from learning that moving age towards 25 is an improvement.
+        MatchOperation q = parser.parse(
+                "MATCH (p:Person) WHERE p.age = 25 AND p.nickname = \"bob\" RETURN p");
+
+        Neo4jGraph far = new Neo4jGraph(
+                Collections.singletonList(node("n1", labels("Person"), props("age", 40))),
+                Collections.emptyList());
+        Neo4jGraph near = new Neo4jGraph(
+                Collections.singletonList(node("n1", labels("Person"), props("age", 27))),
+                Collections.emptyList());
+
+        assertTrue(calculator.computeHeuristic(q, near).getOfTrue()
+                > calculator.computeHeuristic(q, far).getOfTrue());
+        assertTrue(calculator.computeHeuristic(q, singlePersonAged25()).getOfTrue()
+                > calculator.computeHeuristic(q, near).getOfTrue());
     }
 
     private static Neo4jNode node(String id, Set<String> labels, Map<String, Object> props) {
