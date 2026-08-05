@@ -106,37 +106,37 @@ object DynamicPathUtils {
     }
 
     /**
-     * Make sure that the path params are resolved to the same concrete values of "other".
+     * Make sure that the path params are of "this" [x] resolve to the same concrete values of "other" [y].
      * Note: "this" can be just an ancestor of "other".
      * This function takes care when path elements are dynamically handled based on
      * results of previous calls (eg a POST creating a resource).     *
      *
      **/
-    fun bindToSamePathResolution(a: RestCallAction, b: RestCallAction) {
-        if (!a.path.isSameOrAncestorOf(b.path)) {
+    fun bindToSamePathResolution(x: RestCallAction, y: RestCallAction) {
+        if (!x.path.isSameOrAncestorOf(y.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
-                    "${a.path} vs ${b.path}")
+                    "${x.path} vs ${y.path}")
         }
-        for (i in a.parameters.indices) {
-            val target = a.parameters[i]
+        for (i in x.parameters.indices) {
+            val target = x.parameters[i]
             if (target is PathParam) {
-                val k = b.parameters.find { p -> p is PathParam && p.name == target.name }!!
+                val k = y.parameters.find { p -> p is PathParam && p.name == target.name }!!
                 /*
                     Note: even if they are referring to same path variable, it does not mean that
                     necessarily they are represented with the same type of gene, eg., typically a StringGene.
                     For example, they could be a ChoiceGene when dealing with "examples" or Regex when having patterns
                     only defined on some endpoints
                  */
-                val g = a.parameters[i].primaryGene()
+                val g = x.parameters[i].primaryGene()
                 g.copyValueFrom(k.primaryGene())
                 g.forceNewTaints()
             }
         }
-        if(a.path.isEquivalent(b.path)) {
+        if(x.path.isEquivalent(y.path)) {
             //if pointing to the same resource, make sure to handle dynamic resource creation
             //TODO does it make sense to do it even for ancestor paths??? likely not... but not 100% sure
-            a.usePreviousLocationId = b.usePreviousLocationId
-            a.weakReference = b.weakReference
+            x.usePreviousLocationId = y.usePreviousLocationId
+            x.weakReference = y.weakReference
         }
     }
 
