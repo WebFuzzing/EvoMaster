@@ -78,10 +78,14 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
             long end = System.currentTimeMillis();
             long executionTime = end - start;
             TableReference ref = extractTableReference(queryForTracking);
+            String keyspaceName = ref.keyspaceName;
             if (ref.rawTableName != null) {
                 captureTableSchema(cqlSession, ref);
+                if (keyspaceName == null) {
+                    keyspaceName = resolveDefaultKeyspaceName(cqlSession);
+                }
             }
-            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, ref.keyspaceName, ref.tableName, false, executionTime);
+            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, keyspaceName, ref.tableName, false, executionTime);
             ExecutionTracer.addCqlInfo(info);
             return result;
         } catch (IllegalAccessException e) {
@@ -107,7 +111,22 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
-     * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
+     * Resolves the session's current default keyspace, for a statement that didn't
+     * qualify its table with an explicit keyspace, so {@link ExecutedCqlCommand#getKeyspaceName()}
+     * carries the same (never-null) keyspace {@link CassandraSchemaTracer} resolved the table's
+     * schema under, instead of staying null. Never lets a resolution failure break the SUT's own query.
+     */
+    private static String resolveDefaultKeyspaceName(Object cqlSession) {
+        try {
+            return CassandraSchemaTracer.resolveKeyspaceName(cqlSession, null);
+        } catch (RuntimeException e) {
+            SimpleLogger.uniqueWarn("Failed to resolve Cassandra session's default keyspace");
+            return null;
+        }
+    }
+
+    /**
+     * Extraction of keyspace/table from the CQL text. Returns both fields as
      * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
      * (eg DDL, batches).
      */

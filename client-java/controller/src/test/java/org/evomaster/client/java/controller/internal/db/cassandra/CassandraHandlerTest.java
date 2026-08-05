@@ -23,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CassandraHandlerTest {
 
     private static final int CASSANDRA_PORT = 9042;
-    public static final String IMAGE_NAME = "cassandra:4.1";
+    private static final String CASSANDRA_IMAGE = "cassandra";
+    private static final String CASSANDRA_VERSION = "4.1";
 
-    private static final GenericContainer<?> cassandra = new GenericContainer<>(IMAGE_NAME)
+    private static final GenericContainer<?> cassandra = new GenericContainer<>(CASSANDRA_IMAGE + ":" + CASSANDRA_VERSION)
             .withExposedPorts(CASSANDRA_PORT)
             .waitingFor(Wait.forLogMessage(".*Startup complete.*\\n", 1))
             .withStartupTimeout(Duration.ofMinutes(3));
@@ -311,11 +312,21 @@ public class CassandraHandlerTest {
     }
 
     @Test
-    public void testNonEmptyTable_notRecordedAsFailedQuery() {
+    public void testNonEmptyTable_noRowMatches_recordedAsFailedQuery() {
         session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
 
-        // no row matches, but the table itself is not empty
+        // the table itself is not empty, but no row satisfies the WHERE clause
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 18"));
+        handler.getEvaluatedCqlCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+    }
+
+    @Test
+    public void testNonEmptyTable_rowMatches_notRecordedAsFailedQuery() {
+        session.execute("INSERT INTO " + KEYSPACE + "." + TABLE + " (id, age, name) VALUES (1, 30, 'John Doe')");
+
+        handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 30"));
         handler.getEvaluatedCqlCommands();
 
         assertTrue(handler.getExecutionDto().failedQueries.isEmpty());

@@ -10,6 +10,7 @@ import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
+import org.evomaster.client.java.instrumentation.cassandra.TableKey;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -65,17 +66,19 @@ public class CassandraHandler {
     private final List<CqlCommandWithDistance> cqlCommandWithDistances = new ArrayList<>();
 
     /**
-     * CQL commands whose target table came back empty when their distance was computed, kept as
-     * a data-generation hint.
+     * CQL commands whose WHERE clause was not satisfied by any row (including the case where the
+     * target table came back empty) when their distance was computed, kept as a data-generation
+     * hint.
      */
-    private final List<ExecutedCqlCommand> emptyTableQueries = new ArrayList<>();
+    private final List<ExecutedCqlCommand> failedQueries = new ArrayList<>();
 
     /**
-     * Table name to column schema, populated from {@link CassandraTableMetadata} instances read
-     * directly off the Cassandra driver's own metadata (see {@link CassandraSchemaTracer}), the
-     * first time a query references that table.
+     * Table schema, populated from {@link CassandraTableMetadata} instances read directly off the
+     * Cassandra driver's own metadata (see {@link CassandraSchemaTracer}), the first time a query
+     * references that table. Keyed on keyspace and table name together, mirroring
+     * {@link CassandraSchemaTracer}'s own cache, since table names aren't unique across keyspaces.
      */
-    private final Map<String, CassandraTableMetadata> tableSchemas = new HashMap<>();
+    private final Map<TableKey, CassandraTableMetadata> tableSchemas = new HashMap<>();
 
     private volatile boolean extractCqlExecution = true;
 
@@ -91,7 +94,7 @@ public class CassandraHandler {
     public void reset() {
         operations.clear();
         cqlCommandWithDistances.clear();
-        emptyTableQueries.clear();
+        failedQueries.clear();
         // tableSchemas is not cleared: each table's schema is captured once, the first time it's queried
     }
 
@@ -138,7 +141,7 @@ public class CassandraHandler {
         Objects.requireNonNull(info);
 
         if (extractCqlExecution) {
-            tableSchemas.put(info.getTableName(), info);
+            tableSchemas.put(new TableKey(info.getKeyspaceName(), info.getTableName()), info);
         }
     }
 
@@ -164,11 +167,12 @@ public class CassandraHandler {
     }
 
     /**
-     * @return the CQL commands whose target table was found empty, as a data-generation hint.
+     * @return the CQL commands whose WHERE clause was not satisfied by any row, as a
+     * data-generation hint.
      */
     public CassandraExecutionsDto getExecutionDto() {
         CassandraExecutionsDto dto = new CassandraExecutionsDto();
-        dto.failedQueries = emptyTableQueries.stream()
+        dto.failedQueries = failedQueries.stream()
                 .map(this::extractRelevantInfo)
                 .collect(Collectors.toList());
 
@@ -176,7 +180,7 @@ public class CassandraHandler {
     }
 
     private CassandraFailedQuery extractRelevantInfo(ExecutedCqlCommand info) {
-        CassandraTableMetadata schema = tableSchemas.get(info.getTableName());
+        CassandraTableMetadata schema = tableSchemas.get(new TableKey(info.getKeyspaceName(), info.getTableName()));
         String tableSchema = schema != null ? describeTableSchema(schema) : null;
 
         return new CassandraFailedQuery(info.getKeyspaceName(), info.getTableName(), tableSchema);
@@ -228,16 +232,16 @@ public class CassandraHandler {
             return new CqlDistanceWithMetrics(Double.MAX_VALUE, 0);
         }
 
-        if (rows.isEmpty()) {
-            emptyTableQueries.add(info);
-        }
-
         double distance;
         try {
             distance = calculator.computeDistance(cql, rows);
         } catch (Exception e) {
             SimpleLogger.uniqueWarn("Failed to compute CQL distance for: " + cql);
             distance = Double.MAX_VALUE;
+        }
+
+        if (distance > 0) {
+            failedQueries.add(info);
         }
 
         return new CqlDistanceWithMetrics(distance, rows.size());
