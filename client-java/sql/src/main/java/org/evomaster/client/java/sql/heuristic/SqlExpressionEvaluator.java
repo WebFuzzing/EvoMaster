@@ -20,20 +20,19 @@ import org.evomaster.client.java.sql.*;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
-import org.evomaster.client.java.sql.internal.TaintHandler;
+import org.evomaster.client.java.sql.internal.*;
+
 
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
 import static org.evomaster.client.java.sql.heuristic.SqlCastHelper.castTo;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
 
 public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
@@ -189,7 +188,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return evaluationStack.peek();
     }
 
-    private enum ComparisonOperatorType {
+    public enum ComparisonOperatorType {
         EQUALS_TO,
         NOT_EQUALS_TO,
         GREATER_THAN,
@@ -297,6 +296,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
                 truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, comparisonOperatorType);
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
+                taintForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
                 truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
             } else if (concreteLeftValue instanceof Boolean || concreteRightValue instanceof Boolean) {
                 truthnessOfExpression = calculateTruthnessForBooleanComparison(convertToBoolean(concreteLeftValue), convertToBoolean(concreteRightValue), comparisonOperatorType);
@@ -336,7 +336,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftInstant);
         Objects.requireNonNull(rightInstant);
         final long leftInstantMillis = leftInstant.toEpochMilli();
@@ -344,7 +344,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return calculateTruthnessForDoubleComparison(leftInstantMillis, rightInstantMillis, comparisonOperatorType);
     }
 
-    private static Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(concreteLeftValue);
         Objects.requireNonNull(concreteRightValue);
 
@@ -397,7 +397,21 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return (booleanValue ? 1d : 0d);
     }
 
-    private Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness getEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        if (a.equals(b)) {
+            return TRUE_TRUTHNESS;
+        } else {
+            final double base = DistanceHelper.H_NOT_NULL;
+            final double distance = DistanceHelper.getLeftAlignmentDistance(a, b);
+            final double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+            return new Truthness(h, 1d);
+        }
+    }
+
+    private void taintForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftString);
         Objects.requireNonNull(rightString);
 
@@ -406,9 +420,26 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(leftString, rightString, false);
                 }
-                return TruthnessUtils.getStringEqualityTruthness(leftString, rightString);
             case NOT_EQUALS_TO:
-                return TruthnessUtils.getStringEqualityTruthness(leftString, rightString).invert();
+            case GREATER_THAN:
+            case GREATER_THAN_EQUALS:
+            case MINOR_THAN:
+            case MINOR_THAN_EQUALS:
+            default:
+                break;
+        }
+    }
+
+
+    public static Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(leftString);
+        Objects.requireNonNull(rightString);
+
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
+                return getEqualityTruthness(leftString, rightString);
+            case NOT_EQUALS_TO:
+                return getEqualityTruthness(leftString, rightString).invert();
             case GREATER_THAN:
                 return leftString.compareTo(rightString) > 0 ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
             case GREATER_THAN_EQUALS:
@@ -423,7 +454,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, ComparisonOperatorType comparisonOperatorType) {
+    public static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftNumber);
         Objects.requireNonNull(rightNumber);
 
