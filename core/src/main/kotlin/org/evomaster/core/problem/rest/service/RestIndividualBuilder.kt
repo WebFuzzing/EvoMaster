@@ -1,9 +1,8 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -11,10 +10,8 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.sql.SqlAction
-import javax.ws.rs.POST
 
 
 /**
@@ -207,7 +204,7 @@ class RestIndividualBuilder {
         }
         res.auth = target.auth
         res.forceNewTaints()
-        res.bindToSamePathResolution(target)
+        DynamicPathUtils.bindToSamePathResolution(res, target)
 
         return res
     }
@@ -245,9 +242,9 @@ class RestIndividualBuilder {
         res.auth = previous.auth
         res.forceNewTaints()
         if(res.path.isEquivalent(previous.path)) {
-            res.bindToSamePathResolution(previous)
+            DynamicPathUtils.bindToSamePathResolution(res,previous)
         }
-        CreateResourceUtils.linkDynamicCreateResource(previous, res)
+        DynamicPathUtils.linkDynamicCreateResource(previous, res)
 
         return res
     }
@@ -387,7 +384,7 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        CreateResourceUtils.linkDynamicCreateResource(create, target)
+        DynamicPathUtils.linkDynamicCreateResource(create, target)
 
         return true
     }
