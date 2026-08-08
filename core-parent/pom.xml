@@ -22,7 +22,6 @@
         <swagger.parser-v3.version>2.1.14</swagger.parser-v3.version>
         <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <langchain4j.version>1.15.0</langchain4j.version>
-        <java.dataloader>2.2.3</java.dataloader>
     </properties>
 
     <dependencyManagement>
@@ -59,7 +58,7 @@
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
-                        <groupId>org.hibernate</groupId>
+                        <groupId>org.hibernate.validator</groupId>
                         <artifactId>hibernate-validator</artifactId>
                     </exclusion>
                     <exclusion>
@@ -84,11 +83,6 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger.annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.graphql-java</groupId>
-                <artifactId>java-dataloader</artifactId>
-                <version>${java.dataloader}</version>
             </dependency>
             <dependency>
                 <groupId>com.atlassian.oai</groupId>
