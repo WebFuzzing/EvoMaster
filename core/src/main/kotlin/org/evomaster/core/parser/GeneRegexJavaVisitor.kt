@@ -7,7 +7,6 @@ import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 
-private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
@@ -116,8 +115,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
-
-        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
         val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
