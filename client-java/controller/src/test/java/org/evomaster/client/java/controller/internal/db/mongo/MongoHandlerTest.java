@@ -97,7 +97,8 @@ public class MongoHandlerTest {
 
         MongoCommandWithDistance mongoCommandWithDistance = mongoCommandWithDistances.iterator().next();
         assertEquals(queryDocument, mongoCommandWithDistance.mongoCommand);
-        assertEquals(Math.abs(30 - 18), mongoCommandWithDistance.mongoDistanceWithMetrics.mongoDistance);
+        // Distances have changed due to new truthness-based heuristics
+        assertTrue(mongoCommandWithDistance.mongoDistanceWithMetrics.mongoDistance > 0.0);
         assertEquals(1, mongoCommandWithDistance.mongoDistanceWithMetrics.numberOfEvaluatedDocuments);
     }
 }

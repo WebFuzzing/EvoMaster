@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,7 +118,6 @@ class QueryParserTest {
         assertEquals("age", in.getFieldName());
         assertEquals(Arrays.asList(20, 30, null), in.getValues());
     }
-
 
 
     @Test
@@ -497,7 +496,7 @@ class QueryParserTest {
     void testParseImplicitEqualsWithEmptyDocument() {
         Document query = new Document();
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertTrue(operation instanceof TrueOperation);
     }
 
     @Test
@@ -789,6 +788,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertNull(operation);
     }
+
     @Test
     void testParseInvalidEmptyNor() {
         Document query = new Document(
@@ -815,4 +815,54 @@ class QueryParserTest {
 
     }
 
+    @Test
+    void testParseTrueOperation() {
+        Document query = new Document();
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof TrueOperation);
+
+    }
+
+    @Test
+    void testParseNorTrueOperation() {
+        Document query = new Document(
+                "$nor",
+                Collections.singletonList(new Document())
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof NorOperation);
+        NorOperation nor = (NorOperation) operation;
+        assertEquals(1, nor.getConditions().size());
+        assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
+    }
+
+    @Test
+    void testParseEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                new Document("$eq", Arrays.asList("Bob", "Alice")));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
+
+    @Test
+    void testParseImplicitEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                Arrays.asList("Bob", "Alice"));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
 }
