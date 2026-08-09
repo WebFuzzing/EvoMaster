@@ -19,6 +19,22 @@ data class AssertionRepairResult(
     val neededPrefix: String? = null,
     val neededPostfix: String? = null
 ) {
+    companion object {
+        val SUCCESS = AssertionRepairResult(success = true)
+        val FAILURE = AssertionRepairResult(success = false)
+
+        /**
+         * A successful result whose only outcome is [remainder] still being needed by whatever
+         * lies further out, depending on [backward].
+         */
+        fun stillNeeded(remainder: String, backward: Boolean): AssertionRepairResult =
+            if (backward) {
+                AssertionRepairResult(success = true, neededPrefix = remainder)
+            } else {
+                AssertionRepairResult(success = true, neededPostfix = remainder)
+            }
+    }
+
     init {
         require(success || (neededPrefix == null && neededPostfix == null)) {
             "A failed AssertionRepairResult cannot carry an outward requirement"
@@ -40,21 +56,5 @@ data class AssertionRepairResult(
             neededPrefix = next.neededPrefix ?: neededPrefix,
             neededPostfix = next.neededPostfix ?: neededPostfix
         )
-    }
-
-    companion object {
-        val SUCCESS = AssertionRepairResult(success = true)
-        val FAILURE = AssertionRepairResult(success = false)
-
-        /**
-         * A successful result whose only outcome is [remainder] still being needed by whatever
-         * lies further out, depending on [backward].
-         */
-        fun stillNeeded(remainder: String, backward: Boolean): AssertionRepairResult =
-            if (backward) {
-                AssertionRepairResult(success = true, neededPrefix = remainder)
-            } else {
-                AssertionRepairResult(success = true, neededPostfix = remainder)
-            }
     }
 }
