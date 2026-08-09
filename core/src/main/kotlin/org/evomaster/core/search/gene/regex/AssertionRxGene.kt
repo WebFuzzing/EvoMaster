@@ -13,7 +13,12 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 /**
  * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
  */
-enum class AssertionType { LOOKAHEAD, LOOKBEHIND }
+enum class AssertionType(val backward: Boolean, val isInputBoundary: Boolean) {
+    LOOKAHEAD(backward = false, isInputBoundary = false),
+    LOOKBEHIND(backward = true, isInputBoundary = false),
+    START_OF_INPUT(backward = true, isInputBoundary = true),
+    END_OF_INPUT(backward = false, isInputBoundary = true)
+}
 
 /**
  * Represents a zero-width assertion in the regex gene tree.
@@ -37,6 +42,15 @@ class AssertionRxGene(
     val assertionType: AssertionType
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
+    init {
+        require(!assertionType.isInputBoundary || innerGene == null) {
+            "$assertionType is a boundary assertion type and cannot carry inner content"
+        }
+    }
+
+    val backward = assertionType.backward
+    val isInputBoundary = assertionType.isInputBoundary
+
     /**
      *  To handle null [innerGene], in which case the assertion is unsatisfiable.
      */
@@ -44,7 +58,7 @@ class AssertionRxGene(
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
-    override fun isUnsatisfiable(): Boolean = innerGene == null
+    override fun isUnsatisfiable(): Boolean = !isInputBoundary && innerGene == null
 
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 
