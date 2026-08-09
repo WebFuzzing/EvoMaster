@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -35,7 +36,7 @@ object HttpSemanticsOracle {
         }
 
         //on same resource
-        if(! first.usingSameResolvedPath(second)){
+        if(! DynamicPathUtils.doesResolveToSamePath(first,second)){
             return false
         }
 
@@ -93,7 +94,8 @@ object HttpSemanticsOracle {
         }
 
         //check path resolution
-        if(!before.usingSameResolvedPath(delete) || !after.usingSameResolvedPath(delete)) {
+        if(!DynamicPathUtils.doesResolveToSamePath(before,delete)
+            || !DynamicPathUtils.doesResolveToSamePath(after, delete)) {
             return NonWorkingDeleteResult()
         }
 
@@ -139,7 +141,8 @@ object HttpSemanticsOracle {
         }
 
         // all three must be on the same resolved path
-        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) {
+        if(!DynamicPathUtils.doesResolveToSamePath(before,modify)
+            || !DynamicPathUtils.doesResolveToSamePath(after,modify)) {
             return false
         }
 
@@ -235,7 +238,8 @@ object HttpSemanticsOracle {
         if(modify.verb != HttpVerb.PUT && modify.verb != HttpVerb.PATCH) return false
         if(after.verb  != HttpVerb.GET) return false
 
-        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) return false
+        if(!DynamicPathUtils.doesResolveToSamePath(before,modify)
+            || !DynamicPathUtils.doesResolveToSamePath(after,modify)) return false
 
         val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult?
             ?: return false
@@ -337,7 +341,7 @@ object HttpSemanticsOracle {
 
         if (put.verb != HttpVerb.PUT) return null
         if (get.verb != HttpVerb.GET) return null
-        if (!put.usingSameResolvedPath(get)) return null
+        if (!DynamicPathUtils.doesResolveToSamePath(put,get)) return null
         if (put.auth.isDifferentFrom(get.auth)) return null
 
         val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
@@ -594,7 +598,7 @@ object HttpSemanticsOracle {
         if (get.verb != HttpVerb.GET) return false
         if (put.verb != HttpVerb.PUT) return false
 
-        if (!get.usingSameResolvedPath(put)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(get,put)) return false
 
         if (get.auth.isDifferentFrom(put.auth)) return false
 
@@ -638,11 +642,11 @@ object HttpSemanticsOracle {
         if (get1.verb != HttpVerb.GET || get2.verb != HttpVerb.GET) return false
 
         // both PUTs on same resolved path with same auth
-        if (!put1.usingSameResolvedPath(put2)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(put1,put2)) return false
         if (put1.auth.isDifferentFrom(put2.auth)) return false
 
         // both GETs on same resolved path with same auth
-        if (!get1.usingSameResolvedPath(get2)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(get1,get2)) return false
         if (get1.auth.isDifferentFrom(get2.auth)) return false
 
         val resPut1 = actionResults.find { it.sourceLocalId == put1.getLocalId() } as RestCallResult?
@@ -755,7 +759,8 @@ object HttpSemanticsOracle {
         if (patch.verb != HttpVerb.PATCH) return false
         if (after.verb != HttpVerb.GET) return false
 
-        if (!before.usingSameResolvedPath(patch) || !after.usingSameResolvedPath(patch)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(before,patch)
+            || !DynamicPathUtils.doesResolveToSamePath(after,patch)) return false
         // the two GETs must use the same auth for a meaningful state comparison
         if (before.auth.isDifferentFrom(after.auth)) return false
 
