@@ -1761,6 +1761,20 @@ class EMConfig {
             "whether to send a request as-is or attempt a repair.")
     var aIResponseClassifierWeaknessThreshold = 0.8
 
+    enum class AIEnsembleBestModelSelectionStrategy {
+
+        /** Selects the model with the highest average across the considered performance metrics. */
+        MAX_OF_AVERAGE,
+
+        /** Selects the model with the highest minimum value across the considered performance metrics. */
+        MAX_OF_MIN
+    }
+
+    @Experimental
+    @Cfg("Strategy used to select the best-performing model when a combination of AI models " +
+            "are used as an ensemble model for response classification.")
+    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE
+
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
     @DependsOnTrueFor("createTests")
