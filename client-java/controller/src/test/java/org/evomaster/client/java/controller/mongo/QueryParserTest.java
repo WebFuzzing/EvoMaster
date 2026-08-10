@@ -319,6 +319,58 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseBitsAllClear() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllSet() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        assertEquals("flags", bitsAllSet.getFieldName());
+        assertEquals(5L, bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnyClear() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnyClear", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnyClearOperation);
+        BitsAnyClearOperation bitsAnyClear = (BitsAnyClearOperation) operation;
+        assertEquals("flags", bitsAnyClear.getFieldName());
+        assertEquals(5L, bitsAnyClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySet() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnySet", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnySetOperation);
+        BitsAnySetOperation bitsAnySet = (BitsAnySetOperation) operation;
+        assertEquals("flags", bitsAnySet.getFieldName());
+        assertEquals(5L, bitsAnySet.getBitmask());
+    }
+
+    @Test
     void testParseGreaterThanEquals() {
         Document query = new Document(
                 "age",
