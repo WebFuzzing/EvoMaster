@@ -101,6 +101,9 @@ data class RegexFlags(
          * When the `UNIX_LINES` flag is on, only `\n` is considered a line terminator.
          */
         val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
+
+        val defaultLineTerminatorRanges = MultiCharacterRange(false, defaultLineTerminators)
+        val unixLineTerminatorRanges = MultiCharacterRange(false, unixLinesModeLineTerminators)
     }
 
     /**
@@ -171,9 +174,7 @@ data class RegexFlags(
      * but not yet implemented in the gene layer.
      * Call this after merging, before recursing into the flagged disjunction.
      */
-    fun validate() {
-        if (multiline) throw IllegalStateException("Regex flag 'm' (MULTILINE) is not yet supported")
-    }
+    fun validate() {}
 
     /**
      * Checks if the provided character is a line terminator according to the flag behavior.
@@ -202,4 +203,9 @@ data class RegexFlags(
     }
     /** @see org.evomaster.core.utils.RegexFlags.isCaseable */
     fun isCaseable(char: Char): Boolean = isCaseable(char.code)
+
+    /**
+     * The [MultiCharacterRange] that corresponds to the current flag state of [unixLines].
+     */
+    val lineTerminatorRanges = if(unixLines) unixLineTerminatorRanges else defaultLineTerminatorRanges
 }

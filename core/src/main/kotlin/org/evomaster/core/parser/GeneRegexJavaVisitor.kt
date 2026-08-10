@@ -88,6 +88,40 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     }
 
     /**
+     * Represents multiline `^` as `(?:\A|(?<=[terminator]))` as two branches of a
+     * [DisjunctionListRxGene], reusing the existing nested-group repair machinery.
+     */
+    private fun buildMultilineStart(flags: RegexFlags): DisjunctionListRxGene {
+        val branches = listOf(
+            branchOf(AssertionRxGene(null, AssertionType.START_OF_INPUT)), // \A
+            branchOf(AssertionRxGene(terminatorClass(flags), AssertionType.LOOKBEHIND)) // (?<=[terminator])
+        )
+        return DisjunctionListRxGene(branches)
+    }
+
+    /**
+     * Represents multiline `$` as `(?:\z|(?=[terminator]))`. Symmetric to [buildMultilineStart].
+     */
+    private fun buildMultilineEnd(flags: RegexFlags): DisjunctionListRxGene {
+        val branches = listOf(
+            branchOf(AssertionRxGene(null, AssertionType.END_OF_INPUT)), // \z
+            branchOf(AssertionRxGene(terminatorClass(flags), AssertionType.LOOKAHEAD)) // (?=[terminator])
+        )
+        return DisjunctionListRxGene(branches)
+    }
+
+    /** Wraps [terms] as one branch of a boundary assertion's [DisjunctionListRxGene] representation. */
+    private fun branchOf(vararg terms: Gene): DisjunctionRxGene =
+        DisjunctionRxGene("boundaryBranch", terms.toList(), matchStart = true, matchEnd = true)
+
+    /**
+     * Single-branch [DisjunctionListRxGene] wrapping the terminator character class, the innerGene
+     * for multiline ^/$'s content-bearing branch.
+     */
+    private fun terminatorClass(flags: RegexFlags): DisjunctionListRxGene =
+        DisjunctionListRxGene(listOf(branchOf(CharacterRangeRxGene(flags.lineTerminatorRanges, flags))))
+
+    /**
      * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
      * the currently-unsupported ways an assertion's ancestry can appear (nested).
      * Returns true if it reaches the top-level pattern without hitting either, false otherwise.
@@ -235,33 +269,26 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             require(!isAssertionNested(ctx.assertion())){
                 "Nested assertions are not currently supported."
             }
-            val assertionType = when{
-                assertionCtx.BoundaryAssertions() != null -> {
-                    val boundaryTxt = assertionCtx.BoundaryAssertions().text
-                    when(boundaryTxt){
-                        "\\A" -> AssertionType.START_OF_INPUT
-                        "\\z" -> AssertionType.END_OF_INPUT
-                        else -> throw IllegalArgumentException("Invalid boundary assertion")
-                    }
+            hasAssertions = true
+
+            val gene: Gene = when {
+                assertionCtx.BoundaryAssertions() != null -> when (assertionCtx.BoundaryAssertions().text) {
+                    "\\A" -> AssertionRxGene(null, AssertionType.START_OF_INPUT)
+                    "\\z" -> AssertionRxGene(null, AssertionType.END_OF_INPUT)
+                    else -> throw IllegalArgumentException("Invalid boundary assertion")
                 }
                 assertionCtx.CARET() != null ->
-                    AssertionType.START_OF_INPUT
+                    if (currentFlags.multiline) buildMultilineStart(currentFlags)
+                    else AssertionRxGene(null, AssertionType.START_OF_INPUT)
                 assertionCtx.DOLLAR() != null ->
-                    AssertionType.END_OF_INPUT
+                    if (currentFlags.multiline) buildMultilineEnd(currentFlags)
+                    else AssertionRxGene(null, AssertionType.END_OF_INPUT)
                 assertionCtx.LESS_THAN() != null ->
-                    AssertionType.LOOKBEHIND
+                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKBEHIND)
                 else ->
-                    AssertionType.LOOKAHEAD
+                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKAHEAD)
             }
-            hasAssertions = true
-            if(assertionType.isInputBoundary){
-                val assertionGene = AssertionRxGene(null, assertionType)
-                res.genes.add(assertionGene)
-            } else {
-                val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
-                val assertionGene = AssertionRxGene(innerDisjList, assertionType)
-                res.genes.add(assertionGene)
-            }
+            res.genes.add(gene)
             return res
         }
 
