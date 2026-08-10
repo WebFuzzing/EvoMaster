@@ -4,6 +4,15 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.RxAbsorbable
 
 /**
+ * Outcome of one greedy walk over a gene list: [consumed] is how much of the candidate string
+ * can be placed. If less than the full string was consumed, [hardMismatch] says why. `true` means
+ * a gene genuinely refused to match ([consumed] resets to 0 in that case) and the candidate is
+ * simply wrong here; `false` means the gene list just ran out of room with no mismatch,
+ * so the leftover is still worth trying to escape outwards.
+ */
+data class WalkOutcome(val consumed: Int, val hardMismatch: Boolean)
+
+/**
  * Greedy-walk utilities for assertion repair.
  *
  * Given a candidate string sampled from [org.evomaster.core.search.gene.regex.AssertionRxGene.innerGene], attempts to place
@@ -16,6 +25,7 @@ object AssertionRepairWalk {
      * - [absorb]: which [RxAbsorbable] operation to call per gene (a read-only count, or a mutating force)
      * - [onZeroWidth]: what to do when [absorb] returns 0 and the gene [RxAbsorbable.canBeZeroWidth]
      * - [reversed]: whether to walk [genes] right-to-left for lookbehind or left-to-right for lookahead
+     * @see WalkOutcome
      */
     private fun walk(
         genes: List<Gene>,
@@ -23,9 +33,9 @@ object AssertionRepairWalk {
         absorb: (RxAbsorbable, String) -> Int,
         onZeroWidth: (RxAbsorbable) -> Unit,
         reversed: Boolean
-    ): Int {
+    ): WalkOutcome {
         if (value.isEmpty()) {
-            return 0
+            return WalkOutcome(0, hardMismatch = false)
         }
         var consumed = 0
         val walkTarget = if (reversed) {
@@ -41,7 +51,7 @@ object AssertionRepairWalk {
             val remaining = if (reversed) {
                 value.dropLast(consumed)
             } else {
-                value.substring(consumed)
+                value.drop(consumed)
             }
             val amount = absorb(absorbable, remaining)
             if (amount == 0) {
@@ -49,18 +59,19 @@ object AssertionRepairWalk {
                     onZeroWidth(absorbable)
                     continue
                 }
-                return 0
+                return WalkOutcome(0, hardMismatch = true)
             }
             consumed += amount
         }
-        return consumed
+        return WalkOutcome(consumed, hardMismatch = false)
     }
 
     /**
      * Maximum leading characters of [value] that can be absorbed across [genes]
      * left-to-right, without mutating anything.
+     * @see WalkOutcome
      */
-    fun absorbableCount(genes: List<Gene>, value: String): Int =
+    fun absorbableCount(genes: List<Gene>, value: String): WalkOutcome =
         walk(genes, value, reversed = false,
             absorb = { gene, value -> gene.absorbableCount(value) },
             onZeroWidth = {}
@@ -68,9 +79,10 @@ object AssertionRepairWalk {
 
     /**
      * Forces as much of [value] as possible into [genes] left-to-right, mutating each
-     * gene in place using each gene's [RxAbsorbable.tryForce]. Returns total characters placed.
+     * gene in place using each gene's [RxAbsorbable.tryForce].
+     * @see WalkOutcome
      */
-    fun tryForce(genes: List<Gene>, value: String): Int =
+    fun tryForce(genes: List<Gene>, value: String): WalkOutcome =
         walk(genes, value, reversed = false,
             absorb = { gene, value -> gene.tryForce(value) },
             onZeroWidth = { it.forceZeroWidth() }
@@ -81,8 +93,9 @@ object AssertionRepairWalk {
      * trailing characters of [value] that can be absorbed across [genes] right-to-left
      * (walking [genes] in reverse, since the gene closest to the assertion's position is the
      * last one in [genes]), without mutating anything.
+     * @see WalkOutcome
      */
-    fun absorbableSuffixCount(genes: List<Gene>, value: String): Int =
+    fun absorbableSuffixCount(genes: List<Gene>, value: String): WalkOutcome =
         walk(genes, value, reversed = true,
             absorb = { gene, value -> gene.absorbableSuffixCount(value) },
             onZeroWidth = {}
@@ -91,9 +104,10 @@ object AssertionRepairWalk {
     /**
      * Suffix-anchored counterpart of [tryForce], used by lookbehind repair: forces as much
      * of [value] as possible into [genes] right-to-left (mirroring [tryForce]), mutating each
-     * gene in place using [RxAbsorbable.tryForceSuffix]. Returns total characters placed.
+     * gene in place using [RxAbsorbable.tryForceSuffix].
+     * @see WalkOutcome
      */
-    fun tryForceSuffix(genes: List<Gene>, value: String): Int =
+    fun tryForceSuffix(genes: List<Gene>, value: String): WalkOutcome =
         walk(genes, value, reversed = true,
             absorb = { gene, value -> gene.tryForceSuffix(value) },
             onZeroWidth = { it.forceZeroWidth() }
