@@ -325,10 +325,21 @@ object HttpSemanticsOracle {
                 ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
-            //TODO is this correct???
+            assert(getBody.isNotEmpty())
             // no information to verify against; flag only when PUT sent nothing either
-            //return putBody.isNullOrEmpty() //FIXME
-            return null
+            if(putBody.isNullOrEmpty()){
+                /*
+                    TODO what was motivation for this edge case?
+                    extra fields in GET that are not declared in PUT are ignored in this oracle...
+                    however, here, if there is not field in PUT, we do the opposite, and mark as
+                    failure if there are extra fields in GET?
+                    why this flipped behavior?
+                 */
+                return "PUT has no data to set, but GET returns data"
+            } else {
+                //TODO is this branch even possible?
+                return null
+            }
         }
 
         val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
