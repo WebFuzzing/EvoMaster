@@ -76,6 +76,10 @@ CharacterClassEscape
   : SLASH [dDsSwWvVhH]
  ;
 
+BoundaryAssertions
+ : SLASH [Az]
+ ;
+
 EQUAL                      : '=';
 LESS_THAN                  : '<';
 CARET                      : '^';

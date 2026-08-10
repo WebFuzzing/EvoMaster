@@ -236,6 +236,14 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 "Nested assertions are not currently supported."
             }
             val assertionType = when{
+                assertionCtx.BoundaryAssertions() != null -> {
+                    val boundaryTxt = assertionCtx.BoundaryAssertions().text
+                    when(boundaryTxt){
+                        "\\A" -> AssertionType.START_OF_INPUT
+                        "\\z" -> AssertionType.END_OF_INPUT
+                        else -> throw IllegalArgumentException("Invalid boundary assertion")
+                    }
+                }
                 assertionCtx.CARET() != null ->
                     AssertionType.START_OF_INPUT
                 assertionCtx.DOLLAR() != null ->
