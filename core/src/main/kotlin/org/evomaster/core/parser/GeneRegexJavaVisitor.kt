@@ -213,8 +213,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                     ParsedFlagExpression.fromFlagToken(term.FLAG_SCOPE_OPEN().text)
                 )
 
-                merged.validate()
-
                 currentFlags = merged
 
                 // Visit all remaining terms under the new flags. Same as what
@@ -404,8 +402,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             val merged = currentFlags.merge(
                 ParsedFlagExpression.fromFlagToken(ctx.FLAG_GROUP_OPEN().text)
             )
-
-            merged.validate()
 
             currentFlags = merged
 

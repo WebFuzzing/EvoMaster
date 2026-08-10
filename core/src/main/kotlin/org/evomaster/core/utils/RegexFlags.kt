@@ -170,13 +170,6 @@ data class RegexFlags(
     fun merge(expression: ParsedFlagExpression): RegexFlags = expression.applyTo(this)
 
     /**
-     * Throws a clear error for any flag that is recognised in the grammar
-     * but not yet implemented in the gene layer.
-     * Call this after merging, before recursing into the flagged disjunction.
-     */
-    fun validate() {}
-
-    /**
      * Checks if the provided character is a line terminator according to the flag behavior.
      */
     fun isLineTerminator(c: Char) = if (unixLines) {
