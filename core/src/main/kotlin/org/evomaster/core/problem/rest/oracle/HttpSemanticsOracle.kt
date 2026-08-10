@@ -280,19 +280,30 @@ object HttpSemanticsOracle {
         actionResults: List<ActionResult>,
         schema: RestSchema? = null
     ): Boolean {
+        return mismatchedPutResponse(individual, actionResults, schema) != null
+    }
 
-        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return false
+    /**
+     * Check if mismatches, and return an error message if any found
+     */
+    fun mismatchedPutResponse(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        schema: RestSchema? = null
+    ): String? {
 
-        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
+        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return null
+
+        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return null
         // if put returned 2xx but entity does not exist afterwards
-        if (resGet.getStatusCode() == 404) return true
-        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
+        if (resGet.getStatusCode() == 404) return "follow-up GETs return 404"
+        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return null
 
         val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
 
         //for now we only deal with JSON/XML/FORM
         if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
-            return false
+            return null
         }
 
         val putBody = extractRequestBody(put)
@@ -300,22 +311,34 @@ object HttpSemanticsOracle {
 
         // PUT sent content but GET body is empty -> sent fields definitely missing
         if (getBody.isNullOrEmpty()) {
-            return !putBody.isNullOrEmpty()
+            val dataPut = !putBody.isNullOrEmpty()
+            return if(dataPut) {
+                "PUT added data, but GET returns no data"
+            } else {
+                null
+            }
         }
-
 
         val sentFields = extractSentFieldNames(put)
         val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
-            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) } ?: emptySet()
+            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) }
+                ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
+            //TODO is this correct???
             // no information to verify against; flag only when PUT sent nothing either
-            return putBody.isNullOrEmpty()
+            //return putBody.isNullOrEmpty() //FIXME
+            return null
         }
 
         val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
 
-        return hasMismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+        val mismatches = mismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+        if(mismatches.isEmpty()){
+            return null
+        }
+
+        return "mismatched fields [" + mismatches.sorted().joinToString(", ") { "'$it'" } + "]"
     }
 
     private data class PutGetPair(
@@ -383,28 +406,53 @@ object HttpSemanticsOracle {
         wipedFields: Set<String>,
         bodyParam: BodyParam? = null
     ): Boolean {
+        return mismatchedPutFields(putBody, getBody, sentFields, wipedFields, bodyParam).isNotEmpty()
+    }
+
+    internal fun mismatchedPutFields(
+        putBody: String,
+        getBody: String,
+        sentFields: Set<String>,
+        wipedFields: Set<String>,
+        bodyParam: BodyParam? = null
+    ): Set<String> {
+
+        val errors = mutableSetOf<String>()
 
         // sent fields: PUT value must equal GET value
         if (sentFields.isNotEmpty()) {
-            val fieldsPut = readPutFields(putBody, bodyParam, sentFields) ?: return false
-            if (fieldsPut.isNotEmpty()) {
-                val fieldsGet = readGetFields(getBody, fieldsPut.keys) ?: return true
-                for ((field, valuePut) in fieldsPut) {
-                    val valueGet = fieldsGet[field] ?: return true
-                    if (valuePut != valueGet) return true
+            val fieldsPut = readPutFields(putBody, bodyParam, sentFields)
+            if (!fieldsPut.isNullOrEmpty()) {
+                val fieldsGet = readGetFields(getBody, fieldsPut.keys)
+                if(fieldsGet.isNullOrEmpty()){
+                    errors.addAll(fieldsPut.keys)
+                } else {
+                    for ((field, valuePut) in fieldsPut) {
+                        val valueGet = fieldsGet[field]
+                        //TODO but what if the values are 'null'??? was this correct?
+                        if(valueGet == null){
+                            errors.add(field)
+                        } else if (valuePut != valueGet) {
+                                errors.add(field)
+                        }
+                    }
                 }
             }
         }
 
         // wiped fields: must be absent or null in GET
         if (wipedFields.isNotEmpty()) {
-            val getWiped = readGetFields(getBody, wipedFields) ?: return false
-            for (field in wipedFields) {
-                if (!getWiped[field].isNullOrEmpty()) return true
+            val getWiped = readGetFields(getBody, wipedFields)
+            if(!getWiped.isNullOrEmpty()) {
+                for (field in wipedFields) {
+                    if (!getWiped[field].isNullOrEmpty()){
+                        errors.add(field)
+                    }
+                }
             }
         }
 
-        return false
+        return errors
     }
 
     /**
