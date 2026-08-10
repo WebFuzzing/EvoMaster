@@ -78,7 +78,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
         val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
-        //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
         for (gene in disjList.disjunctions) {
             gene.extraPrefix = false
             gene.extraPostfix = false
@@ -142,24 +141,20 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitDisjunction(ctx: RegexJavaParser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
-
-        val matchStart = assertionMatches.first
-        val matchEnd = assertionMatches.second
 
         val res = VisitResult()
 
-        // add disjunction if it has genes, OR if the alternative was purely assertions (^$) or flag scopes
+        // add disjunction if it has genes, OR if the alternative was purely flag scopes
         // in that case altRes.genes is empty but the alternative is valid (matches "")
-        val hasOnlyAssertionsOrFlagScopes = ctx.alternative().term().isNotEmpty() &&
-                ctx.alternative().term().all { it.assertion() != null || it.FLAG_SCOPE_OPEN() != null }
+        val hasOnlyFlagScopes = ctx.alternative().term().isNotEmpty() &&
+                ctx.alternative().term().all { it.FLAG_SCOPE_OPEN() != null }
 
-        if (altRes.genes.isNotEmpty() || hasOnlyAssertionsOrFlagScopes || ctx.alternative().term().isEmpty()) {
-            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
+        if (altRes.genes.isNotEmpty() || hasOnlyFlagScopes || ctx.alternative().term().isEmpty()) {
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart = true, matchEnd = true)
 
             res.genes.add(disj)
         }
-        // else: had non-assertion terms but all produced nothing (empty char class etc.), skip
+        // else: had non-flag scope terms but all produced nothing (empty char class etc.), skip
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -172,9 +167,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitAlternative(ctx: RegexJavaParser.AlternativeContext): VisitResult {
 
         val res = VisitResult()
-
-        var caret = false
-        var dollar = false
 
         for(i in 0 until ctx.term().size){
 
@@ -225,28 +217,11 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 // term is not a back ref: we use the default behavior, term results may only have 0-1 genes
                 // if there is a gene, we add it to result
                 res.genes.add(gene)
-            } else if (resTerm.data is String) {
-
-                val assertion = resTerm.data as String
-                if(i==0 && assertion == "^"){
-                    caret = true
-                } else if(i==ctx.term().size-1 && assertion== "$"){
-                    dollar = true
-                } else {
-                    /*
-                        TODO in a regex, ^ and $ could be in any position, as representing
-                        beginning and end of a line, and a regex could be multiline with
-                        line terminator symbols
-                     */
-                    throw IllegalStateException("Cannot support $assertion at position $i")
-                }
             } else {
                 // unsatisfiable term, return with no genes
                 return VisitResult(data=Pair(false, false))
             }
         }
-
-        res.data = Pair(caret, dollar)
 
         return res
     }
@@ -257,20 +232,26 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
         if(ctx.assertion() != null){
             val assertionCtx = ctx.assertion()
-            if (assertionCtx.CARET() != null || assertionCtx.DOLLAR() != null) {
-                res.data = ctx.assertion().text
-            } else {
-                require(!isAssertionNested(ctx.assertion())){
-                    "Nested assertions are not currently supported."
-                }
-                val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
-                val assertionType = if (assertionCtx.LESS_THAN() != null) {
+            require(!isAssertionNested(ctx.assertion())){
+                "Nested assertions are not currently supported."
+            }
+            val assertionType = when{
+                assertionCtx.CARET() != null ->
+                    AssertionType.START_OF_INPUT
+                assertionCtx.DOLLAR() != null ->
+                    AssertionType.END_OF_INPUT
+                assertionCtx.LESS_THAN() != null ->
                     AssertionType.LOOKBEHIND
-                } else {
+                else ->
                     AssertionType.LOOKAHEAD
-                }
+            }
+            hasAssertions = true
+            if(assertionType.isInputBoundary){
+                val assertionGene = AssertionRxGene(null, assertionType)
+                res.genes.add(assertionGene)
+            } else {
+                val innerDisjList = buildDisjunctionList(assertionCtx.disjunction())
                 val assertionGene = AssertionRxGene(innerDisjList, assertionType)
-                hasAssertions = true
                 res.genes.add(assertionGene)
             }
             return res
