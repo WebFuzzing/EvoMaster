@@ -2,6 +2,7 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.VersionNumbers
 import com.webfuzzing.commons.report.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestCaseCode
@@ -146,7 +147,7 @@ class WFCReportWriter {
         val report = Report()
         val toolName = "EvoMaster"
 
-        report.schemaVersion = getWFCVersion()
+        report.schemaVersion = VersionNumbers.REPORT
         report.toolName = toolName
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
         report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
