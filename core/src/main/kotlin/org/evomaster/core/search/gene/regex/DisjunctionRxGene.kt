@@ -352,13 +352,13 @@ class DisjunctionRxGene(
         var pending = AssertionRepairResult.SUCCESS
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            val backward = assertion.assertionType == AssertionType.LOOKBEHIND
+            val backward = assertion.backward
             val target = if (backward) genesBefore(idx) else genesAfter(idx)
 
-            val resolution = if (target.isEmpty()) {
-                repairAssertionWithNoTarget(assertion, backward, randomness)
-            } else {
-                repairAssertionAgainstTarget(assertion, target, backward, randomness)
+            val resolution = when {
+                assertion.isInputBoundary -> repairBoundaryAssertion(target, backward)
+                target.isEmpty() -> repairAssertionWithNoTarget(assertion, backward, randomness)
+                else -> repairAssertionAgainstTarget(assertion, target, backward, randomness)
             }
             pending = pending.mergedWith(resolution)
             if (!pending.success) {
@@ -446,12 +446,12 @@ class DisjunctionRxGene(
     /**
      * Resolves a "" (empty) requirement: every gene in [target] must collapse to zero width.
      */
-    private fun resolveEmptyRequirement(target: List<Gene>): AssertionRepairResult {
+    private fun resolveEmptyRequirement(target: List<Gene>, backward: Boolean): AssertionRepairResult {
         if (target.any { !(it as RxAbsorbable).canBeZeroWidth }) {
             return AssertionRepairResult.FAILURE
         }
         target.forEach { (it as RxAbsorbable).forceZeroWidth() }
-        return AssertionRepairResult.SUCCESS
+        return AssertionRepairResult.stillNeeded("", backward)
     }
 
     /**
@@ -460,7 +460,7 @@ class DisjunctionRxGene(
      */
     private fun resolveOutwardRequirement(requirement: String, target: List<Gene>, backward: Boolean): AssertionRepairResult {
         if (requirement.isEmpty()) {
-            return resolveEmptyRequirement(target)
+            return resolveEmptyRequirement(target, backward)
         }
         if (target.isEmpty()) {
             return AssertionRepairResult.stillNeeded(requirement, backward)
@@ -486,4 +486,10 @@ class DisjunctionRxGene(
             )
         }
     }
+
+    /**
+     * Repair input boundary assertions (`^` and `$` for example) by forcing taget (and whatever follows) to zero width.
+     */
+    private fun repairBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
+        resolveOutwardRequirement("", target, backward)
 }
