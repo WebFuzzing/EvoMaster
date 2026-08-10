@@ -92,6 +92,15 @@ data class RegexFlags(
             unicodeCharacterClass = externalRegexFlagsBitmask and Pattern.UNICODE_CHARACTER_CLASS != 0,
             comments              = externalRegexFlagsBitmask and Pattern.COMMENTS != 0
         )
+
+        /**
+         * These are the characters that are considered line terminators by default (i.e.: no flags used).
+         */
+        val defaultLineTerminators = listOf('\n', '\r', '\u0085', '\u2028', '\u2029').map{ CharacterRange(it) }
+        /**
+         * When the `UNIX_LINES` flag is on, only `\n` is considered a line terminator.
+         */
+        val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
     }
 
     /**
