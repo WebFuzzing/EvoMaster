@@ -295,21 +295,20 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin()) return ret.replace("\$", "\\\$")
-                .replace("\\\\u", "\\u")
-        //.replace("\$", "\${\'\$\'}")
-        //ret.replace("\$", "\\\$")
-        else return ret.replace("\\\\u", "\\u")
-
-        /*
-                   The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
-                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
-                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
-
-                     As far as I understand, the addition of an \ in the \unicode should not really happen.
-                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
-                     they are not.
-                     */
+        return when {
+            format.isKotlin() -> {
+                // JVM source must retain the doubled backslash. For example, input \uquWOnj must
+                // be emitted as "\\uquWOnj": "\uquWOnj" is invalid, while a valid sequence
+                // such as "\u0041" would silently change the runtime value to "A".
+                ret.replace("\$", "\\\$")
+            }
+            format.isJava() -> {
+                // Java translates eligible Unicode escapes before tokenizing string literals, so
+                // retaining the doubled source backslash also keeps the runtime sequence literal.
+                ret
+            }
+            else -> ret.replace("\\\\u", "\\u")
+        }
     }
 
     private fun applySqlEscapes(string: String, format: OutputFormat): String {

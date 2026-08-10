@@ -21,10 +21,6 @@ Also, some of these papers provides full replication packages, which are linked 
   *Fuzzing REST APIs in Industry: Necessary Features and Open Problems*.
   [[arxiv](https://arxiv.org/abs/2604.01759)]
 
-* O. Sahin, M. Zhang, A. Arcuri.
-  *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*. 
-  [[arxiv](https://arxiv.org/abs/2604.00702)]
-
 * H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
   *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
   [[arxiv](https://arxiv.org/abs/2505.19625)]
@@ -41,6 +37,11 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2026
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*.
+  Journal of Systems and Software (JSS).
+  _(to appear)_
 
 * M. T. Shalmani, A. Golmohammadi, J. P. Galeotti, A. Arcuri.
   *Online Machine Learning Prediction of Failed  Calls to Enhance REST API Fuzzing*.
