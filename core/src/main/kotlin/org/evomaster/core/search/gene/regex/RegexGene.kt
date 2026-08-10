@@ -42,6 +42,9 @@ class RegexGene(
 ) : CompositeFixedGene(name, disjunctions) {
 
 
+    var javaPrefix : String = ""
+    var javaPostfix : String = ""
+
     override fun copyContent(): Gene {
         return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
     }
@@ -77,12 +80,26 @@ class RegexGene(
 
         repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
             disjunctions.randomize(randomness, tryToForceNewValue)
-            if (pattern!!.matcher(disjunctions.getValueAsPrintableString()).find()) {
+            if (pattern!!.matcher(getValueAsRawString()).find()) {
                 return
             }
             if (hasAssertions) {
-                disjunctions.attemptAssertionRepair(randomness)
-                if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
+                if(assertionRepairResult.success){
+                    javaPrefix = assertionRepairResult.neededPrefix
+                        ?: if(randomness.nextBoolean()){
+                            ""
+                        } else {
+                            "prefix_"
+                        }
+                    javaPostfix = assertionRepairResult.neededPostfix
+                        ?: if(randomness.nextBoolean()){
+                            ""
+                        } else {
+                            "_postfix"
+                        }
+                }
+                if (pattern.matcher(getValueAsRawString()).find()) {
                     return
                 }
             }
@@ -182,7 +199,11 @@ class RegexGene(
             return fixedValue!!
         }
 
-        return disjunctions.getValueAsPrintableString(targetFormat = null)
+        return if(regexType == RegexType.JVM){
+            javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
+        } else {
+            disjunctions.getValueAsPrintableString(targetFormat = null)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
