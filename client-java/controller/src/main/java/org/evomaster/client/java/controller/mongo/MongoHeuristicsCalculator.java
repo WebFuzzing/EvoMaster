@@ -127,6 +127,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((SizeOperation) operation, document);
         } else if (operation instanceof ModOperation) {
             return computeHeuristic((ModOperation) operation, document);
+        } else if (operation instanceof BitsOperation) {
+            return computeHeuristic((BitsOperation) operation, document);
         } else if (operation instanceof NotOperation) {
             return computeHeuristic((NotOperation) operation, document);
         } else if (operation instanceof TypeOperation) {
@@ -158,10 +160,17 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(expectedValue);
+        if (!isTypeSupportedForComparison(actualValue)) {
+            throw new IllegalArgumentException("Unsupported type: " + actualValue.getClass().getName());
+        }
+        if (!isTypeSupportedForComparison(expectedValue)) {
+            throw new IllegalArgumentException("Unsupported type: " + expectedValue.getClass().getName());
+        }
 
         final Truthness truthnessOfComparison;
         if (actualValue instanceof Number && expectedValue instanceof Number) {
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison((Number) actualValue, (Number) expectedValue, comparisonOperatorType);
+
         } else if (actualValue instanceof String && expectedValue instanceof String) {
             String actualString = (String) actualValue;
             String expectedString = (String) expectedValue;
@@ -169,8 +178,25 @@ public class MongoHeuristicsCalculator {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+
         } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForBooleanComparison((Boolean) actualValue, (Boolean) expectedValue, comparisonOperatorType);
+            int actualIntValue = toIntValue((Boolean) actualValue);
+            int expectedIntValue = toIntValue((Boolean) expectedValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(
+                    actualIntValue, expectedIntValue, comparisonOperatorType);
+
+        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
+            truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
+
+        } else if (actualValue instanceof Date && expectedValue instanceof Date) {
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
+
+
+        } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
+            long actualTimestamp = BsonHelper.getBsonTimestampValue(actualValue);
+            long expectedTimestamp = BsonHelper.getBsonTimestampValue(expectedValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(actualTimestamp, expectedTimestamp, comparisonOperatorType);
+
         } else if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
             String actualString = actualValue.toString();
             String expectedString = expectedValue.toString();
@@ -178,14 +204,35 @@ public class MongoHeuristicsCalculator {
                 taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
-        } else if (actualValue instanceof Date || expectedValue instanceof Date) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(actualValue), convertToInstant(expectedValue), comparisonOperatorType);
-        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
-            truthnessOfComparison = calculateTruthnessForListComparison((List<?>) actualValue, (List<?>) expectedValue, comparisonOperatorType);
+
         } else {
-            throw new IllegalArgumentException("Unsupported value type: " + actualValue.getClass().getName());
+            // If both types are supported, but no actual comparison logic is defined,
+            // we considered them to be incompatible, therefore the comparison returns false.
+            truthnessOfComparison = C_FALSE;
         }
         return truthnessOfComparison;
+    }
+
+    private static int toIntValue(Boolean actualValue) {
+        return actualValue ? 1 : 0;
+    }
+
+    /**
+     * Checks if the provided value is of a supported type for comparison.
+     *
+     * @param value
+     * @return
+     */
+    private static boolean isTypeSupportedForComparison(Object value) {
+        Objects.requireNonNull(value);
+
+        return value instanceof String ||
+                value instanceof Number ||
+                value instanceof Boolean ||
+                value instanceof Date ||
+                value instanceof List<?> ||
+                BsonHelper.isObjectId(value) ||
+                BsonHelper.isBsonTimestamp(value);
     }
 
     /**
@@ -532,6 +579,40 @@ public class MongoHeuristicsCalculator {
             long actualRemainder = ((Number) actualValue).longValue() % divisor;
             Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
             return buildSafeScaledTruthness(res);
+        }
+    }
+
+    private Truthness computeHeuristic(BitsOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+
+        String fieldName = operation.getFieldName();
+        if (!documentContainsField(document, fieldName)) {
+            return C_FALSE;
+        }
+
+        Object actualValue = getValue(document, fieldName);
+        if (!(actualValue instanceof Number)) {
+            return C_FALSE;
+        }
+
+        final long bitmask = operation.getBitmask();
+        final long maskedValue = ((Number) actualValue).longValue() & bitmask;
+        final int numberOfSetBits = Long.bitCount(maskedValue);
+        final int numberOfBitsInMask = Long.bitCount(bitmask);
+        if (operation instanceof BitsAllClearOperation) {
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            return buildSafeScaledTruthness(equalityTruthness);
+        } else if (operation instanceof BitsAllSetOperation) {
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            return buildSafeScaledTruthness(equalityTruthness);
+        } else if (operation instanceof BitsAnyClearOperation) {
+            Truthness allSetTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            return buildSafeScaledTruthness(allSetTruthness).invert();
+        } else if (operation instanceof BitsAnySetOperation) {
+            Truthness allClearTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            return buildSafeScaledTruthness(allClearTruthness).invert();
+        } else {
+            throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
         }
     }
 
