@@ -118,9 +118,9 @@ object RestActionBuilderV3 {
 
         val inferFormatFromNames: Boolean = true,
 
-        val disableJsonPatchSupport: Boolean = false,
+        val enableJsonPatchSupport: Boolean = true,
 
-        val disableXMLSupport: Boolean = false,
+        val enableXmlSupport: Boolean = true,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -130,8 +130,8 @@ object RestActionBuilderV3 {
             usingWhiteBox = !config.blackBox,
             enableAdvancedFormats = config.enableAdvancedFormats,
             inferFormatFromNames = config.inferFormatFromNames,
-            disableJsonPatchSupport = config.disableJsonPatchSupport,
-            disableXMLSupport = config.disableXMLSupport,
+            enableJsonPatchSupport = config.enableJsonPatchSupport,
+            enableXmlSupport = config.enableXmlSupport,
         )
 
         init {
@@ -756,8 +756,8 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        val isJsonPatch = !options.disableJsonPatchSupport &&
-                verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
+        val isJsonPatch = options.enableJsonPatchSupport &&
+                verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch", ignoreCase = true) }
 
         val name: String
         var gene: Gene
@@ -783,7 +783,7 @@ object RestActionBuilderV3 {
             }
             gene = JsonPatchDocumentGene(name, resourceGene)
         } else {
-            if (!options.disableXMLSupport) {
+            if (options.enableXmlSupport) {
                 // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
                 val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
                 name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
@@ -1149,7 +1149,7 @@ object RestActionBuilderV3 {
                     // if available, otherwise fallback to name + "_item".
                     // When XML support is disabled, ignore xml.name and always use the generic
                     // fallback, so we emulate the pre-XML-support behaviour of EvoMaster.
-                    val itemName = if (!options.disableXMLSupport) {
+                    val itemName = if (options.enableXmlSupport) {
                         schema.xml?.name ?: (name + "_item")
                     } else {
                         name + "_item"
@@ -1188,7 +1188,7 @@ object RestActionBuilderV3 {
                 // Only detect XML attribute fields when XML support is enabled. When disabled,
                 // this stays empty so we fall back to a plain ObjectGene (attributes rendered as
                 // child elements), matching how EvoMaster behaved before ObjectWithAttributesGene.
-                val attributeNames = if (!options.disableXMLSupport) {
+                val attributeNames = if (options.enableXmlSupport) {
                     properties
                         .filterValues { it.xml?.attribute == true }
                         .keys
@@ -1651,7 +1651,7 @@ object RestActionBuilderV3 {
 
         // Same as above: skip XML attribute detection when XML support is disabled, so the object
         // is assembled as a plain ObjectGene (pre-XML-support behaviour).
-        val attributeNames = if (!options.disableXMLSupport) {
+        val attributeNames = if (options.enableXmlSupport) {
             schema.properties
                 ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
                 ?.map { it.key }
