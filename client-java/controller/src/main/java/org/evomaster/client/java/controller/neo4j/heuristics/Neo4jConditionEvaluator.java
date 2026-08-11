@@ -216,18 +216,18 @@ public class Neo4jConditionEvaluator {
             return UNVALUATABLE;
         }
         List<Operand> elements = ((ListOperand) cc.getRight()).getElements();
-        List<Truthness> truths = new ArrayList<>();
+        List<Truthness> listOfTruthness = new ArrayList<>();
         for (Operand element : elements) {
             Object ev = resolveOperandValue(element, mapping);
             if (ev == UNRESOLVED || ev == null) {
                 continue;
             }
-            truths.add(equalityTruthness(l, ev));
+            listOfTruthness.add(equalityTruthness(l, ev));
         }
-        if (truths.isEmpty()) {
+        if (listOfTruthness.isEmpty()) {
             return UNVALUATABLE;
         }
-        return TruthnessUtils.buildOrAggregationTruthness(truths.toArray(new Truthness[0]));
+        return TruthnessUtils.buildOrAggregationTruthness(listOfTruthness.toArray(new Truthness[0]));
     }
 
     private Truthness evaluateStringPredicate(ComparisonCondition cc, Neo4jMapping mapping) {
@@ -269,17 +269,17 @@ public class Neo4jConditionEvaluator {
      * nothing to measure, and the result is {@link #UNVALUATABLE} itself so the marker survives.
      */
     private Truthness aggregate(List<CypherCondition> conditions, Neo4jMapping mapping, boolean and) {
-        List<Truthness> truths = new ArrayList<>();
+        List<Truthness> listOfTruthness = new ArrayList<>();
         boolean allUnvaluatable = true;
         for (CypherCondition c : conditions) {
             Truthness t = evaluateCondition(c, mapping);
             allUnvaluatable &= isUnvaluatable(t);
-            truths.add(t);
+            listOfTruthness.add(t);
         }
-        if (truths.isEmpty() || allUnvaluatable) {
+        if (listOfTruthness.isEmpty() || allUnvaluatable) {
             return UNVALUATABLE;
         }
-        Truthness[] arr = truths.toArray(new Truthness[0]);
+        Truthness[] arr = listOfTruthness.toArray(new Truthness[0]);
         return and ? TruthnessUtils.buildAndAggregationTruthness(arr)
                 : TruthnessUtils.buildOrAggregationTruthness(arr);
     }
