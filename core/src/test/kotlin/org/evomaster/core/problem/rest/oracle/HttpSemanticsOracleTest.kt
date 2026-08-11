@@ -706,15 +706,7 @@ class HttpSemanticsOracleTest {
         assertFalse(mismatch)
     }
 
-    @Test
-    fun testPut_noBodyParam_getHasServerDefaults_returnsFalse() {
-        val mismatch = runMismatchedPutOracle(
-            path = "/users",
-            putBody = null,
-            getResponseBody = """{"id":42,"name":"default","createdAt":"2026-01-01"}"""
-        )
-        assertTrue(mismatch)
-    }
+
 
     @Test
     fun testPut_noBodyParam_getAlsoEmpty_returnsFalse() {
@@ -727,10 +719,22 @@ class HttpSemanticsOracleTest {
     }
 
     @Test
-    fun testPut_bodyOptionalGeneInactive_getHasContent_returnsTrue() {
+    fun testPut_noBodyParam_getHasServerDefaults_returnsFalse() {
+        // no BodyParam at all and no schema -- no field info to verify against,
+        // so no verdict, regardless of what GET returns.
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = null,
+            getResponseBody = """{"id":42,"name":"default","createdAt":"2026-01-01"}"""
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_bodyOptionalGeneInactive_getHasContent_returnsFalse() {
         // Outer OptionalGene wrapping the body is inactive — nothing was sent.
-        // The inner ObjectGene's fields must NOT be treated as sent fields.
-        // Equivalent to "no body": GET returning content is flagged.
+        // The inner ObjectGene's fields must NOT be treated as sent fields, and with
+        // no schema there is no field info to verify against, so no verdict.
         val mismatch = runMismatchedPutOracle(
             path = "/users",
             putBody = jsonPutBodyParamOptionalInactive(
@@ -738,7 +742,7 @@ class HttpSemanticsOracleTest {
             ),
             getResponseBody = """{"name":"Bob"}"""
         )
-        assertTrue(mismatch)
+        assertFalse(mismatch)
     }
 
     @Test
