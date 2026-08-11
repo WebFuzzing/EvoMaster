@@ -62,6 +62,9 @@ class HttpSemanticsService : TimeBoxedPhase{
     @Inject
     private lateinit var epc: ExecutionPhaseController
 
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -745,32 +748,14 @@ class HttpSemanticsService : TimeBoxedPhase{
         return candidates
     }
 
-    private fun locationPathOnly(location: String): String? {
-        return try {
-            val p = java.net.URI(location).rawPath
-            if (p.isNullOrBlank()) null else p
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun declaredPathMatching(resolvedPath: String): RestPath? {
-        return actionDefinitions.asSequence()
-            .map { it.path }
-            .distinct()
-            .filter { it.matches(resolvedPath) }
-            .minByOrNull { it.getParameterTokens().size }
-    }
-
     /**
      * Verb to use for the Location follow-up call. If the Location points to a path
      * declared in the schema, use its declared verbs by [locationFollowUpVerbPriority];
      * otherwise default to GET.
      */
     private fun followUpVerbForLocation(location: String): HttpVerb {
-        val pathOnly = locationPathOnly(location) ?: return HttpVerb.GET
-        val declaredPath = declaredPathMatching(pathOnly) ?: return HttpVerb.GET
-        val verbs = actionDefinitions.filter { it.path == declaredPath }.map { it.verb }.toSet()
+        val declaredPath = callGraphService.resolveDeclaredPath(location) ?: return HttpVerb.GET
+        val verbs = callGraphService.endpointsForPath(declaredPath).map { it.verb }.toSet()
         return locationFollowUpVerbPriority.firstOrNull { verbs.contains(it) } ?: HttpVerb.GET
     }
 

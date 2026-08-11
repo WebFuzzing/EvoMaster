@@ -20,6 +20,7 @@ object HttpSemanticsOracle {
     /**
      * Verbs that the Location follow-up call may use (see HttpSemanticsService).
      */
+    //TODO update when QUERY is going to be added
     private val LOCATION_FOLLOWUP_VERBS = setOf(
         HttpVerb.GET, HttpVerb.DELETE, HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH
     )
