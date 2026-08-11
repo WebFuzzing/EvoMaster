@@ -1766,8 +1766,19 @@ class EMConfig {
         /** Selects the model with the highest average across the considered performance metrics. */
         MAX_OF_AVERAGE,
 
-        /** Selects the model with the highest minimum value across the considered performance metrics. */
-        MAX_OF_MIN
+        /**
+         * Selects the model with the highest harmonic mean across the considered performance metrics.
+         * The harmonic mean penalizes weaker metrics,
+         * favoring models with balanced performance across all considered metrics.
+         *
+         * For example, consider the metrics of models A as [0.95, 0.9, 0.9, 0.3] and B as [0.6, 0.7, 0.65, 0.75].
+         * Their harmonic means are 0.60 and 0.66, so B is selected even though A is very strong in some metrics.
+         */
+        MAX_OF_HARMONIC_MEAN,
+
+        /** Strictly selects the model with the highest minimum value across the considered performance metrics. */
+        MAX_OF_MIN,
+
     }
 
     @Experimental

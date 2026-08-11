@@ -146,8 +146,17 @@ class AIResponseClassifier : AIModel {
                 AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE ->
                     metrics.average()
 
+                AIEnsembleBestModelSelectionStrategy.MAX_OF_HARMONIC_MEAN ->
+                    if (metrics.any { it == 0.0 }) {
+                        0.0
+                    } else {
+                        metrics.size.toDouble() / metrics.sumOf { 1.0 / it }
+                    }
+
                 AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN ->
                     metrics.min()
+
+
             }
         }
     }

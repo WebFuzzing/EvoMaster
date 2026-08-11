@@ -265,7 +265,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `FULL_HISTORY`.|
-|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_MIN`. *Default value*: `MAX_OF_AVERAGE`.|
+|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_HARMONIC_MEAN, MAX_OF_MIN`. *Default value*: `MAX_OF_AVERAGE`.|
 |`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.8`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
