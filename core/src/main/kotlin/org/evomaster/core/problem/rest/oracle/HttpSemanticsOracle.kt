@@ -17,6 +17,20 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 object HttpSemanticsOracle {
 
+    /**
+     * Verbs that the Location follow-up call may use (see HttpSemanticsService).
+     */
+    //TODO update when QUERY is going to be added
+    private val LOCATION_FOLLOWUP_VERBS = setOf(
+        HttpVerb.GET, HttpVerb.DELETE, HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH
+    )
+
+    /**
+     * A Location follow-up returning one of these is treated as an invalid Location:
+     * 404, 405, 500, 501.
+     */
+    private val INVALID_LOCATION_STATUS = setOf(404, 405, 500, 501)
+
 
 
     fun hasRepeatedCreatePut(individual: RestIndividual,
@@ -723,12 +737,13 @@ object HttpSemanticsOracle {
      * Checks the invalid-location oracle:
      *
      *   ANY /X  -> response with Location header L
-     *   GET  L  -> 404   (BUG: location does not point to an existing resource)
+     *   VERB L  -> 404/405/500/501   (BUG: location does not point to a usable resource)
      *
      * Sequence checked: the last two main actions of the individual.
      *  - second-to-last (previous) — any verb — whose result has a non-blank Location header.
-     *  - last is a GET bound to that Location via [RestCallAction.usePreviousLocationId].
-     *  - last action's response is 404.
+     *  - last is bound to that Location via [RestCallAction.usePreviousLocationId]. Its verb is
+     *    chosen from the schema (GET when the Location path is undeclared), so it is not GET-only.
+     *  - last action's response is in [INVALID_LOCATION_STATUS].
      */
     fun hasInvalidLocation(
         individual: RestIndividual,
@@ -741,11 +756,9 @@ object HttpSemanticsOracle {
         val previous = actions[actions.size - 2]
         val follow   = actions[actions.size - 1]
 
-        // follow-up must be a GET, and it must actually be chained to the previous Location
-        if (follow.verb != HttpVerb.GET) return false
+        if (follow.verb !in LOCATION_FOLLOWUP_VERBS) return false
         if (follow.usePreviousLocationId.isNullOrBlank()) return false
 
-        // same auth so a 404 cannot be confused with an authorization problem
         if (previous.auth.isDifferentFrom(follow.auth)) return false
 
         val resPrevious = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
@@ -756,8 +769,8 @@ object HttpSemanticsOracle {
         // the only structural precondition on the previous response is a non-blank Location header
         if (resPrevious.getLocation().isNullOrBlank()) return false
 
-        // BUG: a GET on that Location returns 404
-        return resFollow.getStatusCode() == 404
+        // BUG: the follow-up on that Location returns 404/405/500/501
+        return resFollow.getStatusCode() in INVALID_LOCATION_STATUS
     }
 
     /**
