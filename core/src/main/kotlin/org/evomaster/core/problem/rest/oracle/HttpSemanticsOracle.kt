@@ -325,21 +325,10 @@ object HttpSemanticsOracle {
                 ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
-            assert(getBody.isNotEmpty())
-            // no information to verify against; flag only when PUT sent nothing either
-            if(putBody.isNullOrEmpty()){
-                /*
-                    TODO what was motivation for this edge case?
-                    extra fields in GET that are not declared in PUT are ignored in this oracle...
-                    however, here, if there is not field in PUT, we do the opposite, and mark as
-                    failure if there are extra fields in GET?
-                    why this flipped behavior?
-                 */
-                return "PUT has no data to set, but GET returns data"
-            } else {
-                //TODO is this branch even possible?
-                return null
-            }
+            // no field info at all (no schema, and nothing extractable from the PUT body
+            // itself, whether it's null, empty, "{}", or a non-object body). Nothing to
+            // verify against, so treat it the same regardless of what putBody looks like.
+            return null
         }
 
         val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
@@ -402,22 +391,6 @@ object HttpSemanticsOracle {
         )
         if (getSchemaFields.isEmpty()) return emptySet()
         return candidates intersect getSchemaFields
-    }
-
-    /**
-     * Unified field-level comparison for JSON, XML and form-encoded PUT bodies.
-     *
-     * @param sentFields  fields whose values must match between PUT and GET
-     * @param wipedFields fields that must be absent (or null) in the GET response
-     */
-    internal fun hasMismatchedPutFields(
-        putBody: String,
-        getBody: String,
-        sentFields: Set<String>,
-        wipedFields: Set<String>,
-        bodyParam: BodyParam? = null
-    ): Boolean {
-        return mismatchedPutFields(putBody, getBody, sentFields, wipedFields, bodyParam).isNotEmpty()
     }
 
     internal fun mismatchedPutFields(
