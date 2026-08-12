@@ -413,8 +413,7 @@ object HttpSemanticsOracle {
                 } else {
                     for ((field, valuePut) in fieldsPut) {
                         val valueGet = fieldsGet[field]
-                        //TODO but what if the values are 'null'??? was this correct?
-                        if(valueGet == null){
+                        if(valueGet == null){ //valuePut is never null
                             errors.add(field)
                         } else if (valuePut != valueGet) {
                                 errors.add(field)
