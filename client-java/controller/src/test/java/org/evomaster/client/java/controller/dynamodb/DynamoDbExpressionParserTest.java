@@ -17,8 +17,26 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
     public void testBlankAndInvalidExpressions() {
         assertNull(parser.parse(null, Collections.emptyMap(), Collections.emptyMap()));
         assertNull(parser.parse("   ", Collections.emptyMap(), Collections.emptyMap()));
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse("id =", Collections.emptyMap(), Collections.emptyMap()));
+        assertInvalidExpression("id =");
+    }
+
+    @Test
+    public void testAttributeTypeRequiresAValidStringPlaceholder() {
+        for (DynamoDbAttributeType expectedType : DynamoDbAttributeType.values()) {
+            TypeOperation operation = castAs(parser.parse(
+                    "attribute_type(profile, :expectedType)",
+                    Collections.emptyMap(),
+                    values(":expectedType", expectedType.getToken())), TypeOperation.class);
+
+            assertEquals(expectedType, operation.getExpectedType());
+        }
+
+        assertInvalidExpression("attribute_type(profile, S)");
+        assertInvalidExpression("attribute_type(profile, 'S')");
+        assertInvalidExpression("attribute_type(profile, :expectedType)");
+        assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", 10L);
+        assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", "s");
+        assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", "PLAYER");
     }
 
     @Test
@@ -49,10 +67,10 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
     public void testFunctionsLogicalCompositionAliasesAndIndexes() {
         QueryOperation operation = parser.parse(
                 "NOT (attribute_exists(#a[0].#b) AND begins_with(email, :p) AND contains(titles, 'World Cup')) "
-                        + "OR attribute_type(legendType, S) "
+                        + "OR attribute_type(legendType, :legendType) "
                         + "OR size(teams) >= 2",
                 names("#a", "squads", "#b", "captain"),
-                values(":p", "messi@")
+                values(":p", "messi@", ":legendType", "S")
         );
 
         OrOperation rootOr = castAs(operation, OrOperation.class);
@@ -76,7 +94,7 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
 
         TypeOperation type = castAs(rootOr.getConditions().get(1), TypeOperation.class);
         assertEquals("legendType", type.getFieldName());
-        assertEquals("S", type.getExpectedType());
+        assertEquals(DynamoDbAttributeType.STRING, type.getExpectedType());
 
         SizeOperation size = castAs(rootOr.getConditions().get(2), SizeOperation.class);
         assertEquals("teams", size.getFieldName());
@@ -119,5 +137,16 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
         assertEquals("allTimeGoals", comparison.getFieldName());
         //Assert the number was parsed as a String as a fallback
         assertEquals("9999999999999999999999999999999999999", comparison.getValue());
+    }
+
+    /**
+     * Verifies that parsing an invalid expression fails.
+     *
+     * @param expression expression to parse
+     * @param expressionAttributeValues optional expression-attribute key/value pairs
+     */
+    private void assertInvalidExpression(String expression, Object... expressionAttributeValues) {
+        assertThrows(IllegalArgumentException.class,
+                () -> parser.parse(expression, Collections.emptyMap(), values(expressionAttributeValues)));
     }
 }
