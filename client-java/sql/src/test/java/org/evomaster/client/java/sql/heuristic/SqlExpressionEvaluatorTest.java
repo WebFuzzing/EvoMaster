@@ -117,7 +117,9 @@ class SqlExpressionEvaluatorTest {
 
     }
 
-    private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, QueryResult queryResult) {
+/* TODO: Check if we can remove this code
+
+   private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, QueryResult queryResult) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         Select select = (Select) parsedSqlCommand;
 
@@ -137,7 +139,7 @@ class SqlExpressionEvaluatorTest {
 
         Truthness truthness = evaluator.getEvaluatedTruthness();
         assertTrue(truthness.isTrue());
-    }
+    }*/
 
 
     private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow... row) {
@@ -1283,7 +1285,7 @@ class SqlExpressionEvaluatorTest {
         String sqlCommand = "SELECT COUNT(*) FROM Employees";
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
-        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        SelectItem<?> selectItem = plainSelect.getSelectItems().get(0);
         Expression countExpression = selectItem.getExpression();
 
         QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
@@ -1305,7 +1307,7 @@ class SqlExpressionEvaluatorTest {
 
         countExpression.accept(evaluator);
         assertNotNull(evaluator.getEvaluatedValue());
-        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertInstanceOf(Long.class, evaluator.getEvaluatedValue());
         assertEquals(2L, evaluator.getEvaluatedValue());
     }
 
@@ -1314,7 +1316,7 @@ class SqlExpressionEvaluatorTest {
         String sqlCommand = "SELECT SUM(salary) FROM Employees";
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
-        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        SelectItem<?> selectItem = plainSelect.getSelectItems().get(0);
         Expression sumExpression = selectItem.getExpression();
 
         QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
@@ -1339,7 +1341,7 @@ class SqlExpressionEvaluatorTest {
 
         sumExpression.accept(evaluator);
         assertNotNull(evaluator.getEvaluatedValue());
-        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertInstanceOf(Long.class, evaluator.getEvaluatedValue());
         assertEquals(30_000L, evaluator.getEvaluatedValue());
     }
 
@@ -1348,7 +1350,7 @@ class SqlExpressionEvaluatorTest {
         String sqlCommand = "SELECT AVG(salary) FROM Employees";
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
-        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        SelectItem<?> selectItem = plainSelect.getSelectItems().get(0);
         Expression avgExpression = selectItem.getExpression();
 
         QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
@@ -1373,7 +1375,7 @@ class SqlExpressionEvaluatorTest {
 
         avgExpression.accept(evaluator);
         assertNotNull(evaluator.getEvaluatedValue());
-        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertInstanceOf(Long.class, evaluator.getEvaluatedValue());
         assertEquals(15_000L, evaluator.getEvaluatedValue());
     }
 
@@ -1382,7 +1384,7 @@ class SqlExpressionEvaluatorTest {
         String sqlCommand = "SELECT MAX(salary) FROM Employees";
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
-        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        SelectItem<?> selectItem = plainSelect.getSelectItems().get(0);
         Expression maxExpression = selectItem.getExpression();
 
         QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
@@ -1407,7 +1409,7 @@ class SqlExpressionEvaluatorTest {
 
         maxExpression.accept(evaluator);
         assertNotNull(evaluator.getEvaluatedValue());
-        assertTrue(evaluator.getEvaluatedValue() instanceof Integer);
+        assertInstanceOf(Integer.class, evaluator.getEvaluatedValue());
         assertEquals(20_000, evaluator.getEvaluatedValue());
     }
 
@@ -1416,7 +1418,7 @@ class SqlExpressionEvaluatorTest {
         String sqlCommand = "SELECT MIN(salary) FROM Employees";
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
-        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        SelectItem<?> selectItem = plainSelect.getSelectItems().get(0);
         Expression minExpression = selectItem.getExpression();
 
         QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
@@ -1441,7 +1443,7 @@ class SqlExpressionEvaluatorTest {
 
         minExpression.accept(evaluator);
         assertNotNull(evaluator.getEvaluatedValue());
-        assertTrue(evaluator.getEvaluatedValue() instanceof Integer);
+        assertInstanceOf(Integer.class, evaluator.getEvaluatedValue());
         assertEquals(10_000, evaluator.getEvaluatedValue());
     }
 
@@ -1533,7 +1535,7 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actualTimestamp = evaluator.getEvaluatedValue();
-        assertTrue(actualTimestamp instanceof Timestamp);
+        assertInstanceOf(Timestamp.class, actualTimestamp);
         final Timestamp exptectedTimestamp = java.sql.Timestamp.valueOf("2025-01-14 12:30:45");
         assertEquals(exptectedTimestamp, actualTimestamp);
     }
@@ -1551,7 +1553,7 @@ class SqlExpressionEvaluatorTest {
         expression.accept(evaluator);
         Object actualDate = evaluator.getEvaluatedValue();
 
-        assertTrue(actualDate instanceof java.sql.Date);
+        assertInstanceOf(java.sql.Date.class, actualDate);
 
         final java.sql.Date expectedDate = java.sql.Date.valueOf("2025-01-14");
         assertEquals(expectedDate, actualDate);
@@ -1570,7 +1572,7 @@ class SqlExpressionEvaluatorTest {
         expression.accept(evaluator);
         Object actualTime = evaluator.getEvaluatedValue();
 
-        assertTrue(actualTime instanceof java.sql.Time);
+        assertInstanceOf(Time.class, actualTime);
 
         final java.sql.Time expectedTime = java.sql.Time.valueOf("12:30:45");
         assertEquals(expectedTime, actualTime);
@@ -1603,7 +1605,7 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
-        assertTrue(actual instanceof java.util.Date);
+        assertInstanceOf(Date.class, actual);
         Instant actualInstant = ((java.util.Date) actual).toInstant();
         Instant expectedInstant = Instant.parse("2025-01-14T00:00:00Z");
         assertEquals(expectedInstant, actualInstant);
@@ -1621,7 +1623,7 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
-        assertTrue(actual instanceof java.util.Date);
+        assertInstanceOf(Date.class, actual);
         Instant actualInstant = ((java.util.Date) actual).toInstant();
         final Timestamp expected = Timestamp.valueOf("2025-01-14 12:00:00");
         Instant expectedInstant = expected.toInstant();
@@ -1658,7 +1660,7 @@ class SqlExpressionEvaluatorTest {
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
 
-        assertTrue(actual instanceof java.time.OffsetDateTime);
+        assertInstanceOf(OffsetDateTime.class, actual);
 
         java.time.OffsetDateTime expected =
                 java.time.OffsetDateTime.parse("2025-01-22T15:30:45+02:00");
@@ -1678,7 +1680,7 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
-        assertTrue(actual instanceof Timestamp);
+        assertInstanceOf(Timestamp.class, actual);
         assertEquals(NowFunction.CANONICAL_NOW_VALUE, actual);
     }
 
@@ -1713,7 +1715,7 @@ class SqlExpressionEvaluatorTest {
     }
 
     @Test
-    public void testUpperCaseInsenstive() {
+    public void testUpperCaseInsensitive() {
         String sql = "upper('hello')";
         Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
 
