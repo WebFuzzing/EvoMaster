@@ -122,15 +122,10 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
      * Resolves the session's current default keyspace, for a statement that didn't
      * qualify its table with an explicit keyspace, so {@link ExecutedCqlCommand#getKeyspaceName()}
      * carries the same (never-null) keyspace {@link CassandraSchemaTracer} resolved the table's
-     * schema under, instead of staying null. Never lets a resolution failure break the SUT's own query.
+     * schema under, instead of staying null.
      */
     private static String resolveDefaultKeyspaceName(Object cqlSession) {
-        try {
-            return CassandraSchemaTracer.resolveKeyspaceName(cqlSession, null);
-        } catch (RuntimeException e) {
-            SimpleLogger.uniqueWarn("Failed to resolve Cassandra session's default keyspace");
-            return null;
-        }
+        return CassandraSchemaTracer.resolveKeyspaceName(cqlSession, null);
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
+import java.util.Objects;
 
 /**
  * Describes a CQL query whose target table was found empty when the corresponding heuristic
@@ -20,8 +21,8 @@ public class CassandraFailedQuery {
     private String tableSchema;
 
     public CassandraFailedQuery(String keyspaceName, String tableName, String tableSchema) {
-        this.keyspaceName = keyspaceName;
-        this.tableName = tableName;
+        this.keyspaceName = Objects.requireNonNull(keyspaceName);
+        this.tableName = Objects.requireNonNull(tableName);
         this.tableSchema = tableSchema;
     }
 

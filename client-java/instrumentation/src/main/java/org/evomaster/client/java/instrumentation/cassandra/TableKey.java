@@ -9,12 +9,18 @@ import java.util.Objects;
  */
 public class TableKey {
 
+    /**
+     * The keyspace a table belongs to.
+     */
     private final String keyspaceName;
+    /**
+     * The table name.
+     */
     private final String tableName;
 
     public TableKey(String keyspaceName, String tableName) {
-        this.keyspaceName = keyspaceName;
-        this.tableName = tableName;
+        this.keyspaceName = Objects.requireNonNull(keyspaceName);
+        this.tableName = Objects.requireNonNull(tableName);
     }
 
     public String getKeyspaceName() {

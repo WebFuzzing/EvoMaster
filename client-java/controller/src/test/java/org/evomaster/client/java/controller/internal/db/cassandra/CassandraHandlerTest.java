@@ -92,9 +92,9 @@ public class CassandraHandlerTest {
 
         assertEquals(1, results.size());
         CqlCommandWithDistance result = results.get(0);
-        assertEquals(cql, result.cqlCommand);
-        assertEquals(0.0, result.cqlDistanceWithMetrics.cqlDistance);
-        assertEquals(1, result.cqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(cql, result.getCqlCommand());
+        assertEquals(0.0, result.getCqlDistanceWithMetrics().getCqlDistance());
+        assertEquals(1, result.getCqlDistanceWithMetrics().getNumberOfEvaluatedRows());
     }
 
     @Test
@@ -107,8 +107,8 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertTrue(results.get(0).cqlDistanceWithMetrics.cqlDistance > 0);
-        assertEquals(1, results.get(0).cqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertTrue(results.get(0).getCqlDistanceWithMetrics().getCqlDistance() > 0);
+        assertEquals(1, results.get(0).getCqlDistanceWithMetrics().getNumberOfEvaluatedRows());
     }
 
     @Test
@@ -121,7 +121,7 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
 
         // the handler must never actually run the UPDATE itself, only read the table
         ResultSet check = session.execute("SELECT name FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1");
@@ -138,7 +138,7 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
 
         // the handler must never actually run the DELETE itself, only read the table
         ResultSet check = session.execute("SELECT id FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1 ALLOW FILTERING");
@@ -188,8 +188,8 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
-        assertEquals(1, results.get(0).cqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
+        assertEquals(1, results.get(0).getCqlDistanceWithMetrics().getNumberOfEvaluatedRows());
     }
 
     @Test
@@ -252,10 +252,10 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(2, results.size());
-        assertEquals(matchingCql, results.get(0).cqlCommand);
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
-        assertEquals(nonMatchingCql, results.get(1).cqlCommand);
-        assertTrue(results.get(1).cqlDistanceWithMetrics.cqlDistance > 0.0);
+        assertEquals(matchingCql, results.get(0).getCqlCommand());
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
+        assertEquals(nonMatchingCql, results.get(1).getCqlCommand());
+        assertTrue(results.get(1).getCqlDistanceWithMetrics().getCqlDistance() > 0.0);
     }
 
     @Test
@@ -268,8 +268,8 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
-        assertEquals(3, results.get(0).cqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
+        assertEquals(3, results.get(0).getCqlDistanceWithMetrics().getNumberOfEvaluatedRows());
     }
 
     @Test
@@ -280,8 +280,8 @@ public class CassandraHandlerTest {
         handler.handle(command("SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE age = 1000"));
 
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
-        double closeDistance = results.get(0).cqlDistanceWithMetrics.cqlDistance;
-        double farDistance = results.get(1).cqlDistanceWithMetrics.cqlDistance;
+        double closeDistance = results.get(0).getCqlDistanceWithMetrics().getCqlDistance();
+        double farDistance = results.get(1).getCqlDistanceWithMetrics().getCqlDistance();
 
         assertTrue(closeDistance > 0.0);
         assertTrue(farDistance < 1.0);
@@ -289,15 +289,12 @@ public class CassandraHandlerTest {
     }
 
     @Test
-    public void testMalformedSelectCommand_returnsMaxValueDistanceWithoutThrowing() {
-        // starts with SELECT (so it is buffered) but is not valid CQL beyond that
+    public void testMalformedSelectCommand_throws() {
+        // starts with SELECT (so it is buffered) but is not valid CQL beyond that: the table
+        // reference can't be resolved, and that's not an expected/routine outcome, so it throws
         handler.handle(command("SELECT"));
 
-        List<CqlCommandWithDistance> results = assertDoesNotThrow(handler::getEvaluatedCqlCommands);
-
-        assertEquals(1, results.size());
-        assertEquals(Double.MAX_VALUE, results.get(0).cqlDistanceWithMetrics.cqlDistance);
-        assertEquals(0, results.get(0).cqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertThrows(RuntimeException.class, handler::getEvaluatedCqlCommands);
     }
 
     @Test
@@ -342,7 +339,7 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(1, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
     }
 
     @Test
@@ -357,8 +354,8 @@ public class CassandraHandlerTest {
         List<CqlCommandWithDistance> results = handler.getEvaluatedCqlCommands();
 
         assertEquals(2, results.size());
-        assertEquals(0.0, results.get(0).cqlDistanceWithMetrics.cqlDistance);
-        assertTrue(results.get(1).cqlDistanceWithMetrics.cqlDistance > 0.0);
+        assertEquals(0.0, results.get(0).getCqlDistanceWithMetrics().getCqlDistance());
+        assertTrue(results.get(1).getCqlDistanceWithMetrics().getCqlDistance() > 0.0);
     }
 
     @Test

@@ -136,8 +136,8 @@ public class CqlParserUtils {
      * as part of the token text.
      *
      * @param root the root of a parsed CQL command, as returned by {@link #parseCqlCommand}
-     * @return the referenced keyspace/table, or {@code null} if the statement has none (or isn't
-     *         a SELECT/UPDATE/DELETE)
+     * @return the referenced keyspace/table;
+     * @throws IllegalArgumentException if the statement isn't a SELECT/UPDATE/DELETE
      */
     public static CqlTableReference getTableReference(CqlParser.RootContext root) {
         CqlParser.CqlContext cql = root.cqls() != null ? root.cqls().cql(0) : null;
@@ -152,7 +152,7 @@ public class CqlParserUtils {
             String keyspaceName = update.keyspace() != null ? update.keyspace().getText() : null;
             return new CqlTableReference(keyspaceName, update.table().getText());
         } else {
-            return null;
+            throw new IllegalArgumentException("Cannot extract a table reference from a non SELECT/UPDATE/DELETE CQL command: " + cql.getText());
         }
     }
 

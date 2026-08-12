@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.cassandra.model;
 
+import java.util.Objects;
+
 /**
  * The keyspace/table a CQL SELECT, UPDATE, or DELETE statement targets, as extracted directly
  * from the parsed CQL AST. Identifier text is kept verbatim (including surrounding double quotes,
@@ -21,7 +23,7 @@ public class CqlTableReference {
 
     public CqlTableReference(String keyspaceName, String tableName) {
         this.keyspaceName = keyspaceName;
-        this.tableName = tableName;
+        this.tableName = Objects.requireNonNull(tableName);
     }
 
     public String getKeyspaceName() {

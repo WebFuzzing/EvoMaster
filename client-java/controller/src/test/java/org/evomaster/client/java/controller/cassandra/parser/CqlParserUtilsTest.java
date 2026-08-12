@@ -17,11 +17,13 @@ public class CqlParserUtilsTest {
     // -------------------------------------------------------------------------
 
     private static CqlQueryOperation parseWhere(String cql) {
-        return CqlParserUtils.getWhereOperation(CqlParserUtils.parseCqlCommand(cql));
+        CqlParser.RootContext root = CqlParserUtils.parseCqlCommand(cql);
+        return CqlParserUtils.getWhereOperation(root);
     }
 
     private static CqlTableReference parseTableReference(String cql) {
-        return CqlParserUtils.getTableReference(CqlParserUtils.parseCqlCommand(cql));
+        CqlParser.RootContext root = CqlParserUtils.parseCqlCommand(cql);
+        return CqlParserUtils.getTableReference(root);
     }
 
     private static Object extractValue(CqlQueryOperation op) {

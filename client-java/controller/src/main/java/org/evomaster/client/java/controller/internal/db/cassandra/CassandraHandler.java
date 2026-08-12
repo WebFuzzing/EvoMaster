@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.Cassandra
 import org.evomaster.client.java.controller.cassandra.calculator.CassandraHeuristicsCalculator;
 import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
+import org.evomaster.client.java.controller.cassandra.parser.CqlParser;
 import org.evomaster.client.java.controller.cassandra.parser.CqlParserUtils;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
@@ -32,25 +33,26 @@ public class CassandraHandler {
      * Fully-qualified name of the Cassandra driver's session interface, used to locate it via
      * reflection on the live session object without a compile-time dependency on the driver.
      */
-    public static final String SESSION_INTERFACE = "com.datastax.oss.driver.api.core.CqlSession";
+    private static final String SESSION_INTERFACE = "com.datastax.oss.driver.api.core.CqlSession";
 
     /*
         Names of the driver methods invoked via reflection throughout this class.
      */
-    public static final String METHOD_EXECUTE = "execute";
-    public static final String METHOD_GET_COLUMN_DEFINITIONS = "getColumnDefinitions";
-    public static final String METHOD_GET_NAME = "getName";
-    public static final String METHOD_AS_INTERNAL = "asInternal";
-    public static final String METHOD_GET_OBJECT = "getObject";
+    private static final String METHOD_EXECUTE = "execute";
+    private static final String METHOD_GET_COLUMN_DEFINITIONS = "getColumnDefinitions";
+    private static final String METHOD_GET_NAME = "getName";
+    private static final String METHOD_AS_INTERNAL = "asInternal";
+    private static final String METHOD_GET_OBJECT = "getObject";
 
     /*
         Constants used during schema description
      */
-    public static final String PARTITION_KEY_COLUMN_SUFFIX = " PARTITION KEY";
-    public static final String CLUSTERING_COLUMN_SUFFIX = " CLUSTERING";
+    private static final String PARTITION_KEY_COLUMN_SUFFIX = " PARTITION KEY";
+    private static final String CLUSTERING_COLUMN_SUFFIX = " CLUSTERING";
+    private static final char COLUMN_NAME_TYPE_SEPARATOR = ' ';
 
-
-    public static final String SELECT_ALL_PREFIX = "SELECT * FROM ";
+    private static final String SELECT_ALL_PREFIX = "SELECT * FROM ";
+    private static final char KEYSPACE_TABLE_SEPARATOR = '.';
 
     /**
      * Live CqlSession from the SUT. Held as {@code Object} to avoid a hard compile-time
@@ -199,7 +201,7 @@ public class CassandraHandler {
     }
 
     private static String describeColumn(CassandraColumnMetadata column) {
-        StringBuilder description = new StringBuilder(column.getName()).append(' ').append(column.getCqlType());
+        StringBuilder description = new StringBuilder(column.getName()).append(COLUMN_NAME_TYPE_SEPARATOR).append(column.getCqlType());
         if (column.isPartitionKey()) {
             description.append(PARTITION_KEY_COLUMN_SUFFIX);
         }
@@ -217,11 +219,6 @@ public class CassandraHandler {
         String cql = info.getCqlCommand();
 
         CqlTableReference tableReference = resolveTableReference(cql);
-        if (tableReference == null) {
-            SimpleLogger.uniqueWarn("Could not determine the target table of CQL command: " + cql);
-
-            return new CqlDistanceWithMetrics(Double.MAX_VALUE, 0);
-        }
 
         List<CassandraRow> rows;
         try {
@@ -248,11 +245,9 @@ public class CassandraHandler {
     }
 
     private static CqlTableReference resolveTableReference(String cql) {
-        try {
-            return CqlParserUtils.getTableReference(CqlParserUtils.parseCqlCommand(cql));
-        } catch (Exception e) {
-            return null;
-        }
+        CqlParser.RootContext root = CqlParserUtils.parseCqlCommand(cql);
+
+        return CqlParserUtils.getTableReference(root);
     }
 
     /**
@@ -281,10 +276,19 @@ public class CassandraHandler {
     }
 
     private static String buildSelectAll(CqlTableReference tableReference) {
-        String keyspaceName = tableReference.getKeyspaceName();
-        String maybeKeyspace = keyspaceName != null ? keyspaceName + "." : "";
+        return SELECT_ALL_PREFIX + qualifiedTableName(tableReference);
+    }
 
-        return SELECT_ALL_PREFIX + maybeKeyspace + tableReference.getTableName();
+    /**
+     * Renders a table reference as {@code keyspace.table}, or just {@code table} when the
+     * reference has no keyspace (an unqualified statement, targeting the session's default
+     * keyspace).
+     */
+    private static String qualifiedTableName(CqlTableReference tableReference) {
+        String keyspaceName = tableReference.getKeyspaceName();
+        String maybeKeyspace = keyspaceName != null ? keyspaceName + KEYSPACE_TABLE_SEPARATOR : "";
+
+        return maybeKeyspace + tableReference.getTableName();
     }
 
     private Class<?> detectSessionInterface() throws ClassNotFoundException {
