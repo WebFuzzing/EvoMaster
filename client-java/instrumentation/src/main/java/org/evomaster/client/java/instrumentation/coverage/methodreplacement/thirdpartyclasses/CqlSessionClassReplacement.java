@@ -9,7 +9,6 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -104,18 +103,13 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
-     * Best-effort: caches the queried table's schema, read directly from the driver's own
-     * metadata, so it's available later without depending on Spring Data. Uses the raw,
-     * quote-preserving keyspace/table text (not the lower-cased, quote-stripped fields on
-     * {@link TableReference} used for {@link ExecutedCqlCommand}), since CQL treats quoted
-     * identifiers as case-sensitive. Never lets a schema-capture failure break the SUT's own query.
+     * Caches the queried table's schema, read directly from the driver's own metadata, so it's
+     * available later without depending on Spring Data. Uses the raw, quote-preserving
+     * keyspace/table text (not the lower-cased, quote-stripped fields on {@link TableReference}
+     * used for {@link ExecutedCqlCommand}), since CQL treats quoted identifiers as case-sensitive.
      */
     private static void captureTableSchema(Object cqlSession, TableReference ref) {
-        try {
-            CassandraSchemaTracer.resolve(cqlSession, ref.rawKeyspaceName, ref.rawTableName);
-        } catch (RuntimeException e) {
-            SimpleLogger.uniqueWarn("Failed to capture Cassandra schema for table " + ref.rawTableName);
-        }
+        CassandraSchemaTracer.resolve(cqlSession, ref.rawKeyspaceName, ref.rawTableName);
     }
 
     /**
