@@ -204,7 +204,7 @@ object HttpSemanticsOracle {
         }
 
         // extract the field names sent in the PUT/PATCH request body
-        val modifiedFieldNames = extractModifiedFieldNames(modify)
+        val modifiedFieldNames = extractDeclaredFieldNames(modify)
 
         // if we can identify specific fields, compare only those to avoid false positives from timestamps etc.
         if(modifiedFieldNames.isNotEmpty()
@@ -334,7 +334,7 @@ object HttpSemanticsOracle {
         }
 
         val sentFields = extractSentFieldNames(put)
-        val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
+        val allPutSchemaFields = extractDeclaredFieldNames(put).ifEmpty {
             schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) }
                 ?: emptySet()
         }
@@ -486,10 +486,12 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Extract field names from the PUT/PATCH request body.
-     * These are the fields that the client attempted to modify.
+     * Extract all declared field names from the PUT/PATCH request body.
+     * Not all these fields are necessarily used in the request, e.g., some
+     * might be de-activated/not-selected for modifications (eg potentially off if not
+     * marked as required).
      */
-    private fun extractModifiedFieldNames(modify: RestCallAction): Set<String> {
+    private fun extractDeclaredFieldNames(modify: RestCallAction): Set<String> {
 
         val objectGene = extractBodyObjectGene(modify) ?: return emptySet()
 
@@ -828,7 +830,7 @@ object HttpSemanticsOracle {
         // regardless of the PATCH. However, we are only looking at the fields of PATCH. it would be weird
         // to set a value with a PATCH that the API can change on a whim... not impossible, but most likely
         // very unlikely. so, in theory field flakiness should not be a problem here
-        val untouched = extractModifiedFieldNames(patch) - extractSentFieldNames(patch)
+        val untouched = extractDeclaredFieldNames(patch) - extractSentFieldNames(patch)
         if (untouched.isEmpty()) return false
 
         val bodyBefore = resBefore.getBody()
