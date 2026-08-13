@@ -636,8 +636,8 @@ object HttpSemanticsOracle {
      *   PUT /X        -> 2xx        (same body)
      *   GET /X (or ancestor) -> 2xx  (state after 2nd PUT)
      *
-     * Returns true if any numeric or boolean field differs between the two GET responses.
-     * String fields are intentionally ignored (timestamps/UUIDs etc. cause flakiness).
+     * Returns true if any numeric/boolean field or array size differs between the two GET
+     * responses. Strings and array content are ignored (timestamps/UUIDs/ordering cause flakiness).
      */
     fun hasNonIdempotentPut(
         individual: RestIndividual,
@@ -658,6 +658,9 @@ object HttpSemanticsOracle {
         // both PUTs on same resolved path with same auth
         if (!DynamicPathUtils.doesResolveToSamePath(put1,put2)) return false
         if (put1.auth.isDifferentFrom(put2.auth)) return false
+
+        // same body required
+        if (extractRequestBody(put1) != extractRequestBody(put2)) return false
 
         // both GETs on same resolved path with same auth
         if (!DynamicPathUtils.doesResolveToSamePath(get1,get2)) return false
@@ -691,12 +694,21 @@ object HttpSemanticsOracle {
             val fields1 = formatter.readFields(body1, numericAndBooleanOnly = true) ?: continue
             val fields2 = formatter.readFields(body2, numericAndBooleanOnly = true) ?: continue
 
-            if (fields1.isEmpty() && fields2.isEmpty()) continue
+            val lengths1 = formatter.readArrayLengths(body1) ?: emptyMap()
+            val lengths2 = formatter.readArrayLengths(body2) ?: emptyMap()
+
+            if (fields1.isEmpty() && fields2.isEmpty() && lengths1.isEmpty() && lengths2.isEmpty()) continue
 
             for ((name, v1) in fields1) {
                 val v2 = fields2[name] ?: continue
                 if (v1 != v2) return true
             }
+
+            for ((name, len1) in lengths1) {
+                val len2 = lengths2[name] ?: continue
+                if (len1 != len2) return true
+            }
+
             return false
         }
         return false
