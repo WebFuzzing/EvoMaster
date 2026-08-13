@@ -117,31 +117,6 @@ class SqlExpressionEvaluatorTest {
 
     }
 
-/* TODO: Check if we can remove this code
-
-   private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, QueryResult queryResult) {
-        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        Select select = (Select) parsedSqlCommand;
-
-
-        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
-        TaintHandler taintHandler = null;
-
-        columnReferenceResolver.enterStatementeContext(select);
-
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
-                .withTableColumnResolver(columnReferenceResolver)
-                .withTaintHandler(taintHandler)
-                .withCurrentDataRow(queryResult.seeRows().get(0)).build();
-
-        select.getPlainSelect().getWhere().accept(evaluator);
-        columnReferenceResolver.exitCurrentStatementContext();
-
-        Truthness truthness = evaluator.getEvaluatedTruthness();
-        assertTrue(truthness.isTrue());
-    }*/
-
-
     private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow... row) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         Select select = (Select) parsedSqlCommand;
