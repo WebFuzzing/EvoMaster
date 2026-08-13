@@ -4,7 +4,9 @@ import org.bson.Document;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,7 +118,6 @@ class QueryParserTest {
         assertEquals("age", in.getFieldName());
         assertEquals(Arrays.asList(20, 30, null), in.getValues());
     }
-
 
 
     @Test
@@ -318,6 +319,58 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseBitsAllClear() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllSet() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        assertEquals("flags", bitsAllSet.getFieldName());
+        assertEquals(5L, bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnyClear() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnyClear", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnyClearOperation);
+        BitsAnyClearOperation bitsAnyClear = (BitsAnyClearOperation) operation;
+        assertEquals("flags", bitsAnyClear.getFieldName());
+        assertEquals(5L, bitsAnyClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySet() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnySet", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnySetOperation);
+        BitsAnySetOperation bitsAnySet = (BitsAnySetOperation) operation;
+        assertEquals("flags", bitsAnySet.getFieldName());
+        assertEquals(5L, bitsAnySet.getBitmask());
+    }
+
+    @Test
     void testParseGreaterThanEquals() {
         Document query = new Document(
                 "age",
@@ -495,7 +548,7 @@ class QueryParserTest {
     void testParseImplicitEqualsWithEmptyDocument() {
         Document query = new Document();
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertTrue(operation instanceof TrueOperation);
     }
 
     @Test
@@ -766,5 +819,102 @@ class QueryParserTest {
         );
         QueryOperation operation = parser.parse(query);
         assertNull(operation);
+    }
+
+    @Test
+    void testParseInvalidEmptyAnd() {
+        Document query = new Document(
+                "$and",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseInvalidEmptyOr() {
+        Document query = new Document(
+                "$or",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseInvalidEmptyNor() {
+        Document query = new Document(
+                "$nor",
+                new ArrayList<Document>()
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseEmptyAll() {
+        Document query = new Document(
+                "results",
+                new Document("$all", new ArrayList<Document>())
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+
+        assertTrue(operation instanceof AllOperation);
+        AllOperation<?> all = (AllOperation<?>) operation;
+        assertEquals("results", all.getFieldName());
+        assertEquals(new ArrayList<>(), all.getValues());
+
+    }
+
+    @Test
+    void testParseTrueOperation() {
+        Document query = new Document();
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof TrueOperation);
+
+    }
+
+    @Test
+    void testParseNorTrueOperation() {
+        Document query = new Document(
+                "$nor",
+                Collections.singletonList(new Document())
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof NorOperation);
+        NorOperation nor = (NorOperation) operation;
+        assertEquals(1, nor.getConditions().size());
+        assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
+    }
+
+    @Test
+    void testParseEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                new Document("$eq", Arrays.asList("Bob", "Alice")));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
+
+    @Test
+    void testParseImplicitEqOperationWithList() {
+        Document query = new Document(
+                "f",
+                Arrays.asList("Bob", "Alice"));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("f", eq.getFieldName());
+        assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
     }
 }

@@ -5,12 +5,10 @@ import com.webfuzzing.commons.faults.FaultCategory
 import org.apache.http.HttpStatus
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFault
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
@@ -771,7 +769,7 @@ class RestSecurityOracle {
             //FIXME i don't think it is correct, as ignoring dynamic info?
             //TODO need tests for it
             val matching = verifiers.filter {
-                it.isResolvedParentPath(notfound)
+                DynamicPathUtils.isResolvedParentPath(it,notfound)
                         && ! notfound.auth.isDifferentFrom(it.auth)
             }
 
@@ -845,7 +843,7 @@ class RestSecurityOracle {
 
         // first check that they all refer to the same endpoint
         val conditionForEndpointEquivalence =
-            CreateResourceUtils.doesResolveToSamePath(lastAction, secondLastAction)
+            DynamicPathUtils.doesResolveToSamePath(lastAction, secondLastAction)
 
         if (!conditionForEndpointEquivalence) {
             return false

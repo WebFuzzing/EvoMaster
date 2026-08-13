@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -2034,7 +2035,7 @@ class RestActionBuilderV3Test{
         // only 1 option in the enum
         assertEquals("/v2/api/foo/data", child.resolvedPath())
 
-        parent.bindToSamePathResolution(child)
+        DynamicPathUtils.bindToSamePathResolution(parent, child)
         assertEquals("/v2/api/foo", parent.resolvedPath())
     }
 
@@ -2054,7 +2055,7 @@ class RestActionBuilderV3Test{
         val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
-        parent.bindToSamePathResolution(child)
+        DynamicPathUtils.bindToSamePathResolution(parent, child)
         assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 
@@ -2073,7 +2074,7 @@ class RestActionBuilderV3Test{
         val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
-        parent.bindToSamePathResolution(child)
+        DynamicPathUtils.bindToSamePathResolution(parent, child)
         assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 

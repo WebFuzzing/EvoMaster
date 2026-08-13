@@ -3,11 +3,10 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -477,7 +476,7 @@ open class RestResourceNode(
         if (actions.size == 1) return actions.first()
 
         (1 until actions.size).forEach { i->
-            CreateResourceUtils.linkDynamicCreateResource(actions[i-1], actions[i])
+            DynamicPathUtils.linkDynamicCreateResource(actions[i-1], actions[i])
         }
 
         return actions.last()
@@ -517,7 +516,7 @@ open class RestResourceNode(
         if (ats.size == 2){
             val action = createActionByVerb(ats[1], randomness)
             if (lastPost != null)
-                CreateResourceUtils.linkDynamicCreateResource(lastPost, action)
+                DynamicPathUtils.linkDynamicCreateResource(lastPost, action)
             results.add(action)
         }else if (ats.size > 2){
             throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
@@ -527,7 +526,7 @@ open class RestResourceNode(
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
             val second =  results.last().copyKeepingSameWeakRef()
             if (lastPost != null)
-                CreateResourceUtils.linkDynamicCreateResource(lastPost, second)
+                DynamicPathUtils.linkDynamicCreateResource(lastPost, second)
             results.add(second)
         }
 

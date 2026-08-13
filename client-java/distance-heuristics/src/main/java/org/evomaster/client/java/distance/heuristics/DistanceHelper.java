@@ -31,6 +31,26 @@ public class DistanceHelper {
 
     public static final double H_NOT_EMPTY = H_NOT_NULL;
 
+    /**
+     * A base heuristic value, higher than {@link #H_NOT_NULL}, used in place of {@link #H_NOT_NULL} to give a
+     * better (ie, higher) floor to an {@code ofTrue}/{@code ofFalse} heuristic in situations that, while still
+     * not satisfying the overall condition, are considered a smaller step away from it than the generic
+     * {@link #H_NOT_NULL} case. It is used in two ways:
+     * <ul>
+     *     <li>as the {@code ofTrue} of {@link TruthnessUtils#FALSE_TRUTHNESS_BETTER}, returned when a predicate
+     *     cannot be conclusively evaluated because one (but not all) of its operands is {@code null} — eg, only
+     *     one side of a comparison, {@code BETWEEN}, {@code IN}, {@code LIKE} or boolean check is missing;
+     *     this is treated as a better starting point than the fully-unevaluable case ({@link #H_NOT_NULL}, via
+     *     {@link TruthnessUtils#FALSE_TRUTHNESS});</li>
+     *     <li>as the {@code base} argument when scaling (via
+     *     {@link TruthnessUtils#buildScaledTruthness(double, double)}) the {@code ofTrue} of a comparison whose
+     *     operands are all non-null but that still evaluated to false, so that a genuine (if unsatisfied)
+     *     comparison between real values gets at least this same floor, with room to grow above it as the
+     *     compared values get closer.</li>
+     * </ul>
+     */
+    public static final double H_NOT_NULL_BETTER = H_NOT_NULL + (H_NOT_NULL / 2);
+
 
     //2^16=65536, max distance for a char
     public static final int MAX_CHAR_DISTANCE = 65_536;
@@ -117,7 +137,7 @@ public class DistanceHelper {
     public static double scaleHeuristicWithBase(double heuristic, double base) {
 
         if (heuristic < 0 || heuristic >= 1) {
-            throw new IllegalArgumentException("Invalid heuristic: " + base);
+            throw new IllegalArgumentException("Invalid heuristic: " + heuristic);
         }
         if (base < 0 || base >= 1) {
             throw new IllegalArgumentException("Invalid base: " + base);

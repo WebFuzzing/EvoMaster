@@ -19,6 +19,16 @@ public class ExecutedCqlCommand implements Serializable {
     private final String cqlCommand;
 
     /**
+     * The keyspace the command targets, if it could be determined from the query text; null otherwise
+     */
+    private final String keyspaceName;
+
+    /**
+     * The table the command targets, if it could be determined from the query text; null otherwise
+     */
+    private final String tableName;
+
+    /**
      * Whether the CQL command failed, for any reason
      */
     private final boolean threwCqlException;
@@ -28,14 +38,24 @@ public class ExecutedCqlCommand implements Serializable {
      */
     private final long executionTime;
 
-    public ExecutedCqlCommand(String cqlCommand, boolean threwCqlException, long executionTime) {
+    public ExecutedCqlCommand(String cqlCommand, String keyspaceName, String tableName, boolean threwCqlException, long executionTime) {
         this.cqlCommand = cqlCommand;
+        this.keyspaceName = keyspaceName;
+        this.tableName = tableName;
         this.threwCqlException = threwCqlException;
         this.executionTime = executionTime;
     }
 
     public String getCqlCommand() {
         return cqlCommand;
+    }
+
+    public String getKeyspaceName() {
+        return keyspaceName;
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     public boolean hasThrownCqlException() {
