@@ -62,6 +62,9 @@ class HttpSemanticsService : TimeBoxedPhase{
     @Inject
     private lateinit var epc: ExecutionPhaseController
 
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -713,7 +716,16 @@ class HttpSemanticsService : TimeBoxedPhase{
      */
     private data class LocationCandidate(
         val individual: EvaluatedIndividual<RestIndividual>,
-        val sourceIndex: Int
+        val sourceIndex: Int,
+        val location: String
+    )
+
+    /**
+     * When the Location points to a path declared in the schema, the follow-up call
+     * uses the first declared verb following this priority order.
+     */
+    private val locationFollowUpVerbPriority = listOf(
+        HttpVerb.GET, HttpVerb.DELETE, HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH
     )
 
     /**
@@ -729,10 +741,22 @@ class HttpSemanticsService : TimeBoxedPhase{
             val ea = evaluated[idx]
             ea.action as? RestCallAction ?: continue
             val r = ea.result as? RestCallResult ?: continue
-            if (r.getLocation().isNullOrBlank()) continue
-            candidates.add(LocationCandidate(ei, idx))
+            val location = r.getLocation()
+            if (location.isNullOrBlank()) continue
+            candidates.add(LocationCandidate(ei, idx, location))
         }
         return candidates
+    }
+
+    /**
+     * Verb to use for the Location follow-up call. If the Location points to a path
+     * declared in the schema, use its declared verbs by [locationFollowUpVerbPriority];
+     * otherwise default to GET.
+     */
+    private fun followUpVerbForLocation(location: String): HttpVerb {
+        val declaredPath = callGraphService.resolveDeclaredPath(location) ?: return HttpVerb.GET
+        val verbs = callGraphService.endpointsForPath(declaredPath).map { it.verb }.toSet()
+        return locationFollowUpVerbPriority.firstOrNull { verbs.contains(it) } ?: HttpVerb.GET
     }
 
     private fun invalidLocation() {
@@ -755,31 +779,35 @@ class HttpSemanticsService : TimeBoxedPhase{
             )
             val creator = ind.seeMainExecutableActions().last()
 
+            // If the Location points to a schema path, probe it with its most appropriate
+            // declared verb; otherwise fall back to GET.
+            val verb = followUpVerbForLocation(candidate.location)
+
             // runtime URL is resolved from the Location header
             // (relative/absolute, possibly with query params). We do not bind to a schema
             // The path here is a structural placeholder; the real URL comes from chainState.
-            val getAction = RestCallAction(
-                id = "GET:LOCATION-FOLLOWUP",
-                verb = HttpVerb.GET,
+            val followUp = RestCallAction(
+                id = "$verb:LOCATION-FOLLOWUP",
+                verb = verb,
                 path = RestPath("/"),
                 parameters = mutableListOf(),
                 auth = creator.auth
             )
-            getAction.doInitialize(randomness)
-            getAction.forceNewTaints()
+            followUp.doInitialize(randomness)
+            followUp.forceNewTaints()
 
             try {
                 // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
                 //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
                 //  After that restriction is refactored to allow any verb whose response carried a
                 //  Location header, this catch can be dropped and the oracle will fire for all verbs.
-                creator.saveAndLinkLocationTo(getAction)
+                creator.saveAndLinkLocationTo(followUp)
             } catch (e: IllegalArgumentException) {
                 continue
             }
 
-            // add getAction as a last operation
-            ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
+            // add the follow-up as a last operation
+            ind.addMainActionInEmptyEnterpriseGroup(-1, followUp)
 
             prepareEvaluateAndSave(ind)
         }
