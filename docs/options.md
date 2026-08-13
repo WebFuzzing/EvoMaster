@@ -281,7 +281,6 @@ There are 3 types of options:
 |`cgaNeighborhoodModel`| __Enum__. Cellular GA: neighborhood model (RING, L5, C9, C13). *Valid values*: `RING, L5, C9, C13`. *Default value*: `RING`.|
 |`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`collectSqlZ3Stats`| __Boolean__. Collect detailed statistics for Z3-based SQL generation: SAT/UNSAT/error counts, query uniqueness, Z3 execution time, and SMT-LIB generation time. Only meaningful when generateSqlDataWithZ3=true. *Depends on*: `generateSqlDataWithZ3=true`. *Default value*: `false`.|
-|`enableMultipartFormDataSupport`| __Boolean__. Enable multipart/form-data support when building REST actions. *Default value*: `false`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
@@ -290,6 +289,7 @@ There are 3 types of options:
 |`enableAdvancedFormats`| __Boolean__. Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0. *Default value*: `false`.|
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
 |`enableCustomizedMethodForScheduleTaskHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task. *Default value*: `false`.|
+|`enableMultipartFormDataSupport`| __Boolean__. Enable multipart/form-data support when building REST actions. This feature is disabled by default. *Default value*: `false`.|
 |`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableStaticFlakyInference`| __Boolean__. Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages. *Depends on*: `handleFlakiness=true`. *Default value*: `true`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|
