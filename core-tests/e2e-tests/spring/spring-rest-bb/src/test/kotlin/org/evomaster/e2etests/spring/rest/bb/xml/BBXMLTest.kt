@@ -39,6 +39,8 @@ class BBXMLTest : SpringTestBase() {
                 "DEPARTMENT", "ORGANIZATION", "PERSON_ATTR", "PROJECT", "PROJECTS")
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableXmlSupport", "true")
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)

@@ -44,6 +44,8 @@ class BBJsonPatchTest : SpringTestBase() {
             )
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableJsonPatchSupport", "true")
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)

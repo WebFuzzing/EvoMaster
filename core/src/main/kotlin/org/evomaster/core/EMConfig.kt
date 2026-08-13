@@ -1378,13 +1378,15 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Experimental
     @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
             " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
-    var enableJsonPatchSupport = true
+    var enableJsonPatchSupport = false
 
+    @Experimental
     @Cfg("Enable XML-aware field naming for body genes when the request Content-Type is XML." +
             " When false, body gene names fall back to the pre-feature behavior (schema ref name or 'body').")
-    var enableXmlSupport = true
+    var enableXmlSupport = false
 
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
