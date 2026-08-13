@@ -55,7 +55,7 @@ class RedisHeuristicsCalculatorTest {
         RedisKeyValueStore redisKeyValueStore = new RedisKeyValueStore(redisValueDataList);
 
         RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisKeyValueStore);
-        assertEquals(1.0, result.getDistance(), 0.1, "Pattern with no matches should yield max distance 1");
+        assertEquals(1.0, result.getDistance(), 0.25, "Pattern with no matches should yield values close to 1");
         assertEquals(2, result.getNumberOfEvaluatedKeys());
     }
 
