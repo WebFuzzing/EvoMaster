@@ -38,6 +38,11 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2026
 
+* F. Castagna, M. T. Shalmani, A. Golmohammadi, J. P. Galeotti and A. Arcuri.
+  *An Empirical Evaluation of Search-Based Algorithms for White-Box Testing of REST APIs*.
+  International Colloquium on Theoretical Aspects of Computing (ICTAC).
+  _(to appear)_
+
 * O. Sahin, M. Zhang, A. Arcuri.
   *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*.
   Journal of Systems and Software (JSS).

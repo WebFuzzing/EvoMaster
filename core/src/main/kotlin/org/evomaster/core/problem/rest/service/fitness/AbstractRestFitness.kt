@@ -1513,7 +1513,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
         val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
-        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+        val mismatch = HttpSemanticsOracle.mismatchedPutResponse(individual, actionResults, schemaHolder)
+        if (mismatch == null) return
 
         val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
 
@@ -1522,7 +1523,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
-        ar.addFault(DetectedFault(category, put.getName(), null))
+        ar.addFault(DetectedFault(category, put.getName(), null, "Issue: $mismatch"))
     }
 
     private fun handleInvalidMergePatch(
