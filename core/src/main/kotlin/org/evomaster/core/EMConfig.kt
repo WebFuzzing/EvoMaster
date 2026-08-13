@@ -1379,9 +1379,9 @@ class EMConfig {
     var dtoForRequestPayload = false
 
     @Experimental
-    @Cfg("Disable multipart/form-data support when building REST actions." +
-            "This feature is disabled by default and can be enabled through RestActionBuilder options.")
-    var disableMultipartFormDataSupport = true
+    @Cfg("Enable multipart/form-data support when building REST actions." +
+            " This feature is disabled by default.")
+    var enableMultipartFormDataSupport = false
 
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +

@@ -51,9 +51,9 @@ class RestActionBuilderV3Test{
     fun testMultipartFormDataSupportOptionDefaultsToDisabled(){
         val config = EMConfig()
 
-        assertTrue(config.disableMultipartFormDataSupport)
-        assertTrue(RestActionBuilderV3.Options(config).disableMultipartFormDataSupport)
-        assertFalse(RestActionBuilderV3.Options(disableMultipartFormDataSupport = false).disableMultipartFormDataSupport)
+        assertFalse(config.enableMultipartFormDataSupport)
+        assertFalse(RestActionBuilderV3.Options(config).enableMultipartFormDataSupport)
+        assertTrue(RestActionBuilderV3.Options(enableMultipartFormDataSupport = true).enableMultipartFormDataSupport)
     }
 
     @Test

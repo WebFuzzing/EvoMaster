@@ -118,7 +118,7 @@ object RestActionBuilderV3 {
 
         val inferFormatFromNames: Boolean = true,
 
-        val disableMultipartFormDataSupport: Boolean = true,
+        val enableMultipartFormDataSupport: Boolean = false,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -128,7 +128,7 @@ object RestActionBuilderV3 {
             usingWhiteBox = !config.blackBox,
             enableAdvancedFormats = config.enableAdvancedFormats,
             inferFormatFromNames = config.inferFormatFromNames,
-            disableMultipartFormDataSupport = config.disableMultipartFormDataSupport,
+            enableMultipartFormDataSupport = config.enableMultipartFormDataSupport,
         )
 
         init {
