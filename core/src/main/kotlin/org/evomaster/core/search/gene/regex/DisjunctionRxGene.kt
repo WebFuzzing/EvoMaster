@@ -352,21 +352,39 @@ class DisjunctionRxGene(
         var pending = AssertionRepairResult.SUCCESS
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            val assertionType = assertion.assertionType
-            val backward = assertionType.direction == Direction.BACKWARD
-            val target = if (backward) genesBefore(idx) else genesAfter(idx)
-
-            val resolution = when {
-                !assertionType.hasContent -> repairBoundaryAssertion(target, backward)
-                target.isEmpty() -> repairAssertionWithNoTarget(assertion, backward, randomness)
-                else -> repairAssertionAgainstTarget(assertion, target, backward, randomness)
-            }
+            val resolution = repairAssertion(assertion, idx, randomness)
             pending = pending.mergedWith(resolution)
             if (!pending.success) {
                 return AssertionRepairResult.FAILURE
             }
         }
         return pending
+    }
+
+    /**
+     * Selects target and dispatches to corresponding repair method for the [assertion] located at index [idx].
+     */
+    private fun repairAssertion(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
+        val assertionType = assertion.assertionType
+        val backward = assertion.assertionType.direction == Direction.BACKWARD
+        val target = if (backward) genesBefore(idx) else genesAfter(idx)
+
+        val resolution = when {
+            assertionType.hasContent -> repairAssertionWithContent(assertion, target, backward, randomness)
+            else -> repairBoundaryAssertion(target, backward)
+        }
+        return resolution
+    }
+
+    /**
+     * Repairs [assertion] with content against a [target].
+     */
+    private fun repairAssertionWithContent(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if (target.isEmpty()) {
+            repairAssertionWithNoTarget(assertion, backward, randomness)
+        } else {
+            repairAssertionAgainstTarget(assertion, target, backward, randomness)
+        }
     }
 
     /**
