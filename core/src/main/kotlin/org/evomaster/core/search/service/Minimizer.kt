@@ -196,6 +196,11 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
         val beforeCovered = archive.coveredTargets()
 
+        //fallback in case recomputation below does not reproduce a currently covered target
+        val originalByTarget = archive.getSnapshotOfBestIndividuals()
+            .filterKeys { beforeCovered.contains(it) }
+            .mapValues { (_, individuals) -> individuals[0] }
+
         val currentEvaluated = archive.getCopyOfUniqueCoveringEvaluatedIndividuals()
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${currentEvaluated.size} tests")
@@ -228,24 +233,36 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
         population.forEach{archive.addIfNeeded(it)}
 
+        //re-running a test can be non-deterministic (eg background threads, shared mutable state),
+        //so restore the original test for any target that recomputation failed to reproduce
         val afterCovered = archive.coveredTargets()
-        val diff = beforeCovered.size-afterCovered.size
+        val notReproduced = beforeCovered.filter { !afterCovered.contains(it) }
 
-        if(diff > config.minimizeThresholdForLoss *  beforeCovered.size){
-            //could happen if background threads, for example, as well as constructors of singletons
-            LoggingUtil.getInfoLogger().warn("Recomputing coverage did lose many targets," +
-                    " more than the threshold ${config.minimizeThresholdForLoss*100}%:" +
-                    " from ${beforeCovered.size} to ${afterCovered.size}" +
-                    ", i.e., lost $diff")
+        if(notReproduced.isNotEmpty()){
+            LoggingUtil.getInfoLogger().warn("Recomputing coverage did not reproduce ${notReproduced.size} targets" +
+                    " previously covered (likely due to non-deterministic behavior in the SUT)." +
+                    " Restoring the original tests for them so that no achieved coverage is lost.")
 
             if(config.minimizeShowLostTargets){
-                LoggingUtil.getInfoLogger().warn("Missing targets:");
-                for(target in beforeCovered){
-                    if(! afterCovered.contains(target)){
-                        LoggingUtil.getInfoLogger().warn(idMapper.getDescriptiveId(target));
-                    }
+                LoggingUtil.getInfoLogger().warn("Targets not reproduced on recomputation:");
+                for(target in notReproduced){
+                    LoggingUtil.getInfoLogger().warn(idMapper.getDescriptiveId(target));
                 }
             }
+
+            notReproduced.forEach { target ->
+                originalByTarget[target]?.let { archive.addIfNeeded(it) }
+            }
+        }
+
+        val stillMissing = beforeCovered.size - archive.coveredTargets().size
+
+        if(stillMissing > config.minimizeThresholdForLoss *  beforeCovered.size){
+            //could happen if the original test itself is no longer accepted, eg a death sentence
+            LoggingUtil.getInfoLogger().warn("Even after restoring original tests, still lost many targets," +
+                    " more than the threshold ${config.minimizeThresholdForLoss*100}%:" +
+                    " from ${beforeCovered.size} to ${archive.coveredTargets().size}" +
+                    ", i.e., lost $stillMissing")
 
             assert(false)//shouldn't really happen in the E2E...
         }
