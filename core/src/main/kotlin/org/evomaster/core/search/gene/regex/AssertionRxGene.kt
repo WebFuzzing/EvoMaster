@@ -10,14 +10,16 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
+enum class Direction { FORWARD, BACKWARD }
+
 /**
  * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
  */
-enum class AssertionType(val backward: Boolean, val isInputBoundary: Boolean) {
-    LOOKAHEAD(backward = false, isInputBoundary = false),
-    LOOKBEHIND(backward = true, isInputBoundary = false),
-    START_OF_INPUT(backward = true, isInputBoundary = true),
-    END_OF_INPUT(backward = false, isInputBoundary = true)
+enum class AssertionType(val direction: Direction, val hasContent: Boolean) {
+    LOOKAHEAD(direction = Direction.FORWARD, hasContent = true),
+    LOOKBEHIND(direction = Direction.BACKWARD, hasContent = true),
+    START_OF_INPUT(direction = Direction.BACKWARD, hasContent = false),
+    END_OF_INPUT(direction = Direction.FORWARD, hasContent = false)
 }
 
 /**
@@ -43,13 +45,10 @@ class AssertionRxGene(
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
     init {
-        require(!assertionType.isInputBoundary || innerGene == null) {
+        require(assertionType.hasContent || innerGene == null) {
             "$assertionType is a boundary assertion type and cannot carry inner content"
         }
     }
-
-    val backward = assertionType.backward
-    val isInputBoundary = assertionType.isInputBoundary
 
     /**
      *  To handle null [innerGene], in which case the assertion is unsatisfiable.
@@ -58,7 +57,7 @@ class AssertionRxGene(
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
-    override fun isUnsatisfiable(): Boolean = !isInputBoundary && innerGene == null
+    override fun isUnsatisfiable(): Boolean = assertionType.hasContent && innerGene == null
 
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 

@@ -352,11 +352,12 @@ class DisjunctionRxGene(
         var pending = AssertionRepairResult.SUCCESS
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            val backward = assertion.backward
+            val assertionType = assertion.assertionType
+            val backward = assertionType.direction == Direction.BACKWARD
             val target = if (backward) genesBefore(idx) else genesAfter(idx)
 
             val resolution = when {
-                assertion.isInputBoundary -> repairBoundaryAssertion(target, backward)
+                !assertionType.hasContent -> repairBoundaryAssertion(target, backward)
                 target.isEmpty() -> repairAssertionWithNoTarget(assertion, backward, randomness)
                 else -> repairAssertionAgainstTarget(assertion, target, backward, randomness)
             }
