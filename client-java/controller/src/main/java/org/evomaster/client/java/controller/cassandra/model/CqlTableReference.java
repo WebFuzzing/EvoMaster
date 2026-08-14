@@ -21,6 +21,11 @@ public class CqlTableReference {
      */
     private final String tableName;
 
+    /**
+     * @param keyspaceName the keyspace qualifier, verbatim as written; {@code null} if the
+     *                     statement didn't qualify the table with a keyspace
+     * @param tableName    the table name, verbatim as written; must not be {@code null}
+     */
     public CqlTableReference(String keyspaceName, String tableName) {
         this.keyspaceName = keyspaceName;
         this.tableName = Objects.requireNonNull(tableName);
