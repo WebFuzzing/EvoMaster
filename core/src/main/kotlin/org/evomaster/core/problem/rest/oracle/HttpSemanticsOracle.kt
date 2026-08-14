@@ -204,7 +204,7 @@ object HttpSemanticsOracle {
         }
 
         // extract the field names sent in the PUT/PATCH request body
-        val modifiedFieldNames = extractModifiedFieldNames(modify)
+        val modifiedFieldNames = extractDeclaredFieldNames(modify)
 
         // if we can identify specific fields, compare only those to avoid false positives from timestamps etc.
         if(modifiedFieldNames.isNotEmpty()
@@ -334,7 +334,7 @@ object HttpSemanticsOracle {
         }
 
         val sentFields = extractSentFieldNames(put)
-        val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
+        val allPutSchemaFields = extractDeclaredFieldNames(put).ifEmpty {
             schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) }
                 ?: emptySet()
         }
@@ -486,10 +486,12 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Extract field names from the PUT/PATCH request body.
-     * These are the fields that the client attempted to modify.
+     * Extract all declared field names from the PUT/PATCH request body.
+     * Not all these fields are necessarily used in the request, e.g., some
+     * might be de-activated/not-selected for modifications (eg potentially off if not
+     * marked as required).
      */
-    private fun extractModifiedFieldNames(modify: RestCallAction): Set<String> {
+    private fun extractDeclaredFieldNames(modify: RestCallAction): Set<String> {
 
         val objectGene = extractBodyObjectGene(modify) ?: return emptySet()
 
@@ -667,8 +669,8 @@ object HttpSemanticsOracle {
      *   PUT /X        -> 2xx        (same body)
      *   GET /X (or ancestor) -> 2xx  (state after 2nd PUT)
      *
-     * Returns true if any numeric or boolean field differs between the two GET responses.
-     * String fields are intentionally ignored (timestamps/UUIDs etc. cause flakiness).
+     * Returns true if any numeric/boolean field or array size differs between the two GET
+     * responses. Strings and array content are ignored (timestamps/UUIDs/ordering cause flakiness).
      */
     fun hasNonIdempotentPut(
         individual: RestIndividual,
@@ -689,6 +691,9 @@ object HttpSemanticsOracle {
         // both PUTs on same resolved path with same auth
         if (!DynamicPathUtils.doesResolveToSamePath(put1,put2)) return false
         if (put1.auth.isDifferentFrom(put2.auth)) return false
+
+        // same body required
+        if (extractRequestBody(put1) != extractRequestBody(put2)) return false
 
         // both GETs on same resolved path with same auth
         if (!DynamicPathUtils.doesResolveToSamePath(get1,get2)) return false
@@ -722,12 +727,21 @@ object HttpSemanticsOracle {
             val fields1 = formatter.readFields(body1, numericAndBooleanOnly = true) ?: continue
             val fields2 = formatter.readFields(body2, numericAndBooleanOnly = true) ?: continue
 
-            if (fields1.isEmpty() && fields2.isEmpty()) continue
+            val lengths1 = formatter.readArrayLengths(body1) ?: emptyMap()
+            val lengths2 = formatter.readArrayLengths(body2) ?: emptyMap()
+
+            if (fields1.isEmpty() && fields2.isEmpty() && lengths1.isEmpty() && lengths2.isEmpty()) continue
 
             for ((name, v1) in fields1) {
                 val v2 = fields2[name] ?: continue
                 if (v1 != v2) return true
             }
+
+            for ((name, len1) in lengths1) {
+                val len2 = lengths2[name] ?: continue
+                if (len1 != len2) return true
+            }
+
             return false
         }
         return false
@@ -828,7 +842,7 @@ object HttpSemanticsOracle {
         // regardless of the PATCH. However, we are only looking at the fields of PATCH. it would be weird
         // to set a value with a PATCH that the API can change on a whim... not impossible, but most likely
         // very unlikely. so, in theory field flakiness should not be a problem here
-        val untouched = extractModifiedFieldNames(patch) - extractSentFieldNames(patch)
+        val untouched = extractDeclaredFieldNames(patch) - extractSentFieldNames(patch)
         if (untouched.isEmpty()) return false
 
         val bodyBefore = resBefore.getBody()
