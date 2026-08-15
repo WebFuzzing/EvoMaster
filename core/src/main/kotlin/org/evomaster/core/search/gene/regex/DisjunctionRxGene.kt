@@ -370,10 +370,34 @@ class DisjunctionRxGene(
         val target = if (backward) genesBefore(idx) else genesAfter(idx)
 
         val resolution = when {
-            assertionType.hasContent -> repairAssertionWithContent(assertion, target, backward, randomness)
-            else -> repairBoundaryAssertion(target, backward)
+            assertionType.boundaryFallback -> repairMultilineAssertion(assertion, target, backward, randomness)
+            assertionType.forceFullMatch -> repairBoundaryAssertion(target, backward)
+            else -> repairAssertionWithContent(assertion, target, backward, randomness)
         }
         return resolution
+    }
+
+    /**
+     * Repairs a multiline boundary assertion (^$), which can be either a line terminator or an end of the string.
+     */
+    private fun repairMultilineAssertion(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if(randomness.nextBoolean()){
+            // try boundary first, then try line terminator
+            val result = repairBoundaryAssertion(target, backward)
+            if(result.success){
+                result
+            } else {
+                repairAssertionWithContent(assertion, target, backward, randomness)
+            }
+        } else {
+            // try line terminator first, then try boundary
+            val result = repairAssertionWithContent(assertion, target, backward, randomness)
+            if(result.success){
+                result
+            } else {
+                repairBoundaryAssertion(target, backward)
+            }
+        }
     }
 
     /**

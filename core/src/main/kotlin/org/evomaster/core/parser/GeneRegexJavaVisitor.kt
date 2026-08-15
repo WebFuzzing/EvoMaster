@@ -87,39 +87,11 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         return disjList
     }
 
-    /**
-     * Represents multiline `^` as `(?:\A|(?<=[terminator]))` as two branches of a
-     * [DisjunctionListRxGene], reusing the existing nested-group repair machinery.
-     */
-    private fun buildMultilineStart(flags: RegexFlags): DisjunctionListRxGene {
-        val branches = listOf(
-            branchOf(AssertionRxGene(null, AssertionType.START_OF_INPUT)), // \A
-            branchOf(AssertionRxGene(terminatorClass(flags), AssertionType.LOOKBEHIND)) // (?<=[terminator])
-        )
-        return DisjunctionListRxGene(branches)
+    private fun buildMultilineAnchorInnerGene(flags: RegexFlags): DisjunctionListRxGene {
+        val terminatorClassGene = CharacterRangeRxGene(currentFlags.lineTerminatorRanges, currentFlags)
+        val disjunction = DisjunctionRxGene("multiline_anchor", listOf(terminatorClassGene), matchStart = true, matchEnd = true)
+        return DisjunctionListRxGene(listOf(disjunction))
     }
-
-    /**
-     * Represents multiline `$` as `(?:\z|(?=[terminator]))`. Symmetric to [buildMultilineStart].
-     */
-    private fun buildMultilineEnd(flags: RegexFlags): DisjunctionListRxGene {
-        val branches = listOf(
-            branchOf(AssertionRxGene(null, AssertionType.END_OF_INPUT)), // \z
-            branchOf(AssertionRxGene(terminatorClass(flags), AssertionType.LOOKAHEAD)) // (?=[terminator])
-        )
-        return DisjunctionListRxGene(branches)
-    }
-
-    /** Wraps [terms] as one branch of a boundary assertion's [DisjunctionListRxGene] representation. */
-    private fun branchOf(vararg terms: Gene): DisjunctionRxGene =
-        DisjunctionRxGene("boundaryBranch", terms.toList(), matchStart = true, matchEnd = true)
-
-    /**
-     * Single-branch [DisjunctionListRxGene] wrapping the terminator character class, the innerGene
-     * for multiline ^/$'s content-bearing branch.
-     */
-    private fun terminatorClass(flags: RegexFlags): DisjunctionListRxGene =
-        DisjunctionListRxGene(listOf(branchOf(CharacterRangeRxGene(flags.lineTerminatorRanges, flags))))
 
     /**
      * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
@@ -276,11 +248,17 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                     else -> throw IllegalArgumentException("Invalid boundary assertion")
                 }
                 assertionCtx.CARET() != null ->
-                    if (currentFlags.multiline) buildMultilineStart(currentFlags)
-                    else AssertionRxGene(null, AssertionType.START_OF_INPUT)
+                    if (currentFlags.multiline) {
+                        AssertionRxGene(buildMultilineAnchorInnerGene(currentFlags), AssertionType.MULTILINE_START)
+                    } else {
+                        AssertionRxGene(null, AssertionType.START_OF_INPUT)
+                    }
                 assertionCtx.DOLLAR() != null ->
-                    if (currentFlags.multiline) buildMultilineEnd(currentFlags)
-                    else AssertionRxGene(null, AssertionType.END_OF_INPUT)
+                    if (currentFlags.multiline) {
+                        AssertionRxGene(buildMultilineAnchorInnerGene(currentFlags), AssertionType.MULTILINE_END)
+                    } else {
+                        AssertionRxGene(null, AssertionType.END_OF_INPUT)
+                    }
                 assertionCtx.LESS_THAN() != null ->
                     AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKBEHIND)
                 else ->
