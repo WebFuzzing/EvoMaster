@@ -15,8 +15,8 @@ import static org.evomaster.client.java.controller.redis.RedisUtils.redisPattern
 
 public class RedisHeuristicsCalculator {
 
-    public static final double MAX_REDIS_DISTANCE = 1d;
-    public static final double MIN_REDIS_DISTANCE = 0d;
+    public static final double MAX_VALUE = 1d;
+    public static final double MIN_VALUE = 0d;
 
     private final TaintHandler taintHandler;
 
@@ -77,16 +77,17 @@ public class RedisHeuristicsCalculator {
                 }
 
                 default:
-                    return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
+                    SimpleLogger.error("Unsupported command type: " + type);
+                    throw new IllegalArgumentException("Unsupported command type in Redis heuristic calculation.");
             }
         } catch (Exception e) {
             SimpleLogger.warn("Could not compute distance for " + type + ": " + e.getMessage());
-            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(MAX_VALUE, 0);
         }
     }
 
     private RedisDistanceWithMetrics toMetrics(Truthness t, int evaluated) {
-        return new RedisDistanceWithMetrics(1d - t.getOfTrue(), evaluated);
+        return new RedisDistanceWithMetrics(MAX_VALUE - t.getOfTrue(), evaluated);
     }
 
     /**
@@ -101,14 +102,14 @@ public class RedisHeuristicsCalculator {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
 
-        double maxOfTrue = 0d;
+        double maxOfTrue = MIN_VALUE;
         for (String key : db.keySet()) {
             Truthness eq = TruthnessUtils.getStringEqualityTruthness(targetKey, key);
             if (taintHandler != null) {
                 taintHandler.handleTaintForStringEquals(targetKey, key, false);
             }
             maxOfTrue = Math.max(maxOfTrue, eq.getOfTrue());
-            if (maxOfTrue == 1d) return TruthnessUtils.TRUE_TRUTHNESS;
+            if (maxOfTrue == MAX_VALUE) return TruthnessUtils.TRUE_TRUTHNESS;
         }
         return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
     }
@@ -125,14 +126,14 @@ public class RedisHeuristicsCalculator {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
 
-        double maxOfTrue = 0d;
+        double maxOfTrue = MIN_VALUE;
         for (String field : value.getFields().keySet()) {
             Truthness eq = TruthnessUtils.getStringEqualityTruthness(targetField, field);
             if (taintHandler != null) {
                 taintHandler.handleTaintForStringEquals(targetField, field, false);
             }
             maxOfTrue = Math.max(maxOfTrue, eq.getOfTrue());
-            if (maxOfTrue == 1d) return TruthnessUtils.TRUE_TRUTHNESS;
+            if (maxOfTrue == MAX_VALUE) return TruthnessUtils.TRUE_TRUTHNESS;
         }
         return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
     }
@@ -157,15 +158,15 @@ public class RedisHeuristicsCalculator {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
 
-        double maxPatternSimilarity = 0d;
+        double maxPatternSimilarity = MIN_VALUE;
         for (String key : db.keySet()) {
-            double similarity = 1d - TruthnessUtils.normalizeValue(
+            double similarity = MAX_VALUE - TruthnessUtils.normalizeValue(
                     RegexDistanceUtils.getStandardDistance(key, regex));
             if (taintHandler != null) {
                 taintHandler.handleTaintForRegex(key, regex);
             }
             maxPatternSimilarity = Math.max(maxPatternSimilarity, similarity);
-            if (maxPatternSimilarity == 1d) return TruthnessUtils.TRUE_TRUTHNESS;
+            if (maxPatternSimilarity == MAX_VALUE) return TruthnessUtils.TRUE_TRUTHNESS;
         }
         return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxPatternSimilarity);
     }
@@ -224,7 +225,7 @@ public class RedisHeuristicsCalculator {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
 
-        double maxOfTrue = 0d;
+        double maxOfTrue = MIN_VALUE;
         for (String value : allMembers) {
             List<Truthness> containments = new ArrayList<>();
             for (RedisValueData set : sets) {
@@ -234,7 +235,7 @@ public class RedisHeuristicsCalculator {
                     containments.toArray(new Truthness[0])
             ).getOfTrue();
             maxOfTrue = Math.max(maxOfTrue, ofTrue);
-            if (maxOfTrue == 1d) return TruthnessUtils.TRUE_TRUTHNESS;
+            if (maxOfTrue == MAX_VALUE) return TruthnessUtils.TRUE_TRUTHNESS;
         }
         return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
     }
@@ -249,10 +250,6 @@ public class RedisHeuristicsCalculator {
      *   ).ofTrue)
      */
     private Truthness hContains(String value, Set<String> members) {
-        if (members == null || members.isEmpty()) {
-            return TruthnessUtils.FALSE_TRUTHNESS;
-        }
-
         List<Truthness> equalities = new ArrayList<>();
         for (String member : members) {
             Truthness eq = TruthnessUtils.getStringEqualityTruthness(value, member);
@@ -260,14 +257,17 @@ public class RedisHeuristicsCalculator {
                 taintHandler.handleTaintForStringEquals(value, member, false);
             }
             equalities.add(eq);
-            if (eq.isTrue()) return TruthnessUtils.TRUE_TRUTHNESS; // early exit
+            if (eq.isTrue()) return TruthnessUtils.TRUE_TRUTHNESS;
         }
 
         double orOfTrue = TruthnessUtils.buildOrAggregationTruthness(
                 equalities.toArray(new Truthness[0])
         ).getOfTrue();
 
-        if (orOfTrue == 1d) return TruthnessUtils.TRUE_TRUTHNESS;
-        return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, orOfTrue);
+        if (orOfTrue == MAX_VALUE) {
+            return TruthnessUtils.TRUE_TRUTHNESS;
+        } else {
+            return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, orOfTrue);
+        }
     }
 }
