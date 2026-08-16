@@ -62,10 +62,17 @@ class RPCIndividual(
                     Lazy.assert { actions.size == externalServicesActions.size }
                 }
                 EnterpriseActionGroup(mutableListOf(rpcCallAction), RPCCallAction::class.java).apply {
-                    addChildrenToGroup(
-                        externalServicesActions[index],
-                        GroupsOfChildren.EXTERNAL_SERVICES
-                    )
+                    /*
+                        externalServicesActions defaults to empty, meaning no call has any
+                        mocked external service. Indexing into it regardless would throw for
+                        every call, making the default unusable.
+                     */
+                    if (index < externalServicesActions.size) {
+                        addChildrenToGroup(
+                            externalServicesActions[index],
+                            GroupsOfChildren.EXTERNAL_SERVICES
+                        )
+                    }
                 }})
         },
         mainSize = actions.size,
@@ -76,7 +83,20 @@ class RPCIndividual(
     override fun canMutateStructure(): Boolean = true
 
 
-    fun seeIndexedRPCCalls(): Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
+    /**
+     * The RPC calls of this individual, by the index of the child holding each.
+     *
+     * Note the calls are not children of the individual directly: each is wrapped in an
+     * [EnterpriseActionGroup], alongside the external-service actions that belong to it. So
+     * asking for children of type [RPCCallAction] finds nothing, and the group has to be
+     * unwrapped.
+     */
+    fun seeIndexedRPCCalls(): Map<Int, RPCCallAction> =
+        getIndexedChildren(EnterpriseActionGroup::class.java)
+            .mapNotNull { (index, group) ->
+                (group.getMainAction() as? RPCCallAction)?.let { index to it }
+            }
+            .toMap()
 
 
     /**
