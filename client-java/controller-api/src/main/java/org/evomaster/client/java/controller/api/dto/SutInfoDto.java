@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.WebProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto;
 
 import java.util.List;
 
@@ -34,6 +35,12 @@ public class SutInfoDto {
      * on how to interact with it
      */
     public WebProblemDto webProblem;
+
+    /**
+     * If the SUT is a service driven by messages and described by an AsyncAPI document,
+     * here there will be the info on how to interact with it
+     */
+    public AsyncApiProblemDto asyncApiProblem;
 
     /**
      * Whether the SUT is running or not
