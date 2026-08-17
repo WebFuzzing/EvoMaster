@@ -1,0 +1,442 @@
+package com.webfuzzing.asyncapi;
+
+import com.webfuzzing.asyncapi.access.AsyncApiAccess;
+import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
+import com.webfuzzing.asyncapi.models.AsyncApiDocument;
+import com.webfuzzing.asyncapi.models.AsyncApiMessage;
+import com.webfuzzing.asyncapi.parser.AsyncApiParsingException;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Tests for the AsyncAPI 3.x parser.
+ *
+ * Each document under {@code /asyncapi/artificial} is written to pin down one thing. Several of
+ * them exist because a real published document did what they describe: a payload written in
+ * Avro, a schema pointing at one that was dropped, references that go round in a circle.
+ */
+public class AsyncApiParserTest {
+
+    private AsyncApiDocument load(String resourcePath) {
+        return AsyncApiAccess.getAsyncApiFromResource(resourcePath);
+    }
+
+    private AsyncApiDocument parse(String text) {
+        return AsyncApiAccess.parseFromText(text);
+    }
+
+    /**
+     * Whether any warning mentions the given text, case insensitively.
+     */
+    private boolean warns(AsyncApiDocument document, String... expected) {
+
+        for (String warning : document.getWarnings()) {
+
+            boolean all = true;
+
+            for (String one : expected) {
+                if (!warning.toLowerCase(Locale.ENGLISH).contains(one.toLowerCase(Locale.ENGLISH))) {
+                    all = false;
+                    break;
+                }
+            }
+
+            if (all) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Set<String> setOf(String... values) {
+        return new LinkedHashSet<>(Arrays.asList(values));
+    }
+
+    // ------------------------------------------------------------------ the shape of a document
+
+    @Test
+    public void testMessagesAndTheirSchemas() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/messages.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+        assertEquals("3.0.0", document.getVersion());
+        assertEquals("application/json", document.getDefaultContentType());
+        assertEquals(setOf("signupRequest", "signupReply", "heartbeat"), document.getMessages().keySet());
+        assertEquals(setOf("SignupRequest", "Address"), document.getComponentSchemas().keySet());
+
+        AsyncApiMessage request = document.getMessages().get("signupRequest");
+        assertEquals("SignupRequest", request.getName());
+        assertEquals("Sign a user up", request.getTitle());
+        //no contentType of its own, so the document's default applies
+        assertEquals("application/json", request.getContentType());
+        //the payload keeps its reference rather than being inlined
+        assertEquals("#/components/schemas/SignupRequest", request.getPayload().get("$ref").asText());
+
+        AsyncApiMessage reply = document.getMessages().get("signupReply");
+        assertEquals("application/vnd.example+json", reply.getContentType());
+        assertTrue(reply.getPayload().get("properties").has("userId"));
+
+        //a message with no name of its own is known by its component key
+        assertEquals("heartbeat", document.getMessages().get("heartbeat").getName());
+    }
+
+    @Test
+    public void testJsonAndYamlAreParsedTheSameWay() {
+
+        AsyncApiDocument fromYaml = load("/asyncapi/artificial/messages.yaml");
+        AsyncApiDocument fromJson = load("/asyncapi/artificial/messages.json");
+
+        //without this, two empty models would compare equal and prove nothing
+        assertFalse(fromJson.getMessages().isEmpty());
+
+        assertEquals(fromYaml.getVersion(), fromJson.getVersion());
+        assertEquals(fromYaml.getDefaultContentType(), fromJson.getDefaultContentType());
+        assertEquals(fromYaml.getMessages().keySet(), fromJson.getMessages().keySet());
+        assertEquals(fromYaml.getComponentSchemas().keySet(), fromJson.getComponentSchemas().keySet());
+
+        AsyncApiCorrelationId fromYamlCorrelation =
+                fromYaml.getMessages().get("signupRequest").getCorrelationId();
+        AsyncApiCorrelationId fromJsonCorrelation =
+                fromJson.getMessages().get("signupRequest").getCorrelationId();
+
+        assertEquals(fromYamlCorrelation.getRaw(), fromJsonCorrelation.getRaw());
+        assertEquals(fromYamlCorrelation.getSource(), fromJsonCorrelation.getSource());
+        assertEquals(fromYamlCorrelation.getPointer(), fromJsonCorrelation.getPointer());
+    }
+
+    @Test
+    public void testVersion2IsRejected() {
+
+        //2.x nests its operations inside channels and has no reply at all: a different model
+        AsyncApiParsingException e = assertThrows(AsyncApiParsingException.class, () -> parse(
+                "asyncapi: 2.6.0\n"
+                        + "info:\n"
+                        + "  title: The previous major version\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  user/signup:\n"
+                        + "    publish:\n"
+                        + "      message:\n"
+                        + "        payload:\n"
+                        + "          type: object\n"));
+
+        assertTrue(e.getMessage().contains("2.6.0"), e.getMessage());
+        assertTrue(e.getMessage().contains("3.x"), e.getMessage());
+    }
+
+    @Test
+    public void testUnquotedNumericVersionIsStillReadAsText() {
+
+        //YAML would make '3.0' a number, and free-text fields elsewhere likewise
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0\n"
+                        + "info:\n"
+                        + "  title: Numeric looking\n"
+                        + "  version: 1.0.0\n");
+
+        assertEquals("3.0", document.getVersion());
+    }
+
+    @Test
+    public void testOpenApiDocumentIsRejected() {
+
+        AsyncApiParsingException e = assertThrows(AsyncApiParsingException.class, () -> parse(
+                "openapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: An OpenAPI document, handed over by mistake\n"
+                        + "  version: 1.0.0\n"
+                        + "paths: {}\n"));
+
+        //the message has to say what to do about it, not just that it failed
+        assertTrue(e.getMessage().contains("OpenAPI"), e.getMessage());
+    }
+
+    @Test
+    public void testUnreadableDocumentIsRejected() {
+
+        AsyncApiParsingException e = assertThrows(
+                AsyncApiParsingException.class,
+                () -> parse("asyncapi: 3.0.0\n  badly: [indented"));
+
+        assertTrue(e.getMessage().contains("Failed to parse"), e.getMessage());
+    }
+
+    @Test
+    public void testDocumentThatIsNotAnObjectIsRejected() {
+
+        AsyncApiParsingException e = assertThrows(
+                AsyncApiParsingException.class,
+                () -> parse("- just\n- a list"));
+
+        assertTrue(e.getMessage().contains("not a JSON/YAML object"), e.getMessage());
+    }
+
+    @Test
+    public void testDocumentDeclaringNoMessages() {
+
+        //valid, just empty. Nothing to report and nothing to raise
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Empty\n"
+                        + "  version: 1.0.0\n");
+
+        assertTrue(document.getMessages().isEmpty());
+        assertTrue(document.getComponentSchemas().isEmpty());
+        assertTrue(document.getWarnings().isEmpty());
+    }
+
+    // ------------------------------------------------------------------ correlation
+
+    @Test
+    public void testCorrelationInHeader() {
+
+        AsyncApiMessage message =
+                load("/asyncapi/artificial/messages.yaml").getMessages().get("signupRequest");
+
+        AsyncApiCorrelationId correlation = message.getCorrelationId();
+        assertNotNull(correlation);
+        assertEquals(AsyncApiCorrelationId.Source.HEADER, correlation.getSource());
+        assertEquals("/correlationId", correlation.getPointer());
+        assertEquals("correlationId", correlation.getFieldName());
+    }
+
+    @Test
+    public void testCorrelationInPayload() {
+
+        AsyncApiMessage message =
+                load("/asyncapi/artificial/messages.yaml").getMessages().get("signupReply");
+
+        AsyncApiCorrelationId correlation = message.getCorrelationId();
+        assertNotNull(correlation);
+        //a transport with no headers, such as a socket, can only carry the id in the payload
+        assertEquals(AsyncApiCorrelationId.Source.PAYLOAD, correlation.getSource());
+        assertEquals("/request_id", correlation.getPointer());
+    }
+
+    @Test
+    public void testCorrelationExpressionsThatCannotBeUsed() {
+
+        //not one of the two runtime expressions the specification defines
+        assertNull(AsyncApiCorrelationId.parse("somewhere/else"));
+        assertNull(AsyncApiCorrelationId.parse("$message.header#"));
+        assertNull(AsyncApiCorrelationId.parse("$message.header#noSlash"));
+
+        //a pointer more than one level deep has no single field name
+        AsyncApiCorrelationId nested = AsyncApiCorrelationId.parse("$message.payload#/meta/id");
+        assertEquals("/meta/id", nested.getPointer());
+        assertNull(nested.getFieldName());
+
+        //JSON Pointer escaping is undone, so a field whose name contains a slash still reads
+        assertEquals("a/b", AsyncApiCorrelationId.parse("$message.header#/a~1b").getFieldName());
+
+        //surrounding space is not a reason to reject it
+        assertEquals(
+                AsyncApiCorrelationId.Source.HEADER,
+                AsyncApiCorrelationId.parse("  $message.header#/x  ").getSource());
+    }
+
+    @Test
+    public void testUnsupportedCorrelationExpressionIsReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Correlated the wrong way\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    m:\n"
+                        + "      correlationId:\n"
+                        + "        location: 'somewhere/else'\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        //the message is still perfectly usable, it just cannot be paired with a reply
+        assertNull(document.getMessages().get("m").getCorrelationId());
+        assertTrue(warns(document, "somewhere/else"), document.getWarnings().toString());
+    }
+
+    // ------------------------------------------------------------------ traits
+
+    @Test
+    public void testMessageTraitsAreMerged() {
+
+        AsyncApiMessage message =
+                load("/asyncapi/artificial/messages.yaml").getMessages().get("signupRequest");
+
+        //correlation and headers come from the trait, and are indistinguishable from its own
+        assertEquals(AsyncApiCorrelationId.Source.HEADER, message.getCorrelationId().getSource());
+        assertTrue(message.getHeaders().get("properties").has("correlationId"));
+    }
+
+    @Test
+    public void testTraitsThatCannotBeUsedAreReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Broken traits\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messageTraits:\n"
+                        + "    first:\n"
+                        + "      title: from the first trait\n"
+                        + "      summary: overridden by the second\n"
+                        + "    second:\n"
+                        + "      summary: from the second trait\n"
+                        + "  messages:\n"
+                        + "    merged:\n"
+                        + "      traits:\n"
+                        + "        - $ref: '#/components/messageTraits/first'\n"
+                        + "        - $ref: '#/components/messageTraits/second'\n"
+                        + "      description: what the message states itself\n"
+                        + "    broken:\n"
+                        + "      traits:\n"
+                        + "        - 'not an object at all'\n"
+                        + "        - $ref: '#/components/messageTraits/absent'\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        AsyncApiMessage merged = document.getMessages().get("merged");
+        //traits are merged in declaration order, so the later one wins where they overlap
+        assertEquals("from the first trait", merged.getTitle());
+        assertEquals("from the second trait", merged.getSummary());
+        assertEquals("what the message states itself", merged.getDescription());
+
+        //an unusable trait costs only the trait: the message survives
+        assertTrue(document.getMessages().containsKey("broken"));
+        assertTrue(warns(document, "is not an object"), document.getWarnings().toString());
+        assertTrue(warns(document, "could not be resolved"), document.getWarnings().toString());
+    }
+
+    // ------------------------------------------------------------------ schema formats
+
+    @Test
+    public void testAvroDeclaredOnTheComponentSchema() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-formats.yaml");
+
+        //Avro is declared on the schema, not on the payload, so the drop has to propagate
+        assertFalse(document.getComponentSchemas().containsKey("customer-value"));
+        assertFalse(document.getMessages().containsKey("customer"));
+
+        //while a JSON Schema in the same document is unaffected
+        assertTrue(document.getComponentSchemas().containsKey("order-value"));
+        assertTrue(document.getMessages().containsKey("order"));
+
+        assertTrue(warns(document, "avro"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testMultiFormatWrapperIsUnwrapped() {
+
+        AsyncApiMessage message =
+                load("/asyncapi/artificial/message-schema-formats.yaml").getMessages().get("wrapped");
+
+        //a dialect that is JSON Schema keeps the schema one level down; it must be lifted out
+        assertNull(message.getPayload().get("schemaFormat"));
+        assertEquals("object", message.getPayload().get("type").asText());
+    }
+
+    // ------------------------------------------------------------------ what a payload can reach
+
+    @Test
+    public void testPayloadWhoseSchemaReachesAMissingOneIsDropped() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-references.yaml");
+
+        /*
+            The payload resolves and so does the schema it names -- it is the schema *that one*
+            reaches which is missing. Only following the chain finds it, and it has to be found:
+            whatever consumes this payload would fail on a reference it cannot resolve.
+         */
+        assertFalse(document.getMessages().containsKey("nested"));
+        assertTrue(warns(document, "NotDeclared"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testPayloadInAnotherSchemaDialectIsDropped() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-references.yaml");
+
+        //'#/definitions/...' is draft-04's layout, and nothing in this document answers it
+        assertFalse(document.getMessages().containsKey("otherDialect"));
+        assertTrue(warns(document, "#/definitions/Foo"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testPayloadPointingIntoAnotherDocumentIsDropped() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-references.yaml");
+
+        //documents split across files are not read yet, so such a payload cannot be built from
+        assertFalse(document.getMessages().containsKey("otherDocument"));
+        assertTrue(warns(document, "shared.yaml"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testPointerDeeperThanASchemaIsAccepted() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-references.yaml");
+
+        //what matters is that the schema it points into is present
+        assertTrue(document.getMessages().containsKey("deepPointer"));
+        assertTrue(document.getMessages().containsKey("fine"));
+    }
+
+    @Test
+    public void testBrokenHeadersCostOnlyTheHeaders() {
+
+        AsyncApiMessage message = load("/asyncapi/artificial/message-schema-references.yaml")
+                .getMessages().get("badHeaders");
+
+        //the message is still perfectly usable, so it is kept without its headers
+        assertNotNull(message.getPayload());
+        assertNull(message.getHeaders());
+    }
+
+    // ------------------------------------------------------------------ cycles
+
+    @Test
+    public void testReferenceCyclesDoNotTakeTheDocumentDown() {
+
+        //without a guard each of these recurses until the stack gives out, killing the run
+        AsyncApiDocument document = load("/asyncapi/artificial/reference-cycles.yaml");
+
+        //the circular messages and correlation ids are dropped, each explained
+        assertFalse(document.getMessages().containsKey("ping"));
+        assertFalse(document.getMessages().containsKey("itself"));
+        assertTrue(warns(document, "cycle"), document.getWarnings().toString());
+
+        //a correlationId that only points at itself leaves the message without one
+        assertNull(document.getMessages().get("request").getCorrelationId());
+    }
+
+    @Test
+    public void testSchemasMayReferToThemselves() {
+
+        //a self-referring schema is a tree, and perfectly legitimate: it must not be confused
+        //with a broken reference, nor send the reachability check round for ever
+        AsyncApiDocument document = load("/asyncapi/artificial/reference-cycles.yaml");
+
+        assertTrue(document.getMessages().containsKey("request"));
+        assertTrue(document.getComponentSchemas().containsKey("Node"));
+    }
+
+}

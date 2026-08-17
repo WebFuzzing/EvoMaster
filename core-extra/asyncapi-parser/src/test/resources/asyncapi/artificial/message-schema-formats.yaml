@@ -1,0 +1,54 @@
+asyncapi: 3.0.0
+info:
+  title: Payloads described in Avro rather than JSON Schema
+  version: 1.0.0
+
+# This mirrors how Avro actually appears in published documents: the schemaFormat sits on the
+# component schema, not on the message payload, so a parser that only inspects the payload
+# would accept the document and then build nonsense from it.
+
+components:
+  messages:
+    customer:
+      name: customer
+      contentType: application/avro
+      payload:
+        $ref: '#/components/schemas/customer-value'
+
+    # a multi-format wrapper naming a dialect that *is* JSON Schema: the schema is one level down
+    wrapped:
+      name: wrapped
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+
+    order:
+      name: order
+      payload:
+        $ref: '#/components/schemas/order-value'
+
+  schemas:
+    customer-value:
+      schemaFormat: application/vnd.apache.avro;version=1.9.0
+      schema:
+        type: record
+        name: customer
+        namespace: public
+        fields:
+          - name: id
+            type:
+              - "null"
+              - type: string
+
+    # the same document can perfectly well mix in a schema this parser does understand
+    order-value:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string

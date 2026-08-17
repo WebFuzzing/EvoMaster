@@ -319,6 +319,11 @@
             </dependency>
             <dependency>
                 <groupId>org.evomaster</groupId>
+                <artifactId>asyncapi-parser</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
