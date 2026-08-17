@@ -1379,8 +1379,7 @@ class EMConfig {
     var dtoForRequestPayload = false
 
     @Experimental
-    @Cfg("Enable multipart/form-data support when building REST actions." +
-            " This feature is disabled by default.")
+    @Cfg("Enable multipart/form-data support when building REST actions.")
     var enableMultipartFormDataSupport = false
 
     @Important(6.0)
