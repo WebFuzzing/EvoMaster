@@ -187,7 +187,22 @@ public class AsyncApiParser {
      */
     private static JsonNode schemaOf(JsonNode node, String owner, List<String> warnings) {
 
-        if (node == null || node.isNull() || !node.isObject()) {
+        if (node == null) {
+            //nothing was declared, which is not a problem and has nothing to report
+            return null;
+        }
+
+        if (node.isNull() || !node.isObject()) {
+            /*
+                Something was declared, but not as an object. A bare `true` or `false` is in fact
+                a valid JSON Schema meaning "anything" and "nothing", and an explicit null is
+                written by some generators; none of them describe a shape that genes can be built
+                from. They cost whatever declared them, so they have to be reported -- silently
+                dropping a message is the one outcome a user cannot trace back to their document.
+             */
+            warnings.add(
+                    "The schema of " + owner + " is written as " + describe(node) + " rather than as a"
+                            + " JSON Schema object, so there is no shape to read from it. It is ignored.");
             return null;
         }
 
@@ -424,10 +439,15 @@ public class AsyncApiParser {
             JsonNode target = dereference(trait, root, warnings);
 
             if (target == null) {
-                //dereference has already said why
-                warnings.add(
-                        "A trait declared in " + componentKind + " could not be resolved, and is ignored");
-            } else if (!target.isObject()) {
+                /*
+                    Nothing to add: dereference has already reported which reference failed and
+                    why, and naming the same failure a second time in vaguer terms would only
+                    make the list of warnings harder to read.
+                 */
+                continue;
+            }
+
+            if (!target.isObject()) {
                 warnings.add("A trait declared in " + componentKind + " is not an object, and is ignored");
             } else {
                 sources.add(target);
@@ -463,6 +483,27 @@ public class AsyncApiParser {
         }
 
         return merged;
+    }
+
+    /**
+     * How a node that was expected to be a schema should be named in a warning, so that the
+     * user can recognise it in their own document.
+     */
+    private static String describe(JsonNode node) {
+
+        if (node.isNull()) {
+            return "null";
+        }
+
+        if (node.isArray()) {
+            return "an array";
+        }
+
+        if (node.isBoolean()) {
+            return "the boolean " + node.asText();
+        }
+
+        return "the value '" + node.asText() + "'";
     }
 
     /**

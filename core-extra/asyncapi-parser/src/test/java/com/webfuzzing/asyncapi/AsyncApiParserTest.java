@@ -322,7 +322,9 @@ public class AsyncApiParserTest {
         //an unusable trait costs only the trait: the message survives
         assertTrue(document.getMessages().containsKey("broken"));
         assertTrue(warns(document, "is not an object"), document.getWarnings().toString());
-        assertTrue(warns(document, "could not be resolved"), document.getWarnings().toString());
+        //the reference that failed is named, which is what makes the warning actionable
+        assertTrue(warns(document, "#/components/messageTraits/absent"),
+                document.getWarnings().toString());
     }
 
     // ------------------------------------------------------------------ schema formats
@@ -398,6 +400,94 @@ public class AsyncApiParserTest {
         //what matters is that the schema it points into is present
         assertTrue(document.getMessages().containsKey("deepPointer"));
         assertTrue(document.getMessages().containsKey("fine"));
+    }
+
+    @Test
+    public void testPayloadThatIsNotAnObjectIsDroppedWithAWarning() {
+
+        /*
+            `true` is a valid JSON Schema meaning "any payload at all", but it describes no shape
+            to build from, so the message goes. What matters here is that it is reported: a
+            message that vanishes with nothing in the warnings cannot be traced back to the line
+            of the document that caused it.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Boolean payload\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    anything:\n"
+                        + "      payload: true\n");
+
+        assertFalse(document.getMessages().containsKey("anything"));
+        assertTrue(warns(document, "anything", "boolean true"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testHeadersThatAreNotAnObjectCostOnlyTheHeaders() {
+
+        //a broken headers declaration is reported too, but the message itself is still usable
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Broken headers\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    usable:\n"
+                        + "      headers: []\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        assertTrue(document.getMessages().containsKey("usable"));
+        assertNull(document.getMessages().get("usable").getHeaders());
+        assertTrue(warns(document, "headers of message 'usable'", "an array"),
+                document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAMessageDeclaringNoPayloadIsNotReportedAsBroken() {
+
+        //absent is not the same as unreadable, and must stay silent
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: No payload\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    empty:\n"
+                        + "      title: nothing to say\n");
+
+        assertTrue(document.getMessages().containsKey("empty"));
+        assertTrue(document.getWarnings().isEmpty(), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAnUnresolvableTraitIsReportedOnlyOnce() {
+
+        /*
+            The reference that failed is named by the code that followed it. Reporting it a
+            second time, in vaguer terms, only makes the warnings harder to read.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Missing trait\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    withTrait:\n"
+                        + "      traits:\n"
+                        + "        - $ref: '#/components/messageTraits/notThere'\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        assertEquals(1, document.getWarnings().size(), document.getWarnings().toString());
+        assertTrue(warns(document, "#/components/messageTraits/notThere"),
+                document.getWarnings().toString());
     }
 
     @Test
