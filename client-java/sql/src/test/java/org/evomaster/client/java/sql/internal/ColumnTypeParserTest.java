@@ -8,7 +8,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,6 +41,18 @@ public class ColumnTypeParserTest {
 
         Instant result = ColumnTypeParser.getAsInstant(offsetDateTime);
         assertEquals(expected, result, "Should parse the OffsetDateTime string correctly.");
+    }
+
+    @Test
+    public void testValidOffsetTimeFormat() {
+        String offsetTime = "12:30:45+02:00";
+        Instant expected = OffsetTime.parse(offsetTime)
+                .atDate(LocalDate.of(1970, 1, 1))
+                .toInstant();
+
+        Instant result = ColumnTypeParser.getAsInstant(offsetTime);
+
+        assertEquals(expected, result, "Should parse the OffsetTime string correctly.");
     }
 
     @Test
