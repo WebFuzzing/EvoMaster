@@ -99,4 +99,27 @@ public class DistanceHelperTest {
         double distance = getDistance(left, right);
         assertEquals(2, distance);
     }
+
+    @Test
+    public void testByteArrayLeftAlignmentDistance() {
+        byte[] argentinaHomeShirt = new byte[]{10, 20, 30};
+        byte[] sameShirt = new byte[]{10, 20, 30};
+        byte[] oneChangedColor = new byte[]{10, 20, 31};
+        byte[] allChangedColors = new byte[]{11, 21, 31};
+        byte[] missingColor = new byte[]{10, 20};
+
+        assertEquals(0, getLeftAlignmentDistance(argentinaHomeShirt, sameShirt));
+        assertEquals(1, getLeftAlignmentDistance(argentinaHomeShirt, oneChangedColor));
+        assertEquals(3, getLeftAlignmentDistance(argentinaHomeShirt, allChangedColors));
+        assertEquals(1, getLeftAlignmentDistance(argentinaHomeShirt, missingColor));
+        assertEquals(1, getLeftAlignmentDistance(missingColor, argentinaHomeShirt));
+        assertEquals(1, getLeftAlignmentDistance(new byte[]{0}, new byte[]{-1}));
+        assertEquals(4, getLeftAlignmentDistance(
+                new byte[]{1, 2, 3}, new byte[]{0, 1, 2, 3}));
+        assertEquals(0, getLeftAlignmentDistance(new byte[0], new byte[0]));
+        assertThrows(NullPointerException.class,
+                () -> getLeftAlignmentDistance(null, argentinaHomeShirt));
+        assertThrows(NullPointerException.class,
+                () -> getLeftAlignmentDistance(argentinaHomeShirt, null));
+    }
 }

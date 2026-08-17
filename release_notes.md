@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Fixed Bugs
+- Update to WFC 0.7.0, which fixed few bugs in Web Report
+
+
 # Version 6.1.1
 
 ### New Features

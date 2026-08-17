@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.mongo.utils;
 
+import org.bson.BsonTimestamp;
 import org.bson.BsonType;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,7 @@ class BsonHelperTest {
         assertEquals(Decimal128.class.getTypeName(), BsonHelper.getType(BsonType.DECIMAL128));
         assertEquals(ObjectId.class.getTypeName(), BsonHelper.getType(BsonType.OBJECT_ID));
         assertEquals(String.class.getTypeName(), BsonHelper.getType(BsonType.STRING));
+        assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
 
         assertEquals(BsonHelper.NULL_TYPE, BsonHelper.getType(BsonType.NULL));
         assertEquals(List.class.getTypeName(), BsonHelper.getType(BsonType.ARRAY));
@@ -101,7 +103,6 @@ class BsonHelperTest {
         assertEquals(CodeWithScope.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT_WITH_SCOPE));
         assertEquals(org.bson.BsonRegularExpression.class.getTypeName(), BsonHelper.getType(BsonType.REGULAR_EXPRESSION));
         assertEquals(Symbol.class.getTypeName(), BsonHelper.getType(BsonType.SYMBOL));
-        assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
         assertEquals(org.bson.BsonUndefined.class.getTypeName(), BsonHelper.getType(BsonType.UNDEFINED));
     }
 
@@ -141,5 +142,25 @@ class BsonHelperTest {
 
         String notObjectId = "not an ObjectId";
         assertFalse(BsonHelper.isObjectId(notObjectId));
+    }
+
+    @Test
+    void testIsBsonTimestamp() {
+        assertTrue(BsonHelper.isBsonTimestamp(new BsonTimestamp(1, 2)));
+        assertFalse(BsonHelper.isBsonTimestamp("not a BsonTimestamp"));
+        assertFalse(BsonHelper.isBsonTimestamp(null));
+    }
+
+    @Test
+    void testGetBsonTimestampValue() {
+        BsonTimestamp timestamp = new BsonTimestamp(1, 2);
+
+        assertEquals(timestamp.getValue(), BsonHelper.getBsonTimestampValue(timestamp));
+    }
+
+    @Test
+    void testGetBsonTimestampValueRejectsInvalidType() {
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.getBsonTimestampValue(new Object()));
+        assertThrows(NullPointerException.class, () -> BsonHelper.getBsonTimestampValue(null));
     }
 }

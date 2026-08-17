@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.EMConfig.AIEnsembleBestModelSelectionStrategy
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
@@ -130,13 +131,33 @@ class AIResponseClassifier : AIModel {
         if (delegates.size == 1) return delegates.first()
 
         return delegates.maxBy { model ->
+
             val m = model.estimateMetrics(endpoint)
-            listOf(
+
+            val metrics = listOf(
                 m.precision400,
                 m.sensitivity400,
                 m.specificity,
                 m.npv
-            ).average()
+            )
+
+            when (config.aIEnsembleBestModelSelectionStrategy) {
+
+                AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE ->
+                    metrics.average()
+
+                AIEnsembleBestModelSelectionStrategy.MAX_OF_HARMONIC_MEAN ->
+                    if (metrics.any { it == 0.0 }) {
+                        0.0
+                    } else {
+                        metrics.size.toDouble() / metrics.sumOf { 1.0 / it }
+                    }
+
+                AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN ->
+                    metrics.min()
+
+
+            }
         }
     }
 
