@@ -1,7 +1,7 @@
 package org.evomaster.core.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 
 /**
  * The interface for the constraint solver only for Database Constraints.

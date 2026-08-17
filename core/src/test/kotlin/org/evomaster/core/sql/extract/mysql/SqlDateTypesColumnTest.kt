@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.sql.DbInfoExtractor
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.sql.schema.TableId

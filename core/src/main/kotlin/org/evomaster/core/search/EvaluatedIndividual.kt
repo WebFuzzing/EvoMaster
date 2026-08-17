@@ -8,8 +8,8 @@ import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult

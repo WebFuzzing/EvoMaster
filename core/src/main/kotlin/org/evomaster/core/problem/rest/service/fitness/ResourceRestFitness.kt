@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service.fitness
 
 
 import com.google.inject.Inject
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction

@@ -1,7 +1,7 @@
 package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination

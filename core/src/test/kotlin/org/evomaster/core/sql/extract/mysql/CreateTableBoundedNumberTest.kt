@@ -2,7 +2,7 @@ package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.sql.DbInfoExtractor
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene

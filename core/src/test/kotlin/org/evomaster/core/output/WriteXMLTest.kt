@@ -1,8 +1,7 @@
 package org.evomaster.core.output
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.EMConfig
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table

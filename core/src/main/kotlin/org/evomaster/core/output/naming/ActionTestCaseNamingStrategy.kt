@@ -10,7 +10,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.EvaluatedAction
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,

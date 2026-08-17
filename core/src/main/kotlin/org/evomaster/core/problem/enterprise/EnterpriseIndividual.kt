@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction

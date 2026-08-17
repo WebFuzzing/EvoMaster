@@ -1,6 +1,8 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -91,7 +93,8 @@ class SqlActionUtilsTest {
         val insertId0 = 1001L
         val pkGene1Table0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId0)
         val pkGene2Table0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
-        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
+        val action0 =
+            SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
 
         val insertId1 = 1002L
         val fkGene1 = SqlForeignKeyGene("Fk1", insertId1, targetTable.id, "Id1", false, insertId0)
@@ -138,13 +141,15 @@ class SqlActionUtilsTest {
         val insertId0 = 1001L
         val pkGene1Table0_0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene0, insertId0)
         val pkGene2Table0_0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
-        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0_0, pkGene2Table0_0))
+        val action0 =
+            SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0_0, pkGene2Table0_0))
 
         // Inserts (42,84) to Table0(Id1,Id2)
         val insertId1 = 1002L
         val pkGene1Table0_1 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId1)
         val pkGene2Table0_1 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId1)
-        val action1 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId1, listOf(pkGene1Table0_1, pkGene2Table0_1))
+        val action1 =
+            SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId1, listOf(pkGene1Table0_1, pkGene2Table0_1))
 
         val insertId2 = 1003L
         // Points to DIFFERENT but VALID PK IDs (1001L and 1002L)
@@ -397,7 +402,8 @@ class SqlActionUtilsTest {
         val insertId0 = 1001L
         val pkGene1Table0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId0)
         val pkGene2Table0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
-        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
+        val action0 =
+            SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
 
         val insertId1 = 1002L
         // Fk1 is NULL (unbound), Fk2 is bound to insertId0
@@ -448,7 +454,8 @@ class SqlActionUtilsTest {
         val insertId0 = 1001L
         val pkGene1Table0 = SqlPrimaryKeyGene("Id1", targetTable.id, integerGene1, insertId0)
         val pkGene2Table0 = SqlPrimaryKeyGene("Id2", targetTable.id, integerGene2, insertId0)
-        val action0 = SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
+        val action0 =
+            SqlAction(targetTable, setOf(idColumn1, idColumn2), insertId0, listOf(pkGene1Table0, pkGene2Table0))
 
         val insertId1 = 1002L
         // Fk1 is NULL (unbound)

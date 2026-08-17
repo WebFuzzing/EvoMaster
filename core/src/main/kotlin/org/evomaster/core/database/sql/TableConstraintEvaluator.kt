@@ -1,4 +1,4 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.search.gene.Gene

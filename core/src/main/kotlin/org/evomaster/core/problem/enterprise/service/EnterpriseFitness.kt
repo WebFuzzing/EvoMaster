@@ -14,6 +14,11 @@ import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.sql.DatabaseExecution
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlActionTransformer
+import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
@@ -26,7 +31,6 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.time.SearchTimeController
-import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

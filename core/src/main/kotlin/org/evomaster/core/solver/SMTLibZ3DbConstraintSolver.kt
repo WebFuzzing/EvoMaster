@@ -21,7 +21,7 @@ import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Statistics
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor

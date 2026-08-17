@@ -1,12 +1,11 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
-import org.evomaster.core.sql.SQLKey
+import org.evomaster.core.database.sql.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
-import org.evomaster.core.sql.DatabaseExecution
-import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.sql.schema.TableId
 
 /**

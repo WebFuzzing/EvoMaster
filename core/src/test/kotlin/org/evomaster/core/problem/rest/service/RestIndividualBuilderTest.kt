@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table

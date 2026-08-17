@@ -1,6 +1,9 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionGeneBuilder
+import org.evomaster.core.database.sql.TableConstraintEvaluator
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table

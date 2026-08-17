@@ -1,4 +1,4 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 

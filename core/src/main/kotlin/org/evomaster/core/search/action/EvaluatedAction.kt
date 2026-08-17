@@ -1,7 +1,7 @@
 package org.evomaster.core.search.action
 
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.redis.RedisDbAction

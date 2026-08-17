@@ -5,7 +5,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*

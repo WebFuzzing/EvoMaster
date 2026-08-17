@@ -1,4 +1,4 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType

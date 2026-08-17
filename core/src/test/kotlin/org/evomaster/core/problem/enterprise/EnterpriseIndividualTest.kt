@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.enterprise
 
-import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
@@ -46,7 +46,7 @@ class EnterpriseIndividualTest {
             selectedColumns = emptySet(), 
             insertionId = 2L, 
             representExistingData = true,
-            computedGenes = listOf(org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene("id", "1", false))
+            computedGenes = listOf(ImmutableDataHolderGene("id", "1", false))
         )
         individual.addInitializingDbActions(actions = listOf(existingSqlAction))
 

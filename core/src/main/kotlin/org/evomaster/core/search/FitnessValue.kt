@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
-import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.database.mongo.MongoExecution
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory

@@ -1,4 +1,4 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 
 /**
  * sql execution info

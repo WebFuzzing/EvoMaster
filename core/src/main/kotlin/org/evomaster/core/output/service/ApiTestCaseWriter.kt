@@ -14,8 +14,8 @@ import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
 import java.math.BigDecimal
 import java.math.BigInteger

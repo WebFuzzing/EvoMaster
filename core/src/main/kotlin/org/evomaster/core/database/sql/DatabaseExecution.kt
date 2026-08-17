@@ -1,5 +1,6 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.sql.schema.TableId
@@ -144,7 +145,7 @@ class DatabaseExecution(
             return data.toList()
         }
 
-        private fun cloneSqlExecutionInfo(data: List<org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto>?): List<SqlExecutionInfo> {
+        private fun cloneSqlExecutionInfo(data: List<SqlExecutionLogDto>?): List<SqlExecutionInfo> {
             if (data == null) {
                 return listOf()
             }

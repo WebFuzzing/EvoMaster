@@ -1,4 +1,4 @@
-package org.evomaster.core.sql
+package org.evomaster.core.database.sql
 
 import net.sf.jsqlparser.expression.*
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser

@@ -3,9 +3,9 @@ package org.evomaster.core.output
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionGeneBuilder
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionGeneBuilder
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType.*
 import org.evomaster.core.sql.schema.ForeignKey

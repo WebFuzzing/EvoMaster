@@ -34,8 +34,8 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import java.util.*
 import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType

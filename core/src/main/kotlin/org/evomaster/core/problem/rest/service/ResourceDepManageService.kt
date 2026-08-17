@@ -2,11 +2,10 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -29,7 +28,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
