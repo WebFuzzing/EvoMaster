@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import com.google.inject.Inject
 
@@ -46,6 +46,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
+import kotlin.collections.iterator
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.text.equals

@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils.convertToAscii
@@ -7,7 +7,6 @@ import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
 import org.evomaster.solver.smtlib.SMTNode
 import org.evomaster.solver.smtlib.assertion.*
-import java.util.*
 
 /**
  * Converts SQL conditions into SMT nodes for constraint solving.

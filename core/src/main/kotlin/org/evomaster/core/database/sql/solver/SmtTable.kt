@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils

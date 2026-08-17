@@ -25,7 +25,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.database.sql.SqlInsertBuilder

@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
