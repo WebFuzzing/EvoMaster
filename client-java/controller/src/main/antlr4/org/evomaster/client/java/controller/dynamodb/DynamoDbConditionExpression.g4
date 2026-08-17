@@ -25,7 +25,7 @@ primary
 predicate
     : ATTRIBUTE_EXISTS LPAREN path RPAREN                         #attributeExistsPredicate
     | ATTRIBUTE_NOT_EXISTS LPAREN path RPAREN                     #attributeNotExistsPredicate
-    | ATTRIBUTE_TYPE LPAREN path COMMA value RPAREN               #attributeTypePredicate
+    | ATTRIBUTE_TYPE LPAREN path COMMA PLACEHOLDER RPAREN         #attributeTypePredicate
     | BEGINS_WITH LPAREN path COMMA value RPAREN                  #beginsWithPredicate
     | CONTAINS LPAREN path COMMA value RPAREN                     #containsPredicate
     | SIZE LPAREN path RPAREN comparator value                    #sizePredicate
