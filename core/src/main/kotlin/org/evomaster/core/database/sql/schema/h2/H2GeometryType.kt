@@ -1,4 +1,4 @@
-package org.evomaster.core.sql.schema.h2
+package org.evomaster.core.database.sql.schema.h2
 
 /**
  * Represents the results of parsing a H2 Geometry

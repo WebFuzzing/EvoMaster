@@ -4,8 +4,8 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
-import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

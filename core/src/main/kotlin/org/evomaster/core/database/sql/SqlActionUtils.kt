@@ -6,11 +6,11 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.ForeignKey
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.utils.CollectionUtils
 
 object SqlActionUtils {

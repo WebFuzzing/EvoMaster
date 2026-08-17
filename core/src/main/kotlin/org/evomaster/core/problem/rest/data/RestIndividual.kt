@@ -20,7 +20,7 @@ import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max

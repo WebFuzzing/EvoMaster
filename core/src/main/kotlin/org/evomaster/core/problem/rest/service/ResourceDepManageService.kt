@@ -6,7 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -29,7 +29,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.DatabaseExecution
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files

@@ -5,13 +5,13 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * this class is to record the identified resources in the sut, i.e., based on the 'paths' of 'OpenAPI'

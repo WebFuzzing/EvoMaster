@@ -15,7 +15,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.database.sql.SqlActionUtils.isMatchingTableName
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test

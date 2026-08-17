@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -9,10 +10,10 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -57,7 +58,7 @@ class RestIndividualBuilderTest {
             "ID",
             ColumnDataType.INT,
             primaryKey = true,
-            databaseType = org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType.H2
+            databaseType = DatabaseType.H2
         )
         val table1 = Table(TableId("T1"), setOf(col), emptySet())
         val table2 = Table(TableId("T2"), setOf(col), emptySet())
@@ -105,7 +106,7 @@ class RestIndividualBuilderTest {
             "ID",
             ColumnDataType.INT,
             primaryKey = true,
-            databaseType = org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType.H2
+            databaseType = DatabaseType.H2
         )
         val table1 = Table(TableId("T1"), setOf(col), emptySet())
         val table2 = Table(TableId("T2"), setOf(col), emptySet())
@@ -203,7 +204,7 @@ class RestIndividualBuilderTest {
             "ID",
             ColumnDataType.INT,
             primaryKey = true,
-            databaseType = org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType.H2,
+            databaseType = DatabaseType.H2,
             unique = true
         )
         val table1 = Table(TableId("T1"), setOf(col), emptySet())

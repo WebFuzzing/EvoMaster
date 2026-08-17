@@ -3,10 +3,10 @@ package org.evomaster.core.database.sql
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo

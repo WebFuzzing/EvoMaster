@@ -18,7 +18,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.ci.utils.CIUtils;
-import org.evomaster.core.sql.schema.TableId;
+import org.evomaster.core.database.sql.schema.TableId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

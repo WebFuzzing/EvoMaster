@@ -1,4 +1,4 @@
-package org.evomaster.core.sql.schema.h2
+package org.evomaster.core.database.sql.schema.h2
 
 import java.util.regex.Pattern
 

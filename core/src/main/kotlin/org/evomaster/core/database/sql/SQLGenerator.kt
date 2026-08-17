@@ -1,8 +1,8 @@
 package org.evomaster.core.database.sql
 
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.Table
 
 /**
  * this is a utility to handle Sql command generation

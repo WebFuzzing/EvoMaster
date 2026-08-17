@@ -4,8 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DataRowD
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.api.dto.database.schema.*
-import org.evomaster.core.sql.schema.*
-import org.evomaster.core.sql.schema.ColumnFactory.createColumnFromDto
+import org.evomaster.core.database.sql.schema.ColumnFactory.createColumnFromDto
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -13,6 +12,12 @@ import org.evomaster.dbconstraint.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnFactory
+import org.evomaster.core.database.sql.schema.CompositeType
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.logging.LoggingUtil
 
 

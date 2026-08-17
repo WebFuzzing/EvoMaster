@@ -3,10 +3,11 @@ package org.evomaster.core.sql
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.gene.*
@@ -16,7 +17,6 @@ import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

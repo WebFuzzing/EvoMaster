@@ -1,11 +1,11 @@
-package org.evomaster.core.sql.schema
+package org.evomaster.core.database.sql.schema
 
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.CompositeTypeColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.CompositeTypeDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.sql.schema.h2.H2GeometryType
-import org.evomaster.core.sql.schema.h2.H2GeometryTypeParser
+import org.evomaster.core.database.sql.schema.h2.H2GeometryType
+import org.evomaster.core.database.sql.schema.h2.H2GeometryTypeParser
 
 object ColumnFactory {
 

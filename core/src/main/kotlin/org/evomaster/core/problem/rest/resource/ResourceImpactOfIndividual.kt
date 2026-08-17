@@ -9,7 +9,7 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.impact.impactinfocollection.InitializationGroupedActionsImpacts
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 import kotlin.reflect.KClass
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * created by manzhang on 2021/10/21

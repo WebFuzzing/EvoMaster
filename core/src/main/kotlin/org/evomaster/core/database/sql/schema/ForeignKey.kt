@@ -1,4 +1,4 @@
-package org.evomaster.core.sql.schema
+package org.evomaster.core.database.sql.schema
 
 /**
  *

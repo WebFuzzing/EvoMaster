@@ -14,7 +14,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequ
 import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max

@@ -19,7 +19,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

@@ -29,7 +29,7 @@ import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max

@@ -5,7 +5,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.client.java.sql.internal.SqlHandler
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto
 import org.evomaster.core.database.sql.DatabaseExecution
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach

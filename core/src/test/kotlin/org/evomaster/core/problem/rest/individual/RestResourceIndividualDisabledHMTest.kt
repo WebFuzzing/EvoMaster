@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
 import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster

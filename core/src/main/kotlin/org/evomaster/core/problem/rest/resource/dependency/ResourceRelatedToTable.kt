@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.database.sql.DatabaseExecution
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * related info between resource and tables

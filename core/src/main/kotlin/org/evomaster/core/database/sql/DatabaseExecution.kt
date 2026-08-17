@@ -3,7 +3,7 @@ package org.evomaster.core.database.sql
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.LoggerFactory
 
 /**

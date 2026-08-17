@@ -31,7 +31,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.ColumnDataType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls

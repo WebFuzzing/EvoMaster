@@ -1,13 +1,13 @@
 package org.evomaster.core.problem.util.inference
 
 import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * process inference regarding resource, which can be extended for the different inference technique
