@@ -130,6 +130,159 @@ public class DynamoDbAttributeValueHelperTest {
         assertSame(marker, DynamoDbAttributeValueHelper.toPlainValue(marker));
     }
 
+    /**
+     * Verifies that document paths include every map field and list index in deterministic preorder,
+     * while nulls, empty containers, and sets remain addressable leaves.
+     */
+    @Test
+    public void testDocumentPathsAndLookupByPathForNestedMapsAndListIndexes() {
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("country", "Argentina");
+        profile.put("clubs", Arrays.asList("Barcelona", "Inter Miami"));
+
+        Map<String, Object> squad = new LinkedHashMap<>();
+        squad.put("captain", "Lionel Messi");
+
+        Map<String, Object> player = new LinkedHashMap<>();
+        player.put("name", "Lionel Messi");
+        player.put("profile", profile);
+        player.put("squads", Collections.singletonList(squad));
+        player.put("tournaments", Collections.singletonList(
+                Collections.singletonList("FIFA World Cup")));
+        player.put("retired", null);
+        player.put("tags", new LinkedHashSet<>(Arrays.asList("forward", "captain")));
+        player.put("emptyProfile", Collections.emptyMap());
+        player.put("emptyMatches", Collections.emptyList());
+
+        Set<String> paths = DynamoDbAttributeValueHelper.documentPaths(player);
+
+        assertEquals(Arrays.asList(
+                        "name",
+                        "profile",
+                        "profile.country",
+                        "profile.clubs",
+                        "profile.clubs[0]",
+                        "profile.clubs[1]",
+                        "squads",
+                        "squads[0]",
+                        "squads[0].captain",
+                        "tournaments",
+                        "tournaments[0]",
+                        "tournaments[0][0]",
+                        "retired",
+                        "tags",
+                        "emptyProfile",
+                        "emptyMatches"),
+                new ArrayList<>(paths));
+
+        for (String path : paths) {
+            assertTrue(DynamoDbAttributeValueHelper.lookupByPath(player, path).found, path);
+        }
+        assertSame(profile, DynamoDbAttributeValueHelper.lookupByPath(player, "profile").value);
+        assertEquals("Argentina",
+                DynamoDbAttributeValueHelper.lookupByPath(player, "profile.country").value);
+        assertEquals("Inter Miami",
+                DynamoDbAttributeValueHelper.lookupByPath(player, "profile.clubs[1]").value);
+        assertEquals("Lionel Messi",
+                DynamoDbAttributeValueHelper.lookupByPath(player, "squads[0].captain").value);
+        assertEquals("FIFA World Cup",
+                DynamoDbAttributeValueHelper.lookupByPath(player, "tournaments[0][0]").value);
+
+        DynamoDbAttributeValueHelper.ValueLookup explicitNull =
+                DynamoDbAttributeValueHelper.lookupByPath(player, "retired");
+        assertTrue(explicitNull.found);
+        assertNull(explicitNull.value);
+    }
+
+    /**
+     * Verifies that invalid inputs, absent fields, incompatible intermediate values, and invalid
+     * list indexes all produce an unambiguous missing-path result.
+     */
+    @Test
+    public void testLookupByPathRejectsInvalidTraversal() {
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("country", "Argentina");
+        profile.put("clubs", Arrays.asList("Barcelona", "Inter Miami"));
+
+        Map<String, Object> squad = Collections.singletonMap(
+                "captain", "Lionel Messi");
+        Map<String, Object> player = new LinkedHashMap<>();
+        player.put("name", "Lionel Messi");
+        player.put("profile", profile);
+        player.put("squads", Collections.singletonList(squad));
+
+        List<DynamoDbAttributeValueHelper.ValueLookup> missingLookups = Arrays.asList(
+                DynamoDbAttributeValueHelper.lookupByPath(null, "name"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, null),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "  "),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "country"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "name.first"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "profile.country[0]"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "profile.clubs[-1]"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "profile.clubs[2]"),
+                DynamoDbAttributeValueHelper.lookupByPath(player, "squads[0].coach"));
+
+        for (DynamoDbAttributeValueHelper.ValueLookup lookup : missingLookups) {
+            assertFalse(lookup.found);
+            assertNull(lookup.value);
+        }
+    }
+
+    /**
+     * Verifies empty-input handling and that path enumeration returns a snapshot independent of
+     * later mutations to the source item.
+     */
+    @Test
+    public void testDocumentPathsReturnsEmptySnapshotForMissingOrChangingItems() {
+        assertTrue(DynamoDbAttributeValueHelper.documentPaths(null).isEmpty());
+        assertTrue(DynamoDbAttributeValueHelper.documentPaths(Collections.emptyMap()).isEmpty());
+
+        Map<String, Object> player = new LinkedHashMap<>();
+        player.put("name", "Alexia Putellas");
+        Set<String> paths = DynamoDbAttributeValueHelper.documentPaths(player);
+
+        player.put("country", "Spain");
+        assertEquals(Collections.singleton("name"), paths);
+    }
+
+    @Test
+    public void testResolveAttributeTypeForPlainPlayerValues() {
+        assertEquals(DynamoDbAttributeType.NULL,
+                DynamoDbAttributeValueHelper.resolveAttributeType(null));
+        assertEquals(DynamoDbAttributeType.STRING,
+                DynamoDbAttributeValueHelper.resolveAttributeType("Lionel Messi"));
+        assertEquals(DynamoDbAttributeType.NUMBER,
+                DynamoDbAttributeValueHelper.resolveAttributeType(10L));
+        assertEquals(DynamoDbAttributeType.BINARY,
+                DynamoDbAttributeValueHelper.resolveAttributeType(new byte[]{1, 0}));
+        assertEquals(DynamoDbAttributeType.BOOLEAN,
+                DynamoDbAttributeValueHelper.resolveAttributeType(true));
+        assertEquals(DynamoDbAttributeType.MAP,
+                DynamoDbAttributeValueHelper.resolveAttributeType(Collections.singletonMap("country", "Argentina")));
+        assertEquals(DynamoDbAttributeType.LIST,
+                DynamoDbAttributeValueHelper.resolveAttributeType(Arrays.asList("Barcelona", "Paris")));
+        assertEquals(DynamoDbAttributeType.STRING_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(
+                        new LinkedHashSet<Object>(Arrays.asList("Argentina", "France"))));
+        assertEquals(DynamoDbAttributeType.NUMBER_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(
+                        new LinkedHashSet<Object>(Arrays.asList(10L, 7L))));
+        assertEquals(DynamoDbAttributeType.BINARY_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(
+                        new LinkedHashSet<Object>(Collections.singletonList(new byte[]{1}))));
+    }
+
+    @Test
+    public void testResolveAttributeTypeFallbacks() {
+        assertEquals(DynamoDbAttributeType.LIST,
+                DynamoDbAttributeValueHelper.resolveAttributeType(Collections.emptySet()));
+        assertEquals(DynamoDbAttributeType.LIST,
+                DynamoDbAttributeValueHelper.resolveAttributeType(
+                        new LinkedHashSet<>(Collections.singletonList(new Object()))));
+        assertEquals(DynamoDbAttributeType.STRING,
+                DynamoDbAttributeValueHelper.resolveAttributeType(new Object()));
+    }
+
     private static class FakeAttributeValue {
         private final String n;
         private final Boolean bool;
@@ -157,12 +310,12 @@ public class DynamoDbAttributeValueHelperTest {
             this.bs = bs;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings("unused") //invoked by reflection
         public Boolean hasBs() {
             return true;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings("unused") //invoked by reflection
         public Collection<?> bs() {
             return bs;
         }
@@ -175,7 +328,7 @@ public class DynamoDbAttributeValueHelperTest {
             this.b = b;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings("unused") //invoked by reflection
         public Object b() {
             return b;
         }
