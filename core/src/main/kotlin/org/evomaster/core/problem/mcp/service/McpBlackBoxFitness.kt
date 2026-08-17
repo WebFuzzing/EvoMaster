@@ -108,6 +108,10 @@ class McpBlackBoxFitness : McpFitness() {
      * back to printable string representation for complex types.
      */
     private fun geneToMap(gene: ObjectGene): Map<String, Any?> {
+        /**
+         * TODO: This will be replaced with an McpActionBuilder module
+         * that will convert a tool's input schema into an [ObjectGene]
+         */
         val map = mutableMapOf<String, Any?>()
         for (field in gene.fields) {
             map[field.name] = extractGeneValue(field)
@@ -116,6 +120,10 @@ class McpBlackBoxFitness : McpFitness() {
     }
 
     private fun extractGeneValue(gene: Gene): Any? {
+        /**
+         * TODO: The McpActionBuilder module will reuse [org.evomaster.core.problem.rest.builder.RestActionBuilderV3]
+         * to handle nullable, optional and choice genes within an MCP action gene.
+         */
         return when (gene) {
             is StringGene -> gene.value
             is BooleanGene -> gene.value
