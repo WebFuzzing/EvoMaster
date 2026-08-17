@@ -1,4 +1,4 @@
-package org.evomaster.core.mongo
+package org.evomaster.core.database.mongo
 
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult

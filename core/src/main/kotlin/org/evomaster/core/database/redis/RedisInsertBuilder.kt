@@ -1,13 +1,9 @@
-package org.evomaster.core.redis
+package org.evomaster.core.database.redis
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

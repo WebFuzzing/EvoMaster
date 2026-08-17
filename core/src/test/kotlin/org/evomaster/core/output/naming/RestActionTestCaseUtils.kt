@@ -2,8 +2,8 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.TestUtils
 import org.evomaster.core.TestUtils.generateFakeDbAction
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType

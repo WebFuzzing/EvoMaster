@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoInsertBuilder
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.enterprise.param.DerivedParamHandler
 import org.evomaster.core.remote.SutProblemException

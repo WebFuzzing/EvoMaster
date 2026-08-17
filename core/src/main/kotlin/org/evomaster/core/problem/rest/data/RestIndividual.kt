@@ -5,7 +5,7 @@ import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
@@ -13,7 +13,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.EnvironmentAction

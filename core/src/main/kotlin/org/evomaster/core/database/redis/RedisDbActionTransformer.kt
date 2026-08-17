@@ -1,4 +1,4 @@
-package org.evomaster.core.redis
+package org.evomaster.core.database.redis
 
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 

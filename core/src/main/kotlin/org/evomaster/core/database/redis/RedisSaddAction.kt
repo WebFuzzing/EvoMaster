@@ -1,4 +1,4 @@
-package org.evomaster.core.redis
+package org.evomaster.core.database.redis
 
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene

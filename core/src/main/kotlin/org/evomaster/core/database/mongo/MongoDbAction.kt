@@ -1,4 +1,4 @@
-package org.evomaster.core.mongo
+package org.evomaster.core.database.mongo
 
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3.createGeneForDTO

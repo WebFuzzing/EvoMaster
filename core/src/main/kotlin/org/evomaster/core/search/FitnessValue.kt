@@ -7,11 +7,11 @@ import org.evomaster.client.java.controller.api.dto.database.execution.RedisFail
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
-import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.database.mongo.MongoExecution
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
-import org.evomaster.core.redis.RedisExecution
+import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.sql.schema.TableId
