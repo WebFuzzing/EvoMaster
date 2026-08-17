@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
 
 /**
  * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
@@ -18,13 +19,13 @@ enum class Direction { FORWARD, BACKWARD }
 /**
  * Distinguishes the different assertion types an [AssertionRxGene] represents.
  */
-enum class AssertionType(val direction: Direction, val hasContent: Boolean, val forceFullMatch: Boolean = false, val boundaryFallback: Boolean = false) {
-    LOOKAHEAD(direction = Direction.FORWARD, hasContent = true),
-    LOOKBEHIND(direction = Direction.BACKWARD, hasContent = true),
-    START_OF_INPUT(direction = Direction.BACKWARD, hasContent = false, forceFullMatch = true),
-    END_OF_INPUT(direction = Direction.FORWARD, hasContent = false, forceFullMatch = true),
-    MULTILINE_START(direction = Direction.BACKWARD, hasContent = true, boundaryFallback = true),
-    MULTILINE_END(direction = Direction.FORWARD, hasContent = true, boundaryFallback = true)
+enum class AssertionType(val direction: Direction, val hasContent: Boolean) {
+    LOOKAHEAD(Direction.FORWARD, hasContent = true),
+    LOOKBEHIND(Direction.BACKWARD, hasContent = true),
+    START_OF_INPUT(Direction.BACKWARD, hasContent = false),
+    END_OF_INPUT(Direction.FORWARD, hasContent = false),
+    CARET(Direction.BACKWARD, hasContent = false),
+    DOLLAR(Direction.FORWARD, hasContent = false)
 }
 
 /**
@@ -46,7 +47,8 @@ class AssertionRxGene(
      * in that case [innerGene] is null.
      */
     val innerGene: DisjunctionListRxGene?,
-    val assertionType: AssertionType
+    val assertionType: AssertionType,
+    val flags: RegexFlags = RegexFlags()
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
     init {
@@ -67,7 +69,7 @@ class AssertionRxGene(
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 
     override fun copyContent(): Gene {
-        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene, assertionType)
+        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene, assertionType, flags)
         copy.name = this.name
         return copy
     }

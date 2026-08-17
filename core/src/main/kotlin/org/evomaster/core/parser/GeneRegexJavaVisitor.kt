@@ -87,12 +87,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         return disjList
     }
 
-    private fun buildMultilineAnchorInnerGene(flags: RegexFlags): DisjunctionListRxGene {
-        val terminatorClassGene = CharacterRangeRxGene(currentFlags.lineTerminatorRanges, currentFlags)
-        val disjunction = DisjunctionRxGene("multiline_anchor", listOf(terminatorClassGene), matchStart = true, matchEnd = true)
-        return DisjunctionListRxGene(listOf(disjunction))
-    }
-
     /**
      * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
      * the currently-unsupported ways an assertion's ancestry can appear (nested).
@@ -243,26 +237,18 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
             val gene: Gene = when {
                 assertionCtx.BoundaryAssertions() != null -> when (assertionCtx.BoundaryAssertions().text) {
-                    "\\A" -> AssertionRxGene(null, AssertionType.START_OF_INPUT)
-                    "\\z" -> AssertionRxGene(null, AssertionType.END_OF_INPUT)
+                    "\\A" -> AssertionRxGene(null, AssertionType.START_OF_INPUT, currentFlags)
+                    "\\z" -> AssertionRxGene(null, AssertionType.END_OF_INPUT, currentFlags)
                     else -> throw IllegalArgumentException("Invalid boundary assertion")
                 }
                 assertionCtx.CARET() != null ->
-                    if (currentFlags.multiline) {
-                        AssertionRxGene(buildMultilineAnchorInnerGene(currentFlags), AssertionType.MULTILINE_START)
-                    } else {
-                        AssertionRxGene(null, AssertionType.START_OF_INPUT)
-                    }
+                    AssertionRxGene(null, AssertionType.CARET, currentFlags)
                 assertionCtx.DOLLAR() != null ->
-                    if (currentFlags.multiline) {
-                        AssertionRxGene(buildMultilineAnchorInnerGene(currentFlags), AssertionType.MULTILINE_END)
-                    } else {
-                        AssertionRxGene(null, AssertionType.END_OF_INPUT)
-                    }
+                    AssertionRxGene(null, AssertionType.DOLLAR, currentFlags)
                 assertionCtx.LESS_THAN() != null ->
-                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKBEHIND)
+                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKBEHIND, currentFlags)
                 else ->
-                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKAHEAD)
+                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKAHEAD, currentFlags)
             }
             res.genes.add(gene)
             return res
