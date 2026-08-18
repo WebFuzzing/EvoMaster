@@ -1654,7 +1654,7 @@ class EMConfig {
     @Cfg("Models used to learn input constraints and predict the response status before issuing a request. " +
             "Supports both single-model and ensemble configurations. " +
             "Ensemble model is a combination of a comma-separated list, e.g., GLM,NN,KDE.")
-    var aiModelForResponseClassification: Set<AIResponseClassifierModel> = setOf(AIResponseClassifierModel.NONE)
+    var aiModelForResponseClassification: Set<AIResponseClassifierModel> = setOf(AIResponseClassifierModel.GAUSSIAN)
 
     @Experimental
     @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
