@@ -180,8 +180,6 @@ class CharacterClassEscapeRxGene(
                     negated = MultiCharacterRange(true, ranges)
                 )
             }
-
-        private val unicodeCache = UnicodeCache()
     }
 
     var value: String = ""
@@ -221,7 +219,7 @@ class CharacterClassEscapeRxGene(
                 else -> //this should never happen due to check in init
                     throw IllegalStateException("Type '\\$type' not supported yet")
             }
-            unicodeCache.getRanges(cacheLabel, negated)
+            UnicodeCache.getRanges(cacheLabel, negated)
         } else {
             // regular predefined character classes
             when(type[0]){
@@ -243,7 +241,7 @@ class CharacterClassEscapeRxGene(
                     } else if (PosixClass.fromPLabelIgnoreCase(pLabel) != null) {
                         throw IllegalStateException("This escape (\\$type) is only valid when the \"U\" flag is on.")
                     } else {
-                        unicodeCache.getRanges(pLabel, negated)
+                        UnicodeCache.getRanges(pLabel, negated)
                     }
                 }
                 else -> //this should never happen due to check in init

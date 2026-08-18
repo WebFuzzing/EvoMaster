@@ -21,14 +21,12 @@ import java.util.concurrent.ConcurrentHashMap
  * Results are computed lazily on first access and cached statically for the lifetime of the JVM.
  * The cache is shared across all instances of this class.
  */
-class UnicodeCache {
-    companion object {
-        /**
-         * WARNING: mutable static state. But as it is just a cache, it is not a problem.
-         * Furthermore, although the hashmap is mutable, the values inside are not
-         */
-        private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
-    }
+object UnicodeCache {
+    /**
+     * WARNING: mutable static state. But as it is just a cache, it is not a problem.
+     * Furthermore, although the hashmap is mutable, the values inside are not
+     */
+    private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
 
     // UNICODE GENERAL CATEGORIES, keywords (gc, general_category) are case-insensitive,
     // prefix (Is) and names are case-sensitive
