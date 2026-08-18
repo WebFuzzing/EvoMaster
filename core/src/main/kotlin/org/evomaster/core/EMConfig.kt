@@ -1707,7 +1707,7 @@ class EMConfig {
     @Min(1.0)
     @Cfg("When the Response Classifier determines an action is going to fail, specify how many attempts will" +
             " be tried at fixing it.")
-    var maxRepairAttemptsInResponseClassification = 2
+    var maxRepairAttemptsInResponseClassification = 100
 
     enum class AIClassificationRepairActivation{
         /*

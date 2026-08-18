@@ -323,7 +323,7 @@ There are 3 types of options:
 |`llmThreads`| __Int__. The number of threads to use when making calls towards an LLM, in configured. If connecting to Ollama, this value is ignored, and only 1 thread is used. *Depends on*: `llm=true`. *Default value*: `4`.|
 |`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Depends on*: `llm=true`. *Default value*: `60`.|
 |`llmURL`| __String__. LLM external service URL. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
-|`maxRepairAttemptsInResponseClassification`| __Int__. When the Response Classifier determines an action is going to fail, specify how many attempts will be tried at fixing it. *Constraints*: `min=1.0`. *Default value*: `2`.|
+|`maxRepairAttemptsInResponseClassification`| __Int__. When the Response Classifier determines an action is going to fail, specify how many attempts will be tried at fixing it. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
