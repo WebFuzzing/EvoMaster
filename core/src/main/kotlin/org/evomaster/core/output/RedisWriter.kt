@@ -1,8 +1,12 @@
 package org.evomaster.core.output
 
 import org.apache.commons.text.StringEscapeUtils
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.redis.*
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
+import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
 import org.evomaster.core.problem.rest.data.HttpVerb
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.service.Randomness
 
