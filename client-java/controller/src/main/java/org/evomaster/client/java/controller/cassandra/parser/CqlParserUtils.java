@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller.cassandra.parser;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.operations.*;
 
 import java.util.ArrayList;
@@ -123,6 +125,43 @@ public class CqlParserUtils {
             }
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Extracts the keyspace/table a CQL SELECT, UPDATE, or DELETE statement targets, straight
+     * from the parse tree. Unlike a regex over the raw CQL text, this preserves whether an
+     * identifier was quoted (and therefore case-sensitive) or not, since the grammar's
+     * {@code table}/{@code keyspace}/{@code fromSpecElement} rules match the quote characters
+     * as part of the token text.
+     *
+     * @param root the root of a parsed CQL command, as returned by {@link #parseCqlCommand}
+     * @return the referenced keyspace/table;
+     * @throws IllegalArgumentException if the statement isn't a SELECT/UPDATE/DELETE
+     */
+    public static CqlTableReference getTableReference(CqlParser.RootContext root) {
+        CqlParser.CqlContext cql = root.cqls() != null ? root.cqls().cql(0) : null;
+        if (cql == null) {
+            throw new IllegalStateException("CQL query cannot be null");
+        } else if (cql.select_() != null) {
+            return parseFromSpec(cql.select_().fromSpec());
+        } else if (cql.delete_() != null) {
+            return parseFromSpec(cql.delete_().fromSpec());
+        } else if (cql.update() != null) {
+            CqlParser.UpdateContext update = cql.update();
+            String keyspaceName = update.keyspace() != null ? update.keyspace().getText() : null;
+            return new CqlTableReference(keyspaceName, update.table().getText());
+        } else {
+            throw new IllegalArgumentException("Cannot extract a table reference from a non SELECT/UPDATE/DELETE CQL command: " + cql.getText());
+        }
+    }
+
+    private static CqlTableReference parseFromSpec(CqlParser.FromSpecContext fromSpec) {
+        List<TerminalNode> names = fromSpec.fromSpecElement().OBJECT_NAME();
+        if (names.size() == 2) {
+            return new CqlTableReference(names.get(0).getText(), names.get(1).getText());
+        } else {
+            return new CqlTableReference(null, names.get(0).getText());
         }
     }
 
