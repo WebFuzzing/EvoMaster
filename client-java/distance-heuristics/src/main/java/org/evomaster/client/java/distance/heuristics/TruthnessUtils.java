@@ -215,8 +215,7 @@ public class TruthnessUtils {
     public static Truthness buildXorAggregationTruthness(Truthness left, Truthness right) {
         Truthness leftAndNotRight = buildAndAggregationTruthness(left, right.invert());
         Truthness notLeftAndRight = buildAndAggregationTruthness(left.invert(), right);
-        Truthness orAggregation = buildOrAggregationTruthness(leftAndNotRight, notLeftAndRight);
-        return orAggregation;
+        return buildOrAggregationTruthness(leftAndNotRight, notLeftAndRight);
     }
 
     /**
