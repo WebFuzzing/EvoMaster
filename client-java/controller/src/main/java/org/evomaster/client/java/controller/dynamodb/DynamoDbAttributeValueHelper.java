@@ -394,7 +394,7 @@ public final class DynamoDbAttributeValueHelper {
      * <p>
      * Lookup fails when the item or path is absent, a field does not exist, an intermediate value has
      * the wrong container type, or a list index is outside the available range. A successfully
-     * resolved explicit null is returned as {@code ValueLookup(true, null)}.
+     * resolved explicit null is returned as {@code DynamoDbValueLookup(true, null)}.
      *
      * @param item normalized DynamoDB item
      * @param path document path produced by the DynamoDB expression parser
