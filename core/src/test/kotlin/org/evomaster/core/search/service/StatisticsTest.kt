@@ -37,6 +37,22 @@ class StatisticsTest {
     }
 
     @Test
+    fun testDynamoDbHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(10)
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(20)
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(30)
+
+        repeat(2) {
+            statistics.reportDynamoDbHeuristicEvaluationSuccess()
+        }
+        statistics.reportDynamoDbHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getDynamoDbHeuristicsEvaluationCount())
+        assertEquals(20.0, statistics.averageNumberOfEvaluatedItemsForDynamoDbHeuristics())
+    }
+
+    @Test
     fun testSqlZ3CacheAccountingInvariant() {
         val statistics = Statistics()
 

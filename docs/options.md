@@ -142,6 +142,7 @@ There are 3 types of options:
 |`geneWeightBasedOnImpactsBy`| __Enum__. Specify a strategy to calculate a weight of a gene based on impacts. *Valid values*: `SORT_COUNTER, SORT_RATIO, COUNTER, RATIO`. *Default value*: `RATIO`.|
 |`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`heuristicsForDynamoDb`| __Boolean__. Tracking of DynamoDB commands to improve test generation. *Depends on*: `blackBox=false`. *Experimental option*. *Default value*: `false`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
