@@ -1683,7 +1683,7 @@ class EMConfig {
     @Cfg("Number of training iterations required to update classifier parameters. " +
                 "For example, in the Gaussian model this affects mean and variance updates. " +
                 "For neural network (NN) models, the warm-up should typically be larger than 1000.")
-    var aiResponseClassifierWarmup : Int = 100
+    var aiResponseClassifierWarmup : Int = 1000
 
 
     enum class EncoderType {
