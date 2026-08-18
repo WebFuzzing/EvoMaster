@@ -5,9 +5,9 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.sql.DatabaseExecution
-import org.evomaster.core.sql.SqlExecutionInfo
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.DatabaseExecution
+import org.evomaster.core.database.sql.SqlExecutionInfo
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

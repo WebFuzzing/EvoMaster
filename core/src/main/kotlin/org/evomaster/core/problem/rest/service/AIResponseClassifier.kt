@@ -432,6 +432,10 @@ class AIResponseClassifier : AIModel {
                 }
             }
         }
+        /*
+            If we modify only a subset of fields, then need to make sure post-checks are run.
+            No need in call.randomize(), as that already does it internally.
+         */
         call.postRandomizedChecks(randomness)
     }
 
