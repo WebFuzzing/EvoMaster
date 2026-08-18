@@ -17,6 +17,10 @@ Also, some of these papers provides full replication packages, which are linked 
   *Validating HTTP Semantics in REST APIs With Constructed Call Sequence Scenarios*.
   [[arXiv](https://arxiv.org/abs/2608.16239)]
 
+* M. Zhang, C. Shen, A. Arcuri, T. Yue.
+  *Detecting and Mitigating Flakiness in REST API Fuzzing*.
+  [[arXiv](https://arxiv.org/abs/2603.28452)]
+
 * O. Sahin, M. Zhang, A. Poth, O. Rrjolli, A. Faes, P. Teng, K. Xue, W. Ma, A. Arcuri
   *Using OAI Overlay to Enhance REST API Fuzzing*.
   [[arXiv](https://arxiv.org/html/2607.04325v1)]
