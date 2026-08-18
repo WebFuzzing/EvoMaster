@@ -5,9 +5,8 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.scheduletask.ScheduleTaskAction
-import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
