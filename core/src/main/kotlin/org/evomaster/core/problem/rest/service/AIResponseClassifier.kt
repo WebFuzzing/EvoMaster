@@ -402,7 +402,7 @@ class AIResponseClassifier : AIModel {
          */
         if (classification.invalidFields.isEmpty()) {
             //no info available
-//            call.randomize(randomness, true)
+            call.randomize(randomness, true)
             return
         }
 
