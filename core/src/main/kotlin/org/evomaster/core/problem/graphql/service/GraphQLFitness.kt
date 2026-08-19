@@ -3,7 +3,7 @@ package org.evomaster.core.problem.graphql.service
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.graphql.*
@@ -19,7 +19,6 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.NewCookie

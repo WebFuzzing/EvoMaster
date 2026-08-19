@@ -5,13 +5,13 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

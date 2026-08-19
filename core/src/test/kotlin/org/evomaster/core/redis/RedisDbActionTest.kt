@@ -1,5 +1,9 @@
 package org.evomaster.core.redis
 
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -116,14 +120,16 @@ class RedisDbActionTest {
 
     @Test
     fun testSaddFromSinterActionSeeTopGenesReturnsMemberGene() {
-        val action = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
+        val action =
+            RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
         assertEquals(1, action.seeTopGenes().size)
         assertInstanceOf(StringGene::class.java, action.seeTopGenes()[0])
     }
 
     @Test
     fun testSaddFromSinterActionCopyIsIndependent() {
-        val original = RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
+        val original =
+            RedisSaddFromSinterAction(keys = listOf("set1", "set2"), memberGene = StringGene("member", "shared"))
         val copy = original.copy() as RedisSaddFromSinterAction
         copy.memberGene.value = "changed"
 
