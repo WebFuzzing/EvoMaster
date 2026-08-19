@@ -2,12 +2,12 @@ package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.sql.SqlActionTransformer
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlActionTransformer
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.sql.Date

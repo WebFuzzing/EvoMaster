@@ -11,7 +11,7 @@ import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 
 
 /**
