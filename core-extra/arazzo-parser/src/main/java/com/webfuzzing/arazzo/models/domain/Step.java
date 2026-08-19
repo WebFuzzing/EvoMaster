@@ -12,6 +12,7 @@ import java.util.Map;
  * This model only have SuccessAction, FailureAction and Parameter.
  * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
  */
+//TODO to rename it to ArazzoStep
 public class Step {
     /**
      * A description of the step.

@@ -2252,6 +2252,9 @@ class EMConfig {
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
 
+    /**
+     * Enum that enables and disables the generation of individuals based on Arazzo Workflows.
+     */
     enum class ArazzoStrategy {
         NONE,
         ENABLED
@@ -3367,7 +3370,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("arazzo location in disk")
-    var arazzoLocation = ""
+    var arazzoLocation: String? = null
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){

@@ -14,7 +14,6 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
 import org.evomaster.core.Main
-import org.evomaster.core.problem.rest.SamplerVerifierTest.FakeRemoteController
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.module.ArazzoRestModule
@@ -39,7 +38,7 @@ class ArazzoSamplerVerifierTest {
     fun testArazzoSamplerProducesValidIndividuals() {
         val sampler = createSampler()
 
-        assertTrue(sampler.workflowsArazzo.isNotEmpty(), "Arazzo workflows should be loaded at init")
+        assertTrue(sampler.arazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
         assertTrue(sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
 
         repeat(10) {
@@ -56,7 +55,7 @@ class ArazzoSamplerVerifierTest {
         val sampler = createSampler()
 
         //apply-coupon
-        var workflow = sampler.workflowsArazzoById["apply-coupon"]!!
+        var workflow = sampler.arazzoWorkflowsById["apply-coupon"]!!
         var ind = sampler.buildIndividualFromWorkflow(workflow)
         var actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 
@@ -65,7 +64,7 @@ class ArazzoSamplerVerifierTest {
         assertEquals(listOf("/pet/findByTags", "/pet/{petId}/coupons", "/store/order"), actions.map { it.path.toString() })
 
         //buy-available-pet
-        workflow = sampler.workflowsArazzoById["buy-available-pet"]!!
+        workflow = sampler.arazzoWorkflowsById["buy-available-pet"]!!
         ind = sampler.buildIndividualFromWorkflow(workflow)
         actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 
@@ -74,7 +73,7 @@ class ArazzoSamplerVerifierTest {
         assertEquals(listOf("/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
 
         //place-order
-        workflow = sampler.workflowsArazzoById["place-order"]!!
+        workflow = sampler.arazzoWorkflowsById["place-order"]!!
         ind = sampler.buildIndividualFromWorkflow(workflow)
         actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 

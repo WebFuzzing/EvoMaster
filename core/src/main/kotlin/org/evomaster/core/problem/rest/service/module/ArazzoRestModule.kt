@@ -19,6 +19,9 @@ import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
+/**
+ * It is a module that configures dependencies to enable test generation using the strategy defined for Arazzo.
+ */
 class ArazzoRestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
 
     override fun configure() {

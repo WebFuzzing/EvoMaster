@@ -18,7 +18,7 @@ class ArazzoSampler : AbstractRestSampler() {
      * Choose a random workflow
      */
     override fun sampleAtRandom(): RestIndividual {
-        val workflow = randomness.choose(workflowsArazzo)
+        val workflow = randomness.choose(arazzoWorkflows)
         return buildIndividualFromWorkflow(workflow)
     }
 
@@ -27,7 +27,7 @@ class ArazzoSampler : AbstractRestSampler() {
      */
     fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
         val actions = workflow.steps
-            .flatMap { resolveStep(it) }
+            .flatMap { buildArazzoRestCallActions(it) }
             .onEach {
                 it.doInitialize(randomness)
                 it.forceNewTaints()
@@ -40,24 +40,25 @@ class ArazzoSampler : AbstractRestSampler() {
     /**
      * The Steps can reference a sub-workflow or OpenApi
      */
-    private fun resolveStep(step: Step): List<RestCallAction> {
+    private fun buildArazzoRestCallActions(step: Step): List<RestCallAction> {
         if (!step.operationId.isNullOrBlank()) {
-            return listOfNotNull(findActionForOperation(step.operationId))
+            return listOf(findActionForOperation(step.operationId))
         }
         if (!step.workflowId.isNullOrBlank()) {
-            val nested = workflowsArazzoById[step.workflowId] ?: return emptyList()
-            return nested.steps.flatMap { resolveStep(it) }
+            val nested = arazzoWorkflowsById[step.workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
+            return nested.steps.flatMap { buildArazzoRestCallActions(it) }
         }
-        return emptyList()
+        throw IllegalArgumentException("Arazzo: Step has no operationId, operationPath, or workflowId: ${step.stepId}")
     }
 
     /**
      * Every Step Arazzo has its corresponding RestCallAction in the actionCluster
      */
-    private fun findActionForOperation(operationId: String): RestCallAction? {
+    private fun findActionForOperation(operationId: String): RestCallAction {
         val template = actionCluster.values
             .filterIsInstance<RestCallAction>()
             .find { it.operationId == operationId }
-        return template?.copy() as? RestCallAction
+            ?: throw IllegalArgumentException("Arazzo: Unknown operationId: $operationId")
+        return template.copy() as RestCallAction
     }
 }

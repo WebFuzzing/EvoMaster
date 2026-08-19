@@ -51,6 +51,7 @@ import org.evomaster.core.search.warning.GeneralWarning
 import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Objects
 import javax.annotation.PostConstruct
 import kotlin.sequences.forEach
 
@@ -93,10 +94,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     lateinit var skippedEndpoints : List<Endpoint>
         private set
 
-    var workflowsArazzo = mutableListOf<Workflow>()
+    var arazzoWorkflows = mutableListOf<Workflow>()
         private set
 
-    lateinit var workflowsArazzoById: Map<String, Workflow>
+    lateinit var arazzoWorkflowsById: Map<String, Workflow>
         private set
 
     @PostConstruct
@@ -160,10 +161,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         if (config.arazzoStrategy != EMConfig.ArazzoStrategy.NONE) {
-            val arazzo = readWorkflowsArazzo()
-            workflowsArazzo.clear()
-            workflowsArazzo.addAll(arazzo)
-            workflowsArazzoById = arazzo.associateBy { it.workflowId }
+            val arazzo = readArazzoWorkflows(config.arazzoLocation)
+            arazzoWorkflows.clear()
+            arazzoWorkflows.addAll(arazzo)
+            arazzoWorkflowsById = arazzo.associateBy { it.workflowId }
         }
 
         updateDataPoolBasedOnSchema(actionCluster)
@@ -508,8 +509,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     /**
      * Parse Arazzo and looking for Workflows
      */
-    private fun readWorkflowsArazzo(): List<Workflow> {
-        val arazzoText = ArazzoAccess.readFromDisk(config.arazzoLocation)
+    private fun readArazzoWorkflows(arazzoLocation: String?): List<Workflow> {
+        val location = (Objects.requireNonNull(config.arazzoLocation,"arazzoLocation must not be null"))
+        val arazzoText = ArazzoAccess.readFromDisk(location)
         return ArazzoParser.parse(arazzoText, schemaHolder.main.schemaParsed).workflows
     }
 
