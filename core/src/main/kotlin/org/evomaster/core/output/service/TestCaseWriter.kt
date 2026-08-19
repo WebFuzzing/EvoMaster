@@ -82,9 +82,9 @@ abstract class TestCaseWriter {
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
     /**
-     * Compute the list of Playwright fixtures to destructure in the test signature.
+     * Compute Playwright fixtures to destructure in the test signature.
      * For REST-only generation we currently need only the `request` fixture.
-     * This helper makes it easy to extend later (e.g., include `page`) without touching call sites.
+     * This helper can be extended later (e.g., include `page`) by refactoring it to a List<String>.
      */
     private fun playwrightFixturesFor(test: TestCase): String = "request"
 
@@ -132,11 +132,10 @@ abstract class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
-            format.isPlaywright() -> {
-                val fixtures = playwrightFixturesFor(test)
-                lines.add("test(\"${test.name}\", async ({ $fixtures }) => {")
-            }
-            format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() ->
+                if (format.isPlaywright()) {val fixtures = playwrightFixturesFor(test)
+                    lines.add("test(\"${test.name}\", async ({ $fixtures }) => {")}
+            else lines.add("test(\"${test.name}\", async () => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
             format.isPython() -> lines.add("def ${test.name}(self):")
         }

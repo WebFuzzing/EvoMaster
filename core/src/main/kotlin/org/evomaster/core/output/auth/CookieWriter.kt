@@ -87,22 +87,25 @@ object CookieWriter {
                 // SuperAgent/Playwright cookie extraction
                 if (format.isPlaywright()) {
                     lines.add(".then((res) => {")
-                    lines.add("const setCookie = res.headers()['set-cookie'];")
-                    lines.add("if (setCookie) {")
-                    lines.add("return setCookie.split('\\n')[0].split(';')[0];")
-                    lines.add("}")
-                    lines.add("return null;")
+                    lines.indented {
+                        lines.add("const setCookie = res.headers()['set-cookie'];")
+                        lines.add("if (setCookie) {")
+                        lines.indented {
+                            lines.add("return setCookie.split('\\n')[0].split(';')[0];")
+                        }
+                        lines.add("}")
+                        lines.add("return null;")
+                    }
+                    lines.add("})")
+                    // Playwright cookie extraction must NOT assume res is a response object
+                    lines.add(".then(async (cookie) => {")
+                    lines.indented {
+                        lines.add("${cookiesName(k)} = cookie;")
+                    }
                     lines.add("})")
                 } else {
                     lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
                     lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
-                }
-
-                if (format.isPlaywright()) {
-                    // Playwright cookie extraction must NOT assume res is a response object
-                    lines.add(".then(async (cookie) => {")
-                    lines.add("${cookiesName(k)} = cookie;")
-                    lines.add("})")
                 }
                 lines.appendSemicolon()
             }

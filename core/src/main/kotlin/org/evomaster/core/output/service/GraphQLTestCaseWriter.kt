@@ -52,10 +52,12 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
-            format.isPlaywright() -> {
-                // Handled in callEndpoint for Playwright
+            format.isJavaScript() -> {
+                // Playwright headers/body handled in callEndpoint; set header only for non-Playwright JS
+                if (!format.isPlaywright()) {
+                    lines.add(".set('Content-Type','application/json')")
+                }
             }
-            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
             format.isPython() -> lines.add("headers[\"content-type\"] = \"application/json\"")
            // format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
         }

@@ -542,9 +542,6 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
             if (format.isPlaywright()) {
-                // Guard: avoid executing Playwright tests when Jest is running in the same folder
-                lines.add("const isJest = typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID;")
-                lines.add("if (!isJest) {")
                 lines.add("const { test, expect } = require(\"@playwright/test\");")
             } else {
             lines.add("const superagent = require(\"superagent\");")
@@ -1139,14 +1136,6 @@ class TestSuiteWriter {
 
 
     private fun footer(lines: Lines) {
-        // Close Playwright guard if it was opened; add a Jest placeholder test in the else branch
-        if (config.outputFormat.isPlaywright()) {
-            lines.add("} else {")
-            lines.indented {
-                lines.add("test('placeholder - Playwright suite skipped under Jest', () => { expect(true).toBe(true); });")
-            }
-            lines.add("}")
-        }
         if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isCsharp()) {
             //due to opening of class
             lines.addEmpty(2)

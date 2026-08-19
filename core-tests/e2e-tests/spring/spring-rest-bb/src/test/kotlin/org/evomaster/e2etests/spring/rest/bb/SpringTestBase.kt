@@ -171,8 +171,7 @@ abstract class SpringTestBase : RestTestBase() {
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
 
         when{
-            outputFormat.isPlaywright() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), true)
-            outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
+            outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), outputFormat.isPlaywright())
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)
             outputFormat.isKotlin() -> BlackBoxUtils.runKotlinTests(outputFolderName)
@@ -217,6 +216,9 @@ abstract class SpringTestBase : RestTestBase() {
                 }
                 if(outputFormat.isKotlin()){
                     setOption(args,"outputFilePrefix",BlackBoxUtils.getOutputFilePrefixKotlin(outputFolderName))
+                }
+                if (outputFormat.isPlaywright()) {
+                    setOption(args, "outputFilePrefix", "EvoMaster_pw")
                 }
 
                 defaultSeed++

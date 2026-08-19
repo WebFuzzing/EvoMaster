@@ -349,7 +349,19 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     private fun handleDollarSign(text: String): String{
         return text.replace("\$", "\\\$")
     }
-
+    /**
+     * Formats a field path according to the active output format.
+     *
+     * Rules:
+     *  - Empty input returns an empty string.
+     *  - Java/Kotlin: wrap the path in single quotes and append a dot,
+     *    unless it already starts with a quote.
+     *  - Other formats: return unchanged if starting with '[' or '.';
+     *    otherwise prefix with a dot.
+     *
+     * @param fieldPath raw field path
+     * @return formatted field path for the target generator
+     */
     private fun formatFieldPath(fieldPath: String): String {
         if (fieldPath.isEmpty()) {
             return ""
@@ -380,8 +392,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isPlaywright() -> "expect(($field)$fieldWithDot).toBe(null);"
-                format.isJavaScript() -> "expect($field$fieldPath).toBe(null);" // ($field$)fieldPath
+                format.isJavaScript() ->
+                    if (format.isPlaywright()) "expect(($field)$fieldWithDot).toBe(null);"
+                    else "expect($field$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")

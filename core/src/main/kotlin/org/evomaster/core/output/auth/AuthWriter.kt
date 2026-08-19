@@ -31,65 +31,9 @@ object AuthWriter {
         placeHolderResolver: PlaceHolderResolver?
     ) {
 
-        // Compute placeholder replacements for PLaywright (used for dynamic user data)
+        // Playwright specific handling
         if (format.isPlaywright()) {
-            val replacements: List<String>? = placeHolderResolver?.placeHolders?.entries?.map {
-                val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
-                ".replace(\"${placeholder}\", ${it.value})"
-            }
-            val verb = k.verb.name.lowercase()
-            lines.add(".$verb(")
-            if (k.externalEndpointURL != null) {
-                lines.append("\"${k.externalEndpointURL}\"")
-            } else {
-                lines.append("$baseUrlOfSut + \"")
-                lines.append("${k.endpoint}\"")
-            }
-            lines.append(", {")
-            lines.addEmpty()
-            lines.indented {
-                // headers block
-                lines.add("headers: {")
-                lines.indented {
-                    // content-type header if present
-                    val contentType = k.contentType
-                    if (contentType != null) {
-                        lines.add("'content-type': \"${contentType.defaultValue}\",")
-                    }
-                    // any additional headers
-                    for (header in k.headers) {
-                        lines.add("'${header.name}': \"${header.value}\",")
-                    }
-                }
-                lines.add("},")
-
-                // body/payload
-                val contentType = k.contentType
-                if (contentType != null) {
-                    when (contentType) {
-                        ContentType.X_WWW_FORM_URLENCODED -> {
-                            if (replacements == null) {
-                                lines.add("data: \"${k.payload}\",")
-                            } else {
-                                lines.add("data: \"${k.payload}\"")
-                                // Apply string replacements for placeholders
-                                replacements.forEach { lines.append(it) }
-                                lines.append(",")
-                            }
-                        }
-                        ContentType.JSON -> {
-                            testCaseWriter.printSendJsonBody(k.payload!!, lines, functionsOnString = replacements)
-                            // printSendJsonBody for Playwright appends a trailing comma
-                        }
-                        else -> throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                    }
-                }
-
-                // disable redirections and ignore HTTPS errors
-                lines.add("maxRedirects: 0,")
-                lines.add("ignoreHTTPSErrors: true,")
-            }
-            lines.add("})")
+            addPlaywrightAuthCall(lines, k, testCaseWriter, format, baseUrlOfSut, placeHolderResolver)
             return
         }
 
@@ -111,10 +55,7 @@ object AuthWriter {
                 }
             }
 
-            val replacements = placeHolderResolver?.placeHolders?.entries?.map {
-                    val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
-                    ".replace(\"${placeholder}\", ${it.value})"
-            }
+            val replacements = buildReplacements(format, placeHolderResolver)
 
             when (contentType) {
                 ContentType.X_WWW_FORM_URLENCODED -> {
@@ -188,11 +129,101 @@ object AuthWriter {
         }
     }
 
-    private fun callEndpoint(
+    /**
+     * Emit Playwright request call for authentication endpoints, including headers, body and options.
+     */
+    private fun addPlaywrightAuthCall(
+        lines: Lines,
+        k: CallToEndpoint,
+        testCaseWriter: HttpWsTestCaseWriter,
+        format: OutputFormat,
+        baseUrlOfSut: String,
+        placeHolderResolver: PlaceHolderResolver?
+    ) {
+        // Compute placeholder replacements for Playwright (used for dynamic user data)
+        val replacements: List<String>? = buildReplacements(format, placeHolderResolver)
+
+        // Hoist contentType once and reuse below (headers + body)
+        val contentType = k.contentType
+
+        // Emit verb and URL, leave call open to add Playwright options object
+        emitVerbAndUrl(lines, k, format, baseUrlOfSut, close = false)
+        lines.append(", {")
+        lines.addEmpty()
+        lines.indented {
+            emitPlaywrightHeaders(lines, k, contentType)
+            emitPlaywrightBody(lines, k, testCaseWriter, replacements, contentType)
+            emitPlaywrightRequestOptions(lines)
+        }
+        lines.add("})")
+    }
+
+    /**
+     * Emit the Playwright headers block, including optional content-type and any custom headers.
+     */
+    private fun emitPlaywrightHeaders(
+        lines: Lines,
+        k: CallToEndpoint,
+        contentType: ContentType?
+    ) {
+        lines.add("headers: {")
+        lines.indented {
+            if (contentType != null) {
+                lines.add("'content-type': \"${contentType.defaultValue}\",")
+            }
+            for (header in k.headers) {
+                lines.add("'${header.name}': \"${header.value}\",")
+            }
+        }
+        lines.add("},")
+    }
+
+    /**
+     * Emit the Playwright body/payload block according to the content type.
+     */
+    private fun emitPlaywrightBody(
+        lines: Lines,
+        k: CallToEndpoint,
+        testCaseWriter: HttpWsTestCaseWriter,
+        replacements: List<String>?,
+        contentType: ContentType?
+    ) {
+        if (contentType == null) return
+        when (contentType) {
+            ContentType.X_WWW_FORM_URLENCODED -> {
+                if (replacements == null) {
+                    lines.add("data: \"${k.payload}\",")
+                } else {
+                    lines.add("data: \"${k.payload}\"")
+                    replacements.forEach { lines.append(it) }
+                    lines.append(",")
+                }
+            }
+            ContentType.JSON -> {
+                testCaseWriter.printSendJsonBody(k.payload!!, lines, functionsOnString = replacements)
+            }
+            else -> throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+        }
+    }
+
+    /**
+     * Emit standard Playwright request options for auth requests.
+     */
+    private fun emitPlaywrightRequestOptions(lines: Lines) {
+        lines.add("maxRedirects: 0,")
+        lines.add("ignoreHTTPSErrors: true,")
+    }
+
+    /**
+     * Emit the HTTP verb and URL for the call, with an option to close the parenthesis.
+     * Example (Java/JS): `.post(baseUrl + "/login"` and closes with `)` if `close=true`.
+     */
+    private fun emitVerbAndUrl(
         lines: Lines,
         k: CallToEndpoint,
         format: OutputFormat,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        close: Boolean = false
     ) {
         val verb = k.verb.name.lowercase()
         lines.add(".$verb(")
@@ -206,8 +237,30 @@ object AuthWriter {
             }
             lines.append("${k.endpoint}\"")
         }
-        if (!format.isPython()) {
+        if (close) {
             lines.append(")")
         }
+    }
+
+    /**
+     * Build a list of string replacement functions to apply to payload strings.
+     * Each entry is a snippet like: `.replace("<placeholder>", value)`; returns null if no placeholders.
+     */
+    private fun buildReplacements(
+        format: OutputFormat,
+        placeHolderResolver: PlaceHolderResolver?
+    ): List<String>? = placeHolderResolver?.placeHolders?.entries?.map {
+        val placeholder = GeneUtils.applyEscapes(it.key, mode = GeneUtils.EscapeMode.BODY, format)
+        ".replace(\"${placeholder}\", ${it.value})"
+    }
+
+    private fun callEndpoint(
+        lines: Lines,
+        k: CallToEndpoint,
+        format: OutputFormat,
+        baseUrlOfSut: String
+    ) {
+        // Delegate to the shared emitter; Python keeps it open, others close it
+        emitVerbAndUrl(lines, k, format, baseUrlOfSut, close = !format.isPython())
     }
 }

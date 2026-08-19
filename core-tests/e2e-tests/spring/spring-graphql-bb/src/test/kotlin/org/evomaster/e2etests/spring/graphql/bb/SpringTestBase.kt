@@ -100,8 +100,12 @@ abstract class SpringTestBase : GraphQLTestBase() {
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
 
         when{
-            outputFormat.isPlaywright() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), true)
-            outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
+            outputFormat.isJavaScript() ->
+                if (outputFormat.isPlaywright()) {
+                    BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), true)
+                } else {
+                    BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
+                }
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
