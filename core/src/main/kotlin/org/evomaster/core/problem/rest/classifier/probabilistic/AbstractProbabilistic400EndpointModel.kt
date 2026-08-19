@@ -57,7 +57,7 @@ abstract class AbstractProbabilistic400EndpointModel(
     }
 
     protected var initialized: Boolean = false
-    private val metricRandom = java.util.Random(1234)
+    private var nextWarmupPredictionIs400 = true
 
     /** Create a metric tracker.*/
     val modelMetrics: ModelMetrics = createModelMetrics(metricType)
@@ -108,7 +108,8 @@ abstract class AbstractProbabilistic400EndpointModel(
 
         val outputStatusCode= result.getStatusCode()
         if (modelMetrics.totalSentRequests < warmup || action.parameters.isEmpty()) {
-            val predictedStatusCode = if (metricRandom.nextBoolean()) 400 else NOT_400
+            val predictedStatusCode = if (nextWarmupPredictionIs400) 400 else NOT_400
+            nextWarmupPredictionIs400 = !nextWarmupPredictionIs400
             modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
             val predictedStatusCode = classify(action).prediction()
