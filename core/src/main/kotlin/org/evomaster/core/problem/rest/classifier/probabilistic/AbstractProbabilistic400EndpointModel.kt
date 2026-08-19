@@ -101,8 +101,8 @@ abstract class AbstractProbabilistic400EndpointModel(
     }
 
     /**
-     * Updating classifier performance based on its prediction
-     * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
+     * Updates classifier performance based on its prediction.
+     * During warmup, predictions alternate between 400 and not-400 (like a coin flip) to provide a balanced baseline.
      */
     protected fun updateModelMetrics(action: RestCallAction, result: RestCallResult) {
 
