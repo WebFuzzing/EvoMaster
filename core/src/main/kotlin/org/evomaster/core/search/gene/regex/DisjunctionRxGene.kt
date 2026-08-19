@@ -638,7 +638,7 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Repair input boundary assertions (`^` and `$` for example) by forcing taget (and whatever follows) to zero width.
+     * Repair input boundary assertions (`^` and `$` for example) by forcing [target] (and whatever follows) to zero width.
      */
     private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
         resolveOutwardRequirement("", target, backward)
