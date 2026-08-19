@@ -14,7 +14,7 @@ import org.evomaster.core.utils.RegexFlags
 /**
  * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
  */
-enum class Direction { FORWARD, BACKWARD }
+enum class Direction { FORWARD, BACKWARD, BIDIRECTIONAL }
 
 /**
  * Distinguishes the different assertion types an [AssertionRxGene] represents.
@@ -25,7 +25,9 @@ enum class AssertionType(val direction: Direction, val hasContent: Boolean) {
     START_OF_INPUT(Direction.BACKWARD, hasContent = false),
     END_OF_INPUT(Direction.FORWARD, hasContent = false),
     CARET(Direction.BACKWARD, hasContent = false),
-    DOLLAR(Direction.FORWARD, hasContent = false)
+    DOLLAR(Direction.FORWARD, hasContent = false),
+    WORD_BOUNDARY(Direction.BIDIRECTIONAL, hasContent=false),
+    NON_WORD_BOUNDARY(Direction.BIDIRECTIONAL, hasContent=false)
 }
 
 /**

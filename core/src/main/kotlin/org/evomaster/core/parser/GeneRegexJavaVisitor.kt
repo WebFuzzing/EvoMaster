@@ -239,6 +239,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 assertionCtx.BoundaryAssertions() != null -> when (assertionCtx.BoundaryAssertions().text) {
                     "\\A" -> AssertionRxGene(null, AssertionType.START_OF_INPUT, currentFlags)
                     "\\z" -> AssertionRxGene(null, AssertionType.END_OF_INPUT, currentFlags)
+                    "\\b" -> AssertionRxGene(null, AssertionType.WORD_BOUNDARY, currentFlags)
+                    "\\B" -> AssertionRxGene(null, AssertionType.NON_WORD_BOUNDARY, currentFlags)
                     else -> throw IllegalArgumentException("Invalid boundary assertion")
                 }
                 assertionCtx.CARET() != null ->

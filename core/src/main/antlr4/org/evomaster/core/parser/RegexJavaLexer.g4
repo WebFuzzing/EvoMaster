@@ -77,7 +77,7 @@ CharacterClassEscape
  ;
 
 BoundaryAssertions
- : SLASH [Az]
+ : SLASH [AzbB]
  ;
 
 EQUAL                      : '=';

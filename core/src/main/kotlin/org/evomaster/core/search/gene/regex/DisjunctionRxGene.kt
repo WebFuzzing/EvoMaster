@@ -13,6 +13,7 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.MultiCharacterRange
+import org.evomaster.core.utils.UnicodeCache
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -28,6 +29,26 @@ const val MAX_LOCAL_ASSERTION_ATTEMPTS = 20
  * own index in [DisjunctionRxGene.terms].
  */
 private data class NestedGroupRequirement(val termIndex: Int, val result: AssertionRepairResult)
+
+/** Boundary branches for `\b` and `\B` assertions. Each side (before and after the assertion) may be word or non-word. */
+private data class BoundaryBranch(
+    /** Whether the character immediately preceding the assertion must be a word character. */
+    val wordBefore: Boolean,
+    /** Whether the character immediately following the assertion must be a word character. */
+    val wordAfter: Boolean
+)
+
+// \b: one side must be a word char, the other must not be
+private val wordBoundaryBranches = listOf(
+    BoundaryBranch(wordBefore = true, wordAfter = false),
+    BoundaryBranch(wordBefore = false, wordAfter = true)
+)
+
+// \B: both sides the same
+private val nonWordBoundaryBranches = listOf(
+    BoundaryBranch(wordBefore = true, wordAfter = true),
+    BoundaryBranch(wordBefore = false, wordAfter = false)
+)
 
 class DisjunctionRxGene(
         name: String,
@@ -375,9 +396,56 @@ class DisjunctionRxGene(
                 repairStrictBoundaryAssertion(target, backward)
             AssertionType.CARET, AssertionType.DOLLAR ->
                 repairCaretOrDollar(assertion, target, backward, randomness)
+            AssertionType.WORD_BOUNDARY, AssertionType.NON_WORD_BOUNDARY ->
+                repairBidirectional(assertion, idx, randomness)
         }
         return resolution
     }
+
+    /**
+     * Repairs a [Direction.BIDIRECTIONAL] assertion ([AssertionType.WORD_BOUNDARY]/
+     * [AssertionType.NON_WORD_BOUNDARY]) by trying each of the possible shapes in a randomized
+     * order until one resolves both sides successfully.
+     */
+    private fun repairBidirectional(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
+        val branches = when (assertion.assertionType) {
+            AssertionType.WORD_BOUNDARY -> wordBoundaryBranches
+            AssertionType.NON_WORD_BOUNDARY -> nonWordBoundaryBranches
+            else -> throw IllegalStateException("${assertion.assertionType} is not a word-boundary assertion type.")
+        }.let { if (randomness.nextBoolean()) it else it.reversed() }
+
+        val before = genesBefore(idx)
+        val after = genesAfter(idx)
+        val repairLeftSide = { wordRequired: Boolean -> repairSide(wordRequired, before, backward = true, assertion, randomness) }
+        val repairRightSide = { wordRequired: Boolean -> repairSide(wordRequired, after, backward = false, assertion, randomness) }
+
+        for (branch in branches) {
+            val beforeResult = repairLeftSide(branch.wordBefore)
+            if (!beforeResult.success) continue
+            val afterResult = repairRightSide(branch.wordAfter)
+            if (afterResult.success) {
+                return beforeResult.mergedWith(afterResult)
+            }
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
+     * Resolves one side of a [Direction.BIDIRECTIONAL] branch. [wordRequired] indicates if the current side
+     * should start with a word character or not.
+     */
+    private fun repairSide(wordRequired: Boolean, target: List<Gene>, backward: Boolean, assertion: AssertionRxGene, randomness: Randomness): AssertionRepairResult =
+        if (wordRequired) {
+            val wordRanges = UnicodeCache.getWordForBoundaryRanges(false, assertion.flags)
+            repairTargetFromCharRanges(wordRanges, target, backward, randomness)
+        } else {
+            val nonWordRanges = UnicodeCache.getWordForBoundaryRanges(true, assertion.flags)
+            tryInRandomOrder(
+                { repairTargetFromCharRanges(nonWordRanges, target, backward, randomness) },
+                { repairStrictBoundaryAssertion(target, backward) },
+                randomness
+            )
+        }
 
     /**
      * Repairs a multiline boundary assertion (^$), which can be either a line terminator or an end of the string.
@@ -418,8 +486,19 @@ class DisjunctionRxGene(
 
     /**
      * Attempts repair by trying to force a character sampled from [ranges] into [target].
+     * Checks whether [target]'s current value, already satisfies this without any change.
+     * This makes repairs more reliable.
      */
     private fun repairTargetFromCharRanges(ranges: MultiCharacterRange, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        // check current target's value against ranges before attempting repair
+        val targetChar = (if (backward) target.asReversed() else target)
+            .map { it.getValueAsPrintableString(targetFormat = null) }
+            .firstOrNull { it.isNotEmpty() }
+            ?.let { if (backward) it.last() else it.first() }
+        if (targetChar != null && ranges.contains(targetChar)) {
+            return AssertionRepairResult.SUCCESS
+        }
+
         repeat(MAX_LOCAL_ASSERTION_ATTEMPTS){
             val candidate = ranges.sample(randomness).toString()
             val result = resolveOutwardRequirement(candidate, target, backward)

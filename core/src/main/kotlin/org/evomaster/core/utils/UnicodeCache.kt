@@ -1,6 +1,7 @@
 package org.evomaster.core.utils
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
 
 /**
  * Cache for Unicode character ranges used in `\p{}` and `\P{}` regex escape sequences.
@@ -367,5 +368,42 @@ object UnicodeCache {
         in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]!!
         in unicodeCharClassModePredicates -> unicodeCharClassModePredicates[key]!!
         else -> throw IllegalArgumentException("Unsupported/illegal category, binary property or java method")
+    }
+
+    /**
+     * Returns a [MultiCharacterRange] representing the set of Unicode code points considered as
+     * word characters by `\b` (or non-word characters if [negated]) word boundary escape.
+     *
+     * The result is computed lazily on first access and cached for subsequent calls.
+     * @see getRanges
+     */
+    fun getWordForBoundaryRanges(negated: Boolean, flags: RegexFlags): MultiCharacterRange {
+        val key = if(flags.unicodeCharacterClass) "boundary=wordUnicodeCharClass" else "boundary=word"
+        val fullKey = if (negated) {
+            "^$key"
+        } else {
+            key
+        }
+
+        cache.computeIfAbsent(key) {
+            computeRanges(key, wordBoundaryPredicate(flags))
+        }
+
+        if (!negated) return cache[key]!!
+
+        return cache.computeIfAbsent(fullKey) {
+            MultiCharacterRange(true, cache[key]!!.ranges)
+        }
+    }
+
+    /**
+     * Predicate that separates word from non-word characters as considered for word boundary (`\b`).
+     * This changes depending on regex flag [Pattern.UNICODE_CHARACTER_CLASS] and JDK version.
+     */
+    private fun wordBoundaryPredicate(flags: RegexFlags): (Int) -> Boolean {
+        val pattern = Pattern.compile("(?s)^.\\b.$", flags.toJavaFlagBitmask())
+        return { cp: Int ->
+            pattern.matcher("${cp.toChar()} ").matches()
+        }
     }
 }
