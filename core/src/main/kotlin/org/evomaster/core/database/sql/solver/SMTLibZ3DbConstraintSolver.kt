@@ -149,6 +149,27 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
+        /*
+            Timed as a whole, and in a finally so that every exit path is covered. The two brackets
+            that already existed — around Z3 and around formula generation — leave out writing the
+            .smt2 file, rebuilding the gene tree from a solution, and the call overhead; measuring
+            only those understates what the solver costs the search.
+         */
+        val solveStart = System.currentTimeMillis()
+        try {
+            return doSolve(schemaDto, sqlQuery, numberOfRows, stats)
+        } finally {
+            stats?.reportSqlZ3SolveTime(System.currentTimeMillis() - solveStart)
+        }
+    }
+
+    private fun doSolve(
+        schemaDto: DbInfoDto,
+        sqlQuery: String,
+        numberOfRows: Int,
+        stats: Statistics?
+    ): List<SqlAction> {
+
         val cacheKey = Pair(sqlQuery, numberOfRows)
         // Track "seen" against the same key the cache uses, so unique/duplicate counts
         // line up with actual cache granularity.
@@ -167,7 +188,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            stats?.reportSqlZ3ParseFailure()
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             return emptyList()
         }
 
@@ -180,7 +201,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             generator.generateSMT(queryStatement)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
-            stats?.reportSqlZ3ParseFailure()
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             return emptyList()
         }
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
