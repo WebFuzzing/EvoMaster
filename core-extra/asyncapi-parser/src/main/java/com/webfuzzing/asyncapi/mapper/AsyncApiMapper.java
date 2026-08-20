@@ -17,6 +17,15 @@ import java.io.IOException;
  */
 public class AsyncApiMapper {
 
+    /*
+        TODO Once the parser has stabilized, these could be configuration parameters instead of
+        hard-coded constants.
+
+        They exist because snakeyaml's defaults reject documents that are perfectly valid: the
+        out-of-the-box code-point limit and cap on aliases are both reached by large published
+        specifications.
+     */
+
     private static final int CODE_POINT_LIMIT = 50 * 1024 * 1024;
 
     private static final int MAX_ALIASES_FOR_COLLECTIONS = 1000;

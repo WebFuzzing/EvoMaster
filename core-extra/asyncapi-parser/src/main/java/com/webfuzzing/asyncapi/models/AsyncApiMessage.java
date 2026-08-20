@@ -28,6 +28,10 @@ public class AsyncApiMessage {
 
     private final JsonNode kafkaKey;
 
+    /**
+     * Key is the protocol name, e.g. "kafka" or "amqp".
+     * Value is the binding this message declares for that protocol, as a raw node.
+     */
     private final Map<String, JsonNode> bindings;
 
     private final List<JsonNode> examples;
@@ -154,6 +158,7 @@ public class AsyncApiMessage {
         private JsonNode headers;
         private AsyncApiCorrelationId correlationId;
         private JsonNode kafkaKey;
+        /** @see AsyncApiMessage#bindings */
         private Map<String, JsonNode> bindings = Collections.emptyMap();
         private List<JsonNode> examples = Collections.emptyList();
         private String title;

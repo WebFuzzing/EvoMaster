@@ -26,6 +26,17 @@ import java.util.Locale;
  */
 public class AsyncApiAccess {
 
+    /*
+        TODO This class will likely need to be refactored. Retrieving a schema document from a
+        URL, a file or the classpath is common functionality rather than anything specific to
+        AsyncAPI: it could live in EvoMaster, or in a shared third-party library reused by the
+        different document parsers. It is kept here for now, as that architectural decision is
+        not being made yet.
+
+        Note that AsyncApiParser.parse takes an AsyncApiDocumentFetcher, so retrieval is already
+        behind an interface: whichever way that decision goes, the parser itself is unaffected.
+     */
+
     private static final int CONNECT_TIMEOUT_MS = 10_000;
 
     private static final int READ_TIMEOUT_MS = 30_000;

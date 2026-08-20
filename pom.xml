@@ -239,6 +239,8 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
+        <!-- must stay in sync with what jackson-dataformat-yaml brings in transitively -->
+        <snakeyaml.version>1.33</snakeyaml.version>
         <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
@@ -614,6 +616,11 @@
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>

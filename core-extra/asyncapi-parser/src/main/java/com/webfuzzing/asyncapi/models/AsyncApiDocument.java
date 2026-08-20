@@ -44,8 +44,16 @@ public class AsyncApiDocument {
 
     private final String defaultContentType;
 
+    /**
+     * Key is the message id, i.e. its key under {@code components.messages}.
+     * Value is the message declared under it.
+     */
     private final Map<String, AsyncApiMessage> messages;
 
+    /**
+     * Key is the schema name, i.e. its key under {@code components.schemas}.
+     * Value is that schema as a raw JSON Schema node.
+     */
     private final Map<String, JsonNode> componentSchemas;
 
     private final List<String> warnings;
@@ -123,7 +131,9 @@ public class AsyncApiDocument {
         private final DocumentLocation sourceLocation;
         private final String version;
         private String defaultContentType = DEFAULT_CONTENT_TYPE;
+        /** @see AsyncApiDocument#messages */
         private Map<String, AsyncApiMessage> messages = Collections.emptyMap();
+        /** @see AsyncApiDocument#componentSchemas */
         private Map<String, JsonNode> componentSchemas = Collections.emptyMap();
         private List<String> warnings = Collections.emptyList();
 
