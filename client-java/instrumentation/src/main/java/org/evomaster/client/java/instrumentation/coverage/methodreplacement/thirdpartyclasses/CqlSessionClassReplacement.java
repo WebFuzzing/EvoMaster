@@ -1,7 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
@@ -10,36 +12,172 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass {
     private static final CqlSessionClassReplacement singleton = new CqlSessionClassReplacement();
 
-    public static final String CASSANDRA_FIND_STRING_SYNC = "cassandraExecuteStringSync";
+    public static final String CASSANDRA_EXECUTE_STRING_SYNC = "cassandraExecuteStringSync";
+    public static final String CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC = "cassandraExecuteStringPositionalValuesSync";
+    public static final String CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC = "cassandraExecuteStringNamedValuesSync";
+    public static final String CASSANDRA_EXECUTE_STATEMENT_SYNC = "cassandraExecuteStatementSync";
+
+    private static final String RESULT_SET_CLASS = "com.datastax.oss.driver.api.core.cql.ResultSet";
+    private static final String STATEMENT_CLASS = "com.datastax.oss.driver.api.core.cql.Statement";
+
+    // a CQL identifier: either quoted+case-sensitive (e.g. "Tbl") or unquoted (e.g. tbl)
+    private static final String IDENTIFIER = "(?:\"[^\"]+\"|[A-Za-z_]\\w*)";
+    // clause keywords that introduce a table reference (SELECT/DELETE ... FROM, INSERT ... INTO, UPDATE ...)
+    private static final String CLAUSE_KEYWORDS = "(?:FROM|INTO|UPDATE)";
+
+    /**
+     * Matches the keyspace/table reference after FROM (SELECT/DELETE), INTO (INSERT), or
+     * UPDATE, e.g. "FROM ks.tbl", "INTO tbl", "UPDATE \"Ks\".\"Tbl\"". Group "first" is the
+     * keyspace when a "keyspace.table" qualifier ("second") is present, otherwise it's the
+     * table name on its own.
+     */
+    private static final Pattern TABLE_REFERENCE_PATTERN = Pattern.compile(
+            "(?i)\\b" + CLAUSE_KEYWORDS + "\\s+"
+                    + "(?<first>" + IDENTIFIER + ")"
+                    + "(?:\\s*\\.\\s*(?<second>" + IDENTIFIER + "))?"
+    );
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "com.datastax.oss.driver.api.core.CqlSession";
     }
 
-    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_FIND_STRING_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = "com.datastax.oss.driver.api.core.cql.ResultSet")
+    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
     public static Object execute(Object cqlSession, String query) {
-        return handleCqlExecute(CASSANDRA_FIND_STRING_SYNC, cqlSession, query);
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_SYNC, cqlSession, query, query);
     }
 
-    private static Object handleCqlExecute(String id, Object cqlSession, String query) {
+    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
+    public static Object execute(Object cqlSession, String query, Object... values) {
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, cqlSession, query, query, values);
+    }
+
+    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
+    public static Object execute(Object cqlSession, String query, Map<String, Object> values) {
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, cqlSession, query, query, values);
+    }
+
+    @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STATEMENT_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
+    public static Object execute(Object cqlSession, @ThirdPartyCast(actualType = STATEMENT_CLASS) Object statement) {
+        return handleCqlExecute(CASSANDRA_EXECUTE_STATEMENT_SYNC, cqlSession, extractQueryText(statement), statement);
+    }
+
+    private static Object handleCqlExecute(String id, Object cqlSession, String queryForTracking, Object... invokeArgs) {
         long start = System.currentTimeMillis();
         try {
             Method executeMethod = retrieveExecuteMethod(id, cqlSession);
-            Object result = executeMethod.invoke(cqlSession, query);
+            Object result = executeMethod.invoke(cqlSession, invokeArgs);
             long end = System.currentTimeMillis();
             long executionTime = end - start;
-            ExecutedCqlCommand info = new ExecutedCqlCommand(query, false, executionTime);
+            TableReference ref = extractTableReference(queryForTracking);
+            if (ref.rawTableName != null) {
+                captureTableSchema(cqlSession, ref);
+            }
+            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, ref.keyspaceName, ref.tableName, false, executionTime);
             ExecutionTracer.addCqlInfo(info);
             return result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
+        }
+    }
+
+    /**
+     * Caches the queried table's schema, read directly from the driver's own metadata, so it's
+     * available later without depending on Spring Data. Uses the raw, quote-preserving
+     * keyspace/table text (not the lower-cased, quote-stripped fields on {@link TableReference}
+     * used for {@link ExecutedCqlCommand}), since CQL treats quoted identifiers as case-sensitive.
+     */
+    private static void captureTableSchema(Object cqlSession, TableReference ref) {
+        CassandraSchemaTracer.resolve(cqlSession, ref.rawKeyspaceName, ref.rawTableName);
+    }
+
+    /**
+     * Sentinel {@link TableReference} with all fields {@code null}, returned by
+     * {@link #extractTableReference(String)} when the CQL text doesn't match a recognised
+     * SELECT/INSERT/UPDATE/DELETE table reference shape (eg DDL, batches).
+     */
+    private static final TableReference NO_TABLE_REFERENCE = new TableReference(null, null, null, null);
+
+    /**
+     * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
+     * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
+     * (eg DDL, batches).
+     */
+    private static TableReference extractTableReference(String query) {
+        Objects.requireNonNull(query);
+
+        Matcher matcher = TABLE_REFERENCE_PATTERN.matcher(query);
+        if (!matcher.find()) {
+            return NO_TABLE_REFERENCE;
+        } else {
+            String rawFirst = matcher.group("first");
+            String rawSecond = matcher.group("second");
+            String first = stripQuotes(rawFirst);
+            String second = rawSecond != null ? stripQuotes(rawSecond) : null;
+            // if there is an "a.b" qualifier, "a" is the keyspace and "b" is the table;
+            // otherwise the single identifier is the table, and the keyspace is the session default
+            return second != null
+                    ? new TableReference(first, second, rawFirst, rawSecond)
+                    : new TableReference(null, first, null, rawFirst);
+        }
+    }
+
+    private static String stripQuotes(String identifier) {
+        if (identifier.length() >= 2 && identifier.charAt(0) == '"' && identifier.charAt(identifier.length() - 1) == '"') {
+            return identifier.substring(1, identifier.length() - 1);
+        } else {
+            return identifier;
+        }
+    }
+
+    private static class TableReference {
+        final String keyspaceName;
+        final String tableName;
+        /**
+         * Same keyspace/table, but as the raw, quote-preserving text matched in the CQL string
+         * (not lower-cased/quote-stripped), needed to resolve the table correctly against the
+         * driver's own (quote-sensitive) metadata.
+         */
+        final String rawKeyspaceName;
+        final String rawTableName;
+
+        TableReference(String keyspaceName, String tableName, String rawKeyspaceName, String rawTableName) {
+            this.keyspaceName = keyspaceName;
+            this.tableName = tableName;
+            this.rawKeyspaceName = rawKeyspaceName;
+            this.rawTableName = rawTableName;
+        }
+    }
+
+    /**
+     * Statement is a generic driver type; only SimpleStatement exposes the original
+     * CQL text directly, while BoundStatement requires going through its PreparedStatement.
+     */
+    private static String extractQueryText(Object statement) {
+        try {
+            Method getQuery = statement.getClass().getMethod("getQuery");
+            return (String) getQuery.invoke(statement);
+        } catch (ReflectiveOperationException e) {
+            // not a SimpleStatement (eg BoundStatement) -- fall through
+        }
+
+        try {
+            Method getPreparedStatement = statement.getClass().getMethod("getPreparedStatement");
+            Object prepared = getPreparedStatement.invoke(statement);
+            Method getQuery = prepared.getClass().getMethod("getQuery");
+            return (String) getQuery.invoke(prepared);
+        } catch (ReflectiveOperationException e) {
+            return statement.toString(); // eg BatchStatement -- best effort
         }
     }
 
