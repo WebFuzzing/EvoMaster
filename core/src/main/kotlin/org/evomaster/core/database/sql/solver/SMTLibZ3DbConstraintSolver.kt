@@ -81,10 +81,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Queries that could not be translated at all, remembered so they are attempted once per run.
      *
-     * Unlike Z3's UNKNOWN and ERROR outcomes — which may be a timeout or a transient container fault
-     * and are deliberately left uncached — a translation failure is deterministic: neither the query
-     * nor the schema changes, so the second attempt fails exactly as the first did. The kind is kept
-     * so the statistics keep attributing the failure to the step that produced it.
+     * Z3's UNKNOWN and ERROR outcomes are deliberately not written to any cache, since either can be
+     * a timeout or a transient container fault and remembering one would turn a single bad run into a
+     * permanent answer. A translation failure is different because it is deterministic: neither the
+     * query nor the schema changes, so the second attempt fails exactly as the first did. The kind is
+     * kept so the statistics keep attributing the failure to the step that produced it.
      */
     private var untranslatableQueries: MutableMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>? = null
 
