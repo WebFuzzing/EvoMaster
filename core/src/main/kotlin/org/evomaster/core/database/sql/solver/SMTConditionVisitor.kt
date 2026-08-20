@@ -116,10 +116,16 @@ class SMTConditionVisitor(
                     table — a sub-select in FROM or JOIN, which has no declared SMT constant to refer
                     to. Emitting a reference anyway produced a formula Z3 rejects outright
                     ("unknown constant"), costing a full round-trip to learn nothing. Throwing instead
-                    lets the caller drop this condition and record it as a partial translation, which
-                    is what it is: the query is under-constrained, but the rest of it still applies.
+                    lets the caller drop the clause and record it as a partial translation, leaving
+                    the schema-level constraints of the query intact.
+
+                    Only qualified columns are checked. An unqualified one resolves to the default
+                    table, which is a schema table by construction, and the name it arrives under is
+                    the ASCII-folded one — comparing that against the schema's own spelling would
+                    reject a valid table whose name is not ASCII, quietly dropping its conditions.
                  */
-                if (tables.none { it.id.name.equals(tableName, ignoreCase = true) }) {
+                if (sqlCondition.tableName != null &&
+                    tables.none { it.id.name.equals(tableName, ignoreCase = true) }) {
                     throw RuntimeException(
                         "Column '${sqlCondition.columnName}' is qualified by '$tableName', which is not" +
                             " a table in the schema (most likely a derived table)"

@@ -158,6 +158,29 @@ class SmtLibGeneratorCorpusTest {
     }
 
     /**
+     * A table whose name carries a non-ASCII character translates in full.
+     *
+     * An unqualified column resolves against the default table, whose name reaches the visitor already
+     * ASCII-folded. Checking that folded name against the schema's own spelling rejects a table that
+     * is perfectly valid, and the failure is quiet: the condition is dropped and the query still
+     * reports a partial translation rather than an error.
+     */
+    @Test
+    fun `a table whose name is not ASCII translates in full`() {
+        val schema = loadSchema()
+        val accented = "ANOTACIÓN"
+        val table = schema.tables.first { it.id.name == "NOTE" }
+        table.id.name = accented
+        table.columns.forEach { it.table = accented }
+
+        val result = classify(schema, "SELECT ID FROM $accented WHERE ID = 42")
+
+        assertEquals(Outcome.TRANSLATED, result.outcome) {
+            "the condition was dropped for a table that exists: ${result.detail}"
+        }
+    }
+
+    /**
      * Characterisation test, not a requirement. It pins how much of the corpus is translated with a
      * constraint silently discarded — a case that matters because the weakened formula usually
      * remains satisfiable, so the solver still answers SAT and the rows it produces need not satisfy
