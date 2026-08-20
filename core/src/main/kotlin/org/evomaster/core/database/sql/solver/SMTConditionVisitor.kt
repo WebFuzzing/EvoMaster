@@ -107,6 +107,24 @@ class SMTConditionVisitor(
         return when (sqlCondition) {
 
             is SqlColumn -> {
+                /*
+                    An unquoted `true` or `false` in a WHERE clause arrives here as a column, not as a
+                    SqlBooleanLiteralValue: the constraint parser only produces that type for CHECK
+                    expressions, and to the grammar a boolean literal and an identifier are
+                    indistinguishable in this position. Left as a column, the name is emitted as a
+                    field selector over the row constant, and Z3 rejects the entire formula with
+                    "unknown constant TRUE" — a full round-trip spent to learn nothing.
+
+                    Booleans are encoded as SMT strings, so the literal takes the same spelling the
+                    constraint path uses, which is the one SMTLibZ3DbConstraintSolver.toBoolean reads
+                    back. Only unqualified names are considered, since a qualified one is necessarily
+                    a column reference, and only when no column of that name exists.
+                 */
+                val name = sqlCondition.columnName
+                if (sqlCondition.tableName == null && isBooleanLiteral(name) && !isAColumn(name)) {
+                    return if (name.equals("true", ignoreCase = true)) "\"True\"" else "\"False\""
+                }
+
                 val tableName = sqlCondition.tableName?.let {
                     tableAliases[it] ?: it
                 } ?: defaultTableName
@@ -171,6 +189,9 @@ class SMTConditionVisitor(
      * @param operand The SQL operand as a string.
      * @return True if the operand is a column, false otherwise.
      */
+    private fun isBooleanLiteral(operand: String): Boolean =
+        operand.equals("true", ignoreCase = true) || operand.equals("false", ignoreCase = true)
+
     private fun isAColumn(operand: String): Boolean {
         return tables.any {
             it.id.name.equals(defaultTableName, ignoreCase = true) &&
