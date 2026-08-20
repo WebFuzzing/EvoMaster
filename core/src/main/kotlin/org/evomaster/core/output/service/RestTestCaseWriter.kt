@@ -419,12 +419,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
 
                 format.isJavaScript() -> {
-                    lines.add("const $location = $resVarName.header['location'];")
-                    if (format.isPlaywright()) {
-                        lines.append(".headers()['location'];")
+                    val extract = if (format.isPlaywright()) {
+                        "$resVarName.headers()['location']"
                     } else {
-                        lines.append(".header['location'];")
+                        "$resVarName.header['location']"
                     }
+                    lines.add("const $location = $extract;")
                     val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                     lines.add("expect($validCheck).toBe(true);")
                 }
