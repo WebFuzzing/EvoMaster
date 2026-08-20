@@ -38,11 +38,22 @@ class FailedWhereStrategyGateTest {
         )
     }
 
+    /**
+     * Defensive, not reachable: EMConfig rejects a configuration with both strategies enabled. Pinned
+     * anyway so the predicate stays total, since it is a pure function that a future caller could
+     * reach without that validation in front of it.
+     */
     @Test
     fun `with both strategies enabled the search-based precondition is the one that applies`() {
-        // Mirrors handleFailedWhereSQL, where the search-based branch returns first.
         assertTrue(gate(noInsertableTables = true, noFailedWhereQueries = false, search = true, z3 = true))
         assertFalse(gate(noInsertableTables = false, noFailedWhereQueries = true, search = true, z3 = true))
+    }
+
+    /** With no strategy enabled there is nothing to do, whatever the inputs say. */
+    @Test
+    fun `with neither strategy enabled there is nothing to do`() {
+        assertTrue(gate(noInsertableTables = false, noFailedWhereQueries = false, search = false, z3 = false))
+        assertTrue(gate(noInsertableTables = true, noFailedWhereQueries = true, search = false, z3 = false))
     }
 
     @Test

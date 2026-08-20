@@ -57,8 +57,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          * inconsistency is fixed because it is one, not because it was shown to have suppressed
          * anything.
          *
-         * The precedence mirrors [handleFailedWhereSQL]: the search-based strategy wins when both are
-         * enabled, so the solver's own precondition only applies when it is the one that will run.
+         * The two are mutually exclusive — [EMConfig] rejects a configuration with both enabled — so
+         * the order below is not a precedence rule but a total definition: with neither strategy
+         * enabled there is nothing to do whatever the inputs say, which keeps the predicate honest
+         * independently of the `shouldGenerateSqlData` check that currently guards the call site.
          */
         internal fun nothingToDoForFailedWhere(
             noInsertableTables: Boolean,
@@ -66,8 +68,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             generateSqlDataWithSearch: Boolean,
             generateSqlDataWithZ3: Boolean
         ): Boolean {
-            val solverWillRun = generateSqlDataWithZ3 && !generateSqlDataWithSearch
-            return if (solverWillRun) noFailedWhereQueries else noInsertableTables
+            if (generateSqlDataWithSearch) return noInsertableTables
+            if (generateSqlDataWithZ3) return noFailedWhereQueries
+            return true
         }
     }
 
