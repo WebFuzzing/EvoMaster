@@ -5,9 +5,12 @@ import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.delete.Delete
 import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
+import net.sf.jsqlparser.schema.Column
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.statement.update.Update
 import net.sf.jsqlparser.util.TablesNamesFinder
+import org.evomaster.client.java.sql.heuristic.SqlDerivedTable
+import org.evomaster.client.java.sql.heuristic.TableColumnResolver
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
@@ -493,10 +496,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smt The SMT-LIB object to which query constraints are added.
      * @param sqlQuery The SQL query containing constraints.
      */
-    private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
-        val fromScope = extractFromScope(sqlQuery)
-        val tableAliases = fromScope.tableAliases
-        val columnScope = columnScopeOf(fromScope.derivedAliases)
+    private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) =
+        withColumnScope(sqlQuery) { columnScope -> appendQueryConstraints(smt, sqlQuery, columnScope) }
+
+    private fun appendQueryConstraints(
+        smt: SMTLib,
+        sqlQuery: Statement,
+        columnScope: SMTConditionVisitor.ColumnScope
+    ) {
+        val tableAliases = extractTableAliases(sqlQuery)
 
         appendJoinConstraints(smt, sqlQuery, tableAliases, columnScope)
 
@@ -655,25 +663,36 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     }
 
     /**
-     * Builds the [SMTConditionVisitor.ColumnScope] for one query from the aliases its `FROM` and
-     * `JOIN` items declare.
+     * Builds the [SMTConditionVisitor.ColumnScope] for one query, backed by [TableColumnResolver].
      *
-     * Asking the schema whether a qualifier names a table answers by absence, and gets one shape
-     * wrong: a sub-select aliased with the name of a real table passes the check, and the generator
-     * emits a constraint selecting from that table's row a column it may not even have. Asking the
-     * query's own `FROM` first settles it, because the alias is declared right there.
+     * This is what the alias-based scope approximates. The resolver resolves a column reference
+     * against the query itself, so besides the `FROM` and `JOIN` aliases it also follows CTEs,
+     * lateral joins, correlated subqueries, and the column aliases of a sub-select's projection.
      *
-     * The scope only ever answers "derived" or "unknown". A qualifier it does not recognise falls
-     * through to the schema check, so this can drop conditions the previous behaviour kept but never
-     * the other way round.
+     * It also answers for columns with no qualifier at all, which the alias-based scope cannot:
+     * those currently resolve to the default table and can silently constrain the wrong rows.
+     *
+     * The resolver needs the query as its context and the context has to be popped afterwards, so
+     * the scope is only valid for the duration of [action].
      */
-    private fun columnScopeOf(derivedAliases: Set<String>) =
-        SMTConditionVisitor.ColumnScope { qualifier, _ ->
-            if (qualifier != null && derivedAliases.any { it.equals(qualifier, ignoreCase = true) })
-                true
-            else
-                null
+    private fun <T> withColumnScope(sqlQuery: Statement, action: (SMTConditionVisitor.ColumnScope) -> T): T {
+        val resolver = TableColumnResolver(schema)
+        resolver.enterStatementeContext(sqlQuery)
+        try {
+            return action(SMTConditionVisitor.ColumnScope { qualifier, columnName ->
+                val column = if (qualifier != null) Column(Table(qualifier), columnName) else Column(columnName)
+                /*
+                    A null reference means the resolver could not place the column at all, which is
+                    not the same as "it is derived". It is reported as unknown so the visitor falls
+                    back to its own check rather than dropping a condition on a guess.
+                 */
+                runCatching { resolver.resolve(column) }.getOrNull()
+                    ?.let { it.tableReference is SqlDerivedTable }
+            })
+        } finally {
+            resolver.exitCurrentStatementContext()
         }
+    }
 
     /**
      * Extracts table aliases from the SQL query.
@@ -681,28 +700,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param sqlQuery The SQL query from which aliases are extracted.
      * @return A map of table aliases.
      */
-    private fun extractTableAliases(sqlQuery: Statement): Map<String, String> =
-        extractFromScope(sqlQuery).tableAliases
-
     /**
-     * What the `FROM` and `JOIN` items of a query declare: the aliases that stand for a schema table,
-     * and the aliases that stand for a derived one.
-     */
-    private data class FromScope(
-        val tableAliases: Map<String, String>,
-        val derivedAliases: Set<String>
-    )
-
-    /**
-     * Reads the aliases a query declares.
+     * Reads the aliases a query declares for its schema tables.
      *
-     * A FROM item with no schema table behind it is a derived table. Its alias is recorded rather
-     * than dropped, because that alias is the only place the query says so: matching it against the
-     * schema instead would call it a real table whenever the two happen to share a name.
+     * A FROM item with no schema table behind it contributes no alias. Where the alias-based scope
+     * had to record those separately, so that a sub-select aliased with the name of a real table
+     * would not be mistaken for one, [withColumnScope] now answers that from the query itself.
      */
-    private fun extractFromScope(sqlQuery: Statement): FromScope {
+    private fun extractTableAliases(sqlQuery: Statement): Map<String, String> {
         val tableAliasMap = mutableMapOf<String, String>()
-        val derivedAliases = mutableSetOf<String>()
 
         when (sqlQuery) {
             is Select -> {
@@ -712,20 +718,14 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     val tableName = getTableName(fromItem)
                     if (tableName != null) {
                         tableAliasMap[fromItem.alias?.name ?: tableName] = tableName
-                    } else {
-                        fromItem.alias?.name?.let { derivedAliases.add(it) }
                     }
 
                     val joins = plainSelect.joins
                     if (joins != null) {
                         for (join in joins) {
                             val rightItem = join.rightItem
-                            val joinName = getTableName(rightItem)
-                            if (joinName != null) {
-                                tableAliasMap[rightItem.alias?.name ?: rightItem.toString()] = joinName
-                            } else {
-                                rightItem.alias?.name?.let { derivedAliases.add(it) }
-                            }
+                            val joinName = getTableName(rightItem) ?: continue
+                            tableAliasMap[rightItem.alias?.name ?: rightItem.toString()] = joinName
                         }
                     }
                 }
@@ -741,7 +741,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 tableAliasMap[alias] = tableName
             }
         }
-        return FromScope(tableAliasMap, derivedAliases)
+        return tableAliasMap
     }
 
     /**

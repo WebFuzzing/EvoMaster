@@ -50,6 +50,14 @@
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
         </dependency>
+        <!--
+            Needed by the solver to tell a column of a derived table apart from one of a real table.
+            See TableColumnResolver.
+        -->
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-sql</artifactId>
+        </dependency>
 
 
         <dependency>
