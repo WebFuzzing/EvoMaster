@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test times them apart. It runs its own container from the same image rather than reaching
  * into {@link Z3DockerExecutor}, so it measures the same mechanism without widening production API.
  */
+
 public class Z3InvocationCostTest {
 
     private static GenericContainer<?> container;
@@ -44,7 +46,11 @@ public class Z3InvocationCostTest {
     private static final String FORMULA = buildFormula(12);
 
     private static String buildFormula(int rows) {
-        StringBuilder b = new StringBuilder("(set-logic QF_SLIA)\n");
+        // No set-logic, matching what SmtLibGenerator emits. Declaring QF_SLIA here made Z3 reject
+        // every datatype declaration that followed ("logic does not support algebraic datatypes"),
+        // so it answered sat on an empty problem: these measurements were timing a rejection rather
+        // than a solve.
+        StringBuilder b = new StringBuilder();
         b.append("(declare-datatypes ((Row 0)) (((mk-row (ID Int) (NAME String) (AGE Int)))))\n");
         for (int i = 1; i <= rows; i++) {
             b.append("(declare-const r").append(i).append(" Row)\n");
@@ -118,8 +124,16 @@ public class Z3InvocationCostTest {
     private double selfReportedSeconds(String fileName) throws Exception {
         Container.ExecResult r =
                 container.execInContainer("z3", "-st", "/smt2-resources/" + fileName);
+        // Fail here rather than returning a sentinel: a negative "duration" would flow into the
+        // printed report and the assertions below, where it reads as a fast solve instead of as a
+        // broken measurement.
+        assertEquals(0, r.getExitCode(),
+                "z3 did not run successfully on " + fileName + ": " + r.getStderr());
         Matcher m = Pattern.compile(":total-time\\s+([0-9.]+)").matcher(r.getStdout());
-        return m.find() ? Double.parseDouble(m.group(1)) : -1;
+        assertTrue(m.find(),
+                "z3 -st printed no :total-time for " + fileName + ", so its own timing cannot be read:\n"
+                        + r.getStdout());
+        return Double.parseDouble(m.group(1));
     }
 
     @Test
@@ -269,7 +283,7 @@ public class Z3InvocationCostTest {
      * literal, with length bounds that force the search to try many splits.
      */
     private static String buildStringFormula() {
-        StringBuilder b = new StringBuilder("(set-logic QF_SLIA)\n");
+        StringBuilder b = new StringBuilder();
         int parts = 8;
         for (int i = 1; i <= parts; i++) {
             b.append("(declare-const s").append(i).append(" String)\n");
