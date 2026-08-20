@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Times [JSqlConditionParser] on the shapes of CHECK constraint a PostgreSQL schema actually
+ * Times [JSqlConditionParser] on the shapes of CHECK constraints a PostgreSQL schema actually
  * carries, rather than the simple numeric bounds used elsewhere in the tests.
  *
  * Why this exists. An application with a large PostgreSQL schema was observed spending hundreds of

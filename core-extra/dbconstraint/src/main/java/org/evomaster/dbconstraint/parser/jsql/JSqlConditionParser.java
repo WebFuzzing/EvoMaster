@@ -100,7 +100,7 @@ public class JSqlConditionParser implements SqlConditionParser {
 
         /*
          * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
-         * We can work aroung this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
+         * We can work around this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
          * string
          */
         transformedStr = transformedStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
