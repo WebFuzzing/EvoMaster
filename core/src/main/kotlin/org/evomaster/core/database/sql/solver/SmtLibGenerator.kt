@@ -94,7 +94,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
          * silently disagree when a backend reports a variant spelling; consolidating them into a single
          * source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
          */
-        private val TYPE_MAP = mapOf(
+        // internal rather than private so a test can pin the agreement between this vocabulary and
+        // the one SMTLibZ3DbConstraintSolver uses when turning a solution back into genes.
+        internal val TYPE_MAP = mapOf(
             "BIGINT" to SMT_INT,
             "BIT" to SMT_INT,
             "INTEGER" to SMT_INT,
