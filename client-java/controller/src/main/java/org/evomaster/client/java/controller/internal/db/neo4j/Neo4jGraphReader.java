@@ -4,7 +4,6 @@ import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,9 +13,10 @@ import java.util.Set;
 /**
  * Reads the live Neo4j graph into an in-memory {@link Neo4jGraph} snapshot, used as {@code G} when
  * scoring Cypher queries. The whole graph is read with two read-only Cypher queries that return only
- * primitive projections (ids, label/type names, property maps), so the reflection surface is just
- * {@code Session.run} / {@code Result.list} / {@code Record.get} / {@code Value.as*} — never the
- * driver's {@code Node}/{@code Relationship} types.
+ * primitive projections (ids, label/type names, property maps).
+ * <p>
+ * All driver access goes through {@link ReflectionBasedNeo4jClient}, so this class holds no
+ * reflection of its own and is only about turning records into the graph model.
  */
 public class Neo4jGraphReader {
 
@@ -35,60 +35,46 @@ public class Neo4jGraphReader {
      * @throws RuntimeException if the driver cannot be queried (wrapping the reflection failure)
      */
     public Neo4jGraph read(Object driver) {
-        Object session = invoke(driver, "session");
+        return read(new ReflectionBasedNeo4jClient(driver));
+    }
+
+    /**
+     * Reads the graph through an already-built client. Kept separate from {@link #read(Object)} so a
+     * caller that holds a client (the handler, or the insertion runner) does not create a second one.
+     */
+    public Neo4jGraph read(ReflectionBasedNeo4jClient client) {
+        Object session = client.session();
         try {
-            List<Neo4jNode> nodes = readNodes(session);
-            List<Neo4jEdge> edges = readEdges(session);
+            List<Neo4jNode> nodes = readNodes(client, session);
+            List<Neo4jEdge> edges = readEdges(client, session);
             return new Neo4jGraph(nodes, edges);
         } finally {
-            invoke(session, "close");
+            client.close(session);
         }
     }
 
-    private List<Neo4jNode> readNodes(Object session) {
+    private List<Neo4jNode> readNodes(ReflectionBasedNeo4jClient client, Object session) {
         List<Neo4jNode> nodes = new ArrayList<>();
-        for (Object record : runAndList(session, NODE_QUERY)) {
-            String id = asString(get(record, "id"));
-            Set<String> labels = toStringSet(asList(get(record, "labels")));
-            Map<String, Object> props = asMap(get(record, "props"));
+        for (Object record : client.runAndList(session, NODE_QUERY)) {
+            String id = client.asString(client.get(record, "id"));
+            Set<String> labels = toStringSet(client.asList(client.get(record, "labels")));
+            Map<String, Object> props = client.asMap(client.get(record, "props"));
             nodes.add(new Neo4jNode(id, labels, props));
         }
         return nodes;
     }
 
-    private List<Neo4jEdge> readEdges(Object session) {
+    private List<Neo4jEdge> readEdges(ReflectionBasedNeo4jClient client, Object session) {
         List<Neo4jEdge> edges = new ArrayList<>();
-        for (Object record : runAndList(session, REL_QUERY)) {
-            String id = asString(get(record, "id"));
-            String type = asString(get(record, "type"));
-            String src = asString(get(record, "src"));
-            String tgt = asString(get(record, "tgt"));
-            Map<String, Object> props = asMap(get(record, "props"));
+        for (Object record : client.runAndList(session, REL_QUERY)) {
+            String id = client.asString(client.get(record, "id"));
+            String type = client.asString(client.get(record, "type"));
+            String src = client.asString(client.get(record, "src"));
+            String tgt = client.asString(client.get(record, "tgt"));
+            Map<String, Object> props = client.asMap(client.get(record, "props"));
             edges.add(new Neo4jEdge(id, type, src, tgt, props));
         }
         return edges;
-    }
-
-    private List<?> runAndList(Object session, String query) {
-        Object result = invoke(session, "run", new Class<?>[]{String.class}, query);
-        return (List<?>) invoke(result, "list");
-    }
-
-    private Object get(Object record, String key) {
-        return invoke(record, "get", new Class<?>[]{String.class}, key);
-    }
-
-    private String asString(Object value) {
-        return (String) invoke(value, "asString");
-    }
-
-    private List<?> asList(Object value) {
-        return (List<?>) invoke(value, "asList");
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> asMap(Object value) {
-        return (Map<String, Object>) invoke(value, "asMap");
     }
 
     private Set<String> toStringSet(List<?> values) {
@@ -97,19 +83,5 @@ public class Neo4jGraphReader {
             set.add(String.valueOf(v));
         }
         return set;
-    }
-
-    private Object invoke(Object target, String method) {
-        return invoke(target, method, new Class<?>[0]);
-    }
-
-    private Object invoke(Object target, String method, Class<?>[] argTypes, Object... args) {
-        try {
-            Method m = target.getClass().getMethod(method, argTypes);
-            m.setAccessible(true);
-            return m.invoke(target, args);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to read the Neo4j graph via reflection (" + method + ")", e);
-        }
     }
 }
