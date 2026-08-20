@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.enterprise
 
-import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 
  class  EnterpriseChildTypeVerifier(
      /**

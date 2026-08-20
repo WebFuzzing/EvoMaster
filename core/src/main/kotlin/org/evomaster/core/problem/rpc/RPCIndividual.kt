@@ -2,8 +2,7 @@ package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
