@@ -2027,10 +2027,11 @@ class EMConfig {
     var sqlZ3NumberOfRows = 1
 
     @Experimental
-    @Cfg("Maximum number of entries kept in the Z3 solver's memoization cache. When the bound is " +
-            "reached, the least recently used entry is evicted and would have to be solved again if " +
-            "seen later. Sizing it below the number of distinct queries a search issues turns a large " +
-            "share of cache misses into re-solves of already-known queries. " +
+    @Cfg("Maximum number of entries kept in each of the Z3 solver's memoization caches: the one " +
+            "holding solver results, and the one remembering queries that could not be translated. " +
+            "When the bound is reached, the least recently used entry is evicted and would have to be " +
+            "solved again if seen later. Sizing it below the number of distinct queries a search " +
+            "issues turns a large share of cache misses into re-solves of already-known queries. " +
             "Only meaningful when generateSqlDataWithZ3=true.")
     @DependsOnTrueFor("generateSqlDataWithZ3")
     @Min(1.0)

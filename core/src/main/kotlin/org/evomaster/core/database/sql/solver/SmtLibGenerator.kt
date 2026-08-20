@@ -207,12 +207,6 @@ class SmtLibGenerator(
     }
 
     /**
-     * Appends check constraints for each table to the SMT-LIB.
-     *
-     * @param smt The SMT-LIB object to which check constraints are added.
-     * @param smtTable The table for which check constraints are added.
-     */
-    /**
      * Parses a CHECK expression, returning null when it cannot be read. The warning is emitted here so
      * that a memoised failure does not repeat it on every later query.
      */
@@ -244,6 +238,12 @@ class SmtLibGenerator(
         return parsed
     }
 
+    /**
+     * Appends check constraints for each table to the SMT-LIB.
+     *
+     * @param smt The SMT-LIB object to which check constraints are added.
+     * @param smtTable The table for which check constraints are added.
+     */
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
             val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue

@@ -174,14 +174,18 @@ class UntranslatableQueryCacheTest {
      * without limit. Eviction is least-recently-used, which is the right policy here: a query the
      * search has stopped producing is the one worth forgetting.
      *
-     * The bound is [EMConfig.sqlZ3CacheSize], shared with the result cache. Its default was raised
-     * from 500 after measuring a system under test that issued 2,153 distinct queries in one search,
-     * where the old bound turned nearly half of all cache misses into re-solves of evicted entries
-     * rather than genuinely new work.
+     * The bound is [EMConfig.sqlZ3CacheSize], applied to this memo and to the result cache alike. Its
+     * default was raised from 500 after measuring a system under test that issued 2,153 distinct
+     * queries in one search, where the old bound turned nearly half of all cache misses into re-solves
+     * of evicted entries rather than genuinely new work.
      */
     @Test
     fun `the memo is bounded`() {
-        val bound = EMConfig.DEFAULT_SQL_Z3_CACHE_SIZE
+        // A small bound rather than the production default: what is being checked is that eviction
+        // happens and keeps the most recent entry, which does not depend on the size of the bound, and
+        // this way the cost of the test does not track whatever that default becomes.
+        val bound = 64
+        solver.initializeCaches(bound)
 
         repeat(bound + 50) { i -> solver.solve(schemaDto, "$UNPARSEABLE $i", 1) }
 
