@@ -16,7 +16,7 @@ import org.evomaster.core.search.service.time.SearchStatusUpdater
 import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackService
-import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
 
 
 /**

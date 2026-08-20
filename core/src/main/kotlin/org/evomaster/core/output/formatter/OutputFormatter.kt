@@ -96,6 +96,22 @@ abstract class OutputFormatter (val name: String) {
                     null
                 }
             }
+
+            override fun readArrayLengths(content: String): Map<String, Int>? {
+                return try {
+                    val node = objectMapper.readTree(content)
+                    if (!node.isObject) return null
+                    val out = mutableMapOf<String, Int>()
+                    val it = node.fields()
+                    while (it.hasNext()) {
+                        val (name, value) = it.next()
+                        if (value.isArray) out[name] = value.size()
+                    }
+                    out
+                } catch (e: Exception) {
+                    null
+                }
+            }
         }
 
 
@@ -179,6 +195,36 @@ abstract class OutputFormatter (val name: String) {
                     }
                 }
             }
+
+            override fun readArrayLengths(content: String): Map<String, Int>? {
+                return try {
+                    val doc = xmlFactory.newDocumentBuilder()
+                        .parse(ByteArrayInputStream(content.toByteArray(Charsets.UTF_8)))
+                    doc.documentElement.normalize()
+                    val out = mutableMapOf<String, Int>()
+                    collectArrayLengths(doc.documentElement, out)
+                    out
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            // repeated sibling tags under the same parent are treated as an array
+            private fun collectArrayLengths(element: org.w3c.dom.Element, out: MutableMap<String, Int>) {
+                val children = element.childNodes
+                val elementChildren = mutableListOf<org.w3c.dom.Element>()
+                val counts = mutableMapOf<String, Int>()
+                for (i in 0 until children.length) {
+                    val n = children.item(i)
+                    if (n.nodeType == org.w3c.dom.Node.ELEMENT_NODE) {
+                        val el = n as org.w3c.dom.Element
+                        elementChildren.add(el)
+                        counts[el.tagName] = (counts[el.tagName] ?: 0) + 1
+                    }
+                }
+                counts.filterValues { it > 1 }.forEach { (tag, count) -> out[tag] = count }
+                elementChildren.forEach { collectArrayLengths(it, out) }
+            }
         }
 
 
@@ -209,6 +255,9 @@ abstract class OutputFormatter (val name: String) {
                     null
                 }
             }
+
+            // form-encoded bodies have no standard array representation
+            override fun readArrayLengths(content: String): Map<String, Int>? = emptyMap()
 
             private fun parseForm(body: String): Map<String, String> {
                 if (body.isBlank()) return emptyMap()
@@ -252,4 +301,10 @@ abstract class OutputFormatter (val name: String) {
         fieldNames: Set<String>? = null,
         numericAndBooleanOnly: Boolean = false
     ): Map<String, String>?
+
+    /**
+     * Read top-level array fields from [content] as name -> size.
+     * @return null if [content] cannot be parsed
+     */
+    abstract fun readArrayLengths(content: String): Map<String, Int>?
 }
