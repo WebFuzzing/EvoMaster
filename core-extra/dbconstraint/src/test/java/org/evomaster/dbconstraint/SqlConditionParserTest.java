@@ -321,6 +321,30 @@ class SqlConditionParserTest {
 //        SqlCondition actual = parse(sql, ConstraintDatabaseType.POSTGRES);
     }
 
+    /**
+     * PostgreSQL also emits the ANY/ARRAY pair without the array cast, and a bare ARRAY can appear on
+     * its own. Neither is covered by the rule that recognises the full enum shape, so the general
+     * ARRAY rule has to keep handling them.
+     */
+    @Test
+    void testArrayWithoutCastIsStillTransformed() throws Exception {
+        JSqlConditionParser parser = new JSqlConditionParser();
+
+        assertNotNull(parser.parse("(c = ANY (ARRAY['A', 'B']))", ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
+     * Two arrays in one expression. The rule used to exclude only '<' from its group, so the match ran
+     * from the first "ARRAY[" to the last "]" anywhere in the string and swallowed everything between
+     * them, producing "(a = 1,2] AND b = ARRAY[3,4)". Excluding ']' ends each match at its own array.
+     */
+    @Test
+    void testTwoArraysInOneExpression() throws Exception {
+        JSqlConditionParser parser = new JSqlConditionParser();
+
+        assertNotNull(parser.parse("(a IN (ARRAY[1,2]) AND b IN (ARRAY[3,4]))", ConstraintDatabaseType.POSTGRES));
+    }
+
     @Timeout(value = 10, unit = SECONDS)
     @Test
     void testPerformanceIssueInFamilieBaSakWithTimeout() throws Exception{
