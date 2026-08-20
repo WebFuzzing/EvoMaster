@@ -296,7 +296,7 @@ object UnicodeCache {
     /*
     Filters characters by predicate, constructing a list in a way that skips the MultiCharacterRange construction logic.
      */
-    private fun computeRanges(key: String, predicate: (Int) -> Boolean): MultiCharacterRange {
+    private fun computeRanges(predicate: (Int) -> Boolean): MultiCharacterRange {
         val list = mutableListOf<CharacterRange>()
         var start = Character.MIN_VALUE.code
         val end = Character.MAX_VALUE.code
@@ -348,7 +348,7 @@ object UnicodeCache {
 
         // first we compute and cache the base key (non-negated)
         cache.computeIfAbsent(key) {
-            computeRanges(key, predicate)
+            computeRanges(predicate)
         }
 
         // if the base kay was requested just return
@@ -386,7 +386,7 @@ object UnicodeCache {
         }
 
         cache.computeIfAbsent(key) {
-            computeRanges(key, wordBoundaryPredicate(flags))
+            computeRanges(wordBoundaryPredicate(flags))
         }
 
         if (!negated) return cache[key]!!
