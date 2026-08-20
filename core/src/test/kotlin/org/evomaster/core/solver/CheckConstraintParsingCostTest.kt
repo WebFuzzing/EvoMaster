@@ -4,6 +4,7 @@ import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
 
 /**
  * Times [JSqlConditionParser] on the shapes of CHECK constraint a PostgreSQL schema actually

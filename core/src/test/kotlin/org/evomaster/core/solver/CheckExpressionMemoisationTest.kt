@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.Collections
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
 
 /**
  * Verifies that sharing a parse memo across [SmtLibGenerator] instances removes the repeated cost of

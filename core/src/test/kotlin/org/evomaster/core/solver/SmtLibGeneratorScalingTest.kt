@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
 
 /**
  * Measures how the cost of [SmtLibGenerator.generateSMT] scales with the size of the *schema*,

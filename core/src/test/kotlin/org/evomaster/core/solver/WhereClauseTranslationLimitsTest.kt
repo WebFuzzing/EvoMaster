@@ -5,6 +5,8 @@ import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
+import org.evomaster.core.database.sql.solver.SMTConditionVisitor
 
 /**
  * Pins what a WHERE clause is allowed to contain on its way to the solver, and in particular the two

@@ -7,6 +7,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
+import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
 
 /**
  * A boolean literal in a WHERE clause is not a column, even though the grammar cannot tell them apart.

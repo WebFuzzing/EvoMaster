@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
 import java.sql.DriverManager
+import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
 
 /**
  * Covers the memo of queries that cannot be translated.
