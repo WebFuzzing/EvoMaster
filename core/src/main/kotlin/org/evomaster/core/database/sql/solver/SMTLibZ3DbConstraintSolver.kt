@@ -80,8 +80,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     companion object {
         private const val MAX_CACHE_SIZE = 500
 
-        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
-        // epoch<->string conversions round-trip consistently.
+        // The single layout emitted when turning an epoch value back into a SQL literal. JSqlVisitor
+        // reads a superset of the layouts a database may emit, of which this is one, so the value
+        // round-trips: what is written here is read back to the same instant.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
     }
 
