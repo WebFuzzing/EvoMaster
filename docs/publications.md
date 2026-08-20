@@ -13,17 +13,21 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* O. Sahin, A. Arcuri.
+  *Validating HTTP Semantics in REST APIs With Constructed Call Sequence Scenarios*.
+  [[arXiv](https://arxiv.org/abs/2608.16239)]
+
+* M. Zhang, C. Shen, A. Arcuri, T. Yue.
+  *Detecting and Mitigating Flakiness in REST API Fuzzing*.
+  [[arXiv](https://arxiv.org/abs/2603.28452)]
+
 * O. Sahin, M. Zhang, A. Poth, O. Rrjolli, A. Faes, P. Teng, K. Xue, W. Ma, A. Arcuri
   *Using OAI Overlay to Enhance REST API Fuzzing*.
   [[arXiv](https://arxiv.org/html/2607.04325v1)]
 
-* A. Arcuri, A. Poth, O. Rrjolli, P. Garrett, J. P. Galeotti
+* A. Arcuri, A. Poth, O. Rrjolli, P. Garrett, J. P. Galeotti.
   *Fuzzing REST APIs in Industry: Necessary Features and Open Problems*.
   [[arxiv](https://arxiv.org/abs/2604.01759)]
-
-* O. Sahin, M. Zhang, A. Arcuri.
-  *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*. 
-  [[arxiv](https://arxiv.org/abs/2604.00702)]
 
 * H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
   *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
@@ -41,6 +45,16 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2026
+
+* F. Castagna, M. T. Shalmani, A. Golmohammadi, J. P. Galeotti and A. Arcuri.
+  *An Empirical Evaluation of Search-Based Algorithms for White-Box Testing of REST APIs*.
+  International Colloquium on Theoretical Aspects of Computing (ICTAC).
+  _(to appear)_
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Enhancing REST API Fuzzing with Access Policy Violation Checks and Injection Attacks*.
+  Journal of Systems and Software (JSS).
+  _(to appear)_
 
 * M. T. Shalmani, A. Golmohammadi, J. P. Galeotti, A. Arcuri.
   *Online Machine Learning Prediction of Failed  Calls to Enhance REST API Fuzzing*.

@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TruthnessUtilsTest {
 
+    private static final double DELTA = 0.000001d;
+
     @Test
     public void testGetEqualityTruthnessEqualsUUID() {
         UUID left = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
@@ -29,4 +31,90 @@ class TruthnessUtilsTest {
         assertEquals(1.0, t.getOfFalse());
     }
 
+    @Test
+    public void testGetEqualityTruthnessBooleans() {
+        Truthness equal = TruthnessUtils.getEqualityTruthness(true, true);
+        Truthness unequal = TruthnessUtils.getEqualityTruthness(true, false);
+
+        assertTrue(equal.isTrue());
+        assertSame(TruthnessUtils.TRUE_TRUTHNESS, equal);
+
+        assertTrue(unequal.isFalse());
+        assertSame(TruthnessUtils.FALSE_TRUTHNESS, unequal);
+    }
+
+    /**
+     * Verifies that byte-array equality preserves a gradient based on positional byte mismatches.
+     */
+    @Test
+    public void testGetEqualityTruthnessByteArrays() {
+        byte[] messiPhoto = new byte[]{1, 2, 3};
+        byte[] samePhoto = new byte[]{1, 2, 3};
+        byte[] nearPhoto = new byte[]{1, 2, 4};
+        byte[] farPhoto = new byte[]{9, 8, 7};
+        byte[] croppedPhoto = new byte[]{1, 2};
+
+        Truthness equal = TruthnessUtils.getEqualityTruthness(messiPhoto, samePhoto);
+        Truthness near = TruthnessUtils.getEqualityTruthness(messiPhoto, nearPhoto);
+        Truthness far = TruthnessUtils.getEqualityTruthness(messiPhoto, farPhoto);
+        Truthness cropped = TruthnessUtils.getEqualityTruthness(messiPhoto, croppedPhoto);
+
+        assertTrue(equal.isTrue());
+        assertSame(TruthnessUtils.TRUE_TRUTHNESS, equal);
+
+        assertTrue(near.isFalse());
+        assertEquals(0.55d, near.getOfTrue(), DELTA);
+        assertEquals(1.0d, near.getOfFalse(), DELTA);
+
+        assertTrue(far.isFalse());
+        assertEquals(0.325d, far.getOfTrue(), DELTA);
+        assertEquals(1.0d, far.getOfFalse(), DELTA);
+
+        assertTrue(cropped.isFalse());
+        assertEquals(0.55d, cropped.getOfTrue(), DELTA);
+        assertEquals(1.0d, cropped.getOfFalse(), DELTA);
+        assertTrue(near.getOfTrue() > far.getOfTrue());
+
+        assertThrows(NullPointerException.class,
+                () -> TruthnessUtils.getEqualityTruthness(null, messiPhoto));
+        assertThrows(NullPointerException.class,
+                () -> TruthnessUtils.getEqualityTruthness(messiPhoto, null));
+    }
+
+    @Test
+    public void testGetTruthnessFromDistance() {
+        Truthness zero = TruthnessUtils.getTruthnessFromDistance(0d);
+        Truthness finite = TruthnessUtils.getTruthnessFromDistance(3d);
+        Truthness infinite = TruthnessUtils.getTruthnessFromDistance(Double.POSITIVE_INFINITY);
+        Truthness maximum = TruthnessUtils.getTruthnessFromDistance(Double.MAX_VALUE);
+
+        assertTrue(zero.isTrue());
+        assertEquals(TruthnessUtils.TRUE_TRUTHNESS.getOfTrue(), zero.getOfTrue(), DELTA);
+        assertEquals(TruthnessUtils.TRUE_TRUTHNESS.getOfFalse(), zero.getOfFalse(), DELTA);
+
+        assertTrue(finite.isFalse());
+        assertEquals(DistanceHelper.heuristicFromScaledDistanceWithBase(
+                DistanceHelper.H_NOT_NULL, 3d), finite.getOfTrue(), DELTA);
+        assertEquals(1.0d, finite.getOfFalse(), DELTA);
+
+        assertTrue(infinite.isFalse());
+        assertEquals(TruthnessUtils.FALSE_TRUTHNESS.getOfTrue(), infinite.getOfTrue(), DELTA);
+        assertEquals(1.0d, infinite.getOfFalse(), DELTA);
+
+        assertTrue(maximum.isFalse());
+        assertEquals(TruthnessUtils.FALSE_TRUTHNESS.getOfTrue(), maximum.getOfTrue(), DELTA);
+        assertEquals(1.0d, maximum.getOfFalse(), DELTA);
+
+        assertTrue(finite.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
+        assertTrue(infinite.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
+        assertTrue(maximum.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
+    }
+
+    @Test
+    public void testGetTruthnessFromDistanceRejectsInvalidDistances() {
+        assertThrows(IllegalArgumentException.class,
+                () -> TruthnessUtils.getTruthnessFromDistance(-1d));
+        assertThrows(IllegalArgumentException.class,
+                () -> TruthnessUtils.getTruthnessFromDistance(Double.NaN));
+    }
 }

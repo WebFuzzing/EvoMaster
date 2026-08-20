@@ -7,10 +7,26 @@ import java.util.UUID;
 public class TruthnessUtils {
 
     /**
+     * A {@link Truthness} representing a condition that is fully satisfied.
+     */
+    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, DistanceHelper.H_NOT_NULL);
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied at all.
+     */
+    public static final Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied, but that provides a
+     * better (ie, higher) base value than {@link #FALSE_TRUTHNESS}.
+     */
+    public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.H_NOT_NULL_BETTER, 1);
+
+    /**
      * Scales to a positive double value to the [0,1] range
      *
      * @param v a non-negative double value
-     * @return
+     * @return a double value in the [0,1] range
      */
     public static double normalizeValue(double v) {
         if (v < 0) {
@@ -199,8 +215,7 @@ public class TruthnessUtils {
     public static Truthness buildXorAggregationTruthness(Truthness left, Truthness right) {
         Truthness leftAndNotRight = buildAndAggregationTruthness(left, right.invert());
         Truthness notLeftAndRight = buildAndAggregationTruthness(left.invert(), right);
-        Truthness orAggregation = buildOrAggregationTruthness(leftAndNotRight, notLeftAndRight);
-        return orAggregation;
+        return buildOrAggregationTruthness(leftAndNotRight, notLeftAndRight);
     }
 
     /**
@@ -232,7 +247,7 @@ public class TruthnessUtils {
      * If no values are given, an <code>IllegalArgumentException</code> is thrown.
      *
      * @param values a non-empty list of double values.
-     * @return
+     * @return the average of the given values.
      */
     private static double average(double... values) {
         if (values == null || values.length == 0) {
@@ -248,8 +263,8 @@ public class TruthnessUtils {
     /**
      * Returns the average of the <code>ofFalse</code> values for the truthnesses.
      *
-     * @param truthnesses
-     * @return
+     * @param truthnesses an array of Truthness instances
+     * @return the average of the <code>ofFalse</code> values for the input Truthness instances
      */
     private static double averageOfFalse(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
@@ -262,8 +277,8 @@ public class TruthnessUtils {
      * Returns 1.0d if any of the truthnesses is false, otherwise returns the average of the <code>ofFalse</code> values
      * for the truthnesses.
      *
-     * @param truthnesses
-     * @return
+     * @param truthnesses an array of Truthness instances
+     * @return 1.0d if any of the truthnesses is false, otherwise returns the average of the <code>ofFalse</code> values
      */
     private static double falseOrAverageFalse(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
@@ -278,8 +293,8 @@ public class TruthnessUtils {
      * Returns 1.0d if any of the truthnesses is true, otherwise returns the average of the <code>ofTrue</code> values
      * for the truthnesses.
      *
-     * @param truthnesses
-     * @return
+     * @param truthnesses an array of Truthness instances
+     * @return 1.0d if any of the truthnesses is true, otherwise returns the average of the <code>ofTrue</code> values
      */
     private static double trueOrAverageTrue(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
@@ -317,6 +332,93 @@ public class TruthnessUtils {
                 1d - normalizedDistance,
                 !left.equals(right) ? 1d : 0d
         );
+    }
+
+    /**
+     * Returns a Truthness instance for comparing two boolean values for equality.
+     * <p>
+     * Booleans have no intermediate equality distance, so equal values yield
+     * {@link #TRUE_TRUTHNESS} and unequal values yield {@link #FALSE_TRUTHNESS}.
+     *
+     * @param a a boolean value
+     * @param b another boolean value
+     * @return a Truthness instance representing the equality comparison of the input booleans
+     */
+    public static Truthness getEqualityTruthness(boolean a, boolean b) {
+        return a == b ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+    }
+
+    /**
+     * Returns a Truthness instance for comparing two byte arrays for content equality.
+     * <p>
+     * Equal content yields {@link #TRUE_TRUTHNESS}. For differing content, {@code ofTrue} is derived
+     * from the number of unequal aligned bytes and unmatched trailing bytes using
+     * {@link DistanceHelper#H_NOT_NULL} as its base, while {@code ofFalse} is 1.
+     *
+     * @param a a byte array, must not be {@code null}
+     * @param b another byte array, must not be {@code null}
+     * @return a Truthness instance representing content equality of the input arrays
+     */
+    public static Truthness getEqualityTruthness(byte[] a, byte[] b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        long distance = DistanceHelper.getLeftAlignmentDistance(a, b);
+        if (distance == 0L) {
+            return TRUE_TRUTHNESS;
+        }
+        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(
+                DistanceHelper.H_NOT_NULL, (double) distance);
+        return new Truthness(ofTrue, 1d);
+    }
+
+    /**
+     * Converts a non-negative branch distance into a false-oriented Truthness that preserves
+     * closeness to the true branch.
+     * <p>
+     * A zero distance yields {@link #TRUE_TRUTHNESS}. Positive finite distances yield an
+     * {@code ofTrue} value scaled above the {@link #FALSE_TRUTHNESS} baseline and
+     * {@code ofFalse = 1}. Infinite or {@link Double#MAX_VALUE} distances yield the
+     * {@link #FALSE_TRUTHNESS} baseline.
+     *
+     * @param distance a non-negative branch distance
+     * @return a Truthness instance derived from the distance
+     * @throws IllegalArgumentException if {@code distance} is negative or {@link Double#NaN}
+     */
+    public static Truthness getTruthnessFromDistance(double distance) {
+        if (Double.isNaN(distance)) {
+            throw new IllegalArgumentException("NaN distance");
+        }
+        if (distance < 0) {
+            throw new IllegalArgumentException("Negative distance: " + distance);
+        }
+        if (distance == 0.0d) {
+            return TRUE_TRUTHNESS;
+        }
+        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(
+                DistanceHelper.H_NOT_NULL, distance);
+        return new Truthness(ofTrue, 1d);
+    }
+
+    /**
+     * Computes the {@link Truthness} of the predicate {@code a.equals(b)}.
+     * If the strings are equal, {@code ofTrue} is maximal (1.0). Otherwise, {@code ofTrue} is
+     * derived from a left-alignment distance between the two strings (via
+     * {@link DistanceHelper#getLeftAlignmentDistance}), so that strings sharing a longer common
+     * prefix yield a higher (closer-to-true) heuristic value.
+     *
+     * @param a the first string, must not be {@code null}
+     * @param b the second string, must not be {@code null}
+     * @return the Truthness of {@code a} and {@code b} being equal
+     */
+    public static Truthness getStringEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        if (a.equals(b)) {
+            return TRUE_TRUTHNESS;
+        }
+        long dist = DistanceHelper.getLeftAlignmentDistance(a, b);
+        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, (double) dist);
+        return new Truthness(ofTrue, 1d);
     }
 
 }

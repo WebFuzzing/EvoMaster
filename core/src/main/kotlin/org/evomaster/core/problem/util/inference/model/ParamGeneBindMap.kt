@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.util.inference.model
 
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * [isElementOfParam] means the gene of Param is one type of ObjectGene, MapGene, ListGene

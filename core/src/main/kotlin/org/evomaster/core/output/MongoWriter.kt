@@ -58,8 +58,9 @@ object MongoWriter {
                         .forEach { g ->
                             when (g) {
                                 is ObjectGene -> {
-                                    val printableValue =
-                                        StringEscapeUtils.escapeJava(g.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON))
+                                    val ejson = g.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
+                                    val printableValue = if (format.isJava()) escapeEjsonForJavaLiteral(ejson)
+                                    else StringEscapeUtils.escapeJava(ejson)
                                     val adaptedPrintableValue = if (format.isKotlin())
                                         printableValue.replace(
                                             "$",
@@ -94,5 +95,23 @@ object MongoWriter {
         insertionVars.add(insertionVar to insertionVarResult)
 
     }
+
+    /**
+     * Escapes literal backslash-u sequences in EJSON for a Java string literal.
+     * Java translates eligible Unicode escapes before parsing string literals,
+     * so those sequences can make otherwise valid generated tests fail to compile.
+     * Octal escapes preserve the runtime backslashes without changing genuine
+     * Unicode escapes emitted by [StringEscapeUtils.escapeJava].
+     */
+    internal fun escapeEjsonForJavaLiteral(value: String): String {
+        return StringEscapeUtils.escapeJava(value).replace(ESCAPED_BACKSLASH_U) { match ->
+            val slashCount = match.value.length - 1
+            "\\134".repeat(slashCount / 2) + "u"
+        }
+    }
+
+    // Literal backslashes produce complete even-length runs before 'u'. A genuine
+    // Unicode escape, including one after literal backslashes, has an odd-length run.
+    private val ESCAPED_BACKSLASH_U = Regex("""(?<!\\)(\\\\)+u""")
 
 }

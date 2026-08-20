@@ -1,5 +1,11 @@
 package org.evomaster.core.redis
 
+import org.evomaster.core.database.redis.RedisDbActionTransformer
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
+import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
