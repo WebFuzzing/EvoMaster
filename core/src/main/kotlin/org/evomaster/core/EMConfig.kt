@@ -65,6 +65,17 @@ class EMConfig {
          */
         const val DEFAULT_SQL_Z3_TIMEOUT_MS = 5000
 
+        /**
+         * Default number of entries kept in the Z3 solver's memoization cache. See [sqlZ3CacheSize].
+         *
+         * Chosen from measurements: one system under test issued 2,153 distinct queries in a one-hour
+         * search, and with the previous bound of 500 nearly half of its cache misses were re-solves of
+         * entries that had been evicted rather than genuinely new queries. Entries are small — a query
+         * string and a solver result — so a higher bound costs little memory and removes that whole
+         * class of wasted work.
+         */
+        const val DEFAULT_SQL_Z3_CACHE_SIZE = 5000
+
         private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
@@ -2014,6 +2025,17 @@ class EMConfig {
     @DependsOnTrueFor("generateSqlDataWithZ3")
     @Min(1.0)
     var sqlZ3NumberOfRows = 1
+
+    @Experimental
+    @Cfg("Maximum number of entries kept in each of the two bounded Z3 solver caches: the one " +
+            "holding solver results, and the one remembering queries that could not be translated. " +
+            "When the bound is reached, the least recently used entry is evicted and would have to be " +
+            "solved again if seen later. Sizing it below the number of distinct queries a search " +
+            "issues turns a large share of cache misses into re-solves of already-known queries. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3CacheSize = DEFAULT_SQL_Z3_CACHE_SIZE
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
