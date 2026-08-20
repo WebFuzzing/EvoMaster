@@ -111,6 +111,21 @@ class SMTConditionVisitor(
                     tableAliases[it] ?: it
                 } ?: defaultTableName
 
+                /*
+                    A qualifier that resolves to no schema table means the column belongs to a derived
+                    table — a sub-select in FROM or JOIN, which has no declared SMT constant to refer
+                    to. Emitting a reference anyway produced a formula Z3 rejects outright
+                    ("unknown constant"), costing a full round-trip to learn nothing. Throwing instead
+                    lets the caller drop this condition and record it as a partial translation, which
+                    is what it is: the query is under-constrained, but the rest of it still applies.
+                 */
+                if (tables.none { it.id.name.equals(tableName, ignoreCase = true) }) {
+                    throw RuntimeException(
+                        "Column '${sqlCondition.columnName}' is qualified by '$tableName', which is not" +
+                            " a table in the schema (most likely a derived table)"
+                    )
+                }
+
                 getColumnReference(tableName, sqlCondition.columnName)
             }
 

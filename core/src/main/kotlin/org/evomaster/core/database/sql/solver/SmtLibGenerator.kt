@@ -592,14 +592,18 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
-                    val alias = fromItem.alias?.name ?: tableName
-                    tableAliasMap[alias] = tableName
+                    if (tableName != null) {
+                        val alias = fromItem.alias?.name ?: tableName
+                        tableAliasMap[alias] = tableName
+                    }
 
                     val joins = plainSelect.joins
                     if (joins != null) {
                         for (join in joins) {
+                            // A FROM item with no schema table behind it contributes no alias. Skipping
+                            // it keeps the aliases of the real tables, which are still translatable.
+                            val joinName = getTableName(join.rightItem) ?: continue
                             val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                            val joinName = getTableName(join.rightItem)
                             tableAliasMap[joinAlias] = joinName
                         }
                     }
@@ -619,8 +623,18 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         return tableAliasMap
     }
 
-    private fun getTableName(fromItem: FromItem?): String =
-        (fromItem as Table).getName()
+    /**
+     * The schema table behind a FROM item, or null when there is none — a parenthesised sub-select,
+     * which an ORM emits to resolve entity inheritance through UNION ALL.
+     *
+     * This used to be an unchecked cast to [Table]. The resulting `ClassCastException` was caught far
+     * upstream, where it discarded the *whole* query rather than the one FROM item that could not be
+     * mapped — so a query joining a real table against a derived one lost its real constraints too.
+     * On one system under test that single shape accounted for every SMT-LIB generation failure it
+     * reported, consuming close to half the search budget to produce nothing.
+     */
+    private fun getTableName(fromItem: FromItem?): String? =
+        (fromItem as? Table)?.getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
