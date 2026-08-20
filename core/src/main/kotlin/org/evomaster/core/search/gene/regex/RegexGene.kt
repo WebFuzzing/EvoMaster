@@ -70,7 +70,7 @@ class RegexGene(
             randomness.nextBoolean()
         }
 
-        if (regexType != RegexType.JVM) {
+        if (!requiresAssertionHandling) {
             disjunctions.randomize(randomness, tryToForceNewValue)
             return
         }
@@ -90,6 +90,11 @@ class RegexGene(
 
         throw IllegalStateException("Could not repair regex value")
     }
+
+    /**
+     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     */
+    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
