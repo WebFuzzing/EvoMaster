@@ -38,6 +38,11 @@ class NN400EndpointModel(
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(input: RestCallAction) {
+
+        if (initialized) {
+            return
+        }
+
         super.initializeIfNeeded(input)
         // Initialize with proper dimensions
         weightsInputHidden = Array(dimension!!) {
