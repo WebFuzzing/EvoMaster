@@ -1754,7 +1754,7 @@ class EMConfig {
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
-    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
 
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
