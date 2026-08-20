@@ -107,9 +107,42 @@ class SMTConditionVisitor(
         return when (sqlCondition) {
 
             is SqlColumn -> {
+                /*
+                    An unquoted `true` or `false` in a WHERE clause arrives here as a column, not as a
+                    SqlBooleanLiteralValue: the constraint parser only produces that type for CHECK
+                    expressions, and a query's boolean literal is indistinguishable from an identifier
+                    to the grammar. Left as a column, the name is emitted as a field selector over the
+                    row constant, and Z3 rejects the entire formula with "unknown constant TRUE" —
+                    a full round-trip spent to learn nothing.
+
+                    Booleans are encoded as SMT strings, so the literal takes the same spelling the
+                    constraint path uses, which is the one SMTLibZ3DbConstraintSolver.toBoolean reads
+                    back. Only unqualified names are considered, since a qualified one is necessarily a
+                    column reference, and only when no column of that name exists.
+                 */
+                val name = sqlCondition.columnName
+                if (sqlCondition.tableName == null && isBooleanLiteral(name) && !isAColumn(name)) {
+                    return if (name.equals("true", ignoreCase = true)) "\"True\"" else "\"False\""
+                }
+
                 val tableName = sqlCondition.tableName?.let {
                     tableAliases[it] ?: it
                 } ?: defaultTableName
+
+                /*
+                    A qualifier that resolves to no schema table means the column belongs to a derived
+                    table — a sub-select in FROM or JOIN, which has no declared SMT constant to refer
+                    to. Emitting a reference anyway produced a formula Z3 rejects outright
+                    ("unknown constant"), costing a full round-trip to learn nothing. Throwing instead
+                    lets the caller drop this condition and record it as a partial translation, which
+                    is what it is: the query is under-constrained, but the rest of it still applies.
+                 */
+                if (tables.none { it.id.name.equals(tableName, ignoreCase = true) }) {
+                    throw RuntimeException(
+                        "Column '${sqlCondition.columnName}' is qualified by '$tableName', which is not" +
+                            " a table in the schema (most likely a derived table)"
+                    )
+                }
 
                 getColumnReference(tableName, sqlCondition.columnName)
             }
@@ -150,6 +183,9 @@ class SMTConditionVisitor(
      * @param operand The SQL operand as a string.
      * @return True if the operand is a column, false otherwise.
      */
+    private fun isBooleanLiteral(operand: String): Boolean =
+        operand.equals("true", ignoreCase = true) || operand.equals("false", ignoreCase = true)
+
     private fun isAColumn(operand: String): Boolean {
         return tables.any {
             it.id.name.equals(defaultTableName, ignoreCase = true) &&

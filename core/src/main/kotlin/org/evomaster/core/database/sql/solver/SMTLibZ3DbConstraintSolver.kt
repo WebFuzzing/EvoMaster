@@ -50,6 +50,7 @@ import kotlin.collections.iterator
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.text.equals
+import org.evomaster.dbconstraint.ast.SqlCondition
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -77,12 +78,31 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     // corrupts the map. This makes the cache safe for the parallelized fitness evaluation that is planned.
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
-    companion object {
-        private const val MAX_CACHE_SIZE = 500
+    // Queries that cannot be translated, so they are not retried on every encounter.
+    //
+    // A translation failure is deterministic: the same SQL against the same schema fails the same
+    // way every time, which is exactly what makes it safe to remember. This is the opposite of Z3's
+    // UNKNOWN and ERROR outcomes, which may be a timeout or a transient container fault and are
+    // deliberately left uncached above. Without this, one untranslatable query is re-attempted for
+    // as long as the search keeps producing it: measurements on one SUT showed roughly 20,000
+    // attempts over about 780 distinct queries, a 26x amplification of futile work.
+    //
+    // Bounded and synchronized on the same reasoning as z3ResultCache.
+    private var untranslatableQueries: MutableMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>? = null
 
-        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
-        // epoch<->string conversions round-trip consistently.
+    // Parsed CHECK expressions, keyed by dialect and expression text and shared across the
+    // SmtLibGenerator instances built per cache miss. See the parameter docs on SmtLibGenerator.
+    private var checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+
+    companion object {
+
+        // The layout used when turning an epoch back into a timestamp literal for a generated row.
+        // It must be one that JSqlVisitor can read back, so that a value written here and parsed
+        // there round-trips: that parser now accepts a range of layouts, of which this is one.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+        /** Spellings that SmtLibGenerator.TYPE_MAP encodes identically as a boolean. */
+        private val BOOLEAN_SPELLINGS = setOf("BOOLEAN", "BOOL")
     }
 
     @Inject
@@ -110,13 +130,49 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithZ3) {
             initializeExecutor()
-            val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
-                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
-                    size > MAX_CACHE_SIZE
-            }
-            z3ResultCache = Collections.synchronizedMap(lru)
+            initializeCaches()
         }
     }
+
+    /**
+     * Allocates the memoization structures. Separate from [postConstruct] so tests that build the
+     * solver directly, without an injector and therefore without [config], can still exercise the
+     * cached paths — the same reason [initializeExecutor] is callable on its own.
+     */
+    fun initializeCaches() {
+        // Falls back to the default when there is no injected config, which is how tests build the
+        // solver directly.
+        val maxSize = if (::config.isInitialized) config.sqlZ3CacheSize else EMConfig.DEFAULT_SQL_Z3_CACHE_SIZE
+
+        val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                size > maxSize
+        }
+        z3ResultCache = Collections.synchronizedMap(lru)
+
+        val failedLru =
+            object : LinkedHashMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>(16, 0.75f, true) {
+                override fun removeEldestEntry(
+                    eldest: MutableMap.MutableEntry<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>?
+                ) = size > maxSize
+            }
+        untranslatableQueries = Collections.synchronizedMap(failedLru)
+
+        checkExpressionCache = Collections.synchronizedMap(HashMap())
+    }
+
+    /** Number of queries currently remembered as untranslatable. For tests. */
+    internal fun untranslatableQueryCount(): Int = untranslatableQueries?.size ?: 0
+
+    /** Whether a given query is remembered as untranslatable. For tests. */
+    internal fun isRememberedUntranslatable(sqlQuery: String, numberOfRows: Int): Boolean =
+        untranslatableQueries?.containsKey(Pair(sqlQuery, numberOfRows)) == true
+
+    /** Which step gave up on a remembered query, or null if it is not remembered. For tests. */
+    internal fun rememberedFailureKind(
+        sqlQuery: String,
+        numberOfRows: Int
+    ): Statistics.SqlZ3TranslationFailure? = untranslatableQueries?.get(Pair(sqlQuery, numberOfRows))
 
     fun initializeExecutor() {
         executor = Z3DockerExecutor(resourcesFolder)
@@ -149,6 +205,25 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
+        // Timed as a whole, and in a finally so that every exit path is covered. The inner brackets
+        // around Z3 and around formula generation leave out writing the .smt2 file, rebuilding the
+        // gene tree from a solution — which also happens on every cache hit — and the call overhead;
+        // measuring only those two understates what the solver costs the search.
+        val solveStart = System.currentTimeMillis()
+        try {
+            return doSolve(schemaDto, sqlQuery, numberOfRows, stats)
+        } finally {
+            stats?.reportSqlZ3SolveTime(System.currentTimeMillis() - solveStart)
+        }
+    }
+
+    private fun doSolve(
+        schemaDto: DbInfoDto,
+        sqlQuery: String,
+        numberOfRows: Int,
+        stats: Statistics?
+    ): List<SqlAction> {
+
         val cacheKey = Pair(sqlQuery, numberOfRows)
         // Track "seen" against the same key the cache uses, so unique/duplicate counts
         // line up with actual cache granularity.
@@ -163,16 +238,26 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             }
         }
 
+        // A query already known to be untranslatable is skipped here, before paying for the parse
+        // and the SMT-LIB generation again. The failure is still counted, so the statistics keep
+        // reflecting how often the search runs into it.
+        val knownFailure = untranslatableQueries?.get(cacheKey)
+        if (knownFailure != null) {
+            stats?.reportSqlZ3ParseFailure(knownFailure)
+            return emptyList()
+        }
+
         val queryStatement = try {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            stats?.reportSqlZ3ParseFailure()
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SQL_PARSE)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             return emptyList()
         }
 
         val smtlibGenStart = System.currentTimeMillis()
-        val generator = SmtLibGenerator(schemaDto, numberOfRows)
+        val generator = SmtLibGenerator(schemaDto, numberOfRows, checkExpressionCache)
         // SMT-LIB generation can throw for unsupported column types or query shapes it cannot handle
         // (e.g. a cast failure on an unexpected statement structure). Degrade gracefully to an empty
         // result instead of letting the exception propagate into the structure mutator.
@@ -180,7 +265,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             generator.generateSMT(queryStatement)
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
-            stats?.reportSqlZ3ParseFailure()
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             return emptyList()
         }
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
@@ -330,13 +416,15 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * Whether the given column's SQL type (as reported in [ColumnDto.type]) equals [expectedType],
      * compared case-insensitively as a raw string.
      *
-     * CAVEAT: this relies on [ColumnDto.type] containing the exact spelling passed in (currently
-     * "BOOLEAN" and "TIMESTAMP"). It is needed because the SMT sort alone cannot recover these types
-     * (BOOLEAN is encoded as an SMT String, TIMESTAMP as an SMT Int), so gene reconstruction must
-     * consult the original SQL type. The set of type spellings recognized here must stay consistent
-     * with [SmtLibGenerator.TYPE_MAP]; if a backend reports a variant spelling (e.g. "BOOL" or
-     * "TIMESTAMP WITHOUT TIME ZONE"), the special handling is silently skipped. Consolidating these
-     * type vocabularies into a single source of truth is future work.
+     * Needed because the SMT sort alone cannot recover these types — BOOLEAN is encoded as an SMT
+     * String and TIMESTAMP as an SMT Int — so gene reconstruction must consult the original SQL type.
+     *
+     * CAVEAT: the set of spellings recognised here must stay consistent with
+     * [SmtLibGenerator.TYPE_MAP], and the two are still maintained separately. Equivalences the map
+     * already makes are handled explicitly (see [typeMatches], which treats BOOL and BOOLEAN alike),
+     * but a spelling neither knows about — say "TIMESTAMP WITHOUT TIME ZONE" — still skips the
+     * special handling silently. Consolidating the vocabularies into a single source of truth is
+     * future work.
      */
     private fun hasColumnType(
         schemaDto: DbInfoDto,
@@ -355,7 +443,22 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             it.name.equals(columnName, ignoreCase = true)
         } ?: return false
 
-        return col.type.equals(expectedType, ignoreCase = true)
+        return typeMatches(col.type, expectedType)
+    }
+
+    /**
+     * Whether a column's declared type is the expected one, accounting for spellings that
+     * [SmtLibGenerator.TYPE_MAP] already treats as equivalent.
+     *
+     * Without this, a column declared `BOOL` is encoded as an SMT String exactly like a `BOOLEAN`
+     * one — TYPE_MAP maps both — but is not recognised as boolean when the solution is turned back
+     * into genes, so it silently loses its special handling.
+     */
+    internal fun typeMatches(declaredType: String, expectedType: String): Boolean {
+        val declared = declaredType.uppercase()
+        val expected = expectedType.uppercase()
+        if (declared == expected) return true
+        return BOOLEAN_SPELLINGS.contains(declared) && BOOLEAN_SPELLINGS.contains(expected)
     }
 
     /**
@@ -472,8 +575,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param type The column type as a string.
      * @return The corresponding ColumnDataType.
      */
-    private fun getColumnDataType(type: String): ColumnDataType {
-        return when (type) {
+    internal fun getColumnDataType(type: String): ColumnDataType {
+        // Matched case-insensitively. SmtLibGenerator.TYPE_MAP uppercases before looking up, so a
+        // backend reporting a lowercase spelling used to be mapped there but fall through to the
+        // default here — the two vocabularies disagreeing silently about the same column.
+        return when (type.uppercase()) {
             "BIGINT" -> ColumnDataType.BIGINT
             "INTEGER" -> ColumnDataType.INTEGER
             "FLOAT" -> ColumnDataType.FLOAT

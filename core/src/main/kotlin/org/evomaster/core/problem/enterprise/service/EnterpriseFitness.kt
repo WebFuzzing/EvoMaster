@@ -149,7 +149,18 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
-        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        /*
+            Timed because this is where generated SQL rows are actually paid for. The insertions run
+            against the SUT's database on every evaluation of an individual that carries them, so a
+            single solver call can impose a cost repeated for the rest of the search — a cost that no
+            solver-side counter observes, since it is incurred here rather than in solve().
+         */
+        val insertionStart = System.currentTimeMillis()
+        val sqlResults = try {
+            rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        } finally {
+            statistics.reportSqlInsertionExecution(System.currentTimeMillis() - insertionStart)
+        }
         val map = sqlResults?.idMapping
         val executedResults = sqlResults?.executionResults
 

@@ -28,7 +28,24 @@ import org.evomaster.solver.smtlib.assertion.*
  * @param schema The database schema containing tables and constraints.
  * @param numberOfRows The number of rows to be considered in constraints.
  */
-class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
+class SmtLibGenerator(
+    private val schema: DbInfoDto,
+    private val numberOfRows: Int,
+    /**
+     * Optional memo of CHECK-expression parse outcomes, shared across generators.
+     *
+     * A generator is built afresh on every solver cache miss, so without this the same schema-level
+     * expressions are re-parsed for every query. That is pure waste in the ordinary case, and far
+     * worse than waste in one specific case: the constraint an ORM emits for an enum column on
+     * PostgreSQL, `((c)::text = ANY ((ARRAY[...])::text[]))`, makes the parser degrade quadratically
+     * and then throw, so the cost is paid repeatedly to produce nothing. Schemas do not change
+     * within a run, so one parse per expression suffices.
+     *
+     * A value of null means "was tried and could not be parsed", which is why lookups go through
+     * [containsKey]. Owned by the caller — kept out of a static field on purpose.
+     */
+    private val checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+) {
 
     private var parser = JSqlConditionParser()
 
@@ -90,11 +107,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
          * Maps database column types to SMT-LIB types.
          *
          * FIXME: this is one of three independent type vocabularies interpreting ColumnDto.type
-         * (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). They can
-         * silently disagree when a backend reports a variant spelling; consolidating them into a single
-         * source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
+         * (the others are SMTLibZ3DbConstraintSolver.getColumnDataType and .hasColumnType). Two
+         * concrete disagreements between them have been fixed — a case-sensitive comparison, and the
+         * BOOL/BOOLEAN equivalence — but they remain separate lists and can still diverge on a
+         * spelling only one of them knows. Consolidating them into a single source of truth is future
+         * work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
          */
-        private val TYPE_MAP = mapOf(
+        // internal rather than private so a test can pin the agreement between this vocabulary and
+        // the one SMTLibZ3DbConstraintSolver uses when turning a solution back into genes.
+        internal val TYPE_MAP = mapOf(
             "BIGINT" to SMT_INT,
             "BIT" to SMT_INT,
             "INTEGER" to SMT_INT,
@@ -204,18 +225,44 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
-            try {
-                val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
-                for (i in 1..numberOfRows) {
-                    val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
-                    smt.addNode(constraint)
-                }
-            } catch (e: SqlConditionParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
-            } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+            val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue
+            for (i in 1..numberOfRows) {
+                val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
+                smt.addNode(constraint)
             }
         }
+    }
+
+    /**
+     * Parses a CHECK expression, consulting [checkExpressionCache] when one was supplied.
+     *
+     * Returns null when the expression cannot be parsed, in which case the constraint is skipped and
+     * the generated formula is weaker than the schema. Note that the warning is emitted only on the
+     * first attempt for a given expression: repeating it per query produced tens of thousands of
+     * identical log lines on schemas where a constraint is unsupported.
+     */
+    private fun parseCheckExpressionText(expression: String): SqlCondition? =
+        try {
+            parser.parse(expression, toDBType(schema.databaseType))
+        } catch (e: SqlConditionParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        } catch (e: JSQLParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        }
+
+    private fun parseCheckExpressionCached(expression: String): SqlCondition? {
+        val cache = checkExpressionCache ?: return parseCheckExpressionText(expression)
+        // The database type is part of the key: the same text can parse differently per dialect, and
+        // a cache outliving a single schema must not confuse them.
+        val key = "${schema.databaseType}|$expression"
+        if (cache.containsKey(key)) {
+            return cache[key]
+        }
+        val parsed = parseCheckExpressionText(expression)
+        cache[key] = parsed
+        return parsed
     }
 
     /**
@@ -592,14 +639,16 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
-                    val alias = fromItem.alias?.name ?: tableName
-                    tableAliasMap[alias] = tableName
+                    if (tableName != null) {
+                        val alias = fromItem.alias?.name ?: tableName
+                        tableAliasMap[alias] = tableName
+                    }
 
                     val joins = plainSelect.joins
                     if (joins != null) {
                         for (join in joins) {
+                            val joinName = getTableName(join.rightItem) ?: continue
                             val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                            val joinName = getTableName(join.rightItem)
                             tableAliasMap[joinAlias] = joinName
                         }
                     }
@@ -619,8 +668,21 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         return tableAliasMap
     }
 
-    private fun getTableName(fromItem: FromItem?): String =
-        (fromItem as Table).getName()
+    /**
+     * The name of a schema table appearing in a FROM or JOIN, or null when the item is not one.
+     *
+     * A FROM item need not be a table: a derived table — a parenthesised sub-select, which an ORM
+     * emits for instance to resolve entity inheritance through a `UNION ALL` — is equally valid SQL.
+     * Such an item has no schema table to constrain, so it contributes no alias and is skipped.
+     *
+     * This used to be an unchecked cast to [Table]. The resulting `ClassCastException` was caught far
+     * upstream, where it discarded the *whole* query rather than the one FROM item that could not be
+     * mapped — so a query joining a real table against a derived one lost its real constraints too.
+     * On one system under test that single shape accounted for every SMT-LIB generation failure it
+     * reported, consuming close to half the search budget to produce nothing.
+     */
+    private fun getTableName(fromItem: FromItem?): String? =
+        (fromItem as? Table)?.getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
