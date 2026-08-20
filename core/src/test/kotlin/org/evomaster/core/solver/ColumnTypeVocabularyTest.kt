@@ -11,7 +11,13 @@ import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
  * Two vocabularies describe the same column type: [SmtLibGenerator.TYPE_MAP], which decides the SMT-LIB
  * sort a column is encoded as, and [SMTLibZ3DbConstraintSolver], which decides the gene the solved value
  * is turned back into. When they disagree, nothing fails — a value is produced under one reading and
- * consumed under another — so the agreement has to be pinned by a test rather than noticed at runtime.
+ * consumed under another — so what agreement there is has to be pinned by a test rather than noticed
+ * at runtime.
+ *
+ * What follows covers the two overlaps this change repairs: that neither vocabulary is case-sensitive
+ * where the other is not, and that the two boolean spellings stay interchangeable. It does not check
+ * that every type maps to a compatible gene, which would require the consolidation left as future
+ * work.
  */
 class ColumnTypeVocabularyTest {
 
