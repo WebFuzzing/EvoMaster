@@ -73,7 +73,7 @@ class RestCallAction(
      *
      * TODO check if it could be used to handle issue in BackwardLinkReference
      */
-     private var weakReference: RestCallAction? = null
+    var weakReference: RestCallAction? = null
 ) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
@@ -164,50 +164,8 @@ class RestCallAction(
         return path.resolveOnlyPath(parameters)
     }
 
-    /**
-     * Make sure that the path params are resolved to the same concrete values of "other".
-     * Note: "this" can be just an ancestor of "other"
-     *
-     **/
-    fun bindToSamePathResolution(other: RestCallAction) {
-        if (!this.path.isSameOrAncestorOf(other.path)) {
-            throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
-                    "${this.path} vs ${other.path}")
-        }
-        for (i in parameters.indices) {
-            val target = parameters[i]
-            if (target is PathParam) {
-                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-                /*
-                    Note: even if they are referring to same path variable, it does not mean that
-                    necessarily they are represented with the same type of gene, eg., typically a StringGene.
-                    For example, they could be a ChoiceGene when dealing with "examples" or Regex when having patterns
-                    only defined on some endpoints
-                 */
-                val g = parameters[i].primaryGene()
-                g.copyValueFrom(k.primaryGene())
-                g.forceNewTaints()
-            }
-        }
-    }
 
-    fun usingSameResolvedPath(other: RestCallAction) =
-        //FIXME this does not consider dynamic fields?
-        this.resolvedOnlyPath() == other.resolvedOnlyPath()
 
-    /**
-     * When the URL path of this endpoint is resolved, would it be a (strict) parent from the other action
-     */
-    fun isResolvedParentPath(other: RestCallAction): Boolean {
-
-        val parent = this.resolvedOnlyPath() // TODO deal with dynamic info
-        val child = other.resolvedOnlyPath()
-
-        if(parent.length >= child.length) {
-            return false
-        }
-        return child.startsWith(parent)
-    }
 
 
     /**

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A single structural mapping {@code m = (μ, ε)} from a query pattern {@code P_s} onto a graph
@@ -14,42 +15,75 @@ import java.util.Map;
  * which is shared between the {@code PatternEdge}/{@code PatternNode} and the conditions that refer
  * to it, so condition valuation can resolve a variable to its bound graph element.
  */
-class Neo4jMapping {
+public class Neo4jMapping {
 
+    /**
+     * The node part of the mapping ({@code μ}). Keys are pattern node variable names as the parser
+     * assigned them. a name written in the query such as {@code p}, or a synthetic {@code _anon_node_N}
+     * for an element left anonymous; values are the graph node that variable is bound to in this
+     * mapping. A variable missing from this map is simply not bound here.
+     */
     private final Map<String, Neo4jNode> nodeBindings;
+
+    /**
+     * The relationship part of the mapping ({@code ε}). Keys are pattern edge variable names, in the
+     * same naming scheme as {@link #nodeBindings} ({@code r}, or a synthetic {@code _anon_rel_N});
+     * values are the graph relationship that variable is bound to in this mapping.
+     */
     private final Map<String, Neo4jEdge> edgeBindings;
 
-    Neo4jMapping() {
+    public Neo4jMapping() {
         this.nodeBindings = new LinkedHashMap<>();
         this.edgeBindings = new LinkedHashMap<>();
     }
 
     private Neo4jMapping(Map<String, Neo4jNode> nodeBindings, Map<String, Neo4jEdge> edgeBindings) {
-        this.nodeBindings = new LinkedHashMap<>(nodeBindings);
-        this.edgeBindings = new LinkedHashMap<>(edgeBindings);
+        this.nodeBindings = new LinkedHashMap<>(Objects.requireNonNull(nodeBindings, "nodeBindings must not be null"));
+        this.edgeBindings = new LinkedHashMap<>(Objects.requireNonNull(edgeBindings, "edgeBindings must not be null"));
     }
 
-    Neo4jMapping copy() {
+    public Neo4jMapping copy() {
         return new Neo4jMapping(nodeBindings, edgeBindings);
     }
 
-    Neo4jNode getNode(String variable) {
+    /**
+     * The graph node bound to the given pattern variable, or {@code null} if this mapping does not
+     * bind one. A {@code null} return is a normal outcome, not an error: it is how
+     * {@code resolveProperty} tells a node variable from a relationship variable, and how a condition
+     * on an unbound variable is detected (it yields no {@code ρ}, and the aggregation skips it).
+     * <p>
+     * The variable itself is never {@code null}: the parser names every pattern element, and every
+     * condition, operand and edge endpoint guards its variable name at construction. Guarding it here
+     * keeps a {@code null} name, which would be a bug, from silently looking like an unbound variable.
+     */
+    public Neo4jNode getNode(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return nodeBindings.get(variable);
     }
 
-    Neo4jEdge getEdge(String variable) {
+    /**
+     * The graph relationship bound to the given pattern variable, or {@code null} when this mapping
+     * does not bind it. Same contract as {@link #getNode(String)}.
+     */
+    public Neo4jEdge getEdge(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return edgeBindings.get(variable);
     }
 
-    boolean isNodeBound(String variable) {
+    public boolean isNodeBound(String variable) {
+        Objects.requireNonNull(variable, "variable must not be null");
         return nodeBindings.containsKey(variable);
     }
 
-    void bindNode(String variable, Neo4jNode node) {
+    public void bindNode(String variable, Neo4jNode node) {
+        Objects.requireNonNull(variable, "variable must not be null");
+        Objects.requireNonNull(node, "node must not be null");
         nodeBindings.put(variable, node);
     }
 
-    void bindEdge(String variable, Neo4jEdge edge) {
+    public void bindEdge(String variable, Neo4jEdge edge) {
+        Objects.requireNonNull(variable, "variable must not be null");
+        Objects.requireNonNull(edge, "edge must not be null");
         edgeBindings.put(variable, edge);
     }
 
@@ -57,7 +91,8 @@ class Neo4jMapping {
      * True when this graph edge is already used by some pattern edge in this mapping. Cypher
      * enforces relationship uniqueness within a single MATCH, so the enumerator avoids reusing one.
      */
-    boolean usesEdge(Neo4jEdge edge) {
+    public boolean usesEdge(Neo4jEdge edge) {
+        Objects.requireNonNull(edge, "edge must not be null");
         return edgeBindings.containsValue(edge);
     }
 

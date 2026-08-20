@@ -18,8 +18,25 @@ import java.util.Set;
  */
 public class Neo4jNode {
 
+    /**
+     * Stable identifier of this node, as reported by the driver ({@code elementId}). Unique within the
+     * captured graph, and used to tell two nodes apart when enumerating mappings.
+     */
     private final String id;
+
+    /**
+     * The labels attached to this node, e.g. {@code {Person, Employee}}. A node may carry zero, one or
+     * many labels, which is why this is a set rather than a single value. Iteration order follows the
+     * order the labels were read, so scoring is deterministic.
+     */
     private final Set<String> labels;
+
+    /**
+     * The node's properties. Keys are property names as stored in Neo4j (e.g. {@code age}); values are
+     * the corresponding property values, already converted to plain Java types by the graph reader
+     * ({@code String}, {@code Long}, {@code Double}, {@code Boolean}, ...). A key that is absent means
+     * the property is not set, which is distinct from a key present with a {@code null} value.
+     */
     private final Map<String, Object> properties;
 
     public Neo4jNode(String id, Set<String> labels, Map<String, Object> properties) {
@@ -48,6 +65,10 @@ public class Neo4jNode {
         return properties.containsKey(key);
     }
 
+    /**
+     * The value of the given property, or {@code null} if it is absent <em>or</em> present with a
+     * {@code null} value. Use {@link #hasProperty(String)} to tell those two apart.
+     */
     public Object getProperty(String key) {
         return properties.get(key);
     }

@@ -7,6 +7,10 @@ import org.evomaster.client.java.controller.neo4j.operations.QuantifiedPathPatte
 import org.evomaster.client.java.controller.neo4j.parser.cypher25.Cypher25AntlrParser;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -206,10 +210,102 @@ class Cypher25AntlrParserTest {
     }
 
     @Test
-    void testPropertyParameterValueKeptAsRawOperand() {
+    void testPropertyParameterValueIsAParameterOperand() {
         PropertyCondition prop = (PropertyCondition) parse("MATCH (p {age: $minAge}) RETURN p")
                 .getConditions().stream().filter(PropertyCondition.class::isInstance).findFirst().orElseThrow(AssertionError::new);
-        assertInstanceOf(RawOperand.class, prop.getValue());
+        assertEquals(new ParameterOperand("minAge"), prop.getValue());
+    }
+
+    @Test
+    void testComparisonParameterValueIsAParameterOperand() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.name = $name RETURN p"));
+        assertEquals(new PropertyOperand("p", "name"), cc.getLeft());
+        assertEquals(new ParameterOperand("name"), cc.getRight());
+    }
+
+    @Test
+    void testParameterOperandKeepsTheNameWithoutTheDollar() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.age > $minAge RETURN p"));
+        ParameterOperand param = (ParameterOperand) cc.getRight();
+        assertEquals("minAge", param.getName());
+        assertEquals("$minAge", param.toString());
+    }
+
+    @Test
+    void testEscapedParameterNameIsUnquoted() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.age > $`min age` RETURN p"));
+        assertEquals(new ParameterOperand("min age"), cc.getRight());
+    }
+
+    @Test
+    void testPositionalParameterKeepsItsDigits() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.age > $0 RETURN p"));
+        assertEquals(new ParameterOperand("0"), cc.getRight());
+    }
+
+    @Test
+    void testParameterOnTheLeftOfAComparison() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE $name = p.name RETURN p"));
+        assertEquals(new ParameterOperand("name"), cc.getLeft());
+        assertEquals(new PropertyOperand("p", "name"), cc.getRight());
+    }
+
+    @Test
+    void testTwoParametersInTheSameQueryStayDistinct() {
+        MatchOperation op = parse("MATCH (p:Person) WHERE p.age > $min AND p.age < $max RETURN p");
+        List<Operand> params = op.getConditions().stream()
+                .filter(AndCondition.class::isInstance)
+                .flatMap(c -> ((AndCondition) c).getConditions().stream())
+                .filter(ComparisonCondition.class::isInstance)
+                .map(c -> ((ComparisonCondition) c).getRight())
+                .collect(Collectors.toList());
+        assertEquals(Arrays.asList(new ParameterOperand("min"), new ParameterOperand("max")), params);
+    }
+
+    @Test
+    void testPropertyOfAParameterIsNotAParameterOperand() {
+        // $user.name is a property access on a parameter, not a parameter reference: neither half can
+        // be resolved on its own, so the whole thing stays raw.
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.name = $user.name RETURN p"));
+        assertInstanceOf(RawOperand.class, cc.getRight());
+        assertEquals("$user.name", ((RawOperand) cc.getRight()).getText());
+    }
+
+    @Test
+    void testParameterInsideArithmeticStaysAParameterOperand() {
+        // The arithmetic tree is still built; only the parameter leaf is left unresolved.
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.age > $minAge + 1 RETURN p"));
+        ArithmeticOperand sum = (ArithmeticOperand) cc.getRight();
+        assertEquals(new ParameterOperand("minAge"), sum.getLeft());
+        assertEquals(new LiteralOperand(1L), sum.getRight());
+    }
+
+    @Test
+    void testParameterInsideListStaysAParameterOperand() {
+        ComparisonCondition cc = comparison(parse("MATCH (p:Person) WHERE p.name IN [$a, \"bob\"] RETURN p"));
+        ListOperand list = (ListOperand) cc.getRight();
+        assertEquals(new ParameterOperand("a"), list.getElements().get(0));
+        assertEquals(new LiteralOperand("bob"), list.getElements().get(1));
+    }
+
+    @Test
+    void testNodeParameterisedPropertyMapIsKeptAsRawCondition() {
+        // MATCH (m:Movie $props): the keys are only known at execution time, so the constraint is
+        // recorded whole instead of being dropped, which would leave the node looking unconstrained.
+        MatchOperation op = parse("MATCH (m:Movie $props) RETURN m");
+        assertEquals(0, countOf(op, PropertyCondition.class));
+        assertEquals(1, countOf(op, RawCondition.class));
+        assertEquals("$props", op.getConditions().stream()
+                .filter(RawCondition.class::isInstance)
+                .map(c -> ((RawCondition) c).getExpression())
+                .findFirst().orElseThrow(AssertionError::new));
+    }
+
+    @Test
+    void testRelationshipParameterisedPropertyMapIsKeptAsRawCondition() {
+        MatchOperation op = parse("MATCH (a)-[r:KNOWS $props]->(b) RETURN r");
+        assertEquals(0, countOf(op, PropertyCondition.class));
+        assertEquals(1, countOf(op, RawCondition.class));
     }
 
     @Test
