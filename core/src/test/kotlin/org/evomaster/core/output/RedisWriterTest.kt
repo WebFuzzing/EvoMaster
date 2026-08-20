@@ -1,6 +1,10 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.redis.*
+import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*

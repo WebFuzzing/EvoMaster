@@ -1,20 +1,22 @@
 package org.evomaster.client.java.controller.dynamodb.operations;
 
+import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+
 /**
  * DynamoDB {@code attribute_type(path, type)} predicate operation.
  */
 public class TypeOperation extends QueryOperation {
 
     private final String fieldName;
-    private final String expectedType;
+    private final DynamoDbAttributeType expectedType;
 
     /**
      * Creates a type operation.
      *
      * @param fieldName field name coming from DynamoDB expression/condition
-     * @param expectedType expected DynamoDB type token
+     * @param expectedType expected DynamoDB attribute type
      */
-    public TypeOperation(String fieldName, String expectedType) {
+    public TypeOperation(String fieldName, DynamoDbAttributeType expectedType) {
         this.fieldName = fieldName;
         this.expectedType = expectedType;
     }
@@ -27,9 +29,9 @@ public class TypeOperation extends QueryOperation {
     }
 
     /**
-     * @return expected DynamoDB type token
+     * @return expected DynamoDB attribute type
      */
-    public String getExpectedType() {
+    public DynamoDbAttributeType getExpectedType() {
         return expectedType;
     }
 }
