@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
 import org.evomaster.client.java.controller.neo4j.operations.MatchPattern;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -14,6 +15,9 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_TRUTHNESS;
 
 /**
  * Computes the search heuristic {@code H(Q, G)} of a parsed Cypher MATCH query {@code Q} against a
@@ -30,9 +34,12 @@ import java.util.Objects;
  */
 public class Neo4jHeuristicsCalculator {
 
-    public static final double C = 0.1;
-    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, C);
-    public static final Truthness FALSE_TRUTHNESS = new Truthness(C, 1);
+    /**
+     * Base value a partial score is scaled from, so that a query that matched nothing still ranks below one
+     * that matched something. Named {@code C} after the constant in {@code Formalizing.md}; it is the same
+     * value {@link TruthnessUtils#TRUE_TRUTHNESS} uses for its {@code ofFalse}.
+     */
+    public static final double C = DistanceHelper.H_NOT_NULL;
 
     private final Neo4jStructuralMatcher matcher = new Neo4jStructuralMatcher();
     private final Neo4jConditionEvaluator evaluator;

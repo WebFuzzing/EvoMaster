@@ -14,8 +14,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator.C;
-import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator.FALSE_TRUTHNESS;
-import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator.TRUE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_TRUTHNESS;
 
 /**
  * Evaluates the truthness {@code ρ(condition, m)} of a single {@link CypherCondition} under a
@@ -28,6 +28,13 @@ import static org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeurist
  */
 public class Neo4jConditionEvaluator {
 
+    /**
+     * Marker returned by {@link #resolveOperandValue} when an operand has no value under the current
+     * mapping: an absent property, an unbound variable, or an operand the model does not decompose.
+     * <p>
+     * A distinct object rather than {@code null}, because {@code null} is itself a legitimate property
+     * value in Cypher, and the two lead to different scores.
+     */
     private static final Object UNRESOLVED = new Object();
 
     /**

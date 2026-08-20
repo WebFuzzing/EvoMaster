@@ -250,6 +250,42 @@ class Neo4jHeuristicsCalculatorTest {
     }
 
     @Test
+    void testDivisionByZeroIsNotSatisfiedAndDoesNotThrow() throws CypherParserException {
+        // A zero divisor makes the arithmetic unresolvable, so the comparison is unvaluatable rather
+        // than an error: the score has to come back low, not blow up mid-search.
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE p.age / 0 = 5 RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertFalse(h.isTrue());
+        assertTrue(calculator.computeDistance(q, singlePersonAged25()) > 0);
+    }
+
+    @Test
+    void testModuloByZeroIsNotSatisfiedAndDoesNotThrow() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE p.age % 0 = 5 RETURN p");
+        Truthness h = calculator.computeHeuristic(q, singlePersonAged25());
+
+        assertFalse(h.isTrue());
+        assertTrue(calculator.computeDistance(q, singlePersonAged25()) > 0);
+    }
+
+    @Test
+    void testDivisionByZeroBetweenLiteralsDoesNotThrow() throws CypherParserException {
+        // Both sides are literals, so this one has to survive constant folding too.
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE 25 / 0 = 5 RETURN p");
+
+        assertFalse(calculator.computeHeuristic(q, singlePersonAged25()).isTrue());
+    }
+
+    @Test
+    void testDivisionByANonZeroDivisorIsStillEvaluated() throws CypherParserException {
+        // Guards the two tests above from passing for the wrong reason: ordinary division still works.
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE p.age / 5 = 5 RETURN p");
+
+        assertEquals(0.0, calculator.computeDistance(q, singlePersonAged25()), DELTA);
+    }
+
+    @Test
     void testNotOfUnvaluatableConditionIsNotSatisfied() throws CypherParserException {
         // Cypher: `NOT null` is `null`, not true. Inverting the unvaluatable score would flip its low
         // ofTrue into a near-true one and invent a match that Neo4j does not return.
