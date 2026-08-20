@@ -53,17 +53,34 @@ public class JSqlVisitor implements ExpressionVisitor {
      * The fractional part is parsed but not used: the result is expressed in whole epoch seconds,
      * matching the decoder in SMTLibZ3DbConstraintSolver.
      */
-    private static final DateTimeFormatter TIMESTAMP_PARSER = new DateTimeFormatterBuilder()
-            .appendPattern("yyyy-MM-dd")
-            .optionalStart().appendLiteral('T').optionalEnd()
-            .optionalStart().appendLiteral(' ').optionalEnd()
-            .optionalStart()
+    /**
+     * The time of day, with everything after the hour and minute optional. Built separately so it can
+     * be attached to each separator as a unit: were the separator and the time independently
+     * optional, a literal consisting of a date and a stray separator would satisfy the pattern and be
+     * silently read as midnight.
+     */
+    private static final DateTimeFormatter TIME_OF_DAY = new DateTimeFormatterBuilder()
             .appendPattern("HH:mm")
             .optionalStart().appendPattern(":ss").optionalEnd()
             .optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true).optionalEnd()
-            .optionalEnd()
             .optionalStart().appendOffset("+HH:MM", "Z").optionalEnd()
             .optionalStart().appendOffset("+HH", "Z").optionalEnd()
+            .toFormatter();
+
+    private static DateTimeFormatter timeAfter(char separator) {
+        return new DateTimeFormatterBuilder()
+                .appendLiteral(separator)
+                .append(TIME_OF_DAY)
+                .toFormatter();
+    }
+
+    private static final DateTimeFormatter TIMESTAMP_PARSER = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd")
+            // Either separator, each carrying the whole time of day with it, so that neither can
+            // appear without one. A date on its own remains valid; a date with a dangling separator,
+            // or with an offset but no time, does not.
+            .appendOptional(timeAfter('T'))
+            .appendOptional(timeAfter(' '))
             .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
             .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
             .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
