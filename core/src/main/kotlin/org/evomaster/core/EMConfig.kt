@@ -1378,6 +1378,10 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Experimental
+    @Cfg("Enable multipart/form-data support when building REST actions.")
+    var enableMultipartFormDataSupport = false
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1754,7 +1758,7 @@ class EMConfig {
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
-    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
 
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
