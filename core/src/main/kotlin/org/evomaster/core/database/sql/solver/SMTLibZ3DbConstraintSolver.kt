@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
+import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
@@ -77,9 +78,20 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     // corrupts the map. This makes the cache safe for the parallelized fitness evaluation that is planned.
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
-    companion object {
-        private const val MAX_CACHE_SIZE = 500
+    /**
+     * Queries that could not be translated at all, remembered so they are attempted once per run.
+     *
+     * Unlike Z3's UNKNOWN and ERROR outcomes — which may be a timeout or a transient container fault
+     * and are deliberately left uncached — a translation failure is deterministic: neither the query
+     * nor the schema changes, so the second attempt fails exactly as the first did. The kind is kept
+     * so the statistics keep attributing the failure to the step that produced it.
+     */
+    private var untranslatableQueries: MutableMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>? = null
 
+    /** Shared across the generators built on each cache miss; see [SmtLibGenerator]. */
+    private var checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+
+    companion object {
         // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
         // epoch<->string conversions round-trip consistently.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
@@ -110,13 +122,36 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithZ3) {
             initializeExecutor()
-            val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
-                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
-                    size > MAX_CACHE_SIZE
-            }
-            z3ResultCache = Collections.synchronizedMap(lru)
+            initializeCaches()
         }
     }
+
+    /** Extracted from [postConstruct] so a test can build the caches without a Docker executor. */
+    internal fun initializeCaches() {
+        val maxSize = if (::config.isInitialized) config.sqlZ3CacheSize else EMConfig.DEFAULT_SQL_Z3_CACHE_SIZE
+        val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                size > maxSize
+        }
+        z3ResultCache = Collections.synchronizedMap(lru)
+
+        val failedLru = object : LinkedHashMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>(16, 0.75f, true) {
+            override fun removeEldestEntry(
+                eldest: MutableMap.MutableEntry<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>?
+            ) = size > maxSize
+        }
+        untranslatableQueries = Collections.synchronizedMap(failedLru)
+
+        checkExpressionCache = Collections.synchronizedMap(HashMap())
+    }
+
+    internal fun untranslatableQueryCount(): Int = untranslatableQueries?.size ?: 0
+
+    internal fun isRememberedUntranslatable(sqlQuery: String, numberOfRows: Int): Boolean =
+        untranslatableQueries?.containsKey(Pair(sqlQuery, numberOfRows)) == true
+
+    internal fun rememberedFailureKind(sqlQuery: String, numberOfRows: Int): Statistics.SqlZ3TranslationFailure? =
+        untranslatableQueries?.get(Pair(sqlQuery, numberOfRows))
 
     fun initializeExecutor() {
         executor = Z3DockerExecutor(resourcesFolder)
@@ -180,6 +215,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         // line up with actual cache granularity.
         stats?.reportSqlZ3QuerySeen(cacheKey.hashCode())
 
+        // A query that could not be translated will fail the same way every time, so the attempt is
+        // made once. The failure is still counted on each encounter, so the reported totals keep
+        // reflecting how often the search runs into one.
+        untranslatableQueries?.get(cacheKey)?.let { kind ->
+            stats?.reportSqlZ3ParseFailure(kind)
+            return emptyList()
+        }
+
         val cached = z3ResultCache?.get(cacheKey)
         if (cached != null) {
             stats?.reportSqlZ3CacheHit()
@@ -194,11 +237,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query: '$sqlQuery'")
             stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SQL_PARSE)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             return emptyList()
         }
 
         val smtlibGenStart = System.currentTimeMillis()
-        val generator = SmtLibGenerator(schemaDto, numberOfRows)
+        val generator = SmtLibGenerator(schemaDto, numberOfRows, checkExpressionCache)
         // SMT-LIB generation can throw for unsupported column types or query shapes it cannot handle
         // (e.g. a cast failure on an unexpected statement structure). Degrade gracefully to an empty
         // result instead of letting the exception propagate into the structure mutator.
@@ -207,6 +251,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         } catch (e: RuntimeException) {
             LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
             stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             return emptyList()
         }
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size

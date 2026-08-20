@@ -28,7 +28,17 @@ import org.evomaster.solver.smtlib.assertion.*
  * @param schema The database schema containing tables and constraints.
  * @param numberOfRows The number of rows to be considered in constraints.
  */
-class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
+class SmtLibGenerator(
+    private val schema: DbInfoDto,
+    private val numberOfRows: Int,
+    /**
+     * Optional memo of parsed CHECK expressions, shared across generator instances.
+     *
+     * A generator is built afresh on every solver cache miss, so without this the same schema-level
+     * constraints are re-parsed for every query, even though the schema does not change during a run.
+     */
+    private val checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+) {
 
     private var parser = JSqlConditionParser()
 
@@ -202,18 +212,44 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param smt The SMT-LIB object to which check constraints are added.
      * @param smtTable The table for which check constraints are added.
      */
+    /**
+     * Parses a CHECK expression, returning null when it cannot be read. The warning is emitted here so
+     * that a memoised failure does not repeat it on every later query.
+     */
+    private fun parseCheckExpressionText(expression: String): SqlCondition? =
+        try {
+            parser.parse(expression, toDBType(schema.databaseType))
+        } catch (e: SqlConditionParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        } catch (e: JSQLParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        }
+
+    /**
+     * Parses a CHECK expression, consulting [checkExpressionCache] when one was supplied. Failures are
+     * memoised as null: an expression that cannot be parsed will not become parseable later in the run.
+     */
+    private fun parseCheckExpressionCached(expression: String): SqlCondition? {
+        val cache = checkExpressionCache ?: return parseCheckExpressionText(expression)
+        // Keyed by dialect as well as text, since the same expression can mean different things and
+        // a cache outliving a single schema must not confuse them.
+        val key = "${schema.databaseType}|$expression"
+        if (cache.containsKey(key)) {
+            return cache[key]
+        }
+        val parsed = parseCheckExpressionText(expression)
+        cache[key] = parsed
+        return parsed
+    }
+
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
-            try {
-                val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
-                for (i in 1..numberOfRows) {
-                    val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
-                    smt.addNode(constraint)
-                }
-            } catch (e: SqlConditionParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
-            } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+            val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue
+            for (i in 1..numberOfRows) {
+                val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
+                smt.addNode(constraint)
             }
         }
     }
