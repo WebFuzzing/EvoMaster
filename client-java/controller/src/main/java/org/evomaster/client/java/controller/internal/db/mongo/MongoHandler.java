@@ -144,7 +144,7 @@ public class MongoHandler {
         String databaseName = info.getDatabaseName();
         String collectionName = info.getCollectionName();
 
-        Object collection = getCollection(databaseName,collectionName);
+        Object collection = getCollection(databaseName, collectionName);
         Iterable<?> documents = getDocuments(collection);
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
@@ -152,24 +152,8 @@ public class MongoHandler {
             emptyCollections.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
         }
 
-        double min = Double.MAX_VALUE;
-        int numberOfEvaluatedDocuments = 0;
-        for (Object doc : documents) {
-            numberOfEvaluatedDocuments += 1;
-            double findDistance;
-            try {
-                findDistance = calculator.computeExpression(info.getQuery(), doc);
-            } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed to compute find: " + info.getQuery() + " with data " + doc);
-                findDistance = Double.MAX_VALUE;
-            }
-            if (findDistance == 0) {
-                return new MongoDistanceWithMetrics(0, numberOfEvaluatedDocuments);
-            } else if (findDistance < min) {
-                min = findDistance;
-            }
-        }
-        return new MongoDistanceWithMetrics(min, numberOfEvaluatedDocuments);
+        MongoDistanceWithMetrics mongoDistanceWithMetrics = calculator.computeDistanceDocuments(info.getQuery(), documents); // to update the metrics
+        return mongoDistanceWithMetrics;
     }
 
     private Object getCollection(String databaseName, String collectionName) {

@@ -514,7 +514,8 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
     /**
      * Classifies one side of a comparison: a property reference {@code variable.key} as a
      * {@link PropertyOperand}, a list {@code [..]} as a {@link ListOperand} of element operands,
-     * an operand that is exactly a literal as a {@link LiteralOperand}, an arithmetic expression
+     * an operand that is exactly a literal as a {@link LiteralOperand}, a parameter reference
+     * {@code $name} as a {@link ParameterOperand}, an arithmetic expression
      * ({@code + - * / % ^}, unary minus) as an {@link ArithmeticOperand} (folded to a literal when
      * every leaf is a numeric literal), and anything else (a function call) as a {@link RawOperand}.
      */
@@ -522,6 +523,10 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
         PropertyOperand property = propertyReference(expression);
         if (property != null) {
             return property;
+        }
+        Cypher25Parser.ParameterContext parameter = soleParameter(expression);
+        if (parameter != null) {
+            return new ParameterOperand(parameterName(parameter));
         }
         Cypher25Parser.ListLiteralContext list = soleList(expression);
         if (list != null) {
@@ -676,7 +681,26 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
         if (tokenType == Cypher25Parser.DIVIDE) return ArithmeticOperator.DIVIDE;
         if (tokenType == Cypher25Parser.PERCENT) return ArithmeticOperator.MODULO;
         if (tokenType == Cypher25Parser.POW) return ArithmeticOperator.POWER;
-        return null;                                              // DOUBLEBAR (||) etc.: not numeric arithmetic
+        return null;
+    }
+
+    /** The parameter an operand reduces to when it is nothing but {@code $name}, else null. */
+    private Cypher25Parser.ParameterContext soleParameter(ParseTree expression) {
+        ParseTree node = descendSingleChild(expression);
+        return node instanceof Cypher25Parser.ParameterContext
+                ? (Cypher25Parser.ParameterContext) node
+                : null;
+    }
+
+    /**
+     * The name of a parameter, without the leading {@code $}. A parameter can also be positional
+     * ({@code $0}), in which case the name is the digits.
+     */
+    private String parameterName(Cypher25Parser.ParameterContext ctx) {
+        Cypher25Parser.ParameterNameContext parameterName = ctx.parameterName();
+        return parameterName.symbolicNameString() != null
+                ? name(parameterName.symbolicNameString())
+                : parameterName.getText();
     }
 
     /** The list literal an operand reduces to when it is nothing but {@code [..]}, else null. */
@@ -758,7 +782,11 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
         Map<String, Operand> result = new LinkedHashMap<>();
         Cypher25Parser.MapContext map = ctx.map();
         if (map == null) {
-            return result; // parameterised properties ($props) carry no literal values
+            // The whole property map comes from a parameter ($props), so the keys are unknown until
+            // the query runs. Recorded as a RawCondition rather than returning nothing, so the
+            // constraint still weighs on the score instead of the element looking unconstrained.
+            conditionSink.add(new RawCondition(ctx.getText()));
+            return result;
         }
         List<Cypher25Parser.PropertyKeyNameContext> keys = map.propertyKeyName();
         List<Cypher25Parser.ExpressionContext> values = map.expression();

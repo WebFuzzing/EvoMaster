@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -60,6 +61,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     @Inject
     private lateinit var epc: ExecutionPhaseController
+
+    @Inject
+    private lateinit var callGraphService: CallGraphService
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -274,7 +278,9 @@ class HttpSemanticsService : TimeBoxedPhase{
             //does it have a previous GET call on it in previous action?
             val hasPreviousGet = okDelete.size() > 1
                     && actions[actions.size - 2].let {
-                        it.verb == HttpVerb.GET && it.path == del.path && it.usingSameResolvedPath(last)
+                        it.verb == HttpVerb.GET
+                                && it.path == del.path
+                                && DynamicPathUtils.doesResolveToSamePath(it,last)
                                 && ! it.auth.isDifferentFrom(last.auth)
                         }
 
@@ -284,7 +290,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
                 getOp.forceNewTaints()
-                getOp.bindToSamePathResolution(last)
+                DynamicPathUtils.bindToSamePathResolution(getOp,last)
                 getOp.auth = last.auth
                 //TODO: what if the GET needs WM handling?
                 okDelete.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getOp)
@@ -292,6 +298,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             } else {
                 actions[actions.size - 2]
             }
+            DynamicPathUtils.forceSameQueryParams(previous, last)
 
             //we want to have same GET call before and after the 2xx DELETE
             val after = previous.copy() as RestCallAction
@@ -375,9 +382,11 @@ class HttpSemanticsService : TimeBoxedPhase{
         val last = actions.last() // the PUT/PATCH [404]
 
         val getBefore = builder.createBoundActionFor(getDef, last)
+        DynamicPathUtils.forceSameQueryParams(getBefore, last)
         ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
 
         val getAfter = builder.createBoundActionFor(getDef, last)
+        DynamicPathUtils.forceSameQueryParams(getAfter, last)
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)
@@ -466,6 +475,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val getAfter = builder.createBoundActionFor(getDef, getAction)
 
+        DynamicPathUtils.forceSameQueryParams(modifyCopy, getAction)
+        DynamicPathUtils.forceSameQueryParams(getAfter, getAction)
+
         ind.addMainActionInEmptyEnterpriseGroup(action = modifyCopy)
         ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
 
@@ -508,6 +520,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             val last = ind.seeMainExecutableActions().last() // the PUT 2xx
             val getAfter = builder.createBoundActionFor(getDef, last)
+            DynamicPathUtils.forceSameQueryParams(getAfter, last)
             ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
             prepareEvaluateAndSave(ind)
@@ -557,10 +570,12 @@ class HttpSemanticsService : TimeBoxedPhase{
                 }
                 val getBefore = builder.createBoundActionFor(getDef, patch)
                 creator?.saveAndLinkLocationTo(getBefore)
+                DynamicPathUtils.forceSameQueryParams(getBefore, patch)
                 ind.addMainActionInEmptyEnterpriseGroup(size - 1, getBefore)
 
                 val getAfter = builder.createBoundActionFor(getDef, patch)
                 creator?.saveAndLinkLocationTo(getAfter)
+                DynamicPathUtils.forceSameQueryParams(getAfter, patch)
                 ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
                 val ei = prepareEvaluateAndSave(ind)
@@ -619,7 +634,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             putAction.resetLocalIdRecursively()
             putAction.forceNewTaints()
             putAction.auth = getAction.auth
-            putAction.bindToSamePathResolution(getAction)
+            DynamicPathUtils.bindToSamePathResolution(putAction, getAction)
             ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
 
             prepareEvaluateAndSave(ind)
@@ -669,6 +684,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             // GET after the 1st PUT: bound to firstPut's resolved path and auth
             val get1 = builder.createBoundActionFor(getDef, firstPut)
+            DynamicPathUtils.forceSameQueryParams(get1, firstPut)
 
             // 2nd PUT: exact copy of the 1st PUT (same body) to test idempotency of that request
             val secondPut = firstPut.copy() as RestCallAction
@@ -676,6 +692,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             // GET after the 2nd PUT
             val get2 = builder.createBoundActionFor(getDef, firstPut)
+            DynamicPathUtils.forceSameQueryParams(get2, firstPut)
 
             ind.addMainActionInEmptyEnterpriseGroup(-1, get1)
             ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)
@@ -699,7 +716,16 @@ class HttpSemanticsService : TimeBoxedPhase{
      */
     private data class LocationCandidate(
         val individual: EvaluatedIndividual<RestIndividual>,
-        val sourceIndex: Int
+        val sourceIndex: Int,
+        val location: String
+    )
+
+    /**
+     * When the Location points to a path declared in the schema, the follow-up call
+     * uses the first declared verb following this priority order.
+     */
+    private val locationFollowUpVerbPriority = listOf(
+        HttpVerb.GET, HttpVerb.DELETE, HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH
     )
 
     /**
@@ -715,10 +741,22 @@ class HttpSemanticsService : TimeBoxedPhase{
             val ea = evaluated[idx]
             ea.action as? RestCallAction ?: continue
             val r = ea.result as? RestCallResult ?: continue
-            if (r.getLocation().isNullOrBlank()) continue
-            candidates.add(LocationCandidate(ei, idx))
+            val location = r.getLocation()
+            if (location.isNullOrBlank()) continue
+            candidates.add(LocationCandidate(ei, idx, location))
         }
         return candidates
+    }
+
+    /**
+     * Verb to use for the Location follow-up call. If the Location points to a path
+     * declared in the schema, use its declared verbs by [locationFollowUpVerbPriority];
+     * otherwise default to GET.
+     */
+    private fun followUpVerbForLocation(location: String): HttpVerb {
+        val declaredPath = callGraphService.resolveDeclaredPath(location) ?: return HttpVerb.GET
+        val verbs = callGraphService.endpointsForPath(declaredPath).map { it.verb }.toSet()
+        return locationFollowUpVerbPriority.firstOrNull { verbs.contains(it) } ?: HttpVerb.GET
     }
 
     private fun invalidLocation() {
@@ -741,31 +779,35 @@ class HttpSemanticsService : TimeBoxedPhase{
             )
             val creator = ind.seeMainExecutableActions().last()
 
+            // If the Location points to a schema path, probe it with its most appropriate
+            // declared verb; otherwise fall back to GET.
+            val verb = followUpVerbForLocation(candidate.location)
+
             // runtime URL is resolved from the Location header
             // (relative/absolute, possibly with query params). We do not bind to a schema
             // The path here is a structural placeholder; the real URL comes from chainState.
-            val getAction = RestCallAction(
-                id = "GET:LOCATION-FOLLOWUP",
-                verb = HttpVerb.GET,
+            val followUp = RestCallAction(
+                id = "$verb:LOCATION-FOLLOWUP",
+                verb = verb,
                 path = RestPath("/"),
                 parameters = mutableListOf(),
                 auth = creator.auth
             )
-            getAction.doInitialize(randomness)
-            getAction.forceNewTaints()
+            followUp.doInitialize(randomness)
+            followUp.forceNewTaints()
 
             try {
                 // TODO: RestCallAction.creationLocationId() currently restricts location-id generation
                 //  to POST/PUT and throws otherwise, so this branch silently no-ops on other verbs.
                 //  After that restriction is refactored to allow any verb whose response carried a
                 //  Location header, this catch can be dropped and the oracle will fire for all verbs.
-                creator.saveAndLinkLocationTo(getAction)
+                creator.saveAndLinkLocationTo(followUp)
             } catch (e: IllegalArgumentException) {
                 continue
             }
 
-            // add getAction as a last operation
-            ind.addMainActionInEmptyEnterpriseGroup(-1, getAction)
+            // add the follow-up as a last operation
+            ind.addMainActionInEmptyEnterpriseGroup(-1, followUp)
 
             prepareEvaluateAndSave(ind)
         }

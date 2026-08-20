@@ -12,11 +12,14 @@ public class BsonHelper {
     private static final String KEY_SET_METHOD = "keySet";
     private static final String CONTAINS_KEY_METHOD = "containsKey";
     private static final String GET_TYPE_NAME_METHOD = "getTypeName";
+    private static final String GET_VALUE_METHOD = "getValue";
     private static final String FIND_BY_VALUE_METHOD = "findByValue";
     private static final String VALUE_OF_METHOD = "valueOf";
 
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
     private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
+    public static final String NULL_TYPE = "null";
+    public static final String BSON_TYPE_NULL = "NULL";
 
     public static Object newDocument(Object bsonDocument) {
         Objects.requireNonNull(bsonDocument);
@@ -79,7 +82,8 @@ public class BsonHelper {
         try {
             return (Set<String>) bsonDocument.getClass().getMethod(KEY_SET_METHOD).invoke(bsonDocument);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            return null;
+            // This exception shouldn't go unnoticed.
+            throw new RuntimeException(e);
         }
     }
 
@@ -93,19 +97,69 @@ public class BsonHelper {
         return value != null && value.getClass().getName().equals(ORG_BSON_DOCUMENT);
     }
 
+    private static final String ORG_BSON_TYPES_OBJECT_ID = "org.bson.types.ObjectId";
+    private static final String ORG_BSON_BSON_TIMESTAMP = "org.bson.BsonTimestamp";
+
+    /**
+     * Determines whether the given object is a BSON ObjectId.
+     *
+     * @param obj the object to check; should be non-null to determine if it is a BSON ObjectId
+     * @return true if the object is a BSON ObjectId, false otherwise
+     */
+    public static boolean isObjectId(Object obj) {
+        return obj!=null && obj.getClass().getName().equals(ORG_BSON_TYPES_OBJECT_ID);
+    }
+
+    /**
+     * Determines whether the given object is a BSON BsonTimestamp.
+     *
+     * @param obj the object to check; should be non-null to determine if it is a BSON BsonTimestamp
+     * @return true if the object is a BSON BsonTimestamp, false otherwise
+     */
+    public static boolean isBsonTimestamp(Object obj) {
+        return obj != null && obj.getClass().getName().equals(ORG_BSON_BSON_TIMESTAMP);
+    }
+
+    /**
+     * Retrieves the value of a BSON BsonTimestamp as a long value.
+     *
+     * @param bsonTimestamp the BSON BsonTimestamp object; should be non-null
+     * @return the value of the BSON BsonTimestamp
+     * @throws IllegalArgumentException if the argument is not a BSON BsonTimestamp
+     */
+    public static long getBsonTimestampValue(Object bsonTimestamp) {
+        Objects.requireNonNull(bsonTimestamp);
+        if (!isBsonTimestamp(bsonTimestamp)) {
+            throw new IllegalArgumentException("argument bsonTimestamp must be a BsonTimestamp");
+        }
+        try {
+            return (Long) bsonTimestamp.getClass().getMethod(GET_VALUE_METHOD).invoke(bsonTimestamp);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     public static String getType(Object bsonType) {
+        Objects.requireNonNull(bsonType);
         try {
             ClassLoader bsonTypeClassLoader = bsonType.getClass().getClassLoader();
-            Class<?> bsonTypeClassMapClass = bsonTypeClassLoader.loadClass("org.bson.codecs.BsonTypeClassMap");
             Class<?> bsonTypeClass = bsonTypeClassLoader.loadClass(ORG_BSON_BSON_TYPE);
-            Object bsonTypeClassMap = bsonTypeClassMapClass.getDeclaredConstructor().newInstance();
-            Method get = bsonTypeClassMapClass.getMethod(GET_METHOD, bsonTypeClass);
-            Object type = get.invoke(bsonTypeClassMap, bsonType);
-            return (String) type.getClass().getMethod(GET_TYPE_NAME_METHOD).invoke(type, null);
+            Object bsonNullTypeInstance = Enum.valueOf(bsonTypeClass.asSubclass(Enum.class), BSON_TYPE_NULL);
+            if (bsonType.equals(bsonNullTypeInstance)) {
+                return NULL_TYPE;
+            } else {
+                Class<?> bsonTypeClassMapClass = bsonTypeClassLoader.loadClass("org.bson.codecs.BsonTypeClassMap");
+                Object bsonTypeClassMap = bsonTypeClassMapClass.getDeclaredConstructor().newInstance();
+                Method get = bsonTypeClassMapClass.getMethod(GET_METHOD, bsonTypeClass);
+                Object type = get.invoke(bsonTypeClassMap, bsonType);
+                return (String) type.getClass().getMethod(GET_TYPE_NAME_METHOD).invoke(type, null);
+            }
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     public static Object getTypeFromNumber(Integer number) {

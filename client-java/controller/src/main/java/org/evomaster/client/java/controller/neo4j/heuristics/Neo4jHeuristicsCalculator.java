@@ -7,12 +7,17 @@ import org.evomaster.client.java.controller.neo4j.data.Neo4jNode;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
 import org.evomaster.client.java.controller.neo4j.operations.MatchPattern;
 import org.evomaster.client.java.controller.neo4j.operations.PatternEdge;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_TRUTHNESS;
 
 /**
  * Computes the search heuristic {@code H(Q, G)} of a parsed Cypher MATCH query {@code Q} against a
@@ -25,9 +30,12 @@ import java.util.List;
  */
 public class Neo4jHeuristicsCalculator {
 
-    public static final double C = 0.1;
-    public static final Truthness TRUE_TRUTHNESS = new Truthness(1, C);
-    public static final Truthness FALSE_TRUTHNESS = new Truthness(C, 1);
+    /**
+     * Base value a partial score is scaled from, so that a query that matched nothing still ranks below one
+     * that matched something. Named {@code C} after the constant in {@code Formalizing.md}; it is the same
+     * value {@link TruthnessUtils#TRUE_TRUTHNESS} uses for its {@code ofFalse}.
+     */
+    public static final double C = DistanceHelper.H_NOT_NULL;
 
     private final Neo4jStructuralMatcher matcher = new Neo4jStructuralMatcher();
     private final Neo4jConditionEvaluator evaluator;
@@ -40,7 +48,7 @@ public class Neo4jHeuristicsCalculator {
         this.evaluator = new Neo4jConditionEvaluator(taintHandler);
     }
 
-    Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
+    public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
         Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(query);
         MatchPattern pattern = expanded.pattern;
         List<CypherCondition> conditions = expanded.conditions;
@@ -61,20 +69,25 @@ public class Neo4jHeuristicsCalculator {
      * {@code [0,1]}, where 0 means the query is satisfied.
      */
     public double computeDistance(MatchOperation query, Neo4jGraph graph) {
-        return 1.0d - computeHeuristic(query, graph).getOfTrue();
+        Truthness heuristic = computeHeuristic(query, graph);
+        return 1.0d - heuristic.getOfTrue();
     }
 
     private Truthness computeHeuristicPattern(MatchPattern pattern, Neo4jGraph graph, List<Neo4jMapping> mappings) {
-        Truthness nodes = computeHeuristicMatchNodes(pattern.nodeCount(), graph.nodeCount());
-        Truthness edges = computeHeuristicMatchEdges(pattern.getEdges(), graph, mappings);
-        return TruthnessUtils.buildAndAggregationTruthness(nodes, edges);
+        Truthness hNodes = computeHeuristicMatchNodes(pattern.nodeCount(), graph.nodeCount());
+        Truthness hEdges = computeHeuristicMatchEdges(pattern.getEdges(), graph, mappings);
+        return TruthnessUtils.buildAndAggregationTruthness(hNodes, hEdges);
     }
 
     /**
      * Count-based node availability: enough graph nodes to bind the pattern's nodes. Pure cardinality,
      * no label/property check (those are conditions evaluated by H_where).
      */
-    Truthness computeHeuristicMatchNodes(int required, int available) {
+    public Truthness computeHeuristicMatchNodes(int required, int available) {
+        if (required < 0 || available < 0) {
+            throw new IllegalArgumentException(
+                    "node counts must be non-negative, got required=" + required + ", available=" + available);
+        }
         if (required == 0) {
             return TRUE_TRUTHNESS;
         }
@@ -117,26 +130,31 @@ public class Neo4jHeuristicsCalculator {
 
     private Truthness edgesForMapping(List<PatternEdge> patternEdges, Neo4jGraph graph,
                                       Neo4jMapping mapping) {
-        Truthness[] perEdge = new Truthness[patternEdges.size()];
+        Truthness[] truthnessPerEdge = new Truthness[patternEdges.size()];
         for (int i = 0; i < patternEdges.size(); i++) {
-            perEdge[i] = edgeMatch(patternEdges.get(i), graph, mapping);
+            truthnessPerEdge[i] = edgeMatch(patternEdges.get(i), graph, mapping);
         }
-        return TruthnessUtils.buildAndAggregationTruthness(perEdge);
+        return TruthnessUtils.buildAndAggregationTruthness(truthnessPerEdge);
     }
 
-    /** Existence-only edge check: TRUE if some graph relationship matches the edge's endpoints. */
-    private Truthness edgeMatch(PatternEdge edge, Neo4jGraph graph, Neo4jMapping mapping) {
-        Neo4jNode source = mapping.getNode(edge.getSourceVariable());
-        Neo4jNode target = mapping.getNode(edge.getTargetVariable());
-        if (source == null || target == null) {
-            return FALSE_TRUTHNESS;
-        }
-        for (Neo4jEdge rel : graph.getEdges()) {
-            boolean forward = rel.getSourceId().equals(source.getId())
-                    && rel.getTargetId().equals(target.getId());
-            boolean backward = !edge.isDirected()
-                    && rel.getSourceId().equals(target.getId())
-                    && rel.getTargetId().equals(source.getId());
+    /**
+     * Existence-only edge check: TRUE if some graph relationship matches the pattern edge's endpoints.
+     * <p>
+     * Both endpoints are always bound: a mapping only reaches the result set once every pattern node
+     * variable has a graph node, so an unbound one here means the matcher is broken, not that the query
+     * failed to match.
+     */
+    private Truthness edgeMatch(PatternEdge patternEdge, Neo4jGraph graph, Neo4jMapping mapping) {
+        Neo4jNode source = Objects.requireNonNull(mapping.getNode(patternEdge.getSourceVariable()),
+                "unbound source variable in mapping: " + patternEdge.getSourceVariable());
+        Neo4jNode target = Objects.requireNonNull(mapping.getNode(patternEdge.getTargetVariable()),
+                "unbound target variable in mapping: " + patternEdge.getTargetVariable());
+        for (Neo4jEdge graphEdge : graph.getEdges()) {
+            boolean forward = graphEdge.getSourceId().equals(source.getId())
+                    && graphEdge.getTargetId().equals(target.getId());
+            boolean backward = !patternEdge.isDirected()
+                    && graphEdge.getSourceId().equals(target.getId())
+                    && graphEdge.getTargetId().equals(source.getId());
             if (forward || backward) {
                 return TRUE_TRUTHNESS;
             }
@@ -168,20 +186,18 @@ public class Neo4jHeuristicsCalculator {
 
     /**
      * AND-aggregates the truthness of every condition under one mapping. Conditions that cannot be
-     * valuated (absent property, opaque/raw) are skipped; if none remain, the mapping vacuously
-     * satisfies the (empty) constraint set.
+     * valuated score {@link Neo4jConditionEvaluator#UNVALUATABLE} and are aggregated like the rest, so
+     * they lower the result instead of being dropped. A query with no conditions is vacuously satisfied.
      */
     private Truthness matchConditions(List<CypherCondition> conditions, Neo4jMapping mapping) {
-        List<Truthness> truths = new ArrayList<>();
-        for (CypherCondition c : conditions) {
-            Truthness t = evaluator.evaluateCondition(c, mapping);
-            if (t != null) {
-                truths.add(t);
-            }
-        }
-        if (truths.isEmpty()) {
+        if (conditions.isEmpty()) {
             return TRUE_TRUTHNESS;
         }
-        return TruthnessUtils.buildAndAggregationTruthness(truths.toArray(new Truthness[0]));
+        List<Truthness> listOfTruthness = new ArrayList<>();
+        for (CypherCondition c : conditions) {
+            Truthness t = evaluator.evaluateCondition(c, mapping);
+            listOfTruthness.add(t);
+        }
+        return TruthnessUtils.buildAndAggregationTruthness(listOfTruthness.toArray(new Truthness[0]));
     }
 }

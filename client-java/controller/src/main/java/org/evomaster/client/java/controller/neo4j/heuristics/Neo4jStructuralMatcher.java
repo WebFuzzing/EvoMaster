@@ -18,7 +18,7 @@ import java.util.List;
  * node bindings (an undirected edge matches either orientation), repeated variables resolve to the
  * same element (equijoins), and no graph relationship is used twice in one mapping.
  */
-class Neo4jStructuralMatcher {
+public class Neo4jStructuralMatcher {
 
     /**
      * Upper bound on the number of mappings enumerated, to avoid combinatorial blow-up on large
@@ -26,7 +26,7 @@ class Neo4jStructuralMatcher {
      */
     static final int MAX_NUM_MAPPINGS = 2000;
 
-    List<Neo4jMapping> matchedElements(MatchPattern pattern, Neo4jGraph graph) {
+    public List<Neo4jMapping> matchedElements(MatchPattern pattern, Neo4jGraph graph) {
         List<Neo4jMapping> results = new ArrayList<>();
         List<PatternEdge> edges = pattern.getEdges();
 

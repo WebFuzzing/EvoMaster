@@ -13,8 +13,17 @@ import java.util.Map;
  */
 public class Neo4jGraph {
 
+    /** All nodes of the snapshot, in the order they were read. */
     private final List<Neo4jNode> nodes;
+
+    /** All relationships of the snapshot, in the order they were read. */
     private final List<Neo4jEdge> edges;
+
+    /**
+     * Index over {@link #nodes} for endpoint resolution. Keys are node ids ({@link Neo4jNode#getId()});
+     * values are the node carrying that id. Lets a relationship's {@code sourceId}/{@code targetId} be
+     * resolved in constant time while enumerating mappings, instead of scanning the node list.
+     */
     private final Map<String, Neo4jNode> nodesById;
 
     public Neo4jGraph(List<Neo4jNode> nodes, List<Neo4jEdge> edges) {

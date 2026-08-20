@@ -6,7 +6,7 @@ import java.util.List;
  * Represent $and operation.
  * Joins query clauses with a logical AND returns all documents that match the conditions of all clauses.
  */
-public class AndOperation extends QueryOperation{
+public class AndOperation extends QueryOperation {
     private final List<QueryOperation> conditions;
 
     public AndOperation(List<QueryOperation> conditions) {
