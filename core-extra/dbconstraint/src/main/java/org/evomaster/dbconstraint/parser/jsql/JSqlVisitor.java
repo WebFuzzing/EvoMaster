@@ -17,6 +17,11 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -33,7 +38,36 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     private static final String SINGLE_QUOTE_CHAR = "'";
 
-    private static final String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    /**
+     * Accepts the timestamp layouts a database or an ORM actually emits, rather than a single one.
+     *
+     * The date is mandatory; everything after it is optional. The time may be separated by a space
+     * or by the ISO 'T', may omit the seconds, and may carry a fractional part of any precision. A
+     * trailing UTC offset is honoured in either the "+HH:mm"/"Z" or the "+HH" spelling.
+     *
+     * Widening this matters more than it looks: when a literal cannot be read, the resulting
+     * exception makes the caller drop the *whole* WHERE clause, including the conditions it could
+     * otherwise have translated. An ORM emits sub-second precision whenever it compares a column
+     * against the current instant, so the narrow form lost entire clauses routinely.
+     *
+     * The fractional part is parsed but not used: the result is expressed in whole epoch seconds,
+     * matching the decoder in SMTLibZ3DbConstraintSolver.
+     */
+    private static final DateTimeFormatter TIMESTAMP_PARSER = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd")
+            .optionalStart().appendLiteral('T').optionalEnd()
+            .optionalStart().appendLiteral(' ').optionalEnd()
+            .optionalStart()
+            .appendPattern("HH:mm")
+            .optionalStart().appendPattern(":ss").optionalEnd()
+            .optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true).optionalEnd()
+            .optionalEnd()
+            .optionalStart().appendOffset("+HH:MM", "Z").optionalEnd()
+            .optionalStart().appendOffset("+HH", "Z").optionalEnd()
+            .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+            .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+            .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+            .toFormatter();
 
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
@@ -624,11 +658,12 @@ public class JSqlVisitor implements ExpressionVisitor {
             if (value.startsWith(SINGLE_QUOTE_CHAR) && value.endsWith(SINGLE_QUOTE_CHAR)) {
                 value = value.substring(1, value.length() - 1);
             }
-            // Treat the timestamp string as UTC to match the UTC-based decoder in
-            // SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
-            long epochSeconds = java.time.LocalDateTime.parse(value,
-                    DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT))
-                    .toEpochSecond(ZoneOffset.UTC);
+            TemporalAccessor parsed = TIMESTAMP_PARSER.parse(value);
+            // An explicit offset is honoured; without one, treat the literal as UTC to match the
+            // UTC-based decoder in SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+            long epochSeconds = parsed.isSupported(ChronoField.OFFSET_SECONDS)
+                    ? OffsetDateTime.from(parsed).toEpochSecond()
+                    : LocalDateTime.from(parsed).toEpochSecond(ZoneOffset.UTC);
             stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
             return;
         }
