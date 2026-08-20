@@ -32,6 +32,28 @@ components:
       payload:
         $ref: '#/components/schemas/order-value'
 
+    # not a schemaFormat the specification defines -- it is a content type -- but hand-written
+    # documents do put it here, and it can only mean the schema itself is written in JSON
+    contentTypeAsFormat:
+      name: contentTypeAsFormat
+      payload:
+        schemaFormat: application/json
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+
+    yamlContentTypeAsFormat:
+      name: yamlContentTypeAsFormat
+      payload:
+        schemaFormat: application/yaml
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+
   schemas:
     customer-value:
       schemaFormat: application/vnd.apache.avro;version=1.9.0

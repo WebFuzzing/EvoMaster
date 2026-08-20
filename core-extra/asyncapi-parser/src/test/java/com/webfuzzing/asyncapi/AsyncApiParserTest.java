@@ -356,6 +356,26 @@ public class AsyncApiParserTest {
         assertEquals("object", message.getPayload().get("type").asText());
     }
 
+    @Test
+    public void testAContentTypeWrittenWhereASchemaFormatBelongs() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/message-schema-formats.yaml");
+
+        /*
+            "application/json" and "application/yaml" are content types, not schema formats, so
+            the specification does not list them here. Documents written by hand put them here
+            anyway, and the only reading is that the schema is JSON or YAML -- which for a schema
+            means JSON Schema. Dropping such a message would lose one that is perfectly readable.
+         */
+        for (String id : new String[]{"contentTypeAsFormat", "yamlContentTypeAsFormat"}) {
+            AsyncApiMessage message = document.getMessages().get(id);
+            assertNotNull(message, id);
+            //the wrapper is unwrapped, exactly as for a format the specification does define
+            assertNull(message.getPayload().get("schemaFormat"), id);
+            assertEquals("object", message.getPayload().get("type").asText(), id);
+        }
+    }
+
     // ------------------------------------------------------------------ what a payload can reach
 
     @Test

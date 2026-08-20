@@ -44,6 +44,13 @@ public class AsyncApiParser {
      * Schema formats that are JSON Schema by another name, and so can be read here. Compared as
      * prefixes, since the format string carries a version suffix.
      *
+     * The first four are what the specification defines. The last two are not: "application/json"
+     * and "application/yaml" are content types rather than schema formats, and belong in a
+     * message's `contentType`. They are accepted anyway because hand-written documents do put
+     * them here, and the only thing they can be taken to mean is that the schema is written in
+     * JSON or YAML -- which, for a schema, is JSON Schema. Rejecting them would drop a message
+     * that is perfectly readable.
+     *
      * Anything else -- Avro and Protobuf being the ones that actually turn up -- describes a
      * payload in a language this parser does not speak, and the message is dropped.
      */
@@ -51,7 +58,9 @@ public class AsyncApiParser {
             "application/vnd.aai.asyncapi",
             "application/schema+json",
             "application/schema+yaml",
-            "application/vnd.oai.openapi"
+            "application/vnd.oai.openapi",
+            "application/json",
+            "application/yaml"
     );
 
     private AsyncApiParser() {
