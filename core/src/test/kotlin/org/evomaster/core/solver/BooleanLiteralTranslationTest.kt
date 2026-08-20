@@ -72,8 +72,11 @@ class BooleanLiteralTranslationTest {
         val smt = generate("SELECT ID FROM ACCOUNT a WHERE a.ACTIVE = true AND a.ID > 0")
 
         assertTrue(smt.contains("\"True\"")) { "the literal should still be encoded:\n$smt" }
-        assertTrue(smt.contains("ACTIVE") || smt.contains("active")) {
-            "the qualified column reference disappeared:\n$smt"
+        // Matching the selector applied to a row constant, whose name ends in "__<index>". A looser
+        // pattern would also match the datatype declaration, "(ID Int)", and so would hold even if
+        // the reference had been dropped entirely.
+        assertTrue(Regex("""\(\s*ID\s+\w+__\d+\s*\)""").containsMatchIn(smt)) {
+            "the qualified column reference was not emitted as a field selector:\n$smt"
         }
     }
 }
