@@ -82,18 +82,38 @@ public class JSqlConditionParser implements SqlConditionParser {
      */
     private String transformDialect(String originalSqlStr, ConstraintDatabaseType databaseType) {
         /*
+         * How PostgreSQL reports an enumerated column, in one piece:
+         *
+         *     (col)::text = ANY ((ARRAY['A'::character varying, 'B'::character varying])::text[])
+         *
+         * Handled ahead of the general rules below because the two of them, applied to this shape,
+         * used to leave the cast's own brackets unbalanced: the ARRAY rule ran to the last "]" in the
+         * string, which belongs to "::text[]" rather than to the array, and turned it into "::text[".
+         * The result was invalid SQL, so the constraint was discarded — but only after JSQLParser had
+         * spent a very long time backtracking over it. On one real schema, 44 of 48 check constraints
+         * failed this way and cost over five minutes of the search budget between them, with a single
+         * 24 KB constraint accounting for 275 seconds of that.
+         */
+        String transformedStr = originalSqlStr.replaceAll(
+                "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+\\s*\\[\\s*\\]\\s*\\)",
+                " IN ($1)");
+
+        /*
          * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
-         * We can work aroung this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
+         * We can work around this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
          * string
          */
-        String transformedStr = originalSqlStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
+        transformedStr = transformedStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
 
 
         /*
          * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
          * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
+         *
+         * The group excludes "]" so that it ends at the array's own closing bracket. Excluding "<"
+         * instead, as it used to, made the match run to the last bracket anywhere in the string.
          */
-        transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "$1");
+        transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^\\]]*)\\]", "$1");
 
         /*
          * MySQL Enum
