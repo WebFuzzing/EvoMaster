@@ -134,6 +134,25 @@ class SMTConditionVisitor(
         return when (sqlCondition) {
 
             is SqlColumn -> {
+                /*
+                    An unquoted `true` or `false` in a WHERE clause arrives here as a column, not as a
+                    SqlBooleanLiteralValue: the constraint parser only produces that type for CHECK
+                    expressions, and to the grammar a boolean literal and an identifier are
+                    indistinguishable in this position. Left as a column, the name is emitted as a
+                    field selector over the row constant, and Z3 rejects the entire formula with
+                    "unknown constant TRUE" — a full round-trip spent to learn nothing.
+
+                    Booleans are encoded as SMT strings, so the literal takes the same spelling the
+                    constraint path uses, which is the one SMTLibZ3DbConstraintSolver.toBoolean reads
+                    back. Only unqualified names are considered, since a qualified one is necessarily
+                    a column reference, and only when no table in the schema declares a column with
+                    that name.
+                 */
+                val name = sqlCondition.columnName
+                if (sqlCondition.tableName == null && isBooleanLiteral(name) && !isAColumn(name)) {
+                    return if (name.equals("true", ignoreCase = true)) "\"True\"" else "\"False\""
+                }
+
                 val tableName = sqlCondition.tableName?.let {
                     tableAliases[it] ?: it
                 } ?: defaultTableName
@@ -219,10 +238,24 @@ class SMTConditionVisitor(
      * @param operand The SQL operand as a string.
      * @return True if the operand is a column, false otherwise.
      */
+    private fun isBooleanLiteral(operand: String): Boolean =
+        operand.equals("true", ignoreCase = true) || operand.equals("false", ignoreCase = true)
+
+    /**
+     * Whether any table in the schema declares a column with this name.
+     *
+     * Deliberately broader than the resolution rules for an unqualified column, which would look only
+     * at the tables in scope. The two possible mistakes are not symmetric: treating a real column as a
+     * boolean literal yields data that is silently wrong, while declining to treat a genuine literal as
+     * one yields a formula Z3 rejects — visible, counted, and no worse than the behaviour before the
+     * literal was recognised at all. The broad check errs towards the second.
+     *
+     * It also avoids comparing a folded table name against the schema's own spelling, which is how the
+     * scoped version would have to identify the tables in scope.
+     */
     private fun isAColumn(operand: String): Boolean {
-        return tables.any {
-            it.id.name.equals(defaultTableName, ignoreCase = true) &&
-                    it.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
+        return tables.any { table ->
+            table.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
         }
     }
 
