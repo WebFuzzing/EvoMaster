@@ -186,9 +186,7 @@ class InputEncoderUtilWrapper(
      *
      * @return a list of doubles representing the encoded feature vector
      */
-    fun encode(): List<Double> {
-        val sentinel = -1e6 // for null handling
-        val neutral = 0.0 // for handling unsupported genes
+    fun encode(sentinel: Double = -1e6, neutral: Double = 0.0): List<Double> {
         val listGenes = endPointToGeneList().map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 

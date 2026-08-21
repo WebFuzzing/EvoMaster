@@ -65,9 +65,9 @@ public class DistanceHelper {
      * numeric overflows. In this latter case the max value is returned, ie, we
      * guarantee that the returned value is not lower than the given input distance.
      *
-     * @param distance
-     * @param delta
-     * @return
+     * @param distance 0 or positive
+     * @param delta 0 or positive
+     * @return distance + delta, or max value if overflow
      */
     public static double increasedDistance(double distance, double delta) {
 
@@ -95,9 +95,9 @@ public class DistanceHelper {
     /**
      * Add the 2 distances together, taking into account possible overflows
      *
-     * @param a
-     * @param b
-     * @return
+     * @param a 0 or positive
+     * @param b 0 or positive
+     * @return sum of a and b, or max value if overflow
      */
     public static double addDistances(double a, double b) {
         if (a < 0) {
@@ -118,9 +118,9 @@ public class DistanceHelper {
     /**
      * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
      *
-     * @param base
-     * @param distance
-     * @return
+     * @param base 0 or positive
+     * @param distance 0 or positive
+     * @return h=[0,1] heuristic, or max value if overflow
      */
     public static double heuristicFromScaledDistanceWithBase(double base, double distance) {
 
@@ -200,11 +200,33 @@ public class DistanceHelper {
     }
 
     /**
+     * Computes the left-aligned positional distance between two byte arrays.
+     * Each unequal aligned byte and each unmatched trailing byte contributes one unit.
+     *
+     * @param a first byte array, must not be {@code null}
+     * @param b second byte array, must not be {@code null}
+     * @return the number of unequal aligned bytes plus the difference in array lengths
+     */
+    public static long getLeftAlignmentDistance(byte[] a, byte[] b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        long distance = Math.abs((long) a.length - b.length);
+        int alignedLength = Math.min(a.length, b.length);
+        for (int i = 0; i < alignedLength; i++) {
+            if (a[i] != b[i]) {
+                distance++;
+            }
+        }
+        return distance;
+    }
+
+    /**
      * Computes a distance to a==b. If a-b overflows,
      *
-     * @param a
-     * @param b
-     * @return
+     * @param a long value
+     * @param b long value
+     * @return distance to equality, or max value if overflow
      */
     public static double getDistanceToEquality(long a, long b) {
         // TODO: Some long values cannot be precisely represented as double values
