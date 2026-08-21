@@ -25,6 +25,10 @@ public class DistanceHelper {
 
     public static final double H_REACHED_BUT_NULL = 0.05d;
 
+    public static final double H_MAX_VALUE = 1d;
+
+    public static final double H_MIN_VALUE = 0d;
+
     public static final double H_NOT_NULL = 0.1d;
 
     public static final double H_REACHED_BUT_EMPTY = H_REACHED_BUT_NULL;
