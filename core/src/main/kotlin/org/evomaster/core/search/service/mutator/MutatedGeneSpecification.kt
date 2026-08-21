@@ -1,7 +1,7 @@
 package org.evomaster.core.search.service.mutator
 
 import org.evomaster.core.search.action.EnvironmentAction
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene

@@ -1,9 +1,9 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.dbconstraint.EnumConstraint
 import org.evomaster.dbconstraint.IffConstraint
 import org.evomaster.dbconstraint.IsNotNullConstraint
