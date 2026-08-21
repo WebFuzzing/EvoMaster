@@ -142,7 +142,6 @@ There are 3 types of options:
 |`geneWeightBasedOnImpactsBy`| __Enum__. Specify a strategy to calculate a weight of a gene based on impacts. *Valid values*: `SORT_COUNTER, SORT_RATIO, COUNTER, RATIO`. *Default value*: `RATIO`.|
 |`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Depends on*: `blackBox=false`. *Default value*: `true`.|
-|`heuristicsForDynamoDb`| __Boolean__. Tracking of DynamoDB commands to improve test generation. *Depends on*: `blackBox=false`. *Experimental option*. *Default value*: `false`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
@@ -305,6 +304,7 @@ There are 3 types of options:
 |`generateRedisData`| __Boolean__. Enable EvoMaster to generate Redis data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateSqlDataWithZ3`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|
+|`heuristicsForDynamoDb`| __Boolean__. Tracking of DynamoDB commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
