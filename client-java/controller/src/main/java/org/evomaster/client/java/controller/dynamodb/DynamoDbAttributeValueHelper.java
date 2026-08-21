@@ -494,7 +494,7 @@ public final class DynamoDbAttributeValueHelper {
         /**
          * Creates a pending traversal node.
          *
-         * @param value normalized value to inspect
+         * @param value normalized value to inspect or null for DDB NUL type fields with boolean = true
          * @param path path resolving the value, or null for the item root
          */
         private DocumentPathNode(Object value, String path) {
