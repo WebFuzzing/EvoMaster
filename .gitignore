@@ -167,6 +167,7 @@ Migrations/
 /core-tests/e2e-tests/spring/spring-rest-multidb/target/
 /core-tests/e2e-tests/spring/spring-rest-h2-v2/target/
 /core-tests/e2e-tests/spring/spring-rest-rsa/target/
+/core-tests/e2e-tests/spring/spring-rest-dynamodb/target/
 /core-tests/e2e-tests/spring/spring-rest-h2-v1/em.yaml
 /core-tests/integration-tests/core-it/target/
 /core-tests/integration-tests/core-it/em.yaml
