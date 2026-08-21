@@ -41,11 +41,6 @@ class RegexGene(
     val hasAssertions: Boolean = false
 ) : CompositeFixedGene(name, disjunctions) {
 
-
-    override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
-    }
-
     companion object {
         private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
 
@@ -56,12 +51,24 @@ class RegexGene(
         }
     }
 
+    /**
+     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     */
+    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+
+    /**
+     * Pattern used for assertion repair verification, only on JVM regex.
+     */
     private val pattern: Pattern? =
         if (regexType == RegexType.JVM) {
             compiledPattern(sourceRegex, externalRegexFlags)
         } else {
             null
         }
+
+    override fun copyContent(): Gene {
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
+    }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         usingFixedValue = if(fixedValue == null){
@@ -90,11 +97,6 @@ class RegexGene(
 
         throw IllegalStateException("Could not repair regex value")
     }
-
-    /**
-     * If regex requires its assertions to be repaired, currently only JVM regexes.
-     */
-    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
