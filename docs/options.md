@@ -305,6 +305,7 @@ There are 3 types of options:
 |`generateRedisData`| __Boolean__. Enable EvoMaster to generate Redis data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateSqlDataWithZ3`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|
+|`heuristicsForDynamoDb`| __Boolean__. Tracking of DynamoDB commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
