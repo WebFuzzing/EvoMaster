@@ -356,7 +356,7 @@ public final class DynamoDbAttributeValueHelper {
         }
 
         Deque<DocumentPathNode> pending = new ArrayDeque<>();
-        pending.push(new DocumentPathNode(item, null));
+        pending.push(new DocumentPathNode(item, null)); //Use null as parent for the root node
 
         while (!pending.isEmpty()) {
             DocumentPathNode current = pending.pop();
@@ -368,9 +368,8 @@ public final class DynamoDbAttributeValueHelper {
                 List<Map.Entry<?, ?>> entries = new ArrayList<>(((Map<?, ?>) current.value).entrySet());
                 for (int i = entries.size() - 1; i >= 0; i--) {
                     Map.Entry<?, ?> entry = entries.get(i);
-                    if (entry.getKey() == null) {
-                        continue;
-                    }
+                    Objects.requireNonNull(entry.getKey());
+
                     String field = String.valueOf(entry.getKey());
                     String path = current.path == null ? field : current.path + "." + field;
                     pending.push(new DocumentPathNode(entry.getValue(), path));
