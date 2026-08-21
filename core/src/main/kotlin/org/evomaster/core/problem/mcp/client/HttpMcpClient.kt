@@ -35,6 +35,8 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
     private val client: Client = HttpClientFactory.createTrustingJerseyClient(true, readTimeoutMs)
 
+    // sessionId is volatile to make writes visible across threads
+    // TO-DO: Implement thread-safe reconnect on session expiry
     @Volatile private var sessionId: String? = null
 
     private fun nextId() = idCounter.getAndIncrement()
@@ -86,7 +88,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
                 "MCP initialize handshake failed with HTTP $status at '$baseUrl'"
             )
         }
-        // Capture session ID before reading the body
+        // Capture session ID before reading the body.
+        // The session id is optional it is missing for example in stateless MCP servers.
+        // Reference: https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#session-management
         response.getHeaderString(McpConst.SESSION_ID_HEADER)?.let { sessionId = it }
         val responseBody = response.readEntity(String::class.java)
         if (responseBody.isBlank()) {
