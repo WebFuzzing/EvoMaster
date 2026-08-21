@@ -121,6 +121,8 @@ object RestActionBuilderV3 {
         val enableJsonPatchSupport: Boolean = true,
 
         val enableXmlWithAttributesSupport: Boolean = true,
+
+        val enableMultipartFormDataSupport: Boolean = false,
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -132,6 +134,7 @@ object RestActionBuilderV3 {
             inferFormatFromNames = config.inferFormatFromNames,
             enableJsonPatchSupport = config.enableJsonPatchSupport,
             enableXmlWithAttributesSupport = config.enableXmlWithAttributesSupport,
+            enableMultipartFormDataSupport = config.enableMultipartFormDataSupport,
         )
 
         init {

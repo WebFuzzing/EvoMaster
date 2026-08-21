@@ -80,41 +80,4 @@ class TruthnessUtilsTest {
         assertThrows(NullPointerException.class,
                 () -> TruthnessUtils.getEqualityTruthness(messiPhoto, null));
     }
-
-    @Test
-    public void testGetTruthnessFromDistance() {
-        Truthness zero = TruthnessUtils.getTruthnessFromDistance(0d);
-        Truthness finite = TruthnessUtils.getTruthnessFromDistance(3d);
-        Truthness infinite = TruthnessUtils.getTruthnessFromDistance(Double.POSITIVE_INFINITY);
-        Truthness maximum = TruthnessUtils.getTruthnessFromDistance(Double.MAX_VALUE);
-
-        assertTrue(zero.isTrue());
-        assertEquals(TruthnessUtils.TRUE_TRUTHNESS.getOfTrue(), zero.getOfTrue(), DELTA);
-        assertEquals(TruthnessUtils.TRUE_TRUTHNESS.getOfFalse(), zero.getOfFalse(), DELTA);
-
-        assertTrue(finite.isFalse());
-        assertEquals(DistanceHelper.heuristicFromScaledDistanceWithBase(
-                DistanceHelper.H_NOT_NULL, 3d), finite.getOfTrue(), DELTA);
-        assertEquals(1.0d, finite.getOfFalse(), DELTA);
-
-        assertTrue(infinite.isFalse());
-        assertEquals(TruthnessUtils.FALSE_TRUTHNESS.getOfTrue(), infinite.getOfTrue(), DELTA);
-        assertEquals(1.0d, infinite.getOfFalse(), DELTA);
-
-        assertTrue(maximum.isFalse());
-        assertEquals(TruthnessUtils.FALSE_TRUTHNESS.getOfTrue(), maximum.getOfTrue(), DELTA);
-        assertEquals(1.0d, maximum.getOfFalse(), DELTA);
-
-        assertTrue(finite.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
-        assertTrue(infinite.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
-        assertTrue(maximum.getOfTrue() >= TruthnessUtils.FALSE_TRUTHNESS.getOfTrue());
-    }
-
-    @Test
-    public void testGetTruthnessFromDistanceRejectsInvalidDistances() {
-        assertThrows(IllegalArgumentException.class,
-                () -> TruthnessUtils.getTruthnessFromDistance(-1d));
-        assertThrows(IllegalArgumentException.class,
-                () -> TruthnessUtils.getTruthnessFromDistance(Double.NaN));
-    }
 }

@@ -188,7 +188,7 @@ public class DynamoDbAttributeValueHelperTest {
         assertEquals("FIFA World Cup",
                 DynamoDbAttributeValueHelper.lookupByPath(player, "tournaments[0][0]").value);
 
-        DynamoDbAttributeValueHelper.ValueLookup explicitNull =
+        DynamoDbValueLookup explicitNull =
                 DynamoDbAttributeValueHelper.lookupByPath(player, "retired");
         assertTrue(explicitNull.found);
         assertNull(explicitNull.value);
@@ -211,7 +211,7 @@ public class DynamoDbAttributeValueHelperTest {
         player.put("profile", profile);
         player.put("squads", Collections.singletonList(squad));
 
-        List<DynamoDbAttributeValueHelper.ValueLookup> missingLookups = Arrays.asList(
+        List<DynamoDbValueLookup> missingLookups = Arrays.asList(
                 DynamoDbAttributeValueHelper.lookupByPath(null, "name"),
                 DynamoDbAttributeValueHelper.lookupByPath(player, null),
                 DynamoDbAttributeValueHelper.lookupByPath(player, "  "),
@@ -222,7 +222,7 @@ public class DynamoDbAttributeValueHelperTest {
                 DynamoDbAttributeValueHelper.lookupByPath(player, "profile.clubs[2]"),
                 DynamoDbAttributeValueHelper.lookupByPath(player, "squads[0].coach"));
 
-        for (DynamoDbAttributeValueHelper.ValueLookup lookup : missingLookups) {
+        for (DynamoDbValueLookup lookup : missingLookups) {
             assertFalse(lookup.found);
             assertNull(lookup.value);
         }

@@ -9,7 +9,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
-import static org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator.MAX_REDIS_DISTANCE;
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.H_MAX_VALUE;
 import static org.evomaster.client.java.instrumentation.RedisCommand.RedisCommandType.*;
 
 /**
@@ -200,11 +200,11 @@ public class RedisHandler {
                 }
 
                 default:
-                    return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
+                    return new RedisDistanceWithMetrics(H_MAX_VALUE, 0);
             }
         } catch (Exception e) {
             SimpleLogger.warn("Could not compute distance for " + type + ": " + e.getMessage());
-            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(H_MAX_VALUE, 0);
         }
     }
 
