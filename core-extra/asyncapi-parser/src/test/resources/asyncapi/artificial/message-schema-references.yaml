@@ -1,0 +1,55 @@
+asyncapi: 3.0.0
+info:
+  title: Payloads whose schemas cannot all be followed
+  version: 1.0.0
+
+components:
+  messages:
+    # the payload itself resolves, but what it reaches does not
+    nested:
+      name: Nested
+      payload:
+        $ref: '#/components/schemas/Wrapper'
+
+    # a draft-04 style pointer, which this document has nowhere to resolve
+    otherDialect:
+      name: OtherDialect
+      payload:
+        $ref: '#/definitions/Foo'
+
+    # a pointer into another document, which nothing here can follow
+    otherDocument:
+      name: OtherDocument
+      payload:
+        $ref: 'shared.yaml#/components/schemas/Fine'
+
+    # a pointer that goes deeper than the schema: fine, as long as the schema is there
+    deepPointer:
+      name: DeepPointer
+      payload:
+        $ref: '#/components/schemas/Fine/properties/value'
+
+    # only the headers are broken, so only the headers are lost
+    badHeaders:
+      name: BadHeaders
+      payload:
+        $ref: '#/components/schemas/Fine'
+      headers:
+        $ref: '#/components/schemas/NotDeclared'
+
+    fine:
+      name: Fine
+      payload:
+        $ref: '#/components/schemas/Fine'
+
+  schemas:
+    Wrapper:
+      type: object
+      properties:
+        gone:
+          $ref: '#/components/schemas/NotDeclared'
+    Fine:
+      type: object
+      properties:
+        value:
+          type: string
