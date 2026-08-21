@@ -235,21 +235,20 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             }
             hasAssertions = true
 
-            val gene: Gene = when {
-                assertionCtx.BoundaryAssertions() != null -> when (assertionCtx.BoundaryAssertions().text) {
-                    "\\A" -> AssertionRxGene(null, AssertionType.START_OF_INPUT, currentFlags)
-                    "\\z" -> AssertionRxGene(null, AssertionType.END_OF_INPUT, currentFlags)
-                    else -> throw IllegalArgumentException("Invalid boundary assertion")
-                }
-                assertionCtx.CARET() != null ->
-                    AssertionRxGene(null, AssertionType.CARET, currentFlags)
-                assertionCtx.DOLLAR() != null ->
-                    AssertionRxGene(null, AssertionType.DOLLAR, currentFlags)
-                assertionCtx.LESS_THAN() != null ->
-                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKBEHIND, currentFlags)
-                else ->
-                    AssertionRxGene(buildDisjunctionList(assertionCtx.disjunction()), AssertionType.LOOKAHEAD, currentFlags)
+            val assertionType = when{
+                assertionCtx.StartOfInputAssertion() != null -> AssertionType.START_OF_INPUT
+                assertionCtx.EndOfInputAssertion() != null -> AssertionType.END_OF_INPUT
+                assertionCtx.CARET() != null -> AssertionType.CARET
+                assertionCtx.DOLLAR() != null -> AssertionType.DOLLAR
+                assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
+                else -> AssertionType.LOOKAHEAD
             }
+            val innerGene = when (assertionType) {
+                AssertionType.LOOKBEHIND, AssertionType.LOOKAHEAD -> buildDisjunctionList(assertionCtx.disjunction())
+                else -> null
+            }
+
+            val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
             res.genes.add(gene)
             return res
         }
