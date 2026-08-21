@@ -358,6 +358,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Arazzo Parser from core-extra module -->
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>arazzo-parser</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 

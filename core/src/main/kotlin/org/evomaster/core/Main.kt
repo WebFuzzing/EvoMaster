@@ -27,6 +27,7 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.module.ArazzoRestModule
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
@@ -577,7 +578,9 @@ class Main {
 
             val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    if (config.blackBox) {
+                    if (config.isEnabledArazzoStrategy()) {
+                        ArazzoRestModule()
+                    } else if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
                     } else if (config.isEnabledResourceStrategy()) {
                         /*
