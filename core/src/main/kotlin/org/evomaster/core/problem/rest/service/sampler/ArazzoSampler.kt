@@ -1,15 +1,36 @@
 package org.evomaster.core.problem.rest.service.sampler
 
+import com.webfuzzing.arazzo.access.ArazzoAccess
 import com.webfuzzing.arazzo.models.domain.Step
 import com.webfuzzing.arazzo.models.domain.Workflow
+import com.webfuzzing.arazzo.parser.ArazzoParser
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 
 class ArazzoSampler : AbstractRestSampler() {
 
+    var arazzoWorkflows = mutableListOf<Workflow>()
+        private set
+
+    lateinit var arazzoWorkflowsById: Map<String, Workflow>
+        private set
+
+    override fun postInits() {
+        val location = config.arazzoLocation ?: throw ConfigProblemException("arazzoLocation must not be null when Arazzo strategy is enabled")
+        val workflows = readArazzoWorkflows(location)
+        arazzoWorkflows.clear()
+        arazzoWorkflows.addAll(workflows)
+        arazzoWorkflowsById = workflows.associateBy { it.workflowId }
+    }
+
+    private fun readArazzoWorkflows(location: String): List<Workflow> {
+        val arazzoText = ArazzoAccess.readFromDisk(location)
+        return ArazzoParser.parse(arazzoText, schemaHolder.main.schemaParsed).workflows
+    }
+
     override fun customizeAdHocInitialIndividuals() {
-        // workflows are loaded in AbstractRestSampler.initialize() when arazzoStrategy is enabled
     }
 
     override fun hasSpecialInitForSmartSampler(): Boolean = false

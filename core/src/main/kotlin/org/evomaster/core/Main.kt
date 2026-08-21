@@ -578,10 +578,10 @@ class Main {
 
             val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    if (config.blackBox) {
-                        BlackBoxRestModule(config.bbExperiments)
-                    } else if (config.isEnabledArazzoStrategy()) {
+                    if (config.isEnabledArazzoStrategy()) {
                         ArazzoRestModule()
+                    } else if (config.blackBox) {
+                        BlackBoxRestModule(config.bbExperiments)
                     } else if (config.isEnabledResourceStrategy()) {
                         /*
                             default for white-box testing using MIO
