@@ -89,15 +89,17 @@ public class CassandraHandler {
     private final CassandraHeuristicsCalculator calculator = new CassandraHeuristicsCalculator();
 
     /**
-     * Clears the CQL commands and empty-table queries buffered for the current action, along
-     * with their computed distances. Table schemas are not cleared: each table's schema is
-     * captured once, the first time it's queried, and does not change from one action to the next.
+     * Clears the CQL commands and empty-table queries buffered for the current test, along with
+     * their computed distances, plus the cached table schemas (both here and in
+     * {@link CassandraSchemaTracer}): each table's schema is re-captured the next time it's
+     * queried, rather than assumed unchanged from the previous test.
      */
     public void reset() {
         operations.clear();
         cqlCommandWithDistances.clear();
         failedQueries.clear();
-        // tableSchemas is not cleared: each table's schema is captured once, the first time it's queried
+        tableSchemas.clear();
+        CassandraSchemaTracer.reset();
     }
 
     public void setCqlSession(Object cqlSession) {
