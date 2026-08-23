@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.operations.*;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -158,10 +159,13 @@ public class CqlParserUtils {
 
     private static CqlTableReference parseFromSpec(CqlParser.FromSpecContext fromSpec) {
         List<TerminalNode> names = fromSpec.fromSpecElement().OBJECT_NAME();
-        if (names.size() == 2) {
+        if (names.size() == 1) {
+            return new CqlTableReference(null, names.get(0).getText());
+        } else if (names.size() == 2) {
             return new CqlTableReference(names.get(0).getText(), names.get(1).getText());
         } else {
-            return new CqlTableReference(null, names.get(0).getText());
+            SimpleLogger.error("Malformed fromSpecElement while extracting a CQL table reference: expected 1 or 2 OBJECT_NAME tokens but got " + names.size() + ". fromSpec text: " + fromSpec.getText());
+            throw new IllegalStateException("Malformed fromSpecElement: expected 1 or 2 OBJECT_NAME tokens but got " + names.size());
         }
     }
 
