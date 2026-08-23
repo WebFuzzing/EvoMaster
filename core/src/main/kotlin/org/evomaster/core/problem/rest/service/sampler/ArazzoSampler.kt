@@ -8,6 +8,7 @@ import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
+import java.util.ArrayDeque
 
 class ArazzoSampler : AbstractRestSampler() {
 
@@ -47,8 +48,7 @@ class ArazzoSampler : AbstractRestSampler() {
      * Create workflows individuals
      */
     fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
-        val actions = workflow.steps
-            .flatMap { buildArazzoRestCallActions(it) }
+        val actions = buildArazzoRestCallActions(workflow.steps)
             .onEach {
                 it.doInitialize(randomness)
                 it.forceNewTaints()
@@ -59,21 +59,33 @@ class ArazzoSampler : AbstractRestSampler() {
     }
 
     /**
-     * The Steps can reference a sub-workflow or OpenApi
+     * A RestCallAction must be created for each Step.
+     * Steps can be direct (operationId) or reference a sub-workflow
      */
-    private fun buildArazzoRestCallActions(step: Step): List<RestCallAction> {
-        if (!step.operationId.isNullOrBlank()) {
-            return listOf(findActionForOperation(step.operationId))
+    private fun buildArazzoRestCallActions(steps: List<Step>): List<RestCallAction> {
+        val actions = mutableListOf<RestCallAction>()
+        val pending = ArrayDeque<Step>()
+        pending.addAll(steps)
+
+        while (pending.isNotEmpty()) {
+            val step = pending.removeFirst()
+            when {
+                !step.operationId.isNullOrBlank() ->
+                    actions.add(findActionForOperation(step.operationId))
+
+                !step.workflowId.isNullOrBlank() -> {
+                    val nested = arazzoWorkflowsById[step.workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
+                    nested.steps.asReversed().forEach { pending.addFirst(it) }
+                }
+
+                else -> throw IllegalArgumentException("Arazzo: Step has no operationId, operationPath, or workflowId: ${step.stepId}")
+            }
         }
-        if (!step.workflowId.isNullOrBlank()) {
-            val nested = arazzoWorkflowsById[step.workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
-            return nested.steps.flatMap { buildArazzoRestCallActions(it) }
-        }
-        throw IllegalArgumentException("Arazzo: Step has no operationId, operationPath, or workflowId: ${step.stepId}")
+        return actions
     }
 
     /**
-     * Every Step Arazzo has its corresponding RestCallAction in the actionCluster
+     * Every operationId has its corresponding RestCallAction in the actionCluster
      */
     private fun findActionForOperation(operationId: String): RestCallAction {
         val template = actionCluster.values
