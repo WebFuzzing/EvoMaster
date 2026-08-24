@@ -1,0 +1,13 @@
+asyncapi: 3.0.0
+info:
+  title: The shared document next to main.yaml
+  version: 1.0.0
+
+components:
+  schemas:
+    Thing:
+      title: the-one-next-to-main
+      type: object
+      properties:
+        id:
+          type: string

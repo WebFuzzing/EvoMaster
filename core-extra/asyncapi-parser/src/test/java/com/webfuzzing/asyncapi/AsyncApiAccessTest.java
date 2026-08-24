@@ -82,4 +82,56 @@ public class AsyncApiAccessTest {
         assertTrue(e.getMessage().contains("classpath"), e.getMessage());
     }
 
+    @Test
+    public void testAnotherDocumentNextToThisOneIsFollowed(@TempDir Path dir) throws IOException {
+
+        write(dir.resolve("shared.yaml"),
+                "components:\n"
+                        + "  schemas:\n"
+                        + "    Thing:\n"
+                        + "      type: object\n"
+                        + "      properties:\n"
+                        + "        id:\n"
+                        + "          type: string\n");
+
+        Path main = write(dir.resolve("main.yaml"),
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Split across files\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    m:\n"
+                        + "      payload:\n"
+                        + "        $ref: 'shared.yaml#/components/schemas/Thing'\n");
+
+        AsyncApiDocument document = AsyncApiAccess.getAsyncApiFromLocation(main.toString());
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+        assertEquals(1, document.getComponentSchemas().size());
+        assertTrue(document.getComponentSchemas().keySet().iterator().next().startsWith("_ext_"));
+        assertTrue(document.getMessages().containsKey("m"));
+    }
+
+    @Test
+    public void testTheSameLocationAlwaysGetsTheSameImportedNames(@TempDir Path dir) throws IOException {
+
+        //the names imported components get have to be stable, or generated output would churn
+        write(dir.resolve("shared.yaml"), "components:\n  schemas:\n    Thing:\n      type: string\n");
+
+        Path main = write(dir.resolve("main.yaml"),
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Split\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    m:\n"
+                        + "      payload:\n"
+                        + "        $ref: 'shared.yaml#/components/schemas/Thing'\n");
+
+        assertEquals(
+                AsyncApiAccess.getAsyncApiFromLocation(main.toString()).getComponentSchemas().keySet(),
+                AsyncApiAccess.getAsyncApiFromLocation(main.toString()).getComponentSchemas().keySet());
+    }
 }

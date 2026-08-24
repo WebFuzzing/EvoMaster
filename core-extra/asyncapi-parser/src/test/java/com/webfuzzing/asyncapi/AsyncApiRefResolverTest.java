@@ -2,10 +2,14 @@ package com.webfuzzing.asyncapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.webfuzzing.asyncapi.mapper.AsyncApiMapper;
+import com.webfuzzing.asyncapi.models.DocumentLocation;
+import com.webfuzzing.asyncapi.models.DocumentLocationType;
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver;
+import com.webfuzzing.asyncapi.resolver.RefLocations;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -139,4 +144,124 @@ public class AsyncApiRefResolverTest {
                         .get("payload").get("properties").get("item")));
     }
 
+    // ------------------------------------------------------------------ where a reference leads
+
+    @Test
+    public void testAnAbsoluteReferenceIsTakenAsItIs() {
+
+        List<String> messages = new ArrayList<>();
+
+        assertEquals(
+                "https://example.com/shared.yaml",
+                RefLocations.computeLocation(
+                        "https://example.com/shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofLocal("/some/where/main.yaml"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testARelativeReferenceIsResolvedAgainstTheReferringDocument() {
+
+        List<String> messages = new ArrayList<>();
+
+        assertEquals(
+                "/some/where/shared.yaml",
+                RefLocations.computeLocation(
+                        "shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofLocal("/some/where/main.yaml"),
+                        messages));
+
+        //a document one directory down means that directory, not the primary document's
+        assertEquals(
+                "/some/where/sub/shared.yaml",
+                RefLocations.computeLocation(
+                        "shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofLocal("/some/where/sub/nested.yaml"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testAProtocolRelativeReferenceBorrowsTheProtocol() {
+
+        List<String> messages = new ArrayList<>();
+
+        assertEquals(
+                "https://other.com/shared.yaml",
+                RefLocations.computeLocation(
+                        "//other.com/shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofRemote("https://example.com/main.yaml"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testAProtocolRelativeReferenceWithNoProtocolToBorrow() {
+
+        List<String> messages = new ArrayList<>();
+
+        /*
+            A plain file path has no protocol, so there is nothing to borrow. Reporting it is
+            the only sensible answer -- taking the text apart regardless would read past the
+            start of the string.
+         */
+        assertNull(RefLocations.computeLocation(
+                "//other.com/shared.yaml#/components/schemas/Thing",
+                DocumentLocation.ofLocal("/some/where/main.yaml"),
+                messages));
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0).contains("No protocol"), messages.toString());
+    }
+
+    @Test
+    public void testAReferenceWithNoFragmentIsNotOne() {
+
+        List<String> messages = new ArrayList<>();
+
+        assertNull(RefLocations.computeLocation(
+                "shared.yaml", DocumentLocation.ofLocal("/some/where/main.yaml"), messages));
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0).contains("contains no #"), messages.toString());
+    }
+
+    @Test
+    public void testARelativeReferenceFromADocumentWithNoLocation() {
+
+        //a document handed over as text has no neighbours for a relative reference to name
+        assertThrows(IllegalArgumentException.class, () -> RefLocations.computeLocation(
+                "shared.yaml#/components/schemas/Thing",
+                DocumentLocation.MEMORY,
+                new ArrayList<String>()));
+    }
+
+    @Test
+    public void testALocalReferenceIsRecognisedWhateverItPointsAt() {
+
+        assertTrue(RefLocations.isLocalRef("#/components/schemas/Thing"));
+        assertTrue(RefLocations.isLocalRef("#"));
+        assertFalse(RefLocations.isLocalRef("shared.yaml#/components/schemas/Thing"));
+        assertFalse(RefLocations.isLocalRef("https://example.com/shared.yaml#/x"));
+    }
+
+    @Test
+    public void testWhereADocumentReadFromTheClasspathLooksForItsNeighbours() {
+
+        List<String> messages = new ArrayList<>();
+
+        //a resource path is resolved the same way a file path is
+        assertEquals(
+                "/asyncapi/artificial/shared.yaml",
+                RefLocations.computeLocation(
+                        "shared.yaml#/components/schemas/Thing",
+                        new DocumentLocation("/asyncapi/artificial/main.yaml", DocumentLocationType.RESOURCE),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
 }
