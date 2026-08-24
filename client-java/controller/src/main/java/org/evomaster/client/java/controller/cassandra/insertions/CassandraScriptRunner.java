@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.cassandra.insertions;
 
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionDto;
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionResultsDto;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;

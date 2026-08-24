@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.cassandra.insertions.model;
+package org.evomaster.client.java.controller.api.dto.database.operations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,6 @@ import java.util.List;
  * Data needed to insert a single row into a Cassandra table.
  */
 public class CassandraInsertionDto {
-
     /**
      * The keyspace containing the target table.
      */

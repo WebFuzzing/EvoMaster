@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.cassandra.insertions.model;
+package org.evomaster.client.java.controller.api.dto.database.operations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,24 +6,20 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Outcome of executing a sequence of {@link CassandraInsertionDto} insertions.
- */
 public class CassandraInsertionResultsDto {
-
     /**
-     * Whether the insertion at each index of the sequence of Cassandra insertions executed successfully.
+     * Whether the insertion at the index of a sequence of Cassandra insertions (i.e., {@link CassandraDatabaseCommandDto#insertions})
+     * executed successfully
      */
     public List<Boolean> executionResults = new ArrayList<>();
 
     /**
-     * The index of the insertion that failed, if any.
+     * The index of the insertion that failed if any
      */
     public Integer failedInsertionIndex = -1;
 
     /**
-     * Regex to extract the index of the failed insertion from the exception message thrown by
-     * CassandraScriptRunner.executeInsert.
+     * Regex to extract index of failed insertion from the exception message thrown by the executeInsert method in CassandraScriptRunner
      */
     private static final Pattern pattern = Pattern.compile("index (\\d+)");
 

@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.cassandra.dsl;
 
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionDto;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
