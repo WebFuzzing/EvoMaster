@@ -87,6 +87,12 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     //6xx: mobile
 
+    //9xx: MCP
+    MCP_BROKEN_RESOURCE(981, "Broken Advertised Resource", "brokenAdvertisedResource",
+        "A read attempt on a resource returned JSON-RPC 'resource not found' error (code -32002)"),
+    MCP_INTERNAL_ERROR(982, "MCP Tool Internal Error", "causesInternalErrorMCP",
+        "A tools/call request resulted in a JSON-RPC protocol-level error with code -32603 (Internal error)"),
+
     ;
 
     override fun getCode(): Int {
