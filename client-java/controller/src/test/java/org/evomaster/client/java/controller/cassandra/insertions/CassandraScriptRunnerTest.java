@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller.cassandra.insertions;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionResultsDto;
 import org.evomaster.client.java.controller.cassandra.dsl.CassandraDsl;
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionDto;
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionResultsDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +15,8 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CassandraScriptRunnerTest {
 

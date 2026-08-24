@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.cassandra.dsl;
 
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionDto;
-import org.evomaster.client.java.controller.cassandra.insertions.model.CassandraInsertionEntryDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionEntryDto;
 
 import java.util.ArrayList;
 import java.util.List;

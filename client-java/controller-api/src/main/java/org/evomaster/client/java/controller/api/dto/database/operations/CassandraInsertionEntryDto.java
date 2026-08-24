@@ -1,10 +1,9 @@
-package org.evomaster.client.java.controller.cassandra.insertions.model;
+package org.evomaster.client.java.controller.api.dto.database.operations;
 
 /**
  * A single column/value pair to insert as part of a {@link CassandraInsertionDto}.
  */
 public class CassandraInsertionEntryDto {
-
     /**
      * Name of the column in the target Cassandra table.
      */
