@@ -2,11 +2,15 @@ package com.webfuzzing.asyncapi;
 
 import com.webfuzzing.asyncapi.access.AsyncApiAccess;
 import com.webfuzzing.asyncapi.models.AsyncApiChannel;
+import com.webfuzzing.asyncapi.models.AsyncApiChannelBindings;
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
 import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.AsyncApiMessage;
 import com.webfuzzing.asyncapi.models.AsyncApiOperation;
 import com.webfuzzing.asyncapi.models.AsyncApiReply;
+import com.webfuzzing.asyncapi.models.AsyncApiSecurityScheme;
+import com.webfuzzing.asyncapi.models.AsyncApiServer;
+import com.webfuzzing.asyncapi.models.AsyncApiServerVariable;
 import com.webfuzzing.asyncapi.parser.AsyncApiParsingException;
 import org.junit.jupiter.api.Test;
 
@@ -984,6 +988,281 @@ public class AsyncApiParserTest {
         assertTrue(
                 warns(document, "supplied as text"),
                 "expected a warning about references that cannot be resolved: " + document.getWarnings());
+    }
+
+    // ------------------------------------------------------------------ servers and bindings
+
+    @Test
+    public void testServers() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        assertEquals(setOf("kafka", "rabbit"), document.getServers().keySet());
+
+        AsyncApiServer rabbit = document.getServers().get("rabbit");
+        assertEquals("localhost:5672", rabbit.getHost());
+        assertEquals("amqp", rabbit.getProtocol());
+        //the one field that separates AMQP 0-9-1 from the incompatible 1.0
+        assertEquals("0.9.1", rabbit.getProtocolVersion());
+    }
+
+    @Test
+    public void testServerPathnameAndVariables() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: A server whose path is templated\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  default:\n"
+                        + "    host: localhost:1883\n"
+                        + "    protocol: mqtt\n"
+                        + "    pathname: 'api/1/{module_id}'\n"
+                        + "    variables:\n"
+                        + "      module_id:\n"
+                        + "        description: The id of the module\n"
+                        + "        default: main\n"
+                        + "        enum: [main, spare]\n");
+
+        AsyncApiServer server = document.getServers().get("default");
+        assertEquals("api/1/{module_id}", server.getPathname());
+
+        //the placeholder is declared and left to be resolved at run time, not substituted here
+        AsyncApiServerVariable variable = server.getVariables().get("module_id");
+        assertEquals("The id of the module", variable.getDescription());
+        assertEquals("main", variable.getDefaultValue());
+        assertEquals(Arrays.asList("main", "spare"), variable.getEnumeration());
+    }
+
+    @Test
+    public void testDocumentWithoutServers() {
+
+        //describing only the contract, and leaving the broker to deployment, is common
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        assertTrue(document.getServers().isEmpty());
+        assertEquals(1, document.getOperations().size());
+    }
+
+    @Test
+    public void testKafkaTopicBindingWinsOverTheDeclaredAddress() {
+
+        AsyncApiChannel channel = load("/asyncapi/artificial/bindings.yaml").getChannels().get("both");
+
+        //the declared address is kept as written...
+        assertEquals("events.declared", channel.getAddress());
+        //...but on Kafka the binding's topic is what a client must actually use
+        assertEquals("events.from.binding", channel.effectiveAddress("kafka"));
+        assertEquals("events.from.binding", channel.effectiveAddress("KAFKA"));
+
+        //on any other transport the topic means nothing
+        assertEquals("events.declared", channel.effectiveAddress("amqp"));
+        assertEquals("events.declared", channel.effectiveAddress(null));
+
+        assertEquals("routingKey", channel.getBindings().getAmqpIs());
+        assertEquals("events.exchange", channel.getBindings().getAmqpExchange());
+    }
+
+    @Test
+    public void testKafkaBindingWithoutATopicLeavesTheAddressAlone() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        AsyncApiChannel emptyTopic = document.getChannels().get("emptyTopic");
+        assertNull(emptyTopic.getBindings().getKafkaTopic());
+        assertEquals("events.declared", emptyTopic.effectiveAddress("kafka"));
+
+        AsyncApiChannel plain = document.getChannels().get("plain");
+        assertTrue(plain.getBindings().getRaw().isEmpty());
+        assertEquals("events.declared", plain.effectiveAddress("kafka"));
+    }
+
+    @Test
+    public void testAmqpAndWebSocketChannelBindings() {
+
+        AsyncApiChannelBindings amqp =
+                load("/asyncapi/artificial/traits.yaml").getChannels().get("tasks").getBindings();
+        assertEquals("queue", amqp.getAmqpIs());
+        assertEquals("tasks.request", amqp.getAmqpQueue());
+        assertTrue(amqp.getRaw().containsKey("amqp"));
+
+        AsyncApiChannelBindings ws =
+                load("/asyncapi/artificial/websocket-reply.yaml").getChannels().get("vsi").getBindings();
+        assertEquals("GET", ws.getWsMethod());
+    }
+
+    @Test
+    public void testBindingsBehindAReferenceAreFollowed() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Bindings shared through components\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: declared\n"
+                        + "    bindings:\n"
+                        + "      $ref: '#/components/channelBindings/kafkaTopic'\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        payload:\n"
+                        + "          type: object\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "components:\n"
+                        + "  channelBindings:\n"
+                        + "    kafkaTopic:\n"
+                        + "      kafka:\n"
+                        + "        topic: the.real.topic\n");
+
+        /*
+            Reading a binding without following the reference would leave the channel on its
+            declared address, and a client would publish to the wrong topic. That is a wrong
+            answer rather than a missing one, so it is worth a test of its own.
+         */
+        AsyncApiChannel channel = document.getChannels().get("c");
+        assertEquals("the.real.topic", channel.getBindings().getKafkaTopic());
+        assertEquals("the.real.topic", channel.effectiveAddress("kafka"));
+    }
+
+    @Test
+    public void testChannelParametersAreKeptAsDeclared() {
+
+        AsyncApiChannel channel =
+                load("/asyncapi/artificial/inline-messages.yaml").getChannels().get("signup");
+
+        assertEquals(setOf("tenantId"), channel.getParameters().keySet());
+        assertEquals("acme", channel.getParameters().get("tenantId").get("default").asText());
+    }
+
+    @Test
+    public void testTheServersAChannelIsOn() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        List<String> names = new ArrayList<>();
+        for (AsyncApiServer server : document.serversOf(document.getChannels().get("both"))) {
+            names.add(server.getName());
+        }
+
+        //no 'servers' on the channel means every server, as the specification has it
+        assertEquals(Arrays.asList("kafka", "rabbit"), names);
+    }
+
+    // ------------------------------------------------------------------ security
+
+    @Test
+    public void testSecuritySchemesAreRead() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/traits.yaml");
+        AsyncApiSecurityScheme scheme = document.getSecuritySchemes().get("userPassword");
+
+        assertEquals("userpassword", scheme.getType());
+        assertEquals("SASL PLAIN over the broker connection", scheme.getDescription());
+
+        //and an operation says which of them it needs, through a trait in this document
+        assertEquals(
+                Arrays.asList("userPassword"),
+                document.getOperations().get("submitTask").getSecurity());
+    }
+
+    @Test
+    public void testSecuritySchemeWrittenInlineWhereItIsUsed() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Security stated on the server itself\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - type: userPassword\n"
+                        + "        description: An authentication method for the server\n");
+
+        AsyncApiServer server = document.getServers().get("dev");
+        assertEquals(1, server.getSecurity().size());
+
+        //an inline scheme is registered under a name derived from where it appears
+        AsyncApiSecurityScheme scheme = document.getSecuritySchemes().get(server.getSecurity().get(0));
+        assertEquals("userpassword", scheme.getType());
+        assertEquals("An authentication method for the server", scheme.getDescription());
+    }
+
+    @Test
+    public void testSecurityThatCannotBeUsedIsReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Security pointing nowhere\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - $ref: '#/components/securitySchemes/absent'\n"
+                        + "      - description: no type at all\n");
+
+        assertTrue(document.getServers().get("dev").getSecurity().isEmpty());
+        assertTrue(warns(document, "not a declared"), document.getWarnings().toString());
+        assertTrue(warns(document, "no 'type'"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testDeclaredSecuritySchemeWithNoTypeIsReported() {
+
+        /*
+            A scheme written inline with no 'type' was already reported; one declared under
+            components was dropped in silence. A server referring to it then failed for what
+            looked like a second, unrelated reason.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Scheme with no type\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - $ref: '#/components/securitySchemes/halfWritten'\n"
+                        + "components:\n"
+                        + "  securitySchemes:\n"
+                        + "    halfWritten:\n"
+                        + "      description: someone meant to finish this\n");
+
+        assertFalse(document.getSecuritySchemes().containsKey("halfWritten"));
+        assertTrue(warns(document, "halfWritten", "no 'type'"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testServerMissingWhatItNeedsIsReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Incomplete servers\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  noProtocol:\n"
+                        + "    host: localhost:9092\n"
+                        + "  nothing:\n"
+                        + "    description: neither host nor protocol\n");
+
+        assertTrue(document.getServers().isEmpty());
+        assertTrue(warns(document, "noProtocol", "protocol"), document.getWarnings().toString());
+        //both missing fields are named, not just the first
+        assertTrue(warns(document, "nothing", "host and protocol"), document.getWarnings().toString());
     }
 
 }
