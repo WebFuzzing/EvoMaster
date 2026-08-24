@@ -1,5 +1,7 @@
 package org.evomaster.core.mongo
 
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionTransformer
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

@@ -25,11 +25,35 @@ public class DistanceHelper {
 
     public static final double H_REACHED_BUT_NULL = 0.05d;
 
+    public static final double H_MAX_VALUE = 1d;
+
+    public static final double H_MIN_VALUE = 0d;
+
     public static final double H_NOT_NULL = 0.1d;
 
     public static final double H_REACHED_BUT_EMPTY = H_REACHED_BUT_NULL;
 
     public static final double H_NOT_EMPTY = H_NOT_NULL;
+
+    /**
+     * A base heuristic value, higher than {@link #H_NOT_NULL}, used in place of {@link #H_NOT_NULL} to give a
+     * better (ie, higher) floor to an {@code ofTrue}/{@code ofFalse} heuristic in situations that, while still
+     * not satisfying the overall condition, are considered a smaller step away from it than the generic
+     * {@link #H_NOT_NULL} case. It is used in two ways:
+     * <ul>
+     *     <li>as the {@code ofTrue} of {@link TruthnessUtils#FALSE_TRUTHNESS_BETTER}, returned when a predicate
+     *     cannot be conclusively evaluated because one (but not all) of its operands is {@code null} — eg, only
+     *     one side of a comparison, {@code BETWEEN}, {@code IN}, {@code LIKE} or boolean check is missing;
+     *     this is treated as a better starting point than the fully-unevaluable case ({@link #H_NOT_NULL}, via
+     *     {@link TruthnessUtils#FALSE_TRUTHNESS});</li>
+     *     <li>as the {@code base} argument when scaling (via
+     *     {@link TruthnessUtils#buildScaledTruthness(double, double)}) the {@code ofTrue} of a comparison whose
+     *     operands are all non-null but that still evaluated to false, so that a genuine (if unsatisfied)
+     *     comparison between real values gets at least this same floor, with room to grow above it as the
+     *     compared values get closer.</li>
+     * </ul>
+     */
+    public static final double H_NOT_NULL_BETTER = H_NOT_NULL + (H_NOT_NULL / 2);
 
 
     //2^16=65536, max distance for a char
@@ -41,9 +65,9 @@ public class DistanceHelper {
      * numeric overflows. In this latter case the max value is returned, ie, we
      * guarantee that the returned value is not lower than the given input distance.
      *
-     * @param distance
-     * @param delta
-     * @return
+     * @param distance 0 or positive
+     * @param delta 0 or positive
+     * @return distance + delta, or max value if overflow
      */
     public static double increasedDistance(double distance, double delta) {
 
@@ -71,9 +95,9 @@ public class DistanceHelper {
     /**
      * Add the 2 distances together, taking into account possible overflows
      *
-     * @param a
-     * @param b
-     * @return
+     * @param a 0 or positive
+     * @param b 0 or positive
+     * @return sum of a and b, or max value if overflow
      */
     public static double addDistances(double a, double b) {
         if (a < 0) {
@@ -94,9 +118,9 @@ public class DistanceHelper {
     /**
      * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
      *
-     * @param base
-     * @param distance
-     * @return
+     * @param base 0 or positive
+     * @param distance 0 or positive
+     * @return h=[0,1] heuristic, or max value if overflow
      */
     public static double heuristicFromScaledDistanceWithBase(double base, double distance) {
 
@@ -117,7 +141,7 @@ public class DistanceHelper {
     public static double scaleHeuristicWithBase(double heuristic, double base) {
 
         if (heuristic < 0 || heuristic >= 1) {
-            throw new IllegalArgumentException("Invalid heuristic: " + base);
+            throw new IllegalArgumentException("Invalid heuristic: " + heuristic);
         }
         if (base < 0 || base >= 1) {
             throw new IllegalArgumentException("Invalid base: " + base);
@@ -176,11 +200,33 @@ public class DistanceHelper {
     }
 
     /**
+     * Computes the left-aligned positional distance between two byte arrays.
+     * Each unequal aligned byte and each unmatched trailing byte contributes one unit.
+     *
+     * @param a first byte array, must not be {@code null}
+     * @param b second byte array, must not be {@code null}
+     * @return the number of unequal aligned bytes plus the difference in array lengths
+     */
+    public static long getLeftAlignmentDistance(byte[] a, byte[] b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        long distance = Math.abs((long) a.length - b.length);
+        int alignedLength = Math.min(a.length, b.length);
+        for (int i = 0; i < alignedLength; i++) {
+            if (a[i] != b[i]) {
+                distance++;
+            }
+        }
+        return distance;
+    }
+
+    /**
      * Computes a distance to a==b. If a-b overflows,
      *
-     * @param a
-     * @param b
-     * @return
+     * @param a long value
+     * @param b long value
+     * @return distance to equality, or max value if overflow
      */
     public static double getDistanceToEquality(long a, long b) {
         // TODO: Some long values cannot be precisely represented as double values

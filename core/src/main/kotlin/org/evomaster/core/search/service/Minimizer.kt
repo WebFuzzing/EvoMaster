@@ -14,7 +14,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.SearchStatusUpdater
 import org.evomaster.core.search.service.time.TimeBoxedPhase
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
