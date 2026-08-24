@@ -11,4 +11,10 @@ package org.evomaster.client.java.controller.neo4j.conditions;
  * - Logical operators: AND, OR, NOT
  */
 public interface CypherCondition {
+
+    /**
+     * Dispatches to the {@code visit} method of {@code visitor} matching this condition's concrete
+     * type (double dispatch), returning whatever the visitor produces for it.
+     */
+    <T> T accept(CypherConditionVisitor<T> visitor);
 }

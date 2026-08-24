@@ -21,6 +21,11 @@ public class RawCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitRaw(this);
+    }
+
+    @Override
     public String toString() {
         return expression;
     }

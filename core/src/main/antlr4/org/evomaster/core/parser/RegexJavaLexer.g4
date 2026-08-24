@@ -76,6 +76,8 @@ CharacterClassEscape
   : SLASH [dDsSwWvVhH]
  ;
 
+EQUAL                      : '=';
+LESS_THAN                  : '<';
 CARET                      : '^';
 DOLLAR                     : '$';
 SLASH                      : '\\';
@@ -96,7 +98,7 @@ COLON                      : ':';
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9:,^$\\.*+?()[\]{}|-]
+ : ~[0-9:,^$\\.<*+?()[\]{}|=-]
  ;
 
 fragment OctalEscapeSequence
