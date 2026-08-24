@@ -19,6 +19,6 @@
   "jest": {
     "testEnvironment": "node",
     "testRegex": "generated/.*/.*[tT]est\\.js$",
-    "testPathIgnorePatterns": [".*_pw\\.js$"]
+    "testPathIgnorePatterns": [".*_pw_.*[Tt]est\\.js$"]
   }
 }
