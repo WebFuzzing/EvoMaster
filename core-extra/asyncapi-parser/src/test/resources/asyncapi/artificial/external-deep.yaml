@@ -1,0 +1,31 @@
+asyncapi: 3.0.0
+info:
+  title: A reference into a part of another document that cannot be imported
+  version: 1.0.0
+
+channels:
+  shipments:
+    address: shipments
+    messages:
+      shipped:
+        $ref: '#/components/messages/shipped'
+      placed:
+        $ref: '#/components/messages/placed'
+
+operations:
+  onShipment:
+    action: receive
+    channel:
+      $ref: '#/channels/shipments'
+
+components:
+  messages:
+    shipped:
+      name: OrderShipped
+      # not a component of the other document, so there is nothing to bring in
+      payload:
+        $ref: 'external-shared.yaml#/x-webhooks/orderShipped/schema'
+    placed:
+      name: OrderPlaced
+      payload:
+        $ref: 'external-shared.yaml#/components/schemas/Order'

@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -813,6 +814,176 @@ public class AsyncApiParserTest {
         assertNull(operation.getReply());
         assertNull(document.replyChannelOf(operation));
         assertTrue(document.replyMessagesOf(operation).isEmpty());
+    }
+
+    // ------------------------------------------------------------------ other documents
+
+    @Test
+    public void testSchemasFromAnotherDocumentAreInlined() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+
+        List<String> imported = new ArrayList<>();
+        for (String key : document.getComponentSchemas().keySet()) {
+            if (key.startsWith("_ext_")) {
+                imported.add(key);
+            }
+        }
+        assertEquals(2, imported.size(), "expected Order and Item to be imported, got " + imported);
+
+        //the local schema of the same name must not have been overwritten
+        assertTrue(document.getComponentSchemas().containsKey("Order"));
+        assertTrue(document.getComponentSchemas().get("Order").get("properties").has("localOnly"));
+
+        //the payload now points at the imported copy, not at the local schema of the same name
+        String payloadRef = document.getMessages().get("placeOrder").getPayload().get("$ref").asText();
+        assertTrue(payloadRef.startsWith("#/components/schemas/_ext_"), payloadRef);
+        assertTrue(document.getComponentSchemas().containsKey(
+                payloadRef.substring("#/components/schemas/".length())));
+    }
+
+    @Test
+    public void testReferencesInsideAnImportedDocumentAreRewritten() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        Pattern expected = Pattern.compile("^_ext_[0-9a-f]{8}_Order$");
+        String importedOrderKey = null;
+
+        for (String key : document.getComponentSchemas().keySet()) {
+            if (expected.matcher(key).matches()) {
+                importedOrderKey = key;
+                break;
+            }
+        }
+
+        assertNotNull(importedOrderKey, document.getComponentSchemas().keySet().toString());
+
+        String itemRef = document.getComponentSchemas().get(importedOrderKey)
+                .get("properties").get("item").get("$ref").asText();
+
+        //'#/components/schemas/Item' inside the other document means *its* Item
+        String prefix = importedOrderKey.substring(0, importedOrderKey.length() - "Order".length());
+        assertEquals("#/components/schemas/" + prefix + "Item", itemRef);
+        assertTrue(document.getComponentSchemas().containsKey(
+                itemRef.substring("#/components/schemas/".length())));
+    }
+
+    @Test
+    public void testMessagesFromAnotherDocumentAreInlined() {
+
+        AsyncApiMessage imported =
+                load("/asyncapi/artificial/external-main.yaml").getMessages().get("imported");
+
+        assertEquals("Ack", imported.getName());
+        assertTrue(imported.getPayload().get("$ref").asText().startsWith("#/components/schemas/_ext_"));
+    }
+
+    @Test
+    public void testPointerDeeperThanAnImportedSchemaKeepsItsTail() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        /*
+            Only the component key is renamed. Everything past it describes a way into the
+            imported schema and has to survive, or the reference would name the primary
+            document's own 'Order' -- a different schema that happens to share the name.
+         */
+        String ref = document.getMessages().get("deepPointer").getPayload().get("$ref").asText();
+
+        assertTrue(ref.matches("^#/components/schemas/_ext_[0-9a-f]{8}_Order/properties/item$"), ref);
+    }
+
+    @Test
+    public void testDeepLocalPointerInsideAnImportedDocumentIsRewritten() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        //the imported document wrote '#/components/schemas/Order/...' meaning its own Order
+        String ref = document.getMessages().get("importedDeep").getPayload().get("$ref").asText();
+
+        assertTrue(ref.matches("^#/components/schemas/_ext_[0-9a-f]{8}_Order/properties/id$"), ref);
+
+        //and what it now names is the imported copy, which has the fields the other document declared
+        String key = ref.substring("#/components/schemas/".length(), ref.indexOf("/properties/"));
+        assertTrue(document.getComponentSchemas().get(key).get("properties").has("id"));
+        assertFalse(document.getComponentSchemas().get(key).get("properties").has("localOnly"));
+    }
+
+    @Test
+    public void testReferenceIntoANonComponentPartOfAnotherDocumentIsRejected() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-deep.yaml");
+
+        //what could be imported was, and the message using it is fine
+        assertTrue(document.getMessages().containsKey("placed"));
+
+        //the other one points into an extension section, which cannot be brought in. Leaving it
+        //with a reference out of the document would only fail later, so it is dropped now
+        assertFalse(document.getMessages().containsKey("shipped"));
+        assertEquals(Arrays.asList("placed"), document.getChannels().get("shipments").getMessageIds());
+
+        //both halves are reported: what could not be imported, and what that cost
+        assertTrue(warns(document, "x-webhooks", "can be imported"), document.getWarnings().toString());
+        assertTrue(warns(document, "message 'shipped'", "is ignored"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAReferenceIsResolvedAgainstTheDocumentThatMakesIt() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/nested/main.yaml");
+
+        /*
+            'sub/nested.yaml' refers to 'shared.yaml', which for it means 'sub/shared.yaml' and
+            does not exist. Resolving that against the primary document's directory instead
+            would silently bind it to the shared.yaml next to main.yaml -- a different schema,
+            with no sign that anything went wrong.
+         */
+        assertTrue(
+                warns(document, "Failed to retrieve", "sub/shared.yaml"),
+                document.getWarnings().toString());
+
+        //what could be imported was
+        assertTrue(document.getMessages().containsKey("fromShared"));
+        String sharedKey = document.getMessages().get("fromShared").getPayload().get("$ref").asText()
+                .substring("#/components/schemas/".length());
+        assertEquals(
+                "the-one-next-to-main",
+                document.getComponentSchemas().get(sharedKey).get("title").asText());
+
+        //and the one that could not be is dropped rather than bound to the wrong schema
+        assertFalse(document.getMessages().containsKey("fromNested"));
+        assertEquals(Arrays.asList("fromShared"), document.getChannels().get("c").getMessageIds());
+    }
+
+    @Test
+    public void testADocumentThatNamesItselfIsNotImportedIntoItself() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/self-reference.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+
+        //one copy of everything, not two
+        assertEquals(setOf("Thing"), document.getComponentSchemas().keySet());
+        assertEquals(setOf("m"), document.getMessages().keySet());
+
+        //and the long-winded reference now reads as the local one it always was
+        assertEquals(
+                "#/components/schemas/Thing",
+                document.getMessages().get("m").getPayload().get("$ref").asText());
+    }
+
+    @Test
+    public void testTextOnlyDocumentReportsUnresolvableExternalReferences() {
+
+        AsyncApiDocument document = parse(
+                AsyncApiAccess.readFromResource("/asyncapi/artificial/external-main.yaml"));
+
+        assertTrue(
+                warns(document, "supplied as text"),
+                "expected a warning about references that cannot be resolved: " + document.getWarnings());
     }
 
 }

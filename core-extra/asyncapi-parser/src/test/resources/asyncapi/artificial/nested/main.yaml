@@ -1,0 +1,35 @@
+asyncapi: 3.0.0
+info:
+  title: Imports from two directories, one of which has a broken reference of its own
+  version: 1.0.0
+
+# The point of this document is a trap: 'sub/nested.yaml' refers to 'shared.yaml', which for it
+# means 'sub/shared.yaml' — a file that does not exist. Resolving that reference against the
+# wrong directory would bind it to the 'shared.yaml' next to *this* file instead, which is a
+# different schema entirely, and nothing would say so.
+
+channels:
+  c:
+    address: c
+    messages:
+      fromShared:
+        $ref: '#/components/messages/fromShared'
+      fromNested:
+        $ref: '#/components/messages/fromNested'
+
+operations:
+  onC:
+    action: receive
+    channel:
+      $ref: '#/channels/c'
+
+components:
+  messages:
+    fromShared:
+      name: FromShared
+      payload:
+        $ref: 'shared.yaml#/components/schemas/Thing'
+    fromNested:
+      name: FromNested
+      payload:
+        $ref: 'sub/nested.yaml#/components/schemas/Thing'
