@@ -55,6 +55,8 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         val messages = McpActionBuilder.addActionsFromToolList(tools, toolActionCluster, options)
         messages.forEach { log.warn(it) }
         toolActionCluster.values.forEach { actionCluster[it.id] = it }
+        // TODO: redefine how this will be populated
+        // outputSchemas[tool.name] = tool.outputSchema
     }
 
     /** Builds the resource actions cluster as part of the initialization process */
@@ -183,4 +185,6 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     // -------------------------------------------------------------------------
 
     fun getMcpClient(): HttpMcpClient = mcpClient
+
+    fun getOutputSchema(toolName: String): Map<String, Any?>? = outputSchemas[toolName]
 }
