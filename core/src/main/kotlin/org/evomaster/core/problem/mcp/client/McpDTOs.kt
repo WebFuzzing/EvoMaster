@@ -1,11 +1,13 @@
 package org.evomaster.core.problem.mcp.client
 
+import com.fasterxml.jackson.databind.JsonNode
+
 /** Tool definition as returned by the MCP `tools/list` response. */
 data class McpToolDefinition(
     val name: String,
     val description: String = "",
-    val inputSchema: Map<String, Any?> = emptyMap(),
-    val outputSchema: Map<String, Any?>? = null
+    val inputSchema: JsonNode,
+    val outputSchema: JsonNode? = null
 )
 
 /** Static resource as returned by the MCP `resources/list` response. */
