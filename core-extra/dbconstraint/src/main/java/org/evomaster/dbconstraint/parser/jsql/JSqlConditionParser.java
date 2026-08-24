@@ -77,10 +77,10 @@ public class JSqlConditionParser implements SqlConditionParser {
     /**
      * Rewrites dialect constructs into constructs the rest of the pipeline can consume.
      *
-     * <p>Each rule below exists for one of two reasons, and the distinction decides whether it can
-     * ever be removed. Some constructs JSQLParser cannot parse at all. Others parse fine but produce
-     * AST nodes {@link JSqlVisitor} does not translate, and no parser upgrade changes that. Each
-     * rule states which case it is.
+     * <p>Every rule here is a parser limitation: JSQLParser cannot read the construct at all, so it
+     * is rewritten into one the library accepts. Constructs the library parses are left alone, even
+     * when they are dialect-specific, because {@link JSqlVisitor} translates them from the AST where
+     * the intent is explicit rather than guessed at from the text.
      *
      * @param originalSqlStr original string before transforming dialect primitives
      * @return the transformed SQL so JSQLParser can handle it
@@ -91,56 +91,16 @@ public class JSqlConditionParser implements SqlConditionParser {
          *
          *     (col)::text = ANY ((ARRAY['A'::character varying, 'B'::character varying])::text[])
          *
-         * Handled ahead of the general rules below because the two of them, applied to this shape,
-         * used to leave the cast's own brackets unbalanced: the ARRAY rule ran to the last "]" in the
-         * string, which belongs to "::text[]" rather than to the array, and turned it into "::text[".
-         * The result was invalid SQL, so the constraint was discarded — but only after JSQLParser had
-         * spent a very long time backtracking over it. On one real schema, 44 of 48 check constraints
-         * failed this way and cost over five minutes of the search budget between them, with a single
-         * 24 KB constraint accounting for 275 seconds of that.
-         *
          * A parser limitation: JSQLParser 4.9 rejects the parenthesised expression inside ANY,
-         * failing on "ANY ((" before it reaches the array.
+         * failing on "ANY ((" before it reaches the array. The uncast spellings need no rewriting,
+         * since JSqlVisitor translates them directly.
          *
-         * TODO A parser that accepts the shape does not by itself make this rule removable. The
-         * expression would then be an EqualsTo over an ANY function, which JSqlVisitor does not
-         * translate either, so both have to handle it first.
+         * TODO Removable once JSQLParser parses the cast form. The expression would then be an
+         * EqualsTo over an ANY function, which JSqlVisitor already handles.
          */
         String transformedStr = originalSqlStr.replaceAll(
                 "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+\\s*\\[\\s*\\]\\s*\\)",
                 " IN ($1)");
-
-        /*
-         * PostgreSQL's "= ANY (...)" is rewritten to the equivalent " IN (...)".
-         *
-         * Not a parser limitation: JSQLParser 4.9 parses "col = ANY (ARRAY['A','B'])" without
-         * complaint, as an EqualsTo whose right side is a Function named ANY. JSqlVisitor is what
-         * cannot handle it: visit(Function) only unwraps LOWER and UPPER, and throws for anything
-         * else. The rewrite lands the expression on InExpression instead, which it does support.
-         *
-         * TODO Upgrading JSQLParser has no effect on this rule. It can be dropped once
-         * visit(Function) unwraps ANY and visit(EqualsTo) folds a list right-hand side into an
-         * SqlInCondition.
-         */
-        transformedStr = transformedStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
-
-
-        /*
-         * The Postgres "ARRAY[...]" wrapper is dropped, leaving the bare element list. Used within
-         * an enumeration, the elements alone carry the whole meaning.
-         *
-         * The group excludes "]" so the match ends at the array's own closing bracket rather than
-         * at the last one anywhere in the string.
-         *
-         * Not a parser limitation either: JSQLParser 4.9 parses "x = ARRAY[1,2]" fine, as an
-         * EqualsTo whose right side is an ArrayConstructor. JSqlVisitor throws "not yet
-         * implemented" from visit(ArrayConstructor).
-         *
-         * TODO Upgrading JSQLParser has no effect here either. It can be dropped once
-         * visit(ArrayConstructor) pushes the element list, which is the same SqlConditionList that
-         * visit(ExpressionList) already builds for an IN.
-         */
-        transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^\\]]*)\\]", "$1");
 
         /*
          * MySQL Enum.

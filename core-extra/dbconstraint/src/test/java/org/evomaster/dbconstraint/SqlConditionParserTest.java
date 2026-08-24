@@ -53,6 +53,11 @@ class SqlConditionParserTest {
         return new SqlInCondition(column(columName), stringLiteralList);
     }
 
+    private static SqlInCondition inNumbers(String columName, int... values) {
+        List<SqlCondition> literals = Arrays.stream(values).mapToObj(SqlConditionParserTest::intL).collect(Collectors.toList());
+        return new SqlInCondition(column(columName), new SqlConditionList(literals));
+    }
+
     private static SqlCondition parse(String conditionSqlStr, ConstraintDatabaseType databaseType) throws SqlConditionParserException {
         JSqlConditionParser parser = new JSqlConditionParser();
         return parser.parse(conditionSqlStr, databaseType);
@@ -322,27 +327,63 @@ class SqlConditionParserTest {
     }
 
     /**
-     * PostgreSQL also emits the ANY/ARRAY pair without the array cast, and a bare ARRAY can appear on
-     * its own. Neither is covered by the rule that recognises the full enum shape, so the general
-     * ARRAY rule has to keep handling them.
+     * PostgreSQL also emits the ANY/ARRAY pair without the array cast. JSQLParser reads that spelling,
+     * so no rewriting happens and the shape reaches the visitor intact: "= ANY (ARRAY[...])" asks
+     * whether the column is one of the alternatives, which is what IN means.
      */
     @Test
-    void testArrayWithoutCastIsStillTransformed() throws Exception {
-        JSqlConditionParser parser = new JSqlConditionParser();
+    void testAnyOverArrayIsAMembershipTest() throws Exception {
+        assertEquals(in("c", "A", "B"),
+                parse("(c = ANY (ARRAY['A', 'B']))", ConstraintDatabaseType.POSTGRES));
+    }
 
-        assertNotNull(parser.parse("(c = ANY (ARRAY['A', 'B']))", ConstraintDatabaseType.POSTGRES));
+    /** SOME is a synonym of ANY, and has to translate the same way. */
+    @Test
+    void testSomeOverArrayIsAMembershipTest() throws Exception {
+        assertEquals(in("c", "A", "B"),
+                parse("(c = SOME (ARRAY['A', 'B']))", ConstraintDatabaseType.POSTGRES));
     }
 
     /**
-     * Two arrays in one expression. The rule used to exclude only '<' from its group, so the match ran
-     * from the first "ARRAY[" to the last "]" anywhere in the string and swallowed everything between
-     * them, producing "(a = 1,2] AND b = ARRAY[3,4)". Excluding ']' ends each match at its own array.
+     * Two arrays in one expression, each inside its own IN. The parenthesis around an array is itself
+     * an expression list, so the elements arrive one level deeper than for a plain IN; each array has
+     * to yield its own alternatives rather than a single nested value.
      */
     @Test
     void testTwoArraysInOneExpression() throws Exception {
-        JSqlConditionParser parser = new JSqlConditionParser();
+        assertEquals(and(inNumbers("a", 1, 2), inNumbers("b", 3, 4)),
+                parse("(a IN (ARRAY[1,2]) AND b IN (ARRAY[3,4]))", ConstraintDatabaseType.POSTGRES));
+    }
 
-        assertNotNull(parser.parse("(a IN (ARRAY[1,2]) AND b IN (ARRAY[3,4]))", ConstraintDatabaseType.POSTGRES));
+    /**
+     * ALL requires every element to match rather than one, so it is not a membership test and must not
+     * be folded into an IN. Left untranslated rather than answered with a different question.
+     */
+    @Test
+    void testAllOverArrayIsNotAMembershipTest() {
+        assertThrows(RuntimeException.class,
+                () -> parse("(c = ALL (ARRAY['A', 'B']))", ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
+     * A bare "c = ARRAY[...]" compares the column against an array value instead of testing
+     * membership in it. There is no node for that, and reading it as an IN would make the constraint
+     * mean something it does not say.
+     */
+    @Test
+    void testArrayEqualityIsNotAMembershipTest() {
+        assertThrows(RuntimeException.class,
+                () -> parse("c = ARRAY['A', 'B']", ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
+     * PostgreSQL can also spell an array as a string literal. Its elements are not visible as
+     * expressions, so there is nothing to enumerate and the condition is left untranslated.
+     */
+    @Test
+    void testAnyOverAStringLiteralIsNotTranslated() {
+        assertThrows(RuntimeException.class,
+                () -> parse("c = ANY ('{A,B}')", ConstraintDatabaseType.POSTGRES));
     }
 
     @Timeout(value = 10, unit = SECONDS)
