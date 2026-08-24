@@ -81,9 +81,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     companion object {
         private const val MAX_CACHE_SIZE = 500
 
-        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
-        // epoch<->string conversions round-trip consistently.
+        // The single layout emitted when turning an epoch value back into a SQL literal. JSqlVisitor
+        // reads a superset of the layouts a database may emit, of which this is one, so the value
+        // round-trips: what is written here is read back to the same instant.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+        /**
+         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. The canonical one is
+         * taken from the generator rather than repeated, so the two cannot drift apart; consolidating
+         * all three type vocabularies into one source of truth remains future work.
+         */
+        private val BOOLEAN_SPELLINGS = setOf(SmtLibGenerator.BOOLEAN_TYPE, "BOOL")
     }
 
     @Inject
@@ -384,7 +392,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             it.name.equals(columnName, ignoreCase = true)
         } ?: return false
 
-        return col.type.equals(expectedType, ignoreCase = true)
+        return typeMatches(col.type, expectedType)
+    }
+
+    /**
+     * Whether a column's declared type is the expected one, accounting for spellings that
+     * [SmtLibGenerator.TYPE_MAP] already treats as equivalent.
+     *
+     * Without this, a column declared `BOOL` is encoded as an SMT String exactly like a `BOOLEAN`
+     * one — the type map sends both to the same sort — but is not recognised as boolean when the
+     * solution is turned back into genes, so it silently loses its boolean handling and arrives as
+     * a string.
+     */
+    internal fun typeMatches(declaredType: String, expectedType: String): Boolean {
+        val declared = declaredType.uppercase()
+        val expected = expectedType.uppercase()
+        if (declared == expected) return true
+        return BOOLEAN_SPELLINGS.contains(declared) && BOOLEAN_SPELLINGS.contains(expected)
     }
 
     /**
@@ -501,8 +525,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param type The column type as a string.
      * @return The corresponding ColumnDataType.
      */
-    private fun getColumnDataType(type: String): ColumnDataType {
-        return when (type) {
+    internal fun getColumnDataType(type: String): ColumnDataType {
+        // Matched case-insensitively. SmtLibGenerator.TYPE_MAP uppercases before looking up, so a
+        // backend reporting a lowercase spelling used to be mapped there but fall through to the
+        // default here — the two vocabularies disagreeing silently about the same column.
+        return when (type.uppercase()) {
             "BIGINT" -> ColumnDataType.BIGINT
             "INTEGER" -> ColumnDataType.INTEGER
             "FLOAT" -> ColumnDataType.FLOAT
