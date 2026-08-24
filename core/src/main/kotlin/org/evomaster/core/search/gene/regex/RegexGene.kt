@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -92,20 +93,7 @@ class RegexGene(
             }
             if (hasAssertions) {
                 val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
-                if(assertionRepairResult.success){
-                    javaPrefix = assertionRepairResult.neededPrefix
-                        ?: if(randomness.nextBoolean()){
-                            ""
-                        } else {
-                            "prefix_"
-                        }
-                    javaPostfix = assertionRepairResult.neededPostfix
-                        ?: if(randomness.nextBoolean()){
-                            ""
-                        } else {
-                            "_postfix"
-                        }
-                }
+                setPrefixAndPostfix(assertionRepairResult, randomness)
                 if (pattern.matcher(getValueAsRawString()).find()) {
                     return
                 }
@@ -113,6 +101,28 @@ class RegexGene(
         }
 
         throw IllegalStateException("Could not repair regex value")
+    }
+
+    /**
+     * Set prefix and postfix according to [repairResult], which may carry requirements (like empty prefix
+     * or "a" as postfix). If a side has no requirements (neededPre/Postfix is null) we can randomly set
+     * a pre/postfix.
+     */
+    private fun setPrefixAndPostfix(repairResult: AssertionRepairResult, randomness: Randomness) {
+        if (repairResult.success) {
+            javaPrefix = repairResult.neededPrefix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "prefix_"
+                }
+            javaPostfix = repairResult.neededPostfix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "_postfix"
+                }
+        }
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
@@ -201,7 +211,7 @@ class RegexGene(
             return fixedValue!!
         }
 
-        return if(regexType == RegexType.JVM){
+        return if(requiresAssertionHandling){
             javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
         } else {
             disjunctions.getValueAsPrintableString(targetFormat = null)

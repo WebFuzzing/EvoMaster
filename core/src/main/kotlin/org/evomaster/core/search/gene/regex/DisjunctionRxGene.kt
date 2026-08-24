@@ -365,12 +365,12 @@ class DisjunctionRxGene(
      * Selects target and dispatches to corresponding repair method for the [assertion] located at index [idx].
      */
     private fun repairAssertion(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
-        val backward = assertion.assertionType.direction == Direction.BACKWARD
+        val backward = assertion.assertionType.backward
         val target = if (backward) genesBefore(idx) else genesAfter(idx)
 
         val resolution = when (assertion.assertionType) {
             AssertionType.LOOKAHEAD, AssertionType.LOOKBEHIND ->
-                repairAssertionWithContent(assertion, target, backward, randomness)
+                repairLookaroundAssertion(assertion, target, backward, randomness)
             AssertionType.START_OF_INPUT, AssertionType.END_OF_INPUT ->
                 repairStrictBoundaryAssertion(target, backward)
             AssertionType.CARET, AssertionType.DOLLAR ->
@@ -380,51 +380,9 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Repairs a multiline boundary assertion (^$), which can be either a line terminator or an end of the string.
+     * Repairs a lookaround [assertion] (lookahead/lookbehind) against a [target].
      */
-    private fun repairCaretOrDollar(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
-        return if(!assertion.flags.multiline){
-            repairStrictBoundaryAssertion(target, backward)
-        } else {
-            val lineTerminatorRanges = assertion.flags.lineTerminatorRanges
-            tryInRandomOrder(
-                { repairTargetFromCharRanges(lineTerminatorRanges, target, backward, randomness) },
-                { repairStrictBoundaryAssertion(target, backward) },
-                randomness
-            )
-        }
-    }
-
-    /**
-     * Try two repair functions in random order, if the first one tried fails try the other.
-     */
-    private fun tryInRandomOrder(repairA: () -> AssertionRepairResult, repairB: () -> AssertionRepairResult, randomness: Randomness): AssertionRepairResult {
-        val (first, second) = if (randomness.nextBoolean()) {
-            repairA to repairB
-        } else {
-            repairB to repairA
-        }
-
-        val result = first()
-        return if (result.success) result else second()
-    }
-
-    /**
-     * Attempts repair by trying to force a character sampled from [ranges] into [target].
-     */
-    private fun repairTargetFromCharRanges(ranges: MultiCharacterRange, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
-        repeat(MAX_LOCAL_ASSERTION_ATTEMPTS){
-            val candidate = ranges.sample(randomness).toString()
-            val result = resolveOutwardRequirement(candidate, target, backward)
-            if(result.success) return result
-        }
-        return AssertionRepairResult.FAILURE
-    }
-
-    /**
-     * Repairs [assertion] with content against a [target].
-     */
-    private fun repairAssertionWithContent(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+    private fun repairLookaroundAssertion(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
         return if (target.isEmpty()) {
             repairAssertionWithNoTarget(assertion, backward, randomness)
         } else {
@@ -473,6 +431,56 @@ class DisjunctionRxGene(
 
         val candidate = lastCandidate ?: return AssertionRepairResult.FAILURE
         return resolveOutwardRequirement(candidate, target, backward)
+    }
+
+    /**
+     * Repair input boundary assertions (non-multiline `^` and `$` for example) by forcing target
+     * (and whatever follows) to zero width.
+     */
+    private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
+        resolveEmptyRequirement(target, backward)
+
+    /**
+     * Repairs a (potentially multiline) boundary assertion (^$), which can be either a line terminator
+     * or an end of the string.
+     */
+    private fun repairCaretOrDollar(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if(!assertion.flags.multiline){
+            repairStrictBoundaryAssertion(target, backward)
+        } else {
+            val lineTerminatorRanges = assertion.flags.lineTerminatorRanges
+            tryInRandomOrder(
+                { repairTargetFromCharRanges(lineTerminatorRanges, target, backward, randomness) },
+                { repairStrictBoundaryAssertion(target, backward) },
+                randomness
+            )
+        }
+    }
+
+    /**
+     * Try two repair functions in random order, if the first one tried fails try the other.
+     */
+    private fun tryInRandomOrder(repairA: () -> AssertionRepairResult, repairB: () -> AssertionRepairResult, randomness: Randomness): AssertionRepairResult {
+        val (first, second) = if (randomness.nextBoolean()) {
+            repairA to repairB
+        } else {
+            repairB to repairA
+        }
+
+        val result = first()
+        return if (result.success) result else second()
+    }
+
+    /**
+     * Attempts repair by trying to force a character sampled from [ranges] into [target].
+     */
+    private fun repairTargetFromCharRanges(ranges: MultiCharacterRange, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        repeat(MAX_LOCAL_ASSERTION_ATTEMPTS){
+            val candidate = ranges.sample(randomness).toString()
+            val result = resolveOutwardRequirement(candidate, target, backward)
+            if(result.success) return result
+        }
+        return AssertionRepairResult.FAILURE
     }
 
     /**
@@ -550,10 +558,4 @@ class DisjunctionRxGene(
             )
         }
     }
-
-    /**
-     * Repair input boundary assertions (`^` and `$` for example) by forcing taget (and whatever follows) to zero width.
-     */
-    private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
-        resolveEmptyRequirement(target, backward)
 }

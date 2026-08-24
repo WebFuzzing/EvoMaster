@@ -12,20 +12,15 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.evomaster.core.utils.RegexFlags
 
 /**
- * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
- */
-enum class Direction { FORWARD, BACKWARD }
-
-/**
  * Distinguishes the different assertion types an [AssertionRxGene] represents.
  */
-enum class AssertionType(val direction: Direction, val hasContent: Boolean) {
-    LOOKAHEAD(Direction.FORWARD, hasContent = true),
-    LOOKBEHIND(Direction.BACKWARD, hasContent = true),
-    START_OF_INPUT(Direction.BACKWARD, hasContent = false),
-    END_OF_INPUT(Direction.FORWARD, hasContent = false),
-    CARET(Direction.BACKWARD, hasContent = false),
-    DOLLAR(Direction.FORWARD, hasContent = false)
+enum class AssertionType(val backward: Boolean, val hasContent: Boolean) {
+    LOOKAHEAD(false, hasContent = true),
+    LOOKBEHIND(true, hasContent = true),
+    START_OF_INPUT(true, hasContent = false),
+    END_OF_INPUT(false, hasContent = false),
+    CARET(true, hasContent = false),
+    DOLLAR(false, hasContent = false)
 }
 
 /**
