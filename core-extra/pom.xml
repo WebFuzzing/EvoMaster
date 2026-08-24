@@ -17,5 +17,6 @@
         <module>dbconstraint</module>
         <module>solver</module>
         <module>arazzo-parser</module>
+        <module>asyncapi-parser</module>
     </modules>
 </project>
