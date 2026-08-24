@@ -356,6 +356,60 @@ class SqlConditionParserTest {
     }
 
     /**
+     * The shape PostgreSQL emits for an enumerated column, with the array wrapped in a cast. JSQLParser
+     * cannot read this one, so it is still rewritten before parsing.
+     */
+    @Test
+    void testEnumWithArrayCast() throws Exception {
+        assertEquals(in("c", "A", "B"),
+                parse("((c)::text = ANY ((ARRAY['A'::character varying, 'B'::character varying])::text[]))",
+                        ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
+     * The same shape cast to a type whose name is two words. PostgreSQL spells several of its types
+     * that way, "character varying" and "double precision" among them. A pattern matching a single
+     * word skips these constraints entirely: nothing is rewritten, JSQLParser then rejects the
+     * expression, and the constraint is discarded without any counter recording it.
+     */
+    @Test
+    void testEnumCastToAMultiWordType() throws Exception {
+        assertEquals(in("c", "A"),
+                parse("((c)::text = ANY ((ARRAY['A'::character varying])::character varying[]))",
+                        ConstraintDatabaseType.POSTGRES));
+        assertEquals(in("c", "A"),
+                parse("((c)::text = ANY ((ARRAY['A'::text])::double precision[]))",
+                        ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
+     * PostgreSQL also casts each element instead of the array. Nothing needs rewriting here, since
+     * JSQLParser reads it and the visitor drops the casts on its way to the literals.
+     */
+    @Test
+    void testEnumWithPerElementCasts() throws Exception {
+        assertEquals(in("c", "A", "B"),
+                parse("((c)::text = ANY (ARRAY[('A'::character varying)::text, ('B'::character varying)::text]))",
+                        ConstraintDatabaseType.POSTGRES));
+    }
+
+    /** A schema dump wraps long constraints, so the shape has to survive newlines inside it. */
+    @Test
+    void testEnumSpanningSeveralLines() throws Exception {
+        assertEquals(in("c", "A", "B"),
+                parse("((c)::text = ANY\n   ((ARRAY['A'::character varying,\n     'B'::character varying])::text[]))",
+                        ConstraintDatabaseType.POSTGRES));
+    }
+
+    /** The enum test is rarely alone in a CHECK, and rewriting it must not disturb its neighbours. */
+    @Test
+    void testEnumAlongsideAnotherCondition() throws Exception {
+        assertEquals(and(in("c", "A"), new SqlComparisonCondition(column("n"), SqlComparisonOperator.GREATER_THAN, intL(0))),
+                parse("((c)::text = ANY ((ARRAY['A'::character varying])::text[])) AND (n > 0)",
+                        ConstraintDatabaseType.POSTGRES));
+    }
+
+    /**
      * ALL requires every element to match rather than one, so it is not a membership test and must not
      * be folded into an IN. Left untranslated rather than answered with a different question.
      */

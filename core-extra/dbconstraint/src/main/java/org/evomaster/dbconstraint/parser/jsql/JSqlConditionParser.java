@@ -95,11 +95,15 @@ public class JSqlConditionParser implements SqlConditionParser {
          * failing on "ANY ((" before it reaches the array. The uncast spellings need no rewriting,
          * since JSqlVisitor translates them directly.
          *
+         * The cast target is matched as a sequence of words, not a single one: PostgreSQL spells
+         * types like "character varying" and "double precision" with a space, and a pattern that
+         * accepted only one word silently skipped those constraints.
+         *
          * TODO Removable once JSQLParser parses the cast form. The expression would then be an
          * EqualsTo over an ANY function, which JSqlVisitor already handles.
          */
         String transformedStr = originalSqlStr.replaceAll(
-                "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+\\s*\\[\\s*\\]\\s*\\)",
+                "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+(?:\\s+\\w+)*\\s*\\[\\s*\\]\\s*\\)",
                 " IN ($1)");
 
         /*
