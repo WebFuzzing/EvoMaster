@@ -4,9 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.webfuzzing.asyncapi.mapper.AsyncApiMapper;
+import com.webfuzzing.asyncapi.models.AsyncApiChannel;
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
 import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.AsyncApiMessage;
+import com.webfuzzing.asyncapi.models.AsyncApiOperation;
+import com.webfuzzing.asyncapi.models.AsyncApiReply;
 import com.webfuzzing.asyncapi.models.DocumentLocation;
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver;
 
@@ -18,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +39,10 @@ import java.util.Set;
  * affects.
  */
 public class AsyncApiParser {
+
+    private static final String CHANNEL_REF_PREFIX = "#/channels/";
+
+    private static final String MESSAGE_REF_PREFIX = "#/components/messages/";
 
     private static final String KAFKA = "kafka";
 
@@ -112,6 +120,7 @@ public class AsyncApiParser {
             }
         }
 
+        //messages first: channels refer to them, and inline ones are added to the same map
         Map<String, AsyncApiMessage> messages = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> entry : componentsOf(root, "messages").entrySet()) {
             AsyncApiMessage message = parseMessage(
@@ -121,8 +130,26 @@ public class AsyncApiParser {
             }
         }
 
+        Map<String, AsyncApiChannel> channels = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("channels")).entrySet()) {
+            channels.put(entry.getKey(), parseChannel(
+                    entry.getKey(), entry.getValue(), root, defaultContentType,
+                    componentSchemas, messages, warnings));
+        }
+
+        Map<String, AsyncApiOperation> operations = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("operations")).entrySet()) {
+            AsyncApiOperation operation = parseOperation(
+                    entry.getKey(), entry.getValue(), root, channels, messages, warnings);
+            if (operation != null) {
+                operations.put(entry.getKey(), operation);
+            }
+        }
+
         return AsyncApiDocument.builder(schemaText, location, version)
                 .defaultContentType(defaultContentType)
+                .channels(channels)
+                .operations(operations)
                 .messages(messages)
                 .componentSchemas(componentSchemas)
                 .warnings(warnings)
@@ -346,6 +373,347 @@ public class AsyncApiParser {
         return parsed;
     }
 
+    // ------------------------------------------------------------------ channels
+
+    private static AsyncApiChannel parseChannel(
+            String name,
+            JsonNode rawNode,
+            JsonNode root,
+            String defaultContentType,
+            Map<String, JsonNode> componentSchemas,
+            Map<String, AsyncApiMessage> messages,
+            List<String> warnings) {
+
+        JsonNode dereferenced = dereference(rawNode, root, warnings);
+        JsonNode node = dereferenced == null ? rawNode : dereferenced;
+
+        Map<String, String> messageKeys = new LinkedHashMap<>();
+
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(node.get("messages")).entrySet()) {
+            String id = resolveChannelMessage(
+                    name, entry.getKey(), entry.getValue(), root, defaultContentType,
+                    componentSchemas, messages, warnings);
+            if (id != null) {
+                messageKeys.put(entry.getKey(), id);
+            }
+        }
+
+        return AsyncApiChannel.builder(name)
+                .address(scalarOf(node.get("address")))
+                .messageKeys(messageKeys)
+                .build();
+    }
+
+    /**
+     * Work out which message a channel entry stands for, registering it if it was written
+     * inline rather than referenced.
+     *
+     * @return the id under which the message can be found, or null when it could not be read
+     */
+    private static String resolveChannelMessage(
+            String channelName,
+            String localKey,
+            JsonNode entry,
+            JsonNode root,
+            String defaultContentType,
+            Map<String, JsonNode> componentSchemas,
+            Map<String, AsyncApiMessage> messages,
+            List<String> warnings) {
+
+        String ref = AsyncApiRefResolver.refOf(entry);
+        String id = channelName + "." + localKey;
+
+        if (ref == null) {
+            //written inline: promote it, so that it is reachable like any other message
+            return register(
+                    parseMessage(id, entry, root, defaultContentType, componentSchemas, warnings), messages);
+        }
+
+        /*
+            A channel may add to what it references. When it does, the result is a variant
+            belonging to this channel rather than the shared definition, so it is registered
+            separately: another channel carrying the same message must not inherit it.
+         */
+        boolean overridden = hasFieldsBesidesRef(entry);
+
+        if (!overridden) {
+
+            String componentKey = AsyncApiRefResolver.refKey(ref, MESSAGE_REF_PREFIX);
+
+            if (componentKey != null) {
+
+                if (messages.containsKey(componentKey)) {
+                    return componentKey;
+                }
+
+                warnings.add(
+                        "Channel '" + channelName + "' refers to message '" + componentKey + "', which"
+                                + " is not declared (or could not be read). The message is ignored.");
+                return null;
+            }
+        }
+
+        /*
+            Either an overridden message, or a pointer somewhere other than the component
+            messages. Follow it all the way: the target may itself be an alias, and overlaying
+            onto an alias would leave a $ref that later throws the overrides away again.
+         */
+        JsonNode resolved = dereference(entry, root, warnings);
+
+        if (resolved == null) {
+            warnings.add(
+                    "Channel '" + channelName + "' has a message '" + localKey + "' that could not be read");
+            return null;
+        }
+
+        JsonNode definition = overridden ? shallowMerge(resolved, entry) : resolved;
+
+        return register(
+                parseMessage(id, definition, root, defaultContentType, componentSchemas, warnings), messages);
+    }
+
+    /**
+     * Add a message to the map it is reachable from, and give back its id.
+     */
+    private static String register(AsyncApiMessage message, Map<String, AsyncApiMessage> messages) {
+
+        if (message == null) {
+            return null;
+        }
+
+        messages.put(message.getId(), message);
+
+        return message.getId();
+    }
+
+    private static boolean hasFieldsBesidesRef(JsonNode node) {
+
+        Iterator<String> names = node.fieldNames();
+
+        while (names.hasNext()) {
+            if (!REF.equals(names.next())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------ operations
+
+    private static AsyncApiOperation parseOperation(
+            String name,
+            JsonNode rawNode,
+            JsonNode root,
+            Map<String, AsyncApiChannel> channels,
+            Map<String, AsyncApiMessage> messages,
+            List<String> warnings) {
+
+        JsonNode declared = dereference(rawNode, root, warnings);
+
+        if (declared == null) {
+            return null;
+        }
+
+        JsonNode node = applyTraits(declared, root, "operationTraits", warnings);
+
+        AsyncApiOperation.Action action = actionOf(node.get("action"));
+
+        if (action == null) {
+            warnings.add(
+                    "Operation '" + name + "' declares no valid 'action' (must be 'send' or 'receive'),"
+                            + " and is ignored");
+            return null;
+        }
+
+        String channelRef = AsyncApiRefResolver.refOf(node.get("channel"));
+        String channelName = channelRef == null
+                ? null
+                : AsyncApiRefResolver.refKey(channelRef, CHANNEL_REF_PREFIX);
+
+        if (channelName == null || !channels.containsKey(channelName)) {
+            warnings.add(
+                    "Operation '" + name + "' does not refer to a declared channel"
+                            + (channelRef == null ? "" : " (reference was '" + channelRef + "')")
+                            + ", and is ignored");
+            return null;
+        }
+
+        AsyncApiChannel channel = channels.get(channelName);
+        List<String> messageIds =
+                selectMessages(node.get("messages"), channel, channels, messages, name, warnings);
+
+        if (messageIds.isEmpty()) {
+            warnings.add(
+                    "Operation '" + name + "' has no usable message on channel '" + channelName + "',"
+                            + " so nothing can be built for it");
+        }
+
+        return AsyncApiOperation.builder(name, action, channelName)
+                .messageIds(messageIds)
+                .reply(parseReply(node.get("reply"), root, channels, messages, name, warnings))
+                .title(scalarOf(node.get("title")))
+                .summary(scalarOf(node.get("summary")))
+                .description(scalarOf(node.get("description")))
+                .build();
+    }
+
+    private static AsyncApiOperation.Action actionOf(JsonNode node) {
+
+        String action = scalarOf(node);
+
+        if (action == null) {
+            return null;
+        }
+
+        switch (action.toLowerCase(Locale.ENGLISH)) {
+            case "send":
+                return AsyncApiOperation.Action.SEND;
+            case "receive":
+                return AsyncApiOperation.Action.RECEIVE;
+            default:
+                return null;
+        }
+    }
+
+    private static AsyncApiReply parseReply(
+            JsonNode rawNode,
+            JsonNode root,
+            Map<String, AsyncApiChannel> channels,
+            Map<String, AsyncApiMessage> messages,
+            String operationName,
+            List<String> warnings) {
+
+        if (rawNode == null || rawNode.isNull()) {
+            return null;
+        }
+
+        JsonNode node = dereference(rawNode, root, warnings);
+
+        if (node == null) {
+            return null;
+        }
+
+        String channelRef = AsyncApiRefResolver.refOf(node.get("channel"));
+        String channelName = channelRef == null
+                ? null
+                : AsyncApiRefResolver.refKey(channelRef, CHANNEL_REF_PREFIX);
+
+        AsyncApiChannel replyChannel = channelName == null ? null : channels.get(channelName);
+
+        if (channelName != null && replyChannel == null) {
+            warnings.add(
+                    "The reply of operation '" + operationName + "' refers to channel '" + channelName
+                            + "', which is not declared");
+        }
+
+        List<String> messageIds = replyChannel == null
+                ? new ArrayList<String>()
+                : selectMessages(node.get("messages"), replyChannel, channels, messages, operationName, warnings);
+
+        //the address may be declared here or shared through components.replyAddresses
+        JsonNode rawAddress = node.get("address");
+        JsonNode address = rawAddress == null ? null : dereference(rawAddress, root, warnings);
+
+        return new AsyncApiReply(
+                replyChannel == null ? null : replyChannel.getName(),
+                messageIds,
+                address == null ? null : scalarOf(address.get("location")));
+    }
+
+    /**
+     * The messages an operation, or a reply, actually carries.
+     *
+     * A {@code messages} array picks out a subset of what the channel offers; without one,
+     * every message of the channel is in play. Entries normally address the channel
+     * ({@code #/channels/<c>/messages/<k>}) but a direct reference to a component message is
+     * accepted too, as documents in the wild write both.
+     */
+    private static List<String> selectMessages(
+            JsonNode node,
+            AsyncApiChannel channel,
+            Map<String, AsyncApiChannel> channels,
+            Map<String, AsyncApiMessage> messages,
+            String owner,
+            List<String> warnings) {
+
+        if (node == null || !node.isArray() || node.size() == 0) {
+            return new ArrayList<>(channel.getMessageIds());
+        }
+
+        /*
+            Note there is no falling back to the whole channel when nothing here can be
+            resolved: the operation narrowed the set deliberately, and quietly widening it again
+            would have it drive messages it never claimed to.
+         */
+        Set<String> selected = new LinkedHashSet<>();
+
+        for (String ref : refsOf(node)) {
+
+            /*
+                Both forms have to be checked against what actually survived parsing, not just
+                turned into a key: a message may have been dropped for being unreadable, and an
+                operation left holding its id would look drivable while having nothing to send.
+             */
+            String id = AsyncApiRefResolver.refKey(ref, MESSAGE_REF_PREFIX);
+
+            if (id == null) {
+                id = channelScopedMessage(ref, channels);
+            }
+
+            if (id != null && messages.containsKey(id)) {
+                selected.add(id);
+                continue;
+            }
+
+            if (isChannelScopedMessageRef(ref) || ref.startsWith(MESSAGE_REF_PREFIX)) {
+                warnings.add(
+                        "Operation '" + owner + "' selects message '" + ref + "', which is not available"
+                                + " (it may itself have been skipped)");
+            } else {
+                warnings.add(
+                        "Operation '" + owner + "' selects a message with unsupported reference '"
+                                + ref + "'");
+            }
+        }
+
+        return new ArrayList<>(selected);
+    }
+
+    /**
+     * Resolve {@code #/channels/<channel>/messages/<localKey>} to a message id.
+     */
+    private static String channelScopedMessage(String ref, Map<String, AsyncApiChannel> channels) {
+
+        String[] segments = channelScopedMessageSegments(ref);
+
+        if (segments == null) {
+            return null;
+        }
+
+        AsyncApiChannel channel = channels.get(segments[0]);
+
+        return channel == null ? null : channel.getMessageKeys().get(segments[2]);
+    }
+
+    /**
+     * Whether a reference addresses a message through its channel, whatever it resolves to.
+     */
+    private static boolean isChannelScopedMessageRef(String ref) {
+        return channelScopedMessageSegments(ref) != null;
+    }
+
+    private static String[] channelScopedMessageSegments(String ref) {
+
+        if (!ref.startsWith(CHANNEL_REF_PREFIX)) {
+            return null;
+        }
+
+        String[] segments = ref.substring(CHANNEL_REF_PREFIX.length()).split("/", -1);
+
+        return segments.length == 3 && "messages".equals(segments[1]) ? segments : null;
+    }
+
     // ------------------------------------------------------------------ shared helpers
 
     /**
@@ -543,6 +911,27 @@ public class AsyncApiParser {
         String value = scalarOf(node);
 
         return value == null ? fallback : value;
+    }
+
+    /**
+     * The {@code $ref} of every entry of an array.
+     */
+    private static List<String> refsOf(JsonNode node) {
+
+        List<String> refs = new ArrayList<>();
+
+        if (node == null || !node.isArray()) {
+            return refs;
+        }
+
+        for (JsonNode entry : node) {
+            String ref = AsyncApiRefResolver.refOf(entry);
+            if (ref != null) {
+                refs.add(ref);
+            }
+        }
+
+        return refs;
     }
 
     /**

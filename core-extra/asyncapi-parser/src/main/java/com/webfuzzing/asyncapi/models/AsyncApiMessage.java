@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * One message definition, i.e. the shape of what travels on a channel.
  *
- * A message is what a channel carries: a payload, optional headers, and the metadata that says
- * how to read them.
+ * Messages declared under {@code components.messages} and messages written inline inside a
+ * channel both end up here; the only difference is the {@link #getId()} the latter get.
  */
 public class AsyncApiMessage {
 
@@ -66,8 +66,9 @@ public class AsyncApiMessage {
     }
 
     /**
-     * The key this message is registered under in {@link AsyncApiDocument#getMessages()}, which
-     * is its component key under {@code components.messages}.
+     * The key this message is registered under in {@link AsyncApiDocument#getMessages()}: its
+     * component key when it was declared under {@code components.messages}, or the synthetic
+     * {@code <channelKey>.<localMessageKey>} when it was written inline in a channel.
      */
     public String getId() {
         return id;

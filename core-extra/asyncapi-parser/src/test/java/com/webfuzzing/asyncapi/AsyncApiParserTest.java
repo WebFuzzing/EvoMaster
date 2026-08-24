@@ -1,9 +1,12 @@
 package com.webfuzzing.asyncapi;
 
 import com.webfuzzing.asyncapi.access.AsyncApiAccess;
+import com.webfuzzing.asyncapi.models.AsyncApiChannel;
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
 import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.AsyncApiMessage;
+import com.webfuzzing.asyncapi.models.AsyncApiOperation;
+import com.webfuzzing.asyncapi.models.AsyncApiReply;
 import com.webfuzzing.asyncapi.parser.AsyncApiParsingException;
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +67,17 @@ public class AsyncApiParserTest {
 
     private static Set<String> setOf(String... values) {
         return new LinkedHashSet<>(Arrays.asList(values));
+    }
+
+    private static List<String> namesOf(List<AsyncApiMessage> messages) {
+
+        List<String> names = new ArrayList<>();
+
+        for (AsyncApiMessage message : messages) {
+            names.add(message.getName());
+        }
+
+        return names;
     }
 
     // ------------------------------------------------------------------ the shape of a document
@@ -199,6 +213,7 @@ public class AsyncApiParserTest {
         assertTrue(document.getMessages().isEmpty());
         assertTrue(document.getComponentSchemas().isEmpty());
         assertTrue(document.getWarnings().isEmpty());
+        assertTrue(document.getOperations().isEmpty());
     }
 
     // ------------------------------------------------------------------ correlation
@@ -547,6 +562,257 @@ public class AsyncApiParserTest {
 
         assertTrue(document.getMessages().containsKey("request"));
         assertTrue(document.getComponentSchemas().containsKey("Node"));
+    }
+
+    // ------------------------------------------------------------------ channels and operations
+
+    @Test
+    public void testInlineMessagesArePromoted() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        //no components.messages at all: everything was written inside its channel
+        assertEquals(2, document.getMessages().size());
+        assertTrue(document.getMessages().containsKey("signup.request"));
+        assertTrue(document.getMessages().containsKey("signupReply.ok"));
+
+        AsyncApiChannel channel = document.getChannels().get("signup");
+        assertEquals("user/signup", channel.getAddress());
+        assertEquals(setOf("request"), channel.getMessageKeys().keySet());
+        assertEquals("signup.request", channel.getMessageKeys().get("request"));
+
+        AsyncApiMessage message = document.getMessages().get("signup.request");
+        assertEquals("SignupRequest", message.getName());
+        //assert the content, so that swapping payload and headers would be caught
+        assertTrue(message.getPayload().get("properties").has("email"));
+        assertTrue(message.getHeaders().get("properties").has("correlationId"));
+    }
+
+    @Test
+    public void testInlineChannelMessageThatIsNotAnObjectIsDroppedWithAWarning() {
+
+        /*
+            A message written inside a channel is dropped like any other when its payload is not
+            a schema that can be read. The channel is the path where that used to happen in
+            silence: nothing is registered under the local key, and unlike a message referenced
+            by '$ref' there is no second warning about the channel to hint at what went missing.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: An inline message that cannot be read\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      broken:\n"
+                        + "        payload: not a schema\n"
+                        + "      fine:\n"
+                        + "        payload:\n"
+                        + "          type: object\n");
+
+        AsyncApiChannel channel = document.getChannels().get("c");
+
+        //the one that could be read is still there, so the channel is not lost with it
+        assertEquals(setOf("fine"), channel.getMessageKeys().keySet());
+        assertTrue(warns(document, "not a schema"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testChannelWithoutAddressAndDynamicReplyAddress() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        //an explicit 'address: null' means the address is only known at run time
+        assertNull(document.getChannels().get("signupReply").getAddress());
+
+        AsyncApiReply reply = document.getOperations().get("onSignup").getReply();
+        assertNotNull(reply);
+        assertEquals("signupReply", reply.getChannelName());
+        assertEquals("$message.header#/replyTo", reply.getAddressLocation());
+        //no explicit message selection: everything the reply channel carries
+        assertEquals(Arrays.asList("signupReply.ok"), reply.getMessageIds());
+    }
+
+    @Test
+    public void testOperationSelectsSubsetOfChannelMessages() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/websocket-reply.yaml");
+
+        //one duplex channel carrying five different messages
+        AsyncApiChannel channel = document.getChannels().get("vsi");
+        assertEquals(5, channel.getMessageIds().size());
+
+        AsyncApiOperation operation = document.getOperations().get("recv_list_legs");
+        assertEquals(Arrays.asList("listLegs"), operation.getMessageIds());
+
+        AsyncApiReply reply = operation.getReply();
+        //the reply comes back on the very same channel: there is only one socket
+        assertEquals("vsi", reply.getChannelName());
+        assertEquals(Arrays.asList("listLegsResult", "error"), reply.getMessageIds());
+    }
+
+    @Test
+    public void testChannelLocalMessageKeysDifferFromMessageIds() {
+
+        AsyncApiChannel channel =
+                load("/asyncapi/artificial/websocket-reply.yaml").getChannels().get("vsi");
+
+        //the key a $ref uses is the channel's own, not the component id
+        assertEquals("listLegsResult", channel.getMessageKeys().get("list_legs.result"));
+        assertEquals("error", channel.getMessageKeys().get("error"));
+    }
+
+    @Test
+    public void testNarrowedSelectionIsNotWidenedWhenItsMessageIsSkipped() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/narrowed-selection.yaml");
+
+        //the Avro message could not be read, so the channel is left with only the other one
+        assertEquals(Arrays.asList("usable"), document.getChannels().get("events").getMessageIds());
+
+        //an operation that asked for the skipped message gets nothing, rather than the other one
+        assertTrue(document.getOperations().get("onUnreadable").getMessageIds().isEmpty());
+        assertEquals(Arrays.asList("usable"), document.getOperations().get("onUsable").getMessageIds());
+
+        //while one that asked for nothing in particular gets what is left
+        assertEquals(Arrays.asList("usable"), document.getOperations().get("onAnything").getMessageIds());
+
+        assertTrue(warns(document, "not available"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAChannelMayOverrideWhatItReferences() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: A channel adding to a shared message\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        $ref: '#/components/messages/shared'\n"
+                        + "        title: only on this channel\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    shared:\n"
+                        + "      name: Shared\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        /*
+            The override makes it a variant belonging to this channel, registered under its own
+            id. The shared definition must be left alone, or every other channel carrying the
+            same message would silently inherit something meant for this one.
+         */
+        assertEquals(Arrays.asList("c.m"), document.getOperations().get("o").getMessageIds());
+        assertEquals("only on this channel", document.getMessages().get("c.m").getTitle());
+        assertEquals("Shared", document.getMessages().get("c.m").getName());
+        assertNull(document.getMessages().get("shared").getTitle());
+    }
+
+    @Test
+    public void testSendAndReceiveKeepTheirDirection() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+
+        /*
+            The polarity matters and is easy to invert: 'receive' is what the service consumes,
+            so it is what a tester would publish to, and 'send' is what it emits.
+         */
+        assertEquals(AsyncApiOperation.Action.RECEIVE, document.getOperations().get("works").getAction());
+        assertEquals(
+                AsyncApiOperation.Action.SEND,
+                document.getOperations().get("badCorrelationTarget").getAction());
+    }
+
+    @Test
+    public void testOperationTraitsAreMerged() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Boilerplate factored out of the operations\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        payload:\n"
+                        + "          type: object\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "    traits:\n"
+                        + "      - $ref: '#/components/operationTraits/documented'\n"
+                        + "    summary: what the operation states itself\n"
+                        + "components:\n"
+                        + "  operationTraits:\n"
+                        + "    documented:\n"
+                        + "      summary: overridden by the operation\n"
+                        + "      description: from the trait\n");
+
+        AsyncApiOperation operation = document.getOperations().get("o");
+        assertEquals("what the operation states itself", operation.getSummary());
+        assertEquals("from the trait", operation.getDescription());
+    }
+
+    // ------------------------------------------------------------------ degrading gracefully
+
+    @Test
+    public void testBrokenPartsAreSkippedAndTheRestSurvives() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+
+        //only the two well-formed operations are kept
+        assertEquals(setOf("works", "badCorrelationTarget"), document.getOperations().keySet());
+
+        assertTrue(warns(document, "noAction"), document.getWarnings().toString());
+        assertTrue(warns(document, "wrongAction"), document.getWarnings().toString());
+        assertTrue(warns(document, "missingChannel"), document.getWarnings().toString());
+        assertTrue(warns(document, "doesNotExist"), document.getWarnings().toString());
+
+        //the dangling message reference costs only that one message
+        assertEquals(Arrays.asList("request"), document.getChannels().get("good").getMessageIds());
+    }
+
+    // ------------------------------------------------------------------ the model's read API
+
+    @Test
+    public void testResolvingOperationsToTheirChannelAndMessages() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/websocket-reply.yaml");
+        AsyncApiOperation operation = document.getOperations().get("recv_list_legs");
+
+        assertEquals("vsi", document.channelOf(operation).getName());
+        assertEquals("vsi", document.replyChannelOf(operation).getName());
+        assertEquals(Arrays.asList("ListLegs"), namesOf(document.messagesOf(operation)));
+        assertEquals(
+                Arrays.asList("ListLegsResult", "Error"),
+                namesOf(document.replyMessagesOf(operation)));
+    }
+
+    @Test
+    public void testResolvingAnOperationThatDeclaresNoReply() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+        AsyncApiOperation operation = document.getOperations().get("works");
+
+        assertNull(operation.getReply());
+        assertNull(document.replyChannelOf(operation));
+        assertTrue(document.replyMessagesOf(operation).isEmpty());
     }
 
 }
