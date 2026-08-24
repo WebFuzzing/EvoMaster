@@ -3,9 +3,9 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.SqlInitResourceStrategy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -19,7 +19,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
