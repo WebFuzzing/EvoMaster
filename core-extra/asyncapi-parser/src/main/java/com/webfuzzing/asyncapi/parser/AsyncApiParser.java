@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.webfuzzing.asyncapi.mapper.AsyncApiMapper;
 import com.webfuzzing.asyncapi.models.AsyncApiChannel;
+import com.webfuzzing.asyncapi.models.AsyncApiChannelBindings;
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
 import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.AsyncApiMessage;
 import com.webfuzzing.asyncapi.models.AsyncApiOperation;
 import com.webfuzzing.asyncapi.models.AsyncApiReply;
+import com.webfuzzing.asyncapi.models.AsyncApiSecurityScheme;
+import com.webfuzzing.asyncapi.models.AsyncApiServer;
+import com.webfuzzing.asyncapi.models.AsyncApiServerVariable;
 import com.webfuzzing.asyncapi.models.DocumentLocation;
 import com.webfuzzing.asyncapi.resolver.AsyncApiDocumentFetcher;
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver;
@@ -45,7 +49,9 @@ public class AsyncApiParser {
 
     private static final String MESSAGE_REF_PREFIX = "#/components/messages/";
 
-    private static final String KAFKA = "kafka";
+    private static final String SECURITY_REF_PREFIX = "#/components/securitySchemes/";
+
+    private static final String SERVER_REF_PREFIX = "#/servers/";
 
     private static final String REF = "$ref";
 
@@ -119,6 +125,20 @@ public class AsyncApiParser {
             defaultContentType = AsyncApiDocument.DEFAULT_CONTENT_TYPE;
         }
 
+        //security schemes are a mutable map, as schemes can also be declared inline where used
+        Map<String, AsyncApiSecurityScheme> securitySchemes = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : componentsOf(root, "securitySchemes").entrySet()) {
+            AsyncApiSecurityScheme scheme = parseSecurityScheme(entry.getKey(), entry.getValue(), root);
+            if (scheme == null) {
+                //same as for one written inline: a scheme with no 'type' says nothing usable
+                warnings.add(
+                        "The security scheme '" + entry.getKey() + "' declares no 'type'."
+                                + " It is ignored.");
+            } else {
+                securitySchemes.put(entry.getKey(), scheme);
+            }
+        }
+
         Map<String, JsonNode> componentSchemas = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> entry : componentsOf(root, "schemas").entrySet()) {
             JsonNode schema = schemaOf(entry.getValue(), "the component schema '" + entry.getKey() + "'", warnings);
@@ -147,18 +167,29 @@ public class AsyncApiParser {
         Map<String, AsyncApiOperation> operations = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("operations")).entrySet()) {
             AsyncApiOperation operation = parseOperation(
-                    entry.getKey(), entry.getValue(), root, channels, messages, warnings);
+                    entry.getKey(), entry.getValue(), root, channels, messages, securitySchemes, warnings);
             if (operation != null) {
                 operations.put(entry.getKey(), operation);
             }
         }
 
+        Map<String, AsyncApiServer> servers = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("servers")).entrySet()) {
+            AsyncApiServer server =
+                    parseServer(entry.getKey(), entry.getValue(), root, securitySchemes, warnings);
+            if (server != null) {
+                servers.put(entry.getKey(), server);
+            }
+        }
+
         return AsyncApiDocument.builder(schemaText, location, version)
                 .defaultContentType(defaultContentType)
+                .servers(servers)
                 .channels(channels)
                 .operations(operations)
                 .messages(messages)
                 .componentSchemas(componentSchemas)
+                .securitySchemes(securitySchemes)
                 .warnings(warnings)
                 .build();
     }
@@ -203,7 +234,7 @@ public class AsyncApiParser {
         }
 
         Map<String, JsonNode> bindings = dereferencedFields(node.get("bindings"), root, warnings);
-        JsonNode kafka = bindings.get(KAFKA);
+        JsonNode kafka = bindings.get(AsyncApiChannel.KAFKA);
 
         return AsyncApiMessage.builder(id)
                 .name(scalarOr(node.get("name"), id))
@@ -380,6 +411,132 @@ public class AsyncApiParser {
         return parsed;
     }
 
+    // ------------------------------------------------------------------ servers
+
+    private static AsyncApiServer parseServer(
+            String name,
+            JsonNode rawNode,
+            JsonNode root,
+            Map<String, AsyncApiSecurityScheme> securitySchemes,
+            List<String> warnings) {
+
+        JsonNode node = dereference(rawNode, root, warnings);
+
+        if (node == null) {
+            return null;
+        }
+
+        String host = scalarOf(node.get("host"));
+        String protocol = scalarOf(node.get("protocol"));
+
+        if (host == null || protocol == null) {
+            String missing = host == null && protocol == null
+                    ? "host and protocol"
+                    : (host == null ? "host" : "protocol");
+            warnings.add("Server '" + name + "' declares no " + missing + ", and is ignored");
+            return null;
+        }
+
+        Map<String, AsyncApiServerVariable> variables = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(node.get("variables")).entrySet()) {
+            JsonNode variable = entry.getValue();
+            variables.put(entry.getKey(), new AsyncApiServerVariable(
+                    entry.getKey(),
+                    scalarOf(variable.get("default")),
+                    scalarsOf(variable.get("enum")),
+                    scalarOf(variable.get("description"))));
+        }
+
+        return AsyncApiServer.builder(name, host, protocol)
+                .protocolVersion(scalarOf(node.get("protocolVersion")))
+                .pathname(scalarOf(node.get("pathname")))
+                .variables(variables)
+                .security(parseSecurity(
+                        node.get("security"), "server '" + name + "'", root, securitySchemes, warnings))
+                .build();
+    }
+
+    private static AsyncApiSecurityScheme parseSecurityScheme(String name, JsonNode rawNode, JsonNode root) {
+
+        JsonNode node = rawNode;
+        String ref = AsyncApiRefResolver.refOf(rawNode);
+
+        if (ref != null) {
+            JsonNode resolved = AsyncApiRefResolver.resolveLocal(root, ref);
+            if (resolved != null) {
+                node = resolved;
+            }
+        }
+
+        String type = scalarOf(node.get("type"));
+
+        if (type == null) {
+            return null;
+        }
+
+        return new AsyncApiSecurityScheme(
+                name,
+                type.toLowerCase(Locale.ENGLISH),
+                scalarOf(node.get("in")),
+                scalarOf(node.get("scheme")),
+                scalarOf(node.get("bearerFormat")),
+                scalarOf(node.get("description")));
+    }
+
+    /**
+     * Read a {@code security} array, which may hold either references to declared schemes or
+     * schemes written inline. Inline ones are registered under a name derived from where they
+     * appear, so that everything is reachable from one map.
+     */
+    private static List<String> parseSecurity(
+            JsonNode node,
+            String owner,
+            JsonNode root,
+            Map<String, AsyncApiSecurityScheme> securitySchemes,
+            List<String> warnings) {
+
+        if (node == null || !node.isArray()) {
+            return new ArrayList<>();
+        }
+
+        List<String> names = new ArrayList<>();
+
+        for (int index = 0; index < node.size(); index++) {
+
+            JsonNode entry = node.get(index);
+            String ref = AsyncApiRefResolver.refOf(entry);
+
+            if (ref != null) {
+
+                String key = AsyncApiRefResolver.refKey(ref, SECURITY_REF_PREFIX);
+
+                if (key != null && securitySchemes.containsKey(key)) {
+                    names.add(key);
+                } else {
+                    warnings.add(
+                            "The security of " + owner + " refers to '" + ref + "', which is not a"
+                                    + " declared security scheme. It is ignored.");
+                }
+
+            } else {
+
+                String synthetic = owner + ".security." + index;
+                AsyncApiSecurityScheme scheme = parseSecurityScheme(synthetic, entry, root);
+
+                if (scheme == null) {
+                    warnings.add(
+                            "The security of " + owner + " declares a scheme with no 'type'."
+                                    + " It is ignored.");
+                } else {
+                    securitySchemes.put(synthetic, scheme);
+                    names.add(scheme.getName());
+                }
+            }
+        }
+
+        return names;
+    }
+
     // ------------------------------------------------------------------ channels
 
     private static AsyncApiChannel parseChannel(
@@ -405,9 +562,20 @@ public class AsyncApiParser {
             }
         }
 
+        List<String> servers = new ArrayList<>();
+        for (String ref : refsOf(node.get("servers"))) {
+            String key = AsyncApiRefResolver.refKey(ref, SERVER_REF_PREFIX);
+            if (key != null) {
+                servers.add(key);
+            }
+        }
+
         return AsyncApiChannel.builder(name)
                 .address(scalarOf(node.get("address")))
+                .servers(servers)
                 .messageKeys(messageKeys)
+                .parameters(dereferencedFields(node.get("parameters"), root, warnings))
+                .bindings(parseChannelBindings(dereferencedFields(node.get("bindings"), root, warnings)))
                 .build();
     }
 
@@ -506,6 +674,23 @@ public class AsyncApiParser {
         return false;
     }
 
+    private static AsyncApiChannelBindings parseChannelBindings(Map<String, JsonNode> raw) {
+
+        JsonNode kafka = raw.get(AsyncApiChannel.KAFKA);
+        JsonNode amqp = raw.get("amqp");
+        JsonNode ws = raw.get("ws");
+
+        return AsyncApiChannelBindings.builder()
+                .kafkaTopic(kafka == null ? null : scalarOf(kafka.get("topic")))
+                .amqpIs(amqp == null ? null : scalarOf(amqp.get("is")))
+                //an AMQP name may legitimately be the empty string: that is the default exchange
+                .amqpQueue(amqp == null ? null : textOf(childOf(amqp.get("queue"), "name")))
+                .amqpExchange(amqp == null ? null : textOf(childOf(amqp.get("exchange"), "name")))
+                .wsMethod(ws == null ? null : scalarOf(ws.get("method")))
+                .raw(raw)
+                .build();
+    }
+
     // ------------------------------------------------------------------ operations
 
     private static AsyncApiOperation parseOperation(
@@ -514,6 +699,7 @@ public class AsyncApiParser {
             JsonNode root,
             Map<String, AsyncApiChannel> channels,
             Map<String, AsyncApiMessage> messages,
+            Map<String, AsyncApiSecurityScheme> securitySchemes,
             List<String> warnings) {
 
         JsonNode declared = dereference(rawNode, root, warnings);
@@ -559,6 +745,9 @@ public class AsyncApiParser {
         return AsyncApiOperation.builder(name, action, channelName)
                 .messageIds(messageIds)
                 .reply(parseReply(node.get("reply"), root, channels, messages, name, warnings))
+                .security(parseSecurity(
+                        node.get("security"), "operation '" + name + "'", root, securitySchemes, warnings))
+                .bindings(dereferencedFields(node.get("bindings"), root, warnings))
                 .title(scalarOf(node.get("title")))
                 .summary(scalarOf(node.get("summary")))
                 .description(scalarOf(node.get("description")))
@@ -901,13 +1090,9 @@ public class AsyncApiParser {
      */
     private static String scalarOf(JsonNode node) {
 
-        if (node == null || node.isNull() || node.isContainerNode()) {
-            return null;
-        }
+        String text = textOf(node);
 
-        String text = node.asText();
-
-        return text.trim().isEmpty() ? null : text;
+        return text == null || text.trim().isEmpty() ? null : text;
     }
 
     /**
@@ -918,6 +1103,42 @@ public class AsyncApiParser {
         String value = scalarOf(node);
 
         return value == null ? fallback : value;
+    }
+
+    /**
+     * As {@link #scalarOf}, but keeping a value that is there and empty. Only a few fields can
+     * mean something by an empty string -- AMQP's default exchange is named "" -- so this is the
+     * exception rather than the rule.
+     */
+    private static String textOf(JsonNode node) {
+
+        if (node == null || node.isNull() || node.isContainerNode()) {
+            return null;
+        }
+
+        return node.asText();
+    }
+
+    private static JsonNode childOf(JsonNode node, String field) {
+        return node == null ? null : node.get(field);
+    }
+
+    private static List<String> scalarsOf(JsonNode node) {
+
+        List<String> values = new ArrayList<>();
+
+        if (node == null || !node.isArray()) {
+            return values;
+        }
+
+        for (JsonNode entry : node) {
+            String value = scalarOf(entry);
+            if (value != null) {
+                values.add(value);
+            }
+        }
+
+        return values;
     }
 
     /**
