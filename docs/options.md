@@ -289,6 +289,7 @@ There are 3 types of options:
 |`enableAdvancedFormats`| __Boolean__. Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0. *Default value*: `false`.|
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
 |`enableCustomizedMethodForScheduleTaskHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task. *Default value*: `false`.|
+|`enableMultipartFormDataSupport`| __Boolean__. Enable multipart/form-data support when building REST actions. *Default value*: `false`.|
 |`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableStaticFlakyInference`| __Boolean__. Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages. *Depends on*: `handleFlakiness=true`. *Default value*: `true`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|
