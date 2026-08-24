@@ -1,0 +1,86 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "The messages of a service, and their schemas",
+    "version": "1.0.0"
+  },
+  "defaultContentType": "application/json",
+  "components": {
+    "messageTraits": {
+      "correlated": {
+        "correlationId": {
+          "location": "$message.header#/correlationId"
+        },
+        "headers": {
+          "type": "object",
+          "properties": {
+            "correlationId": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "messages": {
+      "signupRequest": {
+        "name": "SignupRequest",
+        "title": "Sign a user up",
+        "traits": [
+          {
+            "$ref": "#/components/messageTraits/correlated"
+          }
+        ],
+        "payload": {
+          "$ref": "#/components/schemas/SignupRequest"
+        }
+      },
+      "signupReply": {
+        "name": "SignupReply",
+        "contentType": "application/vnd.example+json",
+        "correlationId": {
+          "location": "$message.payload#/request_id"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["request_id", "userId"],
+          "properties": {
+            "request_id": {
+              "type": "string"
+            },
+            "userId": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "heartbeat": {
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "schemas": {
+      "SignupRequest": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
