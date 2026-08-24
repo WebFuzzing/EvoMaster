@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.asyncapi.builder
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiDocument
 import com.webfuzzing.asyncapi.models.AsyncApiMessage
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver
@@ -15,7 +17,7 @@ import org.evomaster.core.search.gene.Gene
  *
  * The parser deliberately stops at the schema: it leaves every `$ref` inside a payload alone,
  * and guarantees that whatever those references reach is present in
- * [AsyncApiDocument.getComponentSchemas]. That guarantee is what this builder trades on -- it hands
+ * [AsyncApiDocument.componentSchemas]. That guarantee is what this builder trades on -- it hands
  * the whole schema map to [RestActionBuilderV3.createGeneForDTO], which wraps it in a synthetic
  * OpenAPI document and lets the existing machinery resolve the references and build the genes.
  *
@@ -45,12 +47,66 @@ object AsyncApiGeneBuilder {
      *
      * Headers are built separately from the payload because they travel separately on the wire:
      * a transport with metadata puts them beside the body rather than in it.
+     *
+     * The header carrying the correlation id, where the message declares one, is left out. That
+     * value is stamped fresh at each execution so that a reply can be paired with the request
+     * that caused it, and a gene holding a value that is about to be overwritten is worse than
+     * no gene at all: the search would spend mutations on something that never reaches the wire.
+     *
+     * Only an id declared one level deep is left out, which is how every document seen so far
+     * writes it. One pointing further in -- `$message.header#/meta/id` -- keeps its gene, and
+     * the search wastes a few mutations on a field that is overwritten before it is sent. That
+     * is the mild failure of the two, and preferable to descending into a headers schema whose
+     * shape is not known here.
      */
     fun buildHeadersGene(
         schema: AsyncApiDocument,
         message: AsyncApiMessage,
         options: RestActionBuilderV3.Options
-    ): Gene? = build(message.headers, "${message.id}.headers", schema, options)
+    ): Gene? = build(withoutCorrelationId(message), "${message.id}.headers", schema, options)
+
+    /**
+     * The headers schema without the property the correlation id is stamped into.
+     */
+    private fun withoutCorrelationId(message: AsyncApiMessage): JsonNode? {
+
+        val headers = message.headers ?: return null
+        val correlation = message.correlationId
+
+        if (correlation == null || correlation.source != AsyncApiCorrelationId.Source.HEADER) {
+            return headers
+        }
+
+        val field = correlation.fieldName ?: return headers
+        val properties = headers.get("properties")
+
+        if (properties == null || !properties.has(field)) {
+            return headers
+        }
+
+        val copy = headers.deepCopy<JsonNode>() as ObjectNode
+        val kept = (copy.get("properties") as ObjectNode).apply { remove(field) }
+
+        /*
+            When the stamped id was the only header, there is nothing left to vary. Returning
+            the empty schema would build a free-form map gene, which is worse than nothing: it
+            would invite the search to invent headers the contract never declared.
+         */
+        if (kept.isEmpty) {
+            return null
+        }
+
+        //a field that is no longer there cannot be required either
+        (copy.get("required") as? ArrayNode)?.let { required ->
+            val kept = required.filter { it.asText() != field }
+            copy.remove("required")
+            if (kept.isNotEmpty()) {
+                copy.putArray("required").apply { kept.forEach { add(it) } }
+            }
+        }
+
+        return copy
+    }
 
     /**
      * Options for building AsyncAPI payloads.
