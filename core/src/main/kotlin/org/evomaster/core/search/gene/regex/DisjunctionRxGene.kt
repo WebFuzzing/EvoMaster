@@ -399,21 +399,14 @@ class DisjunctionRxGene(
      * Try two repair functions in random order, if the first one tried fails try the other.
      */
     private fun tryInRandomOrder(repairA: () -> AssertionRepairResult, repairB: () -> AssertionRepairResult, randomness: Randomness): AssertionRepairResult {
-        return if(randomness.nextBoolean()){
-            val result = repairA()
-            if(result.success) {
-                result
-            } else {
-                repairB()
-            }
+        val (first, second) = if (randomness.nextBoolean()) {
+            repairA to repairB
         } else {
-            val result = repairB()
-            if(result.success) {
-                result
-            } else {
-                repairA()
-            }
+            repairB to repairA
         }
+
+        val result = first()
+        return if (result.success) result else second()
     }
 
     /**
@@ -562,5 +555,5 @@ class DisjunctionRxGene(
      * Repair input boundary assertions (`^` and `$` for example) by forcing taget (and whatever follows) to zero width.
      */
     private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
-        resolveOutwardRequirement("", target, backward)
+        resolveEmptyRequirement(target, backward)
 }
