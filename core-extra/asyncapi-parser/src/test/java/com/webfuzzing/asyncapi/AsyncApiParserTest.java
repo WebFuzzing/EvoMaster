@@ -1265,4 +1265,213 @@ public class AsyncApiParserTest {
         assertTrue(warns(document, "nothing", "host and protocol"), document.getWarnings().toString());
     }
 
+    // ------------------------------------------------------------------ real documents
+
+    /*
+        Everything above is written to pin down one thing at a time. What follows runs the
+        parser against documents taken as published from real services, because the shapes that
+        actually break a parser are not the ones you think to write yourself: a channel with no
+        address whose topic hides in a binding, a reply whose address is announced inside the
+        request, a document with four servers and no way to tell which is meant.
+     */
+
+    private AsyncApiDocument loadSut(String name) {
+        return AsyncApiAccess.getAsyncApiFromResource("/asyncapi/sut/" + name);
+    }
+
+    @Test
+    public void testNcsOverKafka() {
+
+        AsyncApiDocument document = loadSut("ncs-kafka.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+        assertEquals(12, document.getChannels().size());
+        assertEquals(6, document.getOperations().size());
+        assertEquals(9, document.getComponentSchemas().size());
+
+        //every operation is one the service consumes, and every one of them answers
+        for (AsyncApiOperation operation : document.getOperations().values()) {
+            assertEquals(AsyncApiOperation.Action.RECEIVE, operation.getAction(), operation.getName());
+            assertNotNull(operation.getReply(), operation.getName());
+        }
+
+        AsyncApiOperation bessj = document.getOperations().get("bessj");
+        assertEquals("bessjRequest", bessj.getChannelName());
+        assertEquals(Arrays.asList("bessjRequest"), bessj.getMessageIds());
+        assertEquals("bessjReply", bessj.getReply().getChannelName());
+        //two declared outcomes: a result and an error, which is what a search can tell apart
+        assertEquals(Arrays.asList("doubleResult", "error"), bessj.getReply().getMessageIds());
+
+        //an operation whose contract declares a single outcome, for contrast
+        assertEquals(
+                Arrays.asList("intResult"),
+                document.getOperations().get("checkTriangle").getReply().getMessageIds());
+
+        assertEquals("ncs.bessj.request", document.getChannels().get("bessjRequest").getAddress());
+        assertEquals("kafka", document.getServers().get("kafka").getProtocol());
+    }
+
+    @Test
+    public void testNcsPayloadsAndCorrelation() {
+
+        AsyncApiDocument document = loadSut("ncs-kafka.yaml");
+
+        AsyncApiMessage request = document.getMessages().get("bessjRequest");
+        assertEquals("application/json", request.getContentType());
+
+        //the payload keeps its reference, and what it points at is available
+        assertEquals("#/components/schemas/BessjRequest", request.getPayload().get("$ref").asText());
+        assertEquals(3, document.getComponentSchemas().get("BessjRequest")
+                .get("properties").get("n").get("minimum").asInt());
+
+        AsyncApiCorrelationId correlation = request.getCorrelationId();
+        assertEquals(AsyncApiCorrelationId.Source.HEADER, correlation.getSource());
+        assertEquals("correlationId", correlation.getFieldName());
+    }
+
+    @Test
+    public void testNcsOverAmqpDiffersOnlyInBindings() {
+
+        AsyncApiDocument kafka = loadSut("ncs-kafka.yaml");
+        AsyncApiDocument amqp = loadSut("ncs-amqp.yaml");
+
+        //the same interactions and the same message shapes, over a different transport
+        assertEquals(kafka.getOperations().keySet(), amqp.getOperations().keySet());
+        assertEquals(kafka.getChannels().keySet(), amqp.getChannels().keySet());
+        assertEquals(kafka.getMessages().keySet(), amqp.getMessages().keySet());
+        assertEquals(kafka.getComponentSchemas().keySet(), amqp.getComponentSchemas().keySet());
+
+        assertEquals("amqp", amqp.getServers().get("rabbitmq").getProtocol());
+        assertEquals("queue", amqp.getChannels().get("bessjRequest").getBindings().getAmqpIs());
+        assertNull(kafka.getChannels().get("bessjRequest").getBindings().getAmqpIs());
+    }
+
+    @Test
+    public void testAChannelWhoseTopicOnlyExistsInItsBinding() {
+
+        AsyncApiDocument document = loadSut("microcks.yaml");
+
+        AsyncApiChannel channel = document.getChannels().get("service-changes");
+
+        //this channel declares no address at all: the Kafka binding carries the topic
+        assertNull(channel.getAddress());
+        assertEquals("microcks-services-updates", channel.effectiveAddress("kafka"));
+        //the same document also declares a WebSocket binding, where the topic means nothing
+        assertEquals("POST", channel.getBindings().getWsMethod());
+        assertNull(channel.effectiveAddress("ws"));
+    }
+
+    @Test
+    public void testAChannelAddingAKeyToASharedMessage() {
+
+        AsyncApiDocument document = loadSut("microcks.yaml");
+
+        AsyncApiOperation operation = document.getOperations().get("receivedServiceChanges");
+        assertEquals(AsyncApiOperation.Action.RECEIVE, operation.getAction());
+
+        /*
+            The channel adds a Kafka key on top of the shared definition, which makes it a
+            variant belonging to this channel. The shared definition must be left alone, or
+            every other channel carrying the same message would inherit a key meant for this
+            one.
+         */
+        assertEquals(Arrays.asList("service-changes.serviceChangeEvent"), operation.getMessageIds());
+
+        AsyncApiMessage variant = document.getMessages().get("service-changes.serviceChangeEvent");
+        assertEquals("string", variant.getKafkaKey().get("type").asText());
+        assertNotNull(variant.getPayload());
+
+        assertNull(document.getMessages().get("serviceChangeEvent").getKafkaKey());
+    }
+
+    @Test
+    public void testAReplyAddressAnnouncedInTheRequest() {
+
+        AsyncApiDocument document = loadSut("everest.yaml");
+
+        assertEquals(8, document.getOperations().size());
+
+        AsyncApiReply reply = document.getOperations().get("send_request_get_errors").getReply();
+
+        assertEquals("receive_reply_get_errors", reply.getChannelName());
+        //the reply channel has no address of its own: the requester picks one per request
+        assertNull(document.getChannels().get("receive_reply_get_errors").getAddress());
+        assertEquals("$message.header#/replyTo", reply.getAddressLocation());
+    }
+
+    @Test
+    public void testAServerWhosePathIsTemplated() {
+
+        AsyncApiServer server = loadSut("everest.yaml").getServers().get("default");
+
+        assertEquals("mqtt", server.getProtocol());
+        assertEquals("localhost:1883", server.getHost());
+        assertEquals("everest_api/1/error_history_consumer/{module_id}", server.getPathname());
+        assertEquals(
+                "The ID of the module as defined in the EVerest config file.",
+                server.getVariables().get("module_id").getDescription());
+    }
+
+    @Test
+    public void testFourServersAndAContentTypeOfItsOwn() {
+
+        AsyncApiDocument document = loadSut("bookworm-rating.yaml");
+
+        assertEquals("application/vnd.masstransit+json", document.getDefaultContentType());
+        assertEquals(4, document.getServers().size());
+
+        AsyncApiServer development = document.getServers().get("development");
+        assertEquals("amqp", development.getProtocol());
+        assertEquals("0.9.1", development.getProtocolVersion());
+
+        //the scheme is written inline on the server rather than declared in components
+        assertEquals(1, development.getSecurity().size());
+        assertEquals(
+                "userpassword",
+                document.getSecuritySchemes().get(development.getSecurity().get(0)).getType());
+
+        //messages inherit the document's content type when they declare none
+        for (AsyncApiMessage message : document.getMessages().values()) {
+            assertEquals("application/vnd.masstransit+json", message.getContentType(), message.getId());
+        }
+    }
+
+    @Test
+    public void testRequestAndResponseModelledAsSeparateOperations() {
+
+        AsyncApiDocument document = loadSut("openagents-cache.yaml");
+
+        assertEquals(11, document.getOperations().size());
+
+        int send = 0;
+        int receive = 0;
+
+        for (AsyncApiOperation operation : document.getOperations().values()) {
+            //no operation declares a reply: request and response are separate channels here,
+            //which is exactly the shape a black-box tester cannot pair up on its own
+            assertNull(operation.getReply(), operation.getName());
+            if (operation.getAction() == AsyncApiOperation.Action.SEND) {
+                send++;
+            } else {
+                receive++;
+            }
+        }
+
+        /*
+            Note the polarity. This document is written from the point of view of the agent
+            *using* the cache, so issuing a request is 'send' and the answer is 'receive'. The
+            parser reports what the document says and nothing more: which end is the system
+            under test is not something the document settles.
+         */
+        assertEquals(
+                AsyncApiOperation.Action.SEND,
+                document.getOperations().get("createCache").getAction());
+        assertEquals(
+                AsyncApiOperation.Action.RECEIVE,
+                document.getOperations().get("receiveCacheCreateResponse").getAction());
+        assertEquals(4, send);
+        assertEquals(7, receive);
+
+        assertEquals("shared_cache.create", document.getChannels().get("cacheCreate").getAddress());
+    }
 }
