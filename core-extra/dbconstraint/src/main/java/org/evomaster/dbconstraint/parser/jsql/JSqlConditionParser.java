@@ -75,7 +75,12 @@ public class JSqlConditionParser implements SqlConditionParser {
     }
 
     /**
-     * replaces unsupported grammar of JSQLParser with equivalent supported constructs
+     * Rewrites dialect constructs into constructs the rest of the pipeline can consume.
+     *
+     * <p>Each rule below exists for one of two reasons, and the distinction decides whether it can
+     * ever be removed. Some constructs JSQLParser cannot parse at all. Others parse fine but produce
+     * AST nodes {@link JSqlVisitor} does not translate, and no parser upgrade changes that. Each
+     * rule states which case it is.
      *
      * @param originalSqlStr original string before transforming dialect primitives
      * @return the transformed SQL so JSQLParser can handle it
@@ -93,38 +98,72 @@ public class JSqlConditionParser implements SqlConditionParser {
          * spent a very long time backtracking over it. On one real schema, 44 of 48 check constraints
          * failed this way and cost over five minutes of the search budget between them, with a single
          * 24 KB constraint accounting for 275 seconds of that.
+         *
+         * A parser limitation: JSQLParser 4.9 rejects the parenthesised expression inside ANY,
+         * failing on "ANY ((" before it reaches the array.
+         *
+         * TODO A parser that accepts the shape does not by itself make this rule removable. The
+         * expression would then be an EqualsTo over an ANY function, which JSqlVisitor does not
+         * translate either, so both have to handle it first.
          */
         String transformedStr = originalSqlStr.replaceAll(
                 "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+\\s*\\[\\s*\\]\\s*\\)",
                 " IN ($1)");
 
         /*
-         * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
-         * We can work around this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
-         * string
+         * PostgreSQL's "= ANY (...)" is rewritten to the equivalent " IN (...)".
+         *
+         * Not a parser limitation: JSQLParser 4.9 parses "col = ANY (ARRAY['A','B'])" without
+         * complaint, as an EqualsTo whose right side is a Function named ANY. JSqlVisitor is what
+         * cannot handle it: visit(Function) only unwraps LOWER and UPPER, and throws for anything
+         * else. The rewrite lands the expression on InExpression instead, which it does support.
+         *
+         * TODO Upgrading JSQLParser has no effect on this rule. It can be dropped once
+         * visit(Function) unwraps ANY and visit(EqualsTo) folds a list right-hand side into an
+         * SqlInCondition.
          */
         transformedStr = transformedStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
 
 
         /*
-         * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
-         * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
+         * The Postgres "ARRAY[...]" wrapper is dropped, leaving the bare element list. Used within
+         * an enumeration, the elements alone carry the whole meaning.
          *
-         * The group excludes "]" so that it ends at the array's own closing bracket. Excluding "<"
-         * instead, as it used to, made the match run to the last bracket anywhere in the string.
+         * The group excludes "]" so the match ends at the array's own closing bracket rather than
+         * at the last one anywhere in the string.
+         *
+         * Not a parser limitation either: JSQLParser 4.9 parses "x = ARRAY[1,2]" fine, as an
+         * EqualsTo whose right side is an ArrayConstructor. JSqlVisitor throws "not yet
+         * implemented" from visit(ArrayConstructor).
+         *
+         * TODO Upgrading JSQLParser has no effect here either. It can be dropped once
+         * visit(ArrayConstructor) pushes the element list, which is the same SqlConditionList that
+         * visit(ExpressionList) already builds for an IN.
          */
         transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^\\]]*)\\]", "$1");
 
         /*
-         * MySQL Enum
+         * MySQL Enum.
+         *
+         * A parser limitation: JSQLParser 4.9 gives up on the shape MySQL reports, stopping at
+         * "status enum('a','b')" with "could only parse partial expression".
+         *
+         * TODO A parser that accepts it still leaves a function call JSqlVisitor does not
+         * translate, so the rule can only go once both handle it.
          */
         if (databaseType == ConstraintDatabaseType.MYSQL)
             transformedStr = transformedStr.replaceAll("\\s*[E|e][N|n][U|u][M|m]\\s*\\(([^<]*)\\)", " IN ($1)");
 
         /*
-         * H2 CASTS expressions to [CHARACTER LARGE OBJECT] instead of [VARCHAR]
-         * We replace CHARACTER LARGE OBJECT to VARCHAR (this could faild if
-         * CHARACTER LARGE OBJECT is used in the string expeession
+         * H2 casts expressions to [CHARACTER LARGE OBJECT] instead of [VARCHAR]. We replace
+         * CHARACTER LARGE OBJECT with VARCHAR (this could fail if CHARACTER LARGE OBJECT appears
+         * inside a string literal).
+         *
+         * A parser limitation: JSQLParser 4.9 rejects the CHARACTER LARGE OBJECT token outright,
+         * on either side of the comparison.
+         *
+         * TODO Removable once JSQLParser parses the token. The replacement, and with it the
+         * literal-corrupting edge case above, would no longer be needed.
          */
         if (databaseType ==ConstraintDatabaseType.H2) {
             transformedStr = transformedStr.replaceAll("CHARACTER LARGE OBJECT","VARCHAR");
