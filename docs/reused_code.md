@@ -29,3 +29,7 @@ are listed here:
 
 * _asyncapi/sut/openagents-cache.yaml_: AsyncAPI description of the OpenAgents shared-cache API,
   used unmodified as a test resource of the `asyncapi-parser` module. Released under MIT license.
+
+* _asyncapi/sut/scalar.yaml_: AsyncAPI description from
+  [Scalar](https://github.com/scalar/scalar), used unmodified as a test resource of `core`.
+  Released under MIT license.
