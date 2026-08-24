@@ -3,6 +3,9 @@ package org.evomaster.core.sql
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
+import org.evomaster.core.database.sql.DatabaseExecutor
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene

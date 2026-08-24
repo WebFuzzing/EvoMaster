@@ -118,6 +118,8 @@ Migrations/
 /core-tests/client-java/distance-heuristics/target/
 /em.toml
 
+/core-extra/arazzo-parser/target/
+/core-extra/asyncapi-parser/target/
 /core-extra/solver/target/
 /em.yaml
 /core-tests/e2e-tests/spring/spring-rest-openapi-v2/em.yaml
@@ -174,6 +176,7 @@ client-java/sql/target
 client-java/sql-dto/target
 client-java/distance-heuristics/target
 client-java/test-old-libraries/target
+/client-java/postgres-test-utils/target/
 core-tests/e2e-tests/spring/spring-rest-mysql/target
 /core-tests/jdk-8/spring-rest-openapi-v2/target/
 /core-tests/jdk-8/spring-rest-openapi-v2-driver/target/

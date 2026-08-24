@@ -35,6 +35,8 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
     private val client: Client = HttpClientFactory.createTrustingJerseyClient(true, readTimeoutMs)
 
+    // sessionId is volatile to make writes visible across threads
+    // TO-DO: Implement thread-safe reconnect on session expiry
     @Volatile private var sessionId: String? = null
 
     private fun nextId() = idCounter.getAndIncrement()
@@ -53,7 +55,12 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         id?.let { payload["id"] = it }
         val body = mapper.writeValueAsString(payload)
 
-        val acceptTypes = if (acceptEventStream) arrayOf(MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS) else arrayOf(MediaType.APPLICATION_JSON)
+        val acceptTypes = if (acceptEventStream) {
+            arrayOf(MediaType.APPLICATION_JSON, MediaType.SERVER_SENT_EVENTS)
+        } else {
+            arrayOf(MediaType.APPLICATION_JSON)
+        }
+        
         var builder = client.target(baseUrl).request(*acceptTypes)
         sessionId?.let { builder = builder.header(McpConst.SESSION_ID_HEADER, it) }
 
@@ -81,7 +88,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
                 "MCP initialize handshake failed with HTTP $status at '$baseUrl'"
             )
         }
-        // Capture session ID before reading the body
+        // Capture session ID before reading the body.
+        // The session id is optional it is missing for example in stateless MCP servers.
+        // Reference: https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#session-management
         response.getHeaderString(McpConst.SESSION_ID_HEADER)?.let { sessionId = it }
         val responseBody = response.readEntity(String::class.java)
         if (responseBody.isBlank()) {
@@ -98,7 +107,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         try {
             response.close()
         } catch (e: Exception) {
-            log.trace("Failed to close MCP notification response for '$method'", e)
+            log.warn("Failed to close MCP notification response for '$method'", e)
         }
     }
 
