@@ -235,4 +235,68 @@ public class CqlSessionClassReplacementTest {
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
+
+    /**
+     * An unqualified query relies on the session's own default keyspace, which
+     * the query text never mentions. The tracked {@link ExecutedCqlCommand} must still carry that
+     * resolved keyspace name (not null), so it matches the keyspace CassandraSchemaTracer resolves
+     * the table's schema under.
+     */
+    @Test
+    void testExecuteUnqualifiedSelect_resolvesKeyspaceFromSessionDefault() {
+        try (CqlSession sessionWithDefaultKeyspace = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress("localhost", cassandra.getMappedPort(CASSANDRA_PORT)))
+                .withLocalDatacenter("datacenter1")
+                .withKeyspace(KEYSPACE)
+                .build()) {
+
+            String query = "SELECT * FROM " + TABLE_NAME; // unqualified: no "testks." prefix
+
+            CqlSessionClassReplacement.execute(sessionWithDefaultKeyspace, query);
+
+            List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfoList.size());
+
+            Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+            assertEquals(1, commands.size());
+
+            ExecutedCqlCommand cmd = commands.iterator().next();
+            assertEquals(query, cmd.getCqlCommand());
+            assertEquals(KEYSPACE, cmd.getKeyspaceName());
+            assertEquals(TABLE_NAME, cmd.getTableName());
+            assertFalse(cmd.hasThrownCqlException());
+        }
+    }
+
+    /**
+     * A "USE keyspace" statement switches the session's own current keyspace (tracked by the
+     * driver itself), which a later unqualified query then implicitly relies on. Since keyspace
+     * resolution reads the session's live state at tracking time (not a cached value), it must
+     * pick up the switch.
+     */
+    @Test
+    void testExecuteUnqualifiedSelect_afterUseStatement_resolvesSwitchedKeyspace() {
+        try (CqlSession sessionWithoutDefaultKeyspace = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress("localhost", cassandra.getMappedPort(CASSANDRA_PORT)))
+                .withLocalDatacenter("datacenter1")
+                .build()) {
+
+            CqlSessionClassReplacement.execute(sessionWithoutDefaultKeyspace, "USE " + KEYSPACE);
+
+            String query = "SELECT * FROM " + TABLE_NAME; // unqualified
+            CqlSessionClassReplacement.execute(sessionWithoutDefaultKeyspace, query);
+
+            List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfoList.size());
+
+            Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+            ExecutedCqlCommand selectCmd = commands.stream()
+                    .filter(cmd -> cmd.getCqlCommand().equals(query))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("SELECT command not tracked"));
+
+            assertEquals(KEYSPACE, selectCmd.getKeyspaceName());
+            assertEquals(TABLE_NAME, selectCmd.getTableName());
+        }
+    }
 }

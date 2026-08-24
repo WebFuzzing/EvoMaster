@@ -62,6 +62,29 @@ public class CassandraSchemaTracer {
     }
 
     /**
+     * Resolves the actual keyspace name a CQL statement targets: the driver-canonical form of
+     * the explicit qualifier, if present in the query text, otherwise the session's current
+     * default keyspace.
+     *
+     * @param cqlSession      a live {@code com.datastax.oss.driver.api.core.CqlSession}, accessed
+     *                        purely via reflection so this module has no compile-time driver dependency
+     * @param keyspaceNameRaw the raw, quote-preserving keyspace text as it appeared in the CQL
+     *                        statement, or {@code null} if the statement didn't qualify the table
+     *                        with a keyspace (the session's current keyspace applies instead)
+     * @return the resolved keyspace name, in the driver's canonical/internal form, or {@code null}
+     *         if it can't be resolved (unqualified statement with no current keyspace set on the
+     *         session, or an explicit keyspace qualifier that doesn't exist)
+     */
+    public static String resolveKeyspaceName(Object cqlSession, String keyspaceNameRaw) {
+        try {
+            Object keyspaceMetadata = resolveKeyspaceMetadata(cqlSession, keyspaceNameRaw);
+            return keyspaceMetadata != null ? asInternal(invoke(keyspaceMetadata, METHOD_GET_NAME)) : null;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to resolve Cassandra keyspace name for " + keyspaceNameRaw, e);
+        }
+    }
+
+    /**
      * Resolves the shape of a keyspace/table. Tables seen before are served straight from the
      * cache; a table not seen before (e.g. queried for the first time) is fetched once and cached.
      *
@@ -76,15 +99,7 @@ public class CassandraSchemaTracer {
      */
     public static CassandraTableMetadata resolve(Object cqlSession, String keyspaceNameRaw, String tableNameRaw) {
         try {
-            Object keyspaceIdentifier = keyspaceNameRaw != null
-                    ? cqlIdentifierFromCql(keyspaceNameRaw)
-                    : currentKeyspaceIdentifier(cqlSession);
-            if (keyspaceIdentifier == null) {
-                return null;
-            }
-
-            Object metadata = invoke(cqlSession, METHOD_GET_METADATA);
-            Object keyspaceMetadata = unwrapOptional(invokeWithCqlIdentifier(metadata, METHOD_GET_KEYSPACE, keyspaceIdentifier));
+            Object keyspaceMetadata = resolveKeyspaceMetadata(cqlSession, keyspaceNameRaw);
             if (keyspaceMetadata == null) {
                 return null;
             }
@@ -142,6 +157,25 @@ public class CassandraSchemaTracer {
         return names;
     }
 
+    /**
+     * Resolves the driver's own {@code KeyspaceMetadata} for a statement's keyspace: the explicit
+     * qualifier, if present, otherwise the session's current default keyspace. Shared by
+     * {@link #resolve(Object, String, String)} and {@link #resolveKeyspaceName(Object, String)},
+     * the two entry points that need to walk from a raw keyspace qualifier (or its absence) down
+     * to the driver's resolved keyspace.
+     */
+    private static Object resolveKeyspaceMetadata(Object cqlSession, String keyspaceNameRaw) throws ReflectiveOperationException {
+        Object keyspaceIdentifier = keyspaceNameRaw != null
+                ? cqlIdentifierFromCql(keyspaceNameRaw)
+                : currentKeyspaceIdentifier(cqlSession);
+        if (keyspaceIdentifier == null) {
+            return null;
+        }
+
+        Object metadata = invoke(cqlSession, METHOD_GET_METADATA);
+        return unwrapOptional(invokeWithCqlIdentifier(metadata, METHOD_GET_KEYSPACE, keyspaceIdentifier));
+    }
+
     private static Object currentKeyspaceIdentifier(Object cqlSession) throws ReflectiveOperationException {
         return unwrapOptional(invoke(cqlSession, METHOD_GET_KEYSPACE));
     }
@@ -172,32 +206,5 @@ public class CassandraSchemaTracer {
 
     private static Object invoke(Object target, String methodName) throws ReflectiveOperationException {
         return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    /**
-     * Cache key: a table's resolved (never null) keyspace and table name, in the driver's
-     * canonical/internal form.
-     */
-    private static class TableKey {
-        private final String keyspaceName;
-        private final String tableName;
-
-        TableKey(String keyspaceName, String tableName) {
-            this.keyspaceName = keyspaceName;
-            this.tableName = tableName;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TableKey)) return false;
-            TableKey tableKey = (TableKey) o;
-            return Objects.equals(keyspaceName, tableKey.keyspaceName) && Objects.equals(tableName, tableKey.tableName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(keyspaceName, tableName);
-        }
     }
 }
