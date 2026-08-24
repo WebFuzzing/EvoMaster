@@ -34,6 +34,10 @@ public class AsyncApiMessage {
      */
     private final Map<String, JsonNode> bindings;
 
+    /**
+     * The entries of the message's {@code examples} array, each a raw node, in declaration
+     * order. Not interpreted here.
+     */
     private final List<JsonNode> examples;
 
     private final String title;
@@ -160,6 +164,7 @@ public class AsyncApiMessage {
         private JsonNode kafkaKey;
         /** @see AsyncApiMessage#bindings */
         private Map<String, JsonNode> bindings = Collections.emptyMap();
+        /** @see AsyncApiMessage#examples */
         private List<JsonNode> examples = Collections.emptyList();
         private String title;
         private String summary;
