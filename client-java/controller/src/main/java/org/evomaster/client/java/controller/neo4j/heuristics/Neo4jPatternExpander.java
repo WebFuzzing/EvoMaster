@@ -80,7 +80,7 @@ public class Neo4jPatternExpander {
                 edges.add(e);
                 continue;
             }
-            int lower = e.getMinLength() != null ? e.getMinLength() : 0;
+            int lower = e.getMinLength() != null ? e.getMinLength() : 1;
             if (lower <= 1) {
                 if (lower == 0) {
                     merges.put(e.getTargetVariable(), e.getSourceVariable());
