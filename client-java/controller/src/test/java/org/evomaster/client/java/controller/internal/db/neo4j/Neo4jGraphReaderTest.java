@@ -86,9 +86,50 @@ class Neo4jGraphReaderTest {
 
     // --- fake Neo4j driver (only the methods the reader reflects over) ---------------------------
 
+    @Test
+    void testTheSessionIsClosedEvenWhenTheQueryFails() {
+        // A leaked session is expensive during a fuzzing run, which issues thousands of requests, so the
+        // failure path has to close it just like the happy one.
+        FakeDriver driver = new FakeDriver(new ArrayList<>(), new ArrayList<>());
+        driver.failOnRun = true;
+
+        assertThrows(RuntimeException.class, () -> new Neo4jGraphReader().read(driver));
+        assertTrue(driver.lastSession.closed);
+    }
+
+    @Test
+    void testReadingThroughAnAlreadyBuiltClientGivesTheSameGraph() {
+        // The overload a caller that already holds a client uses (the handler, or the insertion runner), so
+        // that it does not build a second one.
+        FakeDriver driver = new FakeDriver(
+                new ArrayList<>(Arrays.asList(nodeRecord("n1", labels("Person"), props("age", 25)))),
+                new ArrayList<>());
+
+        Neo4jGraph graph = new Neo4jGraphReader().read(new ReflectionBasedNeo4jClient(driver));
+
+        assertEquals(1, graph.nodeCount());
+        assertEquals("n1", graph.getNodes().get(0).getId());
+        assertTrue(driver.lastSession.closed);
+    }
+
+    @Test
+    void testANodeWithNoLabelsAndNoPropertiesIsStillRead() {
+        // Perfectly ordinary in Neo4j, and it exercises the empty-collection paths.
+        FakeDriver driver = new FakeDriver(
+                new ArrayList<>(Arrays.asList(nodeRecord("n1", labels(), props()))),
+                new ArrayList<>());
+
+        Neo4jGraph graph = new Neo4jGraphReader().read(driver);
+
+        assertEquals(1, graph.nodeCount());
+        assertTrue(graph.getNodes().get(0).getLabels().isEmpty());
+    }
+
     public static final class FakeDriver {
         private final List<FakeRecord> nodes;
         private final List<FakeRecord> rels;
+        /** When set, every query on a session of this driver blows up, to exercise the failure path. */
+        boolean failOnRun = false;
         FakeSession lastSession;
 
         FakeDriver(List<FakeRecord> nodes, List<FakeRecord> rels) {
@@ -98,6 +139,7 @@ class Neo4jGraphReaderTest {
 
         public FakeSession session() {
             lastSession = new FakeSession(nodes, rels);
+            lastSession.failOnRun = failOnRun;
             return lastSession;
         }
     }
@@ -112,7 +154,12 @@ class Neo4jGraphReaderTest {
             this.rels = rels;
         }
 
+        boolean failOnRun = false;
+
         public FakeResult run(String query) {
+            if (failOnRun) {
+                throw new IllegalStateException("driver blew up");
+            }
             return new FakeResult(query.contains("labels(n)") ? nodes : rels);
         }
 
