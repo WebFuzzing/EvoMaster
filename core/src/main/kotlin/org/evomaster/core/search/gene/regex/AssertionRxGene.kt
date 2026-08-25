@@ -12,22 +12,17 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.evomaster.core.utils.RegexFlags
 
 /**
- * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
- */
-enum class Direction { FORWARD, BACKWARD, BIDIRECTIONAL }
-
-/**
  * Distinguishes the different assertion types an [AssertionRxGene] represents.
  */
-enum class AssertionType(val direction: Direction, val hasContent: Boolean) {
-    LOOKAHEAD(Direction.FORWARD, hasContent = true),
-    LOOKBEHIND(Direction.BACKWARD, hasContent = true),
-    START_OF_INPUT(Direction.BACKWARD, hasContent = false),
-    END_OF_INPUT(Direction.FORWARD, hasContent = false),
-    CARET(Direction.BACKWARD, hasContent = false),
-    DOLLAR(Direction.FORWARD, hasContent = false),
-    WORD_BOUNDARY(Direction.BIDIRECTIONAL, hasContent=false),
-    NON_WORD_BOUNDARY(Direction.BIDIRECTIONAL, hasContent=false)
+enum class AssertionType(val usesInnerGene: Boolean) {
+    LOOKAHEAD(usesInnerGene = true),
+    LOOKBEHIND(usesInnerGene = true),
+    START_OF_INPUT(usesInnerGene = false),
+    END_OF_INPUT(usesInnerGene = false),
+    CARET(usesInnerGene = false),
+    DOLLAR(usesInnerGene = false),
+    WORD_BOUNDARY(usesInnerGene = false),
+    NON_WORD_BOUNDARY(usesInnerGene = false)
 }
 
 /**
@@ -54,7 +49,7 @@ class AssertionRxGene(
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
     init {
-        require(assertionType.hasContent || innerGene == null) {
+        require(assertionType.usesInnerGene || innerGene == null) {
             "$assertionType is a boundary assertion type and cannot carry inner content"
         }
     }
@@ -66,7 +61,7 @@ class AssertionRxGene(
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
-    override fun isUnsatisfiable(): Boolean = assertionType.hasContent && innerGene == null
+    override fun isUnsatisfiable(): Boolean = assertionType.usesInnerGene && innerGene == null
 
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 

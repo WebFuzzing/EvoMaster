@@ -385,22 +385,25 @@ class DisjunctionRxGene(
     /**
      * Selects target and dispatches to corresponding repair method for the [assertion] located at index [idx].
      */
-    private fun repairAssertion(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
-        val backward = assertion.assertionType.direction == Direction.BACKWARD
-        val target = if (backward) genesBefore(idx) else genesAfter(idx)
-
-        val resolution = when (assertion.assertionType) {
-            AssertionType.LOOKAHEAD, AssertionType.LOOKBEHIND ->
-                repairLookaroundAssertion(assertion, target, backward, randomness)
-            AssertionType.START_OF_INPUT, AssertionType.END_OF_INPUT ->
-                repairStrictBoundaryAssertion(target, backward)
-            AssertionType.CARET, AssertionType.DOLLAR ->
-                repairCaretOrDollar(assertion, target, backward, randomness)
-            AssertionType.WORD_BOUNDARY, AssertionType.NON_WORD_BOUNDARY ->
-                repairBidirectional(assertion, idx, randomness)
+    private fun repairAssertion(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult =
+        when (assertion.assertionType) {
+            AssertionType.LOOKAHEAD ->
+                repairLookaroundAssertion(assertion, genesAfter(idx), backward = false, randomness)
+            AssertionType.LOOKBEHIND ->
+                repairLookaroundAssertion(assertion, genesBefore(idx), backward = true, randomness)
+            AssertionType.START_OF_INPUT ->
+                repairStrictBoundaryAssertion(genesBefore(idx), backward = true)
+            AssertionType.END_OF_INPUT ->
+                repairStrictBoundaryAssertion(genesAfter(idx), backward = false)
+            AssertionType.CARET ->
+                repairCaretOrDollar(assertion, genesBefore(idx), backward = true, randomness)
+            AssertionType.DOLLAR ->
+                repairCaretOrDollar(assertion, genesAfter(idx), backward = false, randomness)
+            AssertionType.WORD_BOUNDARY ->
+                repairBidirectional(assertion, wordBoundaryBranches, idx, randomness)
+            AssertionType.NON_WORD_BOUNDARY ->
+                repairBidirectional(assertion, nonWordBoundaryBranches, idx, randomness)
         }
-        return resolution
-    }
 
     /**
      * Repairs a lookaround [assertion] (lookahead/lookbehind) against a [target].
@@ -519,23 +522,18 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Repairs a [Direction.BIDIRECTIONAL] assertion ([AssertionType.WORD_BOUNDARY]/
-     * [AssertionType.NON_WORD_BOUNDARY]) by trying each of the possible shapes in a randomized
-     * order until one resolves both sides successfully.
+     * Repairs a bidirectional assertion ([AssertionType.WORD_BOUNDARY]/[AssertionType.NON_WORD_BOUNDARY])
+     * by trying each of the possible shapes in a randomized order until one resolves both sides successfully.
      */
-    private fun repairBidirectional(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
-        val branches = when (assertion.assertionType) {
-            AssertionType.WORD_BOUNDARY -> wordBoundaryBranches
-            AssertionType.NON_WORD_BOUNDARY -> nonWordBoundaryBranches
-            else -> throw IllegalStateException("${assertion.assertionType} is not a word-boundary assertion type.")
-        }.let { if (randomness.nextBoolean()) it else it.reversed() }
+    private fun repairBidirectional(assertion: AssertionRxGene, branches: List<BoundaryBranch>, idx: Int, randomness: Randomness): AssertionRepairResult {
+        val orderedBranches = if (randomness.nextBoolean()) branches else branches.reversed()
 
         val before = genesBefore(idx)
         val after = genesAfter(idx)
         val repairLeftSide = { wordRequired: Boolean -> repairSide(wordRequired, before, backward = true, assertion, randomness) }
         val repairRightSide = { wordRequired: Boolean -> repairSide(wordRequired, after, backward = false, assertion, randomness) }
 
-        for (branch in branches) {
+        for (branch in orderedBranches) {
             val beforeResult = repairLeftSide(branch.wordBefore)
             if (!beforeResult.success) continue
             val afterResult = repairRightSide(branch.wordAfter)
@@ -547,7 +545,7 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Resolves one side of a [Direction.BIDIRECTIONAL] branch. [wordRequired] indicates if the current side
+     * Resolves one side of a [BoundaryBranch]. [wordRequired] indicates if the current side
      * should start with a word character or not.
      */
     private fun repairSide(wordRequired: Boolean, target: List<Gene>, backward: Boolean, assertion: AssertionRxGene, randomness: Randomness): AssertionRepairResult =

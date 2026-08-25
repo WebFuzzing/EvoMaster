@@ -245,10 +245,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
                 else -> AssertionType.LOOKAHEAD
             }
-            val innerGene = when (assertionType) {
-                AssertionType.LOOKBEHIND, AssertionType.LOOKAHEAD -> buildDisjunctionList(assertionCtx.disjunction())
-                else -> null
-            }
+            val innerGene = if (assertionType.usesInnerGene) buildDisjunctionList(assertionCtx.disjunction()) else null
 
             val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
             res.genes.add(gene)
