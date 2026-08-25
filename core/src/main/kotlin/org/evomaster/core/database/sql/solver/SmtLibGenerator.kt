@@ -104,7 +104,11 @@ class SmtLibGenerator(
          * silently disagree when a backend reports a variant spelling; consolidating them into a single
          * source of truth is future work (see the note on SMTLibZ3DbConstraintSolver.hasColumnType).
          */
-        private val TYPE_MAP = mapOf(
+        // internal rather than private so a test can iterate it, checking that every spelling it
+        // accepts is read the same way by SMTLibZ3DbConstraintSolver. That is narrower than full
+        // agreement between the two vocabularies: it covers case handling and the boolean spellings,
+        // not whether each type maps to a compatible gene.
+        internal val TYPE_MAP = mapOf(
             "BIGINT" to SMT_INT,
             "BIT" to SMT_INT,
             "INTEGER" to SMT_INT,

@@ -12,6 +12,7 @@ import java.util.function.Function;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeValueHelper;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbComparisonType;
+import org.evomaster.client.java.controller.dynamodb.DynamoDbValueLookup;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.BeginsWithOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.BetweenOperation;
@@ -166,7 +167,7 @@ public class DynamoDbHeuristicsCalculator {
 
     private Truthness truthnessForComparison(ComparisonOperation<?> operation, Map<String, Object> item,
             DynamoDbComparisonType comparisonType) {
-        DynamoDbAttributeValueHelper.ValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item,
+        DynamoDbValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item,
                 operation.getFieldName());
         if (!lookup.found) {
             return comparisonType == DynamoDbComparisonType.NOT_EQUALS ? TruthnessUtils.TRUE_TRUTHNESS
@@ -222,7 +223,7 @@ public class DynamoDbHeuristicsCalculator {
     }
 
     private Truthness truthnessForExists(ExistsOperation operation, Map<String, Object> item) {
-        DynamoDbAttributeValueHelper.ValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item,
+        DynamoDbValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item,
                 operation.getFieldName());
         Truthness existsTruthness = lookup.found ? TruthnessUtils.TRUE_TRUTHNESS
                 : this.missingPathTruthness(operation.getFieldName(), item);
@@ -384,7 +385,7 @@ public class DynamoDbHeuristicsCalculator {
 
     private Truthness evaluateExistingField(String fieldName, Map<String, Object> item,
             Function<Object, Truthness> evaluator) {
-        DynamoDbAttributeValueHelper.ValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item, fieldName);
+        DynamoDbValueLookup lookup = DynamoDbAttributeValueHelper.lookupByPath(item, fieldName);
         return !lookup.found ? TruthnessUtils.FALSE_TRUTHNESS : evaluator.apply(lookup.value);
     }
 

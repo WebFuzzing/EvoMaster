@@ -372,34 +372,6 @@ public class TruthnessUtils {
     }
 
     /**
-     * Converts a non-negative branch distance into a false-oriented Truthness that preserves
-     * closeness to the true branch.
-     * <p>
-     * A zero distance yields {@link #TRUE_TRUTHNESS}. Positive finite distances yield an
-     * {@code ofTrue} value scaled above the {@link #FALSE_TRUTHNESS} baseline and
-     * {@code ofFalse = 1}. Infinite or {@link Double#MAX_VALUE} distances yield the
-     * {@link #FALSE_TRUTHNESS} baseline.
-     *
-     * @param distance a non-negative branch distance
-     * @return a Truthness instance derived from the distance
-     * @throws IllegalArgumentException if {@code distance} is negative or {@link Double#NaN}
-     */
-    public static Truthness getTruthnessFromDistance(double distance) {
-        if (Double.isNaN(distance)) {
-            throw new IllegalArgumentException("NaN distance");
-        }
-        if (distance < 0) {
-            throw new IllegalArgumentException("Negative distance: " + distance);
-        }
-        if (distance == 0.0d) {
-            return TRUE_TRUTHNESS;
-        }
-        double ofTrue = DistanceHelper.heuristicFromScaledDistanceWithBase(
-                DistanceHelper.H_NOT_NULL, distance);
-        return new Truthness(ofTrue, 1d);
-    }
-
-    /**
      * Computes the {@link Truthness} of the predicate {@code a.equals(b)}.
      * If the strings are equal, {@code ofTrue} is maximal (1.0). Otherwise, {@code ofTrue} is
      * derived from a left-alignment distance between the two strings (via

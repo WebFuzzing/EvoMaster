@@ -29,6 +29,7 @@ import org.evomaster.core.database.sql.schema.ForeignKey
 import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.utils.StringUtils.convertToAscii
+import org.evomaster.core.utils.TimeUtils
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.Z3Result
 import org.evomaster.solver.Z3Solution
@@ -95,7 +96,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     companion object {
         // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
         // epoch<->string conversions round-trip consistently.
+        // The single layout emitted when turning an epoch value back into a SQL literal. JSqlVisitor
+        // reads a superset of the layouts a database may emit, of which this is one, so the value
+        // round-trips: what is written here is read back to the same instant.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+        /**
+         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. The canonical one is
+         * taken from the generator rather than repeated, so the two cannot drift apart; consolidating
+         * all three type vocabularies into one source of truth remains future work.
+         */
+        private val BOOLEAN_SPELLINGS = setOf(SmtLibGenerator.BOOLEAN_TYPE, "BOOL")
     }
 
     @Inject
@@ -192,22 +203,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
         /*
-            Timed as a whole, and in a finally so that every exit path is covered. Skipped entirely
-            when nothing would report it. The two brackets
-            that already existed — around Z3 and around formula generation — leave out writing the
-            .smt2 file, rebuilding the gene tree from a solution, and the call overhead; measuring
-            only those understates what the solver costs the search.
+            Timed as a whole, and skipped entirely when nothing would report it. The two brackets that
+            already existed, around Z3 and around formula generation, leave out writing the .smt2 file,
+            rebuilding the gene tree from a solution, and the call overhead; measuring only those
+            understates what the solver costs the search.
+
+            A call that throws goes unmeasured, since the reporting happens on return. That only costs
+            a slightly low total: this figure is a running sum with no companion count to fall out of
+            step with, and an escaping exception here is a crash rather than a handled outcome.
          */
         if (stats == null) {
             return doSolve(schemaDto, sqlQuery, numberOfRows, null)
         }
 
-        val solveStart = System.currentTimeMillis()
-        try {
-            return doSolve(schemaDto, sqlQuery, numberOfRows, stats)
-        } finally {
-            stats.reportSqlZ3SolveTime(System.currentTimeMillis() - solveStart)
-        }
+        return TimeUtils.measureTimeMillis(
+            { ms, _ -> stats.reportSqlZ3SolveTime(ms) },
+            { doSolve(schemaDto, sqlQuery, numberOfRows, stats) }
+        )
     }
 
     private fun doSolve(
@@ -242,7 +254,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val queryStatement = try {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
-            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query: '$sqlQuery'")
+            LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: failed to parse SQL query: '$sqlQuery'")
             stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             return emptyList()
@@ -256,7 +268,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val smtLib = try {
             generator.generateSMT(queryStatement)
         } catch (e: RuntimeException) {
-            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
+            LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
             stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             return emptyList()
@@ -296,13 +308,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 emptyList()
             }
             Z3Result.Status.UNKNOWN -> {
-                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
+                LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
                 stats?.reportSqlZ3Unknown(z3TimeMs)
                 // Not cached: an 'unknown' may be timeout-driven and therefore transient
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
-                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
                 stats?.reportSqlZ3Error(z3TimeMs)
                 // Errors are not cached — they may be transient Docker failures
                 emptyList()
@@ -324,7 +336,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             return try {
                 CCJSqlParserUtil.parse(sanitizedQuery)
             } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().error("Failed to parse SQL query '$sqlQuery' as SQL Statement")
+                // Not logged here: the single caller reports this failure with the surrounding
+                // context, and once per distinct query rather than once per attempt.
                 throw RuntimeException(e)
             }
         }
@@ -433,7 +446,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             it.name.equals(columnName, ignoreCase = true)
         } ?: return false
 
-        return col.type.equals(expectedType, ignoreCase = true)
+        return typeMatches(col.type, expectedType)
+    }
+
+    /**
+     * Whether a column's declared type is the expected one, accounting for spellings that
+     * [SmtLibGenerator.TYPE_MAP] already treats as equivalent.
+     *
+     * Without this, a column declared `BOOL` is encoded as an SMT String exactly like a `BOOLEAN`
+     * one — the type map sends both to the same sort — but is not recognised as boolean when the
+     * solution is turned back into genes, so it silently loses its boolean handling and arrives as
+     * a string.
+     */
+    internal fun typeMatches(declaredType: String, expectedType: String): Boolean {
+        val declared = declaredType.uppercase()
+        val expected = expectedType.uppercase()
+        if (declared == expected) return true
+        return BOOLEAN_SPELLINGS.contains(declared) && BOOLEAN_SPELLINGS.contains(expected)
     }
 
     /**
@@ -550,8 +579,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param type The column type as a string.
      * @return The corresponding ColumnDataType.
      */
-    private fun getColumnDataType(type: String): ColumnDataType {
-        return when (type) {
+    internal fun getColumnDataType(type: String): ColumnDataType {
+        // Matched case-insensitively. SmtLibGenerator.TYPE_MAP uppercases before looking up, so a
+        // backend reporting a lowercase spelling used to be mapped there but fall through to the
+        // default here — the two vocabularies disagreeing silently about the same column.
+        return when (type.uppercase()) {
             "BIGINT" -> ColumnDataType.BIGINT
             "INTEGER" -> ColumnDataType.INTEGER
             "FLOAT" -> ColumnDataType.FLOAT
