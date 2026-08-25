@@ -505,7 +505,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookbehinds() {
-        checkSameAsJava("(?<=X)a")
+        checkSameAsJava("(?<=X)a") // satisfiable if we use "X" as prefix, which RegexGene handles.
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
 

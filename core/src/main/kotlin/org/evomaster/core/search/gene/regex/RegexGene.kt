@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -41,14 +42,6 @@ class RegexGene(
     val hasAssertions: Boolean = false
 ) : CompositeFixedGene(name, disjunctions) {
 
-
-    var javaPrefix : String = ""
-    var javaPostfix : String = ""
-
-    override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
-    }
-
     companion object {
         private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
 
@@ -59,12 +52,27 @@ class RegexGene(
         }
     }
 
+    /**
+     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     */
+    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+
+    /**
+     * Pattern used for assertion repair verification, only on JVM regex.
+     */
     private val pattern: Pattern? =
         if (regexType == RegexType.JVM) {
             compiledPattern(sourceRegex, externalRegexFlags)
         } else {
             null
         }
+
+    private var javaPrefix : String = ""
+    private var javaPostfix : String = ""
+
+    override fun copyContent(): Gene {
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
+    }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         usingFixedValue = if(fixedValue == null){
@@ -85,20 +93,7 @@ class RegexGene(
             }
             if (hasAssertions) {
                 val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
-                if(assertionRepairResult.success){
-                    javaPrefix = assertionRepairResult.neededPrefix
-                        ?: if(randomness.nextBoolean()){
-                            ""
-                        } else {
-                            "prefix_"
-                        }
-                    javaPostfix = assertionRepairResult.neededPostfix
-                        ?: if(randomness.nextBoolean()){
-                            ""
-                        } else {
-                            "_postfix"
-                        }
-                }
+                setPrefixAndPostfix(assertionRepairResult, randomness)
                 if (pattern.matcher(getValueAsRawString()).find()) {
                     return
                 }
@@ -109,9 +104,26 @@ class RegexGene(
     }
 
     /**
-     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     * Set prefix and postfix according to [repairResult], which may carry requirements (like empty prefix
+     * or "a" as postfix). If a side has no requirements (neededPre/Postfix is null) we can randomly set
+     * a pre/postfix.
      */
-    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+    private fun setPrefixAndPostfix(repairResult: AssertionRepairResult, randomness: Randomness) {
+        if (repairResult.success) {
+            javaPrefix = repairResult.neededPrefix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "prefix_"
+                }
+            javaPostfix = repairResult.neededPostfix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "_postfix"
+                }
+        }
+    }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
@@ -199,7 +211,7 @@ class RegexGene(
             return fixedValue!!
         }
 
-        return if(regexType == RegexType.JVM){
+        return if(requiresAssertionHandling){
             javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
         } else {
             disjunctions.getValueAsPrintableString(targetFormat = null)

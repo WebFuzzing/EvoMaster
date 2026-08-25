@@ -391,7 +391,7 @@ class DisjunctionRxGene(
 
         val resolution = when (assertion.assertionType) {
             AssertionType.LOOKAHEAD, AssertionType.LOOKBEHIND ->
-                repairAssertionWithContent(assertion, target, backward, randomness)
+                repairLookaroundAssertion(assertion, target, backward, randomness)
             AssertionType.START_OF_INPUT, AssertionType.END_OF_INPUT ->
                 repairStrictBoundaryAssertion(target, backward)
             AssertionType.CARET, AssertionType.DOLLAR ->
@@ -403,52 +403,69 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Repairs a [Direction.BIDIRECTIONAL] assertion ([AssertionType.WORD_BOUNDARY]/
-     * [AssertionType.NON_WORD_BOUNDARY]) by trying each of the possible shapes in a randomized
-     * order until one resolves both sides successfully.
+     * Repairs a lookaround [assertion] (lookahead/lookbehind) against a [target].
      */
-    private fun repairBidirectional(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
-        val branches = when (assertion.assertionType) {
-            AssertionType.WORD_BOUNDARY -> wordBoundaryBranches
-            AssertionType.NON_WORD_BOUNDARY -> nonWordBoundaryBranches
-            else -> throw IllegalStateException("${assertion.assertionType} is not a word-boundary assertion type.")
-        }.let { if (randomness.nextBoolean()) it else it.reversed() }
-
-        val before = genesBefore(idx)
-        val after = genesAfter(idx)
-        val repairLeftSide = { wordRequired: Boolean -> repairSide(wordRequired, before, backward = true, assertion, randomness) }
-        val repairRightSide = { wordRequired: Boolean -> repairSide(wordRequired, after, backward = false, assertion, randomness) }
-
-        for (branch in branches) {
-            val beforeResult = repairLeftSide(branch.wordBefore)
-            if (!beforeResult.success) continue
-            val afterResult = repairRightSide(branch.wordAfter)
-            if (afterResult.success) {
-                return beforeResult.mergedWith(afterResult)
-            }
+    private fun repairLookaroundAssertion(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if (target.isEmpty()) {
+            repairAssertionWithNoTarget(assertion, backward, randomness)
+        } else {
+            repairAssertionAgainstTarget(assertion, target, backward, randomness)
         }
-        return AssertionRepairResult.FAILURE
     }
 
     /**
-     * Resolves one side of a [Direction.BIDIRECTIONAL] branch. [wordRequired] indicates if the current side
-     * should start with a word character or not.
+     * Handles an assertion with nothing local to force onto: escapes zero-width if the assertion
+     * itself allows it, otherwise samples once and escapes the whole candidate outward.
      */
-    private fun repairSide(wordRequired: Boolean, target: List<Gene>, backward: Boolean, assertion: AssertionRxGene, randomness: Randomness): AssertionRepairResult =
-        if (wordRequired) {
-            val wordRanges = UnicodeCache.getWordForBoundaryRanges(false, assertion.flags)
-            repairTargetFromCharRanges(wordRanges, target, backward, randomness)
-        } else {
-            val nonWordRanges = UnicodeCache.getWordForBoundaryRanges(true, assertion.flags)
-            tryInRandomOrder(
-                { repairTargetFromCharRanges(nonWordRanges, target, backward, randomness) },
-                { repairStrictBoundaryAssertion(target, backward) },
-                randomness
-            )
+    private fun repairAssertionWithNoTarget(assertion: AssertionRxGene, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        val innerGene = assertion.innerGene!!
+        if (innerGene.canBeZeroWidth) {
+            innerGene.forceZeroWidth()
+            return AssertionRepairResult.SUCCESS
         }
+        assertion.randomize(randomness, false)
+        val candidate = assertion.sampledInnerValue()!!
+        return AssertionRepairResult.stillNeeded(candidate, backward)
+    }
 
     /**
-     * Repairs a multiline boundary assertion (^$), which can be either a line terminator or an end of the string.
+     * Resamples [assertion] up to [MAX_LOCAL_ASSERTION_ATTEMPTS] times looking for a candidate
+     * [target] fully absorbs; if none does, escapes the last candidate tried outwards. This mirrors
+     * the same outcome [resolveOutwardRequirement] produces.
+     */
+    private fun repairAssertionAgainstTarget(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        val countFunction = countWalkFunction(backward)
+        val forceFunction = forceWalkFunction(backward)
+
+        var lastCandidate: String? = null
+        for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
+            assertion.randomize(randomness, false)
+            val candidate = assertion.sampledInnerValue()!!
+            if (candidate.isEmpty()) {
+                return AssertionRepairResult.SUCCESS
+            }
+            if (countFunction(target, candidate).consumed == candidate.length) {
+                forceFunction(target, candidate)
+                return AssertionRepairResult.SUCCESS
+            }
+            // Read-only for now, try to force full match before escaping partial match.
+            lastCandidate = candidate
+        }
+
+        val candidate = lastCandidate ?: return AssertionRepairResult.FAILURE
+        return resolveOutwardRequirement(candidate, target, backward)
+    }
+
+    /**
+     * Repair input boundary assertions (non-multiline `^` and `$` for example) by forcing target
+     * (and whatever follows) to zero width.
+     */
+    private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
+        resolveEmptyRequirement(target, backward)
+
+    /**
+     * Repairs a (potentially multiline) boundary assertion (^$), which can be either a line terminator
+     * or an end of the string.
      */
     private fun repairCaretOrDollar(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
         return if(!assertion.flags.multiline){
@@ -502,58 +519,49 @@ class DisjunctionRxGene(
     }
 
     /**
-     * Repairs [assertion] with content against a [target].
+     * Repairs a [Direction.BIDIRECTIONAL] assertion ([AssertionType.WORD_BOUNDARY]/
+     * [AssertionType.NON_WORD_BOUNDARY]) by trying each of the possible shapes in a randomized
+     * order until one resolves both sides successfully.
      */
-    private fun repairAssertionWithContent(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
-        return if (target.isEmpty()) {
-            repairAssertionWithNoTarget(assertion, backward, randomness)
+    private fun repairBidirectional(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
+        val branches = when (assertion.assertionType) {
+            AssertionType.WORD_BOUNDARY -> wordBoundaryBranches
+            AssertionType.NON_WORD_BOUNDARY -> nonWordBoundaryBranches
+            else -> throw IllegalStateException("${assertion.assertionType} is not a word-boundary assertion type.")
+        }.let { if (randomness.nextBoolean()) it else it.reversed() }
+
+        val before = genesBefore(idx)
+        val after = genesAfter(idx)
+        val repairLeftSide = { wordRequired: Boolean -> repairSide(wordRequired, before, backward = true, assertion, randomness) }
+        val repairRightSide = { wordRequired: Boolean -> repairSide(wordRequired, after, backward = false, assertion, randomness) }
+
+        for (branch in branches) {
+            val beforeResult = repairLeftSide(branch.wordBefore)
+            if (!beforeResult.success) continue
+            val afterResult = repairRightSide(branch.wordAfter)
+            if (afterResult.success) {
+                return beforeResult.mergedWith(afterResult)
+            }
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
+     * Resolves one side of a [Direction.BIDIRECTIONAL] branch. [wordRequired] indicates if the current side
+     * should start with a word character or not.
+     */
+    private fun repairSide(wordRequired: Boolean, target: List<Gene>, backward: Boolean, assertion: AssertionRxGene, randomness: Randomness): AssertionRepairResult =
+        if (wordRequired) {
+            val wordRanges = UnicodeCache.getWordForBoundaryRanges(false, assertion.flags)
+            repairTargetFromCharRanges(wordRanges, target, backward, randomness)
         } else {
-            repairAssertionAgainstTarget(assertion, target, backward, randomness)
+            val nonWordRanges = UnicodeCache.getWordForBoundaryRanges(true, assertion.flags)
+            tryInRandomOrder(
+                { repairTargetFromCharRanges(nonWordRanges, target, backward, randomness) },
+                { repairStrictBoundaryAssertion(target, backward) },
+                randomness
+            )
         }
-    }
-
-    /**
-     * Handles an assertion with nothing local to force onto: escapes zero-width if the assertion
-     * itself allows it, otherwise samples once and escapes the whole candidate outward.
-     */
-    private fun repairAssertionWithNoTarget(assertion: AssertionRxGene, backward: Boolean, randomness: Randomness): AssertionRepairResult {
-        val innerGene = assertion.innerGene!!
-        if (innerGene.canBeZeroWidth) {
-            innerGene.forceZeroWidth()
-            return AssertionRepairResult.SUCCESS
-        }
-        assertion.randomize(randomness, false)
-        val candidate = assertion.sampledInnerValue()!!
-        return AssertionRepairResult.stillNeeded(candidate, backward)
-    }
-
-    /**
-     * Resamples [assertion] up to [MAX_LOCAL_ASSERTION_ATTEMPTS] times looking for a candidate
-     * [target] fully absorbs; if none does, escapes the last candidate tried outwards. This mirrors
-     * the same outcome [resolveOutwardRequirement] produces.
-     */
-    private fun repairAssertionAgainstTarget(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
-        val countFunction = countWalkFunction(backward)
-        val forceFunction = forceWalkFunction(backward)
-
-        var lastCandidate: String? = null
-        for (attempt in 0 until MAX_LOCAL_ASSERTION_ATTEMPTS) {
-            assertion.randomize(randomness, false)
-            val candidate = assertion.sampledInnerValue()!!
-            if (candidate.isEmpty()) {
-                return AssertionRepairResult.SUCCESS
-            }
-            if (countFunction(target, candidate).consumed == candidate.length) {
-                forceFunction(target, candidate)
-                return AssertionRepairResult.SUCCESS
-            }
-            // Read-only for now, try to force full match before escaping partial match.
-            lastCandidate = candidate
-        }
-
-        val candidate = lastCandidate ?: return AssertionRepairResult.FAILURE
-        return resolveOutwardRequirement(candidate, target, backward)
-    }
 
     /**
      * The genes in [terms] lying before index [idx], excluding other assertions. This is the forcing
@@ -630,10 +638,4 @@ class DisjunctionRxGene(
             )
         }
     }
-
-    /**
-     * Repair input boundary assertions (`^` and `$` for example) by forcing [target] (and whatever follows) to zero width.
-     */
-    private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
-        resolveEmptyRequirement(target, backward)
 }
