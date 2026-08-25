@@ -791,7 +791,8 @@ object RestActionBuilderV3 {
                 val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
                 name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
             } else {
-                name = obj.schema.`$ref`?.substringAfterLast("/") ?: "body"
+                // Pre-feature behaviour: the body gene was unconditionally named "body"
+                name = "body"
             }
             gene = getGene(name, obj.schema, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
         }
