@@ -975,7 +975,7 @@ class EMConfig {
                     throw ConfigProblemException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
                 }
 
-                if (Files.exists(path) && !Files.isWritable(path)) {
+                if (Files.exists(path) && fp.shouldBeWritable && !Files.isWritable(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that already" +
                             " exists, but that cannot be written/replaced to: $path")
                 }
@@ -1162,14 +1162,14 @@ class EMConfig {
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class FilePath(val canBeBlank: Boolean = false)
+    annotation class FilePath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
     /**
      *  Either a file or a folder, that MUST already exist and can be read.
      */
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class ExistingPath(val canBeBlank: Boolean = false, val shouldBeWritable: Boolean = false)
+    annotation class ExistingPath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
 
 //------------------------------------------------------------------------
@@ -1282,7 +1282,7 @@ class EMConfig {
     @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
             " When EvoMaster starts, it will read such file and import all configurations from it.")
     @Regex(".*\\.(yml|yaml|toml)")
-    @FilePath
+    @FilePath(false,false)
     var configPath: String = defaultConfigPath
 
 
@@ -1463,7 +1463,7 @@ class EMConfig {
     var dockerLocalhost = false
 
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
             " the generated tests")
     var jsControllerPath = "./app-driver.js"
@@ -1603,7 +1603,7 @@ class EMConfig {
     var writeStatistics = false
 
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var statisticsFile = "statistics.csv"
 
 
@@ -1808,7 +1808,7 @@ class EMConfig {
     var snapshotInterval = -1.0
 
     @Cfg("Where the snapshot file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var snapshotStatisticsFile = "snapshot.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
@@ -1825,7 +1825,7 @@ class EMConfig {
     var writeExtraHeuristicsFile = false
 
     @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var extraHeuristicsFile = "extra_heuristics.csv"
 
     @Experimental
@@ -2083,7 +2083,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
-    @FilePath
+    @FilePath(false,true)
     var targetHeuristicsFile = "targets.csv"
 
     @Experimental
@@ -2267,7 +2267,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a file that saves derived dependencies")
-    @FilePath
+    @FilePath(false,true)
     var dependencyFile = "dependencies.csv"
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
@@ -2406,7 +2406,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
-    @FilePath
+    @FilePath(false,true)
     var mutatedGeneFile = "mutatedGeneInfo.csv"
 
     @Experimental
@@ -2448,7 +2448,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save all not covered targets when the number is more than 100")
-    @FilePath
+    @FilePath(false,true)
     var exceedTargetsFile = "exceedTargets.txt"
 
 
@@ -2533,7 +2533,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var archiveAfterMutationFile = "archive.csv"
 
     @Debug
@@ -2542,7 +2542,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var impactAfterMutationFile = "impactSnapshot.csv"
 
     @Cfg("Whether to enable archive-based gene mutation")
@@ -2602,7 +2602,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save derived genes")
-    @FilePath
+    @FilePath(false,true)
     var impactFile = "impact.csv"
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
@@ -2662,7 +2662,7 @@ class EMConfig {
     var exportCoveredTarget = false
 
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
-    @FilePath
+    @FilePath(false,true)
     var coveredTargetFile = "coveredTargets.txt"
 
     @Cfg("Specify a format to organize the covered targets by the search")
@@ -2705,7 +2705,7 @@ class EMConfig {
     var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
 
     @Experimental
-    @FilePath
+    @FilePath(false,false)
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath: String = "postman.postman_collection.json"
 
@@ -2831,7 +2831,7 @@ class EMConfig {
             " but problematic if too much")
     var minimizeThresholdForLoss = 0.2
 
-    @FilePath(true)
+    @FilePath(true,false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2839,7 +2839,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoAgentLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo CLI jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2847,7 +2847,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoCliLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, true)
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
             " If left empty, it is not used." +
@@ -2859,7 +2859,7 @@ class EMConfig {
     @Cfg("Port used by JaCoCo to export coverage reports")
     var jaCoCoPort = 8899
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("Command for 'java' used in the External Drivers." +
             " Useful for when there are different JDK installed on same machine without the need" +
             " to update JAVA_HOME." +
