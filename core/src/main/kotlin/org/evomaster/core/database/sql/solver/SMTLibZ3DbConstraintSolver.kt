@@ -11,7 +11,6 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
-import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
@@ -30,6 +29,7 @@ import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.core.utils.TimeUtils
+import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.Z3Result
 import org.evomaster.solver.Z3Solution
@@ -90,12 +90,16 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private var untranslatableQueries: MutableMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>? = null
 
-    /** Shared across the generators built on each cache miss; see [SmtLibGenerator]. */
+    /**
+     * Shared across the generators built on each cache miss; see [SmtLibGenerator].
+     *
+     * Safe to share: the parsed AST is immutable (no setters, all fields final) and the visitor that
+     * reads it is built fresh per use. Unbounded on purpose — the keys are the schema's own CHECK
+     * expressions, a fixed set for the run, which is why [EMConfig.sqlZ3CacheSize] does not govern it.
+     */
     private var checkExpressionCache: MutableMap<String, SqlCondition?>? = null
 
     companion object {
-        // Must match the timestamp format used by JSqlVisitor (TIMESTAMP_FORMAT) so that
-        // epoch<->string conversions round-trip consistently.
         // The single layout emitted when turning an epoch value back into a SQL literal. JSqlVisitor
         // reads a superset of the layouts a database may emit, of which this is one, so the value
         // round-trips: what is written here is read back to the same instant.
