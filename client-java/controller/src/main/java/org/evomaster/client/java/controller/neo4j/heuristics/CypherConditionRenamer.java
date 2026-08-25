@@ -15,12 +15,12 @@ import java.util.Map;
  * Only variable names change; operators, literals and structure are preserved. A name not present in
  * the map is left unchanged.
  */
-final class ConditionRenamer {
+public final class CypherConditionRenamer {
 
-    private ConditionRenamer() {
+    private CypherConditionRenamer() {
     }
 
-    static CypherCondition rename(CypherCondition c, Map<String, String> renames) {
+    public static CypherCondition rename(CypherCondition c, Map<String, String> renames) {
         if (c instanceof LabelCondition) {
             LabelCondition lc = (LabelCondition) c;
             return new LabelCondition(map(lc.getVariableName(), renames), lc.getLabel());
@@ -66,7 +66,7 @@ final class ConditionRenamer {
         return out;
     }
 
-    static Operand rename(Operand o, Map<String, String> renames) {
+    public static Operand rename(Operand o, Map<String, String> renames) {
         if (o instanceof PropertyOperand) {
             PropertyOperand po = (PropertyOperand) o;
             return new PropertyOperand(map(po.getVariableName(), renames), po.getPropertyKey());
@@ -96,7 +96,7 @@ final class ConditionRenamer {
      * True when the condition references {@code variable} as a node/edge variable. Used to decide
      * which endpoint conditions an intermediate node should inherit.
      */
-    static boolean referencesVariable(CypherCondition c, String variable) {
+    public static boolean referencesVariable(CypherCondition c, String variable) {
         if (c instanceof LabelCondition) {
             return variable.equals(((LabelCondition) c).getVariableName());
         }

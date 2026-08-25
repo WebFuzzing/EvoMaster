@@ -410,8 +410,11 @@ class Cypher25AntlrParserTest {
 
     @Test
     void testVariableLengthAny() {
+        // `-[*]->` is `-[*1..]->`: an omitted lower bound is one, not zero, so this still needs a hop.
         PatternEdge edge = parse("MATCH (a)-[*]->(b) RETURN a, b").getPattern().getEdges().get(0);
         assertTrue(edge.isVariableLength());
+        assertEquals(1, edge.getMinLength().intValue());
+        assertNull(edge.getMaxLength());
     }
 
     @Test
@@ -432,7 +435,7 @@ class Cypher25AntlrParserTest {
     @Test
     void testVariableLengthMaxOnly() {
         PatternEdge edge = parse("MATCH (a)-[*..5]->(b) RETURN a, b").getPattern().getEdges().get(0);
-        assertNull(edge.getMinLength());
+        assertEquals(1, edge.getMinLength().intValue());
         assertEquals(5, edge.getMaxLength().intValue());
     }
 
