@@ -187,8 +187,8 @@ class Neo4jHeuristicsCalculatorTest {
         assertEquals(1, expanded.pattern.nodeCount());
         assertEquals(0, expanded.pattern.edgeCount());
         for (CypherCondition c : expanded.conditions) {
-            assertFalse(ConditionRenamer.referencesVariable(c, "b"));
-            assertFalse(ConditionRenamer.referencesVariable(c, "c"));
+            assertFalse(CypherConditionRenamer.referencesVariable(c, "b"));
+            assertFalse(CypherConditionRenamer.referencesVariable(c, "c"));
         }
     }
 
