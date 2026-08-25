@@ -11,7 +11,14 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.RegexWithExternalFlags
 import java.util.regex.Pattern
+
+/**
+ * How many times we try to resample the whole [RegexGene] and attempt repairing before we give up.
+ */
+const val MAX_TREE_REPAIR_ATTEMPTS = 10
 
 /**
  * A gene representing a regular expression (regex).
@@ -29,12 +36,38 @@ class RegexGene(
      * so, this is a reasonable workaround
      */
     var fixedValue: String? = null,
-    var usingFixedValue: Boolean = false
+    var usingFixedValue: Boolean = false,
+    val externalRegexFlags: RegexFlags = RegexFlags(),
+    val hasAssertions: Boolean = false
 ) : CompositeFixedGene(name, disjunctions) {
 
+    companion object {
+        private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
+
+        private fun compiledPattern(sourceRegex: String, flags: RegexFlags): Pattern {
+            return patternCache.computeIfAbsent(RegexWithExternalFlags(sourceRegex, flags)) {
+                Pattern.compile(sourceRegex, flags.toJavaFlagBitmask())
+            }
+        }
+    }
+
+    /**
+     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     */
+    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+
+    /**
+     * Pattern used for assertion repair verification, only on JVM regex.
+     */
+    private val pattern: Pattern? =
+        if (regexType == RegexType.JVM) {
+            compiledPattern(sourceRegex, externalRegexFlags)
+        } else {
+            null
+        }
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -43,7 +76,26 @@ class RegexGene(
         } else {
             randomness.nextBoolean()
         }
-        disjunctions.randomize(randomness, tryToForceNewValue)
+
+        if (!requiresAssertionHandling) {
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            return
+        }
+
+        repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            if (pattern!!.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                return
+            }
+            if (hasAssertions) {
+                disjunctions.attemptAssertionRepair(randomness)
+                if (pattern.matcher(disjunctions.getValueAsPrintableString()).find()) {
+                    return
+                }
+            }
+        }
+
+        throw IllegalStateException("Could not repair regex value")
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
@@ -66,7 +118,7 @@ class RegexGene(
 
         if(regexType == RegexType.JVM){
             val matcher = try{
-                Pattern.compile(sourceRegex).matcher(fixedValue!!)
+                pattern!!.matcher(fixedValue!!)
             }catch(e: Exception){
                 return false
             }

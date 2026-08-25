@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.PhenotypeDormantGene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -15,6 +16,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+private data class BranchRanking(val absorbableCount: Int, val branchIndex: Int)
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
@@ -205,5 +207,131 @@ class DisjunctionListRxGene(
         activeDisjunction = disjunctions.indexOf(child)
 
         return true
+    }
+
+    /**
+     * Ranks all branches by how much of [value] they can absorb, without mutating
+     * anything. Shared by both directions: [absorb] is [DisjunctionRxGene.absorbableCount]
+     * for lookahead's ranking, [DisjunctionRxGene.absorbableSuffixCount] for lookbehind's.
+     */
+    private fun rankBranches(
+        value: String,
+        absorb: (DisjunctionRxGene, String) -> Int
+    ): BranchRanking? {
+        if (value.isEmpty() || disjunctions.isEmpty()) {
+            return null
+        }
+        var bestCount = absorb(disjunctions[activeDisjunction], value)
+        var bestIndex = activeDisjunction
+        for (i in disjunctions.indices) {
+            if (i == activeDisjunction) {
+                continue
+            }
+            if (bestCount == value.length) {
+                break
+            }
+            val can = absorb(disjunctions[i], value)
+            if (can > bestCount) {
+                bestCount = can
+                bestIndex = i
+            }
+        }
+        return BranchRanking(bestCount, bestIndex)
+    }
+
+    /**
+     * Ranks every branch by how much of [value] it could absorb, without mutating, and
+     * reports the best [RxAbsorbable.absorbableCount].
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [rankBranches]
+     */
+    override fun absorbableCount(value: String): Int =
+        rankBranches(value){ disjunction, value -> disjunction.absorbableCount(value) }?.absorbableCount ?: 0
+
+    /**
+     * True if at least one branch can render "", as we can select that branch and force it.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean = disjunctions.any { it.canBeZeroWidth }
+
+    /**
+     * Shared rank-then-force logic behind [tryForce]/[tryForceSuffix]: ranks all branches via
+     * [absorb], switches [activeDisjunction] to the winner if needed, then delegates to [force]
+     * on that branch.
+     */
+    private fun forceBestBranch(
+        value: String,
+        absorb: (DisjunctionRxGene, String) -> Int,
+        force: (DisjunctionRxGene, String) -> Int
+    ): Int {
+        val (bestCount, bestIndex) = rankBranches(value, absorb) ?: BranchRanking(0, activeDisjunction)
+
+        if (bestCount > 0) {
+            if (bestIndex != activeDisjunction) {
+                tryToActivateGene(disjunctions[bestIndex])
+            }
+            return force(disjunctions[bestIndex], value)
+        }
+        return 0
+    }
+
+    /**
+     * Activates whichever branch can best absorb [value] (switching [activeDisjunction] if
+     * needed) and forces it there.
+     * @see [RxAbsorbable.tryForce]
+     * @see [rankBranches]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return forceBestBranch(value,
+            absorb = { d, v -> d.absorbableCount(v) },
+            force = { d, v -> d.tryForce(v) }
+        )
+    }
+
+    /**
+     * Suffix counterpart of [absorbableCount]: ranks every branch by how much of
+     * [value]'s trailing characters it could absorb, without mutating.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int =
+        rankBranches(value) { d, v -> d.absorbableSuffixCount(v) }?.absorbableCount ?: 0
+
+    /**
+     * Suffix counterpart of [tryForce]: activates whichever branch can best absorb
+     * [value]'s trailing characters and forces it there, walking right-to-left.
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        return forceBestBranch(value,
+            absorb = { d, v -> d.absorbableSuffixCount(v) },
+            force = { d, v -> d.tryForceSuffix(v) }
+        )
+    }
+
+    /**
+     * Forces the active branch to zero width if it can; otherwise switches to the first
+     * branch that can and forces that one instead.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth)
+        // try the active branch first to avoid an unnecessary switch
+        val order = listOf(activeDisjunction) + disjunctions.indices.filter { it != activeDisjunction }
+        val target = order.first { disjunctions[it].canBeZeroWidth }
+        disjunctions[target].forceZeroWidth()
+        if (target != activeDisjunction) {
+            tryToActivateGene(disjunctions[target])
+        }
+    }
+
+    /**
+     * Delegates to whichever branch is currently active, as only that branch's rendered
+     * value is ever observed, so only it needs repairing. See [DisjunctionRxGene.attemptAssertionRepair] for
+     * the actual repair logic and what its return value means.
+     */
+    fun attemptAssertionRepair(randomness: Randomness): AssertionRepairResult {
+        return disjunctions[activeDisjunction].attemptAssertionRepair(randomness)
     }
 }

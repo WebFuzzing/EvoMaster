@@ -344,13 +344,22 @@ class Cypher25MatchVisitor extends Cypher25ParserBaseVisitor<Void> {
         return new RawCondition(ctx.getText());
     }
 
+    /**
+     * Reads the {@code *n}, {@code *n..m} length of a variable-length relationship.
+     * <p>
+     * An omitted lower bound means <b>one</b>, not zero: {@code -[*]->} and {@code -[*..3]->} both require at
+     * least one hop. Note this differs from the quantifier of a quantified path pattern, where {@code *} does
+     * mean zero or more and {@code +} means one or more (see {@link #quantifierBounds}). The grammar shows why:
+     * {@code quantifier} offers both {@code PLUS} and {@code TIMES}, while {@code pathLength} only has
+     * {@code TIMES}, so the relationship form has no other way to spell "one or more".
+     */
     private void applyPathLength(RelInfo rel, Cypher25Parser.PathLengthContext ctx) {
         rel.variableLength = true;
         if (ctx.single != null) {
             rel.minLength = parseInt(ctx.single.getText());
             rel.maxLength = rel.minLength;
         } else {
-            if (ctx.from != null) rel.minLength = parseInt(ctx.from.getText());
+            rel.minLength = ctx.from != null ? parseInt(ctx.from.getText()) : 1;
             if (ctx.to != null) rel.maxLength = parseInt(ctx.to.getText());
         }
     }

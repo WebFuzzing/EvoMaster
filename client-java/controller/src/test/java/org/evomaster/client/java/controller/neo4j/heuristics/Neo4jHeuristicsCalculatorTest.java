@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.neo4j.heuristics;
 
 import org.evomaster.client.java.controller.neo4j.conditions.ComparisonCondition;
 import org.evomaster.client.java.controller.neo4j.conditions.CypherCondition;
+import org.evomaster.client.java.controller.neo4j.conditions.PropertyCondition;
 import org.evomaster.client.java.controller.neo4j.conditions.PropertyOperand;
 import org.evomaster.client.java.controller.neo4j.conditions.TypeCondition;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jEdge;
@@ -156,6 +157,88 @@ class Neo4jHeuristicsCalculatorTest {
     }
 
     @Test
+    void testUnboundedVariableLengthNeedsAtLeastOneHop() throws CypherParserException {
+        // `-[*]->` is `-[*1..]->`: an omitted lower bound is one, not zero.
+        MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*]->(b) RETURN b");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(2, expanded.pattern.nodeCount());
+        assertEquals(1, expanded.pattern.edgeCount());
+        assertEquals(1, expanded.conditions.stream().filter(TypeCondition.class::isInstance).count());
+    }
+
+    @Test
+    void testUnboundedVariableLengthIsNotSatisfiedByALoneNode() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*]->(b) RETURN b");
+        Neo4jGraph g = new Neo4jGraph(
+                Collections.singletonList(node("n1", labels(), props())),
+                Collections.emptyList());
+
+        assertFalse(calculator.computeHeuristic(q, g).isTrue());
+        assertTrue(calculator.computeDistance(q, g) > 0);
+    }
+
+    @Test
+    void testOmittedLowerBoundWithAnUpperBoundIsAlsoOne() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*..3]->(b) RETURN b");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(2, expanded.pattern.nodeCount());
+        assertEquals(1, expanded.pattern.edgeCount());
+    }
+
+    @Test
+    void testExplicitZeroLengthStillMergesTheEndpoints() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*0]->(b) RETURN b");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(1, expanded.pattern.nodeCount());
+        assertEquals(0, expanded.pattern.edgeCount());
+        assertEquals(0, expanded.conditions.stream().filter(TypeCondition.class::isInstance).count());
+    }
+
+    @Test
+    void testQuantifiedPathStarStillMeansZeroOrMore() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a) ((x)-[:KNOWS]->(y))* (b) RETURN a");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(1, expanded.pattern.nodeCount());
+        assertEquals(0, expanded.pattern.edgeCount());
+    }
+
+    @Test
+    void testUndirectedVariableLengthExpandsToAChainToo() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*2]-(b) RETURN b");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(3, expanded.pattern.nodeCount());
+        assertEquals(2, expanded.pattern.edgeCount());
+        assertTrue(expanded.pattern.getEdges().stream().noneMatch(PatternEdge::isDirected));
+    }
+
+    @Test
+    void testEveryHopOfAChainInheritsTheEdgeConditions() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a)-[r:KNOWS*2 {since: 2020}]->(b) RETURN b");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(2, expanded.conditions.stream().filter(TypeCondition.class::isInstance).count());
+        assertEquals(2, expanded.conditions.stream()
+                .filter(PropertyCondition.class::isInstance)
+                .filter(c -> "since".equals(((PropertyCondition) c).getPropertyKey()))
+                .count());
+    }
+
+    @Test
+    void testNestedQuantifiedPathsMultiplyOut() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (a) ((x) ((m)-[:R]->(n)){2} (y)){2} (b) RETURN a");
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(q);
+
+        assertEquals(4, expanded.pattern.edgeCount());
+        assertEquals(5, expanded.pattern.nodeCount());
+        assertEquals(4, expanded.conditions.stream().filter(TypeCondition.class::isInstance).count());
+    }
+
+    @Test
     void testVariableLengthTwoHopSatisfied() throws CypherParserException {
         MatchOperation q = parser.parse("MATCH (a)-[:KNOWS*2]->(b) RETURN b");
         // n1 -KNOWS-> n2 -KNOWS-> n3 : a two-hop KNOWS path exists.
@@ -187,8 +270,8 @@ class Neo4jHeuristicsCalculatorTest {
         assertEquals(1, expanded.pattern.nodeCount());
         assertEquals(0, expanded.pattern.edgeCount());
         for (CypherCondition c : expanded.conditions) {
-            assertFalse(ConditionRenamer.referencesVariable(c, "b"));
-            assertFalse(ConditionRenamer.referencesVariable(c, "c"));
+            assertFalse(CypherConditionRenamer.referencesVariable(c, "b"));
+            assertFalse(CypherConditionRenamer.referencesVariable(c, "c"));
         }
     }
 

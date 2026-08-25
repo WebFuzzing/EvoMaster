@@ -36,9 +36,9 @@ import java.util.Set;
  *     sub-pattern, since step 1 clones them unchanged (min/max preserved) into the flat edge list.</li>
  * </ol>
  */
-class Neo4jPatternExpander {
+public class Neo4jPatternExpander {
 
-    static final class ExpandedQuery {
+    public static final class ExpandedQuery {
         final MatchPattern pattern;
         final List<CypherCondition> conditions;
 
@@ -50,7 +50,7 @@ class Neo4jPatternExpander {
 
     private int counter = 0;
 
-    ExpandedQuery expand(MatchOperation query) {
+    public ExpandedQuery expand(MatchOperation query) {
         ExpandedQuery afterQpp = expandQuantifiedPaths(query.getPattern(), query.getConditions());
         return expandVariableLengthEdges(afterQpp.pattern, afterQpp.conditions);
     }
@@ -80,7 +80,7 @@ class Neo4jPatternExpander {
                 edges.add(e);
                 continue;
             }
-            int lower = e.getMinLength() != null ? e.getMinLength() : 0;
+            int lower = e.getMinLength() != null ? e.getMinLength() : 1;
             if (lower <= 1) {
                 if (lower == 0) {
                     merges.put(e.getTargetVariable(), e.getSourceVariable());
@@ -244,7 +244,7 @@ class Neo4jPatternExpander {
                     e.isVariableLength(), e.getMinLength(), e.getMaxLength()));
         }
         for (CypherCondition c : subConditions) {
-            conditions.add(ConditionRenamer.rename(c, renames));
+            conditions.add(CypherConditionRenamer.rename(c, renames));
         }
     }
 
@@ -312,7 +312,7 @@ class Neo4jPatternExpander {
     private List<CypherCondition> endpointConditions(List<CypherCondition> conditions, String variable) {
         List<CypherCondition> out = new ArrayList<>();
         for (CypherCondition c : conditions) {
-            if (ConditionRenamer.referencesVariable(c, variable)) {
+            if (CypherConditionRenamer.referencesVariable(c, variable)) {
                 out.add(c);
             }
         }
@@ -340,7 +340,7 @@ class Neo4jPatternExpander {
     private List<CypherCondition> renameAll(List<CypherCondition> conditions, Map<String, String> renames) {
         List<CypherCondition> out = new ArrayList<>(conditions.size());
         for (CypherCondition c : conditions) {
-            out.add(ConditionRenamer.rename(c, renames));
+            out.add(CypherConditionRenamer.rename(c, renames));
         }
         return out;
     }
