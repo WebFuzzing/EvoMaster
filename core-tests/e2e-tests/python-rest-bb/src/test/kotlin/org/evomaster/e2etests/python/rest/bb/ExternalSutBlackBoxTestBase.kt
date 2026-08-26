@@ -109,7 +109,6 @@ abstract class ExternalSutBlackBoxTestBase : RestTestBase() {
 
     private fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String) {
         when {
-            // For Playwright output, invoke Playwright runner instead of Jest
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName), outputFormat.isPlaywright())
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)
