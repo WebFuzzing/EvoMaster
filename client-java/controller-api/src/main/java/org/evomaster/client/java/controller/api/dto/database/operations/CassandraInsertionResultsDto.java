@@ -27,6 +27,17 @@ public class CassandraInsertionResultsDto {
         return failedInsertionIndex >= 0;
     }
 
+    /**
+     * Given the exception thrown when executing a sequence of Cassandra insertions, extract the index of the
+     * insertion that failed, and mark as successfully executed only the insertions that came before it.
+     * <p>
+     * To be used in EMController once the insertion of Cassandra data is implemented, in the same way as it is
+     * currently done for Mongo in executeMongoInsertion, ie to build the results DTO to send back when
+     * CassandraScriptRunner#executeInsert throws an exception.
+     *
+     * @param insertions the sequence of insertions that was attempted
+     * @param e          the exception thrown while executing such insertions
+     */
     public void handleFailedInsertion(List<CassandraInsertionDto> insertions, Exception e) {
         failedInsertionIndex = findFailedInsertion(e);
 
