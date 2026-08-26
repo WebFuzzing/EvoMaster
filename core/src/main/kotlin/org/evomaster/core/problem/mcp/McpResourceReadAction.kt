@@ -3,11 +3,11 @@ package org.evomaster.core.problem.mcp
 import org.evomaster.core.search.action.Action
 
 /**
- * Action to read an MCP resource.
- * For direct resources (isTemplate=false), the URI is fixed and no genes are mutable.
- * For template resources (isTemplate=true), one StringGene per URI template variable
- * (e.g. {city} in weather:///{city}/current) is created and fuzzed independently;
- * call resolvedUri() to interpolate current gene values into the template.
+ * Action that reads a resource from an MCP server via the `resources/read` JSON-RPC method.
+ *
+ * @param uriTemplate the resource URI or URI template string (e.g. `file:///data`, `weather:///{city}/current`)
+ * @param uriParams one [McpUriParam] per template variable; empty for direct resources
+ * @param isTemplate whether this action represents a URI template or a fixed URI
  */
 class McpResourceReadAction(
     val uriTemplate: String,
