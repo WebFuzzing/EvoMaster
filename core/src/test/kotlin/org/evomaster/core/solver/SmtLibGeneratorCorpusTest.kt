@@ -7,6 +7,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -210,7 +211,7 @@ class SmtLibGeneratorCorpusTest {
      * means "no condition was lost *loudly*", not "no condition was lost".
      */
     @Test
-    fun `a query over a derived table loses only the derived part`() {
+    fun `a derived table never costs the whole query`() {
         val results = runCorpus()
         val byOutcome = results.groupingBy { it.outcome }.eachCount()
         val partial = byOutcome[Outcome.PARTIAL_TRANSLATION] ?: 0
@@ -231,6 +232,179 @@ class SmtLibGeneratorCorpusTest {
         }
         assertTrue(derived.any { it.outcome == Outcome.PARTIAL_TRANSLATION }) {
             "the corpus should exercise a condition over a derived table, which has to be dropped"
+        }
+    }
+
+    /**
+     * What the containment is worth, stated as an invariant rather than a count.
+     *
+     * The query below joins a real table against a derived one and puts three conditions in the same
+     * `WHERE`: two over the real table, one over the derived alias. Only the third is untranslatable.
+     *
+     * Before the clause was split into conjuncts, the exception raised by the third discarded all
+     * three, because the caller guards the clause as a unit. The assertion here is that the two
+     * translatable conditions survive: their columns must appear in the generated formula, and
+     * exactly one condition must be recorded as lost.
+     */
+    @Test
+    fun `an untranslatable condition costs only itself`() {
+        val query = "SELECT p.ID FROM PROJECT p" +
+            " LEFT OUTER JOIN (SELECT ID, PROJECT_ID FROM LABEL UNION ALL SELECT ID, PROJECT_ID FROM LABEL) l" +
+            " ON p.ID = l.PROJECT_ID" +
+            " WHERE p.TITLE = 'kept' AND l.ID = 7 AND p.RANK > 3"
+
+        val schema = loadSchema()
+        val generator = SmtLibGenerator(schema, NUMBER_OF_ROWS)
+        val smt = generator.generateSMT(parseStatement(query)).toString()
+
+        /*
+            Two conditions reference the derived alias — the JOIN's ON and the middle conjunct of the
+            WHERE — and each is dropped on its own. What matters is that the count equals the number
+            of untranslatable conditions, not the number of clauses that contained one.
+         */
+        assertEquals(2, generator.skippedQueryConstraints) {
+            "only the conditions over the derived table should be lost"
+        }
+        listOf(
+            "(assert (= ${ref("TITLE", "project")} \"kept\"))",
+            "(assert (> ${ref("RANK", "project")} 3))"
+        ).forEach { expected ->
+            assertTrue(smt.contains(expected)) { "$expected should have survived:\n$smt" }
+        }
+    }
+
+    /** Left outer join of a real table against a derived one, the shape an ORM emits for inheritance. */
+    private val joinWithDerived =
+        "SELECT p.ID FROM PROJECT p" +
+            " LEFT OUTER JOIN (SELECT ID, PROJECT_ID FROM LABEL) l ON p.ID = l.PROJECT_ID"
+
+    /*
+        The assertions below name the exact text a translated condition takes, rather than matching a
+        column anywhere in the formula. Two things would otherwise make them pass for the wrong
+        reason: a column name also appears in its datatype declaration, and PROJECT.RANK carries a
+        CHECK constraint that emits "(<= (RANK project__1) 100)" whatever the query says.
+     */
+
+    /** Text of the reference to [column] of the first row of [table]. */
+    private fun ref(column: String, table: String) = "($column ${table}__1)"
+
+    private fun generate(query: String): Pair<SmtLibGenerator, String> {
+        val generator = SmtLibGenerator(loadSchema(), NUMBER_OF_ROWS)
+        return generator to generator.generateSMT(parseStatement(query)).toString()
+    }
+
+    /**
+     * The counterpart of the previous test: the split stops at `AND`.
+     *
+     * Pruning the two operators is not equally safe. Dropping a conjunct leaves a formula weaker than
+     * the query, so Z3 may return rows that do not satisfy what was dropped, which is the failure
+     * mode this code already accepts and counts. Dropping a disjunct would leave a formula
+     * *stronger* than the query, which can turn a satisfiable query into `unsat` and yield no rows
+     * at all. So a disjunction is translated whole or not at all.
+     *
+     * Here the disjunction has one side over a derived table. Neither side may reach the formula:
+     * keeping `p.TITLE = 'x'` alone would demand of every generated row something the query only
+     * offered as an alternative. The conjunct beside it is unaffected.
+     */
+    @Test
+    fun `a disjunction is translated whole or not at all`() {
+        val (_, smt) = generate("$joinWithDerived WHERE (l.ID = 7 OR p.TITLE = 'x') AND p.RANK > 3")
+
+        assertFalse(smt.contains(ref("TITLE", "project"))) {
+            "the translatable side of the disjunction must not be asserted on its own:\n$smt"
+        }
+        assertTrue(smt.contains("(assert (> ${ref("RANK", "project")} 3))")) {
+            "the conjunct beside the disjunction should have survived:\n$smt"
+        }
+    }
+
+    /**
+     * The same rule reached from the other side: a disjunction every operand of which translates is
+     * emitted as one `or`, and the conjunct beside it is emitted separately. Without this, the test
+     * above would also pass on an implementation that simply dropped every disjunction it saw.
+     */
+    @Test
+    fun `a disjunction that translates in full is kept`() {
+        val (_, smt) = generate("$joinWithDerived WHERE (p.TITLE = 'x' OR p.RANK > 3) AND p.RANK < 90")
+
+        assertTrue(smt.contains("(or (= ${ref("TITLE", "project")}")) {
+            "the disjunction should be emitted whole:\n$smt"
+        }
+        assertTrue(smt.contains("(assert (< ${ref("RANK", "project")} 90))")) {
+            "the conjunct beside it should be emitted separately:\n$smt"
+        }
+    }
+
+    /**
+     * The subtle case, and the reason [flattening][SmtLibGenerator] cannot simply recurse through
+     * every operator it meets.
+     *
+     * The `AND` here sits *inside* a disjunction. Splitting it would leave
+     * `p.TITLE = 'x' OR p.RANK > 3` — a formula that demands of every row something the query only
+     * offered as one of two alternatives, and which can be `unsat` where the query was satisfiable.
+     * So the clause is dropped whole instead.
+     */
+    @Test
+    fun `a conjunction inside a disjunction is not split`() {
+        val (_, smt) = generate("$joinWithDerived WHERE p.TITLE = 'x' OR (l.ID = 7 AND p.RANK > 3)")
+
+        assertFalse(smt.contains(ref("TITLE", "project"))) {
+            "the disjunction must not be pruned from inside:\n$smt"
+        }
+        assertFalse(smt.contains("(assert (> ${ref("RANK", "project")} 3))")) {
+            "the disjunction must not be pruned from inside:\n$smt"
+        }
+    }
+
+    /**
+     * A characterisation test, not a guarantee. It pins behaviour this change neither introduces nor
+     * repairs, so that a later fix has to face it deliberately.
+     *
+     * `SMTConditionVisitor` drops the operands of a disjunction that translate to nothing and keeps
+     * the rest. `IS NULL` translates to nothing, so `A OR (X IS NULL)` reaches the formula as `A`
+     * alone: every row is now required to satisfy `A`, which the query only offered as one
+     * alternative. This is the opposite direction of loss from everything else here, and no counter
+     * records it — `skippedQueryConstraints` stays at the value the `ON` clause alone accounts for.
+     *
+     * It belongs to the untracked `NULL` gap. Splitting the clause per conjunct does not reach it,
+     * because the loss happens inside the visitor and below the level the split operates on.
+     */
+    @Test
+    fun `a disjunction silently loses an operand that translates to nothing`() {
+        val (generator, smt) = generate("$joinWithDerived WHERE p.TITLE IS NULL OR p.RANK > 3")
+
+        assertTrue(smt.contains("(assert (> ${ref("RANK", "project")} 3))")) {
+            "the surviving operand is asserted on its own, which is stronger than the query:\n$smt"
+        }
+        assertFalse(smt.contains("(or (> ${ref("RANK", "project")}")) {
+            "no disjunction is left of the WHERE clause:\n$smt"
+        }
+        assertEquals(1, generator.skippedQueryConstraints) {
+            "the loss is not counted: the only skipped constraint should be the ON over the derived table"
+        }
+    }
+
+    /**
+     * The case that motivates reading the query's aliases rather than matching against the schema
+     * alone.
+     *
+     * Here the sub-select is aliased `LABEL`, which is also the name of a real table in the schema.
+     * Deciding by name — "is this qualifier one of the schema's tables?" — answers yes, and the
+     * generator emits a constraint selecting `TITLE` from a `LABEL` row. `LABEL` has no such column,
+     * so the formula reaches Z3 only to be rejected, and nothing records that a condition was lost.
+     *
+     * Reading the query's own `FROM` settles it: the alias is declared there as a sub-select, so the
+     * condition is dropped and counted instead.
+     */
+    @Test
+    fun `a derived table aliased as a schema table is still derived`() {
+        val query = "SELECT sub.TITLE FROM (SELECT TITLE FROM PROJECT) LABEL WHERE LABEL.TITLE = 'x'"
+
+        val result = classify(loadSchema(), query)
+
+        assertEquals(Outcome.PARTIAL_TRANSLATION, result.outcome) {
+            "the condition over the derived table should be dropped and counted, not emitted" +
+                " against the schema table that happens to share its name (was: ${result.detail})"
         }
     }
 }

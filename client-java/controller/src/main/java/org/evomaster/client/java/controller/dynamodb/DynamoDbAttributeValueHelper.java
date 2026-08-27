@@ -343,47 +343,49 @@ public final class DynamoDbAttributeValueHelper {
      * {@link #lookupByPath(Map, String)}. Container paths are included alongside their descendants,
      * while sets are treated as leaves because DynamoDB document paths cannot address set members.
      * Paths retain the deterministic traversal order of the normalized maps and lists.
+     * <p>
+     * Children are pushed onto a LIFO work stack in reverse order to preserve depth-first preorder.
      *
      * @param item normalized DynamoDB item
      * @return snapshot of all resolvable document paths, or an empty set when {@code item} is null
      */
     public static Set<String> documentPaths(Map<String, Object> item) {
         Set<String> paths = new LinkedHashSet<>();
-        if (item != null) {
-            collectDocumentPaths(item, null, paths);
+        if (item == null) {
+            return paths;
+        }
+
+        Deque<DocumentPathNode> pending = new ArrayDeque<>();
+        pending.push(new DocumentPathNode(item, null)); //Use null as parent for the root node
+
+        while (!pending.isEmpty()) {
+            DocumentPathNode current = pending.pop();
+            if (current.path != null) {
+                paths.add(current.path);
+            }
+
+            if (current.value instanceof Map<?, ?>) {
+                List<Map.Entry<?, ?>> entries = new ArrayList<>(((Map<?, ?>) current.value).entrySet());
+                for (int i = entries.size() - 1; i >= 0; i--) {
+                    Map.Entry<?, ?> entry = entries.get(i);
+                    Objects.requireNonNull(entry.getKey());
+
+                    String field = String.valueOf(entry.getKey());
+                    String path = current.path == null ? field : current.path + "." + field;
+                    pending.push(new DocumentPathNode(entry.getValue(), path));
+                }
+                continue;
+            }
+
+            if (current.value instanceof List<?>) {
+                List<?> list = (List<?>) current.value;
+                for (int i = list.size() - 1; i >= 0; i--) {
+                    String path = current.path + LIST_INDEX_OPEN + i + LIST_INDEX_CLOSE;
+                    pending.push(new DocumentPathNode(list.get(i), path));
+                }
+            }
         }
         return paths;
-    }
-
-    /**
-     * Recursively collects paths below one normalized map or list value.
-     *
-     * @param value current normalized value
-     * @param parentPath path of the current value, or null for the item root
-     * @param paths destination set preserving traversal order
-     */
-    private static void collectDocumentPaths(Object value, String parentPath, Set<String> paths) {
-        if (value instanceof Map<?, ?>) {
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                if (entry.getKey() == null) {
-                    continue;
-                }
-                String field = String.valueOf(entry.getKey());
-                String path = parentPath == null ? field : parentPath + "." + field;
-                paths.add(path);
-                collectDocumentPaths(entry.getValue(), path, paths);
-            }
-            return;
-        }
-
-        if (value instanceof List<?>) {
-            List<?> list = (List<?>) value;
-            for (int i = 0; i < list.size(); i++) {
-                String path = parentPath + LIST_INDEX_OPEN + i + LIST_INDEX_CLOSE;
-                paths.add(path);
-                collectDocumentPaths(list.get(i), path, paths);
-            }
-        }
     }
 
     /**
@@ -396,15 +398,15 @@ public final class DynamoDbAttributeValueHelper {
      * <p>
      * Lookup fails when the item or path is absent, a field does not exist, an intermediate value has
      * the wrong container type, or a list index is outside the available range. A successfully
-     * resolved explicit null is returned as {@code ValueLookup(true, null)}.
+     * resolved explicit null is returned as {@code DynamoDbValueLookup(true, null)}.
      *
      * @param item normalized DynamoDB item
      * @param path document path produced by the DynamoDB expression parser
      * @return result containing both path-presence information and the resolved value
      */
-    public static ValueLookup lookupByPath(Map<String, Object> item, String path) {
+    public static DynamoDbValueLookup lookupByPath(Map<String, Object> item, String path) {
         if (item == null || path == null || path.trim().isEmpty()) {
-            return new ValueLookup(false, null);
+            return new DynamoDbValueLookup(false, null);
         }
 
         Object current = item;
@@ -413,45 +415,28 @@ public final class DynamoDbAttributeValueHelper {
             ParsedChunk chunk = parseChunk(rawChunk);
 
             if (!(current instanceof Map<?, ?>)) {
-                return new ValueLookup(false, null);
+                return new DynamoDbValueLookup(false, null);
             }
 
             Map<?, ?> map = (Map<?, ?>) current;
             if (!map.containsKey(chunk.fieldName)) {
-                return new ValueLookup(false, null);
+                return new DynamoDbValueLookup(false, null);
             }
             current = map.get(chunk.fieldName);
 
             for (Integer index : chunk.indexes) {
                 if (!(current instanceof List<?>)) {
-                    return new ValueLookup(false, null);
+                    return new DynamoDbValueLookup(false, null);
                 }
                 List<?> list = (List<?>) current;
                 if (index < 0 || index >= list.size()) {
-                    return new ValueLookup(false, null);
+                    return new DynamoDbValueLookup(false, null);
                 }
                 current = list.get(index);
             }
         }
 
-        return new ValueLookup(true, current);
-    }
-
-    /**
-     * Result of resolving a DynamoDB document path against a normalized item.
-     * <p>
-     * A separate {@link #found} flag is necessary because {@link #value} can legitimately be
-     * {@code null} when the path exists and points to a DynamoDB null attribute.
-     */
-    public static final class ValueLookup {
-
-        public final boolean found;
-        public final Object value;
-
-        private ValueLookup(boolean found, Object value) {
-            this.found = found;
-            this.value = value;
-        }
+        return new DynamoDbValueLookup(true, current);
     }
 
     /**
@@ -469,6 +454,7 @@ public final class DynamoDbAttributeValueHelper {
      * @return parsed field name and indexes to traverse
      */
     private static ParsedChunk parseChunk(String chunk) {
+        Objects.requireNonNull(chunk);
         String field = chunk;
         List<Integer> indexes = new ArrayList<>();
 
@@ -496,6 +482,25 @@ public final class DynamoDbAttributeValueHelper {
         }
 
         return new ParsedChunk(field, indexes);
+    }
+
+    /**
+     * One pending value and its resolvable document path in the iterative traversal.
+     */
+    private static final class DocumentPathNode {
+        private final Object value;
+        private final String path;
+
+        /**
+         * Creates a pending traversal node.
+         *
+         * @param value normalized value to inspect or null for DDB NUL type fields with boolean = true
+         * @param path path resolving the value, or null for the item root
+         */
+        private DocumentPathNode(Object value, String path) {
+            this.value = value;
+            this.path = path;
+        }
     }
 
     /**
