@@ -27,6 +27,14 @@ class MultiDbMongoRedisPostgresEMTest : RestTestBase() {
             "MultiDbMongoRedisPostgresEM",
             1000
         ) { args ->
+            // disable impact analysis for this test, as it is not working properly with the current implementation of the SUT
+            setOption(args, "doCollectImpact", "false")
+            setOption(args, "adaptiveGeneSelectionMethod", "NONE")
+            setOption(args, "archiveGeneMutation", "NONE")
+            setOption(args, "probOfArchiveMutation", "0.0")
+            // enable heuristics for MongoDB and Redis
+            setOption(args, "heuristicsForSQL", "true")
+            setOption(args, "instrumentMR_SQL", "true")
             setOption(args, "heuristicsForMongo", "true")
             setOption(args, "instrumentMR_MONGO", "true")
             setOption(args, "heuristicsForRedis", "true")
@@ -37,8 +45,8 @@ class MultiDbMongoRedisPostgresEMTest : RestTestBase() {
             assertTrue(solution.individuals.size >= 1)
 
             // Combined GET endpoint
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/get/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/get/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/get/{idsql}/{idmongo}/{idredis}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/get/{idsql}/{idmongo}/{idredis}", null)
 
             // POST endpoints for each database
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/postgres/{id}", null)

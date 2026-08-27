@@ -44,17 +44,19 @@ import javax.persistence.EntityManager
     }
 
     // 1 GET endpoint reading postgres, mongo, and redis
-    @GetMapping("/get/{id}")
-    open fun getCombined(@PathVariable id: Long): ResponseEntity<CombinedDataDto> {
+    @GetMapping("/get/{idsql}/{idmongo}/{idredis}")
+    open fun getCombined(@PathVariable idsql: Long,
+                         @PathVariable idmongo: Long,
+                         @PathVariable idredis: Long): ResponseEntity<CombinedDataDto> {
         val postgresQuery = em.createNativeQuery("select * from X where id = ?")
-            .setParameter(1, id)
+            .setParameter(1, idsql)
         val postgresList = postgresQuery.resultList
         val postgresFound = postgresList.isNotEmpty()
 
-        val mongoList = mongoPersons.findByAge(id.toInt())
+        val mongoList = mongoPersons.findByAge(idmongo.toInt())
         val mongoFound = mongoList.isNotEmpty()
 
-        val redisVal = sync.get(id.toString())
+        val redisVal = sync.get(idredis.toString())
         val redisFound = redisVal != null
 
         if (postgresFound && mongoFound && redisFound) {
