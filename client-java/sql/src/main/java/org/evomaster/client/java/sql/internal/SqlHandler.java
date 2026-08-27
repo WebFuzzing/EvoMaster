@@ -237,11 +237,23 @@ public class SqlHandler {
                         ? SqlHeuristicsCalculator.isValidSqlCommandForSqlHeuristicsCalculation(sqlCommand)
                         : isValidSqlCommandForDistanceEvaluation(sqlCommand))) {
 
-                    Statement parsedStatement = SqlParserUtils.parseSqlCommand(sqlCommand);
-                    SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand,
-                            parsedStatement,
-                            successfulInitSqlInsertions,
-                            queryFromDatabase);
+                    /*
+                        There are SQL constructs we cannot analyze yet, which throw exceptions.
+                        Those must not escape from here: the heuristics are computed in the same
+                        request that returns the coverage, so an exception here would make us lose
+                        the whole coverage of the test, and not just this single heuristic.
+                     */
+                    SqlDistanceWithMetrics sqlDistance;
+                    try {
+                        Statement parsedStatement = SqlParserUtils.parseSqlCommand(sqlCommand);
+                        sqlDistance = computeDistance(sqlCommand,
+                                parsedStatement,
+                                successfulInitSqlInsertions,
+                                queryFromDatabase);
+                    } catch (Exception e) {
+                        SimpleLogger.uniqueWarn("Failed to compute SQL heuristics for: " + sqlCommand);
+                        sqlDistance = new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+                    }
                     distances.add(new SqlCommandWithDistance(sqlCommand, sqlDistance));
                 }
             });
