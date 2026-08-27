@@ -17,6 +17,17 @@ import java.util.Map;
  */
 public class ReflectionBasedNeo4jClient {
 
+    private static final String AS_LIST_METHOD = "asList";
+    private static final String AS_MAP_METHOD = "asMap";
+    private static final String AS_STRING_METHOD = "asString";
+    private static final String CLOSE_METHOD = "close";
+    private static final String GET_METHOD = "get";
+    private static final String LIST_METHOD = "list";
+    private static final String RUN_METHOD = "run";
+    private static final String SESSION_METHOD = "session";
+
+    private static final String DETACH_DELETE_ALL_QUERY = "MATCH (n) DETACH DELETE n";
+
     /** The SUT's {@code org.neo4j.driver.Driver}, held as an {@code Object} on purpose. */
     private final Object driver;
 
@@ -32,17 +43,17 @@ public class ReflectionBasedNeo4jClient {
 
     /** Opens a session. The caller is responsible for passing it to {@link #close(Object)}. */
     public Object session() {
-        return invoke(driver, "session");
+        return invoke(driver, SESSION_METHOD);
     }
 
     public void close(Object session) {
-        invoke(session, "close");
+        invoke(session, CLOSE_METHOD);
     }
 
     /** Runs a read-only Cypher query and returns its records. */
     public List<?> runAndList(Object session, String cypher) {
-        Object result = invoke(session, "run", new Class<?>[]{String.class}, cypher);
-        return (List<?>) invoke(result, "list");
+        Object result = invoke(session, RUN_METHOD, new Class<?>[]{String.class}, cypher);
+        return (List<?>) invoke(result, LIST_METHOD);
     }
 
     /**
@@ -53,16 +64,16 @@ public class ReflectionBasedNeo4jClient {
      *                   values to bind to them
      */
     public List<?> runAndList(Object session, String cypher, Map<String, Object> parameters) {
-        Object result = invoke(session, "run",
+        Object result = invoke(session, RUN_METHOD,
                 new Class<?>[]{String.class, Map.class}, cypher, parameters);
-        return (List<?>) invoke(result, "list");
+        return (List<?>) invoke(result, LIST_METHOD);
     }
 
     /** Empties the database: every node and every relationship attached to it. */
     public void detachDeleteAll() {
         Object session = session();
         try {
-            runAndList(session, "MATCH (n) DETACH DELETE n");
+            runAndList(session, DETACH_DELETE_ALL_QUERY);
         } finally {
             close(session);
         }
@@ -70,20 +81,20 @@ public class ReflectionBasedNeo4jClient {
 
     /** Reads the field {@code key} out of a {@code Record}. */
     public Object get(Object record, String key) {
-        return invoke(record, "get", new Class<?>[]{String.class}, key);
+        return invoke(record, GET_METHOD, new Class<?>[]{String.class}, key);
     }
 
     public String asString(Object value) {
-        return (String) invoke(value, "asString");
+        return (String) invoke(value, AS_STRING_METHOD);
     }
 
     public List<?> asList(Object value) {
-        return (List<?>) invoke(value, "asList");
+        return (List<?>) invoke(value, AS_LIST_METHOD);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> asMap(Object value) {
-        return (Map<String, Object>) invoke(value, "asMap");
+        return (Map<String, Object>) invoke(value, AS_MAP_METHOD);
     }
 
     private Object invoke(Object target, String method) {
