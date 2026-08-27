@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.database.sql.SqlActionTransformer
-import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll

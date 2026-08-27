@@ -1,4 +1,4 @@
-package org.evomaster.core.database.sql.solver
+package org.evomaster.core.database.sql.solver.service
 
 import com.google.inject.Inject
 
@@ -22,6 +22,8 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.solver.DbConstraintSolver
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
 import org.evomaster.core.database.sql.schema.Column
 import org.evomaster.core.database.sql.schema.ColumnDataType
 import org.evomaster.core.database.sql.schema.ForeignKey

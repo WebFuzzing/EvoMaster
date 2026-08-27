@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.evomaster.core.database.sql.solver.SmtLibGenerator
-import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.database.sql.solver.SMTConditionVisitor
 
 /**
