@@ -21,12 +21,12 @@ object JsonSchemaNormalizer {
     private const val LEGACY_DEFS = "definitions"
 
     /**
-     * Normalize [inputSchema] and its nested `$defs`/`definitions` into a flat, OpenAPI-3.0-compatible
+     * Normalize an [inputSchema] into a flat, OpenAPI-3.0-compatible
      * map of schemas.
      *
      * @param rootName component name under which the root schema is registered
-     * @param inputSchema the raw JSON Schema node (typically a MCP tool `inputSchema`)
-     * @param messages sink for warnings about lossy or unsupported constructs
+     * @param inputSchema the raw JSON Schema node (typically an MCP tool `inputSchema`)
+     * @param messages list for warnings about lossy or unsupported constructs
      * @return schemas keyed by component name; always contains [rootName]
      */
     fun normalize(rootName: String, inputSchema: JsonNode, messages: MutableList<String>): Map<String, JsonNode> {
@@ -34,7 +34,19 @@ object JsonSchemaNormalizer {
         val result = LinkedHashMap<String, JsonNode>()
 
         // Work on a deep copy so the caller's node is never mutated.
-        val rootCopy = inputSchema.deepCopy<JsonNode>()
+        var rootCopy = inputSchema.deepCopy<JsonNode>()
+
+        val typeNode = rootCopy.get("type")
+        val isObject = rootCopy is ObjectNode && (typeNode == null || typeNode.asText() == "object" || (typeNode.isArray && typeNode.any { it.asText() == "object" }))
+
+        if (!isObject) {
+            messages.add("Schema at $rootName expected to be an object; replaced with empty object")
+            val newRoot = mapper.createObjectNode()
+            newRoot.put("type", "object")
+            rootCopy = newRoot
+        } else if (!rootCopy.has("type")) {
+            rootCopy.put("type", "object")
+        }
 
         // Collect def names first so ref rewriting is aware of every sibling.
         val defNames = HashSet<String>()
