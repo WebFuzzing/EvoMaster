@@ -78,7 +78,10 @@ class RegexGene(
     private var javaPostfix : String = ""
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
+        val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
+        copy.javaPrefix=javaPrefix
+        copy.javaPostfix=javaPostfix
+        return copy
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
