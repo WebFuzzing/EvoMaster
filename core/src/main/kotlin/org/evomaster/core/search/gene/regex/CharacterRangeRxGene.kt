@@ -28,6 +28,13 @@ class CharacterRangeRxGene(
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
+
+        private fun Char.swapCase(): Char =
+            if (this.isUpperCase()) {
+                this.lowercaseChar()
+            } else {
+                this.uppercaseChar()
+            }
     }
 
     // '\u0000' is a placeholder for the unsatisfiable case (empty MCR with no valid ranges).
@@ -179,5 +186,51 @@ class CharacterRangeRxGene(
         LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")
 
         return false
+    }
+
+    /**
+     * 1 if [value]'s first character (or its case-swapped counterpart, when caseable) is
+     * within [validRanges], else 0.
+     * @see [RxAbsorbable.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int {
+        if (value.isEmpty()) {
+            return 0
+        }
+        val c = value[0]
+        if (validRanges.contains(c)) {
+            return 1
+        }
+        if (flags.isCaseable(c) && validRanges.contains(c.swapCase())) {
+            return 1
+        }
+        return 0
+    }
+
+    /**
+     * Always false: a character range always renders exactly one character.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean = false
+
+    /**
+     * Forces [value]'s first character onto this gene, swapping case if that's what
+     * matched; mirrors [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        val n = absorbableCount(value)
+        require(n == 0 || n == 1)
+        if (n == 1) {
+            val c = value[0]
+            this.value = if (validRanges.contains(c)) {
+                    c
+                } else {
+                    c.swapCase()
+                }
+            this.useUpperCase = c.isUpperCase()
+        }
+        return n
     }
 }
