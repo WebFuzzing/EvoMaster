@@ -184,6 +184,14 @@ public interface SutHandler {
     default ReflectionBasedRedisClient getRedisConnection() {return null;}
 
     /**
+     * Returns the AWS SDK v2 DynamoDB client used by the SUT, when available.
+     * The return type is Object to avoid a runtime dependency on a specific SDK version.
+     *
+     * @return synchronous or asynchronous DynamoDB client, or {@code null}
+     */
+    default Object getDynamoDbConnection() {return null;}
+
+    /**
      * <p>
      * register or execute specified SQL script for initializing data in database
      * there is no need to be enabled.
