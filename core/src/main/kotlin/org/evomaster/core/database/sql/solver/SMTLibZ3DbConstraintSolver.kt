@@ -138,19 +138,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithZ3) {
             initializeExecutor()
-            initializeCaches()
+            initializeCaches(config.sqlZ3CacheSize)
         }
     }
 
     /**
      * Extracted from [postConstruct] so a test can build the caches without a Docker executor.
      *
-     * [maxSize] defaults to the configured bound. A test exercising eviction passes a small value, so
-     * that what it costs to run does not track whatever the production default happens to be.
+     * [maxSize] is passed in rather than read from [EMConfig] here: a test that builds this solver
+     * directly has no injected configuration, and one exercising eviction wants a small bound so that
+     * what it costs to run does not track whatever the production default happens to be.
      */
-    internal fun initializeCaches(
-        maxSize: Int = if (::config.isInitialized) config.sqlZ3CacheSize else EMConfig.DEFAULT_SQL_Z3_CACHE_SIZE
-    ) {
+    internal fun initializeCaches(maxSize: Int) {
         val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
                 size > maxSize

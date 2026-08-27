@@ -49,6 +49,12 @@ class UntranslatableQueryCacheTest {
         /** Not valid SQL, so it fails in the parsing step. */
         private const val UNPARSEABLE = "this is not a SQL query at all"
 
+        /**
+         * Bound used by every test that is not about eviction. Comfortably above what any of them
+         * stores, and small enough that none of this depends on the production default.
+         */
+        private const val CACHE_BOUND = 128
+
         /** Valid SQL, run against [schemaWithUnsupportedType] so it fails while generating SMT-LIB. */
         private const val UNSUPPORTED_TYPE = "SELECT * FROM blobs WHERE id = 1"
 
@@ -72,7 +78,7 @@ class UntranslatableQueryCacheTest {
             // No injector here, so the caches have to be allocated explicitly. The Z3 executor is
             // never reached: every query in this test fails before the solver would be invoked.
             solver = SMTLibZ3DbConstraintSolver()
-            solver.initializeCaches()
+            solver.initializeCaches(CACHE_BOUND)
         }
 
         @JvmStatic
@@ -85,7 +91,7 @@ class UntranslatableQueryCacheTest {
 
     @BeforeEach
     fun freshCaches() {
-        solver.initializeCaches()
+        solver.initializeCaches(CACHE_BOUND)
     }
 
     @Test
