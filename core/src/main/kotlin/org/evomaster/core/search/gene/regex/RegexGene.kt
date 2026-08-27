@@ -67,7 +67,14 @@ class RegexGene(
             null
         }
 
+    /**
+     * Prefix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPrefix], can be set on [randomize].
+     */
     private var javaPrefix : String = ""
+
+    /**
+     * Postfix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPostfix], can be set on [randomize].
+     */
     private var javaPostfix : String = ""
 
     override fun copyContent(): Gene {
