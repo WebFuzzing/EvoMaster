@@ -1,11 +1,10 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.database.sql.solver.SmtLibGenerator
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
 import org.junit.jupiter.api.AfterAll
