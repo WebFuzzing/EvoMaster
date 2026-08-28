@@ -1,6 +1,5 @@
 package com.dynamodb.players;
 
-import com.dynamodb.config.SwaggerConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,7 +10,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.net.URI;
 
@@ -20,8 +18,7 @@ import java.net.URI;
  */
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 @ComponentScan({"com.dynamodb.config", "com.dynamodb.players"})
-@EnableSwagger2
-public class WorldCupPlayersApp extends SwaggerConfiguration {
+public class WorldCupPlayersApp {
 
     /**
      * Starts the World Cup players application.

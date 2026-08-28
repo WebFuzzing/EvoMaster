@@ -134,7 +134,7 @@ public class WorldCupPlayersController extends EmbeddedSutController {
      */
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RestProblem("http://localhost:" + getSutPort() + "/v2/api-docs", null);
+        return new RestProblem("http://localhost:" + getSutPort() + "/v3/api-docs", null);
     }
 
     /**
