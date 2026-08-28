@@ -14,7 +14,6 @@ import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
 
-    @Disabled("Needs to hande lookahead in regex")
     @Test
     fun testLanguageTool(){
         val s = "^((?iu)@.+)$"

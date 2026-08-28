@@ -25,10 +25,14 @@ public class CassandraScriptRunner {
 
     /**
      * Execute the different Cassandra insertions.
+     * <p>
+     * A failing insertion does not stop the ones that follow it: it is just marked as failed in the
+     * returned results, and the execution carries on with the next insertion.
      *
      * @param connection a connection to the database (CqlSession)
      * @param insertions the Cassandra insertions to execute
-     * @return a CassandraInsertionResultsDto
+     * @return a CassandraInsertionResultsDto stating, for each insertion, whether it executed successfully
+     * @throws IllegalArgumentException if there is no insertion to execute
      */
     public static CassandraInsertionResultsDto executeInsert(Object connection, List<CassandraInsertionDto> insertions) {
 
@@ -46,18 +50,16 @@ public class CassandraScriptRunner {
                 String cql = prepareInsertCommand(insertionDto);
                 executeCql(connection, cql);
                 cassandraResults.set(i, true);
-                SimpleLogger.debug(cql + " executed on keyspace: " + insertionDto.keyspaceName + " and table: " + insertionDto.tableName);
+                SimpleLogger.debug("Insertion executed successfully");
             } catch (Exception e) {
-                final String errorMessage;
-                if (e instanceof InvocationTargetException) {
-                    InvocationTargetException invocationTargetException = (InvocationTargetException) e;
-                    Throwable innerException = invocationTargetException.getTargetException();
-                    errorMessage = innerException.getMessage();
-                } else {
-                    errorMessage = e.getMessage();
-                }
-                String msg = "Failed to execute insertion with index " + i + " with Cassandra. Error: " + errorMessage;
-                throw new RuntimeException(msg, e);
+                /*
+                    Cassandra has no foreign keys nor referential integrity between rows, so a
+                    failed insertion does not invalidate the ones that follow it. As such, the index is just
+                    marked as failed and the execution carries on, in the same way as done in
+                    SqlScriptRunner#execInsert.
+                 */
+                String msg = "Failed to execute insertion";
+                SimpleLogger.warn(msg, extractError(e));
             }
         }
 
@@ -88,5 +90,16 @@ public class CassandraScriptRunner {
 
     private static void executeCql(Object connection, String cql) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         connection.getClass().getMethod("execute", String.class).invoke(connection, cql);
+    }
+
+    /**
+     * As the CQL statements are executed via reflection, the actual error thrown by the driver comes
+     * wrapped into an {@link InvocationTargetException}, and so it needs to be unwrapped to be reported.
+     */
+    private static Throwable extractError(Exception e) {
+        if (e instanceof InvocationTargetException) {
+            return ((InvocationTargetException) e).getTargetException();
+        }
+        return e;
     }
 }

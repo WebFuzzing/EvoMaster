@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,5 +75,28 @@ public class CassandraScriptRunnerTest {
 
         assertTrue(resultsDto.executionResults.get(0));
         assertTrue(connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).iterator().hasNext());
+    }
+
+    @Test
+    public void testInsertionFailureDoesNotStopFollowingInsertions() {
+
+        /*
+            The second insertion fails, as a quoted string is given for the "id" column, which is an int.
+            Note that it could not fail by reusing an existing id, as in Cassandra that would be an upsert.
+         */
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, TABLE).d("id", "1").d("name", "'first'")
+                .and().insertInto(KEYSPACE, TABLE).d("id", "'notAnInt'").d("name", "'broken'")
+                .and().insertInto(KEYSPACE, TABLE).d("id", "3").d("name", "'third'")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertFalse(resultsDto.executionResults.get(1));
+        assertTrue(resultsDto.executionResults.get(2));
+
+        //the third insertion must have been attempted, in spite of the second one having failed
+        assertEquals(2, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
     }
 }

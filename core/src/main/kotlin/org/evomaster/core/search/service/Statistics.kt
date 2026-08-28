@@ -97,12 +97,39 @@ class Statistics : SearchListener {
     private var sqlZ3UnknownCount = 0
     private var sqlZ3ErrorCount = 0
     private var sqlZ3ParseFailureCount = 0
+    // Breakdown of sqlZ3ParseFailureCount, which on its own cannot direct a fix: the two failures
+    // live in different components and are corrected in different places.
+    // Invariant: sqlZ3ParseFailureCount == sqlZ3SqlParseFailureCount + sqlZ3SmtlibGenFailureCount
+    private var sqlZ3SqlParseFailureCount = 0
+    private var sqlZ3SmtlibGenFailureCount = 0
     private var sqlZ3PartialTranslationCount = 0
     private var sqlZ3TimeMs = 0L
     private var sqlZ3SmtlibGenTimeMs = 0L
+    /**
+     * Wall-clock time inside solve(), covering every call including the ones served from cache.
+     *
+     * Deliberately overlaps sqlZ3TimeMs and sqlZ3SmtlibGenTimeMs rather than replacing them: those
+     * two bracket only the Z3 invocation and the formula construction, which between them leave out
+     * writing the .smt2 file, rebuilding the gene tree from a solution — done on every cache hit as
+     * well — and the call overhead itself. The difference between this and the sum of the other two
+     * is precisely the cost that was previously unaccounted for.
+     */
+    private var sqlZ3SolveTimeMs = 0L
     private val sqlZ3SmtlibSizeBytes = IncrementalAverage()
     private val sqlZ3SeenQueryHashes = mutableSetOf<Int>()
     private var sqlZ3UniqueQueriesCount = 0
+
+    /**
+     * Time spent executing the SQL insertions that were generated for the test setup, and how many
+     * batches were executed.
+     *
+     * Not a solver metric: these rows are inserted into the SUT's own database on every evaluation
+     * of an individual that carries them, so the cost is paid over and over, far from solve(). It is
+     * measured here because no existing counter covers it, which left a large part of the observed
+     * slowdown unattributable.
+     */
+    private var sqlInsertionExecutionTimeMs = 0L
+    private var sqlInsertionExecutionCount = 0
 
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
@@ -113,6 +140,11 @@ class Statistics : SearchListener {
     private var redisHeuristicEvaluationSuccessCount = 0
     private var redisHeuristicEvaluationFailureCount = 0
     private val redisDocumentsAverageCalculator = IncrementalAverage()
+
+    // DynamoDB heuristic evaluation statistics
+    private var dynamoDbHeuristicEvaluationSuccessCount = 0
+    private var dynamoDbHeuristicEvaluationFailureCount = 0
+    private val dynamoDbItemsAverageCalculator = IncrementalAverage()
 
    class Pair(val header: String, val element: String)
 
@@ -210,6 +242,11 @@ class Statistics : SearchListener {
         redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
+    /** Records the number of items inspected by one DynamoDB heuristic evaluation. */
+    fun reportNumberOfEvaluatedItemsForDynamoDbHeuristic(numberOfEvaluatedItems: Int) {
+        dynamoDbItemsAverageCalculator.addValue(numberOfEvaluatedItems)
+    }
+
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
         if (numberOfParsingFailures<0) {
             throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
@@ -241,6 +278,16 @@ class Statistics : SearchListener {
         redisHeuristicEvaluationFailureCount++
     }
 
+    /** Records one successful DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationSuccess() {
+        dynamoDbHeuristicEvaluationSuccessCount++
+    }
+
+    /** Records one failed DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationFailure() {
+        dynamoDbHeuristicEvaluationFailureCount++
+    }
+
     fun reportSqlZ3Sat(z3TimeMs: Long) {
         sqlZ3CacheMissCount++
         sqlZ3SatCount++
@@ -265,9 +312,29 @@ class Statistics : SearchListener {
         sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportSqlZ3ParseFailure() {
+    /**
+     * A query that never reached Z3 because it could not be turned into an SMT-LIB problem.
+     *
+     * [kind] records which step gave up. The distinction matters because the two are fixed in
+     * different components — one in the SQL parser, the other in the SMT-LIB generator's handling of
+     * schemas and query shapes — and an aggregate figure cannot say which to work on.
+     */
+    fun reportSqlZ3ParseFailure(kind: SqlZ3TranslationFailure) {
         sqlZ3CacheMissCount++
         sqlZ3ParseFailureCount++
+        when (kind) {
+            SqlZ3TranslationFailure.SQL_PARSE -> sqlZ3SqlParseFailureCount++
+            SqlZ3TranslationFailure.SMTLIB_GENERATION -> sqlZ3SmtlibGenFailureCount++
+        }
+    }
+
+    /** Which step failed to translate a query into an SMT-LIB problem. */
+    enum class SqlZ3TranslationFailure {
+        /** JSQLParser could not read the SQL at all. */
+        SQL_PARSE,
+
+        /** The SQL parsed, but a formula could not be built for it or for its schema. */
+        SMTLIB_GENERATION
     }
 
     /**
@@ -277,6 +344,17 @@ class Statistics : SearchListener {
      */
     fun reportSqlZ3PartialTranslation() {
         sqlZ3PartialTranslationCount++
+    }
+
+    /** Total wall-clock time of one solve() call, cache hits included. See [sqlZ3SolveTimeMs]. */
+    fun reportSqlZ3SolveTime(ms: Long) {
+        sqlZ3SolveTimeMs += ms
+    }
+
+    /** One execution of a batch of generated SQL insertions against the SUT's database. */
+    fun reportSqlInsertionExecution(ms: Long) {
+        sqlInsertionExecutionTimeMs += ms
+        sqlInsertionExecutionCount++
     }
 
     fun reportSqlZ3SmtlibGenTime(ms: Long, sizeBytes: Int) {
@@ -301,6 +379,15 @@ class Statistics : SearchListener {
     internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
     internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
+    // Exposed for tests: verify the failure breakdown adds up to the aggregate, and that the two
+    // duration accumulators only ever move forward.
+    internal fun getSqlZ3ParseFailureCount() = sqlZ3ParseFailureCount
+    internal fun getSqlZ3SqlParseFailureCount() = sqlZ3SqlParseFailureCount
+    internal fun getSqlZ3SmtlibGenFailureCount() = sqlZ3SmtlibGenFailureCount
+    internal fun getSqlZ3SolveTimeMs() = sqlZ3SolveTimeMs
+    internal fun getSqlInsertionExecutionTimeMs() = sqlInsertionExecutionTimeMs
+    internal fun getSqlInsertionExecutionCount() = sqlInsertionExecutionCount
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -312,6 +399,13 @@ class Statistics : SearchListener {
     fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
 
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
+
+    /** Returns the total number of DynamoDB heuristic evaluations. */
+    fun getDynamoDbHeuristicsEvaluationCount(): Int =
+        dynamoDbHeuristicEvaluationSuccessCount + dynamoDbHeuristicEvaluationFailureCount
+
+    /** Returns the average number of items inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedItemsForDynamoDbHeuristics(): Double = dynamoDbItemsAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -453,6 +547,11 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
             add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
 
+            // statistics info for DynamoDB Heuristics
+            add(Pair("averageNumberOfEvaluatedItemsForDynamoDbHeuristics",
+                "${averageNumberOfEvaluatedItemsForDynamoDbHeuristics()}"))
+            add(Pair("dynamoDbHeuristicsEvaluationCount", "${getDynamoDbHeuristicsEvaluationCount()}"))
+
             // statistics info for SQL Heuristics
             add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
@@ -471,10 +570,15 @@ class Statistics : SearchListener {
                 add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
                 add(Pair("sqlZ3Errors", "$sqlZ3ErrorCount"))
                 add(Pair("sqlZ3ParseFailures", "$sqlZ3ParseFailureCount"))
+                add(Pair("sqlZ3SqlParseFailures", "$sqlZ3SqlParseFailureCount"))
+                add(Pair("sqlZ3SmtlibGenFailures", "$sqlZ3SmtlibGenFailureCount"))
                 add(Pair("sqlZ3PartialTranslations", "$sqlZ3PartialTranslationCount"))
                 add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
                 add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
                 add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))
+                add(Pair("sqlZ3SolveTotalMs", "$sqlZ3SolveTimeMs"))
+                add(Pair("sqlInsertionExecutionTotalMs", "$sqlInsertionExecutionTimeMs"))
+                add(Pair("sqlInsertionExecutions", "$sqlInsertionExecutionCount"))
             }
 
             for(phase in ExecutionPhaseController.Phase.entries){
