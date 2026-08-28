@@ -33,7 +33,7 @@ object MongoWriter {
             return
         }
 
-        val insertionVar = "insertions${groupIndex}"
+        val insertionVar = "mongoInsertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
         val previousVar = insertionVars.joinToString(", ") { it.first }
         mongoDbInitialization
