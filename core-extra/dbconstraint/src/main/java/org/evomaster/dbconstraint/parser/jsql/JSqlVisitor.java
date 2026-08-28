@@ -36,6 +36,9 @@ public class JSqlVisitor implements ExpressionVisitor {
     private static final String LOWER = "LOWER";
     private static final String UPPER = "UPPER";
 
+    private static final String ANY = "ANY";
+    private static final String SOME = "SOME";
+
     private static final String SINGLE_QUOTE_CHAR = "'";
 
     /**
@@ -296,9 +299,57 @@ public class JSqlVisitor implements ExpressionVisitor {
     public void visit(EqualsTo equalsTo) {
         equalsTo.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
+
+        ArrayConstructor alternatives = membershipArrayOf(equalsTo.getRightExpression());
+        if (alternatives != null) {
+            /*
+             * "col = ANY (ARRAY['A','B'])" is a membership test, equivalent to
+             * "col IN ('A','B')", so it is translated to the node that already means that.
+             */
+            if (!(left instanceof SqlColumn)) {
+                throw new RuntimeException("Extraction of condition not yet implemented");
+            }
+            alternatives.accept(this);
+            SqlConditionList literals = (SqlConditionList) stack.pop();
+            stack.push(new SqlInCondition((SqlColumn) left, literals));
+            return;
+        }
+
         equalsTo.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
+        if (right instanceof SqlConditionList) {
+            /*
+             * A bare "col = ARRAY[...]" compares a value against an array rather than testing
+             * membership in it, and there is no node for that. Reading it as an IN would answer a
+             * different question than the constraint asks, so it is left untranslated.
+             */
+            throw new RuntimeException("Extraction of condition not yet implemented");
+        }
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.EQUALS_TO, right));
+    }
+
+    /**
+     * The array of alternatives in a membership test, or null if the expression is not one.
+     *
+     * <p>Only {@code ANY} and {@code SOME} qualify, and only over an array literal. {@code ALL}
+     * requires every element to match rather than one, and {@code ANY} over a subquery carries no
+     * literals to enumerate, so neither can be answered with an {@code IN}.
+     */
+    private static ArrayConstructor membershipArrayOf(Expression expression) {
+        if (!(expression instanceof Function)) {
+            return null;
+        }
+        Function function = (Function) expression;
+        String name = function.getName().toUpperCase();
+        if (!name.equals(ANY) && !name.equals(SOME)) {
+            return null;
+        }
+        ExpressionList<?> parameters = function.getParameters();
+        if (parameters == null || parameters.size() != 1
+                || !(parameters.get(0) instanceof ArrayConstructor)) {
+            return null;
+        }
+        return (ArrayConstructor) parameters.get(0);
     }
 
 
@@ -325,8 +376,22 @@ public class JSqlVisitor implements ExpressionVisitor {
         inExpression.getLeftExpression().accept(this);
         SqlColumn left = (SqlColumn) stack.pop();
         inExpression.getRightExpression().accept(this);
-        SqlConditionList right = (SqlConditionList) stack.pop();
+        SqlConditionList right = unwrapSingletonArray((SqlConditionList) stack.pop());
         stack.push(new SqlInCondition(left, right));
+    }
+
+    /**
+     * Flattens the one nested level that {@code IN (ARRAY[...])} produces.
+     *
+     * <p>The parenthesis around the array is itself an expression list, so the array's elements
+     * arrive wrapped in a list of one. The alternatives are the elements, not the array.
+     */
+    private static SqlConditionList unwrapSingletonArray(SqlConditionList list) {
+        List<SqlCondition> elements = list.getSqlConditionExpressions();
+        if (elements.size() == 1 && elements.get(0) instanceof SqlConditionList) {
+            return (SqlConditionList) elements.get(0);
+        }
+        return list;
     }
 
     @Override
@@ -717,10 +782,15 @@ public class JSqlVisitor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+    /**
+     * An array literal, e.g. {@code ARRAY['A','B']}, becomes the list of its elements: the same
+     * {@link SqlConditionList} that {@link #visit(ExpressionList)} builds for the right-hand side of
+     * an {@code IN}. What that list means is decided by whoever consumes it, since an array is a
+     * value in its own right and only membership tests turn it into a set of alternatives.
+     */
     @Override
     public void visit(ArrayConstructor aThis) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        aThis.getExpressions().accept(this);
     }
 
     @Override

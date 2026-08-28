@@ -20,7 +20,7 @@ import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.database.sql.SqlActionTransformer
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.AdditionalTargetCollector
+import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
