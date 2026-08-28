@@ -388,6 +388,7 @@ public class EMController {
                         noKillSwitch(() -> sutController.initMongoHandler());
                         noKillSwitch(() -> sutController.initOpenSearchHandler());
                         noKillSwitch(() -> sutController.initRedisHandler());
+                        noKillSwitch(() -> sutController.initDynamoDbHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not

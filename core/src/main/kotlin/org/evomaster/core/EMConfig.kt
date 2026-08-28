@@ -1976,6 +1976,11 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForRedis = false
 
+    @Experimental
+    @Cfg("Tracking of DynamoDB commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForDynamoDb = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2018,6 +2023,23 @@ class EMConfig {
     @DependsOnTrueFor("generateSqlDataWithZ3")
     @Min(1.0)
     var sqlZ3NumberOfRows = 1
+
+    /*
+        The default is chosen from measurements: one system under test issued 2,153 distinct queries in
+        a one-hour search. Entries are small,
+        a query string and a solver result, so a higher bound costs little memory and removes that whole
+        class of wasted work.
+     */
+    @Experimental
+    @Cfg("Maximum number of entries kept in each of the two bounded Z3 solver caches: the one " +
+            "holding solver results, and the one remembering queries that could not be translated. " +
+            "When the bound is reached, the least recently used entry is evicted and would have to be " +
+            "solved again if seen later. Sizing it below the number of distinct queries a search " +
+            "issues turns a large share of cache misses into re-solves of already-known queries. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3CacheSize = 5000
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")

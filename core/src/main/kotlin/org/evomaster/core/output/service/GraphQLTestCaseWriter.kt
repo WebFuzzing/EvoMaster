@@ -59,7 +59,12 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
-            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+            format.isJavaScript() -> {
+                // Playwright headers/body handled in callEndpoint; set header only for non-Playwright JS
+                if (!format.isPlaywright()) {
+                    lines.add(".set('Content-Type','application/json')")
+                }
+            }
             format.isPython() -> lines.add("headers[\"content-type\"] = \"application/json\"")
            // format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
         }
@@ -102,10 +107,14 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     }
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
-
         // TODO maybe in future might want to have GET for QUERY types
         val verb = "post"
-        lines.add(".$verb(")
+
+        if (format.isPlaywright()) {
+            lines.add("await request.$verb(")
+        } else {
+            lines.add(".$verb(")
+        }
 
         if(config.blackBox){
             /*
@@ -136,6 +145,14 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
             handlePythonVerbEndpoint(_call as GraphQLAction, lines) {
                 lines.append(", data=body")
             }
+        }
+
+        if (format.isPlaywright()) {
+            lines.append(", {")
+            lines.indented {
+                lines.add("maxRedirects: 0,")
+            }
+            lines.add("}")
         }
 
         lines.append(")")
