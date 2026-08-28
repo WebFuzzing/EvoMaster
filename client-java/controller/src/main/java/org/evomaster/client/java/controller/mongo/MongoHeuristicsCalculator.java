@@ -519,7 +519,28 @@ public class MongoHeuristicsCalculator {
 
 
     private Truthness computeHeuristic(ElemMatchOperation operation, Object document) {
-        throw new IllegalArgumentException("Not implemented yet");
+        requireNonNullQueryAndDocument(operation, document);
+        Objects.requireNonNull(operation.getFieldName());
+        Objects.requireNonNull(operation.getCondition());
+
+        if (!documentContainsField(document, operation.getFieldName())) {
+            return C_FALSE;
+        } else {
+            Object actualValue = getValue(document, operation.getFieldName());
+            if (actualValue == null || !(actualValue instanceof List<?>)) {
+                return C_FALSE;
+            } else {
+                List<?> actualList = (List<?>) actualValue;
+                if (actualList.isEmpty()) {
+                    return C_FALSE;
+                } else {
+                    Truthness orAggregation = buildOrAggregationTruthness(actualList.stream()
+                            .map(listElement -> computeHeuristicOnDocument(operation.getCondition(), listElement))
+                            .toArray(Truthness[]::new));
+                    return buildSafeScaledTruthness(orAggregation);
+                }
+            }
+        }
     }
 
     private Truthness computeHeuristic(ExistsOperation operation, Object document) {
