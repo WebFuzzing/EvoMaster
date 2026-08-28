@@ -45,18 +45,18 @@ import javax.persistence.EntityManager
 
     // 1 GET endpoint reading postgres, mongo, and redis
     @GetMapping("/get/{idsql}/{idmongo}/{idredis}")
-    open fun getCombined(@PathVariable idsql: Long,
-                         @PathVariable idmongo: Long,
-                         @PathVariable idredis: Long): ResponseEntity<CombinedDataDto> {
+    open fun getCombined(@PathVariable idsql: String,
+                         @PathVariable idmongo: String,
+                         @PathVariable idredis: String): ResponseEntity<CombinedDataDto> {
         val postgresQuery = em.createNativeQuery("select * from X where id = ?")
             .setParameter(1, idsql)
         val postgresList = postgresQuery.resultList
         val postgresFound = postgresList.isNotEmpty()
 
-        val mongoList = mongoPersons.findByAge(idmongo.toInt())
+        val mongoList = mongoPersons.findByName(idmongo)
         val mongoFound = mongoList.isNotEmpty()
 
-        val redisVal = sync.get(idredis.toString())
+        val redisVal = sync.get(idredis)
         val redisFound = redisVal != null
 
         if (postgresFound && mongoFound && redisFound) {
@@ -69,7 +69,7 @@ import javax.persistence.EntityManager
     // POST endpoint for Postgres
     @PostMapping("/postgres/{id}")
     @Transactional
-    open fun postPostgres(@PathVariable id: Long): ResponseEntity<Void> {
+    open fun postPostgres(@PathVariable id: String): ResponseEntity<Void> {
         em.createNativeQuery("insert into X (id) values (?)")
             .setParameter(1, id)
             .executeUpdate()
@@ -78,7 +78,7 @@ import javax.persistence.EntityManager
 
     // POST endpoint for Mongo
     @PostMapping("/mongo/{age}")
-    open fun postMongo(@PathVariable age: Int): ResponseEntity<Void> {
+    open fun postMongo(@PathVariable age: String): ResponseEntity<Void> {
         val s = MongoPerson(age)
         mongoPersons.save(s)
         return ResponseEntity.status(200).build()

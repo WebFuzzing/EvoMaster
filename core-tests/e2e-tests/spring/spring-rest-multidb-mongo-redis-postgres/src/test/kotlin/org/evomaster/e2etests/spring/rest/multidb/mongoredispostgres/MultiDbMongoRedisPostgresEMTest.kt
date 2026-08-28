@@ -32,13 +32,17 @@ class MultiDbMongoRedisPostgresEMTest : RestTestBase() {
             setOption(args, "adaptiveGeneSelectionMethod", "NONE")
             setOption(args, "archiveGeneMutation", "NONE")
             setOption(args, "probOfArchiveMutation", "0.0")
-            // enable heuristics for MongoDB and Redis
+            // enable heuristics for SQL, MongoDB and Redis
             setOption(args, "heuristicsForSQL", "true")
             setOption(args, "instrumentMR_SQL", "true")
             setOption(args, "heuristicsForMongo", "true")
             setOption(args, "instrumentMR_MONGO", "true")
             setOption(args, "heuristicsForRedis", "true")
             setOption(args, "instrumentMR_REDIS", "true")
+            // enable data insertion for SQL, MongoDB, and Redis
+            setOption(args, "generateSqlDataWithSearch", "true")
+            setOption(args, "generateMongoData", "true")
+            setOption(args, "generateRedisData", "true")
 
             val solution = initAndRun(args)
 

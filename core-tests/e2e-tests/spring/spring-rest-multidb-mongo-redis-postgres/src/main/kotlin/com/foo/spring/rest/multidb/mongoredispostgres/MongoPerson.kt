@@ -5,11 +5,11 @@ import javax.persistence.Id
 class MongoPerson {
     @Id
     var id: String? = null
-    var age: Int? = null
+    var name: String? = null
 
     constructor()
 
-    constructor(age: Int) {
-        this.age = age
+    constructor(name: String) {
+        this.name = name
     }
 }
