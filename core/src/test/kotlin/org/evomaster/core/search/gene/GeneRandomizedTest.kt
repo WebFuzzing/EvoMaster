@@ -76,8 +76,10 @@ class GeneRandomizedTest : AbstractGeneTest(){
                 //they must be different. the same genotype must not lead to different phenotypes
                 assertFalse(x.containsSameValueAs(y), "Different phenotype but same genotype for ${root.javaClass}")
 
-                if(root.flatView().any{ it is ChoiceGene<*> } && !y.isGloballyValid()){
-                    // as ChoiceGene's unsafeCopyValueFrom checks isGloballyValid by using copyValueFrom
+                if(y.flatView().filter{ it is ChoiceGene<*> }.any{ !it.isGloballyValid() }){
+                    // since y's randomize may activate a globally invalid gene on a ChoiceGene
+                    // we check if any of y's ChoiceGenes (if any are present) are invalid before we continue,
+                    // as ChoiceGene's unsafeCopyValueFrom checks isGloballyValid by using copyValueFrom.
                     // note: flatView does not include template genes, which appear on some genes like ObjectGene
                     return@forEach
                 }
