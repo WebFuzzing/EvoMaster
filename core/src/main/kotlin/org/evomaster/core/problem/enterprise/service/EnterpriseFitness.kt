@@ -535,7 +535,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
