@@ -22,6 +22,11 @@ class CassandraDbAction(
      * There is exactly one gene per column, in the same order.
      */
     val columns: List<CassandraColumn>,
+    /**
+     * The genes generating the value of each of the [columns], in the same order.
+     * Only meant to be given when copying an existing action, so that its genes are carried over
+     * instead of being built anew: when not given, one gene is built per column.
+     */
     computedGenes: List<Gene>? = null
 ) : EnvironmentAction(listOf()) {
 

@@ -3,6 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -14,7 +15,7 @@ import org.evomaster.core.search.gene.string.StringGene
  *
  * This is needed because such literals are inserted verbatim into the INSERT command built on the
  * client side, and how a value has to be written depends on its type: text and the temporal types
- * are enclosed in single quotes, whereas numbers, booleans and uuids are not.
+ * are enclosed in single quotes, whereas numbers, booleans, uuids and durations are not.
  */
 object CassandraLiteralRenderer {
 
@@ -35,7 +36,7 @@ object CassandraLiteralRenderer {
 
         return when (gene) {
             is StringGene, is DateGene, is TimeGene, is DateTimeGene -> quote(value)
-            is BooleanGene, is UUIDGene, is NumberGene<*> -> value
+            is BooleanGene, is UUIDGene, is NumberGene<*>, is CqlDurationGene -> value
             else -> throw IllegalArgumentException("Cannot render a CQL literal for a gene of type ${gene.javaClass.simpleName}")
         }
     }

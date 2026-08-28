@@ -36,6 +36,9 @@ object CassandraTableSchemaParser {
     /**
      * Splits on the separator between columns, ignoring the separators nested inside a type
      * parameter list, as a collection type is itself rendered with them, eg "map<text, int>".
+     *
+     * @throws IllegalArgumentException if the type parameter lists are not balanced, as then there
+     * is no telling which of the separators are the ones between columns
      */
     private fun splitColumns(tableSchema: String): List<String> {
 
@@ -50,6 +53,10 @@ object CassandraTableSchemaParser {
                     current.append(c)
                 }
                 c == TYPE_PARAMETERS_END -> {
+                    if (depth == 0) {
+                        throw IllegalArgumentException("Unbalanced type parameters in the description" +
+                                " of the columns of a Cassandra table: $tableSchema")
+                    }
                     depth--
                     current.append(c)
                 }
@@ -60,6 +67,12 @@ object CassandraTableSchemaParser {
                 else -> current.append(c)
             }
         }
+
+        if (depth != 0) {
+            throw IllegalArgumentException("Unbalanced type parameters in the description" +
+                    " of the columns of a Cassandra table: $tableSchema")
+        }
+
         columns.add(current.toString())
 
         return columns

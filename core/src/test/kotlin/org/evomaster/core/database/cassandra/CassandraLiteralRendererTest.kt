@@ -3,6 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -72,6 +73,24 @@ class CassandraLiteralRendererTest {
         listOf(DateTimeGene("created"), DateGene("day"), TimeGene("moment")).forEach {
             assertEquals("'${it.getValueAsRawString()}'", CassandraLiteralRenderer.toCqlLiteral(it))
         }
+    }
+
+    /**
+     * A duration literal is written without quotes in CQL, sign included.
+     */
+    @Test
+    fun testDurationIsNotQuoted() {
+        val gene = CqlDurationGene(
+            "elapsed",
+            months = IntegerGene("months", 1),
+            days = IntegerGene("days", 2),
+            nanos = LongGene("nanos", 3L)
+        )
+
+        assertEquals("1mo2d3ns", CassandraLiteralRenderer.toCqlLiteral(gene))
+
+        gene.negative.value = true
+        assertEquals("-1mo2d3ns", CassandraLiteralRenderer.toCqlLiteral(gene))
     }
 
     @Test

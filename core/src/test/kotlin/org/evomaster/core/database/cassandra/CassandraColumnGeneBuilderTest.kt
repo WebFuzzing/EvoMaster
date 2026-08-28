@@ -3,6 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -82,13 +83,19 @@ class CassandraColumnGeneBuilderTest {
         assertEquals("firstName", gene.name)
     }
 
+    @Test
+    fun testDurationType() {
+        assertTrue(buildFor("duration") is CqlDurationGene)
+    }
+
     /**
      * A counter is only writable with an UPDATE, and a timeuuid needs a value that a plain uuid
-     * gene would not produce, so neither can be given an arbitrary value in an insertion.
+     * gene would not produce, so neither can be given an arbitrary value in an insertion. For the
+     * other types, it is just that no gene generating a value for them has been written yet.
      */
     @Test
     fun testUnsupportedTypes() {
-        listOf("counter", "timeuuid", "blob", "inet", "duration", "list<int>", "frozen<myType>").forEach {
+        listOf("counter", "timeuuid", "blob", "inet", "list<int>", "frozen<myType>").forEach {
             assertFalse(CassandraColumnGeneBuilder.isSupported(CassandraColumn("aColumn", it)), "$it should not be supported")
             assertThrows<IllegalArgumentException>("no exception for $it") { buildFor(it) }
         }

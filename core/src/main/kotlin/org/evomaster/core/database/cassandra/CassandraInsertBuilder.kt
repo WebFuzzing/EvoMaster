@@ -15,40 +15,69 @@ class CassandraInsertBuilder {
     }
 
     /**
+     * @param tableSchema the description of the columns of a table, as reported by the SUT driver
+     * @return whether an insertion that could be executed can be built for such a table, ie whether
+     * a value can be generated for at least one of its columns and for all of the ones composing
+     * its primary key
+     */
+    fun canBuildInsertionFor(tableSchema: String): Boolean {
+
+        val (supported, unsupported) = partitionBySupport(CassandraTableSchemaParser.parse(tableSchema))
+
+        return supported.isNotEmpty() && unsupported.none { isPartOfPrimaryKey(it) }
+    }
+
+    /**
      * The columns whose CQL type is not handled are left out of the insertion, as no value can be
      * generated for them. The resulting insertion is still worth executing, since the remaining
      * columns might be all that is needed, and a rejected insertion is already recorded as a failed
      * one instead of stopping the search.
      *
+     * That argument does not hold when no value can be generated for any column, nor when one of
+     * the skipped columns is part of the primary key, as Cassandra requires a full primary key in
+     * an INSERT: in both cases the insertion could only be rejected, so none is built.
+     *
      * Note that the genes of the returned action are not initialized yet, which is left to the
      * caller, as it is done for the other types of database action.
+     *
+     * @throws IllegalArgumentException if no insertion that could be executed can be built for the
+     * table, as verifiable beforehand with [canBuildInsertionFor]
      */
     fun createCassandraInsertionAction(keyspace: String, table: String, tableSchema: String): CassandraDbAction {
 
-        val columns = CassandraTableSchemaParser.parse(tableSchema)
+        val (supported, unsupported) = partitionBySupport(CassandraTableSchemaParser.parse(tableSchema))
 
-        val (supported, unsupported) = columns.partition { CassandraColumnGeneBuilder.isSupported(it) }
+        val qualifiedTableName = "$keyspace.$table"
+
+        if (supported.isEmpty()) {
+            throw IllegalArgumentException("No value can be generated for any column of" +
+                    " $qualifiedTableName: ${describe(unsupported)}")
+        }
+
+        val unsupportedKeyColumns = unsupported.filter { isPartOfPrimaryKey(it) }
+        if (unsupportedKeyColumns.isNotEmpty()) {
+            throw IllegalArgumentException("No value can be generated for some of the columns composing" +
+                    " the primary key of $qualifiedTableName: ${describe(unsupportedKeyColumns)}")
+        }
 
         if (unsupported.isNotEmpty()) {
             LoggingUtil.uniqueWarn(
                 log,
-                "Cannot generate data for some columns of $keyspace.$table, as their CQL type is not handled: {}",
-                unsupported.joinToString(", ") { "${it.name} ${it.cqlType}" }
+                "Cannot generate data for some columns of a Cassandra table, as their CQL type is not handled: {}",
+                "$qualifiedTableName: ${describe(unsupported)}"
             )
-
-            /*
-                Cassandra requires a full primary key in an INSERT, so leaving out any of those
-                columns means the insertion is going to be rejected.
-             */
-            if (unsupported.any { it.isPartitionKey || it.isClusteringColumn }) {
-                LoggingUtil.uniqueWarn(
-                    log,
-                    "Some of those columns are part of the primary key of {}, so the insertion will fail",
-                    "$keyspace.$table"
-                )
-            }
         }
 
         return CassandraDbAction(keyspace, table, supported).apply { forceNewTaints() }
     }
+
+    /**
+     * @return the columns a value can be generated for (first), and the ones it cannot (second)
+     */
+    private fun partitionBySupport(columns: List<CassandraColumn>) =
+        columns.partition { CassandraColumnGeneBuilder.isSupported(it) }
+
+    private fun isPartOfPrimaryKey(column: CassandraColumn) = column.isPartitionKey || column.isClusteringColumn
+
+    private fun describe(columns: List<CassandraColumn>) = columns.joinToString(", ") { "${it.name} ${it.cqlType}" }
 }

@@ -3,8 +3,10 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class CassandraInsertBuilderTest {
 
@@ -57,11 +59,43 @@ class CassandraInsertBuilderTest {
         assertEquals(listOf("id", "name"), action.columns.map { it.name })
     }
 
+    /**
+     * An insertion with no column at all could only be rejected, so none is built.
+     */
     @Test
-    fun testTableWithNoSupportedColumn() {
-        val action = builder.createCassandraInsertionAction("ks", "blobs", "content blob")
+    fun testTableWithNoSupportedColumnIsRejected() {
+        assertThrows<IllegalArgumentException> {
+            builder.createCassandraInsertionAction("ks", "blobs", "content blob")
+        }
+        assertFalse(builder.canBuildInsertionFor("content blob"))
+    }
 
-        assertTrue(action.seeTopGenes().isEmpty())
+    /**
+     * Cassandra requires a full primary key in an INSERT, so an insertion leaving out one of the
+     * columns composing it could only be rejected.
+     */
+    @Test
+    fun testTableWithUnsupportedPartitionKeyIsRejected() {
+        assertThrows<IllegalArgumentException> {
+            builder.createCassandraInsertionAction("ks", "users", "id blob PARTITION KEY, name text")
+        }
+        assertFalse(builder.canBuildInsertionFor("id blob PARTITION KEY, name text"))
+    }
+
+    @Test
+    fun testTableWithUnsupportedClusteringColumnIsRejected() {
+        val schema = "id uuid PARTITION KEY, at blob CLUSTERING, note text"
+
+        assertThrows<IllegalArgumentException> {
+            builder.createCassandraInsertionAction("ks", "events", schema)
+        }
+        assertFalse(builder.canBuildInsertionFor(schema))
+    }
+
+    @Test
+    fun testInsertionCanBeBuiltWhenOnlyRegularColumnsAreSkipped() {
+        assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, picture blob, name text"))
+        assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, name text"))
     }
 
     @Test

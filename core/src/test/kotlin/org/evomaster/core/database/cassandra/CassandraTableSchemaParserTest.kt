@@ -82,4 +82,18 @@ class CassandraTableSchemaParserTest {
     fun testColumnWithNoTypeIsRejected() {
         assertThrows<IllegalArgumentException> { CassandraTableSchemaParser.parse("name") }
     }
+
+    /**
+     * With unbalanced type parameters, there is no telling which of the separators are the ones
+     * between columns, so the description is rejected instead of being split at the wrong places.
+     */
+    @Test
+    fun testUnclosedTypeParametersAreRejected() {
+        assertThrows<IllegalArgumentException> { CassandraTableSchemaParser.parse("tags map<text, int") }
+    }
+
+    @Test
+    fun testUnopenedTypeParametersAreRejected() {
+        assertThrows<IllegalArgumentException> { CassandraTableSchemaParser.parse("a text>, b int") }
+    }
 }

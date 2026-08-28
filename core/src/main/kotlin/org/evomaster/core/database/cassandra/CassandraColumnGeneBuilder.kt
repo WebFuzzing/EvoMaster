@@ -3,6 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -11,17 +12,50 @@ import org.evomaster.core.search.gene.string.StringGene
 
 /**
  * Builds the gene used to generate the value of a Cassandra column, based on its CQL type.
- * Only the scalar CQL types that can be inserted with a plain literal are handled: collections,
- * user defined types, and the types that cannot be given an arbitrary value in an INSERT (eg a
- * counter, which is only writable with an UPDATE) have no representation here.
+ *
+ * Two different reasons keep a CQL type out of the ones handled here:
+ * - the value of a column of that type cannot be generated at all, ie a counter, which is only
+ *   writable with an UPDATE, and a timeuuid, which requires a version 1 UUID, whereas [UUIDGene]
+ *   generates a random one;
+ * - no gene generating a value of that type has been written yet, ie blob, inet, the collections
+ *   and the user defined types.
  */
 object CassandraColumnGeneBuilder {
+
+    /**
+     * How the gene generating the value of a column is built, for each of the CQL types handled
+     * here, keyed by the normalized name of the type. Being the single place where such types are
+     * enumerated, it is also what [isSupported] answers from, so that the two cannot disagree.
+     */
+    private val GENE_BUILDERS: Map<String, (String) -> Gene> = mapOf(
+        "ascii" to { name -> StringGene(name) },
+        "text" to { name -> StringGene(name) },
+        "varchar" to { name -> StringGene(name) },
+        "tinyint" to { name -> IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt()) },
+        "smallint" to { name -> IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt()) },
+        "int" to { name -> IntegerGene(name) },
+        "bigint" to { name -> LongGene(name) },
+        "varint" to { name -> BigIntegerGene(name) },
+        "decimal" to { name -> BigDecimalGene(name) },
+        "float" to { name -> FloatGene(name) },
+        "double" to { name -> DoubleGene(name) },
+        "boolean" to { name -> BooleanGene(name) },
+        "uuid" to { name -> UUIDGene(name) },
+        /*
+            Only valid values are generated, as these genes are used to set up the state of the
+            database, and Cassandra would just reject an insertion carrying an invalid one.
+         */
+        "timestamp" to { name -> DateTimeGene(name, onlyValid = true) },
+        "date" to { name -> DateGene(name, onlyValidDates = true) },
+        "time" to { name -> TimeGene(name, onlyValidTimes = true) },
+        "duration" to { name -> CqlDurationGene(name) }
+    )
 
     /**
      * @return whether a gene can be built for [column], ie whether its CQL type is one of the
      * scalar types handled here
      */
-    fun isSupported(column: CassandraColumn) = normalize(column.cqlType) in SUPPORTED_CQL_TYPES
+    fun isSupported(column: CassandraColumn) = normalize(column.cqlType) in GENE_BUILDERS
 
     /**
      * @throws IllegalArgumentException if the CQL type of [column] is not handled, as verifiable
@@ -29,38 +63,12 @@ object CassandraColumnGeneBuilder {
      */
     fun buildGene(column: CassandraColumn): Gene {
 
-        val name = column.name
+        val builder = GENE_BUILDERS[normalize(column.cqlType)]
+            ?: throw IllegalArgumentException("Cannot handle the CQL type of column $column")
 
-        return when (normalize(column.cqlType)) {
-            "ascii", "text", "varchar" -> StringGene(name)
-            "tinyint" -> IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
-            "smallint" -> IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
-            "int" -> IntegerGene(name)
-            "bigint" -> LongGene(name)
-            "varint" -> BigIntegerGene(name)
-            "decimal" -> BigDecimalGene(name)
-            "float" -> FloatGene(name)
-            "double" -> DoubleGene(name)
-            "boolean" -> BooleanGene(name)
-            "uuid" -> UUIDGene(name)
-            /*
-                Only valid values are generated, as these genes are used to set up the state of the
-                database, and Cassandra would just reject an insertion carrying an invalid one.
-             */
-            "timestamp" -> DateTimeGene(name, onlyValid = true)
-            "date" -> DateGene(name, onlyValidDates = true)
-            "time" -> TimeGene(name, onlyValidTimes = true)
-            else -> throw IllegalArgumentException("Cannot handle the CQL type of column $column")
-        }
+        return builder(column.name)
     }
 
     private fun normalize(cqlType: String) = cqlType.trim().lowercase()
 
-    private val SUPPORTED_CQL_TYPES = setOf(
-        "ascii", "text", "varchar",
-        "tinyint", "smallint", "int", "bigint", "varint", "decimal", "float", "double",
-        "boolean",
-        "uuid",
-        "timestamp", "date", "time"
-    )
 }
