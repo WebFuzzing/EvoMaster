@@ -30,6 +30,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DynamoDbClassReplacementTest {
 
@@ -209,6 +211,27 @@ public class DynamoDbClassReplacementTest {
         verifyInterception(Arrays.asList(TABLE_NAME, TABLE_NAME_SECOND), DynamoDbOperationNames.BATCH_GET_ITEM, request);
     }
 
+    /**
+     * Verifies that synchronous target failures are recorded before the existing exception wrapper is propagated.
+     */
+    @Test
+    public void testSynchronousConditionalFailure() {
+        Map<String, AttributeValue> lionelMessi = Collections.singletonMap(
+                "id", AttributeValue.builder().s("Lionel Messi").build());
+        syncClient.putItem(PutItemRequest.builder().tableName(TABLE_NAME).item(lionelMessi).build());
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .item(lionelMessi)
+                .conditionExpression("attribute_not_exists(id)")
+                .build();
+
+        RuntimeException failure = assertThrows(RuntimeException.class,
+                () -> DynamoDbClassReplacement.Sync.putItem(syncClient, request));
+
+        assertTrue(failure.getCause() instanceof ConditionalCheckFailedException);
+        verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.PUT_ITEM, request, false);
+    }
+
     // --- Async Tests ---
 
     @Test
@@ -346,6 +369,19 @@ public class DynamoDbClassReplacementTest {
     }
 
     private void verifyInterception(List<String> expectedTableNames, DynamoDbOperationNames expectedOperationName, Object expectedRequest) {
+        verifyInterception(expectedTableNames, expectedOperationName, expectedRequest, true);
+    }
+
+    /**
+     * Verifies one recorded DynamoDB command and its execution outcome.
+     *
+     * @param expectedTableNames expected table names
+     * @param expectedOperationName expected operation
+     * @param expectedRequest expected low-level request
+     * @param expectedSuccess expected execution outcome
+     */
+    private void verifyInterception(List<String> expectedTableNames, DynamoDbOperationNames expectedOperationName,
+                                    Object expectedRequest, boolean expectedSuccess) {
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
         assertEquals(1, additionalInfoList.size());
         Set<DynamoDbCommand> dynamoDbCommands = additionalInfoList.get(0).getDynamoDbInfoData();
@@ -355,5 +391,7 @@ public class DynamoDbClassReplacementTest {
         assertEquals(expectedTableNames, command.getTableNames());
         assertEquals(expectedOperationName, command.getOperationName());
         assertEquals(expectedRequest, command.getDdbRequest());
+        assertEquals(expectedSuccess, command.isSuccessfullyExecuted());
+        assertTrue(command.getExecutionTime() >= 0L);
     }
 }

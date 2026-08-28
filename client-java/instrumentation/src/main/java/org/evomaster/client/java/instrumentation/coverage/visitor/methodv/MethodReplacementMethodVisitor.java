@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -18,7 +19,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Rewrites supported method calls and method-reference handles to their EvoMaster replacements.
+ */
 public class MethodReplacementMethodVisitor extends MethodVisitor {
+
+    private static final String LAMBDA_METAFACTORY = "java/lang/invoke/LambdaMetafactory";
+    private static final int LAMBDA_IMPLEMENTATION_HANDLE_INDEX = 1;
 
     private final String className;
     private final String methodName;
@@ -177,6 +184,123 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 UnitsInfoRecorder.markNewReplacedMethodInThirdParty(debugInfo);
             }
         }
+    }
+
+    /**
+     * Rewrites the implementation handle of a bound Java method reference when it targets a tracker replacement.
+     * Lambda bootstrap signature arguments are kept unchanged; only the captured receiver type is adapted to the
+     * replacement's first parameter because LambdaMetafactory requires an exact match for captured parameters.
+     *
+     * @param name invokedynamic method name
+     * @param descriptor invokedynamic method descriptor
+     * @param bootstrapMethodHandle bootstrap method handle
+     * @param bootstrapMethodArguments bootstrap method arguments
+     */
+    @Override
+    public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle,
+                                       Object... bootstrapMethodArguments) {
+        if (!isLambdaMetafactory(bootstrapMethodHandle)
+                || bootstrapMethodArguments.length <= LAMBDA_IMPLEMENTATION_HANDLE_INDEX
+                || !(bootstrapMethodArguments[LAMBDA_IMPLEMENTATION_HANDLE_INDEX] instanceof Handle)) {
+            super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
+            return;
+        }
+
+        Handle implementationHandle = (Handle) bootstrapMethodArguments[LAMBDA_IMPLEMENTATION_HANDLE_INDEX];
+        Optional<Method> replacement = findTrackerReplacement(implementationHandle, descriptor,
+                bootstrapMethodArguments);
+        if (!replacement.isPresent()) {
+            super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
+            return;
+        }
+
+        Method method = replacement.get();
+        Object[] rewrittenArguments = bootstrapMethodArguments.clone();
+        rewrittenArguments[LAMBDA_IMPLEMENTATION_HANDLE_INDEX] = new Handle(
+                Opcodes.H_INVOKESTATIC,
+                Type.getInternalName(method.getDeclaringClass()),
+                method.getName(),
+                Type.getMethodDescriptor(method),
+                false);
+
+        Type invokedType = Type.getMethodType(descriptor);
+        Type replacementReceiverType = Type.getArgumentTypes(Type.getMethodDescriptor(method))[0];
+        String rewrittenDescriptor = Type.getMethodDescriptor(invokedType.getReturnType(), replacementReceiverType);
+
+        handleLastCallerClass();
+        UnitsInfoRecorder.markNewTrackedMethod("");
+        super.visitInvokeDynamicInsn(name, rewrittenDescriptor, bootstrapMethodHandle, rewrittenArguments);
+    }
+
+    /**
+     * @param bootstrapMethodHandle bootstrap method handle
+     * @return whether the handle invokes a supported LambdaMetafactory bootstrap method
+     */
+    private boolean isLambdaMetafactory(Handle bootstrapMethodHandle) {
+        return bootstrapMethodHandle.getTag() == Opcodes.H_INVOKESTATIC
+                && LAMBDA_METAFACTORY.equals(bootstrapMethodHandle.getOwner())
+                && ("metafactory".equals(bootstrapMethodHandle.getName())
+                || "altMetafactory".equals(bootstrapMethodHandle.getName()));
+    }
+
+    /**
+     * Finds a tracker replacement that can be used as a bound method-reference implementation handle.
+     *
+     * @param implementationHandle original method-reference handle
+     * @param invokedDescriptor invokedynamic descriptor
+     * @param bootstrapMethodArguments LambdaMetafactory bootstrap arguments
+     * @return compatible tracker replacement, if one exists
+     */
+    private Optional<Method> findTrackerReplacement(Handle implementationHandle, String invokedDescriptor,
+                                                    Object[] bootstrapMethodArguments) {
+        if (implementationHandle.getTag() != Opcodes.H_INVOKEINTERFACE
+                && implementationHandle.getTag() != Opcodes.H_INVOKEVIRTUAL) {
+            return Optional.empty();
+        }
+
+        Type[] capturedTypes = Type.getArgumentTypes(invokedDescriptor);
+        if (capturedTypes.length != 1
+                || bootstrapMethodArguments.length < 3
+                || !(bootstrapMethodArguments[0] instanceof Type)
+                || !(bootstrapMethodArguments[2] instanceof Type)) {
+            return Optional.empty();
+        }
+
+        Type samMethodType = (Type) bootstrapMethodArguments[0];
+        Type instantiatedMethodType = (Type) bootstrapMethodArguments[2];
+        int targetArgumentCount = Type.getArgumentTypes(implementationHandle.getDesc()).length;
+        if (Type.getArgumentTypes(samMethodType.getDescriptor()).length != targetArgumentCount
+                || Type.getArgumentTypes(instantiatedMethodType.getDescriptor()).length != targetArgumentCount) {
+            return Optional.empty();
+        }
+
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(
+                implementationHandle.getOwner(), false);
+        if (candidateClasses.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<Method> replacement = ReplacementUtils.chooseMethodFromCandidateReplacement(
+                isInSUT,
+                implementationHandle.getName(),
+                implementationHandle.getDesc(),
+                candidateClasses,
+                false,
+                className);
+        if (!replacement.isPresent()) {
+            return Optional.empty();
+        }
+
+        Method method = replacement.get();
+        Replacement annotation = method.getAnnotation(Replacement.class);
+        Type[] replacementArguments = Type.getArgumentTypes(Type.getMethodDescriptor(method));
+        if (annotation.type() != ReplacementType.TRACKER
+                || annotation.replacingStatic()
+                || replacementArguments.length != targetArgumentCount + 1) {
+            return Optional.empty();
+        }
+
+        return replacement;
     }
 
     private void handleLastCallerClass(){

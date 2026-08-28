@@ -775,6 +775,12 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
+                <artifactId>dynamodb-enhanced</artifactId>
+                <version>${software.amazon.awssdk.dynamodb.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>netty-nio-client</artifactId>
                 <version>${software.amazon.awssdk.dynamodb.version}</version>
                 <scope>test</scope>
