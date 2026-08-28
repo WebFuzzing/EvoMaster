@@ -50,7 +50,7 @@ public class CassandraScriptRunner {
                 String cql = prepareInsertCommand(insertionDto);
                 executeCql(connection, cql);
                 cassandraResults.set(i, true);
-                SimpleLogger.debug(cql + " executed on keyspace: " + insertionDto.keyspaceName + " and table: " + insertionDto.tableName);
+                SimpleLogger.debug("Insertion executed successfully");
             } catch (Exception e) {
                 /*
                     Cassandra has no foreign keys nor referential integrity between rows, so a
@@ -58,8 +58,8 @@ public class CassandraScriptRunner {
                     marked as failed and the execution carries on, in the same way as done in
                     SqlScriptRunner#execInsert.
                  */
-                String msg = "Failed to execute insertion with index " + i + " with Cassandra. Error: " + extractErrorMessage(e);
-                SimpleLogger.warn(msg);
+                String msg = "Failed to execute insertion";
+                SimpleLogger.warn(msg, extractError(e));
             }
         }
 
@@ -96,10 +96,10 @@ public class CassandraScriptRunner {
      * As the CQL statements are executed via reflection, the actual error thrown by the driver comes
      * wrapped into an {@link InvocationTargetException}, and so it needs to be unwrapped to be reported.
      */
-    private static String extractErrorMessage(Exception e) {
+    private static Throwable extractError(Exception e) {
         if (e instanceof InvocationTargetException) {
-            return ((InvocationTargetException) e).getTargetException().getMessage();
+            return ((InvocationTargetException) e).getTargetException();
         }
-        return e.getMessage();
+        return e;
     }
 }
