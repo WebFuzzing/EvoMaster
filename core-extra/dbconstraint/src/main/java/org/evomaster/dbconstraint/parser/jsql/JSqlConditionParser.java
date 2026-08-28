@@ -75,36 +75,59 @@ public class JSqlConditionParser implements SqlConditionParser {
     }
 
     /**
-     * replaces unsupported grammar of JSQLParser with equivalent supported constructs
+     * Rewrites dialect constructs into constructs the rest of the pipeline can consume.
+     *
+     * <p>Every rule here is a parser limitation: JSQLParser cannot read the construct at all, so it
+     * is rewritten into one the library accepts. Constructs the library parses are left alone, even
+     * when they are dialect-specific, because {@link JSqlVisitor} translates them from the AST where
+     * the intent is explicit rather than guessed at from the text.
      *
      * @param originalSqlStr original string before transforming dialect primitives
      * @return the transformed SQL so JSQLParser can handle it
      */
     private String transformDialect(String originalSqlStr, ConstraintDatabaseType databaseType) {
         /*
-         * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
-         * We can work aroung this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
-         * string
+         * How PostgreSQL reports an enumerated column, in one piece:
+         *
+         *     (col)::text = ANY ((ARRAY['A'::character varying, 'B'::character varying])::text[])
+         *
+         * A parser limitation: JSQLParser 4.9 rejects the parenthesised expression inside ANY,
+         * failing on "ANY ((" before it reaches the array. The uncast spellings need no rewriting,
+         * since JSqlVisitor translates them directly.
+         *
+         * The cast target is matched as a sequence of words, not a single one: PostgreSQL spells
+         * types like "character varying" and "double precision" with a space, and a pattern that
+         * accepted only one word silently skipped those constraints.
+         *
+         * TODO Removable once JSQLParser parses the cast form. The expression would then be an
+         * EqualsTo over an ANY function, which JSqlVisitor already handles.
          */
-        String transformedStr = originalSqlStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
-
+        String transformedStr = originalSqlStr.replaceAll(
+                "=\\s*ANY\\s*\\(\\s*\\(\\s*ARRAY\\s*\\[([^\\]]*)\\]\\s*\\)\\s*::\\s*\\w+(?:\\s+\\w+)*\\s*\\[\\s*\\]\\s*\\)",
+                " IN ($1)");
 
         /*
-         * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
-         * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
-         */
-        transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "$1");
-
-        /*
-         * MySQL Enum
+         * MySQL Enum.
+         *
+         * A parser limitation: JSQLParser 4.9 gives up on the shape MySQL reports, stopping at
+         * "status enum('a','b')" with "could only parse partial expression".
+         *
+         * TODO A parser that accepts it still leaves a function call JSqlVisitor does not
+         * translate, so the rule can only go once both handle it.
          */
         if (databaseType == ConstraintDatabaseType.MYSQL)
             transformedStr = transformedStr.replaceAll("\\s*[E|e][N|n][U|u][M|m]\\s*\\(([^<]*)\\)", " IN ($1)");
 
         /*
-         * H2 CASTS expressions to [CHARACTER LARGE OBJECT] instead of [VARCHAR]
-         * We replace CHARACTER LARGE OBJECT to VARCHAR (this could faild if
-         * CHARACTER LARGE OBJECT is used in the string expeession
+         * H2 casts expressions to [CHARACTER LARGE OBJECT] instead of [VARCHAR]. We replace
+         * CHARACTER LARGE OBJECT with VARCHAR (this could fail if CHARACTER LARGE OBJECT appears
+         * inside a string literal).
+         *
+         * A parser limitation: JSQLParser 4.9 rejects the CHARACTER LARGE OBJECT token outright,
+         * on either side of the comparison.
+         *
+         * TODO Removable once JSQLParser parses the token. The replacement, and with it the
+         * literal-corrupting edge case above, would no longer be needed.
          */
         if (databaseType ==ConstraintDatabaseType.H2) {
             transformedStr = transformedStr.replaceAll("CHARACTER LARGE OBJECT","VARCHAR");
