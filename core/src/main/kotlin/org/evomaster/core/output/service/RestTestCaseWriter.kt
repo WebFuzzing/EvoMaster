@@ -71,17 +71,27 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
+        super.handleTestInitialization(lines,
+            baseUrlOfSut,
+            ind,
+            sqlInsertionVars,
+            mongoInsertionVars,
+            redisInsertionVars,
+            testName)
     }
 
     override fun handleActionCalls(
             lines: Lines,
             baseUrlOfSut: String,
             ind: EvaluatedIndividual<*>,
-            insertionVars: MutableList<Pair<String, String>>,
+            sqlInsertionVars: MutableList<Pair<String, String>>,
+            mongoInsertionVars: MutableList<Pair<String, String>>,
+            redisInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     ) {
@@ -97,7 +107,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             lines,
                             ind.individual.seeSqlDbActions(),
                             groupIndex = index.toString(),
-                            insertionVars = insertionVars,
+                            sqlInsertionVars = sqlInsertionVars,
                             skipFailure = config.skipFailureSQLInTestFile
                         )
                     //actions
