@@ -441,8 +441,9 @@ object GeneSamplerForTests {
         return RegexGene(
             name = "rand RegexGene",
             disjunctions = sampleDisjunctionListRxGene(rand),
-            ".*", //TODO tricky, we want to sample different structures,
+            "(?s).*", //TODO tricky, we want to sample different structures,
                                 // but still validation should not fail
+                            // (?s) makes "." match all chars instead of excluding line terminators
             RegexType.JVM
         )
     }
