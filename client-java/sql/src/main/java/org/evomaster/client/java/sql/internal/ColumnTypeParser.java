@@ -2,7 +2,6 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -11,7 +10,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Function;
 
 /**
@@ -29,6 +27,7 @@ public class ColumnTypeParser {
                 Instant::parse,
                 s -> OffsetDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX")).toInstant(),
                 s -> OffsetDateTime.parse(s, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX")).toInstant(),
+                s -> OffsetTime.parse(s).atDate(LocalDate.of(1970, 1, 1)).toInstant(),
                 s -> {
                         /*
                            maybe it is in some weird format like 28-Feb-17...
@@ -36,14 +35,14 @@ public class ColumnTypeParser {
                            JPQL with Date handled like this :(
                         */
                     DateTimeFormatter df = new DateTimeFormatterBuilder()
-                            // case insensitive to parse JAN and FEB
+                            // case-insensitive to parse JAN and FEB
                             .parseCaseInsensitive()
                             // add pattern
                             .appendPattern("dd-MMM-yy")
                             // create formatter (use English Locale to parse month names)
                             .toFormatter();
 
-                    return LocalDate.parse(content.toString(), df)
+                    return LocalDate.parse(content, df)
                             .atStartOfDay().toInstant(ZoneOffset.UTC);
                 },
                 s -> parseDate(s)

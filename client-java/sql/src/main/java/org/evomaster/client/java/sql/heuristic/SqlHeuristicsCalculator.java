@@ -874,7 +874,7 @@ public class SqlHeuristicsCalculator {
             if (!filteredQueryResult.isEmpty()) {
                 truthness = TRUE_TRUTHNESS;
             } else {
-                truthness = TruthnessUtils.buildScaledTruthness(DistanceHelper.C, maxOfTrue);
+                truthness = TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
             }
             return new SqlHeuristicResult(truthness, filteredQueryResult);
         }

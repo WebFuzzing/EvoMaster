@@ -159,7 +159,7 @@ public class CassandraOperationEvaluator {
             if (typeResult.isTrue()) {
                 return typeResult;
             } else {
-                return TruthnessUtils.buildScaledTruthness(DistanceHelper.C_BETTER, typeResult.getOfTrue());
+                return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL_BETTER, typeResult.getOfTrue());
             }
         }
     }
@@ -398,7 +398,7 @@ public class CassandraOperationEvaluator {
             return unscaledTruthness;
         }
 
-        return TruthnessUtils.buildScaledTruthness(DistanceHelper.C_BETTER, unscaledTruthness.getOfTrue());
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL_BETTER, unscaledTruthness.getOfTrue());
     }
 
     private static List<?> toElementList(Object collection) {

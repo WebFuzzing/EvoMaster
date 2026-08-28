@@ -1,6 +1,12 @@
 package org.evomaster.core.redis
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisInsertBuilder
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
+import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

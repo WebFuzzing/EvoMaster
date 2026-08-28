@@ -222,7 +222,7 @@
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.6.0</wfc.version>
+        <wfc.version>0.7.0</wfc.version>
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
@@ -239,6 +239,8 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
+        <!-- must stay in sync with what jackson-dataformat-yaml brings in transitively -->
+        <snakeyaml.version>1.33</snakeyaml.version>
         <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
@@ -315,6 +317,11 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-dbconstraint</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>asyncapi-parser</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -609,6 +616,11 @@
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>

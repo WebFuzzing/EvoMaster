@@ -9,12 +9,27 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 object HttpSemanticsOracle {
+
+    /**
+     * Verbs that the Location follow-up call may use (see HttpSemanticsService).
+     */
+    //TODO update when QUERY is going to be added
+    private val LOCATION_FOLLOWUP_VERBS = setOf(
+        HttpVerb.GET, HttpVerb.DELETE, HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH
+    )
+
+    /**
+     * A Location follow-up returning one of these is treated as an invalid Location:
+     * 404, 405, 500, 501.
+     */
+    private val INVALID_LOCATION_STATUS = setOf(404, 405, 500, 501)
 
 
 
@@ -35,7 +50,7 @@ object HttpSemanticsOracle {
         }
 
         //on same resource
-        if(! first.usingSameResolvedPath(second)){
+        if(! DynamicPathUtils.doesResolveToSamePath(first,second)){
             return false
         }
 
@@ -93,7 +108,8 @@ object HttpSemanticsOracle {
         }
 
         //check path resolution
-        if(!before.usingSameResolvedPath(delete) || !after.usingSameResolvedPath(delete)) {
+        if(!DynamicPathUtils.doesResolveToSamePath(before,delete)
+            || !DynamicPathUtils.doesResolveToSamePath(after, delete)) {
             return NonWorkingDeleteResult()
         }
 
@@ -139,7 +155,8 @@ object HttpSemanticsOracle {
         }
 
         // all three must be on the same resolved path
-        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) {
+        if(!DynamicPathUtils.doesResolveToSamePath(before,modify)
+            || !DynamicPathUtils.doesResolveToSamePath(after,modify)) {
             return false
         }
 
@@ -187,7 +204,7 @@ object HttpSemanticsOracle {
         }
 
         // extract the field names sent in the PUT/PATCH request body
-        val modifiedFieldNames = extractModifiedFieldNames(modify)
+        val modifiedFieldNames = extractDeclaredFieldNames(modify)
 
         // if we can identify specific fields, compare only those to avoid false positives from timestamps etc.
         if(modifiedFieldNames.isNotEmpty()
@@ -235,7 +252,8 @@ object HttpSemanticsOracle {
         if(modify.verb != HttpVerb.PUT && modify.verb != HttpVerb.PATCH) return false
         if(after.verb  != HttpVerb.GET) return false
 
-        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) return false
+        if(!DynamicPathUtils.doesResolveToSamePath(before,modify)
+            || !DynamicPathUtils.doesResolveToSamePath(after,modify)) return false
 
         val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult?
             ?: return false
@@ -276,19 +294,30 @@ object HttpSemanticsOracle {
         actionResults: List<ActionResult>,
         schema: RestSchema? = null
     ): Boolean {
+        return mismatchedPutResponse(individual, actionResults, schema) != null
+    }
 
-        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return false
+    /**
+     * Check if mismatches, and return an error message if any found
+     */
+    fun mismatchedPutResponse(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        schema: RestSchema? = null
+    ): String? {
 
-        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
+        val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return null
+
+        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return null
         // if put returned 2xx but entity does not exist afterwards
-        if (resGet.getStatusCode() == 404) return true
-        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
+        if (resGet.getStatusCode() == 404) return "follow-up GETs return 404"
+        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return null
 
         val bodyParam = put.parameters.find { it is BodyParam } as BodyParam?
 
         //for now we only deal with JSON/XML/FORM
         if (bodyParam != null && !bodyParam.isJson() && !bodyParam.isXml() && !bodyParam.isForm()) {
-            return false
+            return null
         }
 
         val putBody = extractRequestBody(put)
@@ -296,22 +325,34 @@ object HttpSemanticsOracle {
 
         // PUT sent content but GET body is empty -> sent fields definitely missing
         if (getBody.isNullOrEmpty()) {
-            return !putBody.isNullOrEmpty()
+            val dataPut = !putBody.isNullOrEmpty()
+            return if(dataPut) {
+                "PUT added data, but GET returns no data"
+            } else {
+                null
+            }
         }
-
 
         val sentFields = extractSentFieldNames(put)
-        val allPutSchemaFields = extractModifiedFieldNames(put).ifEmpty {
-            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) } ?: emptySet()
+        val allPutSchemaFields = extractDeclaredFieldNames(put).ifEmpty {
+            schema?.let { SchemaUtils.extractRequestBodySchemaFields(it, put.path.toString(), HttpVerb.PUT) }
+                ?: emptySet()
         }
         if (sentFields.isEmpty() && allPutSchemaFields.isEmpty()) {
-            // no information to verify against; flag only when PUT sent nothing either
-            return putBody.isNullOrEmpty()
+            // no field info at all (no schema, and nothing extractable from the PUT body
+            // itself, whether it's null, empty, "{}", or a non-object body). Nothing to
+            // verify against, so treat it the same regardless of what putBody looks like.
+            return null
         }
 
         val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
 
-        return hasMismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+        val mismatches = mismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+        if(mismatches.isEmpty()){
+            return null
+        }
+
+        return "mismatched fields [" + mismatches.sorted().joinToString(", ") { "'$it'" } + "]"
     }
 
     private data class PutGetPair(
@@ -337,7 +378,7 @@ object HttpSemanticsOracle {
 
         if (put.verb != HttpVerb.PUT) return null
         if (get.verb != HttpVerb.GET) return null
-        if (!put.usingSameResolvedPath(get)) return null
+        if (!DynamicPathUtils.doesResolveToSamePath(put,get)) return null
         if (put.auth.isDifferentFrom(get.auth)) return null
 
         val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
@@ -366,41 +407,49 @@ object HttpSemanticsOracle {
         return candidates intersect getSchemaFields
     }
 
-    /**
-     * Unified field-level comparison for JSON, XML and form-encoded PUT bodies.
-     *
-     * @param sentFields  fields whose values must match between PUT and GET
-     * @param wipedFields fields that must be absent (or null) in the GET response
-     */
-    internal fun hasMismatchedPutFields(
+    internal fun mismatchedPutFields(
         putBody: String,
         getBody: String,
         sentFields: Set<String>,
         wipedFields: Set<String>,
         bodyParam: BodyParam? = null
-    ): Boolean {
+    ): Set<String> {
+
+        val errors = mutableSetOf<String>()
 
         // sent fields: PUT value must equal GET value
         if (sentFields.isNotEmpty()) {
-            val fieldsPut = readPutFields(putBody, bodyParam, sentFields) ?: return false
-            if (fieldsPut.isNotEmpty()) {
-                val fieldsGet = readGetFields(getBody, fieldsPut.keys) ?: return true
-                for ((field, valuePut) in fieldsPut) {
-                    val valueGet = fieldsGet[field] ?: return true
-                    if (valuePut != valueGet) return true
+            val fieldsPut = readPutFields(putBody, bodyParam, sentFields)
+            if (!fieldsPut.isNullOrEmpty()) {
+                val fieldsGet = readGetFields(getBody, fieldsPut.keys)
+                if(fieldsGet.isNullOrEmpty()){
+                    errors.addAll(fieldsPut.keys)
+                } else {
+                    for ((field, valuePut) in fieldsPut) {
+                        val valueGet = fieldsGet[field]
+                        if(valueGet == null){ //valuePut is never null
+                            errors.add(field)
+                        } else if (valuePut != valueGet) {
+                                errors.add(field)
+                        }
+                    }
                 }
             }
         }
 
         // wiped fields: must be absent or null in GET
         if (wipedFields.isNotEmpty()) {
-            val getWiped = readGetFields(getBody, wipedFields) ?: return false
-            for (field in wipedFields) {
-                if (!getWiped[field].isNullOrEmpty()) return true
+            val getWiped = readGetFields(getBody, wipedFields)
+            if(!getWiped.isNullOrEmpty()) {
+                for (field in wipedFields) {
+                    if (!getWiped[field].isNullOrEmpty()){
+                        errors.add(field)
+                    }
+                }
             }
         }
 
-        return false
+        return errors
     }
 
     /**
@@ -437,10 +486,12 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Extract field names from the PUT/PATCH request body.
-     * These are the fields that the client attempted to modify.
+     * Extract all declared field names from the PUT/PATCH request body.
+     * Not all these fields are necessarily used in the request, e.g., some
+     * might be de-activated/not-selected for modifications (eg potentially off if not
+     * marked as required).
      */
-    private fun extractModifiedFieldNames(modify: RestCallAction): Set<String> {
+    private fun extractDeclaredFieldNames(modify: RestCallAction): Set<String> {
 
         val objectGene = extractBodyObjectGene(modify) ?: return emptySet()
 
@@ -594,7 +645,7 @@ object HttpSemanticsOracle {
         if (get.verb != HttpVerb.GET) return false
         if (put.verb != HttpVerb.PUT) return false
 
-        if (!get.usingSameResolvedPath(put)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(get,put)) return false
 
         if (get.auth.isDifferentFrom(put.auth)) return false
 
@@ -618,8 +669,8 @@ object HttpSemanticsOracle {
      *   PUT /X        -> 2xx        (same body)
      *   GET /X (or ancestor) -> 2xx  (state after 2nd PUT)
      *
-     * Returns true if any numeric or boolean field differs between the two GET responses.
-     * String fields are intentionally ignored (timestamps/UUIDs etc. cause flakiness).
+     * Returns true if any numeric/boolean field or array size differs between the two GET
+     * responses. Strings and array content are ignored (timestamps/UUIDs/ordering cause flakiness).
      */
     fun hasNonIdempotentPut(
         individual: RestIndividual,
@@ -638,11 +689,14 @@ object HttpSemanticsOracle {
         if (get1.verb != HttpVerb.GET || get2.verb != HttpVerb.GET) return false
 
         // both PUTs on same resolved path with same auth
-        if (!put1.usingSameResolvedPath(put2)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(put1,put2)) return false
         if (put1.auth.isDifferentFrom(put2.auth)) return false
 
+        // same body required
+        if (extractRequestBody(put1) != extractRequestBody(put2)) return false
+
         // both GETs on same resolved path with same auth
-        if (!get1.usingSameResolvedPath(get2)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(get1,get2)) return false
         if (get1.auth.isDifferentFrom(get2.auth)) return false
 
         val resPut1 = actionResults.find { it.sourceLocalId == put1.getLocalId() } as RestCallResult?
@@ -673,12 +727,21 @@ object HttpSemanticsOracle {
             val fields1 = formatter.readFields(body1, numericAndBooleanOnly = true) ?: continue
             val fields2 = formatter.readFields(body2, numericAndBooleanOnly = true) ?: continue
 
-            if (fields1.isEmpty() && fields2.isEmpty()) continue
+            val lengths1 = formatter.readArrayLengths(body1) ?: emptyMap()
+            val lengths2 = formatter.readArrayLengths(body2) ?: emptyMap()
+
+            if (fields1.isEmpty() && fields2.isEmpty() && lengths1.isEmpty() && lengths2.isEmpty()) continue
 
             for ((name, v1) in fields1) {
                 val v2 = fields2[name] ?: continue
                 if (v1 != v2) return true
             }
+
+            for ((name, len1) in lengths1) {
+                val len2 = lengths2[name] ?: continue
+                if (len1 != len2) return true
+            }
+
             return false
         }
         return false
@@ -688,12 +751,13 @@ object HttpSemanticsOracle {
      * Checks the invalid-location oracle:
      *
      *   ANY /X  -> response with Location header L
-     *   GET  L  -> 404   (BUG: location does not point to an existing resource)
+     *   VERB L  -> 404/405/500/501   (BUG: location does not point to a usable resource)
      *
      * Sequence checked: the last two main actions of the individual.
      *  - second-to-last (previous) — any verb — whose result has a non-blank Location header.
-     *  - last is a GET bound to that Location via [RestCallAction.usePreviousLocationId].
-     *  - last action's response is 404.
+     *  - last is bound to that Location via [RestCallAction.usePreviousLocationId]. Its verb is
+     *    chosen from the schema (GET when the Location path is undeclared), so it is not GET-only.
+     *  - last action's response is in [INVALID_LOCATION_STATUS].
      */
     fun hasInvalidLocation(
         individual: RestIndividual,
@@ -706,11 +770,9 @@ object HttpSemanticsOracle {
         val previous = actions[actions.size - 2]
         val follow   = actions[actions.size - 1]
 
-        // follow-up must be a GET, and it must actually be chained to the previous Location
-        if (follow.verb != HttpVerb.GET) return false
+        if (follow.verb !in LOCATION_FOLLOWUP_VERBS) return false
         if (follow.usePreviousLocationId.isNullOrBlank()) return false
 
-        // same auth so a 404 cannot be confused with an authorization problem
         if (previous.auth.isDifferentFrom(follow.auth)) return false
 
         val resPrevious = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
@@ -721,8 +783,8 @@ object HttpSemanticsOracle {
         // the only structural precondition on the previous response is a non-blank Location header
         if (resPrevious.getLocation().isNullOrBlank()) return false
 
-        // BUG: a GET on that Location returns 404
-        return resFollow.getStatusCode() == 404
+        // BUG: the follow-up on that Location returns 404/405/500/501
+        return resFollow.getStatusCode() in INVALID_LOCATION_STATUS
     }
 
     /**
@@ -755,7 +817,8 @@ object HttpSemanticsOracle {
         if (patch.verb != HttpVerb.PATCH) return false
         if (after.verb != HttpVerb.GET) return false
 
-        if (!before.usingSameResolvedPath(patch) || !after.usingSameResolvedPath(patch)) return false
+        if (!DynamicPathUtils.doesResolveToSamePath(before,patch)
+            || !DynamicPathUtils.doesResolveToSamePath(after,patch)) return false
         // the two GETs must use the same auth for a meaningful state comparison
         if (before.auth.isDifferentFrom(after.auth)) return false
 
@@ -779,7 +842,7 @@ object HttpSemanticsOracle {
         // regardless of the PATCH. However, we are only looking at the fields of PATCH. it would be weird
         // to set a value with a PATCH that the API can change on a whim... not impossible, but most likely
         // very unlikely. so, in theory field flakiness should not be a problem here
-        val untouched = extractModifiedFieldNames(patch) - extractSentFieldNames(patch)
+        val untouched = extractDeclaredFieldNames(patch) - extractSentFieldNames(patch)
         if (untouched.isEmpty()) return false
 
         val bodyBefore = resBefore.getBody()
