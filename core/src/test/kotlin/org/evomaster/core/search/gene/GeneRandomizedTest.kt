@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 
 import org.evomaster.core.search.gene.interfaces.WrapperGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DynamicTest
@@ -74,6 +75,12 @@ class GeneRandomizedTest : AbstractGeneTest(){
             } else {
                 //they must be different. the same genotype must not lead to different phenotypes
                 assertFalse(x.containsSameValueAs(y), "Different phenotype but same genotype for ${root.javaClass}")
+
+                if(root.flatView().any{ it is ChoiceGene<*> } && !y.isGloballyValid()){
+                    // as ChoiceGene's unsafeCopyValueFrom checks isGloballyValid by using copyValueFrom
+                    // note: flatView does not include template genes, which appear on some genes like ObjectGene
+                    return@forEach
+                }
 
                 //with same type and constraints, even "unsafe" should always work
                 val wasCopied = x.unsafeCopyValueFrom(y)
