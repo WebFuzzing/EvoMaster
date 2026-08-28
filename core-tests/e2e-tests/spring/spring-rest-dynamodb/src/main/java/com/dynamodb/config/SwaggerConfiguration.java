@@ -25,7 +25,7 @@ public class SwaggerConfiguration {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .select()
-                .paths(regex("/players/.*"))
+                .paths(regex("/(players|operations)/.*"))
                 .build()
                 .ignoredParameterTypes(WebRequest.class, Authentication.class);
     }
@@ -37,8 +37,8 @@ public class SwaggerConfiguration {
      */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("World Cup Players API")
-                .description("DynamoDB query sample for World Cup players")
+                .title("DynamoDB E2E API")
+                .description("DynamoDB samples used by EvoMaster end-to-end tests")
                 .version("1.0")
                 .build();
     }
