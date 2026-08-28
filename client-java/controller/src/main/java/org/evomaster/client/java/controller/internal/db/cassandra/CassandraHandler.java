@@ -90,16 +90,16 @@ public class CassandraHandler {
 
     /**
      * Clears the CQL commands and empty-table queries buffered for the current test, along with
-     * their computed distances, plus the cached table schemas (both here and in
-     * {@link CassandraSchemaTracer}): each table's schema is re-captured the next time it's
-     * queried, rather than assumed unchanged from the previous test.
+     * their computed distances. Table schemas ({@link #tableSchemas}, and the cache in
+     * {@link CassandraSchemaTracer}) are deliberately left untouched: like {@code SqlHandler.schema}
+     * and {@code MongoHandler.collectionSchemas}, a table's shape doesn't change over the course of
+     * a search, so it's captured once (the first time a table is referenced) and kept for the life
+     * of the run rather than re-derived every test.
      */
     public void reset() {
         operations.clear();
         cqlCommandWithDistances.clear();
         failedQueries.clear();
-        tableSchemas.clear();
-        CassandraSchemaTracer.reset();
     }
 
     public void setCqlSession(Object cqlSession) {

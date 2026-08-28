@@ -55,7 +55,9 @@ public class CassandraSchemaTracer {
     }
 
     /**
-     * Resets the tracer's status
+     * Clears the cached table shapes. Called once per new search (from
+     * {@link org.evomaster.client.java.instrumentation.InstrumentationController#resetForNewSearch()}),
+     * not per test.
      */
     public static void reset() {
         tables.clear();

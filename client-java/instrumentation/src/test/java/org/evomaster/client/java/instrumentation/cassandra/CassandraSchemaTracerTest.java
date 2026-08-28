@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -271,6 +272,40 @@ public class CassandraSchemaTracerTest {
 
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
         assertEquals(1, additionalInfoList.size());
+        assertTrue(additionalInfoList.get(0).getCassandraTableMetadataData().isEmpty());
+    }
+
+    @Test
+    void resolve_afterResetForNewSearch_retracesSchema() {
+        cqlSession.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE_1 + ".reset_new_search_table" +
+                " (id uuid PRIMARY KEY, age int)");
+
+        CassandraSchemaTracer.resolve(cqlSession, KEYSPACE_1, "reset_new_search_table");
+        ExecutionTracer.reset();
+
+        InstrumentationController.resetForNewSearch();
+        CassandraSchemaTracer.resolve(cqlSession, KEYSPACE_1, "reset_new_search_table");
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+        // cache was cleared by resetForNewSearch(), so the second resolve() must re-trace
+        assertEquals(1, additionalInfoList.get(0).getCassandraTableMetadataData().size());
+    }
+
+    @Test
+    void resolve_afterResetForNewTest_doesNotRetraceSchema() {
+        cqlSession.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE_1 + ".reset_new_test_table" +
+                " (id uuid PRIMARY KEY, age int)");
+
+        CassandraSchemaTracer.resolve(cqlSession, KEYSPACE_1, "reset_new_test_table");
+        ExecutionTracer.reset();
+
+        InstrumentationController.resetForNewTest();
+        CassandraSchemaTracer.resolve(cqlSession, KEYSPACE_1, "reset_new_test_table");
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+        // per-test reset must NOT clear the schema cache
         assertTrue(additionalInfoList.get(0).getCassandraTableMetadataData().isEmpty());
     }
 }

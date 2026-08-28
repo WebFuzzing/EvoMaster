@@ -215,6 +215,21 @@ public class CassandraHandlerTest {
     }
 
     @Test
+    public void testReset_preservesTableSchema() {
+        handler.handle(tableSchema(TABLE));
+        handler.reset();
+
+        String cql = "SELECT * FROM " + KEYSPACE + "." + TABLE + " WHERE id = 1";
+        handler.handle(command(cql));
+        handler.getEvaluatedCqlCommands();
+
+        CassandraExecutionsDto dto = handler.getExecutionDto();
+        assertEquals(1, dto.failedQueries.size());
+        // schema was captured before reset() and must still be attached afterwards
+        assertEquals("id int PARTITION KEY", dto.failedQueries.get(0).getTableSchema());
+    }
+
+    @Test
     public void testExtractCqlExecutionDisabled_commandNotBuffered() {
         handler.setExtractCqlExecution(false);
 
