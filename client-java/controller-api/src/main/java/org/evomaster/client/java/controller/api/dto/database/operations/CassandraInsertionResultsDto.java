@@ -16,7 +16,7 @@ public class CassandraInsertionResultsDto {
     /**
      * The index of the insertion that failed if any
      */
-    public Integer failedInsertionIndex = -1;
+    public int failedInsertionIndex = -1;
 
     /**
      * Regex to extract index of failed insertion from the exception message thrown by the executeInsert method in CassandraScriptRunner
