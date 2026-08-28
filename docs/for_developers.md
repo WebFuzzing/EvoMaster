@@ -24,6 +24,20 @@ The main reason is that, being libraries, we do not want to also have to ship th
 libraries with them. 
 
 
+### Adding New Major Features
+
+In line of principle, any major feature should be toggleable.
+This is done by adding new configurations `@Cfg` in `EMConfig` class. 
+There are many reasons why we do this, which are explained in more details [here](publications/2023_sqj_tool.pdf).
+
+Even if a feature works fine in unit, integration and E2E tests, it does not mean it will work fine when fuzzing SUTs.
+As such, any new feature should be marked as `@Experimental`, and be _off_ by default (i.e., not used when EvoMaster runs). 
+E2E tests that need the configuration will have to activate it manually in their test setup (e.g., with `setOption(args, optionaName, optionValue)`). 
+
+Once a feature is fully completed, and we test it with experiments (eg WFD), then we can remove the `@Experimental` tag and put it on by default. 
+This is _only done by the architect_ of EvoMaster, after running experiments.  
+
+
 ### BRACES { AND SPACES vs. TABS 
 
 Not going to start an holy war here... once made a choice, we just keep it consistent throughout the whole project. 

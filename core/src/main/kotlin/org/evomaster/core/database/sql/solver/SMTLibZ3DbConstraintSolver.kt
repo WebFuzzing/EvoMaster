@@ -28,6 +28,8 @@ import org.evomaster.core.database.sql.schema.ForeignKey
 import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.utils.StringUtils.convertToAscii
+import org.evomaster.core.utils.TimeUtils
+import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.Z3Result
 import org.evomaster.solver.Z3Solution
@@ -77,9 +79,27 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     // corrupts the map. This makes the cache safe for the parallelized fitness evaluation that is planned.
     private var z3ResultCache: MutableMap<Pair<String, Int>, Z3Result>? = null
 
-    companion object {
-        private const val MAX_CACHE_SIZE = 500
+    /**
+     * Queries that could not be translated at all, remembered so they are attempted once per run.
+     *
+     * Z3's UNKNOWN and ERROR outcomes are deliberately not written to any cache, since either can be
+     * a timeout or a transient container fault and remembering one would turn a single bad run into a
+     * permanent answer. A translation failure is different because it is deterministic: neither the
+     * query nor the schema changes, so the second attempt fails exactly as the first did. The kind is
+     * kept so the statistics keep attributing the failure to the step that produced it.
+     */
+    private var untranslatableQueries: MutableMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>? = null
 
+    /**
+     * Shared across the generators built on each cache miss; see [SmtLibGenerator].
+     *
+     * Safe to share: the parsed AST is immutable (no setters, all fields final) and the visitor that
+     * reads it is built fresh per use. Unbounded on purpose — the keys are the schema's own CHECK
+     * expressions, a fixed set for the run, which is why [EMConfig.sqlZ3CacheSize] does not govern it.
+     */
+    private var checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+
+    companion object {
         // The single layout emitted when turning an epoch value back into a SQL literal. JSqlVisitor
         // reads a superset of the layouts a database may emit, of which this is one, so the value
         // round-trips: what is written here is read back to the same instant.
@@ -118,13 +138,41 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun postConstruct() {
         if (config.generateSqlDataWithZ3) {
             initializeExecutor()
-            val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
-                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
-                    size > MAX_CACHE_SIZE
-            }
-            z3ResultCache = Collections.synchronizedMap(lru)
+            initializeCaches(config.sqlZ3CacheSize)
         }
     }
+
+    /**
+     * Extracted from [postConstruct] so a test can build the caches without a Docker executor.
+     *
+     * [maxSize] is passed in rather than read from [EMConfig] here: a test that builds this solver
+     * directly has no injected configuration, and one exercising eviction wants a small bound so that
+     * what it costs to run does not track whatever the production default happens to be.
+     */
+    internal fun initializeCaches(maxSize: Int) {
+        val lru = object : LinkedHashMap<Pair<String, Int>, Z3Result>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<String, Int>, Z3Result>?) =
+                size > maxSize
+        }
+        z3ResultCache = Collections.synchronizedMap(lru)
+
+        val failedLru = object : LinkedHashMap<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>(16, 0.75f, true) {
+            override fun removeEldestEntry(
+                eldest: MutableMap.MutableEntry<Pair<String, Int>, Statistics.SqlZ3TranslationFailure>?
+            ) = size > maxSize
+        }
+        untranslatableQueries = Collections.synchronizedMap(failedLru)
+
+        checkExpressionCache = Collections.synchronizedMap(HashMap())
+    }
+
+    internal fun untranslatableQueryCount(): Int = untranslatableQueries?.size ?: 0
+
+    internal fun isRememberedUntranslatable(sqlQuery: String, numberOfRows: Int): Boolean =
+        untranslatableQueries?.containsKey(Pair(sqlQuery, numberOfRows)) == true
+
+    internal fun rememberedFailureKind(sqlQuery: String, numberOfRows: Int): Statistics.SqlZ3TranslationFailure? =
+        untranslatableQueries?.get(Pair(sqlQuery, numberOfRows))
 
     fun initializeExecutor() {
         executor = Z3DockerExecutor(resourcesFolder)
@@ -157,10 +205,45 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val collectStats = ::config.isInitialized && config.collectSqlZ3Stats
         val stats: Statistics? = if (collectStats) statisticsRef?.get() else null
 
+        /*
+            Timed as a whole, and skipped entirely when nothing would report it. The two brackets that
+            already existed, around Z3 and around formula generation, leave out writing the .smt2 file,
+            rebuilding the gene tree from a solution, and the call overhead; measuring only those
+            understates what the solver costs the search.
+
+            A call that throws goes unmeasured, since the reporting happens on return. That only costs
+            a slightly low total: this figure is a running sum with no companion count to fall out of
+            step with, and an escaping exception here is a crash rather than a handled outcome.
+         */
+        if (stats == null) {
+            return doSolve(schemaDto, sqlQuery, numberOfRows, null)
+        }
+
+        return TimeUtils.measureTimeMillis(
+            { ms, _ -> stats.reportSqlZ3SolveTime(ms) },
+            { doSolve(schemaDto, sqlQuery, numberOfRows, stats) }
+        )
+    }
+
+    private fun doSolve(
+        schemaDto: DbInfoDto,
+        sqlQuery: String,
+        numberOfRows: Int,
+        stats: Statistics?
+    ): List<SqlAction> {
+
         val cacheKey = Pair(sqlQuery, numberOfRows)
         // Track "seen" against the same key the cache uses, so unique/duplicate counts
         // line up with actual cache granularity.
         stats?.reportSqlZ3QuerySeen(cacheKey.hashCode())
+
+        // A query that could not be translated will fail the same way every time, so the attempt is
+        // made once. The failure is still counted on each encounter, so the reported totals keep
+        // reflecting how often the search runs into one.
+        untranslatableQueries?.get(cacheKey)?.let { kind ->
+            stats?.reportSqlZ3ParseFailure(kind)
+            return emptyList()
+        }
 
         val cached = z3ResultCache?.get(cacheKey)
         if (cached != null) {
@@ -174,21 +257,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val queryStatement = try {
             parseStatement(sqlQuery)
         } catch (e: RuntimeException) {
-            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to parse SQL query as SMT-LIB: '$sqlQuery'")
-            stats?.reportSqlZ3ParseFailure()
+            LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: failed to parse SQL query: '$sqlQuery'")
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SQL_PARSE)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SQL_PARSE)
             return emptyList()
         }
 
         val smtlibGenStart = System.currentTimeMillis()
-        val generator = SmtLibGenerator(schemaDto, numberOfRows)
+        val generator = SmtLibGenerator(schemaDto, numberOfRows, checkExpressionCache)
         // SMT-LIB generation can throw for unsupported column types or query shapes it cannot handle
         // (e.g. a cast failure on an unexpected statement structure). Degrade gracefully to an empty
         // result instead of letting the exception propagate into the structure mutator.
         val smtLib = try {
             generator.generateSMT(queryStatement)
         } catch (e: RuntimeException) {
-            LoggingUtil.getInfoLogger().warn("SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
-            stats?.reportSqlZ3ParseFailure()
+            LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: failed to generate SMT-LIB for query '$sqlQuery': ${e.message}")
+            stats?.reportSqlZ3ParseFailure(Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
+            untranslatableQueries?.put(cacheKey, Statistics.SqlZ3TranslationFailure.SMTLIB_GENERATION)
             return emptyList()
         }
         val smtlibBytes = smtLib.toString().toByteArray(StandardCharsets.UTF_8).size
@@ -226,13 +311,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 emptyList()
             }
             Z3Result.Status.UNKNOWN -> {
-                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
+                LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 returned 'unknown' (incomplete theory or timeout) for query '$sqlQuery'")
                 stats?.reportSqlZ3Unknown(z3TimeMs)
                 // Not cached: an 'unknown' may be timeout-driven and therefore transient
                 emptyList()
             }
             Z3Result.Status.ERROR -> {
-                LoggingUtil.getInfoLogger().warn("SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
+                LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
                 stats?.reportSqlZ3Error(z3TimeMs)
                 // Errors are not cached — they may be transient Docker failures
                 emptyList()
@@ -254,7 +339,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             return try {
                 CCJSqlParserUtil.parse(sanitizedQuery)
             } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().error("Failed to parse SQL query '$sqlQuery' as SQL Statement")
+                // Not logged here: the single caller reports this failure with the surrounding
+                // context, and once per distinct query rather than once per attempt.
                 throw RuntimeException(e)
             }
         }
