@@ -1,6 +1,5 @@
 package com.dynamodb.operations;
 
-import com.dynamodb.config.SwaggerConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,7 +11,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.net.URI;
 
@@ -21,8 +19,7 @@ import java.net.URI;
  */
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 @ComponentScan({"com.dynamodb.config", "com.dynamodb.operations"})
-@EnableSwagger2
-public class DynamoDbOperationsApp extends SwaggerConfiguration {
+public class DynamoDbOperationsApp {
 
     /**
      * Starts the DynamoDB operations application.

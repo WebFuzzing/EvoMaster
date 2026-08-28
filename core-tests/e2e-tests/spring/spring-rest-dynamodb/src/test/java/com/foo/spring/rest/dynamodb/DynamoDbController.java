@@ -149,7 +149,7 @@ public abstract class DynamoDbController extends EmbeddedSutController {
      */
     @Override
     public final ProblemInfo getProblemInfo() {
-        return new RestProblem("http://localhost:" + getSutPort() + "/v2/api-docs", null);
+        return new RestProblem("http://localhost:" + getSutPort() + "/v3/api-docs", null);
     }
 
     /**
