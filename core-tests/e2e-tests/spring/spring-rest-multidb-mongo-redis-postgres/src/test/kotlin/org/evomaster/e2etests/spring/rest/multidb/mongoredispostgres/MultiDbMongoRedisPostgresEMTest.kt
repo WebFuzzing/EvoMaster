@@ -33,12 +33,17 @@ class MultiDbMongoRedisPostgresEMTest : RestTestBase() {
             setOption(args, "archiveGeneMutation", "NONE")
             setOption(args, "probOfArchiveMutation", "0.0")
             // enable heuristics for SQL, MongoDB and Redis
-            setOption(args, "heuristicsForSQL", "true")
-            setOption(args, "instrumentMR_SQL", "true")
-            setOption(args, "heuristicsForMongo", "true")
             setOption(args, "instrumentMR_MONGO", "true")
-            setOption(args, "heuristicsForRedis", "true")
             setOption(args, "instrumentMR_REDIS", "true")
+            setOption(args, "instrumentMR_SQL", "true")
+
+            setOption(args, "extractSqlExecutionInfo", "true")
+            setOption(args, "extractMongoExecutionInfo", "true")
+            setOption(args, "extractRedisExecutionInfo", "true")
+
+            setOption(args, "heuristicsForSQL", "true")
+            setOption(args, "heuristicsForMongo", "true")
+            setOption(args, "heuristicsForRedis", "true")
             // enable data insertion for SQL, MongoDB, and Redis
             setOption(args, "generateSqlDataWithSearch", "true")
             setOption(args, "generateMongoData", "true")
