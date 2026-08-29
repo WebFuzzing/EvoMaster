@@ -325,6 +325,44 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testElemMatchNested() {
+        Document doc = new Document("groups", Arrays.asList(
+                new Document("members", Arrays.asList(
+                        new Document("name", "Bob"),
+                        new Document("name", "Alice"))),
+                new Document("members", Collections.singletonList(
+                        new Document("name", "Eve")))
+        ));
+        Document bsonTrue = new Document("groups",
+                new Document("$elemMatch",
+                        new Document("members",
+                                new Document("$elemMatch", new Document("name", "Alice")))));
+        Document bsonFalse = new Document("groups",
+                new Document("$elemMatch",
+                        new Document("members",
+                                new Document("$elemMatch", new Document("name", "Carol")))));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonTrue, doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonFalse, doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchWithEqOperatorDocument() {
+        Document doc = new Document().append("tags", Arrays.asList("a", "b", "c"));
+        Document bsonTrue = new Document("tags", new Document("$elemMatch", new Document("$eq", "b")));
+        Document bsonFalse = new Document("tags", new Document("$elemMatch", new Document("$eq", "z")));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonTrue, doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonFalse, doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
     public void testElemMatchWithMultipleConditions() {
         Document doc = new Document().append("results", Arrays.asList(
                 new Document("product", "abc").append("quantity", 5),

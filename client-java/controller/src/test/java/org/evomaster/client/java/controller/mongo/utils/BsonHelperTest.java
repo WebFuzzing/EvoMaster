@@ -115,10 +115,20 @@ class BsonHelperTest {
     }
 
     @Test
+    void testGetTypeFromNumberReturnsNullWhenNotFound() {
+        assertNull(BsonHelper.getTypeFromNumber(999));
+    }
+
+    @Test
     void testGetTypeFromAlias() {
         Object bsonType = BsonHelper.getTypeFromAlias("STRING");
 
         assertEquals(BsonType.STRING, bsonType);
+    }
+
+    @Test
+    void testGetTypeFromAliasReturnsNullWhenNotFound() {
+        assertNull(BsonHelper.getTypeFromAlias("UNKNOWN"));
     }
 
     @Test

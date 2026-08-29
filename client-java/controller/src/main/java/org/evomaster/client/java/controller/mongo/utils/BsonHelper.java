@@ -162,6 +162,12 @@ public class BsonHelper {
 
     }
 
+    /**
+     * Retrieves the BSON type corresponding to the given integer value.
+     *
+     * @param number the integer value representing the BSON type
+     * @return the BSON type object, or null if not found
+     */
     public static Object getTypeFromNumber(Integer number) {
         Class<?> bsonTypeClass;
         try {
@@ -170,10 +176,16 @@ public class BsonHelper {
             return findByValue.invoke(null, number);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 
+    /**
+     * Retrieves the BSON type corresponding to the given alias string.
+     *
+     * @param alias the alias string representing the BSON type
+     * @return the BSON type object, or null if not found
+     */
     public static Object getTypeFromAlias(String alias) {
         Class<?> bsonTypeClass;
         try {
@@ -182,7 +194,7 @@ public class BsonHelper {
             return valueOf.invoke(null, alias);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new RuntimeException(e);
+           return null;
         }
     }
 }

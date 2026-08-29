@@ -19,8 +19,13 @@ public class ModSelector extends SingleConditionQuerySelector {
 
         if (value instanceof List<?>) {
             List<?> listOfValues = (List<?>) value;
-            Long divisor = (Long) listOfValues.get(0);
-            Long remainder = (Long) listOfValues.get(1);
+            if (listOfValues.size() != 2
+                    || !(listOfValues.get(0) instanceof Number)
+                    || !(listOfValues.get(1) instanceof Number)) {
+                return null;
+            }
+            Long divisor = ((Number) listOfValues.get(0)).longValue();
+            Long remainder = ((Number) listOfValues.get(1)).longValue();
             return new ModOperation(fieldName, divisor, remainder);
         } else {
             return null;

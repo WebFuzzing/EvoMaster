@@ -190,6 +190,32 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseNestedElemMatch() {
+        Document query = new Document(
+                "groups",
+                new Document("$elemMatch",
+                        new Document("members",
+                                new Document("$elemMatch", new Document("name", "Alice"))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation outerElemMatch = (ElemMatchOperation) operation;
+        assertEquals("groups", outerElemMatch.getFieldName());
+
+        assertTrue(outerElemMatch.getCondition() instanceof ElemMatchOperation);
+        ElemMatchOperation innerElemMatch = (ElemMatchOperation) outerElemMatch.getCondition();
+        assertEquals("members", innerElemMatch.getFieldName());
+
+        assertTrue(innerElemMatch.getCondition() instanceof EqualsOperation);
+        EqualsOperation<?> equals = (EqualsOperation<?>) innerElemMatch.getCondition();
+        assertEquals("name", equals.getFieldName());
+        assertEquals("Alice", equals.getValue());
+    }
+
+
+
+    @Test
     void testParseElemMatchWithMultipleConditions() {
         Document query = new Document(
                 "results",
@@ -224,6 +250,100 @@ class QueryParserTest {
         EqualsOperation equals = (EqualsOperation) elemMatch.getCondition();
         assertEquals("product", equals.getFieldName());
         assertEquals(null, equals.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithEqOperator() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch", new Document("$eq", "b"))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("tags", elemMatch.getFieldName());
+        assertTrue(elemMatch.getCondition() instanceof EqualsOperation);
+        EqualsOperation<?> equals = (EqualsOperation<?>) elemMatch.getCondition();
+        assertEquals("$", equals.getFieldName());
+        assertEquals("b", equals.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithGteOperator() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch", new Document("$gte", "b"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("tags", elemMatch.getFieldName());
+        assertTrue(elemMatch.getCondition() instanceof GreaterThanEqualsOperation);
+        GreaterThanEqualsOperation<?> greaterThanEquals =
+                (GreaterThanEqualsOperation<?>) elemMatch.getCondition();
+        assertEquals("$", greaterThanEquals.getFieldName());
+        assertEquals("b", greaterThanEquals.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithAndBetweenLtAndGt() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch",
+                        new Document("$and", Arrays.asList(
+                                new Document("$lt", "c"),
+                                new Document("$gt", "a"))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("tags", elemMatch.getFieldName());
+
+        assertTrue(elemMatch.getCondition() instanceof AndOperation);
+        AndOperation and = (AndOperation) elemMatch.getCondition();
+        assertEquals(2, and.getConditions().size());
+
+        assertTrue(and.getConditions().get(0) instanceof LessThanOperation);
+        LessThanOperation<?> lessThan = (LessThanOperation<?>) and.getConditions().get(0);
+        assertEquals("$", lessThan.getFieldName());
+        assertEquals("c", lessThan.getValue());
+
+        assertTrue(and.getConditions().get(1) instanceof GreaterThanOperation);
+        GreaterThanOperation<?> greaterThan = (GreaterThanOperation<?>) and.getConditions().get(1);
+        assertEquals("$", greaterThan.getFieldName());
+        assertEquals("a", greaterThan.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithOrCondition() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch",
+                        new Document("$or", Arrays.asList(
+                                new Document("$eq", "a"),
+                                new Document("$eq", "b"))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("tags", elemMatch.getFieldName());
+
+        assertTrue(elemMatch.getCondition() instanceof OrOperation);
+        OrOperation or = (OrOperation) elemMatch.getCondition();
+        assertEquals(2, or.getConditions().size());
+
+        assertTrue(or.getConditions().get(0) instanceof EqualsOperation);
+        EqualsOperation<?> firstEquals = (EqualsOperation<?>) or.getConditions().get(0);
+        assertEquals("$", firstEquals.getFieldName());
+        assertEquals("a", firstEquals.getValue());
+
+        assertTrue(or.getConditions().get(1) instanceof EqualsOperation);
+        EqualsOperation<?> secondEquals = (EqualsOperation<?>) or.getConditions().get(1);
+        assertEquals("$", secondEquals.getFieldName());
+        assertEquals("b", secondEquals.getValue());
     }
 
     @Test
@@ -916,5 +1036,383 @@ class QueryParserTest {
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
         assertEquals("f", eq.getFieldName());
         assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
+    }
+
+    @Test
+    void testParseLessThan() {
+        QueryOperation operation = parser.parse(
+                new Document("age", new Document("$lt", 65))
+        );
+
+        assertTrue(operation instanceof LessThanOperation);
+        LessThanOperation<?> lessThan = (LessThanOperation<?>) operation;
+        assertEquals("age", lessThan.getFieldName());
+        assertEquals(65, lessThan.getValue());
+    }
+
+    @Test
+    void testParseExistsFalse() {
+        QueryOperation operation = parser.parse(
+                new Document("age", new Document("$exists", false))
+        );
+
+        assertTrue(operation instanceof ExistsOperation);
+        assertFalse(((ExistsOperation) operation).getBoolean());
+    }
+
+    @Test
+    void testParseNotWithComparisonOperator() {
+        QueryOperation operation = parser.parse(
+                new Document("age", new Document("$not", new Document("$gt", 18)))
+        );
+
+        assertTrue(operation instanceof NotOperation);
+        NotOperation not = (NotOperation) operation;
+        assertEquals("age", not.getFieldName());
+        assertTrue(not.getCondition() instanceof GreaterThanOperation);
+        assertEquals(18, ((GreaterThanOperation<?>) not.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseTopLevelValueOperatorWithSyntheticField() {
+        QueryOperation operation = parser.parse(new Document("$gt", 18));
+
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> greaterThan = (GreaterThanOperation<?>) operation;
+        assertEquals("$", greaterThan.getFieldName());
+        assertEquals(18, greaterThan.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithImplicitRange() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch",
+                        new Document("$gt", "a").append("$lt", "c"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        QueryOperation condition = ((ElemMatchOperation) operation).getCondition();
+        assertTrue(condition instanceof AndOperation);
+
+        AndOperation and = (AndOperation) condition;
+        assertEquals(2, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof LessThanOperation);
+        assertEquals("$", ((GreaterThanOperation<?>) and.getConditions().get(0)).getFieldName());
+        assertEquals("$", ((LessThanOperation<?>) and.getConditions().get(1)).getFieldName());
+    }
+
+    @Test
+    void testParseElemMatchWithNotEqualsOperator() {
+        ElemMatchOperation elemMatch = parseElemMatchCondition(
+                new Document("$ne", "b"),
+                NotEqualsOperation.class
+        );
+        NotEqualsOperation<?> notEquals = (NotEqualsOperation<?>) elemMatch.getCondition();
+        assertEquals("$", notEquals.getFieldName());
+        assertEquals("b", notEquals.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithLessThanEqualsOperator() {
+        ElemMatchOperation elemMatch = parseElemMatchCondition(
+                new Document("$lte", "b"),
+                LessThanEqualsOperation.class
+        );
+        LessThanEqualsOperation<?> lessThanEquals =
+                (LessThanEqualsOperation<?>) elemMatch.getCondition();
+        assertEquals("$", lessThanEquals.getFieldName());
+        assertEquals("b", lessThanEquals.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithInOperator() {
+        ElemMatchOperation elemMatch = parseElemMatchCondition(
+                new Document("$in", Arrays.asList("a", "b")),
+                InOperation.class
+        );
+        InOperation<?> in = (InOperation<?>) elemMatch.getCondition();
+        assertEquals("$", in.getFieldName());
+        assertEquals(Arrays.asList("a", "b"), in.getValues());
+    }
+
+    @Test
+    void testParseElemMatchWithNotInOperator() {
+        ElemMatchOperation elemMatch = parseElemMatchCondition(
+                new Document("$nin", Arrays.asList("a", "b")),
+                NotInOperation.class
+        );
+        NotInOperation<?> notIn = (NotInOperation<?>) elemMatch.getCondition();
+        assertEquals("$", notIn.getFieldName());
+        assertEquals(Arrays.asList("a", "b"), notIn.getValues());
+    }
+
+    @Test
+    void testParseElemMatchWithNotOperator() {
+        ElemMatchOperation elemMatch = parseElemMatchCondition(
+                new Document("$not", new Document("$eq", "b")),
+                NotOperation.class
+        );
+        NotOperation not = (NotOperation) elemMatch.getCondition();
+        assertEquals("$", not.getFieldName());
+        assertTrue(not.getCondition() instanceof EqualsOperation);
+        assertEquals("b", ((EqualsOperation<?>) not.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithNestedLogicalConditions() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch",
+                        new Document("$and", Arrays.asList(
+                                new Document("$gt", "a"),
+                                new Document("$or", Arrays.asList(
+                                        new Document("$eq", "b"),
+                                        new Document("$eq", "c"))))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        QueryOperation condition = ((ElemMatchOperation) operation).getCondition();
+        assertTrue(condition instanceof AndOperation);
+        AndOperation and = (AndOperation) condition;
+        assertEquals(2, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof OrOperation);
+        assertEquals(2, ((OrOperation) and.getConditions().get(1)).getConditions().size());
+    }
+
+    @Test
+    void testParseElemMatchWithNorCondition() {
+        Document query = new Document(
+                "tags",
+                new Document("$elemMatch",
+                        new Document("$nor", Arrays.asList(
+                                new Document("$eq", "a"),
+                                new Document("$eq", "b"))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        QueryOperation condition = ((ElemMatchOperation) operation).getCondition();
+        assertTrue(condition instanceof NorOperation);
+        assertEquals(2, ((NorOperation) condition).getConditions().size());
+    }
+
+    @Test
+    void testParseElemMatchNestedInsideOr() {
+        Document query = new Document(
+                "$or",
+                Arrays.asList(
+                        new Document("tags", new Document("$elemMatch", new Document("$eq", "a"))),
+                        new Document("tags", new Document("$elemMatch", new Document("$eq", "b"))))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof OrOperation);
+        OrOperation or = (OrOperation) operation;
+        assertEquals(2, or.getConditions().size());
+        assertTrue(or.getConditions().stream().allMatch(c -> c instanceof ElemMatchOperation));
+    }
+
+    @Test
+    void testParseElemMatchWithEmptyCondition() {
+        QueryOperation operation = parser.parse(
+                new Document("tags", new Document("$elemMatch", new Document()))
+        );
+
+        assertTrue(operation instanceof ElemMatchOperation);
+        assertTrue(((ElemMatchOperation) operation).getCondition() instanceof TrueOperation);
+    }
+
+    @Test
+    void testParseInvalidElemMatchConditions() {
+        assertAll(
+                () -> assertInvalidQuery(
+                        new Document("tags", new Document("$elemMatch", "invalid"))),
+                () -> assertInvalidQuery(
+                        new Document("tags", new Document("$elemMatch", null))),
+                () -> assertInvalidQuery(new Document(
+                        "tags",
+                        new Document("$elemMatch", new Document("$unknown", 1))
+                )),
+                () -> assertInvalidQuery(new Document(
+                        "tags",
+                        new Document("$elemMatch", new Document("$or", "invalid"))
+                ))
+        );
+    }
+
+    @Test
+    void testParseInvalidCollectionOperatorValues() {
+        assertAll(
+                () -> assertInvalidQuery(new Document("tags", new Document("$in", "a"))),
+                () -> assertInvalidQuery(new Document("tags", new Document("$nin", "a"))),
+                () -> assertInvalidQuery(new Document("tags", new Document("$all", "a")))
+        );
+    }
+
+    @Test
+    void testParseInvalidModValues() {
+        assertAll(
+                () -> assertInvalidQuery(
+                        new Document("age", new Document("$mod", Collections.emptyList()))),
+                () -> assertInvalidQuery(
+                        new Document("age", new Document("$mod", Collections.singletonList(2L)))),
+                () -> assertInvalidQuery(
+                        new Document("age", new Document("$mod", Arrays.asList(2L, 0L, 1L))))
+        );
+    }
+
+    @Test
+    void testParseModWithIntegerValues() {
+        QueryOperation operation = parser.parse(
+                new Document("age", new Document("$mod", Arrays.asList(2, 0)))
+        );
+
+        assertTrue(operation instanceof ModOperation);
+        ModOperation mod = (ModOperation) operation;
+        assertEquals(2L, mod.getDivisor());
+        assertEquals(0L, mod.getRemainder());
+    }
+
+    @Test
+    void testParseInvalidSizeValues() {
+        assertAll(
+                () -> assertInvalidQuery(new Document("tags", new Document("$size", "three"))),
+                () -> assertInvalidQuery(new Document("tags", new Document("$size", -1)))
+        );
+    }
+
+    @Test
+    void testParseInvalidTypeValues() {
+        assertAll(
+                () -> assertInvalidQuery(
+                        new Document("value", new Document("$type", "NOT_A_BSON_TYPE"))),
+                () -> assertInvalidQuery(new Document("value", new Document("$type", 999)))
+        );
+    }
+
+    @Test
+    void testParseInvalidBitwiseValues() {
+        assertAll(
+                () -> assertInvalidQuery(
+                        new Document("flags", new Document("$bitsAllClear", "5"))),
+                () -> assertInvalidQuery(new Document("flags", new Document("$bitsAllSet", 5))),
+                () -> assertInvalidQuery(
+                        new Document("flags", new Document("$bitsAnyClear", true))),
+                () -> assertInvalidQuery(
+                        new Document("flags", new Document("$bitsAnySet", new Document("bit", 1))))
+        );
+    }
+
+    @Test
+    void testParseNearSphereWithoutOptionalDistances() {
+        Document geometry = new Document("type", "Point")
+                .append("coordinates", Arrays.asList(40.0, 70.0));
+        QueryOperation operation = parser.parse(
+                new Document("location",
+                        new Document("$nearSphere", new Document("$geometry", geometry)))
+        );
+
+        assertTrue(operation instanceof NearSphereOperation);
+        NearSphereOperation nearSphere = (NearSphereOperation) operation;
+        assertEquals(40.0, nearSphere.getLongitude());
+        assertEquals(70.0, nearSphere.getLatitude());
+        assertNull(nearSphere.getMaxDistance());
+        assertNull(nearSphere.getMinDistance());
+    }
+
+    @Test
+    void testParseInvalidNearSphereCoordinates() {
+        Document geometryWithWrongCount = new Document("type", "Point")
+                .append("coordinates", Collections.singletonList(40.0));
+        Document geometryWithWrongTypes = new Document("type", "Point")
+                .append("coordinates", Arrays.asList("40", 70.0));
+
+        assertAll(
+                () -> assertInvalidQuery(new Document(
+                        "location",
+                        new Document("$nearSphere", new Document("x", 40.0))
+                )),
+                () -> assertInvalidQuery(new Document(
+                        "location",
+                        new Document("$nearSphere", new Document("$geometry", geometryWithWrongCount))
+                )),
+                () -> assertInvalidQuery(new Document(
+                        "location",
+                        new Document("$nearSphere", new Document("$geometry", geometryWithWrongTypes))
+                ))
+        );
+    }
+
+    @Test
+    void testParseNearSphereIndependentOfOperatorOrder() {
+        Document point = new Document("x", 40.0).append("y", 70.0);
+        Document nearSphere = new Document("$maxDistance", 10.0)
+                .append("$nearSphere", point)
+                .append("$minDistance", 1.0);
+
+        QueryOperation operation = parser.parse(new Document("location", nearSphere));
+
+        assertTrue(operation instanceof NearSphereOperation);
+        NearSphereOperation parsed = (NearSphereOperation) operation;
+        assertEquals(6371000 * 10.0, parsed.getMaxDistance());
+        assertEquals(6371000 * 1.0, parsed.getMinDistance());
+    }
+
+    @Test
+    void testParseMultipleOperatorsOnSameFieldInReverseOrder() {
+        Document query = new Document(
+                "age",
+                new Document("$lt", 30).append("$gt", 18)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(2, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof LessThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof GreaterThanOperation);
+    }
+
+    @Test
+    void testParseInvalidMixedOperatorAndFieldDocument() {
+        assertInvalidQuery(new Document(
+                "age",
+                new Document("$gt", 18).append("unit", "years")
+        ));
+    }
+
+    @Test
+    void testParseInvalidNorWithInvalidCondition() {
+        assertInvalidQuery(new Document(
+                "$nor",
+                Arrays.asList(new Document("age", 30), "invalid")
+        ));
+    }
+
+    private ElemMatchOperation parseElemMatchCondition(
+            Document condition,
+            Class<? extends QueryOperation> expectedConditionType) {
+        QueryOperation operation = parser.parse(
+                new Document("tags", new Document("$elemMatch", condition))
+        );
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("tags", elemMatch.getFieldName());
+        assertTrue(
+                expectedConditionType.isInstance(elemMatch.getCondition()),
+                () -> "Expected " + expectedConditionType.getSimpleName()
+                        + " but got " + elemMatch.getCondition().getClass().getSimpleName()
+        );
+        return elemMatch;
+    }
+
+    private void assertInvalidQuery(Document query) {
+        QueryOperation operation = assertDoesNotThrow(() -> parser.parse(query));
+        assertNull(operation);
     }
 }
