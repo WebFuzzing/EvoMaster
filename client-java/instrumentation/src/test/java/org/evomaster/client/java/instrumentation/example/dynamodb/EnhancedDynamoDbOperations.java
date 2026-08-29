@@ -21,6 +21,11 @@ public interface EnhancedDynamoDbOperations extends AutoCloseable {
     void executeConditionalFailure(boolean async);
 
     /**
+     * Writes a versioned player through an enhanced client configured with the versioning extension.
+     */
+    void executeVersionedPut();
+
+    /**
      * Closes the underlying low-level clients.
      */
     @Override

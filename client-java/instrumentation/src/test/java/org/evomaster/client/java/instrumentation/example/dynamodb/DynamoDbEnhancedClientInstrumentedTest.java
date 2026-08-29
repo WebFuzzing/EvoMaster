@@ -162,6 +162,39 @@ public class DynamoDbEnhancedClientInstrumentedTest {
     }
 
     /**
+     * Verifies that an enhanced-client extension's generated item and condition are captured from the low-level call.
+     */
+    @Test
+    public void shouldRecordVersionedPutWithExtensionChanges() throws Exception {
+        ExecutionTracer.reset();
+
+        operations.executeVersionedPut();
+
+        List<DynamoDbCommand> commands = recordedCommands();
+        assertEquals(1, commands.size());
+        DynamoDbCommand command = commands.get(0);
+        assertEquals(Collections.singletonList(TABLE_NAME), command.getTableNames());
+        assertEquals(DynamoDbOperationNames.PUT_ITEM, command.getOperationName());
+        assertEquals(MODEL_PACKAGE + "PutItemRequest", command.getDdbRequest().getClass().getName());
+        assertTrue(command.isSuccessfullyExecuted());
+
+        Object request = command.getDdbRequest();
+        Map<?, ?> item = (Map<?, ?>) request.getClass().getMethod("item").invoke(request);
+        Object version = item.get("version");
+        Map<?, ?> expressionNames = (Map<?, ?>) request.getClass()
+                .getMethod("expressionAttributeNames")
+                .invoke(request);
+        assertEquals(1, expressionNames.size());
+        String versionPlaceholder = expressionNames.keySet().iterator().next().toString();
+
+        assertEquals("1", version.getClass().getMethod("n").invoke(version));
+        assertEquals("attribute_not_exists(" + versionPlaceholder + ")", request.getClass()
+                .getMethod("conditionExpression")
+                .invoke(request));
+        assertEquals("version", expressionNames.get(versionPlaceholder));
+    }
+
+    /**
      * Creates the composite-key player table.
      */
     private static void createTable() {

@@ -10,6 +10,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.extensions.VersionedRecordExtension;
+import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
@@ -36,6 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EnhancedDynamoDbOperationsImpl implements EnhancedDynamoDbOperations {
 
     private static final TableSchema<Player> PLAYER_SCHEMA = TableSchema.fromBean(Player.class);
+    private static final TableSchema<VersionedPlayer> VERSIONED_PLAYER_SCHEMA =
+            TableSchema.fromBean(VersionedPlayer.class);
 
     private final DynamoDbClient syncClient;
     private final DynamoDbAsyncClient asyncClient;
@@ -43,6 +47,7 @@ public class EnhancedDynamoDbOperationsImpl implements EnhancedDynamoDbOperation
     private final DynamoDbEnhancedAsyncClient enhancedAsyncClient;
     private final DynamoDbTable<Player> syncTable;
     private final DynamoDbAsyncTable<Player> asyncTable;
+    private final DynamoDbTable<VersionedPlayer> versionedSyncTable;
 
     /**
      * Creates enhanced clients connected to DynamoDB Local.
@@ -68,6 +73,11 @@ public class EnhancedDynamoDbOperationsImpl implements EnhancedDynamoDbOperation
         enhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder().dynamoDbClient(asyncClient).build();
         syncTable = enhancedSyncClient.table(tableName, PLAYER_SCHEMA);
         asyncTable = enhancedAsyncClient.table(tableName, PLAYER_SCHEMA);
+        versionedSyncTable = DynamoDbEnhancedClient.builder()
+                .dynamoDbClient(syncClient)
+                .extensions(VersionedRecordExtension.builder().build())
+                .build()
+                .table(tableName, VERSIONED_PLAYER_SCHEMA);
     }
 
     /**
@@ -139,6 +149,18 @@ public class EnhancedDynamoDbOperationsImpl implements EnhancedDynamoDbOperation
         } else {
             syncTable.putItem(request);
         }
+    }
+
+    /**
+     * Writes a player with an unset version so the configured extension adds the first version and its condition.
+     */
+    @Override
+    public void executeVersionedPut() {
+        VersionedPlayer player = new VersionedPlayer();
+        player.setCountry("Germany");
+        player.setName("Jamal Musiala");
+        player.setAge(21);
+        versionedSyncTable.putItem(player);
     }
 
     /**
@@ -315,6 +337,77 @@ public class EnhancedDynamoDbOperationsImpl implements EnhancedDynamoDbOperation
          */
         public void setAge(int age) {
             this.age = age;
+        }
+    }
+
+    /**
+     * World Cup player with optimistic locking enabled through {@link VersionedRecordExtension}.
+     */
+    @DynamoDbBean
+    public static class VersionedPlayer {
+
+        private String country;
+        private String name;
+        private int age;
+        private Integer version;
+
+        /**
+         * @return player's country
+         */
+        @DynamoDbPartitionKey
+        public String getCountry() {
+            return country;
+        }
+
+        /**
+         * @param country player's country
+         */
+        public void setCountry(String country) {
+            this.country = country;
+        }
+
+        /**
+         * @return player's name
+         */
+        @DynamoDbSortKey
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * @param name player's name
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        /**
+         * @return player's age
+         */
+        public int getAge() {
+            return age;
+        }
+
+        /**
+         * @param age player's age
+         */
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        /**
+         * @return the optimistic-locking version
+         */
+        @DynamoDbVersionAttribute
+        public Integer getVersion() {
+            return version;
+        }
+
+        /**
+         * @param version optimistic-locking version
+         */
+        public void setVersion(Integer version) {
+            this.version = version;
         }
     }
 }
