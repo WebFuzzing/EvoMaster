@@ -476,11 +476,11 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookaheads() {
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)[a-z]+") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
         checkSameAsJava("abc|(?=[a&&b])def")
     }
@@ -522,8 +522,8 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""^a((?=b\d)b)\d$""")
         checkSameAsJava("""^\d(x(?<=\dx))y$""")
         checkSameAsJava("(?=abcde)abc")
-        assertThrows<IllegalStateException> { checkSameAsJava("""^a((?=b\d)b)y$""") }
-        assertThrows<IllegalStateException> { checkSameAsJava("^(a(?=bc)d)e$") }
+        assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
+        assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
     }
 
     @Test
@@ -544,12 +544,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testStartAndEndOfInputNested() {
         checkSameAsJava("""a?(\Ab)c""")
         checkSameAsJava("""x?((^z)y)""")
-        assertThrows<IllegalStateException> { checkSameAsJava("""a(\Ab)c""") }
+        assertThrows<AssertionError> { checkSameAsJava("""a(\Ab)c""") }
         checkSameAsJava("""a(b\z)c?""")
-        assertThrows<IllegalStateException> { checkSameAsJava("""a(b\z)c""") }
+        assertThrows<AssertionError> { checkSameAsJava("""a(b\z)c""") }
         checkSameAsJava("""((y(z\z))w?)x?""")
         checkSameAsJava("""x?(c?(^z)y\z)w?""")
-        assertThrows<IllegalStateException> { checkSameAsJava("""x?(c(^z)y)""") }
+        assertThrows<AssertionError> { checkSameAsJava("""x?(c(^z)y)""") }
     }
 
     @Test
@@ -559,6 +559,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?m)\\s^b")
         checkCanSample("(?m)\\s^b", listOf("\nb", "\rb"), 500)
         checkSameAsJava("(?m)x?((^z)y)")
-        assertThrows<IllegalStateException> { checkSameAsJava("(?m)a^b") }
+        assertThrows<AssertionError> { checkSameAsJava("(?m)a^b") }
     }
 }
