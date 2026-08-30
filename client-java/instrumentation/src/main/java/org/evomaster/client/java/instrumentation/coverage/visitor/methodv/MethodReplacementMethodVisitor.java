@@ -295,6 +295,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         Replacement annotation = method.getAnnotation(Replacement.class);
         Type[] replacementArguments = Type.getArgumentTypes(Type.getMethodDescriptor(method));
         if (annotation.type() != ReplacementType.TRACKER
+                || !annotation.supportsMethodReference()
                 || annotation.replacingStatic()
                 || replacementArguments.length != targetArgumentCount + 1) {
             return Optional.empty();

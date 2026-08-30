@@ -91,6 +91,16 @@ public class MethodReplacementMethodVisitorTest {
     }
 
     /**
+     * Verifies that compatible trackers are not rewritten unless they explicitly opt in.
+     */
+    @Test
+    public void shouldKeepNonOptInTrackerMethodReferencesUnchanged() {
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,DYNAMODB,SQL");
+
+        assertUnchanged("java/sql/Statement", "executeQuery", "(Ljava/lang/String;)Ljava/sql/ResultSet;");
+    }
+
+    /**
      * Asserts that a supported low-level client handle is replaced with its tracker handle.
      *
      * @param owner original client owner

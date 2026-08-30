@@ -7,7 +7,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Array;
 
 /**
  * Mark a static method as a replacement one for a method in the Java API.
@@ -51,7 +50,6 @@ public @interface Replacement {
      *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
      *  See further documentation there.
      *  Also, recall that most of these constraints are checked in ReplacementListTest
-     *
      *  For an explanation of why we do this, look at the comments in MethodReplacementMethodVisitor
      */
     boolean replacingConstructor() default false;
@@ -62,6 +60,13 @@ public @interface Replacement {
      * an exception
      */
     ReplacementType type();
+
+    /**
+     * Whether this tracker replacement can be used to rewrite a bound Java method reference.
+     * Method-reference rewriting is opt-in because tracker replacements can have assumptions that
+     * are valid for direct calls but not for LambdaMetafactory-generated invocations.
+     */
+    boolean supportsMethodReference() default false;
 
     /**
      * Give an id to this replacement method. This is used to then easily
