@@ -1,6 +1,7 @@
 package org.evomaster.core.database.cassandra
 
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -96,6 +97,22 @@ class CassandraInsertBuilderTest {
     fun testInsertionCanBeBuiltWhenOnlyRegularColumnsAreSkipped() {
         assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, picture blob, name text"))
         assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, name text"))
+    }
+
+    /**
+     * Cassandra only allows a frozen collection in a primary key, and a frozen type is reported as
+     * a plain one, so a collection in that position is handled as any other supported column.
+     */
+    @Test
+    fun testTableWithACollectionAsPartitionKeyIsAccepted() {
+        val schema = "tags set<text> PARTITION KEY, v int"
+
+        assertTrue(builder.canBuildInsertionFor(schema))
+
+        val action = builder.createCassandraInsertionAction("ks", "images", schema)
+
+        assertEquals(listOf("tags", "v"), action.seeTopGenes().map { it.name })
+        assertTrue(action.seeTopGenes()[0] is CqlCollectionGene)
     }
 
     @Test

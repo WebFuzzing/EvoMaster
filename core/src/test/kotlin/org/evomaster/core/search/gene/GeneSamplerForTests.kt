@@ -2,6 +2,8 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.parser.RegexType
+import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
+import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
@@ -189,6 +191,7 @@ object GeneSamplerForTests {
 
             // Cassandra genes
             CqlDurationGene::class -> sampleCqlDurationGene(rand) as T
+            CqlCollectionGene::class -> sampleCqlCollectionGene(rand) as T
 
             // JSON Patch genes
             JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
@@ -425,6 +428,15 @@ object GeneSamplerForTests {
 
     private fun sampleCqlDurationGene(rand: Randomness): CqlDurationGene {
         return CqlDurationGene("rand CqlDurationGene ${rand.nextInt()}")
+    }
+
+    private fun sampleCqlCollectionGene(rand: Randomness): CqlCollectionGene {
+
+        val kind = rand.choose(CqlCollectionKind.entries)
+
+        val content = if (kind == CqlCollectionKind.MAP) sampleFixedMapGene(rand) else sampleArrayGene(rand)
+
+        return CqlCollectionGene("rand CqlCollectionGene ${rand.nextInt()}", kind, content)
     }
 
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
