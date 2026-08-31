@@ -14,6 +14,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDt
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.dbconstraint.ConstraintDatabaseType
+import org.evomaster.dbconstraint.ast.SqlAndCondition
 import org.evomaster.dbconstraint.ast.SqlCondition
 import net.sf.jsqlparser.JSQLParserException
 import org.evomaster.core.utils.StringUtils.convertToAscii
@@ -28,7 +29,17 @@ import org.evomaster.solver.smtlib.assertion.*
  * @param schema The database schema containing tables and constraints.
  * @param numberOfRows The number of rows to be considered in constraints.
  */
-class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
+class SmtLibGenerator(
+    private val schema: DbInfoDto,
+    private val numberOfRows: Int,
+    /**
+     * Optional memo of parsed CHECK expressions, shared across generator instances.
+     *
+     * A generator is built afresh on every solver cache miss, so without this the same schema-level
+     * constraints are re-parsed for every query, even though the schema does not change during a run.
+     */
+    private val checkExpressionCache: MutableMap<String, SqlCondition?>? = null
+) {
 
     private var parser = JSqlConditionParser()
 
@@ -201,6 +212,38 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     }
 
     /**
+     * Parses a CHECK expression, returning null when it cannot be read. The warning is emitted here so
+     * that a memoised failure does not repeat it on every later query.
+     */
+    private fun parseCheckExpressionText(expression: String): SqlCondition? =
+        try {
+            parser.parse(expression, toDBType(schema.databaseType))
+        } catch (e: SqlConditionParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        } catch (e: JSQLParserException) {
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
+        }
+
+    /**
+     * Parses a CHECK expression, consulting [checkExpressionCache] when one was supplied. Failures are
+     * memoised as null: an expression that cannot be parsed will not become parseable later in the run.
+     */
+    private fun parseCheckExpressionCached(expression: String): SqlCondition? {
+        val cache = checkExpressionCache ?: return parseCheckExpressionText(expression)
+        // Keyed by dialect as well as text, since the same expression can mean different things and
+        // a cache outliving a single schema must not confuse them.
+        val key = "${schema.databaseType}|$expression"
+        if (cache.containsKey(key)) {
+            return cache[key]
+        }
+        val parsed = parseCheckExpressionText(expression)
+        cache[key] = parsed
+        return parsed
+    }
+
+    /**
      * Appends check constraints for each table to the SMT-LIB.
      *
      * @param smt The SMT-LIB object to which check constraints are added.
@@ -208,16 +251,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
-            try {
-                val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
-                for (i in 1..numberOfRows) {
-                    val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
-                    smt.addNode(constraint)
-                }
-            } catch (e: SqlConditionParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
-            } catch (e: JSQLParserException) {
-                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+            val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue
+            for (i in 1..numberOfRows) {
+                val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
+                smt.addNode(constraint)
             }
         }
     }
@@ -497,9 +534,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param sqlQuery The SQL query containing constraints.
      */
     private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
-        val tableAliases = extractTableAliases(sqlQuery)
+        val fromScope = extractFromScope(sqlQuery)
+        val tableAliases = fromScope.tableAliases
+        val columnScope = columnScopeOf(fromScope.derivedAliases)
 
-        appendJoinConstraints(smt, sqlQuery, tableAliases)
+        appendJoinConstraints(smt, sqlQuery, tableAliases, columnScope)
 
         val (where, defaultTable) = when (sqlQuery) {
             is Select -> {
@@ -512,18 +551,81 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         }
 
         if (where != null && defaultTable != null) {
-            try {
-                val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
-                for (i in 1..numberOfRows) {
-                    val constraint = parseQueryCondition(tableAliases, defaultTable, condition, i)
-                    smt.addNode(constraint)
-                }
+            val condition = try {
+                parser.parse(where.toString(), toDBType(schema.databaseType))
             } catch (e: RuntimeException) {
                 skippedQueryConstraints++
-                LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
+                LoggingUtil.getInfoLogger()
+                    .warn("Could not parse WHERE clause, skipping: ${where}. Reason: ${e.message}")
+                null
+            }
+
+            if (condition != null) {
+                appendConjuncts(smt, condition, "WHERE clause") { conjunct, i ->
+                    parseQueryCondition(tableAliases, defaultTable, conjunct, i, columnScope)
+                }
             }
         }
     }
+
+    /**
+     * Translates a clause one top-level conjunct at a time, so that a conjunct which cannot be
+     * expressed in SMT-LIB costs only itself.
+     *
+     * The clause used to be translated as a single unit, which meant that one untranslatable
+     * condition — a column of a derived table, say — discarded every other condition sharing the
+     * `AND` with it, including ones that were perfectly expressible. Splitting first bounds that loss.
+     *
+     * The split stops at `AND` and does not descend into `OR`, because the two are not equally safe
+     * to prune. Dropping a conjunct yields a formula weaker than the query, which is the failure mode
+     * this class already accepts and counts: Z3 may return rows that do not satisfy the dropped
+     * predicate. Dropping a disjunct would instead yield a formula *stronger* than the query, which
+     * can turn a satisfiable query into `unsat` and produce no rows at all. So a disjunction is
+     * translated whole or not at all.
+     *
+     * Note that this is a property of the split, not of the translation as a whole:
+     * [SMTConditionVisitor.visit] for a disjunction already discards operands that translate to
+     * nothing and keeps the rest, so `A OR (X IS NULL)` still reaches the formula as `A`. That
+     * predates this method and is part of the untracked `NULL` gap, not something the split
+     * introduces or can repair.
+     *
+     * @param clause a human-readable name for the clause, used only in the log message.
+     * @param translate translates one conjunct for a given 1-based row index.
+     */
+    private fun appendConjuncts(
+        smt: SMTLib,
+        condition: SqlCondition,
+        clause: String,
+        translate: (SqlCondition, Int) -> SMTNode
+    ) {
+        for (conjunct in flattenConjuncts(condition)) {
+            try {
+                /*
+                    Every row is translated before any node is added, so that a conjunct which fails
+                    part-way through cannot leave the rows it already produced behind.
+                 */
+                val nodes = (1..numberOfRows).map { translate(conjunct, it) }
+                    .filterNot { it is EmptySMTNode }
+                smt.addNodes(nodes)
+            } catch (e: RuntimeException) {
+                skippedQueryConstraints++
+                LoggingUtil.getInfoLogger().warn(
+                    "Could not translate a condition of the $clause to SMT-LIB, skipping it:" +
+                        " ${conjunct.toSql()}. Reason: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Flattens a chain of `AND` conditions into its top-level conjuncts, leaving anything else as a
+     * single element.
+     */
+    private fun flattenConjuncts(condition: SqlCondition): List<SqlCondition> =
+        if (condition is SqlAndCondition)
+            flattenConjuncts(condition.leftExpr) + flattenConjuncts(condition.rightExpr)
+        else
+            listOf(condition)
 
     /**
      * Appends join constraints to the SMT-LIB.
@@ -532,7 +634,12 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param sqlQuery The SQL query containing join constraints.
      * @param tableAliases The map of table aliases.
      */
-    private fun appendJoinConstraints(smt: SMTLib, sqlQuery: Statement, tableAliases: Map<String, String>) {
+    private fun appendJoinConstraints(
+        smt: SMTLib,
+        sqlQuery: Statement,
+        tableAliases: Map<String, String>,
+        columnScope: SMTConditionVisitor.ColumnScope
+    ) {
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val joins = plainSelect.joins
@@ -552,13 +659,12 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                             // non-empty JOIN, but it does not model full INNER JOIN semantics: for
                             // numberOfRows>=2 it never explores mismatched-index pairs (e.g. users2 with
                             // products1). Matching arbitrary row combinations is future work.
-                            for (i in 1..numberOfRows) {
-                                val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                                smt.addNode(constraint)
+                            appendConjuncts(smt, condition, "JOIN ON clause") { conjunct, i ->
+                                parseQueryCondition(tableAliases, tableFromQuery, conjunct, i, columnScope)
                             }
                         } catch (e: RuntimeException) {
                             skippedQueryConstraints++
-                            LoggingUtil.getInfoLogger().warn("Could not translate JOIN ON clause to SMT-LIB, skipping: ${onExpression}. Reason: ${e.message}")
+                            LoggingUtil.getInfoLogger().warn("Could not parse JOIN ON clause, skipping: ${onExpression}. Reason: ${e.message}")
                         }
                     }
                 }
@@ -575,12 +681,39 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param index The index of the row.
      * @return The corresponding SMT node.
      */
-    private fun parseQueryCondition(tableAliases: Map<String, String>, defaultTableName: String, condition: SqlCondition, index: Int): SMTNode {
+    private fun parseQueryCondition(
+        tableAliases: Map<String, String>,
+        defaultTableName: String,
+        condition: SqlCondition,
+        index: Int,
+        columnScope: SMTConditionVisitor.ColumnScope
+    ): SMTNode {
         val smtDefaultTableName = smtTableByOriginalName[defaultTableName.lowercase()]?.smtName
             ?: convertToAscii(defaultTableName)
-        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, schema.tables, index)
+        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, schema.tables, index, columnScope)
         return condition.accept(visitor, null) as SMTNode
     }
+
+    /**
+     * Builds the [SMTConditionVisitor.ColumnScope] for one query from the aliases its `FROM` and
+     * `JOIN` items declare.
+     *
+     * Asking the schema whether a qualifier names a table answers by absence, and gets one shape
+     * wrong: a sub-select aliased with the name of a real table passes the check, and the generator
+     * emits a constraint selecting from that table's row a column it may not even have. Asking the
+     * query's own `FROM` first settles it, because the alias is declared right there.
+     *
+     * The scope only ever answers "derived" or "unknown". A qualifier it does not recognise falls
+     * through to the schema check, so this can drop conditions the previous behaviour kept but never
+     * the other way round.
+     */
+    private fun columnScopeOf(derivedAliases: Set<String>) =
+        SMTConditionVisitor.ColumnScope { qualifier, _ ->
+            if (qualifier != null && derivedAliases.any { it.equals(qualifier, ignoreCase = true) })
+                true
+            else
+                null
+        }
 
     /**
      * Extracts table aliases from the SQL query.
@@ -588,23 +721,51 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param sqlQuery The SQL query from which aliases are extracted.
      * @return A map of table aliases.
      */
-    private fun extractTableAliases(sqlQuery: Statement): Map<String, String> {
+    private fun extractTableAliases(sqlQuery: Statement): Map<String, String> =
+        extractFromScope(sqlQuery).tableAliases
+
+    /**
+     * What the `FROM` and `JOIN` items of a query declare: the aliases that stand for a schema table,
+     * and the aliases that stand for a derived one.
+     */
+    private data class FromScope(
+        val tableAliases: Map<String, String>,
+        val derivedAliases: Set<String>
+    )
+
+    /**
+     * Reads the aliases a query declares.
+     *
+     * A FROM item with no schema table behind it is a derived table. Its alias is recorded rather
+     * than dropped, because that alias is the only place the query says so: matching it against the
+     * schema instead would call it a real table whenever the two happen to share a name.
+     */
+    private fun extractFromScope(sqlQuery: Statement): FromScope {
         val tableAliasMap = mutableMapOf<String, String>()
+        val derivedAliases = mutableSetOf<String>()
+
         when (sqlQuery) {
             is Select -> {
                 val plainSelect = sqlQuery.selectBody as PlainSelect
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
-                    val alias = fromItem.alias?.name ?: tableName
-                    tableAliasMap[alias] = tableName
+                    if (tableName != null) {
+                        tableAliasMap[fromItem.alias?.name ?: tableName] = tableName
+                    } else {
+                        fromItem.alias?.name?.let { derivedAliases.add(it) }
+                    }
 
                     val joins = plainSelect.joins
                     if (joins != null) {
                         for (join in joins) {
-                            val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                            val joinName = getTableName(join.rightItem)
-                            tableAliasMap[joinAlias] = joinName
+                            val rightItem = join.rightItem
+                            val joinName = getTableName(rightItem)
+                            if (joinName != null) {
+                                tableAliasMap[rightItem.alias?.name ?: rightItem.toString()] = joinName
+                            } else {
+                                rightItem.alias?.name?.let { derivedAliases.add(it) }
+                            }
                         }
                     }
                 }
@@ -620,11 +781,21 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                 tableAliasMap[alias] = tableName
             }
         }
-        return tableAliasMap
+        return FromScope(tableAliasMap, derivedAliases)
     }
 
-    private fun getTableName(fromItem: FromItem?): String =
-        (fromItem as Table).getName()
+    /**
+     * The schema table behind a FROM item, or null when there is none — a parenthesised sub-select,
+     * which an ORM emits to resolve entity inheritance through UNION ALL.
+     *
+     * This used to be an unchecked cast to [Table]. The resulting `ClassCastException` was caught far
+     * upstream, where it discarded the *whole* query rather than the one FROM item that could not be
+     * mapped — so a query joining a real table against a derived one lost its real constraints too.
+     * On one system under test that single shape accounted for every SMT-LIB generation failure it
+     * reported, consuming close to half the search budget to produce nothing.
+     */
+    private fun getTableName(fromItem: FromItem?): String? =
+        (fromItem as? Table)?.getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
