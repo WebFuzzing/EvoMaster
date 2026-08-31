@@ -4,19 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class JsonSchemaNormalizerTest {
+class JsonSchemaToOpenApiConverterTest {
 
     private val mapper = ObjectMapper()
 
-    private fun normalize(json: String, root: String = "root"): Pair<Map<String, com.fasterxml.jackson.databind.JsonNode>, MutableList<String>> {
+    private fun convert(json: String, root: String = "root"): Pair<Map<String, com.fasterxml.jackson.databind.JsonNode>, MutableList<String>> {
         val messages = mutableListOf<String>()
-        val schemas = JsonSchemaNormalizer.normalize(root, mapper.readTree(json), messages)
+        val schemas = JsonSchemaToOpenApiConverter.convert(root, mapper.readTree(json), messages)
         return schemas to messages
     }
 
     @Test
     fun `simple object schema is kept and keyed by root name`() {
-        val (schemas, messages) = normalize(
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":"string"} }, "required":["a"] }"""
         )
         assertTrue(schemas.containsKey("root"))
@@ -26,30 +26,32 @@ class JsonSchemaNormalizerTest {
     }
 
     @Test
-    fun `nullable type array becomes single type plus nullable`() {
-        val (schemas, _) = normalize(
+    fun `nullable type array is preserved for the 3_1 parser`() {
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":["string","null"]} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
-        assertEquals("string", a.get("type").asText())
-        assertTrue(a.get("nullable").asBoolean())
+        // OpenAPI 3.1 consumes JSON Schema type arrays directly: no downgrade to type+nullable.
+        assertTrue(a.get("type").isArray)
+        assertEquals(setOf("string", "null"), a.get("type").map { it.asText() }.toSet())
+        assertTrue(messages.isEmpty())
     }
 
     @Test
-    fun `multiple non-null types become oneOf with warning`() {
-        val (schemas, messages) = normalize(
+    fun `multiple non-null types are preserved as a type array`() {
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":["string","integer"]} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
-        assertNull(a.get("type"))
-        assertTrue(a.has("oneOf"))
-        assertEquals(2, a.get("oneOf").size())
-        assertTrue(messages.any { it.contains("multiple types") })
+        assertTrue(a.get("type").isArray)
+        assertEquals(setOf("string", "integer"), a.get("type").map { it.asText() }.toSet())
+        assertFalse(a.has("oneOf"))
+        assertTrue(messages.isEmpty())
     }
 
     @Test
     fun `const becomes single-value enum`() {
-        val (schemas, _) = normalize(
+        val (schemas, _) = convert(
             """{ "type":"object", "properties": { "a": {"type":"string","const":"fixed"} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
@@ -59,30 +61,35 @@ class JsonSchemaNormalizerTest {
     }
 
     @Test
-    fun `examples array collapses to single example`() {
-        val (schemas, _) = normalize(
+    fun `examples array is preserved`() {
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":"string","examples":["x","y"]} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
-        assertNull(a.get("examples"))
-        assertEquals("x", a.get("example").asText())
+        // 3.1 keeps the JSON Schema `examples` array; no collapse to a single `example`.
+        assertTrue(a.get("examples").isArray)
+        assertEquals(2, a.get("examples").size())
+        assertNull(a.get("example"))
+        assertTrue(messages.isEmpty())
     }
 
     @Test
-    fun `numeric exclusive bounds become bound plus boolean flag`() {
-        val (schemas, _) = normalize(
+    fun `numeric exclusive bounds are preserved`() {
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":"integer","exclusiveMinimum":0,"exclusiveMaximum":10} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
-        assertEquals(0, a.get("minimum").asInt())
-        assertTrue(a.get("exclusiveMinimum").asBoolean())
-        assertEquals(10, a.get("maximum").asInt())
-        assertTrue(a.get("exclusiveMaximum").asBoolean())
+        // 3.1 uses the numeric JSON Schema form directly; the gene builder reads exclusive*Value.
+        assertEquals(0, a.get("exclusiveMinimum").asInt())
+        assertEquals(10, a.get("exclusiveMaximum").asInt())
+        assertNull(a.get("minimum"))
+        assertNull(a.get("maximum"))
+        assertTrue(messages.isEmpty())
     }
 
     @Test
     fun `defs are lifted to siblings and refs rewritten`() {
-        val (schemas, _) = normalize(
+        val (schemas, _) = convert(
             """
             {
               "type":"object",
@@ -101,7 +108,7 @@ class JsonSchemaNormalizerTest {
 
     @Test
     fun `def name colliding with root is disambiguated`() {
-        val (schemas, _) = normalize(
+        val (schemas, _) = convert(
             """
             {
               "type":"object",
@@ -117,8 +124,8 @@ class JsonSchemaNormalizerTest {
     }
 
     @Test
-    fun `unsupported keywords are dropped with a warning`() {
-        val (schemas, messages) = normalize(
+    fun `conditional keywords are preserved for the 3_1 parser`() {
+        val (schemas, messages) = convert(
             """
             {
               "type":"object",
@@ -129,16 +136,16 @@ class JsonSchemaNormalizerTest {
             """.trimIndent()
         )
         val root = schemas["root"]!!
-        assertNull(root.get("patternProperties"))
-        assertNull(root.get("if"))
-        assertNull(root.get("then"))
-        assertTrue(messages.any { it.contains("patternProperties") })
-        assertTrue(messages.any { it.contains("'if'") })
+        // 3.1 accepts these keywords; the gene builder ignores what it does not model, no warnings.
+        assertTrue(root.has("patternProperties"))
+        assertTrue(root.has("if"))
+        assertTrue(root.has("then"))
+        assertTrue(messages.isEmpty())
     }
 
     @Test
     fun `prefixItems collapse to items with a warning`() {
-        val (schemas, messages) = normalize(
+        val (schemas, messages) = convert(
             """{ "type":"object", "properties": { "a": {"type":"array","prefixItems":[{"type":"string"},{"type":"integer"}]} } }"""
         )
         val a = schemas["root"]!!.get("properties").get("a")
@@ -150,22 +157,22 @@ class JsonSchemaNormalizerTest {
 
     @Test
     fun `missing root type defaults to object`() {
-        val (schemas, _) = normalize("""{ "properties": { "a": {"type":"string"} } }""")
+        val (schemas, _) = convert("""{ "properties": { "a": {"type":"string"} } }""")
         assertEquals("object", schemas["root"]!!.get("type").asText())
     }
 
     @Test
     fun `non-object root is replaced with empty object and warns`() {
-        val (schemas, messages) = normalize("""{ "type":"string" }""")
-        // stays string but warns (MCP expects object)
+        val (schemas, messages) = convert("""{ "type":"string" }""")
         assertTrue(messages.any { it.contains("expected to be an object") })
+        assertEquals("object", schemas["root"]!!.get("type").asText())
     }
 
     @Test
     fun `caller node is not mutated`() {
         val original = """{ "type":"object", "properties": { "a": {"type":["string","null"]} } }"""
         val node = mapper.readTree(original)
-        JsonSchemaNormalizer.normalize("root", node, mutableListOf())
+        JsonSchemaToOpenApiConverter.convert("root", node, mutableListOf())
         // the original node still has the array type untouched
         assertTrue(node.get("properties").get("a").get("type").isArray)
     }

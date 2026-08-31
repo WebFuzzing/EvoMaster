@@ -440,14 +440,6 @@ object RestActionBuilderV3 {
      * Create a Gene from a set of related JSON-Schema definitions supplied as already-parsed
      * [JsonNode]s.
      *
-     * Unlike [createGeneForDTO], schemas are not passed as a hand-formatted string, so keys are
-     * escaped correctly and no string offset/re-parsing round-trip is needed. All entries are
-     * registered under `components/schemas`, so `$ref`s of the form `#/components/schemas/<name>`
-     * resolve across siblings (e.g. a root schema referencing its extracted `$defs`).
-     *
-     * Note: unlike the string-based overloads, this method does NOT use [dtoCache]; each call
-     * parses and builds afresh.
-     *
      * @param rootName the key in [schemasByName] whose gene is returned
      * @param schemasByName every schema to register, keyed by component name; must contain [rootName]
      * @param options the options to customize the gene creation process
@@ -464,9 +456,8 @@ object RestActionBuilderV3 {
             throw IllegalArgumentException("Root schema '$rootName' not present among provided schemas")
         }
 
-        // Build:  { "openapi":"3.0.0", "components": { "schemas": { <name>: <schema>, ... } } }
         val root = mapper.createObjectNode()
-        root.put("openapi", "3.0.0")
+        root.put("openapi", "3.1.0")
         val schemasNode = root.putObject(OPENAPI_COMPONENT_NAME).putObject(OPENAPI_SCHEMA_NAME)
         schemasByName.forEach { (name, node) -> schemasNode.set<JsonNode>(name, node) }
 
