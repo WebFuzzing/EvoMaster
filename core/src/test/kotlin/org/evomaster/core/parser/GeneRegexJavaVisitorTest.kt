@@ -476,11 +476,11 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookaheads() {
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)[a-z]+") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
         checkSameAsJava("abc|(?=[a&&b])def")
     }
@@ -505,7 +505,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookbehinds() {
-        assertThrows<IllegalStateException> { checkSameAsJava("(?<=X)a") }
+        assertThrows<AssertionError> { checkSameAsJava("(?<=X)a") }
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
 
@@ -521,7 +521,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testNestedAssertionOutwardEscape() {
         checkSameAsJava("""^a((?=b\d)b)\d$""")
         checkSameAsJava("""^\d(x(?<=\dx))y$""")
-        assertThrows<IllegalStateException> { checkSameAsJava("""^a((?=b\d)b)y$""") }
-        assertThrows<IllegalStateException> { checkSameAsJava("^(a(?=bc)d)e$") }
+        assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
+        assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
     }
 }
