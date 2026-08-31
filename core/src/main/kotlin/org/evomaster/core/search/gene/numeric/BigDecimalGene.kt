@@ -285,7 +285,7 @@ class BigDecimalGene(
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){
 
-        val ensureRoundedValueIsInRange = (getMinimum () < bd && bd < getMaximum())
+        val ensureRoundedValueIsInRange = (getMinimum () <= bd && bd <= getMaximum())
 
         val rounded = if (precision == null){
             if (scale == null) bd

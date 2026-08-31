@@ -16,10 +16,6 @@ object CassandraTableSchemaParser {
 
     private const val CLUSTERING_COLUMN_SUFFIX = " CLUSTERING"
 
-    private const val TYPE_PARAMETERS_START = '<'
-
-    private const val TYPE_PARAMETERS_END = '>'
-
     /**
      * @param tableSchema the description of all the columns of a table, as reported by the SUT driver
      * @return the columns described in [tableSchema], in the same order
@@ -40,43 +36,8 @@ object CassandraTableSchemaParser {
      * @throws IllegalArgumentException if the type parameter lists are not balanced, as then there
      * is no telling which of the separators are the ones between columns
      */
-    private fun splitColumns(tableSchema: String): List<String> {
-
-        val columns = mutableListOf<String>()
-        val current = StringBuilder()
-        var depth = 0
-
-        for (c in tableSchema) {
-            when {
-                c == TYPE_PARAMETERS_START -> {
-                    depth++
-                    current.append(c)
-                }
-                c == TYPE_PARAMETERS_END -> {
-                    if (depth == 0) {
-                        throw IllegalArgumentException("Unbalanced type parameters in the description" +
-                                " of the columns of a Cassandra table: $tableSchema")
-                    }
-                    depth--
-                    current.append(c)
-                }
-                c == COLUMN_SEPARATOR && depth == 0 -> {
-                    columns.add(current.toString())
-                    current.clear()
-                }
-                else -> current.append(c)
-            }
-        }
-
-        if (depth != 0) {
-            throw IllegalArgumentException("Unbalanced type parameters in the description" +
-                    " of the columns of a Cassandra table: $tableSchema")
-        }
-
-        columns.add(current.toString())
-
-        return columns
-    }
+    private fun splitColumns(tableSchema: String) =
+        CqlTypeParameters.splitAtTopLevel(tableSchema, COLUMN_SEPARATOR)
 
     private fun parseColumn(description: String): CassandraColumn {
 
