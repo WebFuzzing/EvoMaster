@@ -110,9 +110,12 @@ class CassandraColumnGeneBuilderTest {
 
     /**
      * Cassandra collapses the repeated elements of a set, so generating them is wasted effort.
+     * Note that the gene only asks for unique elements, without guaranteeing them: the check is
+     * skipped altogether for the element types [ArrayGene] cannot compare, and nothing keeps an
+     * element from being mutated into the value of another one afterwards.
      */
     @Test
-    fun testSetTypeGeneratesUniqueElements() {
+    fun testSetTypeAsksForUniqueElements() {
         val gene = buildFor("set<text>") as CqlCollectionGene
 
         assertEquals(CqlCollectionKind.SET, gene.kind)
