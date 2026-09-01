@@ -975,7 +975,7 @@ class EMConfig {
                     throw ConfigProblemException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
                 }
 
-                if (Files.exists(path) && !Files.isWritable(path)) {
+                if (Files.exists(path) && fp.shouldBeWritable && !Files.isWritable(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that already" +
                             " exists, but that cannot be written/replaced to: $path")
                 }
@@ -1162,14 +1162,14 @@ class EMConfig {
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class FilePath(val canBeBlank: Boolean = false)
+    annotation class FilePath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
     /**
      *  Either a file or a folder, that MUST already exist and can be read.
      */
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class ExistingPath(val canBeBlank: Boolean = false, val shouldBeWritable: Boolean = false)
+    annotation class ExistingPath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
 
 //------------------------------------------------------------------------
@@ -1282,7 +1282,7 @@ class EMConfig {
     @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
             " When EvoMaster starts, it will read such file and import all configurations from it.")
     @Regex(".*\\.(yml|yaml|toml)")
-    @FilePath
+    @FilePath(false,false)
     var configPath: String = defaultConfigPath
 
 
@@ -1378,6 +1378,21 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Experimental
+    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
+            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
+    var enableJsonPatchSupport = false
+
+    @Experimental
+    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
+            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
+            " names fall back to the pre-feature behavior (schema ref name or 'body').")
+    var enableXmlWithAttributesSupport = false
+
+    @Experimental
+    @Cfg("Enable multipart/form-data support when building REST actions.")
+    var enableMultipartFormDataSupport = false
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1459,7 +1474,7 @@ class EMConfig {
     var dockerLocalhost = false
 
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
             " the generated tests")
     var jsControllerPath = "./app-driver.js"
@@ -1599,7 +1614,7 @@ class EMConfig {
     var writeStatistics = false
 
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var statisticsFile = "statistics.csv"
 
 
@@ -1754,7 +1769,7 @@ class EMConfig {
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
-    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
 
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
@@ -1804,7 +1819,7 @@ class EMConfig {
     var snapshotInterval = -1.0
 
     @Cfg("Where the snapshot file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var snapshotStatisticsFile = "snapshot.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
@@ -1821,7 +1836,7 @@ class EMConfig {
     var writeExtraHeuristicsFile = false
 
     @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var extraHeuristicsFile = "extra_heuristics.csv"
 
     @Experimental
@@ -1972,6 +1987,11 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForRedis = false
 
+    @Experimental
+    @Cfg("Tracking of DynamoDB commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForDynamoDb = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2014,6 +2034,23 @@ class EMConfig {
     @DependsOnTrueFor("generateSqlDataWithZ3")
     @Min(1.0)
     var sqlZ3NumberOfRows = 1
+
+    /*
+        The default is chosen from measurements: one system under test issued 2,153 distinct queries in
+        a one-hour search. Entries are small,
+        a query string and a solver result, so a higher bound costs little memory and removes that whole
+        class of wasted work.
+     */
+    @Experimental
+    @Cfg("Maximum number of entries kept in each of the two bounded Z3 solver caches: the one " +
+            "holding solver results, and the one remembering queries that could not be translated. " +
+            "When the bound is reached, the least recently used entry is evicted and would have to be " +
+            "solved again if seen later. Sizing it below the number of distinct queries a search " +
+            "issues turns a large share of cache misses into re-solves of already-known queries. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3CacheSize = 5000
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
@@ -2079,7 +2116,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
-    @FilePath
+    @FilePath(false,true)
     var targetHeuristicsFile = "targets.csv"
 
     @Experimental
@@ -2279,7 +2316,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a file that saves derived dependencies")
-    @FilePath
+    @FilePath(false,true)
     var dependencyFile = "dependencies.csv"
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
@@ -2418,7 +2455,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
-    @FilePath
+    @FilePath(false,true)
     var mutatedGeneFile = "mutatedGeneInfo.csv"
 
     @Experimental
@@ -2460,7 +2497,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save all not covered targets when the number is more than 100")
-    @FilePath
+    @FilePath(false,true)
     var exceedTargetsFile = "exceedTargets.txt"
 
 
@@ -2545,7 +2582,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var archiveAfterMutationFile = "archive.csv"
 
     @Debug
@@ -2554,7 +2591,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var impactAfterMutationFile = "impactSnapshot.csv"
 
     @Cfg("Whether to enable archive-based gene mutation")
@@ -2614,7 +2651,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save derived genes")
-    @FilePath
+    @FilePath(false,true)
     var impactFile = "impact.csv"
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
@@ -2674,7 +2711,7 @@ class EMConfig {
     var exportCoveredTarget = false
 
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
-    @FilePath
+    @FilePath(false,true)
     var coveredTargetFile = "coveredTargets.txt"
 
     @Cfg("Specify a format to organize the covered targets by the search")
@@ -2717,7 +2754,7 @@ class EMConfig {
     var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
 
     @Experimental
-    @FilePath
+    @FilePath(false,false)
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath: String = "postman.postman_collection.json"
 
@@ -2843,7 +2880,7 @@ class EMConfig {
             " but problematic if too much")
     var minimizeThresholdForLoss = 0.2
 
-    @FilePath(true)
+    @FilePath(true,false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2851,7 +2888,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoAgentLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo CLI jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2859,7 +2896,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoCliLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, true)
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
             " If left empty, it is not used." +
@@ -2871,7 +2908,7 @@ class EMConfig {
     @Cfg("Port used by JaCoCo to export coverage reports")
     var jaCoCoPort = 8899
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("Command for 'java' used in the External Drivers." +
             " Useful for when there are different JDK installed on same machine without the need" +
             " to update JAVA_HOME." +

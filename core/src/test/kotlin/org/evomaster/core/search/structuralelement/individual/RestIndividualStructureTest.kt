@@ -1,20 +1,19 @@
 package org.evomaster.core.search.structuralelement.individual
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
 import org.junit.jupiter.api.Assertions.assertEquals

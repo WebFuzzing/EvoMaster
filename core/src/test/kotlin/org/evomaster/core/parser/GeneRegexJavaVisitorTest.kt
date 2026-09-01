@@ -453,4 +453,75 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testUnicodeCharClassFlagImpliesUnicodeCase(){
         checkCanSample("(?iU)Å", "å", 100)
     }
+
+    @Test
+    fun testSimpleLookaheads() {
+        checkSameAsJava("(?=aaa5)aaa\\d")
+        checkSameAsJava("(?=.*\\d).{4,8}")
+        checkSameAsJava("(?=.*[A-Z])[a-zA-Z]{4,8}")
+        checkSameAsJava("(?=.*[a-z])[a-zA-Z]{4,8}")
+        checkSameAsJava("foo(?=.*\\d)[a-z\\d]{3,6}")
+        checkSameAsJava("(?=.*\\d)\\w{6,12}")
+        checkSameAsJava("(?=.*[^A-Za-z0-9])\\w{6,12}$")
+        checkSameAsJava("^(?=.*\\d)[a-zA-Z\\d]{8,16}$")
+        checkSameAsJava("(?=\\d)\\d{1,5}")
+        checkSameAsJava("(?=.*\\d)([a-z]+|\\d+){2,4}")
+        checkSameAsJava("(?=(!.*[a-z]+))\\1")
+        checkSameAsJava("(?=(\\d|\\s|d))(\\d|\\s|d)*")
+        checkSameAsJava("(?=a*)\\w*")
+        checkSameAsJava("(?=xbcde)x(bcdX|bc)de")
+        checkSameAsJava("^(?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?$")
+        checkSameAsJava("(?=ababc)(ab|abc)+")
+    }
+
+    @Test
+    fun testUnsatisfiableLookaheads() {
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)[a-z]+") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
+        checkSameAsJava("abc|(?=[a&&b])def")
+    }
+
+    @Test
+    fun testSimpleLookbehinds() {
+        checkSameAsJava("foo(?<=oo)\\d+")
+        checkSameAsJava("\\d(?<=[13579])")
+        checkSameAsJava("a(?<=a)b")
+        checkSameAsJava("\\w*(?<=z)c")
+        checkSameAsJava("[a-z]+(?<=aa|bb)cc")
+        checkSameAsJava("a(?<=a)b")
+        checkSameAsJava("(abc|ab|a)(?<=abc)")
+        checkSameAsJava("(?<name>a)\\k<name>")
+    }
+
+    @Test
+    fun testLookbehindRepairAcrossDirections() {
+        checkSameAsJava("\\w+(?<=X*)m(?=z)\\w")
+        checkSameAsJava("^(?<=X*)m(?=z)(a|z)")
+    }
+
+    @Test
+    fun testUnsatisfiableLookbehinds() {
+        assertThrows<AssertionError> { checkSameAsJava("(?<=X)a") }
+        assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
+    }
+
+    @Test
+    fun testNestedAssertionInGroupLocallySatisfied() {
+        checkSameAsJava("^(a(?=bc)bc)d$")
+        checkSameAsJava("^(a(?<=a)b)c$")
+        checkSameAsJava("^((?<name>x)(?=y)y)z$")
+        checkSameAsJava("^(a(?=ok)(o|k|a|y)*)$")
+    }
+
+    @Test
+    fun testNestedAssertionOutwardEscape() {
+        checkSameAsJava("""^a((?=b\d)b)\d$""")
+        checkSameAsJava("""^\d(x(?<=\dx))y$""")
+        assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
+        assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
+    }
 }

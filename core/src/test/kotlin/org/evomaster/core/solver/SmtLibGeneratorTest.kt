@@ -5,6 +5,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
+import org.evomaster.core.database.sql.solver.SmtLibGenerator
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
 import org.junit.jupiter.api.AfterAll
@@ -234,27 +235,16 @@ class SmtLibGeneratorTest {
         val response: SMTLib = generator.generateSMT(selectStatement)
 
         val expected = tableConstraints
-        // Query constraints
-        expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users__1)", "30"),
-                        EqualsAssertion(listOf("7", "(POINTS users__1)"))
-                    )
-                )
-            )
-        )
-        expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users__2)", "30"),
-                        EqualsAssertion(listOf("7", "(POINTS users__2)"))
-                    )
-                )
-            )
-        )
+        /*
+            Query constraints. The two conjuncts of the WHERE are asserted separately rather than
+            under a single (and ...): the clause is translated one top-level conjunct at a time, so
+            that one untranslatable condition cannot discard the others. Top-level asserts are
+            conjunctive in SMT-LIB, so the formula is the same one; only its shape differs.
+         */
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("7", "(POINTS users__1)"))))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("7", "(POINTS users__2)"))))
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
@@ -282,25 +272,11 @@ class SmtLibGeneratorTest {
         val expected = tableConstraints
         // Query constraints
         expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users__1)", "30"),
-                        EqualsAssertion(listOf("(POINTS users__1)", "7"))
-                    )
-                )
-            )
+            AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30"))
         )
-        expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users__2)", "30"),
-                        EqualsAssertion(listOf("(POINTS users__2)", "7"))
-                    )
-                )
-            )
-        )
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(POINTS users__1)", "7"))))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(POINTS users__2)", "7"))))
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),
@@ -341,45 +317,15 @@ class SmtLibGeneratorTest {
 
         // Query constraints
         expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        AndAssertion(
-                            listOf(
-                                AndAssertion(
-                                    listOf(
-                                        GreaterThanAssertion("(AGE users__1)", "30"),
-                                        EqualsAssertion(listOf("(POINTS users__1)", "7"))
-                                    )
-                                ),
-                            GreaterThanAssertion("(MIN_PRICE products__1)", "500")
-                            )
-                        ),
-                        EqualsAssertion(listOf("(STOCK products__1)", "8"))
-                    )
-                )
-            )
+            AssertSMTNode(GreaterThanAssertion("(AGE users__1)", "30"))
         )
-        expected.addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        AndAssertion(
-                            listOf(
-                                AndAssertion(
-                                    listOf(
-                                        GreaterThanAssertion("(AGE users__2)", "30"),
-                                        EqualsAssertion(listOf("(POINTS users__2)", "7"))
-                                    )
-                                ),
-                                GreaterThanAssertion("(MIN_PRICE products__2)", "500")
-                            )
-                        ),
-                        EqualsAssertion(listOf("(STOCK products__2)", "8"))
-                    )
-                )
-            )
-        )
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users__2)", "30")))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(POINTS users__1)", "7"))))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(POINTS users__2)", "7"))))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(MIN_PRICE products__1)", "500")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(MIN_PRICE products__2)", "500")))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(STOCK products__1)", "8"))))
+        expected.addNode(AssertSMTNode(EqualsAssertion(listOf("(STOCK products__2)", "8"))))
 
         val satConstraints = arrayOf(
             CheckSatSMTNode(),

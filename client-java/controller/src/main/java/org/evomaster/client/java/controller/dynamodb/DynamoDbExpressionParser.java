@@ -112,6 +112,25 @@ public class DynamoDbExpressionParser {
     }
 
     /**
+     * Resolves and validates the expression value used as an {@code attribute_type} argument.
+     *
+     * @param placeholder expression attribute value placeholder
+     * @return validated DynamoDB attribute type
+     */
+    private DynamoDbAttributeType parseAttributeType(String placeholder) {
+        if (!expressionAttributeValues.containsKey(placeholder)) {
+            throw new IllegalArgumentException("Missing expression attribute value for " + placeholder);
+        }
+
+        Object value = expressionAttributeValues.get(placeholder);
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException(
+                    "Expression attribute value " + placeholder + " must be a DynamoDB attribute type string");
+        }
+        return DynamoDbAttributeType.fromToken((String) value);
+    }
+
+    /**
      * Parses a numeric literal into {@link Long} or {@link Double}.
      *
      * @param token numeric literal token
@@ -276,8 +295,8 @@ public class DynamoDbExpressionParser {
         /** {@inheritDoc} */
         @Override
         public QueryOperation visitAttributeTypePredicate(DynamoDbConditionExpressionParser.AttributeTypePredicateContext ctx) {
-            Object expectedType = parseValue(ctx.value());
-            return new TypeOperation(parseFieldName(ctx.path().getText()), expectedType == null ? null : String.valueOf(expectedType));
+            DynamoDbAttributeType expectedType = parseAttributeType(ctx.PLACEHOLDER().getText());
+            return new TypeOperation(parseFieldName(ctx.path().getText()), expectedType);
         }
 
         /** {@inheritDoc} */

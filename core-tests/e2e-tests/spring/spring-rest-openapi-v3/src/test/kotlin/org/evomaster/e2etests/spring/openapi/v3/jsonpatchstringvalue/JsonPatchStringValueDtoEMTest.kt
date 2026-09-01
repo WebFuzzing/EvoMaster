@@ -42,6 +42,7 @@ class JsonPatchStringValueDtoEMTest : SpringTestBase() {
             100,
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableJsonPatchSupport", "true")
             setOption(args, "dtoForRequestPayload", "true")
             // This SUT intentionally has no authentication, and the PATCH returns 2xx, so the
             // security oracle would flag a fault 208 (Anonymous Modifications). It is irrelevant to

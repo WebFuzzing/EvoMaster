@@ -305,7 +305,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             } else if (concreteLeftValue instanceof OffsetDateTime || concreteRightValue instanceof OffsetDateTime) {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetTime || concreteRightValue instanceof OffsetTime) {
-                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), comparisonOperatorType);
+                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof UUID || concreteRightValue instanceof UUID) {
                 truthnessOfExpression = calculateTruthnessForUUIDComparison(convertToUUID(concreteLeftValue), convertToUUID(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof Object[] && concreteRightValue instanceof Object[]) {

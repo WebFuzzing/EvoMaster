@@ -11,7 +11,6 @@ import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.llm.service.LlmService
-import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
@@ -25,7 +24,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.time.SearchTimeController
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -541,9 +540,13 @@ class TestSuiteWriter {
 
         if (format.isJavaScript()) {
             lines.add("process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';")
+            if (format.isPlaywright()) {
+                lines.add("const { test, expect } = require(\"@playwright/test\");")
+            } else {
             lines.add("const superagent = require(\"superagent\");")
             // HTTP client timeout (ms)
             lines.add("const $httpTimeoutVarMs = ${config.tcpTimeoutMs};")
+            }
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
@@ -552,7 +555,8 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
-            if (config.testTimeout > 0) {
+            // Playwright has its own test runner and does not use Jest
+            if (config.testTimeout > 0 && !format.isPlaywright()) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
@@ -787,6 +791,13 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
+        // For Playwright, avoid emitting a top-level test.beforeAll hook to prevent
+        // Playwright runner errors when files are imported indirectly. Also, for
+        // black-box scenarios the hook would be empty anyway.
+        if (format.isPlaywright()) {
+            return
+        }
+
         when {
             format.isJUnit4() -> lines.add("@BeforeClass")
             format.isJUnit5() -> lines.add("@BeforeAll")
@@ -797,7 +808,9 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() -> lines.add("beforeAll( async () =>")
+            format.isJavaScript() -> {
+                lines.add("beforeAll( async () =>")
+            }
         }
 
         lines.block {
@@ -964,7 +977,13 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun tearDown()")
             }
-            format.isJavaScript() -> lines.add("afterAll( async () =>")
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    lines.add("test.afterAll( async () =>")
+                } else {
+                    lines.add("afterAll( async () =>")
+                }
+            }
         }
 
         if (!format.isCsharp()) {
@@ -1017,7 +1036,13 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    lines.add("test.beforeEach(async () => ")
+                } else {
+                    lines.add("beforeEach(async () => ")
+                }
+            }
             //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }

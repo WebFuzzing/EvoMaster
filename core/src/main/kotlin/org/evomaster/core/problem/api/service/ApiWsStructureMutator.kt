@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.RedisFail
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -14,8 +14,8 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
-import org.evomaster.core.redis.RedisDbAction
-import org.evomaster.core.redis.RedisInsertBuilder
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisInsertBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -25,11 +25,11 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -42,6 +42,36 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
+
+        /**
+         * Whether there is nothing to do for a failed WHERE, which depends on the strategy because
+         * the two consume different inputs.
+         *
+         * The search-based generation builds INSERTs table by table, so it needs tables it is able to
+         * insert into; with none, there is nothing it can do. The solver instead works from the query
+         * text and the schema, and never consults that map. Gating it on the map made it inherit a
+         * precondition that is not its own: a failed WHERE over something canInsertInto rejects — a
+         * view, or a table whose identifier does not match the schema exactly — would leave the solver
+         * unreachable even though the query is there and translatable, and would do so without leaving
+         * any trace in the statistics. No case of that actually happening was observed; the
+         * inconsistency is fixed because it is one, not because it was shown to have suppressed
+         * anything.
+         *
+         * The two are mutually exclusive — [EMConfig] rejects a configuration with both enabled — so
+         * the order below is not a precedence rule but a total definition: with neither strategy
+         * enabled there is nothing to do whatever the inputs say, which keeps the predicate honest
+         * independently of the `shouldGenerateSqlData` check that currently guards the call site.
+         */
+        internal fun nothingToDoForFailedWhere(
+            noInsertableTables: Boolean,
+            noFailedWhereQueries: Boolean,
+            generateSqlDataWithSearch: Boolean,
+            generateSqlDataWithZ3: Boolean
+        ): Boolean {
+            if (generateSqlDataWithSearch) return noInsertableTables
+            if (generateSqlDataWithZ3) return noFailedWhereQueries
+            return true
+        }
     }
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
@@ -308,13 +338,25 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             //TODO likely to remove/change once we ll support VIEWs
             .filter { sampler.canInsertInto(it.key) }
 
-        if (fw.isEmpty()) {
+        val failedWhereQueries = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhereQueries()
+
+        val nothingToDo = nothingToDoForFailedWhere(
+            noInsertableTables = fw.isEmpty(),
+            noFailedWhereQueries = failedWhereQueries.isEmpty(),
+            generateSqlDataWithSearch = config.generateSqlDataWithSearch,
+            generateSqlDataWithZ3 = config.generateSqlDataWithZ3
+        )
+        if (nothingToDo) {
+            if (log.isTraceEnabled && fw.isEmpty() && failedWhereQueries.isNotEmpty()) {
+                log.trace(
+                    "{} failed WHERE queries were reported, but no table among them can be inserted into",
+                    failedWhereQueries.size
+                )
+            }
             return
         }
 
         val oldSqlActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
-
-        val failedWhereQueries = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhereQueries()
         val addedSqlInsertions = handleFailedWhereSQL(ind, fw, failedWhereQueries, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)

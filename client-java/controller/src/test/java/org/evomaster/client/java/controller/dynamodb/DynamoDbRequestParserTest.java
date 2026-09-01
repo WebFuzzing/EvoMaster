@@ -339,8 +339,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
     public void testConditionWithTypeAndInParsing() {
         PutItemRequest request = PutItemRequest.builder()
                 .tableName("players")
-                .conditionExpression("attribute_type(kind, S) AND status IN (:s1, 'GOAT', champion)")
-                .expressionAttributeValues(attributeValues(":s1", stringValue("LEGEND")))
+                .conditionExpression("attribute_type(kind, :kindType) AND status IN (:s1, 'GOAT', champion)")
+                .expressionAttributeValues(attributeValues(
+                        ":kindType", stringValue("S"),
+                        ":s1", stringValue("LEGEND")))
                 .build();
 
         ParsedDynamoDbRequest parsedRequest =
@@ -350,7 +352,7 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
 
         TypeOperation type = castAs(and.getConditions().get(0), TypeOperation.class);
         assertEquals("kind", type.getFieldName());
-        assertEquals("S", type.getExpectedType());
+        assertEquals(DynamoDbAttributeType.STRING, type.getExpectedType());
 
         InOperation<?> in = castAs(and.getConditions().get(1), InOperation.class);
         assertEquals("status", in.getFieldName());
