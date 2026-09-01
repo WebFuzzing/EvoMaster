@@ -597,20 +597,20 @@ public class MongoHeuristicsCalculator {
 
         final long bitmask = operation.getBitmask();
         final long maskedValue = ((Number) actualValue).longValue() & bitmask;
-        final int numberOfSetBits = Long.bitCount(maskedValue);
+        final int numberOfSetBitsInMaskedValue = Long.bitCount(maskedValue);
         final int numberOfBitsInMask = Long.bitCount(bitmask);
         if (operation instanceof BitsAllClearOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, 0);
             return buildSafeScaledTruthness(equalityTruthness);
         } else if (operation instanceof BitsAllSetOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
             return buildSafeScaledTruthness(equalityTruthness);
         } else if (operation instanceof BitsAnyClearOperation) {
-            Truthness allSetTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
-            return buildSafeScaledTruthness(allSetTruthness).invert();
+            Truthness lessThanTruthness = getLessThanTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
+            return buildSafeScaledTruthness(lessThanTruthness);
         } else if (operation instanceof BitsAnySetOperation) {
-            Truthness allClearTruthness = getEqualityTruthness(numberOfSetBits, 0);
-            return buildSafeScaledTruthness(allClearTruthness).invert();
+            Truthness lessThanTruthness = getLessThanTruthness(0, numberOfSetBitsInMaskedValue);
+            return buildSafeScaledTruthness(lessThanTruthness);
         } else {
             throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
         }

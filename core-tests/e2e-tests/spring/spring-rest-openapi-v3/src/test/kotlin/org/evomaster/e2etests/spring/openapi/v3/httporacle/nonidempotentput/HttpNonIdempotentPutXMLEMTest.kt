@@ -29,6 +29,7 @@ class HttpNonIdempotentPutXMLEMTest : SpringTestBase(){
                 1000
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableXmlWithAttributesSupport", "true")
             setOption(args, "security", "false")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
