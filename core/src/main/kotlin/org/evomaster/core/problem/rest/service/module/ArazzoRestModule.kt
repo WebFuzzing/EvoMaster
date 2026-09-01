@@ -8,13 +8,13 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness
 import org.evomaster.core.problem.rest.service.fitness.RestFitness
-import org.evomaster.core.problem.rest.service.mutator.ArazzoStructureMutator
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.ArazzoSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.mutator.EmptyStructureMutator
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -74,7 +74,7 @@ class ArazzoRestModule(private val bindRemote: Boolean = true) : RestBaseModule(
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
-            .to(ArazzoStructureMutator::class.java)
+            .to(EmptyStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(HttpWsExternalServiceHandler::class.java)

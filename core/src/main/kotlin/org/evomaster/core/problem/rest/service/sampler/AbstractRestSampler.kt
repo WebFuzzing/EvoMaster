@@ -49,6 +49,8 @@ import org.evomaster.core.search.warning.WarningCategory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import kotlin.sequences.forEach
+
 
 
 abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
@@ -87,6 +89,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     lateinit var skippedEndpoints : List<Endpoint>
         private set
+
 
     @PostConstruct
     open fun initialize() {
@@ -450,6 +453,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             )
         }
     }
+
 
     private fun updateDataPoolBasedOnSchema(actionCluster: MutableMap<String, Action>){
 
