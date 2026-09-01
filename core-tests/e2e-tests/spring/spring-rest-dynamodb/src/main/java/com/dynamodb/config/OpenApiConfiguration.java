@@ -17,10 +17,10 @@ public class OpenApiConfiguration {
      * @return the OpenAPI document metadata
      */
     @Bean
-    public OpenAPI worldCupPlayersOpenApi() {
+    public OpenAPI dynamoDbOpenApi() {
         return new OpenAPI().info(new Info()
-                .title("World Cup Players API")
-                .description("DynamoDB query sample for World Cup players")
+                .title("DynamoDB E2E API")
+                .description("DynamoDB samples used by EvoMaster end-to-end tests")
                 .version("1.0"));
     }
 }
