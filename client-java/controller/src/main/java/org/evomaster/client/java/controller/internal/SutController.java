@@ -27,6 +27,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -94,6 +95,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final OpenSearchHandler openSearchHandler = new OpenSearchHandler();
 
     private final RedisHandler redisHandler = new RedisHandler();
+
+    private final DynamoDbHandler dynamoDbHandler = new DynamoDbHandler();
 
     private Server controllerServer;
 
@@ -326,7 +329,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
-
     /**
      * This is needed only during test generation (not execution),
      * and it is automatically called by the EM controller after
@@ -375,6 +377,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
+     * Initializes DynamoDB heuristic access after the SUT has started.
+     */
+    public final void initDynamoDbHandler() {
+        dynamoDbHandler.setDynamoDbClient(getDynamoDbConnection());
+    }
+
+    /**
      * TODO further handle multiple connections
      * @return sql connection if there exists
      */
@@ -397,6 +406,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         mongoHandler.reset();
         neo4jHandler.reset();
         redisHandler.reset();
+        dynamoDbHandler.reset();
     }
 
     /**
@@ -419,8 +429,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
         if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()
-                || isNeo4jHeuristicsComputationAllowed()
-                || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()) {
+                || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()
+                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -437,6 +447,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
             if (isRedisHeuristicsComputationAllowed()) {
                 computeRedisHeuristics(dto, additionalInfoList);
+            }
+            if (isDynamoDbHeuristicsComputationAllowed()) {
+                computeDynamoDbHeuristics(dto, additionalInfoList);
             }
         }
         return dto;
@@ -460,6 +473,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isRedisHeuristicsComputationAllowed() {
         return redisHandler.isCalculateHeuristics();
+    }
+
+    private boolean isDynamoDbHeuristicsComputationAllowed() {
+        return dynamoDbHandler.isCalculateHeuristics();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -591,8 +608,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     new ExtraHeuristicEntryDto(
                         ExtraHeuristicEntryDto.Type.OPENSEARCH,
                         ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                        p.getCommand().toString(),
-                        p.getDistanceWithMetrics().getDistance(),
+                        p.getNeo4jCommand().toString(),
+                        p.getNeo4jDistanceWithMetrics().getNeo4jDistance(),
                         p.getDistanceWithMetrics().getNumberOfEvaluatedDocuments(),
                         false
                     ))
@@ -631,6 +648,33 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (redisHandler.isExtractRedisExecution()) {
             dto.redisExecutionsDto = redisHandler.getExecutionDto();
         }
+    }
+
+    /**
+     * Computes DynamoDB heuristics captured for the latest action.
+     *
+     * @param dto destination extra-heuristics DTO
+     * @param additionalInfoList instrumentation data for the current action
+     */
+    public final void computeDynamoDbHeuristics(ExtraHeuristicsDto dto,
+                                                 List<AdditionalInfo> additionalInfoList) {
+        if (!dynamoDbHandler.isCalculateHeuristics()) {
+            return;
+        }
+        if (!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getDynamoDbInfoData().forEach(dynamoDbHandler::handle);
+        }
+
+        dynamoDbHandler.getEvaluatedDynamoDbCommands().stream()
+                .map(evaluated -> new ExtraHeuristicEntryDto(
+                        ExtraHeuristicEntryDto.Type.DYNAMODB,
+                        ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                        evaluated.getHeuristicId(),
+                        evaluated.getDistanceWithMetrics().getDistance(),
+                        evaluated.getDistanceWithMetrics().getNumberOfEvaluatedItems(),
+                        evaluated.getDistanceWithMetrics().isEvaluationFailure()))
+                .forEach(dto.heuristics::add);
     }
 
     /**

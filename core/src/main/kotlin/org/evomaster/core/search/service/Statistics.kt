@@ -141,6 +141,11 @@ class Statistics : SearchListener {
     private var redisHeuristicEvaluationFailureCount = 0
     private val redisDocumentsAverageCalculator = IncrementalAverage()
 
+    // DynamoDB heuristic evaluation statistics
+    private var dynamoDbHeuristicEvaluationSuccessCount = 0
+    private var dynamoDbHeuristicEvaluationFailureCount = 0
+    private val dynamoDbItemsAverageCalculator = IncrementalAverage()
+
     // neo4j heuristic evaluation statistic
     private var neo4jHeuristicEvaluationSuccessCount = 0
     private var neo4jHeuristicEvaluationFailureCount = 0
@@ -242,6 +247,11 @@ class Statistics : SearchListener {
         redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
+    /** Records the number of items inspected by one DynamoDB heuristic evaluation. */
+    fun reportNumberOfEvaluatedItemsForDynamoDbHeuristic(numberOfEvaluatedItems: Int) {
+        dynamoDbItemsAverageCalculator.addValue(numberOfEvaluatedItems)
+    }
+
     fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
         neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
     }
@@ -275,6 +285,16 @@ class Statistics : SearchListener {
 
     fun reportRedisHeuristicEvaluationFailure() {
         redisHeuristicEvaluationFailureCount++
+    }
+
+    /** Records one successful DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationSuccess() {
+        dynamoDbHeuristicEvaluationSuccessCount++
+    }
+
+    /** Records one failed DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationFailure() {
+        dynamoDbHeuristicEvaluationFailureCount++
     }
 
     fun reportSqlZ3Sat(z3TimeMs: Long) {
@@ -361,7 +381,6 @@ class Statistics : SearchListener {
     fun reportSqlZ3CacheHit() {
         sqlZ3CacheHitCount++
     }
-
     // Exposed for tests: verify the memoization accounting invariant
     // (seen == cacheHits + cacheMisses).
     internal fun getSqlZ3QueriesSeenCount() = sqlZ3QueriesSeenCount
@@ -375,6 +394,7 @@ class Statistics : SearchListener {
     fun reportNeo4jHeuristicEvaluationFailure() {
         neo4jHeuristicEvaluationFailureCount++
     }
+
     // Exposed for tests: verify the failure breakdown adds up to the aggregate, and that the two
     // duration accumulators only ever move forward.
     internal fun getSqlZ3ParseFailureCount() = sqlZ3ParseFailureCount
@@ -395,6 +415,13 @@ class Statistics : SearchListener {
     fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
 
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
+
+    /** Returns the total number of DynamoDB heuristic evaluations. */
+    fun getDynamoDbHeuristicsEvaluationCount(): Int =
+        dynamoDbHeuristicEvaluationSuccessCount + dynamoDbHeuristicEvaluationFailureCount
+
+    /** Returns the average number of items inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedItemsForDynamoDbHeuristics(): Double = dynamoDbItemsAverageCalculator.mean
 
     fun getNeo4jHeuristicsEvaluationCount(): Int = neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
 
@@ -539,6 +566,11 @@ class Statistics : SearchListener {
             // statistics info for Mongo Heuristics
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
             add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
+
+            // statistics info for DynamoDB Heuristics
+            add(Pair("averageNumberOfEvaluatedItemsForDynamoDbHeuristics",
+                "${averageNumberOfEvaluatedItemsForDynamoDbHeuristics()}"))
+            add(Pair("dynamoDbHeuristicsEvaluationCount", "${getDynamoDbHeuristicsEvaluationCount()}"))
 
             // statistics info for SQL Heuristics
             add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))

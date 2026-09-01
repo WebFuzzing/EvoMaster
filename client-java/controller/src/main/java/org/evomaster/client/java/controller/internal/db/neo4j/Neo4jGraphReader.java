@@ -20,12 +20,28 @@ import java.util.Set;
  */
 public class Neo4jGraphReader {
 
+    /*
+     * Aliases of the columns the two queries return. They build the queries as well as read the
+     * records back, so the name asked for can never drift from the name projected.
+     */
+    private static final String ID_FIELD = "id";
+    private static final String LABELS_FIELD = "labels";
+    private static final String PROPS_FIELD = "props";
+    private static final String SOURCE_FIELD = "src";
+    private static final String TARGET_FIELD = "tgt";
+    private static final String TYPE_FIELD = "type";
+
     private static final String NODE_QUERY =
-            "MATCH (n) RETURN elementId(n) AS id, labels(n) AS labels, properties(n) AS props";
+            "MATCH (n) RETURN elementId(n) AS " + ID_FIELD
+                    + ", labels(n) AS " + LABELS_FIELD
+                    + ", properties(n) AS " + PROPS_FIELD;
 
     private static final String REL_QUERY =
-            "MATCH ()-[r]->() RETURN elementId(r) AS id, type(r) AS type, "
-                    + "elementId(startNode(r)) AS src, elementId(endNode(r)) AS tgt, properties(r) AS props";
+            "MATCH ()-[r]->() RETURN elementId(r) AS " + ID_FIELD
+                    + ", type(r) AS " + TYPE_FIELD
+                    + ", elementId(startNode(r)) AS " + SOURCE_FIELD
+                    + ", elementId(endNode(r)) AS " + TARGET_FIELD
+                    + ", properties(r) AS " + PROPS_FIELD;
 
     /**
      * Reads all nodes and relationships from the database reachable through {@code driver}.
@@ -56,9 +72,9 @@ public class Neo4jGraphReader {
     private List<Neo4jNode> readNodes(ReflectionBasedNeo4jClient client, Object session) {
         List<Neo4jNode> nodes = new ArrayList<>();
         for (Object record : client.runAndList(session, NODE_QUERY)) {
-            String id = client.asString(client.get(record, "id"));
-            Set<String> labels = toStringSet(client.asList(client.get(record, "labels")));
-            Map<String, Object> props = client.asMap(client.get(record, "props"));
+            String id = client.asString(client.get(record, ID_FIELD));
+            Set<String> labels = toStringSet(client.asList(client.get(record, LABELS_FIELD)));
+            Map<String, Object> props = client.asMap(client.get(record, PROPS_FIELD));
             nodes.add(new Neo4jNode(id, labels, props));
         }
         return nodes;
@@ -67,11 +83,11 @@ public class Neo4jGraphReader {
     private List<Neo4jEdge> readEdges(ReflectionBasedNeo4jClient client, Object session) {
         List<Neo4jEdge> edges = new ArrayList<>();
         for (Object record : client.runAndList(session, REL_QUERY)) {
-            String id = client.asString(client.get(record, "id"));
-            String type = client.asString(client.get(record, "type"));
-            String src = client.asString(client.get(record, "src"));
-            String tgt = client.asString(client.get(record, "tgt"));
-            Map<String, Object> props = client.asMap(client.get(record, "props"));
+            String id = client.asString(client.get(record, ID_FIELD));
+            String type = client.asString(client.get(record, TYPE_FIELD));
+            String src = client.asString(client.get(record, SOURCE_FIELD));
+            String tgt = client.asString(client.get(record, TARGET_FIELD));
+            Map<String, Object> props = client.asMap(client.get(record, PROPS_FIELD));
             edges.add(new Neo4jEdge(id, type, src, tgt, props));
         }
         return edges;
