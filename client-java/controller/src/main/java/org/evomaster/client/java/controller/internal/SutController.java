@@ -575,15 +575,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             }
 
-            neo4jHandler.getEvaluatedCommands().stream()
+            neo4jHandler.getEvaluatedNeo4jCommands().stream()
                     .map(p ->
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.NEO4J,
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.getNeo4jCommand(),
-                                    p.getNeo4jDistanceWithMetrics().getNeo4jDistance(),
-                                    p.getNeo4jDistanceWithMetrics().getNumberOfEvaluatedNodes(),
-                                    p.getNeo4jDistanceWithMetrics().isNeo4jDistanceEvaluationFailure()
+                                    p.getCommand(),
+                                    p.getDistanceWithMetrics().getDistance(),
+                                    p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                    p.getDistanceWithMetrics().isEvaluationFailure()
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -608,8 +608,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     new ExtraHeuristicEntryDto(
                         ExtraHeuristicEntryDto.Type.OPENSEARCH,
                         ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                        p.getNeo4jCommand().toString(),
-                        p.getNeo4jDistanceWithMetrics().getNeo4jDistance(),
+                        p.getCommand().toString(),
+                        p.getDistanceWithMetrics().getDistance(),
                         p.getDistanceWithMetrics().getNumberOfEvaluatedDocuments(),
                         false
                     ))

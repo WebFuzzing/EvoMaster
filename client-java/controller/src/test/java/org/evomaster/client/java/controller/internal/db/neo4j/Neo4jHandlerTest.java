@@ -15,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Exercises {@link Neo4jHandler} and {@link Neo4jGraphReader} end-to-end against a hand-rolled fake
  * driver that exposes the same method names the reader reflects over ({@code session}/{@code run}/
  * {@code list}/{@code get}/{@code asString}/{@code asList}/{@code asMap}/{@code close}). This validates
- * the reflection plumbing and the parse→score→DTO pipeline without needing a live Neo4j instance.
+ * the reflection plumbing and the whole parse, score and report pipeline without needing a live Neo4j
+ * instance.
  * <p>
  * Integers are returned as {@code Long} to mimic the real driver's value mapping.
  */
@@ -43,15 +44,15 @@ class Neo4jHandlerTest {
         handler.setNeo4jConnection(example1Driver());
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
-        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedCommands();
+        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
 
         assertEquals(1, evaluated.size());
         Neo4jCommandWithDistance result = evaluated.get(0);
-        assertEquals(MATCH_QUERY, result.getNeo4jCommand());
-        assertFalse(result.getNeo4jDistanceWithMetrics().isNeo4jDistanceEvaluationFailure());
-        assertEquals(4, result.getNeo4jDistanceWithMetrics().getNumberOfEvaluatedNodes());
-        // distance = 1 - ofTrue; ofTrue ≈ 0.939 → distance ≈ 0.061.
-        assertEquals(0.061, result.getNeo4jDistanceWithMetrics().getNeo4jDistance(), 0.005);
+        assertEquals(MATCH_QUERY, result.getCommand());
+        assertFalse(result.getDistanceWithMetrics().isEvaluationFailure());
+        assertEquals(4, result.getDistanceWithMetrics().getNumberOfEvaluatedNodes());
+        // distance is 1 - ofTrue, and here ofTrue is about 0.939.
+        assertEquals(0.061, result.getDistanceWithMetrics().getDistance(), 0.005);
     }
 
     @Test
@@ -61,20 +62,41 @@ class Neo4jHandlerTest {
         handler.handle(new Neo4JRunCommand("CREATE (n:Person {name: 'Zoe'})", null, true, 1));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
-        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedCommands();
+        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
         // The write query does not parse as a MATCH and is skipped; only the read query is scored.
         assertEquals(1, evaluated.size());
-        assertEquals(MATCH_QUERY, evaluated.get(0).getNeo4jCommand());
+        assertEquals(MATCH_QUERY, evaluated.get(0).getCommand());
     }
 
     @Test
     void testNoConnectionYieldsNoHeuristics() {
         Neo4jHandler handler = new Neo4jHandler();
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
-        assertTrue(handler.getEvaluatedCommands().isEmpty());
+        assertTrue(handler.getEvaluatedNeo4jCommands().isEmpty());
     }
 
-    // --- fake Neo4j driver (only the methods the reader reflects over) ---------------------------
+    @Test
+    void testHeuristicsAreNotComputedWhenDisabled() {
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(example1Driver());
+        handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
+        handler.setCalculateHeuristics(false);
+
+        // Registered while enabled, so it is the check before evaluating that has to drop the query.
+        assertTrue(handler.getEvaluatedNeo4jCommands().isEmpty());
+    }
+
+    @Test
+    void testAnUnreadableGraphYieldsNoHeuristicsInsteadOfFailing() {
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(new BrokenDriver());
+        handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
+
+        // The SUT must keep running even if its driver cannot be queried.
+        assertTrue(handler.getEvaluatedNeo4jCommands().isEmpty());
+    }
+
+    // Fake Neo4j driver, exposing only the methods the reader reflects over.
 
     public static final class FakeDriver {
         private final List<FakeRecord> nodes;
@@ -87,6 +109,14 @@ class Neo4jHandlerTest {
 
         public FakeSession session() {
             return new FakeSession(nodes, rels);
+        }
+    }
+
+    /** A driver whose session cannot be opened, standing in for a Neo4j that is down. */
+    public static final class BrokenDriver {
+
+        public Object session() {
+            throw new IllegalStateException("no connection to the database");
         }
     }
 

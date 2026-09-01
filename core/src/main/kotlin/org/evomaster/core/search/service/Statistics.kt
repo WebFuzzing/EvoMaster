@@ -252,6 +252,7 @@ class Statistics : SearchListener {
         dynamoDbItemsAverageCalculator.addValue(numberOfEvaluatedItems)
     }
 
+    /** Records the number of nodes inspected by one Neo4j heuristic evaluation. */
     fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
         neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
     }
@@ -381,16 +382,19 @@ class Statistics : SearchListener {
     fun reportSqlZ3CacheHit() {
         sqlZ3CacheHitCount++
     }
+
     // Exposed for tests: verify the memoization accounting invariant
     // (seen == cacheHits + cacheMisses).
     internal fun getSqlZ3QueriesSeenCount() = sqlZ3QueriesSeenCount
     internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
     internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
+    /** Records one successful Neo4j heuristic evaluation. */
     fun reportNeo4jHeuristicEvaluationSuccess() {
         neo4jHeuristicEvaluationSuccessCount++
     }
 
+    /** Records one failed Neo4j heuristic evaluation. */
     fun reportNeo4jHeuristicEvaluationFailure() {
         neo4jHeuristicEvaluationFailureCount++
     }
@@ -423,8 +427,11 @@ class Statistics : SearchListener {
     /** Returns the average number of items inspected by DynamoDB heuristics. */
     fun averageNumberOfEvaluatedItemsForDynamoDbHeuristics(): Double = dynamoDbItemsAverageCalculator.mean
 
-    fun getNeo4jHeuristicsEvaluationCount(): Int = neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
+    /** Returns the total number of Neo4j heuristic evaluations. */
+    fun getNeo4jHeuristicsEvaluationCount(): Int =
+        neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
 
+    /** Returns the average number of nodes inspected by Neo4j heuristics. */
     fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {

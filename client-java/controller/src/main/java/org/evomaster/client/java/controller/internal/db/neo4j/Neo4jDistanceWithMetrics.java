@@ -1,41 +1,51 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
 /**
- * The result of scoring one captured Cypher query against the live graph: the distance to satisfying
- * it ({@code 1 - ofTrue}, in {@code [0,1]}, 0 meaning satisfied), how many graph nodes were available
- * when scoring, and whether the evaluation failed (e.g. the query could not be parsed).
+ * Result of scoring one captured Cypher query against the live graph.
  */
-public class Neo4jDistanceWithMetrics {
+public final class Neo4jDistanceWithMetrics {
 
-    private final double neo4jDistance;
-
+    private final double distance;
     private final int numberOfEvaluatedNodes;
+    private final boolean evaluationFailure;
 
-    private final boolean neo4jDistanceEvaluationFailure;
-
-    public Neo4jDistanceWithMetrics(double neo4jDistance, int numberOfEvaluatedNodes,
-                                    boolean neo4jDistanceEvaluationFailure) {
-        if (neo4jDistance < 0) {
-            throw new IllegalArgumentException("neo4jDistance must be non-negative but value is " + neo4jDistance);
+    /**
+     * Creates a Neo4j heuristic result.
+     *
+     * @param distance normalized distance to satisfying the query, 0 meaning satisfied
+     * @param numberOfEvaluatedNodes number of graph nodes considered
+     * @param evaluationFailure whether the evaluation failed
+     */
+    public Neo4jDistanceWithMetrics(double distance, int numberOfEvaluatedNodes, boolean evaluationFailure) {
+        if (distance < 0.0d || distance > 1.0d || Double.isNaN(distance)) {
+            throw new IllegalArgumentException("distance must be between 0 and 1, but was " + distance);
         }
         if (numberOfEvaluatedNodes < 0) {
-            throw new IllegalArgumentException(
-                    "numberOfEvaluatedNodes must be non-negative but value is " + numberOfEvaluatedNodes);
+            throw new IllegalArgumentException("numberOfEvaluatedNodes must be non-negative");
         }
-        this.neo4jDistance = neo4jDistance;
+        this.distance = distance;
         this.numberOfEvaluatedNodes = numberOfEvaluatedNodes;
-        this.neo4jDistanceEvaluationFailure = neo4jDistanceEvaluationFailure;
+        this.evaluationFailure = evaluationFailure;
     }
 
-    public double getNeo4jDistance() {
-        return neo4jDistance;
+    /**
+     * @return normalized distance to satisfying the query, 0 meaning satisfied
+     */
+    public double getDistance() {
+        return distance;
     }
 
+    /**
+     * @return number of graph nodes considered
+     */
     public int getNumberOfEvaluatedNodes() {
         return numberOfEvaluatedNodes;
     }
 
-    public boolean isNeo4jDistanceEvaluationFailure() {
-        return neo4jDistanceEvaluationFailure;
+    /**
+     * @return whether the evaluation failed
+     */
+    public boolean isEvaluationFailure() {
+        return evaluationFailure;
     }
 }
