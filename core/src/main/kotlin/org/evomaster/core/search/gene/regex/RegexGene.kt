@@ -13,6 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.RegexFlags
 import org.evomaster.core.utils.RegexWithExternalFlags
+import org.slf4j.LoggerFactory
 import java.util.regex.Pattern
 
 /**
@@ -42,6 +43,8 @@ class RegexGene(
 ) : CompositeFixedGene(name, disjunctions) {
 
     companion object {
+        private val log = LoggerFactory.getLogger(RegexGene::class.java)
+
         private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
 
         private fun compiledPattern(sourceRegex: String, flags: RegexFlags): Pattern {
@@ -95,7 +98,11 @@ class RegexGene(
             }
         }
 
-        throw IllegalStateException("Could not repair regex value")
+        // failed to repair regex, the value of this gene does not match the source regex.
+        // this may happen because regex is unsatisfiable, regex bug or because of EMs limited support of regex assertions.
+        val message = "Could not repair value for regex: \"$sourceRegex\", last tried: \"${getValueAsRawString()}\""
+        log.warn(message)
+        assert(false) { message }
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")

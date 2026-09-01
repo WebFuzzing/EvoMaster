@@ -349,13 +349,52 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     private fun handleDollarSign(text: String): String{
         return text.replace("\$", "\\\$")
     }
+    /**
+     * Formats a field path according to the active output format.
+     *
+     * Rules:
+     *  - Empty input returns an empty string.
+     *  - Java/Kotlin: wrap the path in single quotes and append a dot,
+     *    unless it already starts with a quote.
+     *  - Other formats: return unchanged if starting with '[' or '.';
+     *    otherwise prefix with a dot.
+     *
+     * @param fieldPath raw field path
+     * @return formatted field path for the target generator
+     */
+    private fun formatFieldPath(fieldPath: String): String {
+        if (fieldPath.isEmpty()) {
+            return ""
+        }
+        if (format.isJavaOrKotlin()) {
+            return if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+        }
+        return if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) {
+            fieldPath
+        } else {
+            ".$fieldPath"
+        }
+    }
 
     private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (value == null) {
+            val field = when {
+                format.isJavaScript() -> {
+                    if (format.isPlaywright()) {
+                        "(await $responseVariableName.json())"
+                    } else {
+                        "$responseVariableName.body"
+                    }
+                }
+                    else -> ""
+                }
+            val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
+                format.isJavaScript() ->
+                    if (format.isPlaywright()) "expect(($field)$fieldWithDot).toBe(null);"
+                    else "expect($field$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -409,10 +448,24 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
             if (isSuitableToPrint(toPrint)) {
                 if (format.isJavaScript() || format.isPython()) {
+                    val field = when {
+                        format.isJavaScript() -> {
+                        if (format.isPlaywright()) {
+                            "(await $responseVariableName.json())"
+                        } else {
+                            "$responseVariableName.body"
+                        }
+                    }
+                        else -> ""
+                    }
+
+                    val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
                     val assertionContent = if (format.isPython()) {
                         "assert $responseVariableName.json()$fieldPath == $toPrint"
+                    }else if (format.isPlaywright()){ // playwright
+                        "expect($field$fieldWithDot).toBe($toPrint);"
                     }else { // javascript
-                        "expect($responseVariableName.body$fieldPath).toBe($toPrint);"
+                        "expect($field$fieldPath).toBe($toPrint);" // ($field$)fieldPath
                     }
 
                     if (flakyValue == null || flakyValue == value){
@@ -560,6 +613,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         if (format.isJavaScript()) {
+            if (format.isPlaywright()) {
+                return "expect(await $responseVariableName.text()).toBe(\"\");"
+            }
             /*
                 This is super ugly... but there is no clean solution for this
                 in Jest nor SuperAgent... :(
@@ -595,8 +651,15 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 val path = if (fieldPath.isEmpty()) "" else "$fieldPath."
                 ".body(\"${path}size()\", equalTo($expectedSize))"
             }
-            format.isJavaScript() ->
-                "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    val field = formatFieldPath(fieldPath)
+                    "expect((await $responseVariableName.json())$field).toHaveLength($expectedSize);"
+                } else {
+                    val field = "$responseVariableName.body"
+                    "expect($field$fieldPath.length).toBe($expectedSize);" // ($field$)fieldPath
+                }
+            }
             format.isCsharp() ->
                 "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"
             format.isPython() ->
@@ -616,10 +679,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             return ".body(containsString(\"$content\"))"
         }
 
-        if (format.isJavaScript()) {
-            return "expect($responseVariableName.text).toContain(\"$content\");"
-
+        if (format.isPlaywright()) {
+            return "expect(await $responseVariableName.text()).toContain(\"$content\");"
         }
+
+        if (format.isJavaScript()) {
+            return "expect($responseVariableName.text).toContain(\"$content\");"        }
 
         if (format.isCsharp()) {
             val k = when {
