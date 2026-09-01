@@ -30,6 +30,7 @@ class XMLFailModificationEMTest : SpringTestBase(){
                 2000
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableXmlWithAttributesSupport", "true")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
             setOption(args, "useExperimentalOracles", "true")
