@@ -116,7 +116,7 @@ open class PolyglotPersistenceSutController : EmbeddedSutController() {
 
     override fun getProblemInfo(): ProblemInfo {
         return RestProblem(
-            "http://localhost:$sutPort/v2/api-docs",
+            "http://localhost:$sutPort/v3/api-docs/api",
             null
         )
     }
