@@ -1379,6 +1379,17 @@ class EMConfig {
     var dtoForRequestPayload = false
 
     @Experimental
+    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
+            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
+    var enableJsonPatchSupport = false
+
+    @Experimental
+    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
+            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
+            " names fall back to the pre-feature behavior (schema ref name or 'body').")
+    var enableXmlWithAttributesSupport = false
+
+    @Experimental
     @Cfg("Enable multipart/form-data support when building REST actions.")
     var enableMultipartFormDataSupport = false
 
