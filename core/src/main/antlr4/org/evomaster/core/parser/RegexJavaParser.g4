@@ -128,17 +128,13 @@ characterClass
     ;
 
 classContents
-    : classUnion (DOUBLE_AMPERSAND classUnion)*
-    ;
-
-classUnion
-    : characterClass+                          // one or more nested classes = UNION
-    | classRanges                           // bare ranges
+    : classRanges (DOUBLE_AMPERSAND classRanges)*
     ;
 
 classRanges
  :
  | nonemptyClassRanges
+ | characterClass classRanges
  ;
 
 
@@ -152,6 +148,7 @@ nonemptyClassRangesNoDash
  : classAtom
  | classAtomNoDash nonemptyClassRangesNoDash
  | classAtomNoDash MINUS classAtom classRanges
+ | characterClass classRanges
  ;
 
 classAtom
