@@ -1,17 +1,31 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
  * Represent $regex operation.
  * Provides regular expression capabilities for pattern matching strings in queries.
  */
-public class RegexOperation extends QueryOperation{
+public class RegexOperation extends QueryOperationWithField {
     private final Pattern pattern;
-    private final List<Character> options;
+    private final RegexOptions options;
 
-    public RegexOperation(Pattern pattern, List<Character> options) {
+    /**
+     * Creates a new RegexOperation with a default RegexOptions
+     * (all options set to false)
+     *
+     * @param fieldname the fieldname
+     * @param pattern the pattern
+     */
+    public RegexOperation(String fieldname, Pattern pattern) {
+        this(fieldname, pattern, new RegexOptions());
+    }
+
+    public RegexOperation(String fieldName, Pattern pattern, RegexOptions options) {
+        super(fieldName);
+        Objects.requireNonNull(pattern);
+        Objects.requireNonNull(options);
         this.pattern = pattern;
         this.options = options;
     }
@@ -20,7 +34,7 @@ public class RegexOperation extends QueryOperation{
         return pattern;
     }
 
-    public List<Character> getOptions() {
+    public RegexOptions getOptions() {
         return options;
     }
 }

@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.mongo.utils;
 
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
+import org.bson.BsonRegularExpression;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 import org.bson.types.Binary;
@@ -162,5 +163,37 @@ class BsonHelperTest {
     void testGetBsonTimestampValueRejectsInvalidType() {
         assertThrows(IllegalArgumentException.class, () -> BsonHelper.getBsonTimestampValue(new Object()));
         assertThrows(NullPointerException.class, () -> BsonHelper.getBsonTimestampValue(null));
+    }
+
+    @Test
+    void testIsBsonRegularExpression() {
+        assertTrue(BsonHelper.isBsonRegularExpression(new BsonRegularExpression("^hospital", "im")));
+        assertFalse(BsonHelper.isBsonRegularExpression("^hospital"));
+        assertFalse(BsonHelper.isBsonRegularExpression(new Object()));
+        assertFalse(BsonHelper.isBsonRegularExpression(null));
+    }
+
+    @Test
+    void testBsonRegexGetPattern() {
+        BsonRegularExpression regex = new BsonRegularExpression("^hospital.*near$");
+
+        assertEquals("^hospital.*near$", BsonHelper.bsonRegexGetPattern(regex));
+    }
+
+    @Test
+    void testBsonRegexGetOptions() {
+        BsonRegularExpression regexWithOptions = new BsonRegularExpression("hospital", "ims");
+        BsonRegularExpression regexWithoutOptions = new BsonRegularExpression("hospital");
+
+        assertEquals("ims", BsonHelper.bsonRegexGetOptions(regexWithOptions));
+        assertEquals("", BsonHelper.bsonRegexGetOptions(regexWithoutOptions));
+    }
+
+    @Test
+    void testBsonRegexGettersRejectInvalidValues() {
+        assertThrows(NullPointerException.class, () -> BsonHelper.bsonRegexGetPattern(null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.bsonRegexGetOptions(null));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetPattern("hospital"));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetOptions("hospital"));
     }
 }

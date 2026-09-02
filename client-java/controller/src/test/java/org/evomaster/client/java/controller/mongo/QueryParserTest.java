@@ -1,12 +1,14 @@
 package org.evomaster.client.java.controller.mongo;
 
 import org.bson.Document;
+import org.bson.BsonRegularExpression;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -250,6 +252,91 @@ class QueryParserTest {
         TypeOperation type = (TypeOperation) operation;
         assertEquals("name", type.getFieldName());
         assertNotNull(type.getType());
+    }
+
+    @Test
+    void testParseRegexString() {
+        Document query = new Document("name", new Document("$regex", "^hospital.*"));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("name", regex.getFieldName());
+        assertEquals("^hospital.*", regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isEmpty());
+    }
+
+    @Test
+    void testParseRegexOptionsAreOptional() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertNotNull(regex.getOptions());
+        assertTrue(regex.getOptions().isEmpty());
+        assertFalse(regex.getOptions().isCaseInsensitive());
+        assertFalse(regex.getOptions().isMultiline());
+        assertFalse(regex.getOptions().isDotAll());
+        assertFalse(regex.getOptions().isExtended());
+        assertFalse(regex.getOptions().isUnicode());
+    }
+
+    @Test
+    void testParseRegexStringWithOptions() {
+        Document query = new Document("name",
+                new Document("$regex", "^hospital.*")
+                        .append("$options", "imsxu"));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("name", regex.getFieldName());
+        assertEquals("^hospital.*", regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isCaseInsensitive());
+        assertTrue(regex.getOptions().isMultiline());
+        assertTrue(regex.getOptions().isDotAll());
+        assertTrue(regex.getOptions().isExtended());
+        assertTrue(regex.getOptions().isUnicode());
+        assertTrue((regex.getPattern().flags() & Pattern.CASE_INSENSITIVE) != 0);
+        assertTrue((regex.getPattern().flags() & Pattern.MULTILINE) != 0);
+    }
+
+    @Test
+    void testParseRegexBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$regex", new BsonRegularExpression("hospital$", "i")));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("hospital$", regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isCaseInsensitive());
+        assertFalse(regex.getOptions().isMultiline());
+    }
+
+    @Test
+    void testParseRegexJavaPatternWithOptionsBeforeRegex() {
+        Document query = new Document("name",
+                new Document("$options", "s")
+                        .append("$regex", Pattern.compile("hospital.*near", Pattern.CASE_INSENSITIVE)));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("hospital.*near", regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isDotAll());
+        assertFalse(regex.getOptions().isCaseInsensitive());
+        assertTrue((regex.getPattern().flags() & Pattern.DOTALL) != 0);
+        assertEquals(0, regex.getPattern().flags() & Pattern.CASE_INSENSITIVE);
+    }
+
+    @Test
+    void testParseRegexRejectsInvalidQueries() {
+        assertNull(parser.parse(new Document("name", new Document("$regex", 42))));
+        assertNull(parser.parse(new Document("name",
+                new Document("$regex", "hospital").append("$options", "g"))));
+        assertNull(parser.parse(new Document("name",
+                new Document("$regex", "[").append("$options", "i"))));
+        assertNull(parser.parse(new Document("name",
+                new Document("$regex", "hospital").append("$options", 1))));
+    }
+
+    @Test
+    void testParseRegexRejectsNullPattern() {
+        Document query = new Document("name", new Document("$regex", null));
+
+        assertNull(parser.parse(query));
     }
 
     @Test
