@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
@@ -135,6 +137,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((TypeOperation) operation, document);
         } else if (operation instanceof NearSphereOperation) {
             return computeHeuristic((NearSphereOperation) operation, document);
+        } else if (operation instanceof NearOperation) {
+            return computeHeuristic((NearOperation) operation, document);
         } else if (operation instanceof ElemMatchOperation) {
             return computeHeuristic((ElemMatchOperation) operation, document);
         } else if (operation instanceof TrueOperation) {
@@ -142,6 +146,23 @@ public class MongoHeuristicsCalculator {
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
         }
+    }
+
+    private Truthness computeHeuristic(NearOperation operation, Object document) {
+        Objects.requireNonNull(operation);
+        Objects.requireNonNull(document);
+        Objects.requireNonNull(operation.getFieldName());
+
+        final String fieldName = operation.getFieldName();
+        final Object fieldValue = getValue(document, fieldName);
+
+        final double longitude = operation.getLongitude();
+        final double latitude = operation.getLatitude();
+
+        GeoSpatialModel model = operation.hasLegacyCoordinates()
+                ? GeoSpatialModel.PLANAR
+                : GeoSpatialModel.SPHERICAL;
+        return computeHeuristic(operation, longitude, latitude, fieldValue, model);
     }
 
     /**
@@ -679,7 +700,144 @@ public class MongoHeuristicsCalculator {
     }
 
     private Truthness computeHeuristic(NearSphereOperation operation, Object document) {
-        throw new IllegalArgumentException("Not implemented yet");
+        Objects.requireNonNull(operation);
+        Objects.requireNonNull(document);
+        Objects.requireNonNull(operation.getFieldName());
+
+        final String fieldName = operation.getFieldName();
+        final Object fieldValue = getValue(document, fieldName);
+
+        final double longitude = operation.getLongitude();
+        final double latitude = operation.getLatitude();
+
+        return computeHeuristic(operation, longitude, latitude, fieldValue, GeoSpatialModel.SPHERICAL);
+    }
+
+    /**
+     * Enumeration representing the geospatial model used for distance calculations.
+     * PLANAR: Uses Euclidean distance for flat surfaces.
+     * SPHERICAL: Uses Haversine distance for spherical surfaces (e.g., Earth)
+     */
+    private enum GeoSpatialModel {
+        /**
+         * PLANAR: Uses Euclidean distance for flat surfaces.
+         */
+        PLANAR,
+        /**
+         * SPHERICAL: Uses Haversine distance for spherical surfaces (e.g., Earth)
+         */
+        SPHERICAL
+    }
+
+    private static Truthness computeHeuristic(AbstractProximityOperation abstractProximityOperation,
+                                              double longitude,
+                                              double latitude,
+                                              Object fieldValue,
+                                              GeoSpatialModel geoSpatialModel) {
+
+        Objects.requireNonNull(abstractProximityOperation);
+        double x1 = geoSpatialModel == GeoSpatialModel.SPHERICAL ? Math.toRadians(longitude) : longitude;
+        double y1 = geoSpatialModel == GeoSpatialModel.SPHERICAL ? Math.toRadians(latitude) : latitude;
+        double x2;
+        double y2;
+
+    /*
+      GeoJSON Point in document.
+      type key is case-sensitive.
+      (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4)
+     */
+        if (isBsonDocument(fieldValue)
+                && GeoJsonUtils.isGeoJsonPoint(fieldValue)) {
+            GeoJsonPoint geoJsonPoint = GeoJsonUtils.toGeoJsonPoint(fieldValue);
+            x2 = geoSpatialModel == GeoSpatialModel.SPHERICAL
+                    ? Math.toRadians(geoJsonPoint.getLongitude())
+                    : geoJsonPoint.getLongitude();
+            y2 = geoSpatialModel == GeoSpatialModel.SPHERICAL
+                    ? Math.toRadians(geoJsonPoint.getLatitude())
+                    : geoJsonPoint.getLatitude();
+        } else {
+            return C_FALSE;
+        }
+        double distanceBetweenPoints;
+        switch (geoSpatialModel) {
+            case PLANAR:
+                 distanceBetweenPoints = euclideanDistance(x1, y1, x2, y2);
+                break;
+            case SPHERICAL:
+                distanceBetweenPoints = haversineDistance(x1, y1, x2, y2);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported GeoSpatialModel: " + geoSpatialModel);
+        }
+        double max = abstractProximityOperation.hasMaxDistance()
+                ? abstractProximityOperation.getMaxDistance()
+                : Double.MAX_VALUE;
+
+        double min = abstractProximityOperation.hasMinDistance()
+                ? abstractProximityOperation.getMinDistance()
+                : 0.0;
+
+        if (min <= distanceBetweenPoints
+                && distanceBetweenPoints <= max) {
+            return TRUE_C;
+        }
+
+        return (distanceBetweenPoints > max)
+                ? getEqualityTruthness(distanceBetweenPoints, max)
+                : getEqualityTruthness(distanceBetweenPoints, min);
+    }
+
+
+    /**
+     * Calculates the Haversine distance between two geographical points specified
+     * in radians. The Haversine formula determines the great-circle distance between
+     * two points on a sphere given their latitudes and longitudes.
+     *
+     * @param x1 the longitude of the first point in radians
+     * @param y1 the latitude of the first point in radians
+     * @param x2 the longitude of the second point in radians
+     * @param y2 the latitude of the second point in radians
+     * @return the Haversine distance between the two points in meters
+     */
+    private static double haversineDistance(
+            double x1,
+            double y1,
+            double x2,
+            double y2) {
+
+        // Earth's radius in meters
+        double radius = 6371000.0;
+
+        double dLat = y2 - y1;
+        double dLon = x2 - x1;
+
+        double a = Math.pow(Math.sin(dLat / 2), 2)
+                + Math.cos(y1) * Math.cos(y2)
+                * Math.pow(Math.sin(dLon / 2), 2);
+
+        double c = 2 * Math.atan2(
+                Math.sqrt(a),
+                Math.sqrt(1 - a));
+
+        return radius * c;
+    }
+
+    /**
+     * Calculates the Euclidean distance between two points in a 2D Cartesian coordinate system.
+     * The Euclidean distance is the straight-line distance between two points in Euclidean space.
+     *
+     * @param x1 the x-coordinate of the first point
+     * @param y1 the y-coordinate of the first point
+     * @param x2 the x-coordinate of the second point
+     * @param y2 the y-coordinate of the second point
+     * @return the Euclidean distance between the two points
+     */
+    private static double euclideanDistance(
+            double x1,
+            double y1,
+            double x2,
+            double y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 
     private Truthness calculateTruthnessForListComparison(List<?> actualList, List<?> expectedList, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {

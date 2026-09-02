@@ -957,13 +957,44 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(distanceNotMatch.isFalse());
     }
 
-    @Disabled
     @Test
     public void testNearSphere() {
         Document doc = new Document().append("location", new Document().append("type", "Point").append("coordinates", Arrays.asList(-74.044502, 40.689247)));
         BsonDocument point = new BsonDocument().append("type", new BsonString("Point")).append("coordinates", new BsonArray(Arrays.asList(new BsonDouble(2.29441692356368), new BsonDouble(48.858504187164684))));
         Bson bsonTrue = Filters.nearSphere("location", point, 6000000.0, 0.0);
         Bson bsonFalse = Filters.nearSphere("location", point, 5000000.0, 0.0);
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testNearSphereRejectsCloserPointInsideMinimumDistance() {
+        Document closerPoint = new Document("location", new Document("type", "Point")
+                .append("coordinates", Arrays.asList(0.0, 0.001)));
+        Document fartherPoint = new Document("location", new Document("type", "Point")
+                .append("coordinates", Arrays.asList(0.0, 0.02)));
+        BsonDocument queryPoint = new BsonDocument("type", new BsonString("Point"))
+                .append("coordinates", new BsonArray(Arrays.asList(new BsonDouble(0.0), new BsonDouble(0.0))));
+
+        // The closer point is about 111 m away; the farther point is about 2.2 km away.
+        Bson nearSphere = Filters.nearSphere("location", queryPoint, 3000.0, 1000.0);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness closerResult = calculator.computeHeuristicDocument(convertToDocument(nearSphere), closerPoint);
+        Truthness fartherResult = calculator.computeHeuristicDocument(convertToDocument(nearSphere), fartherPoint);
+
+        assertTrue(closerResult.isFalse());
+        assertTrue(fartherResult.isTrue());
+    }
+
+    @Test
+    public void testNear() {
+        Document doc = new Document().append("location", new Document().append("type", "Point").append("coordinates", Arrays.asList(-74.044502, 40.689247)));
+        BsonDocument point = new BsonDocument().append("type", new BsonString("Point")).append("coordinates", new BsonArray(Arrays.asList(new BsonDouble(2.29441692356368), new BsonDouble(48.858504187164684))));
+        Bson bsonTrue = Filters.near("location", point, 6000000.0, 0.0);
+        Bson bsonFalse = Filters.near("location", point, 5000000.0, 0.0);
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
