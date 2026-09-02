@@ -423,6 +423,206 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseNearLegacy() {
+        Document query = new Document(
+                "location",
+                new Document("$near", new Document("x", 40.0).append("y", 70.0))
+                        .append("$maxDistance", 10.0)
+                        .append("$minDistance", 1.0)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof NearOperation);
+        NearOperation near = (NearOperation) operation;
+        assertEquals("location", near.getFieldName());
+        assertEquals(40.0, near.getLongitude());
+        assertEquals(70.0, near.getLatitude());
+        assertEquals(10.0, near.getMaxDistance());
+        assertEquals(1.0, near.getMinDistance());
+    }
+
+    @Test
+    void testParseNearGeoJson() {
+        Document geometry = new Document("type", "Point")
+                .append("coordinates", Arrays.asList(40.0, 70.0));
+        Document query = new Document(
+                "location",
+                new Document("$near", new Document("$geometry", geometry)
+                        .append("$maxDistance", 1000.0)
+                        .append("$minDistance", 100.0))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof NearOperation);
+        NearOperation near = (NearOperation) operation;
+        assertEquals("location", near.getFieldName());
+        assertEquals(40.0, near.getLongitude());
+        assertEquals(70.0, near.getLatitude());
+        assertEquals(1000.0, near.getMaxDistance());
+        assertEquals(100.0, near.getMinDistance());
+    }
+
+    @Test
+    void testParseNearLegacyCoordinateArray() {
+        Document query = new Document("location",
+                new Document("$near", Arrays.asList(40.0, 70.0))
+                        .append("$maxDistance", 10.0));
+
+        NearOperation near = assertInstanceOf(NearOperation.class, parser.parse(query));
+        assertEquals(40.0, near.getLongitude());
+        assertEquals(70.0, near.getLatitude());
+        assertEquals(10.0, near.getMaxDistance());
+        assertNull(near.getMinDistance());
+    }
+
+    @Test
+    void testParseNearSphereLegacyCoordinateArray() {
+        Document query = new Document("location",
+                new Document("$nearSphere", Arrays.asList(40.0, 70.0))
+                        .append("$minDistance", 0.25));
+
+        NearSphereOperation near = assertInstanceOf(NearSphereOperation.class, parser.parse(query));
+        assertEquals(40.0, near.getLongitude());
+        assertEquals(70.0, near.getLatitude());
+        assertNull(near.getMaxDistance());
+        assertEquals(6371000 * 0.25, near.getMinDistance());
+    }
+
+    @Test
+    void testParseNearWithoutDistances() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            Document legacyQuery = new Document("location",
+                    new Document(operator, Arrays.asList(40.0, 70.0)));
+            AbstractProximityOperation legacy = assertProximityOperation(operator, parser.parse(legacyQuery));
+            assertNull(legacy.getMinDistance());
+            assertNull(legacy.getMaxDistance());
+
+            Document geometry = new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(40.0, 70.0));
+            Document geoJsonQuery = new Document("location",
+                    new Document(operator, new Document("$geometry", geometry)));
+            AbstractProximityOperation geoJson = assertProximityOperation(operator, parser.parse(geoJsonQuery));
+            assertNull(geoJson.getMinDistance());
+            assertNull(geoJson.getMaxDistance());
+        }
+    }
+
+    @Test
+    void testParseNearWithIndividualDistanceLimits() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            Document withMaxDistance = new Document("location",
+                    new Document(operator, Arrays.asList(40.0, 70.0))
+                            .append("$maxDistance", 0.5));
+            AbstractProximityOperation legacy = assertProximityOperation(operator, parser.parse(withMaxDistance));
+            assertNotNull(legacy.getMaxDistance());
+            assertNull(legacy.getMinDistance());
+
+            Document geometry = new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(40.0, 70.0));
+            Document withMinDistance = new Document("location",
+                    new Document(operator, new Document("$geometry", geometry)
+                            .append("$minDistance", 100)));
+            AbstractProximityOperation geoJson = assertProximityOperation(operator, parser.parse(withMinDistance));
+            assertEquals(100.0, geoJson.getMinDistance());
+            assertNull(geoJson.getMaxDistance());
+        }
+    }
+
+    @Test
+    void testParseNearAcceptsNumericBsonVariants() {
+        Document geometry = new Document("type", "Point")
+                .append("coordinates", Arrays.asList(40, 70L));
+        Document query = new Document("location",
+                new Document("$near", new Document("$geometry", geometry)
+                        .append("$minDistance", 100)
+                        .append("$maxDistance", 1000L)));
+
+        NearOperation near = assertInstanceOf(NearOperation.class, parser.parse(query));
+        assertEquals(40.0, near.getLongitude());
+        assertEquals(70.0, near.getLatitude());
+        assertEquals(100.0, near.getMinDistance());
+        assertEquals(1000.0, near.getMaxDistance());
+    }
+
+    @Test
+    void testParseNearOperatorDoesNotNeedToBeFirst() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            Document query = new Document("location",
+                    new Document("$maxDistance", 0.5)
+                            .append(operator, Arrays.asList(40.0, 70.0)));
+            assertProximityOperation(operator, parser.parse(query));
+        }
+    }
+
+    @Test
+    void testParseNearGeoJsonBoundaryCoordinates() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            Document geometry = new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(-180, 90));
+            Document query = new Document("location",
+                    new Document(operator, new Document("$geometry", geometry)));
+
+            AbstractProximityOperation near = assertProximityOperation(operator, parser.parse(query));
+            assertEquals(-180.0, near.getLongitude());
+            assertEquals(90.0, near.getLatitude());
+        }
+    }
+
+    @Test
+    void testParseNearRejectsInvalidLegacyCoordinates() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            assertNull(parser.parse(new Document("location",
+                    new Document(operator, Collections.singletonList(40.0)))));
+            assertNull(parser.parse(new Document("location",
+                    new Document(operator, Arrays.asList(40.0, 70.0, 80.0)))));
+            assertNull(parser.parse(new Document("location",
+                    new Document(operator, Arrays.asList("40", 70.0)))));
+        }
+    }
+
+    @Test
+    void testParseNearRejectsInvalidGeoJsonPoints() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            assertInvalidGeoJsonNear(operator, new Document("type", "LineString")
+                    .append("coordinates", Arrays.asList(40.0, 70.0)));
+            assertInvalidGeoJsonNear(operator, new Document("type", "Point")
+                    .append("coordinates", Collections.singletonList(40.0)));
+            assertInvalidGeoJsonNear(operator, new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(181.0, 70.0)));
+            assertInvalidGeoJsonNear(operator, new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(40.0, "70")));
+            assertNull(parser.parse(new Document("location", new Document(operator, new Document()))));
+        }
+    }
+
+    @Test
+    void testParseNearRejectsNonNumericDistances() {
+        for (String operator : Arrays.asList("$near", "$nearSphere")) {
+            Document legacyQuery = new Document("location",
+                    new Document(operator, Arrays.asList(40.0, 70.0))
+                            .append("$maxDistance", "far"));
+            assertNull(parser.parse(legacyQuery));
+
+            Document geometry = new Document("type", "Point")
+                    .append("coordinates", Arrays.asList(40.0, 70.0));
+            Document geoJsonQuery = new Document("location",
+                    new Document(operator, new Document("$geometry", geometry)
+                            .append("$minDistance", "near")));
+            assertNull(parser.parse(geoJsonQuery));
+        }
+    }
+
+    private AbstractProximityOperation assertProximityOperation(String operator, QueryOperation operation) {
+        return "$near".equals(operator)
+                ? assertInstanceOf(NearOperation.class, operation)
+                : assertInstanceOf(NearSphereOperation.class, operation);
+    }
+
+    private void assertInvalidGeoJsonNear(String operator, Document geometry) {
+        Document query = new Document("location",
+                new Document(operator, new Document("$geometry", geometry)));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
     void testParseImplicitEquals() {
         Document query = new Document("age", 30);
         QueryOperation operation = parser.parse(query);
