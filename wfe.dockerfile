@@ -21,4 +21,4 @@ ENTRYPOINT ["/bin/sh", "-c", \
 ]
 
 
-# docker build -t webfuzzing/wfe-snapshot-<wfe-version>  -f wfe.dockerfile .
+# docker build -t webfuzzing/wfe-snapshot:<wfe-version>  -f wfe.dockerfile .
