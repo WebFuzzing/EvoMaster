@@ -519,7 +519,43 @@ public class MongoHeuristicsCalculator {
 
 
     private Truthness computeHeuristic(ElemMatchOperation operation, Object document) {
-        throw new IllegalArgumentException("Not implemented yet");
+        requireNonNullQueryAndDocument(operation, document);
+        Objects.requireNonNull(operation.getFieldName());
+        Objects.requireNonNull(operation.getCondition());
+
+        if (!documentContainsField(document, operation.getFieldName())) {
+            return C_FALSE;
+        } else {
+            Object actualValue = getValue(document, operation.getFieldName());
+            if (actualValue == null || !(actualValue instanceof List<?>)) {
+                return C_FALSE;
+            } else {
+                List<?> actualList = (List<?>) actualValue;
+                if (actualList.isEmpty()) {
+                    return C_FALSE;
+                } else {
+                    Truthness orAggregation = buildOrAggregationTruthness(actualList.stream()
+                            .map(listElement -> computeHeuristicOnElemMatchElement(
+                                    operation.getCondition(), listElement, document))
+                            .toArray(Truthness[]::new));
+                    return buildSafeScaledTruthness(orAggregation);
+                }
+            }
+        }
+    }
+
+    private Truthness computeHeuristicOnElemMatchElement(QueryOperation condition, Object element, Object documentTemplate) {
+        if (isBsonDocument(element)) {
+            return computeHeuristicOnDocument(condition, element);
+        }
+
+        if (!(condition instanceof QueryOperationWithField)) {
+            return C_FALSE;
+        }
+
+        Object elementDocument = newDocument(documentTemplate);
+        appendToDocument(elementDocument, ((QueryOperationWithField) condition).getFieldName(), element);
+        return computeHeuristicOnDocument(condition, elementDocument);
     }
 
     private Truthness computeHeuristic(ExistsOperation operation, Object document) {
@@ -597,20 +633,20 @@ public class MongoHeuristicsCalculator {
 
         final long bitmask = operation.getBitmask();
         final long maskedValue = ((Number) actualValue).longValue() & bitmask;
-        final int numberOfSetBits = Long.bitCount(maskedValue);
+        final int numberOfSetBitsInMaskedValue = Long.bitCount(maskedValue);
         final int numberOfBitsInMask = Long.bitCount(bitmask);
         if (operation instanceof BitsAllClearOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, 0);
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, 0);
             return buildSafeScaledTruthness(equalityTruthness);
         } else if (operation instanceof BitsAllSetOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
+            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
             return buildSafeScaledTruthness(equalityTruthness);
         } else if (operation instanceof BitsAnyClearOperation) {
-            Truthness allSetTruthness = getEqualityTruthness(numberOfSetBits, numberOfBitsInMask);
-            return buildSafeScaledTruthness(allSetTruthness).invert();
+            Truthness lessThanTruthness = getLessThanTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
+            return buildSafeScaledTruthness(lessThanTruthness);
         } else if (operation instanceof BitsAnySetOperation) {
-            Truthness allClearTruthness = getEqualityTruthness(numberOfSetBits, 0);
-            return buildSafeScaledTruthness(allClearTruthness).invert();
+            Truthness lessThanTruthness = getLessThanTruthness(0, numberOfSetBitsInMaskedValue);
+            return buildSafeScaledTruthness(lessThanTruthness);
         } else {
             throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
         }

@@ -62,6 +62,7 @@ public class RedisHandler {
     public void reset() {
         operations.clear();
         evaluatedRedisCommands.clear();
+        failedCommands.clear();
     }
 
     public boolean isExtractRedisExecution() {

@@ -308,6 +308,105 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testElemMatch() {
+        Document doc = new Document().append("results", Arrays.asList(
+                new Document("product", "xyz").append("quantity", 5),
+                new Document("product", "abc").append("quantity", 15)
+        ));
+
+        Bson bsonTrue = Filters.elemMatch("results", Filters.eq("product", "abc"));
+        Bson bsonFalse = Filters.elemMatch("results", Filters.eq("product", "def"));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchNested() {
+        Document doc = new Document("groups", Arrays.asList(
+                new Document("members", Arrays.asList(
+                        new Document("name", "Bob"),
+                        new Document("name", "Alice"))),
+                new Document("members", Collections.singletonList(
+                        new Document("name", "Eve")))
+        ));
+        Document bsonTrue = new Document("groups",
+                new Document("$elemMatch",
+                        new Document("members",
+                                new Document("$elemMatch", new Document("name", "Alice")))));
+        Document bsonFalse = new Document("groups",
+                new Document("$elemMatch",
+                        new Document("members",
+                                new Document("$elemMatch", new Document("name", "Carol")))));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonTrue, doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonFalse, doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchWithEqOperatorDocument() {
+        Document doc = new Document().append("tags", Arrays.asList("a", "b", "c"));
+        Document bsonTrue = new Document("tags", new Document("$elemMatch", new Document("$eq", "b")));
+        Document bsonFalse = new Document("tags", new Document("$elemMatch", new Document("$eq", "z")));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonTrue, doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(bsonFalse, doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchWithMultipleConditions() {
+        Document doc = new Document().append("results", Arrays.asList(
+                new Document("product", "abc").append("quantity", 5),
+                new Document("product", "abc").append("quantity", 15)
+        ));
+
+        Bson bsonTrue = Filters.elemMatch("results", Filters.and(Filters.eq("product", "abc"), Filters.gt("quantity", 10)));
+        Bson bsonFalse = Filters.elemMatch("results", Filters.and(Filters.eq("product", "abc"), Filters.gt("quantity", 20)));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchMissingField() {
+        Document doc = new Document().append("name", "Bob");
+        Bson query = Filters.elemMatch("results", Filters.eq("product", "abc"));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(query), doc);
+        assertTrue(distanceMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchNotAList() {
+        Document doc = new Document().append("results", new Document("product", "abc"));
+        Bson query = Filters.elemMatch("results", Filters.eq("product", "abc"));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(query), doc);
+        assertTrue(distanceMatch.isFalse());
+    }
+
+    @Test
+    public void testElemMatchEmptyList() {
+        Document doc = new Document().append("results", Collections.emptyList());
+        Bson query = Filters.elemMatch("results", Filters.eq("product", "abc"));
+
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(query), doc);
+        assertTrue(distanceMatch.isFalse());
+    }
+
+    @Test
     public void testMod() {
         Document doc = new Document().append("age", 20);
         Bson bsonTrue = Filters.mod("age", 3, 2);
@@ -376,34 +475,34 @@ public class MongoHeuristicsCalculatorTest {
     public void testBitsAnyClear() {
         Document doc = new Document().append("flags", 0b1010L);
         Bson bsonTrue = Filters.bitsAnyClear("flags", 0b1110L);
-        Bson bsonFalse = Filters.bitsAnyClear("flags", 0b1010L);
-        Bson bsonFurtherFromFalse = Filters.bitsAnyClear("flags", 0b1111L);
+        Bson bsonFalse = Filters.bitsAnyClear("flags", 0b1000L);
+        Bson bsonFurtherFromTrue = Filters.bitsAnyClear("flags", 0b1010L);
 
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
-        Truthness distanceFurtherFromFalse = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromFalse), doc);
+        Truthness distanceFurtherFromTrue = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromTrue), doc);
 
         assertTrue(distanceMatch.isTrue());
         assertTrue(distanceNotMatch.isFalse());
-        assertTrue(distanceFurtherFromFalse.isTrue());
-        assertTrue(distanceMatch.getOfFalse() > distanceFurtherFromFalse.getOfFalse());
+        assertTrue(distanceFurtherFromTrue.isFalse());
+        assertTrue(distanceMatch.getOfTrue() > distanceFurtherFromTrue.getOfTrue());
     }
 
     @Test
     public void testBitsAnySet() {
         Document doc = new Document().append("flags", 0b1010L);
         Bson bsonTrue = Filters.bitsAnySet("flags", 0b0010L);
-        Bson bsonFalse = Filters.bitsAnySet("flags", 0b0101L);
-        Bson bsonFurtherFromFalse = Filters.bitsAnySet("flags", 0b1010L);
+        Bson bsonFalse = Filters.bitsAnySet("flags", 0b0001L);
+        Bson bsonFalseFurtherFromTrue = Filters.bitsAnySet("flags", 0b0101L);
 
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
-        Truthness distanceFurtherFromFalse = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFurtherFromFalse), doc);
+        Truthness distanceNotMatchFurtherFromMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalseFurtherFromTrue), doc);
 
         assertTrue(distanceMatch.isTrue());
         assertTrue(distanceNotMatch.isFalse());
-        assertTrue(distanceFurtherFromFalse.isTrue());
-        assertTrue(distanceMatch.getOfFalse() > distanceFurtherFromFalse.getOfFalse());
+        assertTrue(distanceNotMatchFurtherFromMatch.isFalse());
+        assertTrue(distanceMatch.getOfTrue() > distanceNotMatchFurtherFromMatch.getOfTrue());
     }
 
 
