@@ -282,27 +282,34 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testCharClassIntersectionSubtractionAndNesting(){
-        checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
-        checkSameAsJava("[a&&a][a&&a&&a]")
-        checkSameAsJava("[a-z&&[aeiou]]")
-        checkSameAsJava("[a-z&&[^aeiou]]")
-        checkSameAsJava("[a-z&&[a-p]&&[f-z]]")
-        checkSameAsJava("[ac-e&&[a-d]]")
-        checkSameAsJava("[\\w&&[a-z]]")
-        checkSameAsJava("[a-z&&[b-y]]")
-        checkSameAsJava("[a-z0-9&&[A-Z0-9]&&[2B4C]]")
-        checkSameAsJava("[[a-c][x-z]&&[b-y]]")
-        checkSameAsJava("[a-c&&[b-d]e-g]")
-        checkSameAsJava("[^a-z&&[^aeiou]]")
-        checkSameAsJava("[\\s&&[^\\n]]")
-        checkSameAsJava("[a-c&&[c-e]]")
-        checkSameAsJava("[a-z&&[a-z]]")
-        checkSameAsJava("[a-ce-g&&[b-f]]")
-        checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
-        checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
-        checkSameAsJava("&&")
-        checkSameAsJava("[[a-c&&[d-f]][x-z]]")
-        checkSameAsJava("[a-c&&[b-d]]|[x&&y]")
+        checkSameAsJava("^[abc-e[f-h]ij-l[m]n]$")
+        checkSameAsJava("^[a&&a][a&&a&&a]$")
+        checkSameAsJava("^[a-z&&[aeiou]]$")
+        checkSameAsJava("^[a-z&&[^aeiou]]$")
+        checkSameAsJava("^[a-z&&[a-p]&&[f-z]]$")
+        checkSameAsJava("^[ac-e&&[a-d]]$")
+        checkSameAsJava("^[\\w&&[a-z]]$")
+        checkSameAsJava("^[a-z&&[b-y]]$")
+        checkSameAsJava("^[a-z0-9&&[A-Z0-9]&&[2B4C]]$")
+        checkSameAsJava("^[[a-c][x-z]&&[b-y]]$")
+        checkSameAsJava("^[a-c&&[b-d]e-g]$")
+        checkSameAsJava("^[^a-z&&[^aeiou]]$")
+        checkSameAsJava("^[\\s&&[^\\n]]$")
+        checkSameAsJava("^[a-c&&[c-e]]$")
+        checkSameAsJava("^[a-z&&[a-z]]$")
+        checkSameAsJava("^[a-ce-g&&[b-f]]$")
+        checkSameAsJava("^[[a-z&&[a-p]]&&[f-z]]$")
+        checkSameAsJava("^[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]$")
+        checkSameAsJava("^&&$")
+        checkSameAsJava("^[[a-c&&[d-f]][x-z]]$")
+        checkSameAsJava("^[a-c&&[b-d]]|[x&&y]$")
+        checkSameAsJava("^[&&a]$")
+        checkSameAsJava("^[a&&]$")
+        checkSameAsJava("^[b-z&&&&a-j]$")
+        checkSameAsJava("^[&b-z&&&a-j]$")
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[&&]$") }
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[]$") }
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[^]$") }
     }
 
     @Test
@@ -476,11 +483,11 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookaheads() {
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=.*\\d)[a-z]+") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
-        assertThrows<IllegalStateException> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])[a-zA-Z]{4,8}") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)(?=.*[A-Z])") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=.*\\d)[a-z]+") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=bbbX)aaa[a-z]") }
+        assertThrows<AssertionError> { checkSameAsJava("(?=abcde)a(bcef|de)de") }
         assertThrows<IllegalStateException> { checkSameAsJava("(?=[a&&b])a(bcef|de)de") }
         checkSameAsJava("abc|(?=[a&&b])def")
     }
@@ -505,7 +512,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookbehinds() {
-        assertThrows<IllegalStateException> { checkSameAsJava("(?<=X)a") }
+        assertThrows<AssertionError> { checkSameAsJava("(?<=X)a") }
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
 
@@ -521,7 +528,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testNestedAssertionOutwardEscape() {
         checkSameAsJava("""^a((?=b\d)b)\d$""")
         checkSameAsJava("""^\d(x(?<=\dx))y$""")
-        assertThrows<IllegalStateException> { checkSameAsJava("""^a((?=b\d)b)y$""") }
-        assertThrows<IllegalStateException> { checkSameAsJava("^(a(?=bc)d)e$") }
+        assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
+        assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
     }
 }

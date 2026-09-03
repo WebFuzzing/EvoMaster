@@ -556,12 +556,27 @@ public class MongoHeuristicsCalculator {
                     return C_FALSE;
                 } else {
                     Truthness orAggregation = buildOrAggregationTruthness(actualList.stream()
-                            .map(listElement -> computeHeuristicOnDocument(operation.getCondition(), listElement))
+                            .map(listElement -> computeHeuristicOnElemMatchElement(
+                                    operation.getCondition(), listElement, document))
                             .toArray(Truthness[]::new));
                     return buildSafeScaledTruthness(orAggregation);
                 }
             }
         }
+    }
+
+    private Truthness computeHeuristicOnElemMatchElement(QueryOperation condition, Object element, Object documentTemplate) {
+        if (isBsonDocument(element)) {
+            return computeHeuristicOnDocument(condition, element);
+        }
+
+        if (!(condition instanceof QueryOperationWithField)) {
+            return C_FALSE;
+        }
+
+        Object elementDocument = newDocument(documentTemplate);
+        appendToDocument(elementDocument, ((QueryOperationWithField) condition).getFieldName(), element);
+        return computeHeuristicOnDocument(condition, elementDocument);
     }
 
     private Truthness computeHeuristic(ExistsOperation operation, Object document) {

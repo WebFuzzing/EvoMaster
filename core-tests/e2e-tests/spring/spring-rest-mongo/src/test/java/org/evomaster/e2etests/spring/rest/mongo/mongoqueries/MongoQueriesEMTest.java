@@ -26,7 +26,7 @@ public class MongoQueriesEMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "MongoQueriesEMTest",
                 "org.foo.spring.rest.mongo.MongoQueriesEMTest",
-                3000,
+                5000,
                 (args) -> {
                     setOption(args, "heuristicsForMongo", "true");
                     setOption(args, "instrumentMR_MONGO", "true");
@@ -49,6 +49,8 @@ public class MongoQueriesEMTest extends RestTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/not", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/size", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/elemMatch", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/near", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/nearSphere", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAllClear", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAnySet", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAllSet", null);
