@@ -171,22 +171,26 @@ public class MongoHeuristicsCalculator {
 
         final Pattern pattern = operation.getPattern();
         final String patternString = pattern.pattern();
-        final int patternFlags = pattern.flags();
 
-        if (ExecutionTracer.isTaintInput(inputValue)) {
-            ExecutionTracer.addStringSpecialization(inputValue,
-                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, patternString, TaintType.FULL_MATCH, patternFlags));
+        if (taintHandler!=null) {
+            final int patternFlags = pattern.flags();
+            // TODO: tainting should take into account the pattern flags, which can change the matching behavior
+            // TODO: regex could be a partial word match (MongoDB $regex) instead of a whole word match (Matcher.matches())
+            taintHandler.handleTaintForRegex(inputValue, patternString);
         }
 
+
         Matcher matcher = pattern.matcher(inputValue);
-        boolean matches = matcher.matches();
+        boolean matches = matcher.find();
 
         if (matches) {
             return TRUE_C;
         } else {
             // TODO this does not take into account pattern flags, which can change the matching behavior
             final int distance = RegexDistanceUtils.getStandardDistance(inputValue, patternString);
-            double ofTrue = 1d / (1d + distance);
+            // The distance approximation can be zero even when Java's matcher rejects the input
+            // (for example, when flags affect line terminators). Keep non-matches strictly false.
+            double ofTrue = 1d / (1.1d + distance);
             return buildSafeScaledTruthness(ofTrue);
         }
     }

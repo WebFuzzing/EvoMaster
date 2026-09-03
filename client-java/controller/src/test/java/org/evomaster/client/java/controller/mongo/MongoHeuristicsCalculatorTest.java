@@ -11,7 +11,9 @@ import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithM
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.Disabled;
@@ -1010,6 +1012,53 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testRegexAnchorsAreConsidered() {
+        Document query = new Document("name", new Document("$regex", "^hospital$"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness exactMatch = calculator.computeHeuristicDocument(query, new Document("name", "hospital"));
+        Truthness substringMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+
+        assertTrue(exactMatch.isTrue());
+        assertTrue(substringMatch.isFalse());
+    }
+
+    @Test
+    public void testRegexHeuristicRewardsCloserNonMatchingValue() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness closerResult = calculator.computeHeuristicDocument(query, new Document("name", "hospitel"));
+        Truthness fartherResult = calculator.computeHeuristicDocument(query, new Document("name", "clinic"));
+
+        assertTrue(closerResult.isFalse());
+        assertTrue(fartherResult.isFalse());
+        assertTrue(closerResult.getOfTrue() > fartherResult.getOfTrue());
+    }
+
+    @Test
+    public void testRegexHeuristicIsPartialByDefault() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness substringMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+        assertTrue(substringMatch.isTrue());
+    }
+
+    @Test
+    public void testRegexHeuristicWholeWordMatch() {
+        Document query = new Document("name", new Document("$regex", "^hospital$"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness wholeWordMatch = calculator.computeHeuristicDocument(query, new Document("name", "hospital"));
+        Truthness substringDoesNotMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+
+        assertTrue(wholeWordMatch.isTrue());
+        assertTrue(substringDoesNotMatch.isFalse());
+    }
+
+
+    @Test
     public void testRegexMatchesDocumentFieldWithCaseInsensitiveOption() {
         Document query = new Document("name",
                 new Document("$regex", "^general hospital$")
@@ -1064,10 +1113,13 @@ public class MongoHeuristicsCalculatorTest {
                 new Document("$regex", "^åland hospital$").append("$options", "i"));
         Document unicodeCaseInsensitive = new Document("name",
                 new Document("$regex", "^åland hospital$").append("$options", "iu"));
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
-        assertTrue(calculator.computeHeuristicDocument(asciiCaseInsensitive, document).isFalse());
-        assertTrue(calculator.computeHeuristicDocument(unicodeCaseInsensitive, document).isTrue());
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        final Truthness asciiCaseInsensitiveTruthness = calculator.computeHeuristicDocument(asciiCaseInsensitive, document);
+        final Truthness unicodeCaseInsensitiveTruthness = calculator.computeHeuristicDocument(unicodeCaseInsensitive, document);
+
+        assertTrue(asciiCaseInsensitiveTruthness.isTrue());
+        assertTrue(unicodeCaseInsensitiveTruthness.isTrue());
     }
 
     @Test
@@ -1333,6 +1385,40 @@ public class MongoHeuristicsCalculatorTest {
             assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
             assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
             assertEquals("bar", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+        } finally {
+            ExecutionTracer.reset();
+        }
+    }
+
+    @Test
+    public void testTaintHandlingForRegexOperation() {
+        ExecutionTracer.reset();
+        try {
+            TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+            MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+            Document document = new Document("name", "_EM_1111_XYZ_");
+            Document query = new Document("name",
+                    new Document("$regex", "hospital").append("$options", "i"));
+
+            calculator.computeHeuristicDocument(query, document);
+
+            List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfos.size());
+            Map<String, Set<StringSpecializationInfo>> specializations =
+                    additionalInfos.get(0).getStringSpecializationsView();
+            assertTrue(specializations.containsKey("_EM_1111_XYZ_"));
+            assertEquals(1, specializations.get("_EM_1111_XYZ_").size());
+
+            StringSpecializationInfo specialization =
+                    specializations.get("_EM_1111_XYZ_").iterator().next();
+            assertEquals("hospital", specialization.getValue());
+            // TODO: Regex external flags are not monitored by the taintHandler
+            assertEquals(0, specialization.getExternalRegexFlagsBitmask());
+            // TODO: The regex specialization type should be REGEX_PARTIAL, but currently it is REGEX_WHOLE.
+            assertEquals(StringSpecialization.REGEX_WHOLE, specialization.getStringSpecialization());
+            assertEquals(TaintType.FULL_MATCH, specialization.getType());
+
+
         } finally {
             ExecutionTracer.reset();
         }

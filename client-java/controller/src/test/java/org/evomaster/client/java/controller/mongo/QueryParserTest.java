@@ -1,7 +1,11 @@
 package org.evomaster.client.java.controller.mongo;
 
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.bson.BsonRegularExpression;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
+import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
 
@@ -425,6 +429,31 @@ class QueryParserTest {
         assertEquals("hospital$", regex.getPattern().pattern());
         assertTrue(regex.getOptions().isCaseInsensitive());
         assertFalse(regex.getOptions().isMultiline());
+    }
+
+    @Test
+    void testParseFiltersRegex() {
+        Document query = convertToDocument(Filters.regex("name", "^hospital.*", "i"));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("name", regex.getFieldName());
+        assertEquals("^hospital.*", regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isCaseInsensitive());
+        assertTrue((regex.getPattern().flags() & Pattern.CASE_INSENSITIVE) != 0);
+    }
+
+    @Test
+    void testParseFiltersRegexWithJavaPattern() {
+        Pattern pattern = Pattern.compile("^hospital.*near$", Pattern.MULTILINE | Pattern.DOTALL);
+        Document query = convertToDocument(Filters.regex("description", pattern));
+
+        RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
+        assertEquals("description", regex.getFieldName());
+        assertEquals(pattern.pattern(), regex.getPattern().pattern());
+        assertTrue(regex.getOptions().isMultiline());
+        assertTrue(regex.getOptions().isDotAll());
+        assertTrue((regex.getPattern().flags() & Pattern.MULTILINE) != 0);
+        assertTrue((regex.getPattern().flags() & Pattern.DOTALL) != 0);
     }
 
     @Test
@@ -1701,5 +1730,10 @@ class QueryParserTest {
     private void assertInvalidQuery(Document query) {
         QueryOperation operation = assertDoesNotThrow(() -> parser.parse(query));
         assertNull(operation);
+    }
+
+    private Document convertToDocument(Bson filter) {
+        DocumentCodec documentCodec = new DocumentCodec();
+        return documentCodec.decode(filter.toBsonDocument().asBsonReader(), DecoderContext.builder().build());
     }
 }
