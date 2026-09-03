@@ -20,7 +20,7 @@ import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.database.sql.SqlActionTransformer
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.AdditionalTargetCollector
+import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
@@ -399,6 +399,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             handleRedisHeuristics(dto, fv)
         }
 
+        if (configuration.heuristicsForDynamoDb) {
+            handleDynamoDbHeuristics(dto, fv)
+        }
+
         if (configuration.extractRedisExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
@@ -430,7 +434,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (!toMinimize.isEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -465,7 +469,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -498,7 +502,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -509,6 +513,39 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportRedisHeuristicEvaluationFailure()
                         } else {
                             statistics.reportRedisHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Applies DynamoDB predicate distances and records their evaluation metrics. */
+    private fun handleDynamoDbHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.DYNAMODB
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.DYNAMODB) {
+                        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportDynamoDbHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportDynamoDbHeuristicEvaluationSuccess()
                         }
                     }
                 }

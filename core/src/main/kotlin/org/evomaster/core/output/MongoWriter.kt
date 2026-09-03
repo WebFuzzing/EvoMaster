@@ -17,7 +17,7 @@ object MongoWriter {
      * @param mongoDbInitialization contains the db actions to be generated
      * @param lines is used to save generated textual lines with respects to [mongoDbInitialization]
      * @param groupIndex specifies an index of a group of this [mongoDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
+     * @param mongoInsertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleMongoDbInitialization(
@@ -25,7 +25,7 @@ object MongoWriter {
         mongoDbInitialization: List<EvaluatedMongoDbAction>,
         lines: Lines,
         groupIndex: String = "",
-        insertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
 
@@ -33,9 +33,9 @@ object MongoWriter {
             return
         }
 
-        val insertionVar = "insertions${groupIndex}"
+        val insertionVar = "mongoInsertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
+        val previousVar = mongoInsertionVars.joinToString(", ") { it.first }
         mongoDbInitialization
             .filter { !skipFailure || it.mongoResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedMongoDbAction ->
@@ -92,7 +92,7 @@ object MongoWriter {
         )
         lines.appendSemicolon()
 
-        insertionVars.add(insertionVar to insertionVarResult)
+        mongoInsertionVars.add(insertionVar to insertionVarResult)
 
     }
 

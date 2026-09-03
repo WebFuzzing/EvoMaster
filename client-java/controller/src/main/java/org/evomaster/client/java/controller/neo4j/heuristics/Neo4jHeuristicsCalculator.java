@@ -27,10 +27,6 @@ import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_
  * <p>
  * {@code H(Q, G) = andAggregation(H_match(P_s, G), H_where(C_all, matched_elements(P_s, G)))}, where
  * {@code P_s} is the structural pattern and {@code C_all} the conditions.
- * <p>
- * Expects {@code query} to already be in canonical form: no quantified path patterns and no
- * variable-length edges (both are expanded to a plain pattern by a separate canonization step before
- * reaching this calculator).
  */
 public class Neo4jHeuristicsCalculator {
 
@@ -53,8 +49,9 @@ public class Neo4jHeuristicsCalculator {
     }
 
     public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
-        MatchPattern pattern = query.getPattern();
-        List<CypherCondition> conditions = query.getConditions();
+        Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(query);
+        MatchPattern pattern = expanded.pattern;
+        List<CypherCondition> conditions = expanded.conditions;
 
         List<Neo4jMapping> mappings = matcher.matchedElements(pattern, graph);
 
