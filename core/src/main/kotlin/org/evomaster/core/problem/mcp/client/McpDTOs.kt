@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode
 /** Tool definition as returned by the MCP `tools/list` response. */
 data class McpToolDefinition(
     val name: String,
-    val description: String,
-    val inputSchema: JsonNode
+    val description: String = "",
+    val inputSchema: JsonNode,
+    val outputSchema: JsonNode? = null
 )
 
 /** Static resource as returned by the MCP `resources/list` response. */
@@ -27,13 +28,15 @@ data class McpResourceTemplate(
 /** Result of a `tools/call` invocation, as defined by the MCP specification. */
 data class McpToolResult(
     val content: List<McpToolContent> = emptyList(),
+    val isError: Boolean = false,
     val structuredContent: Map<String, Any?>? = null,
-    val isError: Boolean = false
+    val protocolError: McpProtocolError? = null
 )
 
 /** Result of a `resources/read` invocation, as defined by the MCP specification. */
 data class McpResourceResult(
-    val contents: List<McpResourceContent> = emptyList()
+    val contents: List<McpResourceContent> = emptyList(),
+    val protocolError: McpProtocolError? = null
 )
 
 /** Content item within a `resources/read` response (spec: TextResourceContents | BlobResourceContents). */
@@ -98,3 +101,9 @@ data class McpEmbeddedResourceToolContent(
 ) : McpToolContent {
     override val type get() = "resource"
 }
+
+/** Mirrors the JSON-RPC 2.0 error object: {"code": ..., "message": ...}. */
+data class McpProtocolError(
+    val code: Int,
+    val message: String
+)
