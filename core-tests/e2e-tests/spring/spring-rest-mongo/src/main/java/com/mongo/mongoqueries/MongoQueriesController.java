@@ -90,6 +90,11 @@ public class MongoQueriesController {
         return executeQuery(new Document("tags", new Document("$size", 3)));
     }
 
+    @GetMapping("elemMatch")
+    public ResponseEntity<Void> findElemMatch() {
+        return executeQuery(new Document("tags", new Document("$elemMatch", new Document("$eq", "b"))));
+    }
+
     @GetMapping("bitsAllClear")
     public ResponseEntity<Void> findBitsAllClear() {
         return executeQuery(new Document("flags", new Document("$bitsAllClear", 2L)));

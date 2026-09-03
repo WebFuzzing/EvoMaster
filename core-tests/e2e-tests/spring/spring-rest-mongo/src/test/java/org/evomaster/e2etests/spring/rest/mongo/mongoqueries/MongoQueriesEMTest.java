@@ -48,6 +48,7 @@ public class MongoQueriesEMTest extends RestTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/mod", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/not", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/size", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/elemMatch", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAllClear", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAnySet", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongoqueries/bitsAllSet", null);
