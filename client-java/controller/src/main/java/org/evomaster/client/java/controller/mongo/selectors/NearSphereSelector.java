@@ -33,7 +33,7 @@ public class NearSphereSelector extends QuerySelector {
         }
         Object innerDoc = getValue(query, fieldName);
 
-        if (!isBsonDocument(innerDoc) || !hasTheExpectedOperator(query)) {
+        if (!isBsonDocument(innerDoc) || !documentContainsField(innerDoc, operator())) {
             return null;
         }
 
