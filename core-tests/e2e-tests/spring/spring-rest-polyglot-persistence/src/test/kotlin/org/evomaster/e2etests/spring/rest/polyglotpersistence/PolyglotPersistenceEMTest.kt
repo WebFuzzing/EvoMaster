@@ -27,14 +27,6 @@ class PolyglotPersistenceEMTest : RestTestBase() {
             "MultiDbMongoRedisPostgresEM",
             1000
         ) { args ->
-            // disable impact analysis for this test,
-            // as there is a bug in the current implementatio
-            // of the impact analysis when an action has
-            // RedisDbAction, MongoDbAction and SqlAction
-            setOption(args, "doCollectImpact", "false")
-            setOption(args, "adaptiveGeneSelectionMethod", "NONE")
-            setOption(args, "archiveGeneMutation", "NONE")
-            setOption(args, "probOfArchiveMutation", "0.0")
             // enable heuristics for SQL, MongoDB and Redis
             setOption(args, "instrumentMR_MONGO", "true")
             setOption(args, "instrumentMR_REDIS", "true")
