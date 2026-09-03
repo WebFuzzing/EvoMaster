@@ -48,4 +48,22 @@ class RedisHandlerTest {
         List<RedisCommandEvaluation> evals = handler.getEvaluatedRedisCommands();
         assertTrue(evals.isEmpty());
     }
+
+    @Test
+    void testResetClearsFailedCommands() {
+        RedisCommand cmd = new RedisCommand(
+                RedisCommand.RedisCommandType.GET,
+                new String[]{"key<user:1>"},
+                true,
+                5
+        );
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        assertFalse(handler.getExecutionDto().failedCommands.isEmpty());
+
+        handler.reset();
+
+        assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
+    }
 }
