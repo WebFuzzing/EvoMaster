@@ -4,6 +4,9 @@ import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
 import org.evomaster.client.java.controller.mongo.operations.RegexOperation;
 import org.evomaster.client.java.controller.mongo.operations.RegexOptions;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -17,6 +20,35 @@ public class RegexSelector extends QuerySelector {
 
     private static final String REGEX_OPERATOR = "$regex";
     private static final String OPTIONS_OPERATOR = "$options";
+
+    private static final char REGEX_OPTION_CASE_INSENSITIVE = 'i';
+    private static final char REGEX_OPTION_MULTILINE = 'm';
+    private static final char REGEX_OPTION_DOT_ALL = 's';
+    private static final char REGEX_OPTION_EXTENDED = 'x';
+    private static final char REGEX_OPTION_UNICODE = 'u';
+
+
+    /**
+     * A set of supported regex options used to modify the behavior of regular expression queries.
+     * This set is immutable and contains predefined constants representing specific regex behavior.
+     *
+     * Available regex options in this set may include:
+     * - Case insensitivity
+     * - Multiline mode
+     * - Dot-all mode, where the dot matches newline characters
+     * - Extended mode, allowing for comments and whitespace in the pattern
+     * - Unicode-aware matching
+     *
+     * This collection is primarily used in the context of query parsing and regex operation
+     * construction within the `RegexSelector` class or other related selectors.
+     */
+    private static final Set<Character> REGEX_OPTIONS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            REGEX_OPTION_CASE_INSENSITIVE,
+            REGEX_OPTION_MULTILINE,
+            REGEX_OPTION_DOT_ALL,
+            REGEX_OPTION_EXTENDED,
+            REGEX_OPTION_UNICODE)));
+
 
     @Override
     public QueryOperation getOperation(Object query) {
@@ -81,17 +113,18 @@ public class RegexSelector extends QuerySelector {
     }
 
     private RegexOptions parseOptions(String options) {
+
         for (char option : options.toCharArray()) {
-            if ("imsxu".indexOf(option) < 0) {
+            if (!REGEX_OPTIONS.contains(option)) {
                 return null;
             }
         }
         return new RegexOptions(
-                options.indexOf('i') >= 0,
-                options.indexOf('m') >= 0,
-                options.indexOf('s') >= 0,
-                options.indexOf('x') >= 0,
-                options.indexOf('u') >= 0);
+                options.indexOf(REGEX_OPTION_CASE_INSENSITIVE) >= 0,
+                options.indexOf(REGEX_OPTION_MULTILINE) >= 0,
+                options.indexOf(REGEX_OPTION_DOT_ALL) >= 0,
+                options.indexOf(REGEX_OPTION_EXTENDED) >= 0,
+                options.indexOf(REGEX_OPTION_UNICODE) >= 0);
     }
 
     private int flagsFromOptions(RegexOptions options) {
@@ -106,11 +139,11 @@ public class RegexSelector extends QuerySelector {
 
     private String optionsFromFlags(int flags) {
         StringBuilder options = new StringBuilder();
-        if ((flags & Pattern.CASE_INSENSITIVE) != 0) options.append('i');
-        if ((flags & Pattern.MULTILINE) != 0) options.append('m');
-        if ((flags & Pattern.DOTALL) != 0) options.append('s');
-        if ((flags & Pattern.COMMENTS) != 0) options.append('x');
-        if ((flags & Pattern.UNICODE_CASE) != 0) options.append('u');
+        if ((flags & Pattern.CASE_INSENSITIVE) != 0) options.append(REGEX_OPTION_CASE_INSENSITIVE);
+        if ((flags & Pattern.MULTILINE) != 0) options.append(REGEX_OPTION_MULTILINE);
+        if ((flags & Pattern.DOTALL) != 0) options.append(REGEX_OPTION_DOT_ALL);
+        if ((flags & Pattern.COMMENTS) != 0) options.append(REGEX_OPTION_EXTENDED);
+        if ((flags & Pattern.UNICODE_CASE) != 0) options.append(REGEX_OPTION_UNICODE);
         return options.toString();
     }
 

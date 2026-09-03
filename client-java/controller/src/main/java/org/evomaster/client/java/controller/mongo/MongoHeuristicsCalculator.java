@@ -6,6 +6,11 @@ import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
@@ -14,6 +19,8 @@ import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 public class MongoHeuristicsCalculator {
@@ -135,6 +142,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((NotOperation) operation, document);
         } else if (operation instanceof TypeOperation) {
             return computeHeuristic((TypeOperation) operation, document);
+        } else if (operation instanceof RegexOperation) {
+            return computeHeuristic((RegexOperation) operation, document);
         } else if (operation instanceof NearSphereOperation) {
             return computeHeuristic((NearSphereOperation) operation, document);
         } else if (operation instanceof NearOperation) {
@@ -145,6 +154,40 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((TrueOperation) operation, document);
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
+        }
+    }
+
+    private Truthness computeHeuristic(RegexOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+        Objects.requireNonNull(operation.getPattern());
+        Objects.requireNonNull(operation.getOptions());
+
+        Object fieldValue = getValue(document, operation.getFieldName());
+        if (!(fieldValue instanceof String)) {
+            return C_FALSE;
+        }
+
+        final String inputValue = (String) fieldValue;
+
+        final Pattern pattern = operation.getPattern();
+        final String patternString = pattern.pattern();
+        final int patternFlags = pattern.flags();
+
+        if (ExecutionTracer.isTaintInput(inputValue)) {
+            ExecutionTracer.addStringSpecialization(inputValue,
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, patternString, TaintType.FULL_MATCH, patternFlags));
+        }
+
+        Matcher matcher = pattern.matcher(inputValue);
+        boolean matches = matcher.matches();
+
+        if (matches) {
+            return TRUE_C;
+        } else {
+            // TODO this does not take into account pattern flags, which can change the matching behavior
+            final int distance = RegexDistanceUtils.getStandardDistance(inputValue, patternString);
+            double ofTrue = 1d / (1d + distance);
+            return buildSafeScaledTruthness(ofTrue);
         }
     }
 
@@ -776,7 +819,7 @@ public class MongoHeuristicsCalculator {
         double distanceBetweenPoints;
         switch (geoSpatialModel) {
             case PLANAR:
-                 distanceBetweenPoints = euclideanDistance(x1, y1, x2, y2);
+                distanceBetweenPoints = euclideanDistance(x1, y1, x2, y2);
                 break;
             case SPHERICAL:
                 distanceBetweenPoints = haversineDistance(x1, y1, x2, y2);

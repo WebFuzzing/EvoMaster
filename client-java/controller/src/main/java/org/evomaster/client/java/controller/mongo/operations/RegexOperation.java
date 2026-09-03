@@ -15,11 +15,11 @@ public class RegexOperation extends QueryOperationWithField {
      * Creates a new RegexOperation with a default RegexOptions
      * (all options set to false)
      *
-     * @param fieldname the fieldname
+     * @param fieldName the fieldName
      * @param pattern the pattern
      */
-    public RegexOperation(String fieldname, Pattern pattern) {
-        this(fieldname, pattern, new RegexOptions());
+    public RegexOperation(String fieldName, Pattern pattern) {
+        this(fieldName, pattern, new RegexOptions());
     }
 
     public RegexOperation(String fieldName, Pattern pattern, RegexOptions options) {
