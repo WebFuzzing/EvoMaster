@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,8 +48,14 @@ public class AsyncApiRefResolver {
 
     private static final String MESSAGES = "messages";
 
-    public static final String SCHEMA_PREFIX = RefLocations.FRAGMENT_SEPARATOR + RefLocations.PATH_SEPARATOR
-            + COMPONENTS + RefLocations.PATH_SEPARATOR + SCHEMAS + RefLocations.PATH_SEPARATOR;
+    /**
+     * How a pointer at any component begins, e.g. the "#/components/" of
+     * "#/components/schemas/Order".
+     */
+    private static final String COMPONENT_PREFIX = RefLocations.FRAGMENT_SEPARATOR
+            + RefLocations.PATH_SEPARATOR + COMPONENTS + RefLocations.PATH_SEPARATOR;
+
+    public static final String SCHEMA_PREFIX = COMPONENT_PREFIX + SCHEMAS + RefLocations.PATH_SEPARATOR;
 
     /**
      * The two component kinds that are worth pulling out of an external document. Schemas are
@@ -170,7 +175,7 @@ public class AsyncApiRefResolver {
         }
 
         String rest = ref.substring(SCHEMA_PREFIX.length());
-        int slash = rest.indexOf('/');
+        int slash = rest.indexOf(RefLocations.PATH_SEPARATOR);
         String key = slash < 0 ? rest : rest.substring(0, slash);
 
         return key.trim().isEmpty() ? null : decodePointerSegment(key);
@@ -503,18 +508,18 @@ public class AsyncApiRefResolver {
         if (segments.length < 3 || !COMPONENTS.equals(segments[0]) || !INLINABLE.contains(segments[1])) {
             warnings.add(
                     "Reference '" + original + "' points at '" + path + "' of another document."
-                            + " Only components/" + SCHEMAS + " and components/" + MESSAGES
+                            + " Only " + COMPONENTS + RefLocations.PATH_SEPARATOR + SCHEMAS
+                            + " and " + COMPONENTS + RefLocations.PATH_SEPARATOR + MESSAGES
                             + " can be imported.");
             return null;
         }
 
-        StringBuilder renamed = new StringBuilder("#/")
-                .append(COMPONENTS).append('/')
-                .append(segments[1]).append('/')
+        StringBuilder renamed = new StringBuilder(COMPONENT_PREFIX)
+                .append(segments[1]).append(RefLocations.PATH_SEPARATOR)
                 .append(prefix).append(segments[2]);
 
         for (int i = 3; i < segments.length; i++) {
-            renamed.append('/').append(segments[i]);
+            renamed.append(RefLocations.PATH_SEPARATOR).append(segments[i]);
         }
 
         return renamed.toString();
@@ -569,9 +574,7 @@ public class AsyncApiRefResolver {
 
     private static DocumentLocationType locationTypeOf(String absoluteLocation, DocumentLocation from) {
 
-        String lower = absoluteLocation.toLowerCase(Locale.ENGLISH);
-
-        if (lower.startsWith("http:") || lower.startsWith("https:")) {
+        if (RefLocations.isHttpLocation(absoluteLocation)) {
             return DocumentLocationType.REMOTE;
         }
 
