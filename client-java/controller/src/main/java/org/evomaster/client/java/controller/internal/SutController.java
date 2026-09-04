@@ -35,6 +35,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
+import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jHandler;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
@@ -88,6 +89,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final SqlHandler sqlHandler = new SqlHandler(new TaintHandlerExecutionTracer());
 
     private final MongoHandler mongoHandler = new MongoHandler();
+
+    private final Neo4jHandler neo4jHandler = new Neo4jHandler();
 
     private final OpenSearchHandler openSearchHandler = new OpenSearchHandler();
 
@@ -351,6 +354,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    public final void initNeo4jHandler() {
+        neo4jHandler.setNeo4jConnection(getNeo4jConnection());
+    }
+
     // TODO: Refactor this initialization methods once Redis and OpenSearch implementations are done
     public final void initOpenSearchHandler() {
         // This is needed because the replacement use to get this info occurs during the start of the SUT.
@@ -397,6 +404,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void resetExtraHeuristics() {
         sqlHandler.reset();
         mongoHandler.reset();
+        neo4jHandler.reset();
         redisHandler.reset();
         dynamoDbHandler.reset();
     }
@@ -422,7 +430,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()
                 || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()
-                || isDynamoDbHeuristicsComputationAllowed()) {
+                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -430,6 +438,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
             if (isMongoHeuristicsComputationAllowed()) {
                 computeMongoHeuristics(dto, additionalInfoList);
+            }
+            if (isNeo4jHeuristicsComputationAllowed()) {
+                computeNeo4jHeuristics(dto, additionalInfoList);
             }
             if (isOpenSearchHeuristicsComputationAllowed()) {
                 computeOpenSearchHeuristics(dto, additionalInfoList);
@@ -450,6 +461,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isMongoHeuristicsComputationAllowed() {
         return mongoHandler.isCalculateHeuristics() || mongoHandler.isExtractMongoExecution();
+    }
+
+    private boolean isNeo4jHeuristicsComputationAllowed() {
+        return neo4jHandler.isCalculateHeuristics();
     }
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
@@ -543,6 +558,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
             }
             dto.mongoExecutionsDto = mongoHandler.getExecutionDto();
+        }
+    }
+
+    public final void computeNeo4jHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
+        if(neo4jHandler.isCalculateHeuristics()){
+            if(!additionalInfoList.isEmpty()) {
+                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+                last.getNeo4JInfoData().forEach(it -> {
+                    try {
+                        neo4jHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND");
+                        assert false;
+                    }
+                });
+            }
+
+            neo4jHandler.getEvaluatedNeo4jCommands().stream()
+                    .map(p ->
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.NEO4J,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.getCommand(),
+                                    p.getDistanceWithMetrics().getDistance(),
+                                    p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                    p.getDistanceWithMetrics().isEvaluationFailure()
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
         }
     }
 

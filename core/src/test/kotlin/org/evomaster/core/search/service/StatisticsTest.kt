@@ -53,6 +53,22 @@ class StatisticsTest {
     }
 
     @Test
+    fun testNeo4jHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(10)
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(20)
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(30)
+
+        repeat(2) {
+            statistics.reportNeo4jHeuristicEvaluationSuccess()
+        }
+        statistics.reportNeo4jHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getNeo4jHeuristicsEvaluationCount())
+        assertEquals(20.0, statistics.averageNumberOfEvaluatedNodesForNeo4jHeuristics())
+    }
+
+    @Test
     fun testSqlZ3CacheAccountingInvariant() {
         val statistics = Statistics()
 
