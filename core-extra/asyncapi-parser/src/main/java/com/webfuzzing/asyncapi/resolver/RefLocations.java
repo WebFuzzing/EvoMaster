@@ -52,12 +52,6 @@ public class RefLocations {
 
     private static final String HTTPS_PREFIX = HTTPS_SCHEME + PROTOCOL_SEPARATOR;
 
-    /**
-     * A file on disk written as a URL rather than as a path. Resolved as a URI, like any other
-     * URL, and not through the file system.
-     */
-    private static final String FILE_PREFIX = "file" + PROTOCOL_SEPARATOR;
-
     private RefLocations() {
     }
 
@@ -143,10 +137,7 @@ public class RefLocations {
 
         String csl = currentSource.getLocation();
 
-        boolean plainPath = currentSource.getType() == DocumentLocationType.LOCAL
-                && !csl.toLowerCase(Locale.ENGLISH).startsWith(FILE_PREFIX);
-
-        if (plainPath) {
+        if (currentSource.isPlainFilePath()) {
             return Paths.get(csl).resolveSibling(rawLocation).normalize().toString();
         }
 
