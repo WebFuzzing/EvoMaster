@@ -87,9 +87,9 @@ public class RefLocations {
      * @throws IllegalArgumentException if the referring document was supplied as text, as there
      *                                  is then nothing for a relative location to be relative to
      */
-    public static String computeLocation(String ref, DocumentLocation currentSource, List<String> messages) {
+    public static String resolveDocumentLocation(String ref, DocumentLocation currentSource, List<String> messages) {
 
-        String rawLocation = extractLocation(ref, messages);
+        String rawLocation = extractLocationPart(ref, messages);
 
         if (rawLocation == null) {
             return null;
@@ -134,7 +134,15 @@ public class RefLocations {
         }
     }
 
-    private static String extractLocation(String ref, List<String> messages) {
+    /**
+     * The location part of a reference, i.e. everything before the {@code #} that separates it
+     * from the JSON Pointer. Empty for a reference that stays inside its own document, and null
+     * when there is no separator at all, in which case {@code messages} says so.
+     *
+     * This only reads the text. Turning what it gives back into somewhere a document can be
+     * retrieved from is {@link #resolveDocumentLocation}'s job.
+     */
+    private static String extractLocationPart(String ref, List<String> messages) {
 
         if (!ref.contains(FRAGMENT_SEPARATOR)) {
             messages.add("Not a valid $ref, as it contains no " + FRAGMENT_SEPARATOR + ": " + ref);

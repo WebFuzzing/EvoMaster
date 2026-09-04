@@ -346,7 +346,7 @@ public class AsyncApiRefResolver {
      */
     private static String locationOf(String ref, DocumentLocation from, List<String> warnings) {
         try {
-            return RefLocations.computeLocation(ref, from, warnings);
+            return RefLocations.resolveDocumentLocation(ref, from, warnings);
         } catch (Exception e) {
             warnings.add("Cannot work out what document '" + ref + "' refers to: " + e.getMessage());
             return null;
