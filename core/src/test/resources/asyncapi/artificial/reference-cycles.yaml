@@ -1,0 +1,42 @@
+asyncapi: 3.0.0
+info:
+  title: References that go round in circles
+  version: 1.0.0
+
+# Generators do emit these, and following one for ever would take down the whole run rather
+# than cost the one element it affects.
+
+components:
+  messages:
+    # a message that only points at another message, which points back
+    ping:
+      $ref: '#/components/messages/pong'
+    pong:
+      $ref: '#/components/messages/ping'
+    itself:
+      $ref: '#/components/messages/itself'
+
+    request:
+      name: Request
+      correlationId:
+        $ref: '#/components/correlationIds/first'
+      payload:
+        $ref: '#/components/schemas/Node'
+
+  correlationIds:
+    first:
+      $ref: '#/components/correlationIds/second'
+    second:
+      $ref: '#/components/correlationIds/first'
+
+  schemas:
+    # a schema referring to itself is perfectly legitimate: a tree of nodes
+    Node:
+      type: object
+      properties:
+        value:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
