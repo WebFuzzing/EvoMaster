@@ -15,9 +15,13 @@ public class BsonHelper {
     private static final String GET_VALUE_METHOD = "getValue";
     private static final String FIND_BY_VALUE_METHOD = "findByValue";
     private static final String VALUE_OF_METHOD = "valueOf";
+    private static final String GET_PATTERN_METHOD = "getPattern";
+    private static final String GET_OPTIONS_METHOD = "getOptions";
 
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
     private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
+    private static final String BSON_REGEX_CLASS = "org.bson.BsonRegularExpression";
+
     public static final String NULL_TYPE = "null";
     public static final String BSON_TYPE_NULL = "NULL";
 
@@ -195,6 +199,57 @@ public class BsonHelper {
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
            return null;
+        }
+    }
+
+    /**
+     * Checks if the given object is a BSON regular expression.
+     *
+     * @param object the object to check; should be non-null to determine if it is a BSON regular expression
+     * @return true if the object is a BSON regular expression, false otherwise
+     */
+    public static boolean isBsonRegularExpression(Object object) {
+        return object != null && BSON_REGEX_CLASS.equals(object.getClass().getName());
+    }
+
+    /**
+     * Retrieves the pattern from a BSON regular expression object.
+     *
+     * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
+     * @return a String representing the pattern of the BSON regular expression.
+     * @throws NullPointerException if the provided value is null.
+     * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
+     * @throws RuntimeException if an error occurs while invoking the method to retrieve the pattern.
+     */
+    public static String bsonRegexGetPattern(Object value) {
+        Objects.requireNonNull(value, "The provided value cannot be null");
+        if (!isBsonRegularExpression(value)) {
+            throw new IllegalArgumentException("The provided value is not a BSON regular expression but class: " + value.getClass().getName());
+        }
+        try {
+            return (String) value.getClass().getMethod(GET_PATTERN_METHOD).invoke(value);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Retrieves the options associated with a BSON regular expression.
+     *
+     * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
+     * @return a String representing the options associated with the BSON regular expression.
+     * @throws NullPointerException if the provided value is null.
+     * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
+     **/
+    public static String bsonRegexGetOptions(Object value) {
+        Objects.requireNonNull(value, "The provided value cannot be null");
+        if (!isBsonRegularExpression(value)) {
+            throw new IllegalArgumentException("The provided value is not a BSON regular expression but class: " + value.getClass().getName());
+        }
+        try {
+            return (String) value.getClass().getMethod(GET_OPTIONS_METHOD).invoke(value);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 }

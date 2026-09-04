@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.mongo.selectors;
 
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
+import org.evomaster.client.java.controller.mongo.operations.AbstractProximityOperation;
 import org.evomaster.client.java.controller.mongo.operations.NearSphereOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
 
@@ -63,51 +65,70 @@ public class NearSphereSelector extends QuerySelector {
     }
 
     public QueryOperation parseValue(String fieldName, Object innerDoc, boolean legacyCoordinates) {
-        Object longitude;
-        Object latitude;
-        Object maxDistance = null;
-        Object minDistance = null;
+        Number longitude;
+        Number latitude;
+        Double maxDistance;
+        Double minDistance;
 
         Object point = getValue(innerDoc, operator());
+        Object rawMaxDistance = getValue(legacyCoordinates ? innerDoc : point, MAX_DISTANCE_OPERATOR);
+        Object rawMinDistance = getValue(legacyCoordinates ? innerDoc : point, MIN_DISTANCE_OPERATOR);
+
+        if ((rawMaxDistance != null && !(rawMaxDistance instanceof Number))
+                || (rawMinDistance != null && !(rawMinDistance instanceof Number))) {
+            return null;
+        }
+
+        maxDistance = rawMaxDistance == null ? null : ((Number) rawMaxDistance).doubleValue();
+        minDistance = rawMinDistance == null ? null : ((Number) rawMinDistance).doubleValue();
 
         if (legacyCoordinates) {
-            Object maxDistanceInRadians = getValue(innerDoc, MAX_DISTANCE_OPERATOR);
-            Object minDistanceInRadians = getValue(innerDoc, MIN_DISTANCE_OPERATOR);
-
-            if (maxDistanceInRadians instanceof Double) {
-                maxDistance = radiansToMeters((double) maxDistanceInRadians);
-            }
-
-            if (minDistanceInRadians instanceof Double) {
-                minDistance = radiansToMeters((double) minDistanceInRadians);
-            }
-
-            longitude = getValue(point, X_FIELD_NAME);
-            latitude = getValue(point, Y_FIELD_NAME);
-        } else {
-            Object geometry = getValue(point, GEOMETRY_OPERATOR);
-            Object coordinates = getValue(geometry, COORDINATES_FIELD_NAME);
-
-            if (coordinates instanceof List<?> && ((List<?>) coordinates).size() == 2) {
-                longitude = ((List<?>) coordinates).get(0);
-                latitude = ((List<?>) coordinates).get(1);
+            if (point instanceof List<?> && ((List<?>) point).size() == 2) {
+                Object rawLongitude = ((List<?>) point).get(0);
+                Object rawLatitude = ((List<?>) point).get(1);
+                if (!(rawLongitude instanceof Number) || !(rawLatitude instanceof Number)) {
+                    return null;
+                }
+                longitude = (Number) rawLongitude;
+                latitude = (Number) rawLatitude;
+            } else if (isBsonDocument(point)) {
+                Object rawLongitude = getValue(point, X_FIELD_NAME);
+                Object rawLatitude = getValue(point, Y_FIELD_NAME);
+                if (!(rawLongitude instanceof Number) || !(rawLatitude instanceof Number)) {
+                    return null;
+                }
+                longitude = (Number) rawLongitude;
+                latitude = (Number) rawLatitude;
             } else {
                 return null;
             }
 
-            maxDistance = getValue(point, MAX_DISTANCE_OPERATOR);
-            minDistance = getValue(point, MIN_DISTANCE_OPERATOR);
+            maxDistance = maxDistance == null ? null : convertLegacyDistance(maxDistance);
+            minDistance = minDistance == null ? null : convertLegacyDistance(minDistance);
+        } else {
+            Object geometry = getValue(point, GEOMETRY_OPERATOR);
+            if (!isBsonDocument(geometry) || !GeoJsonUtils.isGeoJsonPoint(geometry)) {
+                return null;
+            }
+            Object coordinates = getValue(geometry, COORDINATES_FIELD_NAME);
+            longitude = (Number) ((List<?>) coordinates).get(0);
+            latitude = (Number) ((List<?>) coordinates).get(1);
         }
 
-        if (longitude instanceof Double && latitude instanceof Double && (maxDistance == null || maxDistance instanceof Double) && (minDistance == null || minDistance instanceof Double)) {
-            return new NearSphereOperation(fieldName, (Double) longitude, (Double) latitude, (Double) maxDistance, (Double) minDistance);
-        } else {
-            return null;
-        }
+        return createOperation(fieldName, longitude.doubleValue(), latitude.doubleValue(), maxDistance, minDistance, legacyCoordinates);
     }
 
-    private static double radiansToMeters(double radians) {
+    protected double convertLegacyDistance(double radians) {
         return EARTH_RADIUS_IN_METERS * radians;
+    }
+
+    protected AbstractProximityOperation createOperation(String fieldName,
+                                                         double longitude,
+                                                         double latitude,
+                                                         Double maxDistance,
+                                                         Double minDistance,
+                                                         boolean legacyCoordinates) {
+        return new NearSphereOperation(fieldName, longitude, latitude, maxDistance, minDistance);
     }
 
     private String extractFieldName(Object query) {

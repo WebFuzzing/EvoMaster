@@ -1,5 +1,7 @@
 package com.mongo.mongoqueries;
 
+import org.bson.Document;
+
 import java.util.List;
 
 public class MongoQueriesData {
@@ -10,17 +12,19 @@ public class MongoQueriesData {
     private Long flags;
     private List<String> tags;
     private String description;
+    private Document location;
 
     public MongoQueriesData() {
     }
 
-    public MongoQueriesData(String id, String name, Integer age, Long flags, List<String> tags, String description) {
+    public MongoQueriesData(String id, String name, Integer age, Long flags, List<String> tags, String description, Document location) {
         this.id = id;
         this.name = name;
         this.age = age;
         this.flags = flags;
         this.tags = tags;
         this.description = description;
+        this.location = location;
     }
 
     public String getId() {
@@ -69,5 +73,13 @@ public class MongoQueriesData {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Document getLocation() {
+        return location;
+    }
+
+    public void setLocation(Document location) {
+        this.location = location;
     }
 }
