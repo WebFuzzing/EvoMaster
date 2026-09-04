@@ -49,7 +49,8 @@ public class AsyncApiRefResolver {
 
     private static final String MESSAGES = "messages";
 
-    public static final String SCHEMA_PREFIX = "#/" + COMPONENTS + "/" + SCHEMAS + "/";
+    public static final String SCHEMA_PREFIX = RefLocations.FRAGMENT_SEPARATOR + RefLocations.PATH_SEPARATOR
+            + COMPONENTS + RefLocations.PATH_SEPARATOR + SCHEMAS + RefLocations.PATH_SEPARATOR;
 
     /**
      * The two component kinds that are worth pulling out of an external document. Schemas are
@@ -64,6 +65,15 @@ public class AsyncApiRefResolver {
      * otherwise be followed forever.
      */
     private static final int MAX_IMPORTED_DOCUMENTS = 100;
+
+    /**
+     * JSON Pointer escaping: a "/" inside a key is written "~1", and a "~" is written "~0".
+     */
+    private static final String ESCAPED_SLASH = "~1";
+
+    private static final String TILDE = "~";
+
+    private static final String ESCAPED_TILDE = TILDE + "0";
 
     /**
      * How the text of a retrieved document is turned into a tree. Supplied by the caller so
@@ -93,7 +103,8 @@ public class AsyncApiRefResolver {
 
         JsonNode current = root;
 
-        for (String segment : ref.substring(1).split("/")) {
+        for (String segment : ref.substring(RefLocations.FRAGMENT_SEPARATOR.length())
+                .split(RefLocations.PATH_SEPARATOR)) {
 
             if (segment.isEmpty()) {
                 continue;
@@ -124,7 +135,7 @@ public class AsyncApiRefResolver {
         String key = ref.substring(expectedPrefix.length());
 
         //must be a single segment: a deeper pointer is something else than what was asked for
-        if (key.trim().isEmpty() || key.contains("/")) {
+        if (key.trim().isEmpty() || key.contains(RefLocations.PATH_SEPARATOR)) {
             return null;
         }
 
@@ -439,7 +450,7 @@ public class AsyncApiRefResolver {
          */
         if (absolute.equals(primary)) {
             String fragment = fragmentOf(ref);
-            return fragment.trim().isEmpty() ? null : "#" + fragment;
+            return fragment.trim().isEmpty() ? null : RefLocations.FRAGMENT_SEPARATOR + fragment;
         }
 
         LoadedDocument target = loaded.get(absolute);
@@ -464,7 +475,7 @@ public class AsyncApiRefResolver {
      * Whatever follows the first {@code #} of a reference, empty when there is none.
      */
     private static String fragmentOf(String ref) {
-        int hash = ref.indexOf('#');
+        int hash = ref.indexOf(RefLocations.FRAGMENT_SEPARATOR);
         return hash < 0 ? "" : ref.substring(hash + 1);
     }
 
@@ -484,8 +495,10 @@ public class AsyncApiRefResolver {
             String original,
             List<String> warnings) {
 
-        String path = fragment.startsWith("/") ? fragment.substring(1) : fragment;
-        String[] segments = path.split("/", -1);
+        String path = fragment.startsWith(RefLocations.PATH_SEPARATOR)
+                ? fragment.substring(RefLocations.PATH_SEPARATOR.length())
+                : fragment;
+        String[] segments = path.split(RefLocations.PATH_SEPARATOR, -1);
 
         if (segments.length < 3 || !COMPONENTS.equals(segments[0]) || !INLINABLE.contains(segments[1])) {
             warnings.add(
@@ -608,6 +621,6 @@ public class AsyncApiRefResolver {
             }
         }
 
-        return decoded.replace("~1", "/").replace("~0", "~");
+        return decoded.replace(ESCAPED_SLASH, RefLocations.PATH_SEPARATOR).replace(ESCAPED_TILDE, TILDE);
     }
 }
