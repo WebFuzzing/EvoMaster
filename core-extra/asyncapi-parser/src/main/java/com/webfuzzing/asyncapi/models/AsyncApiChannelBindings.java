@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The subset of the protocol bindings that a client acts on, plus the untouched originals.
@@ -116,7 +117,7 @@ public class AsyncApiChannelBindings {
 
         public Builder wsMethod(String wsMethod) { this.wsMethod = wsMethod; return this; }
 
-        public Builder raw(Map<String, JsonNode> raw) { this.raw = raw; return this; }
+        public Builder raw(Map<String, JsonNode> raw) { this.raw = Objects.requireNonNull(raw, "raw"); return this; }
 
         public AsyncApiChannelBindings build() {
             return new AsyncApiChannelBindings(this);

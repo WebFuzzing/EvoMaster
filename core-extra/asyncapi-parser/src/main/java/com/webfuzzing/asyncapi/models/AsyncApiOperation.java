@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An entry under {@code operations:}, i.e. something an application does on a channel.
@@ -153,18 +154,18 @@ public class AsyncApiOperation {
         private String description;
 
         private Builder(String name, Action action, String channelName) {
-            this.name = name;
-            this.action = action;
-            this.channelName = channelName;
+            this.name = Objects.requireNonNull(name, "name");
+            this.action = Objects.requireNonNull(action, "action");
+            this.channelName = Objects.requireNonNull(channelName, "channelName");
         }
 
-        public Builder messageIds(List<String> messageIds) { this.messageIds = messageIds; return this; }
+        public Builder messageIds(List<String> messageIds) { this.messageIds = Objects.requireNonNull(messageIds, "messageIds"); return this; }
 
         public Builder reply(AsyncApiReply reply) { this.reply = reply; return this; }
 
-        public Builder security(List<String> security) { this.security = security; return this; }
+        public Builder security(List<String> security) { this.security = Objects.requireNonNull(security, "security"); return this; }
 
-        public Builder bindings(Map<String, JsonNode> bindings) { this.bindings = bindings; return this; }
+        public Builder bindings(Map<String, JsonNode> bindings) { this.bindings = Objects.requireNonNull(bindings, "bindings"); return this; }
 
         public Builder title(String title) { this.title = title; return this; }
 

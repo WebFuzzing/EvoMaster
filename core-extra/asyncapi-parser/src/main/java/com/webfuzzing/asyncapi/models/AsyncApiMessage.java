@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * One message definition, i.e. the shape of what travels on a channel.
@@ -172,13 +173,16 @@ public class AsyncApiMessage {
         private String description;
 
         private Builder(String id) {
-            this.id = id;
+            this.id = Objects.requireNonNull(id, "id");
             this.name = id;
         }
 
-        public Builder name(String name) { this.name = name; return this; }
+        public Builder name(String name) { this.name = Objects.requireNonNull(name, "name"); return this; }
 
-        public Builder contentType(String contentType) { this.contentType = contentType; return this; }
+        public Builder contentType(String contentType) {
+            this.contentType = Objects.requireNonNull(contentType, "contentType");
+            return this;
+        }
 
         public Builder payload(JsonNode payload) { this.payload = payload; return this; }
 
@@ -191,9 +195,9 @@ public class AsyncApiMessage {
 
         public Builder kafkaKey(JsonNode kafkaKey) { this.kafkaKey = kafkaKey; return this; }
 
-        public Builder bindings(Map<String, JsonNode> bindings) { this.bindings = bindings; return this; }
+        public Builder bindings(Map<String, JsonNode> bindings) { this.bindings = Objects.requireNonNull(bindings, "bindings"); return this; }
 
-        public Builder examples(List<JsonNode> examples) { this.examples = examples; return this; }
+        public Builder examples(List<JsonNode> examples) { this.examples = Objects.requireNonNull(examples, "examples"); return this; }
 
         public Builder title(String title) { this.title = title; return this; }
 

@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An entry under {@code channels:}: one addressable place on the broker (a Kafka topic, an AMQP
@@ -167,24 +168,27 @@ public class AsyncApiChannel {
         private AsyncApiChannelBindings bindings = AsyncApiChannelBindings.none();
 
         private Builder(String name) {
-            this.name = name;
+            this.name = Objects.requireNonNull(name, "name");
         }
 
         public Builder address(String address) { this.address = address; return this; }
 
-        public Builder servers(List<String> servers) { this.servers = servers; return this; }
+        public Builder servers(List<String> servers) { this.servers = Objects.requireNonNull(servers, "servers"); return this; }
 
         public Builder messageKeys(Map<String, String> messageKeys) {
-            this.messageKeys = messageKeys;
+            this.messageKeys = Objects.requireNonNull(messageKeys, "messageKeys");
             return this;
         }
 
         public Builder parameters(Map<String, JsonNode> parameters) {
-            this.parameters = parameters;
+            this.parameters = Objects.requireNonNull(parameters, "parameters");
             return this;
         }
 
-        public Builder bindings(AsyncApiChannelBindings bindings) { this.bindings = bindings; return this; }
+        public Builder bindings(AsyncApiChannelBindings bindings) {
+            this.bindings = Objects.requireNonNull(bindings, "bindings");
+            return this;
+        }
 
         public AsyncApiChannel build() {
             return new AsyncApiChannel(this);
