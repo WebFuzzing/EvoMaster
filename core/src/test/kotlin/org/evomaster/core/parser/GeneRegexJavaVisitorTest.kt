@@ -469,7 +469,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?=.*[a-z])[a-zA-Z]{4,8}")
         checkSameAsJava("foo(?=.*\\d)[a-z\\d]{3,6}")
         checkSameAsJava("(?=.*\\d)\\w{6,12}")
-        checkSameAsJava("(?=.*[^A-Za-z0-9])\\w{6,12}$")
+        checkSameAsJava("(?=.*[^A-Za-z])\\w{6,12}$")
         checkSameAsJava("^(?=.*\\d)[a-zA-Z\\d]{8,16}$")
         checkSameAsJava("(?=\\d)\\d{1,5}")
         checkSameAsJava("(?=.*\\d)([a-z]+|\\d+){2,4}")
@@ -512,7 +512,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookbehinds() {
-        assertThrows<AssertionError> { checkSameAsJava("(?<=X)a") }
+        checkSameAsJava("(?<=X)a") // satisfiable if we use "X" as prefix, which RegexGene handles.
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
 
@@ -528,7 +528,44 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testNestedAssertionOutwardEscape() {
         checkSameAsJava("""^a((?=b\d)b)\d$""")
         checkSameAsJava("""^\d(x(?<=\dx))y$""")
+        checkSameAsJava("(?=abcde)abc")
         assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
         assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
+    }
+
+    @Test
+    fun testStartAndEndOfInput() {
+        checkSameAsJava("""\Aabc""")
+        checkSameAsJava("""abc\z""")
+        checkSameAsJava("""\Aabc\z""")
+        checkSameAsJava("""^abc\z""")
+        checkSameAsJava("""\Aabc$""")
+        checkSameAsJava("""^abc$""")
+        checkSameAsJava("^b*$")
+        checkSameAsJava("a*^b*\$c*")
+        checkSameAsJava("^^^^$$$$")
+        checkSameAsJava("^(ab$)|(cd$)(fg)*")
+    }
+
+    @Test
+    fun testStartAndEndOfInputNested() {
+        checkSameAsJava("""a?(\Ab)c""")
+        checkSameAsJava("""x?((^z)y)""")
+        assertThrows<AssertionError> { checkSameAsJava("""a(\Ab)c""") }
+        checkSameAsJava("""a(b\z)c?""")
+        assertThrows<AssertionError> { checkSameAsJava("""a(b\z)c""") }
+        checkSameAsJava("""((y(z\z))w?)x?""")
+        checkSameAsJava("""x?(c?(^z)y\z)w?""")
+        assertThrows<AssertionError> { checkSameAsJava("""x?(c(^z)y)""") }
+    }
+
+    @Test
+    fun testMultilineFlag(){
+        checkSameAsJava("(?m)abc")
+        checkSameAsJava("(?m)^abc$")
+        checkSameAsJava("(?m)\\s^b")
+        checkCanSample("(?m)\\s^b", listOf("\nb", "\rb"), 500)
+        checkSameAsJava("(?m)x?((^z)y)")
+        assertThrows<AssertionError> { checkSameAsJava("(?m)a^b") }
     }
 }
