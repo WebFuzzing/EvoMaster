@@ -39,8 +39,7 @@ class RegexGene(
      */
     var fixedValue: String? = null,
     var usingFixedValue: Boolean = false,
-    val externalRegexFlags: RegexFlags = RegexFlags(),
-    val hasAssertions: Boolean = false
+    val externalRegexFlags: RegexFlags = RegexFlags()
 ) : CompositeFixedGene(name, disjunctions) {
 
     companion object {
@@ -70,11 +69,21 @@ class RegexGene(
             null
         }
 
+    /**
+     * Prefix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPrefix], can be set on [randomize].
+     */
     private var javaPrefix : String = ""
+
+    /**
+     * Postfix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPostfix], can be set on [randomize].
+     */
     private var javaPostfix : String = ""
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags, hasAssertions)
+        val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
+        copy.javaPrefix=javaPrefix
+        copy.javaPostfix=javaPostfix
+        return copy
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -94,12 +103,10 @@ class RegexGene(
             if (pattern!!.matcher(getValueAsRawString()).find()) {
                 return
             }
-            if (hasAssertions) {
-                val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
-                setPrefixAndPostfix(assertionRepairResult, randomness)
-                if (pattern.matcher(getValueAsRawString()).find()) {
-                    return
-                }
+            val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
+            setPrefixAndPostfix(assertionRepairResult, randomness)
+            if (pattern.matcher(getValueAsRawString()).find()) {
+                return
             }
         }
 

@@ -1,11 +1,10 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.evomaster.core.database.sql.solver.SmtLibGenerator
-import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 
 /**
  * Two vocabularies describe the same column type: [SmtLibGenerator.TYPE_MAP], which decides the SMT-LIB

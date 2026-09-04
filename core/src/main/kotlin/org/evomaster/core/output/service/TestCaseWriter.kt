@@ -143,12 +143,14 @@ abstract class TestCaseWriter {
 
         lines.indented {
             val ind = test.test
-            val insertionVars = mutableListOf<Pair<String, String>>()
+            val sqlInsertionVars = mutableListOf<Pair<String, String>>()
+            val mongoInsertionVars = mutableListOf<Pair<String, String>>()
+            val redisInsertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
-            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
-            handleCleanUpActions(lines, baseUrlOfSut, ind, insertionVars, test.name,testSuitePath)
+            handleTestInitialization(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, test.name)
+            handleActionCalls(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, test.name,testSuitePath)
         }
 
 
@@ -218,13 +220,17 @@ abstract class TestCaseWriter {
      * for this test, and other needed setups, like SQL insertions.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
-     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param sqlInsertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
+     * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     )
 
@@ -233,13 +239,17 @@ abstract class TestCaseWriter {
      * @param lines are generated lines which save the generated test scripts
      * @param baseUrlOfSut is the base url of sut
      * @param ind is the final individual (ie test) to be generated into the test scripts
-     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param sqlInsertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
+     * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleActionCalls(
             lines: Lines,
             baseUrlOfSut: String,
             ind: EvaluatedIndividual<*>,
-            insertionVars: MutableList<Pair<String, String>>,
+            sqlInsertionVars: MutableList<Pair<String, String>>,
+            mongoInsertionVars: MutableList<Pair<String, String>>,
+            redisInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     )
@@ -248,7 +258,9 @@ abstract class TestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testCaseName: String,
         testSuitePath: Path?
     ){
