@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
+import org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
 import org.junit.jupiter.api.Test;
 
@@ -84,6 +85,27 @@ class Neo4jHandlerTest {
 
         // Registered while enabled, so it is the check before evaluating that has to drop the query.
         assertTrue(handler.getEvaluatedNeo4jCommands().isEmpty());
+    }
+
+    @Test
+    void testAFailedEvaluationReportsTheMaximumDistance() {
+        // A relationship whose source node is not in the graph: the graph reads fine, but scoring the query
+        // against it fails, and that failure must never look closer to satisfied than a genuine miss.
+        List<FakeRecord> nodes = Arrays.asList(
+                nodeRecord("n1", labels("Person"), props("age", 25L)));
+        List<FakeRecord> rels = Arrays.asList(
+                relRecord("e1", "KNOWS", "ghost", "n1"));
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(new FakeDriver(nodes, rels));
+        handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
+
+        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
+
+        assertEquals(1, evaluated.size());
+        Neo4jDistanceWithMetrics metrics = evaluated.get(0).getDistanceWithMetrics();
+        assertTrue(metrics.isEvaluationFailure());
+        assertEquals(Neo4jHeuristicsCalculator.MAX_NEO4J_DISTANCE, metrics.getDistance(), 0.0d);
+        assertEquals(1, metrics.getNumberOfEvaluatedNodes());
     }
 
     @Test
