@@ -127,27 +127,14 @@ public class RefLocations {
     }
 
     /**
-     * Resolve a relative location against the folder holding the document that refers to it,
-     * which is what the specification prescribes.
+     * Resolve a relative location against the folder holding the document that refers to it.
      *
-     * Which resolver does that depends on what kind of location the referring document has,
-     * because each kind already has one in the JDK that knows its rules:
+     * A URL, a {@code file:} URL and a classpath path are resolved as URIs, per RFC 3986. A
+     * plain file path is resolved through the file system instead: it may contain a space, or
+     * on Windows backslashes and a drive letter, none of which {@link URI} accepts.
      *
-     * <ul>
-     * <li>a URL, a {@code file:} URL, or a classpath path is resolved as a URI, per RFC 3986.
-     *     That defines what a trailing slash means and collapses "." and ".." segments, so two
-     *     references to the same document produce the same string -- which matters, as that
-     *     string is what tells imported documents apart;</li>
-     * <li>a plain file path is resolved through the file system, which knows the platform's
-     *     separator. A path is not a URI: it may contain a space, or on Windows backslashes and
-     *     a drive letter, none of which {@link URI} accepts.</li>
-     * </ul>
-     *
-     * This used to build "<document>/../<target>" and normalize it with {@link URI}, which
-     * failed both ways: {@link URI} rejected any path that was not a legal URI, and the
-     * un-normalized string returned instead was unusable too, since ".." cannot traverse
-     * through a file. Every external reference was then dropped, with a warning saying the
-     * file did not exist, purely because of where the project sat on disk.
+     * Both collapse "." and ".." segments, so two references to the same document produce the
+     * same string. That matters because the string is what tells imported documents apart.
      */
     private static String resolveRelative(
             String rawLocation,
