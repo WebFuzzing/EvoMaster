@@ -157,15 +157,17 @@ public class AsyncApiParser {
             }
         }
 
+        JsonNode channelsNode = root.get("channels");
         Map<String, AsyncApiChannel> channels = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("channels")).entrySet()) {
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(channelsNode).entrySet()) {
             channels.put(entry.getKey(), parseChannel(
                     entry.getKey(), entry.getValue(), root, defaultContentType,
                     componentSchemas, messages, warnings));
         }
 
+        JsonNode operationsNode = root.get("operations");
         Map<String, AsyncApiOperation> operations = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("operations")).entrySet()) {
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(operationsNode).entrySet()) {
             AsyncApiOperation operation = parseOperation(
                     entry.getKey(), entry.getValue(), root, channels, messages, securitySchemes, warnings);
             if (operation != null) {
@@ -173,8 +175,9 @@ public class AsyncApiParser {
             }
         }
 
+        JsonNode serversNode = root.get("servers");
         Map<String, AsyncApiServer> servers = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(root.get("servers")).entrySet()) {
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(serversNode).entrySet()) {
             AsyncApiServer server =
                     parseServer(entry.getKey(), entry.getValue(), root, securitySchemes, warnings);
             if (server != null) {
@@ -437,8 +440,9 @@ public class AsyncApiParser {
             return null;
         }
 
+        JsonNode variablesNode = node.get("variables");
         Map<String, AsyncApiServerVariable> variables = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(node.get("variables")).entrySet()) {
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(variablesNode).entrySet()) {
             JsonNode variable = entry.getValue();
             variables.put(entry.getKey(), new AsyncApiServerVariable(
                     entry.getKey(),
@@ -553,7 +557,8 @@ public class AsyncApiParser {
 
         Map<String, String> messageKeys = new LinkedHashMap<>();
 
-        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(node.get("messages")).entrySet()) {
+        JsonNode messagesNode = node.get("messages");
+        for (Map.Entry<String, JsonNode> entry : objectFieldsOf(messagesNode).entrySet()) {
             String id = resolveChannelMessage(
                     name, entry.getKey(), entry.getValue(), root, defaultContentType,
                     componentSchemas, messages, warnings);
