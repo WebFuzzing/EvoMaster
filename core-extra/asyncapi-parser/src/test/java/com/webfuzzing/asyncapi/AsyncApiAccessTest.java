@@ -114,6 +114,43 @@ public class AsyncApiAccessTest {
     }
 
     @Test
+    public void testAnotherDocumentIsFollowedFromAFolderWhoseNameHasASpace(@TempDir Path dir)
+            throws IOException {
+
+        /*
+            A space is not legal in a URI, and resolving a relative reference used to go through
+            java.net.URI. That made following a reference depend on where the project happened
+            to sit on disk: every external reference was dropped, with a warning saying the file
+            did not exist, for any path containing a space -- and likewise on Windows, whose
+            paths have backslashes and a drive letter.
+         */
+        Path folder = Files.createDirectories(dir.resolve("with space"));
+
+        write(folder.resolve("shared.yaml"),
+                "components:\n"
+                        + "  schemas:\n"
+                        + "    Thing:\n"
+                        + "      type: string\n");
+
+        Path main = write(folder.resolve("main.yaml"),
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: In a folder with a space in its name\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    m:\n"
+                        + "      payload:\n"
+                        + "        $ref: 'shared.yaml#/components/schemas/Thing'\n");
+
+        AsyncApiDocument document = AsyncApiAccess.getAsyncApiFromLocation(main.toString());
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+        assertEquals(1, document.getComponentSchemas().size());
+        assertTrue(document.getMessages().containsKey("m"));
+    }
+
+    @Test
     public void testTheSameLocationAlwaysGetsTheSameImportedNames(@TempDir Path dir) throws IOException {
 
         //the names imported components get have to be stable, or generated output would churn
