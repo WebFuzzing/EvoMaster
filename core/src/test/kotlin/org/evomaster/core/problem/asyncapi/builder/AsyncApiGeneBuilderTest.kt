@@ -97,14 +97,19 @@ class AsyncApiGeneBuilderTest {
     fun testHeadersAreBuiltSeparatelyFromThePayload() {
 
         val schema = AsyncApiAccess.getAsyncApiFromResource("/asyncapi/artificial/messages.yaml")
-        val message = schema.messages.getValue("signupRequest")
-
-        val headers = AsyncApiGeneBuilder.buildHeadersGene(schema, message, options)!!
-        assertTrue(field(headers, "correlationId") is StringGene)
 
         //a message declaring no headers gets none, rather than an empty object
         assertNull(
             AsyncApiGeneBuilder.buildHeadersGene(schema, schema.messages.getValue("heartbeat"), options)
+        )
+
+        /*
+            signupRequest declares one header, and it is the one the correlation id is stamped
+            into. That value is written fresh at each execution, so a gene holding it would only
+            be overwritten -- and with nothing else left, there are no header genes at all.
+         */
+        assertNull(
+            AsyncApiGeneBuilder.buildHeadersGene(schema, schema.messages.getValue("signupRequest"), options)
         )
     }
 
