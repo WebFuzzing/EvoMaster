@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser

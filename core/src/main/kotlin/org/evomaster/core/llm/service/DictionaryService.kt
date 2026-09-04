@@ -147,6 +147,9 @@ class DictionaryService {
         if(!isActive()){
             throw IllegalStateException("Dictionary service is not active")
         }
+        if(fields.isEmpty()){
+            throw IllegalArgumentException("No fields to update")
+        }
 
         val result = searchForNames(fields.map { it.name })
 

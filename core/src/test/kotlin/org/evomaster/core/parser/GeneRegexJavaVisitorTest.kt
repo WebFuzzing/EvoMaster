@@ -282,27 +282,34 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testCharClassIntersectionSubtractionAndNesting(){
-        checkSameAsJava("[abc-e[f-h]ij-l[m]n]")
-        checkSameAsJava("[a&&a][a&&a&&a]")
-        checkSameAsJava("[a-z&&[aeiou]]")
-        checkSameAsJava("[a-z&&[^aeiou]]")
-        checkSameAsJava("[a-z&&[a-p]&&[f-z]]")
-        checkSameAsJava("[ac-e&&[a-d]]")
-        checkSameAsJava("[\\w&&[a-z]]")
-        checkSameAsJava("[a-z&&[b-y]]")
-        checkSameAsJava("[a-z0-9&&[A-Z0-9]&&[2B4C]]")
-        checkSameAsJava("[[a-c][x-z]&&[b-y]]")
-        checkSameAsJava("[a-c&&[b-d]e-g]")
-        checkSameAsJava("[^a-z&&[^aeiou]]")
-        checkSameAsJava("[\\s&&[^\\n]]")
-        checkSameAsJava("[a-c&&[c-e]]")
-        checkSameAsJava("[a-z&&[a-z]]")
-        checkSameAsJava("[a-ce-g&&[b-f]]")
-        checkSameAsJava("[[a-z&&[a-p]]&&[f-z]]")
-        checkSameAsJava("[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]")
-        checkSameAsJava("&&")
-        checkSameAsJava("[[a-c&&[d-f]][x-z]]")
-        checkSameAsJava("[a-c&&[b-d]]|[x&&y]")
+        checkSameAsJava("^[abc-e[f-h]ij-l[m]n]$")
+        checkSameAsJava("^[a&&a][a&&a&&a]$")
+        checkSameAsJava("^[a-z&&[aeiou]]$")
+        checkSameAsJava("^[a-z&&[^aeiou]]$")
+        checkSameAsJava("^[a-z&&[a-p]&&[f-z]]$")
+        checkSameAsJava("^[ac-e&&[a-d]]$")
+        checkSameAsJava("^[\\w&&[a-z]]$")
+        checkSameAsJava("^[a-z&&[b-y]]$")
+        checkSameAsJava("^[a-z0-9&&[A-Z0-9]&&[2B4C]]$")
+        checkSameAsJava("^[[a-c][x-z]&&[b-y]]$")
+        checkSameAsJava("^[a-c&&[b-d]e-g]$")
+        checkSameAsJava("^[^a-z&&[^aeiou]]$")
+        checkSameAsJava("^[\\s&&[^\\n]]$")
+        checkSameAsJava("^[a-c&&[c-e]]$")
+        checkSameAsJava("^[a-z&&[a-z]]$")
+        checkSameAsJava("^[a-ce-g&&[b-f]]$")
+        checkSameAsJava("^[[a-z&&[a-p]]&&[f-z]]$")
+        checkSameAsJava("^[a[b[c[d&&[\\w]]]][0-7&&\\d&&[0-5]&&1-5]]$")
+        checkSameAsJava("^&&$")
+        checkSameAsJava("^[[a-c&&[d-f]][x-z]]$")
+        checkSameAsJava("^[a-c&&[b-d]]|[x&&y]$")
+        checkSameAsJava("^[&&a]$")
+        checkSameAsJava("^[a&&]$")
+        checkSameAsJava("^[b-z&&&&a-j]$")
+        checkSameAsJava("^[&b-z&&&a-j]$")
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[&&]$") }
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[]$") }
+        assertThrows<IllegalArgumentException> { checkSameAsJava("^[^]$") }
     }
 
     @Test
@@ -462,7 +469,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?=.*[a-z])[a-zA-Z]{4,8}")
         checkSameAsJava("foo(?=.*\\d)[a-z\\d]{3,6}")
         checkSameAsJava("(?=.*\\d)\\w{6,12}")
-        checkSameAsJava("(?=.*[^A-Za-z0-9])\\w{6,12}$")
+        checkSameAsJava("(?=.*[^A-Za-z])\\w{6,12}$")
         checkSameAsJava("^(?=.*\\d)[a-zA-Z\\d]{8,16}$")
         checkSameAsJava("(?=\\d)\\d{1,5}")
         checkSameAsJava("(?=.*\\d)([a-z]+|\\d+){2,4}")
@@ -505,7 +512,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testUnsatisfiableLookbehinds() {
-        assertThrows<AssertionError> { checkSameAsJava("(?<=X)a") }
+        checkSameAsJava("(?<=X)a") // satisfiable if we use "X" as prefix, which RegexGene handles.
         assertThrows<IllegalStateException> { checkSameAsJava("a(?<=[a&&b])a") }
     }
 
@@ -521,7 +528,44 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testNestedAssertionOutwardEscape() {
         checkSameAsJava("""^a((?=b\d)b)\d$""")
         checkSameAsJava("""^\d(x(?<=\dx))y$""")
+        checkSameAsJava("(?=abcde)abc")
         assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
         assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
+    }
+
+    @Test
+    fun testStartAndEndOfInput() {
+        checkSameAsJava("""\Aabc""")
+        checkSameAsJava("""abc\z""")
+        checkSameAsJava("""\Aabc\z""")
+        checkSameAsJava("""^abc\z""")
+        checkSameAsJava("""\Aabc$""")
+        checkSameAsJava("""^abc$""")
+        checkSameAsJava("^b*$")
+        checkSameAsJava("a*^b*\$c*")
+        checkSameAsJava("^^^^$$$$")
+        checkSameAsJava("^(ab$)|(cd$)(fg)*")
+    }
+
+    @Test
+    fun testStartAndEndOfInputNested() {
+        checkSameAsJava("""a?(\Ab)c""")
+        checkSameAsJava("""x?((^z)y)""")
+        assertThrows<AssertionError> { checkSameAsJava("""a(\Ab)c""") }
+        checkSameAsJava("""a(b\z)c?""")
+        assertThrows<AssertionError> { checkSameAsJava("""a(b\z)c""") }
+        checkSameAsJava("""((y(z\z))w?)x?""")
+        checkSameAsJava("""x?(c?(^z)y\z)w?""")
+        assertThrows<AssertionError> { checkSameAsJava("""x?(c(^z)y)""") }
+    }
+
+    @Test
+    fun testMultilineFlag(){
+        checkSameAsJava("(?m)abc")
+        checkSameAsJava("(?m)^abc$")
+        checkSameAsJava("(?m)\\s^b")
+        checkCanSample("(?m)\\s^b", listOf("\nb", "\rb"), 500)
+        checkSameAsJava("(?m)x?((^z)y)")
+        assertThrows<AssertionError> { checkSameAsJava("(?m)a^b") }
     }
 }

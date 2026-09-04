@@ -76,6 +76,9 @@ CharacterClassEscape
   : SLASH [dDsSwWvVhH]
  ;
 
+StartOfInputAssertion: SLASH 'A';
+EndOfInputAssertion: SLASH 'z';
+
 EQUAL                      : '=';
 LESS_THAN                  : '<';
 CARET                      : '^';

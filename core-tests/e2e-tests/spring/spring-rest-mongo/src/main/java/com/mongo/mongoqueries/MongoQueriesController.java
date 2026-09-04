@@ -21,9 +21,28 @@ public class MongoQueriesController {
 
     @PostMapping("saveData")
     public ResponseEntity<Void> saveData() {
-        mongoTemplate.save(new MongoQueriesData("1", "John", 25, 5L, Arrays.asList("a", "b", "c"), "some description"), COLLECTION_NAME);
-        mongoTemplate.save(new MongoQueriesData("2", "Alice", 35, 1L, Arrays.asList("a", "b", "d"), "desc"), COLLECTION_NAME);
+        mongoTemplate.getCollection(COLLECTION_NAME)
+                .createIndex(new Document("location", "2dsphere"));
+        mongoTemplate.save(new MongoQueriesData("1", "John", 25, 5L,
+                Arrays.asList("a", "b", "c"), "some description",
+                geoJsonPoint(2.29441692356368, 48.858504187164684)), COLLECTION_NAME);
+        mongoTemplate.save(new MongoQueriesData("2", "Alice", 35, 1L,
+                Arrays.asList("a", "b", "d"), "desc",
+                geoJsonPoint(-74.044502, 40.689247)), COLLECTION_NAME);
         return ResponseEntity.status(200).build();
+    }
+
+    private Document geoJsonPoint(double longitude, double latitude) {
+        return new Document("type", "Point")
+                .append("coordinates", Arrays.asList(longitude, latitude));
+    }
+
+    private Document geoJsonNearQuery(String operator) {
+        Document geometry = geoJsonPoint(2.2945, 48.8586);
+        return new Document("location",
+                new Document(operator,
+                        new Document("$geometry", geometry)
+                                .append("$maxDistance", 1000.0)));
     }
 
     private ResponseEntity<Void> executeQuery(Document queryDoc) {
@@ -88,6 +107,27 @@ public class MongoQueriesController {
     @GetMapping("size")
     public ResponseEntity<Void> findSize() {
         return executeQuery(new Document("tags", new Document("$size", 3)));
+    }
+
+    @GetMapping("elemMatch")
+    public ResponseEntity<Void> findElemMatch() {
+        return executeQuery(new Document("tags", new Document("$elemMatch", new Document("$eq", "b"))));
+    }
+
+    @GetMapping("regex")
+    public ResponseEntity<Void> findRegex() {
+        return executeQuery(new Document("name",
+                new Document("$regex", "^jo").append("$options", "i")));
+    }
+
+    @GetMapping("near")
+    public ResponseEntity<Void> findNear() {
+        return executeQuery(geoJsonNearQuery("$near"));
+    }
+
+    @GetMapping("nearSphere")
+    public ResponseEntity<Void> findNearSphere() {
+        return executeQuery(geoJsonNearQuery("$nearSphere"));
     }
 
     @GetMapping("bitsAllClear")

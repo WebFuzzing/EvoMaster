@@ -474,7 +474,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             .filterIsInstance<StringGene>()
             .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
             .map { FieldInfo(it.name, it.description) }
-            .let { dictionaryService.updatePoolFromDictionary(it.toList()) }
+            .let {
+                if(it.isNotEmpty()) {
+                    dictionaryService.updatePoolFromDictionary(it.toList())
+                }
+            }
     }
 
     private fun feedObjectExamplesToDataPool(actionCluster: Map<String, Action>) {

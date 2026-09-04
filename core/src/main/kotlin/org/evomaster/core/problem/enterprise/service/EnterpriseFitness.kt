@@ -438,7 +438,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (!toMinimize.isEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -473,7 +473,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -506,7 +506,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -539,7 +539,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -572,7 +572,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
