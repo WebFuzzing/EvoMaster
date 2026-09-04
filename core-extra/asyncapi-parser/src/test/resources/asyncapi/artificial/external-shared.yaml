@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: Shared schemas, not an AsyncAPI document itself
+  version: 1.0.0
+
+# a schema living somewhere that is not a component, as OpenAPI extensions often do
+x-webhooks:
+  orderShipped:
+    schema:
+      type: object
+      properties:
+        shippedAt:
+          type: string
+
+components:
+  messages:
+    Ack:
+      name: Ack
+      payload:
+        $ref: '#/components/schemas/Order'
+
+    # a local pointer that goes deeper than the schema it names. It has to end up naming *this*
+    # document's Order, not the one of the same name in the document importing it
+    DeepAck:
+      name: DeepAck
+      payload:
+        $ref: '#/components/schemas/Order/properties/id'
+
+  schemas:
+    Order:
+      type: object
+      required: [id, item]
+      properties:
+        id:
+          type: string
+        item:
+          $ref: '#/components/schemas/Item'
+    Item:
+      type: object
+      properties:
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1

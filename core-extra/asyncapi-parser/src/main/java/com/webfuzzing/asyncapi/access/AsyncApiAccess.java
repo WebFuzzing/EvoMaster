@@ -79,11 +79,12 @@ public class AsyncApiAccess {
         on AsyncApiDocument.getWarnings(), and where those warnings go is the caller's decision.
      */
     private static AsyncApiDocument parse(String schemaText, DocumentLocation location) {
-        return AsyncApiParser.parse(schemaText, location);
+        return AsyncApiParser.parse(schemaText, location, AsyncApiAccess::fetch);
     }
 
     /**
-     * Read the text of a document, wherever it lives.
+     * Read the text of a document, wherever it lives. Also used to follow references to other
+     * documents, which is why it takes the kind of location explicitly.
      */
     private static String fetch(String location, DocumentLocationType type) {
 

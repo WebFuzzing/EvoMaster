@@ -11,6 +11,7 @@ import com.webfuzzing.asyncapi.models.AsyncApiMessage;
 import com.webfuzzing.asyncapi.models.AsyncApiOperation;
 import com.webfuzzing.asyncapi.models.AsyncApiReply;
 import com.webfuzzing.asyncapi.models.DocumentLocation;
+import com.webfuzzing.asyncapi.resolver.AsyncApiDocumentFetcher;
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver;
 
 import java.util.ArrayDeque;
@@ -75,9 +76,12 @@ public class AsyncApiParser {
     }
 
     /**
-     * Parse {@code schemaText}, which was retrieved from {@code location}.
+     * Parse {@code schemaText}, reaching for any document it refers to with {@code fetch}.
      */
-    public static AsyncApiDocument parse(String schemaText, DocumentLocation location) {
+    public static AsyncApiDocument parse(
+            String schemaText,
+            DocumentLocation location,
+            AsyncApiDocumentFetcher fetch) {
 
         JsonNode root;
         try {
@@ -106,6 +110,9 @@ public class AsyncApiParser {
         }
 
         List<String> warnings = new ArrayList<>();
+
+        AsyncApiRefResolver.inlineExternalDocuments(
+                (ObjectNode) root, location, warnings, fetch, AsyncApiMapper::readTree);
 
         String defaultContentType = scalarOf(root.get("defaultContentType"));
         if (defaultContentType == null) {
