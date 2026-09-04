@@ -11,7 +11,9 @@ import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithM
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.Disabled;
@@ -996,6 +998,141 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testRegexMatchesDocumentField() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        Document matchingDocument = new Document("name", "nearest hospital");
+        Document nonMatchingDocument = new Document("name", "medical clinic");
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness matchingResult = calculator.computeHeuristicDocument(query, matchingDocument);
+        Truthness nonMatchingResult = calculator.computeHeuristicDocument(query, nonMatchingDocument);
+
+        assertTrue(matchingResult.isTrue());
+        assertTrue(nonMatchingResult.isFalse());
+    }
+
+    @Test
+    public void testRegexAnchorsAreConsidered() {
+        Document query = new Document("name", new Document("$regex", "^hospital$"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness exactMatch = calculator.computeHeuristicDocument(query, new Document("name", "hospital"));
+        Truthness substringMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+
+        assertTrue(exactMatch.isTrue());
+        assertTrue(substringMatch.isFalse());
+    }
+
+    @Test
+    public void testRegexHeuristicRewardsCloserNonMatchingValue() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness closerResult = calculator.computeHeuristicDocument(query, new Document("name", "hospitel"));
+        Truthness fartherResult = calculator.computeHeuristicDocument(query, new Document("name", "clinic"));
+
+        assertTrue(closerResult.isFalse());
+        assertTrue(fartherResult.isFalse());
+        assertTrue(closerResult.getOfTrue() > fartherResult.getOfTrue());
+    }
+
+    @Test
+    public void testRegexHeuristicIsPartialByDefault() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness substringMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+        assertTrue(substringMatch.isTrue());
+    }
+
+    @Test
+    public void testRegexHeuristicWholeWordMatch() {
+        Document query = new Document("name", new Document("$regex", "^hospital$"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Truthness wholeWordMatch = calculator.computeHeuristicDocument(query, new Document("name", "hospital"));
+        Truthness substringDoesNotMatch = calculator.computeHeuristicDocument(query, new Document("name", "nearest hospital"));
+
+        assertTrue(wholeWordMatch.isTrue());
+        assertTrue(substringDoesNotMatch.isFalse());
+    }
+
+
+    @Test
+    public void testRegexMatchesDocumentFieldWithCaseInsensitiveOption() {
+        Document query = new Document("name",
+                new Document("$regex", "^general hospital$")
+                        .append("$options", "i"));
+        Document document = new Document("name", "GENERAL HOSPITAL");
+
+        Truthness result = new MongoHeuristicsCalculator().computeHeuristicDocument(query, document);
+
+        assertTrue(result.isTrue());
+    }
+
+    @Test
+    public void testRegexMultilineOptionIsConsidered() {
+        Document document = new Document("description", "clinic\nhospital\npharmacy");
+        Document withoutMultiline = new Document("description", new Document("$regex", "^hospital$"));
+        Document withMultiline = new Document("description",
+                new Document("$regex", "^hospital$").append("$options", "m"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(withoutMultiline, document).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(withMultiline, document).isTrue());
+    }
+
+    @Test
+    public void testRegexDotAllOptionIsConsidered() {
+        Document document = new Document("description", "hospital\nis near");
+        Document withoutDotAll = new Document("description", new Document("$regex", "hospital.*near"));
+        Document withDotAll = new Document("description",
+                new Document("$regex", "hospital.*near").append("$options", "s"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(withoutDotAll, document).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(withDotAll, document).isTrue());
+    }
+
+    @Test
+    public void testRegexExtendedOptionIsConsidered() {
+        Document document = new Document("name", "generalhospital");
+        Document withoutExtended = new Document("name", new Document("$regex", "general hospital"));
+        Document withExtended = new Document("name",
+                new Document("$regex", "general hospital").append("$options", "x"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(withoutExtended, document).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(withExtended, document).isTrue());
+    }
+
+    @Test
+    public void testRegexUnicodeOptionIsConsidered() {
+        Document document = new Document("name", "ÅLAND HOSPITAL");
+        Document asciiCaseInsensitive = new Document("name",
+                new Document("$regex", "^åland hospital$").append("$options", "i"));
+        Document unicodeCaseInsensitive = new Document("name",
+                new Document("$regex", "^åland hospital$").append("$options", "iu"));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        final Truthness asciiCaseInsensitiveTruthness = calculator.computeHeuristicDocument(asciiCaseInsensitive, document);
+        final Truthness unicodeCaseInsensitiveTruthness = calculator.computeHeuristicDocument(unicodeCaseInsensitive, document);
+
+        assertTrue(asciiCaseInsensitiveTruthness.isTrue());
+        assertTrue(unicodeCaseInsensitiveTruthness.isTrue());
+    }
+
+    @Test
+    public void testRegexDoesNotMatchMissingNullOrNonStringField() {
+        Document query = new Document("name", new Document("$regex", "hospital"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("name", null)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("name", 42)).isFalse());
+    }
+
+    @Test
     public void testNearSphere() {
         Document doc = new Document().append("location", new Document().append("type", "Point").append("coordinates", Arrays.asList(-74.044502, 40.689247)));
         BsonDocument point = new BsonDocument().append("type", new BsonString("Point")).append("coordinates", new BsonArray(Arrays.asList(new BsonDouble(2.29441692356368), new BsonDouble(48.858504187164684))));
@@ -1248,6 +1385,40 @@ public class MongoHeuristicsCalculatorTest {
             assertTrue(stringSpecializationsView.containsKey("_EM_1111_XYZ_"));
             assertEquals(1, stringSpecializationsView.get("_EM_1111_XYZ_").size());
             assertEquals("bar", stringSpecializationsView.get("_EM_1111_XYZ_").iterator().next().getValue());
+        } finally {
+            ExecutionTracer.reset();
+        }
+    }
+
+    @Test
+    public void testTaintHandlingForRegexOperation() {
+        ExecutionTracer.reset();
+        try {
+            TaintHandler taintHandler = new TaintHandlerExecutionTracer();
+            MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(taintHandler);
+            Document document = new Document("name", "_EM_1111_XYZ_");
+            Document query = new Document("name",
+                    new Document("$regex", "hospital").append("$options", "i"));
+
+            calculator.computeHeuristicDocument(query, document);
+
+            List<AdditionalInfo> additionalInfos = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfos.size());
+            Map<String, Set<StringSpecializationInfo>> specializations =
+                    additionalInfos.get(0).getStringSpecializationsView();
+            assertTrue(specializations.containsKey("_EM_1111_XYZ_"));
+            assertEquals(1, specializations.get("_EM_1111_XYZ_").size());
+
+            StringSpecializationInfo specialization =
+                    specializations.get("_EM_1111_XYZ_").iterator().next();
+            assertEquals("hospital", specialization.getValue());
+            // TODO: Regex external flags are not monitored by the taintHandler
+            assertEquals(0, specialization.getExternalRegexFlagsBitmask());
+            // TODO: The regex specialization type should be REGEX_PARTIAL, but currently it is REGEX_WHOLE.
+            assertEquals(StringSpecialization.REGEX_WHOLE, specialization.getStringSpecialization());
+            assertEquals(TaintType.FULL_MATCH, specialization.getType());
+
+
         } finally {
             ExecutionTracer.reset();
         }

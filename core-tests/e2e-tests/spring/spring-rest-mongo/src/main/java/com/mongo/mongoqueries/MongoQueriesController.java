@@ -114,6 +114,12 @@ public class MongoQueriesController {
         return executeQuery(new Document("tags", new Document("$elemMatch", new Document("$eq", "b"))));
     }
 
+    @GetMapping("regex")
+    public ResponseEntity<Void> findRegex() {
+        return executeQuery(new Document("name",
+                new Document("$regex", "^jo").append("$options", "i")));
+    }
+
     @GetMapping("near")
     public ResponseEntity<Void> findNear() {
         return executeQuery(geoJsonNearQuery("$near"));
