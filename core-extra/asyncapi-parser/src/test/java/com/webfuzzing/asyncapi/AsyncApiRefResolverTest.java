@@ -2,8 +2,11 @@ package com.webfuzzing.asyncapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.webfuzzing.asyncapi.mapper.AsyncApiMapper;
+import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.DocumentLocation;
 import com.webfuzzing.asyncapi.models.DocumentLocationType;
+import com.webfuzzing.asyncapi.parser.AsyncApiParser;
+import com.webfuzzing.asyncapi.resolver.AsyncApiDocumentFetcher;
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver;
 import com.webfuzzing.asyncapi.resolver.RefLocations;
 import org.junit.jupiter.api.Test;
@@ -45,7 +48,9 @@ public class AsyncApiRefResolverTest {
                         + "    with/slash:\n"
                         + "      type: string\n"
                         + "    with~tilde:\n"
-                        + "      type: integer\n");
+                        + "      type: integer\n"
+                        + "    bad%zz:\n"
+                        + "      type: boolean\n");
     }
 
     @Test
@@ -84,6 +89,21 @@ public class AsyncApiRefResolverTest {
                 .resolveLocal(document(), "#/components/schemas/with~1slash").get("type").asText());
         assertEquals("integer", AsyncApiRefResolver
                 .resolveLocal(document(), "#/components/schemas/with~0tilde").get("type").asText());
+    }
+
+    @Test
+    public void testPercentEncodedPointerSegmentsAreDecoded() throws IOException {
+
+        //references are URIs, so a key may arrive percent-encoded as well as pointer-escaped
+        assertEquals("string", AsyncApiRefResolver
+                .resolveLocal(document(), "#/components/schemas/with%2Fslash").get("type").asText());
+
+        /*
+            "%zz" is not a valid escape. Rather than failing, the segment is taken as written --
+            and here that is a key which exists, so the fallback is observable.
+         */
+        assertEquals("boolean", AsyncApiRefResolver
+                .resolveLocal(document(), "#/components/schemas/bad%zz").get("type").asText());
     }
 
     @Test
@@ -155,6 +175,14 @@ public class AsyncApiRefResolverTest {
                 "https://example.com/shared.yaml",
                 RefLocations.resolveDocumentLocation(
                         "https://example.com/shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofLocal("/some/where/main.yaml"),
+                        messages));
+
+        //plain http is absolute just the same
+        assertEquals(
+                "http://example.com/shared.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "http://example.com/shared.yaml#/components/schemas/Thing",
                         DocumentLocation.ofLocal("/some/where/main.yaml"),
                         messages));
 
@@ -359,5 +387,148 @@ public class AsyncApiRefResolverTest {
                         messages));
 
         assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    // ------------------------------------------------------------------ importing other documents
+
+    private static final String SHARED_THING =
+            "components:\n"
+                    + "  schemas:\n"
+                    + "    Thing:\n"
+                    + "      type: string\n";
+
+    private static String mainReferring(String ref) {
+        return "asyncapi: 3.0.0\n"
+                + "info:\n"
+                + "  title: Split across documents\n"
+                + "  version: 1.0.0\n"
+                + "components:\n"
+                + "  messages:\n"
+                + "    m:\n"
+                + "      payload:\n"
+                + "        $ref: '" + ref + "'\n";
+    }
+
+    private static int importedSchemas(AsyncApiDocument document) {
+
+        int count = 0;
+
+        for (String key : document.getComponentSchemas().keySet()) {
+            if (key.startsWith("_ext_")) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private boolean warns(AsyncApiDocument document, String text) {
+
+        for (String warning : document.getWarnings()) {
+            if (warning.contains(text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Test
+    public void testAnotherDocumentIsFetchedFromARemoteLocation() {
+
+        List<String> fetched = new ArrayList<>();
+        List<DocumentLocationType> fetchedAs = new ArrayList<>();
+
+        /*
+            The fetcher is an interface precisely so that this can be tested without a server:
+            it is handed the absolute location and told how to read it, and hands back the text.
+         */
+        AsyncApiDocumentFetcher fetcher = (location, type) -> {
+            fetched.add(location);
+            fetchedAs.add(type);
+            return SHARED_THING;
+        };
+
+        AsyncApiDocument document = AsyncApiParser.parse(
+                mainReferring("shared.yaml#/components/schemas/Thing"),
+                DocumentLocation.ofRemote("https://example.com/api/main.yaml"),
+                fetcher);
+
+        //resolved against the referring URL, and read the way a URL is read
+        assertEquals(Arrays.asList("https://example.com/api/shared.yaml"), fetched);
+        assertEquals(Arrays.asList(DocumentLocationType.REMOTE), fetchedAs);
+
+        assertTrue(document.getWarnings().isEmpty(), document.getWarnings().toString());
+        assertEquals(1, importedSchemas(document));
+        assertTrue(document.getMessages().containsKey("m"));
+    }
+
+    @Test
+    public void testNoMoreThanAHundredDocumentsAreImported() {
+
+        /*
+            References are paths, and a server that answers every path -- or a symlink loop --
+            would be followed for ever without a ceiling. Here every location resolves to a
+            document, and the message points at one more of them than the ceiling allows.
+         */
+        StringBuilder main = new StringBuilder(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Too many neighbours\n"
+                        + "  version: 1.0.0\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    m:\n"
+                        + "      payload:\n"
+                        + "        type: object\n"
+                        + "        properties:\n");
+
+        for (int i = 0; i <= 100; i++) {
+            main.append("          p").append(i).append(":\n")
+                    .append("            $ref: 'doc").append(i).append(".yaml#/components/schemas/Thing'\n");
+        }
+
+        AsyncApiDocument document = AsyncApiParser.parse(
+                main.toString(),
+                DocumentLocation.ofRemote("https://example.com/main.yaml"),
+                (location, type) -> SHARED_THING);
+
+        assertEquals(100, importedSchemas(document));
+        assertTrue(warns(document, "More than 100 documents"), document.getWarnings().toString());
+
+        //the reference past the ceiling was left unresolved, and the message depending on it goes
+        assertFalse(document.getMessages().containsKey("m"));
+    }
+
+    @Test
+    public void testAReferenceToAWholeDocumentIsReported() {
+
+        //nothing after the '#': it names the other document itself rather than a component of it
+        AsyncApiDocument document = AsyncApiParser.parse(
+                mainReferring("shared.yaml#"),
+                DocumentLocation.ofRemote("https://example.com/main.yaml"),
+                (location, type) -> SHARED_THING);
+
+        assertTrue(warns(document, "whole document"), document.getWarnings().toString());
+        assertFalse(document.getMessages().containsKey("m"));
+    }
+
+    @Test
+    public void testAReferenceWithNoFragmentAtAllIsReportedAndNotFetched() {
+
+        List<String> fetched = new ArrayList<>();
+
+        //not a $ref at all by the specification's definition, so there is nothing to retrieve
+        AsyncApiDocument document = AsyncApiParser.parse(
+                mainReferring("shared.yaml"),
+                DocumentLocation.ofRemote("https://example.com/main.yaml"),
+                (location, type) -> {
+                    fetched.add(location);
+                    return SHARED_THING;
+                });
+
+        assertTrue(fetched.isEmpty(), "nothing should have been fetched, but got " + fetched);
+        assertTrue(warns(document, "contains no #"), document.getWarnings().toString());
+        assertFalse(document.getMessages().containsKey("m"));
     }
 }
