@@ -55,6 +55,8 @@ assertion
  | PAREN_open QUESTION EQUAL disjunction PAREN_close                  // lookahead (?=...)
  | PAREN_open QUESTION LESS_THAN EQUAL disjunction PAREN_close        // lookbehind (?<=...)
 //// | '(' '?' '!' disjunction ')'
+ | StartOfInputAssertion // \A
+ | EndOfInputAssertion // \z
  ;
 
 quantifier
