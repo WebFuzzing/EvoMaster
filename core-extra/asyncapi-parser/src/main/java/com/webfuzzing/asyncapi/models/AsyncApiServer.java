@@ -3,6 +3,7 @@ package com.webfuzzing.asyncapi.models;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An entry under {@code servers:}, i.e. one broker the API is exposed on.
@@ -113,9 +114,9 @@ public class AsyncApiServer {
         private List<String> security = Collections.emptyList();
 
         private Builder(String name, String host, String protocol) {
-            this.name = name;
-            this.host = host;
-            this.protocol = protocol;
+            this.name = Objects.requireNonNull(name, "name");
+            this.host = Objects.requireNonNull(host, "host");
+            this.protocol = Objects.requireNonNull(protocol, "protocol");
         }
 
         public Builder protocolVersion(String protocolVersion) {
@@ -126,11 +127,11 @@ public class AsyncApiServer {
         public Builder pathname(String pathname) { this.pathname = pathname; return this; }
 
         public Builder variables(Map<String, AsyncApiServerVariable> variables) {
-            this.variables = variables;
+            this.variables = Objects.requireNonNull(variables, "variables");
             return this;
         }
 
-        public Builder security(List<String> security) { this.security = security; return this; }
+        public Builder security(List<String> security) { this.security = Objects.requireNonNull(security, "security"); return this; }
 
         public AsyncApiServer build() {
             return new AsyncApiServer(this);

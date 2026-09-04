@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A parsed AsyncAPI 3.x document, normalised so that a caller never has to walk the raw
@@ -300,9 +301,9 @@ public class AsyncApiDocument {
         private List<String> warnings = Collections.emptyList();
 
         private Builder(String rawText, DocumentLocation sourceLocation, String version) {
-            this.rawText = rawText;
-            this.sourceLocation = sourceLocation;
-            this.version = version;
+            this.rawText = Objects.requireNonNull(rawText, "rawText");
+            this.sourceLocation = Objects.requireNonNull(sourceLocation, "sourceLocation");
+            this.version = Objects.requireNonNull(version, "version");
         }
 
         public Builder defaultContentType(String defaultContentType) {
@@ -310,28 +311,28 @@ public class AsyncApiDocument {
             return this;
         }
 
-        public Builder servers(Map<String, AsyncApiServer> servers) { this.servers = servers; return this; }
+        public Builder servers(Map<String, AsyncApiServer> servers) { this.servers = Objects.requireNonNull(servers, "servers"); return this; }
 
-        public Builder channels(Map<String, AsyncApiChannel> channels) { this.channels = channels; return this; }
+        public Builder channels(Map<String, AsyncApiChannel> channels) { this.channels = Objects.requireNonNull(channels, "channels"); return this; }
 
         public Builder operations(Map<String, AsyncApiOperation> operations) {
-            this.operations = operations;
+            this.operations = Objects.requireNonNull(operations, "operations");
             return this;
         }
 
-        public Builder messages(Map<String, AsyncApiMessage> messages) { this.messages = messages; return this; }
+        public Builder messages(Map<String, AsyncApiMessage> messages) { this.messages = Objects.requireNonNull(messages, "messages"); return this; }
 
         public Builder componentSchemas(Map<String, JsonNode> componentSchemas) {
-            this.componentSchemas = componentSchemas;
+            this.componentSchemas = Objects.requireNonNull(componentSchemas, "componentSchemas");
             return this;
         }
 
         public Builder securitySchemes(Map<String, AsyncApiSecurityScheme> securitySchemes) {
-            this.securitySchemes = securitySchemes;
+            this.securitySchemes = Objects.requireNonNull(securitySchemes, "securitySchemes");
             return this;
         }
 
-        public Builder warnings(List<String> warnings) { this.warnings = warnings; return this; }
+        public Builder warnings(List<String> warnings) { this.warnings = Objects.requireNonNull(warnings, "warnings"); return this; }
 
         public AsyncApiDocument build() {
             return new AsyncApiDocument(this);

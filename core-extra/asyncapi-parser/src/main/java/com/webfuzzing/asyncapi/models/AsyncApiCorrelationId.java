@@ -1,5 +1,7 @@
 package com.webfuzzing.asyncapi.models;
 
+import java.util.Objects;
+
 /**
  * A parsed {@code correlationId.location}, i.e. where in a message the value that pairs a
  * request with its reply is to be written and read.
@@ -35,9 +37,9 @@ public class AsyncApiCorrelationId {
     private final String description;
 
     public AsyncApiCorrelationId(String raw, Source source, String pointer, String description) {
-        this.raw = raw;
-        this.source = source;
-        this.pointer = pointer;
+        this.raw = Objects.requireNonNull(raw, "raw");
+        this.source = Objects.requireNonNull(source, "source");
+        this.pointer = Objects.requireNonNull(pointer, "pointer");
         this.description = description;
         this.fieldName = fieldNameOf(pointer);
     }

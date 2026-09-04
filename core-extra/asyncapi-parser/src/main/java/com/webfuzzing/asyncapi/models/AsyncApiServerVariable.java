@@ -2,6 +2,7 @@ package com.webfuzzing.asyncapi.models;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * One entry under {@code servers.<server>.variables}. Same shape as an OpenAPI server variable.
@@ -26,9 +27,9 @@ public class AsyncApiServerVariable {
             String defaultValue,
             List<String> enumeration,
             String description) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
         this.defaultValue = defaultValue;
-        this.enumeration = Collections.unmodifiableList(enumeration);
+        this.enumeration = Collections.unmodifiableList(Objects.requireNonNull(enumeration, "enumeration"));
         this.description = description;
     }
 

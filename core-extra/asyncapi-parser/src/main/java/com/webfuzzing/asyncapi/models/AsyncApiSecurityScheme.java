@@ -1,5 +1,7 @@
 package com.webfuzzing.asyncapi.models;
 
+import java.util.Objects;
+
 /**
  * An entry under {@code components.securitySchemes}, i.e. how a client authenticates to the
  * broker.
@@ -31,8 +33,8 @@ public class AsyncApiSecurityScheme {
             String scheme,
             String bearerFormat,
             String description) {
-        this.name = name;
-        this.type = type;
+        this.name = Objects.requireNonNull(name, "name");
+        this.type = Objects.requireNonNull(type, "type");
         this.location = location;
         this.scheme = scheme;
         this.bearerFormat = bearerFormat;
