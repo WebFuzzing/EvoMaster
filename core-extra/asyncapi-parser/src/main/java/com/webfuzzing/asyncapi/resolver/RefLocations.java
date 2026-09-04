@@ -40,9 +40,16 @@ public class RefLocations {
      */
     private static final String PROTOCOL_RELATIVE_PREFIX = "//";
 
-    private static final String HTTP_PREFIX = "http" + PROTOCOL_SEPARATOR;
+    /**
+     * The schemes whose locations are already absolute, so need no resolving.
+     */
+    private static final String HTTP_SCHEME = "http";
 
-    private static final String HTTPS_PREFIX = "https" + PROTOCOL_SEPARATOR;
+    private static final String HTTPS_SCHEME = "https";
+
+    private static final String HTTP_PREFIX = HTTP_SCHEME + PROTOCOL_SEPARATOR;
+
+    private static final String HTTPS_PREFIX = HTTPS_SCHEME + PROTOCOL_SEPARATOR;
 
     /**
      * What a relative location is resolved against, as discussed in the specification: a
@@ -52,6 +59,17 @@ public class RefLocations {
     private static final String PARENT_FOLDER = ".." + PATH_SEPARATOR;
 
     private RefLocations() {
+    }
+
+    /**
+     * Whether the location is an absolute http(s) URL, and so is already where the document
+     * lives rather than something to resolve against the document referring to it.
+     */
+    public static boolean isHttpLocation(String location) {
+
+        String lower = location.toLowerCase(Locale.ENGLISH);
+
+        return lower.startsWith(HTTP_PREFIX) || lower.startsWith(HTTPS_PREFIX);
     }
 
     /**
@@ -77,9 +95,7 @@ public class RefLocations {
             return null;
         }
 
-        String lower = rawLocation.toLowerCase(Locale.ENGLISH);
-
-        if (lower.startsWith(HTTP_PREFIX) || lower.startsWith(HTTPS_PREFIX)) {
+        if (isHttpLocation(rawLocation)) {
             //location is absolute, so no need to do anything
             return rawLocation;
         }
