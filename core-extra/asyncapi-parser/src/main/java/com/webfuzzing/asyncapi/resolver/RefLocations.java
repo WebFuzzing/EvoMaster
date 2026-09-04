@@ -4,6 +4,7 @@ import com.webfuzzing.asyncapi.models.DocumentLocation;
 import com.webfuzzing.asyncapi.models.DocumentLocationType;
 
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 
@@ -52,11 +53,10 @@ public class RefLocations {
     private static final String HTTPS_PREFIX = HTTPS_SCHEME + PROTOCOL_SEPARATOR;
 
     /**
-     * What a relative location is resolved against, as discussed in the specification: a
-     * reference is relative to the folder holding the document that makes it, not to the
-     * document itself.
+     * A file on disk written as a URL rather than as a path. Resolved as a URI, like any other
+     * URL, and not through the file system.
      */
-    private static final String PARENT_FOLDER = ".." + PATH_SEPARATOR;
+    private static final String FILE_PREFIX = "file" + PROTOCOL_SEPARATOR;
 
     private RefLocations() {
     }
@@ -122,15 +122,59 @@ public class RefLocations {
             return csl.substring(0, separator) + PROTOCOL_SEPARATOR + rawLocation;
         }
 
-        //if arrive here, it is a relative path
-        String delimiter = csl.endsWith(PATH_SEPARATOR) ? "" : PATH_SEPARATOR;
+        //if we arrive here, it is a relative location
+        return resolveRelative(rawLocation, currentSource, messages);
+    }
 
-        String location = csl + delimiter + PARENT_FOLDER + rawLocation;
+    /**
+     * Resolve a relative location against the folder holding the document that refers to it,
+     * which is what the specification prescribes.
+     *
+     * Which resolver does that depends on what kind of location the referring document has,
+     * because each kind already has one in the JDK that knows its rules:
+     *
+     * <ul>
+     * <li>a URL, a {@code file:} URL, or a classpath path is resolved as a URI, per RFC 3986.
+     *     That defines what a trailing slash means and collapses "." and ".." segments, so two
+     *     references to the same document produce the same string -- which matters, as that
+     *     string is what tells imported documents apart;</li>
+     * <li>a plain file path is resolved through the file system, which knows the platform's
+     *     separator. A path is not a URI: it may contain a space, or on Windows backslashes and
+     *     a drive letter, none of which {@link URI} accepts.</li>
+     * </ul>
+     *
+     * This used to build "<document>/../<target>" and normalize it with {@link URI}, which
+     * failed both ways: {@link URI} rejected any path that was not a legal URI, and the
+     * un-normalized string returned instead was unusable too, since ".." cannot traverse
+     * through a file. Every external reference was then dropped, with a warning saying the
+     * file did not exist, purely because of where the project sat on disk.
+     */
+    private static String resolveRelative(
+            String rawLocation,
+            DocumentLocation currentSource,
+            List<String> messages) {
+
+        String csl = currentSource.getLocation();
+
+        boolean plainPath = currentSource.getType() == DocumentLocationType.LOCAL
+                && !csl.toLowerCase(Locale.ENGLISH).startsWith(FILE_PREFIX);
+
+        if (plainPath) {
+            return Paths.get(csl).resolveSibling(rawLocation).normalize().toString();
+        }
 
         try {
-            return new URI(location).normalize().toString();
-        } catch (Exception e) {
-            return location;
+            return URI.create(csl).resolve(rawLocation).toString();
+        } catch (IllegalArgumentException e) {
+            /*
+                The referring document's location is a URL or classpath path that is not a legal
+                URI -- one written with a space in it, say. There is then no well-defined way to
+                resolve a relative reference from it, so this says why rather than guessing.
+             */
+            messages.add(
+                    "Cannot resolve '" + rawLocation + "' against '" + csl + "', which is not a valid"
+                            + " URI: " + e.getMessage());
+            return null;
         }
     }
 

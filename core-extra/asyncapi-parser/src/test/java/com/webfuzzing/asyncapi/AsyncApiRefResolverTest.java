@@ -185,6 +185,102 @@ public class AsyncApiRefResolverTest {
     }
 
     @Test
+    public void testDotAndDotDotSegmentsAreCollapsed() {
+
+        List<String> messages = new ArrayList<>();
+
+        /*
+            The resolved location is what tells imported documents apart, so two references to
+            the same document must come out as the same string however they were written. A
+            plain path is resolved through the file system and a URL per RFC 3986; both collapse
+            these segments.
+         */
+        assertEquals(
+                "/a/common/x.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "../common/x.yaml#/components/schemas/X",
+                        DocumentLocation.ofLocal("/a/b/main.yaml"),
+                        messages));
+        assertEquals(
+                "/a/b/shared.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "./shared.yaml#/components/schemas/X",
+                        DocumentLocation.ofLocal("/a/b/main.yaml"),
+                        messages));
+        assertEquals(
+                "https://example.com/common/x.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "../common/x.yaml#/components/schemas/X",
+                        DocumentLocation.ofRemote("https://example.com/a/main.yaml"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testAPathWithASpaceIsNotAUriAndIsResolvedAsAPath() {
+
+        List<String> messages = new ArrayList<>();
+
+        //java.net.URI would reject this; a path is resolved through the file system instead
+        assertEquals(
+                "/has space/shared.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofLocal("/has space/main.yaml"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testADocumentServedFromADirectoryUrl() {
+
+        List<String> messages = new ArrayList<>();
+
+        //a trailing slash means the URL is the folder itself, so nothing is stripped from it
+        assertEquals(
+                "https://example.com/docs/shared.yaml",
+                RefLocations.resolveDocumentLocation(
+                        "shared.yaml#/components/schemas/Thing",
+                        DocumentLocation.ofRemote("https://example.com/docs/"),
+                        messages));
+
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testAFileUrlIsResolvedAsAUrl() {
+
+        List<String> messages = new ArrayList<>();
+
+        String resolved = RefLocations.resolveDocumentLocation(
+                "shared.yaml#/components/schemas/Thing",
+                DocumentLocation.ofLocal("file:///a/b/main.yaml"),
+                messages);
+
+        //URI is free to write one slash or three after "file:"; both name the same file
+        assertTrue(resolved.startsWith("file:"), resolved);
+        assertTrue(resolved.endsWith("/a/b/shared.yaml"), resolved);
+        assertTrue(messages.isEmpty(), messages.toString());
+    }
+
+    @Test
+    public void testAReferringUrlThatIsNotAValidUriIsReported() {
+
+        List<String> messages = new ArrayList<>();
+
+        //a URL is a URI, and one with a space in it is not one; there is no right answer here
+        assertNull(RefLocations.resolveDocumentLocation(
+                "shared.yaml#/components/schemas/Thing",
+                DocumentLocation.ofRemote("https://example.com/has space/main.yaml"),
+                messages));
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0).contains("not a valid URI"), messages.toString());
+    }
+
+    @Test
     public void testAProtocolRelativeReferenceBorrowsTheProtocol() {
 
         List<String> messages = new ArrayList<>();
