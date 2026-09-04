@@ -153,7 +153,7 @@ public class AsyncApiRefResolverTest {
 
         assertEquals(
                 "https://example.com/shared.yaml",
-                RefLocations.computeLocation(
+                RefLocations.resolveDocumentLocation(
                         "https://example.com/shared.yaml#/components/schemas/Thing",
                         DocumentLocation.ofLocal("/some/where/main.yaml"),
                         messages));
@@ -168,7 +168,7 @@ public class AsyncApiRefResolverTest {
 
         assertEquals(
                 "/some/where/shared.yaml",
-                RefLocations.computeLocation(
+                RefLocations.resolveDocumentLocation(
                         "shared.yaml#/components/schemas/Thing",
                         DocumentLocation.ofLocal("/some/where/main.yaml"),
                         messages));
@@ -176,7 +176,7 @@ public class AsyncApiRefResolverTest {
         //a document one directory down means that directory, not the primary document's
         assertEquals(
                 "/some/where/sub/shared.yaml",
-                RefLocations.computeLocation(
+                RefLocations.resolveDocumentLocation(
                         "shared.yaml#/components/schemas/Thing",
                         DocumentLocation.ofLocal("/some/where/sub/nested.yaml"),
                         messages));
@@ -191,7 +191,7 @@ public class AsyncApiRefResolverTest {
 
         assertEquals(
                 "https://other.com/shared.yaml",
-                RefLocations.computeLocation(
+                RefLocations.resolveDocumentLocation(
                         "//other.com/shared.yaml#/components/schemas/Thing",
                         DocumentLocation.ofRemote("https://example.com/main.yaml"),
                         messages));
@@ -209,7 +209,7 @@ public class AsyncApiRefResolverTest {
             the only sensible answer -- taking the text apart regardless would read past the
             start of the string.
          */
-        assertNull(RefLocations.computeLocation(
+        assertNull(RefLocations.resolveDocumentLocation(
                 "//other.com/shared.yaml#/components/schemas/Thing",
                 DocumentLocation.ofLocal("/some/where/main.yaml"),
                 messages));
@@ -223,7 +223,7 @@ public class AsyncApiRefResolverTest {
 
         List<String> messages = new ArrayList<>();
 
-        assertNull(RefLocations.computeLocation(
+        assertNull(RefLocations.resolveDocumentLocation(
                 "shared.yaml", DocumentLocation.ofLocal("/some/where/main.yaml"), messages));
 
         assertEquals(1, messages.size());
@@ -234,7 +234,7 @@ public class AsyncApiRefResolverTest {
     public void testARelativeReferenceFromADocumentWithNoLocation() {
 
         //a document handed over as text has no neighbours for a relative reference to name
-        assertThrows(IllegalArgumentException.class, () -> RefLocations.computeLocation(
+        assertThrows(IllegalArgumentException.class, () -> RefLocations.resolveDocumentLocation(
                 "shared.yaml#/components/schemas/Thing",
                 DocumentLocation.MEMORY,
                 new ArrayList<String>()));
@@ -257,7 +257,7 @@ public class AsyncApiRefResolverTest {
         //a resource path is resolved the same way a file path is
         assertEquals(
                 "/asyncapi/artificial/shared.yaml",
-                RefLocations.computeLocation(
+                RefLocations.resolveDocumentLocation(
                         "shared.yaml#/components/schemas/Thing",
                         new DocumentLocation("/asyncapi/artificial/main.yaml", DocumentLocationType.RESOURCE),
                         messages));
