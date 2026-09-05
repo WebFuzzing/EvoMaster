@@ -22,9 +22,9 @@ object DynamoDbActionTransformer {
                             attribute.attributeName,
                             attribute.type,
                             when (attribute.type) {
-                                DynamoDbScalarTypeDto.S -> (attribute.gene as StringGene).value
-                                DynamoDbScalarTypeDto.N -> (attribute.gene as BigDecimalGene).value.toPlainString()
-                                DynamoDbScalarTypeDto.BOOL -> (attribute.gene as BooleanGene).value.toString()
+                                DynamoDbScalarTypeDto.STRING -> (attribute.gene as StringGene).value
+                                DynamoDbScalarTypeDto.NUMBER -> (attribute.gene as BigDecimalGene).value.toPlainString()
+                                DynamoDbScalarTypeDto.BOOLEAN -> (attribute.gene as BooleanGene).value.toString()
                             }
                         )
                     }

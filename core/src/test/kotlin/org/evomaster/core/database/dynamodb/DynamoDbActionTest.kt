@@ -19,7 +19,7 @@ class DynamoDbActionTest {
     fun actionExposesStableMetadataAndCopiesGenesIndependently() {
         val original = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.S, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")))
         )
 
         val copy = original.copy() as DynamoDbAction
@@ -27,7 +27,7 @@ class DynamoDbActionTest {
 
         assertEquals("DynamoDB_INSERT_WorldCupPlayers", original.getName())
         assertEquals(DynamoDbAction::class.java.name, original.getActionGroupKey())
-        assertEquals("WorldCupPlayers|country:S=Argentina", original.insertionKey())
+        assertEquals("WorldCupPlayers|country:STRING=Argentina", original.insertionKey())
         assertSame(original.attributes.single().gene, original.seeTopGenes().single())
         assertNotSame(original.attributes.single().gene, copy.attributes.single().gene)
         assertEquals("Argentina", (original.attributes.single().gene as StringGene).value)
@@ -38,7 +38,7 @@ class DynamoDbActionTest {
     fun actionResultTracksInsertionOutcomeAndMatchesDynamoDbActions() {
         val action = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.S, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")))
         )
         val result = DynamoDbActionResult("source")
 
@@ -54,7 +54,7 @@ class DynamoDbActionTest {
     fun executionPreservesFailedQueriesAndAcceptsMissingDto() {
         val query = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.S, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"))
         )
         val dto = DynamoDbExecutionsDto()
         dto.failedQueries.add(query)

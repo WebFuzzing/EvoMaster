@@ -43,11 +43,11 @@ object DynamoDbInsertBuilder {
         val type = attribute.type ?: return null
         val value = attribute.value ?: return null
         val gene = when (type) {
-            DynamoDbScalarTypeDto.S -> StringGene(attribute.attributeName, value)
-            DynamoDbScalarTypeDto.N -> value.toBigDecimalOrNull()?.let {
+            DynamoDbScalarTypeDto.STRING -> StringGene(attribute.attributeName, value)
+            DynamoDbScalarTypeDto.NUMBER -> value.toBigDecimalOrNull()?.let {
                 BigDecimalGene(attribute.attributeName, it)
             } ?: return null
-            DynamoDbScalarTypeDto.BOOL -> BooleanGene(attribute.attributeName, value.toBoolean())
+            DynamoDbScalarTypeDto.BOOLEAN -> BooleanGene(attribute.attributeName, value.toBoolean())
         }
 
         return DynamoDbAttributeGene(attribute.attributeName, type, gene)
