@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,18 +39,24 @@ public final class DynamoDbDsl implements DynamoDbSequenceDsl, DynamoDbStatement
     }
 
     @Override
-    public DynamoDbStatementDsl s(String name, String value) {
-        return attribute(name, DynamoDbScalarTypeDto.S, value);
-    }
-
-    @Override
-    public DynamoDbStatementDsl n(String name, String value) {
-        return attribute(name, DynamoDbScalarTypeDto.N, value);
-    }
-
-    @Override
-    public DynamoDbStatementDsl bool(String name, boolean value) {
-        return attribute(name, DynamoDbScalarTypeDto.BOOL, Boolean.toString(value));
+    public DynamoDbStatementDsl d(String attributeName, String printableValue) {
+        if (printableValue == null) {
+            throw new IllegalArgumentException("Unspecified attribute value");
+        }
+        if (isStringLiteral(printableValue)) {
+            String value = printableValue.substring(1, printableValue.length() - 1).replace("''", "'");
+            return attribute(attributeName, DynamoDbScalarTypeDto.STRING, value);
+        }
+        if ("true".equalsIgnoreCase(printableValue) || "false".equalsIgnoreCase(printableValue)) {
+            return attribute(attributeName, DynamoDbScalarTypeDto.BOOLEAN,
+                    Boolean.toString(Boolean.parseBoolean(printableValue)));
+        }
+        try {
+            new BigDecimal(printableValue);
+            return attribute(attributeName, DynamoDbScalarTypeDto.NUMBER, printableValue);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Unsupported DynamoDB scalar value: " + printableValue, e);
+        }
     }
 
     @Override
@@ -71,6 +78,14 @@ public final class DynamoDbDsl implements DynamoDbSequenceDsl, DynamoDbStatement
         }
         current.attributes.add(new DynamoDbAttributeValueDto(name, type, value));
         return this;
+    }
+
+    /**
+     * @param value value to inspect
+     * @return whether the value is enclosed in single quotes
+     */
+    private boolean isStringLiteral(String value) {
+        return value.length() >= 2 && value.charAt(0) == '\'' && value.charAt(value.length() - 1) == '\'';
     }
 
     private void checkOpen() {

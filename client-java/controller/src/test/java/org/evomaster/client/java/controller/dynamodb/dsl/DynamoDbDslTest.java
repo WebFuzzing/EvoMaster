@@ -17,20 +17,37 @@ public class DynamoDbDslTest {
     public void testBuildsWorldCupPlayerInsertions() {
         List<DynamoDbInsertionDto> insertions = DynamoDbDsl.dynamoDb()
                 .insertInto("WorldCupPlayers")
-                .s("country", "Argentina")
-                .n("fifaId", "10")
-                .bool("captain", true)
+                .d("country", "'Argentina'")
+                .d("fifaId", "10")
+                .d("captain", "true")
                 .insertInto("WorldCupPlayers")
-                .s("country", "Brazil")
-                .n("fifaId", "1")
+                .d("country", "'Brazil'")
+                .d("fifaId", "1")
                 .dtos();
 
         assertEquals(2, insertions.size());
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.S, "Argentina");
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.N, "10");
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "captain", DynamoDbScalarTypeDto.BOOL, "true");
-        assertInsertion(insertions.get(1), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.S, "Brazil");
-        assertInsertion(insertions.get(1), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.N, "1");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Argentina");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.NUMBER, "10");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
+        assertInsertion(insertions.get(1), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Brazil");
+        assertInsertion(insertions.get(1), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.NUMBER, "1");
+    }
+
+    @Test
+    public void testDistinguishesQuotedWorldCupPlayerValues() {
+        DynamoDbInsertionDto insertion = DynamoDbDsl.dynamoDb()
+                .insertInto("WorldCupPlayers")
+                .d("shirtNumber", "'10'")
+                .d("captainLabel", "'true'")
+                .d("goals", "3e1")
+                .d("captain", "TRUE")
+                .dtos()
+                .get(0);
+
+        assertInsertion(insertion, "WorldCupPlayers", "shirtNumber", DynamoDbScalarTypeDto.STRING, "10");
+        assertInsertion(insertion, "WorldCupPlayers", "captainLabel", DynamoDbScalarTypeDto.STRING, "true");
+        assertInsertion(insertion, "WorldCupPlayers", "goals", DynamoDbScalarTypeDto.NUMBER, "3e1");
+        assertInsertion(insertion, "WorldCupPlayers", "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
     }
 
     @Test
@@ -39,7 +56,12 @@ public class DynamoDbDslTest {
         assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb().insertInto(""));
 
         DynamoDbStatementDsl statement = (DynamoDbStatementDsl) DynamoDbDsl.dynamoDb();
-        assertThrows(IllegalStateException.class, () -> statement.s("country", "Argentina"));
+        assertThrows(IllegalStateException.class, () -> statement.d("country", "'Argentina'"));
+
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb()
+                .insertInto("WorldCupPlayers").d("country", null));
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb()
+                .insertInto("WorldCupPlayers").d("country", "Argentina"));
 
         DynamoDbStatementDsl completed = DynamoDbDsl.dynamoDb().insertInto("WorldCupPlayers");
         completed.dtos();
