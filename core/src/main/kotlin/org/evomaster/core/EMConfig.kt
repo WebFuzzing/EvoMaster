@@ -2288,6 +2288,27 @@ class EMConfig {
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
+
+    /**
+     * Enum that enables and disables the generation of individuals based on Arazzo Workflows.
+     */
+    enum class ArazzoStrategy {
+        NONE,
+        ENABLED
+    }
+
+    @Experimental
+    @Cfg("Enable workflow-based sampling from an Arazzo document. " +
+            "Only applicable for REST with MIO.")
+    var arazzoStrategy = ArazzoStrategy.NONE
+
+    fun isEnabledArazzoStrategy() = isUsingAdvancedTechniques() && arazzoStrategy != ArazzoStrategy.NONE
+
+    @Experimental
+    @Cfg("Probability of controlling the creation of Arazzo individuals.")
+    @Probability
+    var probOfArazzoSampling = 0.5
+
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
@@ -3388,6 +3409,10 @@ class EMConfig {
             " This is just an heuristics though, and unrestricted strings would still be sampled with a given probability.")
     var inferFormatFromNames = false
 
+
+    @Experimental
+    @Cfg("arazzo location in disk")
+    var arazzoLocation: String? = null
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
