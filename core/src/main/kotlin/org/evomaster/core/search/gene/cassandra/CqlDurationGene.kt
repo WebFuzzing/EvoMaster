@@ -21,7 +21,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * with at most one leading "-", which applies to the whole value, so a duration mixing signs has no
  * representation in CQL.
  *
- * Note that the representation is not unique, as all the amounts being zero and [negative] being
+ * Note that the representation is not unique, as all the amounts being zero and [isNegative] being
  * true renders "-0mo0d0ns", ie the same value as the positive zero duration spelled differently.
  */
 class CqlDurationGene(
@@ -33,15 +33,15 @@ class CqlDurationGene(
      * Whether the duration is negative, ie the sign shared by the three amounts it is composed of.
      * Explicitly defaulted to false, as [BooleanGene] defaults to true.
      */
-    val negative: BooleanGene = BooleanGene("negative", false)
-) : CompositeFixedGene(name, mutableListOf(months, days, nanos, negative)) {
+    val isNegative: BooleanGene = BooleanGene("negative", false)
+) : CompositeFixedGene(name, mutableListOf(months, days, nanos, isNegative)) {
 
     override fun copyContent(): Gene = CqlDurationGene(
         name,
         months.copy() as IntegerGene,
         days.copy() as IntegerGene,
         nanos.copy() as LongGene,
-        negative.copy() as BooleanGene
+        isNegative.copy() as BooleanGene
     )
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
@@ -52,7 +52,7 @@ class CqlDurationGene(
         months.randomize(randomness, tryToForceNewValue)
         days.randomize(randomness, tryToForceNewValue)
         nanos.randomize(randomness, tryToForceNewValue)
-        negative.randomize(randomness, tryToForceNewValue)
+        isNegative.randomize(randomness, tryToForceNewValue)
     }
 
     override fun getValueAsPrintableString(
@@ -70,7 +70,7 @@ class CqlDurationGene(
      * all zero.
      */
     override fun getValueAsRawString(): String {
-        val sign = if (negative.value) "-" else ""
+        val sign = if (isNegative.value) "-" else ""
         return "$sign${months.value}mo${days.value}d${nanos.value}ns"
     }
 
@@ -82,7 +82,7 @@ class CqlDurationGene(
         return this.months.unsafeCopyValueFrom(other.months)
                 && this.days.unsafeCopyValueFrom(other.days)
                 && this.nanos.unsafeCopyValueFrom(other.nanos)
-                && this.negative.unsafeCopyValueFrom(other.negative)
+                && this.isNegative.unsafeCopyValueFrom(other.isNegative)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -93,7 +93,7 @@ class CqlDurationGene(
         return this.months.containsSameValueAs(other.months)
                 && this.days.containsSameValueAs(other.days)
                 && this.nanos.containsSameValueAs(other.nanos)
-                && this.negative.containsSameValueAs(other.negative)
+                && this.isNegative.containsSameValueAs(other.isNegative)
     }
 
     override fun customShouldApplyShallowMutation(

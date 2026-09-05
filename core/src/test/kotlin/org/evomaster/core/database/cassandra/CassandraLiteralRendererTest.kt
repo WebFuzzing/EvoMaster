@@ -89,7 +89,7 @@ class CassandraLiteralRendererTest {
 
         assertEquals("1mo2d3ns", CassandraLiteralRenderer.toCqlLiteral(gene))
 
-        gene.negative.value = true
+        gene.isNegative.value = true
         assertEquals("-1mo2d3ns", CassandraLiteralRenderer.toCqlLiteral(gene))
     }
 

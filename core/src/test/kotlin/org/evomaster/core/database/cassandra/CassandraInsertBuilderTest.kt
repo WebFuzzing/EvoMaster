@@ -1,5 +1,7 @@
 package org.evomaster.core.database.cassandra
 
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto
 import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,9 +14,19 @@ class CassandraInsertBuilderTest {
 
     private val builder = CassandraInsertBuilder()
 
+    private fun schema(keyspace: String, table: String, vararg columns: CassandraColumnDto) =
+        CassandraTableSchemaDto(keyspace, table, columns.toList())
+
+    private fun column(name: String, cqlType: String) = CassandraColumnDto(name, cqlType, false, false)
+
+    private fun partitionKey(name: String, cqlType: String) = CassandraColumnDto(name, cqlType, true, false)
+
+    private fun clusteringColumn(name: String, cqlType: String) = CassandraColumnDto(name, cqlType, false, true)
+
     @Test
     fun testOneGenePerColumn() {
-        val action = builder.createCassandraInsertionAction("ks", "users", "id uuid PARTITION KEY, name text")
+        val action = builder.createCassandraInsertionAction(
+            schema("ks", "users", partitionKey("id", "uuid"), column("name", "text")))
 
         assertEquals(listOf("id", "name"), action.seeTopGenes().map { it.name })
         assertTrue(action.seeTopGenes()[0] is UUIDGene)
@@ -23,7 +35,8 @@ class CassandraInsertBuilderTest {
 
     @Test
     fun testKeyspaceAndTableAreKept() {
-        val action = builder.createCassandraInsertionAction("ks", "users", "id uuid PARTITION KEY")
+        val action = builder.createCassandraInsertionAction(
+            schema("ks", "users", partitionKey("id", "uuid")))
 
         assertEquals("ks", action.keyspace)
         assertEquals("users", action.table)
@@ -31,7 +44,8 @@ class CassandraInsertBuilderTest {
 
     @Test
     fun testActionName() {
-        val action = builder.createCassandraInsertionAction("ks", "users", "id uuid PARTITION KEY")
+        val action = builder.createCassandraInsertionAction(
+            schema("ks", "users", partitionKey("id", "uuid")))
 
         assertEquals("CASSANDRA_Insert_ks_users", action.getName())
     }
@@ -39,7 +53,10 @@ class CassandraInsertBuilderTest {
     @Test
     fun testKeyRolesAreKept() {
         val action = builder.createCassandraInsertionAction(
-            "ks", "events", "id uuid PARTITION KEY, created timestamp CLUSTERING, note text")
+            schema("ks", "events",
+                partitionKey("id", "uuid"),
+                clusteringColumn("created", "timestamp"),
+                column("note", "text")))
 
         assertTrue(action.columns[0].isPartitionKey)
         assertTrue(action.columns[1].isClusteringColumn)
@@ -53,7 +70,10 @@ class CassandraInsertBuilderTest {
     @Test
     fun testColumnsWithUnsupportedTypeAreSkipped() {
         val action = builder.createCassandraInsertionAction(
-            "ks", "users", "id uuid PARTITION KEY, picture blob, name text")
+            schema("ks", "users",
+                partitionKey("id", "uuid"),
+                column("picture", "blob"),
+                column("name", "text")))
 
         assertEquals(listOf("id", "name"), action.seeTopGenes().map { it.name })
         assertEquals(listOf("id", "name"), action.columns.map { it.name })
@@ -64,10 +84,10 @@ class CassandraInsertBuilderTest {
      */
     @Test
     fun testTableWithNoSupportedColumnIsRejected() {
-        assertThrows<IllegalArgumentException> {
-            builder.createCassandraInsertionAction("ks", "blobs", "content blob")
-        }
-        assertFalse(builder.canBuildInsertionFor("content blob"))
+        val schema = schema("ks", "blobs", column("content", "blob"))
+
+        assertThrows<IllegalArgumentException> { builder.createCassandraInsertionAction(schema) }
+        assertFalse(builder.canBuildInsertionFor(schema))
     }
 
     /**
@@ -76,31 +96,39 @@ class CassandraInsertBuilderTest {
      */
     @Test
     fun testTableWithUnsupportedPartitionKeyIsRejected() {
-        assertThrows<IllegalArgumentException> {
-            builder.createCassandraInsertionAction("ks", "users", "id blob PARTITION KEY, name text")
-        }
-        assertFalse(builder.canBuildInsertionFor("id blob PARTITION KEY, name text"))
+        val schema = schema("ks", "users", partitionKey("id", "blob"), column("name", "text"))
+
+        assertThrows<IllegalArgumentException> { builder.createCassandraInsertionAction(schema) }
+        assertFalse(builder.canBuildInsertionFor(schema))
     }
 
     @Test
     fun testTableWithUnsupportedClusteringColumnIsRejected() {
-        val schema = "id uuid PARTITION KEY, at blob CLUSTERING, note text"
+        val schema = schema("ks", "events",
+            partitionKey("id", "uuid"),
+            clusteringColumn("at", "blob"),
+            column("note", "text"))
 
-        assertThrows<IllegalArgumentException> {
-            builder.createCassandraInsertionAction("ks", "events", schema)
-        }
+        assertThrows<IllegalArgumentException> { builder.createCassandraInsertionAction(schema) }
         assertFalse(builder.canBuildInsertionFor(schema))
     }
 
     @Test
     fun testInsertionCanBeBuiltWhenOnlyRegularColumnsAreSkipped() {
-        assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, picture blob, name text"))
-        assertTrue(builder.canBuildInsertionFor("id uuid PARTITION KEY, name text"))
+        assertTrue(builder.canBuildInsertionFor(
+            schema("ks", "users",
+                partitionKey("id", "uuid"),
+                column("picture", "blob"),
+                column("name", "text"))))
+
+        assertTrue(builder.canBuildInsertionFor(
+            schema("ks", "users", partitionKey("id", "uuid"), column("name", "text"))))
     }
 
     @Test
     fun testCopyKeepsTheColumns() {
-        val action = builder.createCassandraInsertionAction("ks", "users", "id uuid PARTITION KEY, name text")
+        val action = builder.createCassandraInsertionAction(
+            schema("ks", "users", partitionKey("id", "uuid"), column("name", "text")))
         val copy = action.copy() as CassandraDbAction
 
         assertEquals(action.keyspace, copy.keyspace)
