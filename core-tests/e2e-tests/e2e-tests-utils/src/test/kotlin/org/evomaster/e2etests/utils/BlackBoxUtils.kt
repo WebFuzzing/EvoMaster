@@ -36,9 +36,13 @@ object BlackBoxUtils {
 
     private fun mvn() = if (isWindows()) "mvn.cmd" else "mvn"
 
-
     private fun runNpmInstall() {
-        val command = listOf(npm(), "ci")
+        /*
+            Regarding "--no-audit":
+            outages on NPM kills the build (eg Sep'26), when NPM's auth services are down.
+            as we don't need it (and anyway we would not even look at or store those logs), we skip those checks
+         */
+        val command = listOf(npm(), "ci", "--no-audit")
 
         executeInstallShellCommand(command, JS_BASE_PATH, "NPM")
     }
@@ -106,7 +110,7 @@ object BlackBoxUtils {
         }
     }
 
-    fun runNpmTests(folderRelativePath: String) {
+    fun runNpmTests(folderRelativePath: String, isPlaywright: Boolean = false) {
         runNpmInstall()
 
         val path = if(folderRelativePath.endsWith("/")){
@@ -116,8 +120,12 @@ object BlackBoxUtils {
             "$folderRelativePath/"
         }
 
-        val command = listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
-        runTestsCommand(command, JS_BASE_PATH, "NPM")
+        val command = if (isPlaywright) {
+            listOf(npm(), "run", "test:playwright", "--", path)
+        } else {
+            listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
+        }
+        runTestsCommand(command, JS_BASE_PATH, if (isPlaywright) "Playwright" else "NPM")
     }
 
     fun runPythonTests(folderRelativePath: String) {

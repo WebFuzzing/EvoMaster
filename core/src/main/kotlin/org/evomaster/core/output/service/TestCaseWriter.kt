@@ -81,6 +81,13 @@ abstract class TestCaseWriter {
 
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
+    /**
+     * Compute Playwright fixtures to destructure in the test signature.
+     * For REST-only generation we currently need only the `request` fixture.
+     * This helper can be extended later (e.g., include `page`) by refactoring it to a List<String>.
+     */
+    private fun playwrightFixturesFor(test: TestCase): String = "request"
+
     fun convertToCompilableTestCode(
             test: TestCase,
             baseUrlOfSut: String,
@@ -125,7 +132,10 @@ abstract class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
-            format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() ->
+                if (format.isPlaywright()) {val fixtures = playwrightFixturesFor(test)
+                    lines.add("test(\"${test.name}\", async ({ $fixtures }) => {")}
+            else lines.add("test(\"${test.name}\", async () => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
             format.isPython() -> lines.add("def ${test.name}(self):")
         }
@@ -133,12 +143,14 @@ abstract class TestCaseWriter {
 
         lines.indented {
             val ind = test.test
-            val insertionVars = mutableListOf<Pair<String, String>>()
+            val sqlInsertionVars = mutableListOf<Pair<String, String>>()
+            val mongoInsertionVars = mutableListOf<Pair<String, String>>()
+            val redisInsertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
-            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
-            handleCleanUpActions(lines, baseUrlOfSut, ind, insertionVars, test.name,testSuitePath)
+            handleTestInitialization(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, test.name)
+            handleActionCalls(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, test.name,testSuitePath)
         }
 
 
@@ -208,13 +220,17 @@ abstract class TestCaseWriter {
      * for this test, and other needed setups, like SQL insertions.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
-     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param sqlInsertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
+     * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     )
 
@@ -223,13 +239,17 @@ abstract class TestCaseWriter {
      * @param lines are generated lines which save the generated test scripts
      * @param baseUrlOfSut is the base url of sut
      * @param ind is the final individual (ie test) to be generated into the test scripts
-     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param sqlInsertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
+     * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleActionCalls(
             lines: Lines,
             baseUrlOfSut: String,
             ind: EvaluatedIndividual<*>,
-            insertionVars: MutableList<Pair<String, String>>,
+            sqlInsertionVars: MutableList<Pair<String, String>>,
+            mongoInsertionVars: MutableList<Pair<String, String>>,
+            redisInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     )
@@ -238,7 +258,9 @@ abstract class TestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testCaseName: String,
         testSuitePath: Path?
     ){
@@ -318,6 +340,12 @@ abstract class TestCaseWriter {
         testSuitePath: Path?,
         baseUrlOfSut: String
     ) {
+        val playwrightExpectException = format.isPlaywright() && shouldFailIfExceptionNotThrown(res)
+        val hasThrownVar = if (playwrightExpectException) "hasThrown_${counter++}" else ""
+
+        if (playwrightExpectException) {
+            lines.add("let $hasThrownVar = false;")
+        }
         when {
             /*
                 TODO do we need to handle differently in JS due to Promises?
@@ -389,6 +417,12 @@ abstract class TestCaseWriter {
             format.isPython() -> lines.add("except Exception as e:")
         }
 
+        if (playwrightExpectException) {
+            lines.indented {
+                lines.add("$hasThrownVar = true;")
+            }
+        }
+
         lines.indented {
             res.getErrorMessage()?.let {
                 lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
@@ -400,6 +434,9 @@ abstract class TestCaseWriter {
 
         if (!format.isPython()) {
             lines.add("}")
+        }
+        if (playwrightExpectException) {
+            lines.add("expect($hasThrownVar).toBe(true);")
         }
     }
 

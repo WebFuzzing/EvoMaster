@@ -14,7 +14,7 @@ import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -143,6 +143,7 @@ object GeneSamplerForTests {
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
             BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
+            AssertionRxGene::class -> sampleAssertionRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -428,12 +429,21 @@ object GeneSamplerForTests {
         )
     }
 
+    fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {
+        // since we do not want assertion repairs to fail for sampleRegexGene
+        // we make trivial assertions "(?=)", which always succeed repairs
+        val innerDisj = DisjunctionRxGene("emptyDisj", emptyList(), true, true)
+        val innerGene = DisjunctionListRxGene(listOf(innerDisj))
+        return AssertionRxGene(innerGene=innerGene, AssertionType.LOOKAHEAD)
+    }
+
     fun sampleRegexGene(rand: Randomness): RegexGene {
         return RegexGene(
             name = "rand RegexGene",
             disjunctions = sampleDisjunctionListRxGene(rand),
-            ".*", //TODO tricky, we want to sample different structures,
+            "(?s).*", //TODO tricky, we want to sample different structures,
                                 // but still validation should not fail
+                            // (?s) makes "." match all chars instead of excluding line terminators
             RegexType.JVM
         )
     }
@@ -473,8 +483,8 @@ object GeneSamplerForTests {
                 //let's avoid huge trees...
                 .filter {
                     (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
-                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
-                            || rand.nextBoolean()
+                    && it.java != BackReferenceRxGene::class.java && it.java != AssertionRxGene::class.java) // as this also contains a DisjunctionListRxGene within
+                            || rand.nextBoolean(0.2) // reduced chance for larger trees
                 }
 
         val numberOfTerms = rand.nextInt(1, 3)

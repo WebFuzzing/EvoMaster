@@ -5,16 +5,16 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
-import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
-import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.database.mongo.MongoExecution
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
-import org.evomaster.core.redis.RedisExecution
+import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -189,8 +189,13 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
-    fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
-        extraToMinimize[actionIndex] = list.sorted()
+    fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
+        if (extraToMinimize[actionIndex] == null) {
+            extraToMinimize[actionIndex] = list.sorted()
+        } else {
+            val mergedList = (extraToMinimize[actionIndex]!! + list).sorted()
+            extraToMinimize[actionIndex] = mergedList
+        }
     }
 
     fun setDatabaseExecution(actionIndex: Int, databaseExecution: DatabaseExecution){

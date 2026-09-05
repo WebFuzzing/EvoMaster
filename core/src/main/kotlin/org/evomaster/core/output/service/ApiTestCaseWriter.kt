@@ -3,19 +3,19 @@ package org.evomaster.core.output.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.redis.RedisDbAction
-import org.evomaster.core.redis.RedisDbActionResult
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -47,7 +47,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -77,7 +79,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingSqlActions.indices.map {
                         EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as SqlActionResult)
                     },
-                    lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                    lines, sqlInsertionVars = sqlInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingMongoActions.isNotEmpty()) {
@@ -86,7 +88,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingMongoActions.indices.map {
                     EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
                 },
-                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                lines, mongoInsertionVars = mongoInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingRedisActions.isNotEmpty()) {
@@ -100,7 +102,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     EvaluatedRedisDbAction(initializingRedisActions[it], result)
                 },
                 lines,
-                insertionVars = insertionVars,
+                redisInsertionVars = redisInsertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }
@@ -349,13 +351,52 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     private fun handleDollarSign(text: String): String{
         return text.replace("\$", "\\\$")
     }
+    /**
+     * Formats a field path according to the active output format.
+     *
+     * Rules:
+     *  - Empty input returns an empty string.
+     *  - Java/Kotlin: wrap the path in single quotes and append a dot,
+     *    unless it already starts with a quote.
+     *  - Other formats: return unchanged if starting with '[' or '.';
+     *    otherwise prefix with a dot.
+     *
+     * @param fieldPath raw field path
+     * @return formatted field path for the target generator
+     */
+    private fun formatFieldPath(fieldPath: String): String {
+        if (fieldPath.isEmpty()) {
+            return ""
+        }
+        if (format.isJavaOrKotlin()) {
+            return if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+        }
+        return if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) {
+            fieldPath
+        } else {
+            ".$fieldPath"
+        }
+    }
 
     private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (value == null) {
+            val field = when {
+                format.isJavaScript() -> {
+                    if (format.isPlaywright()) {
+                        "(await $responseVariableName.json())"
+                    } else {
+                        "$responseVariableName.body"
+                    }
+                }
+                    else -> ""
+                }
+            val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
+                format.isJavaScript() ->
+                    if (format.isPlaywright()) "expect(($field)$fieldWithDot).toBe(null);"
+                    else "expect($field$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -409,10 +450,24 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
             if (isSuitableToPrint(toPrint)) {
                 if (format.isJavaScript() || format.isPython()) {
+                    val field = when {
+                        format.isJavaScript() -> {
+                        if (format.isPlaywright()) {
+                            "(await $responseVariableName.json())"
+                        } else {
+                            "$responseVariableName.body"
+                        }
+                    }
+                        else -> ""
+                    }
+
+                    val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
                     val assertionContent = if (format.isPython()) {
                         "assert $responseVariableName.json()$fieldPath == $toPrint"
+                    }else if (format.isPlaywright()){ // playwright
+                        "expect($field$fieldWithDot).toBe($toPrint);"
                     }else { // javascript
-                        "expect($responseVariableName.body$fieldPath).toBe($toPrint);"
+                        "expect($field$fieldPath).toBe($toPrint);" // ($field$)fieldPath
                     }
 
                     if (flakyValue == null || flakyValue == value){
@@ -560,6 +615,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         if (format.isJavaScript()) {
+            if (format.isPlaywright()) {
+                return "expect(await $responseVariableName.text()).toBe(\"\");"
+            }
             /*
                 This is super ugly... but there is no clean solution for this
                 in Jest nor SuperAgent... :(
@@ -595,8 +653,15 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 val path = if (fieldPath.isEmpty()) "" else "$fieldPath."
                 ".body(\"${path}size()\", equalTo($expectedSize))"
             }
-            format.isJavaScript() ->
-                "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    val field = formatFieldPath(fieldPath)
+                    "expect((await $responseVariableName.json())$field).toHaveLength($expectedSize);"
+                } else {
+                    val field = "$responseVariableName.body"
+                    "expect($field$fieldPath.length).toBe($expectedSize);" // ($field$)fieldPath
+                }
+            }
             format.isCsharp() ->
                 "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"
             format.isPython() ->
@@ -616,10 +681,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             return ".body(containsString(\"$content\"))"
         }
 
-        if (format.isJavaScript()) {
-            return "expect($responseVariableName.text).toContain(\"$content\");"
-
+        if (format.isPlaywright()) {
+            return "expect(await $responseVariableName.text()).toContain(\"$content\");"
         }
+
+        if (format.isJavaScript()) {
+            return "expect($responseVariableName.text).toContain(\"$content\");"        }
 
         if (format.isCsharp()) {
             val k = when {

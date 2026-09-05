@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -11,7 +12,15 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.RegexWithExternalFlags
+import org.slf4j.LoggerFactory
 import java.util.regex.Pattern
+
+/**
+ * How many times we try to resample the whole [RegexGene] and attempt repairing before we give up.
+ */
+const val MAX_TREE_REPAIR_ATTEMPTS = 10
 
 /**
  * A gene representing a regular expression (regex).
@@ -29,12 +38,52 @@ class RegexGene(
      * so, this is a reasonable workaround
      */
     var fixedValue: String? = null,
-    var usingFixedValue: Boolean = false
+    var usingFixedValue: Boolean = false,
+    val externalRegexFlags: RegexFlags = RegexFlags()
 ) : CompositeFixedGene(name, disjunctions) {
 
+    companion object {
+        private val log = LoggerFactory.getLogger(RegexGene::class.java)
+
+        private val patternCache = java.util.concurrent.ConcurrentHashMap<RegexWithExternalFlags, Pattern>()
+
+        private fun compiledPattern(sourceRegex: String, flags: RegexFlags): Pattern {
+            return patternCache.computeIfAbsent(RegexWithExternalFlags(sourceRegex, flags)) {
+                Pattern.compile(sourceRegex, flags.toJavaFlagBitmask())
+            }
+        }
+    }
+
+    /**
+     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     */
+    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+
+    /**
+     * Pattern used for assertion repair verification, only on JVM regex.
+     */
+    private val pattern: Pattern? =
+        if (regexType == RegexType.JVM) {
+            compiledPattern(sourceRegex, externalRegexFlags)
+        } else {
+            null
+        }
+
+    /**
+     * Prefix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPrefix], can be set on [randomize].
+     */
+    private var javaPrefix : String = ""
+
+    /**
+     * Postfix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPostfix], can be set on [randomize].
+     */
+    private var javaPostfix : String = ""
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue)
+        val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
+        copy.javaPrefix=javaPrefix
+        copy.javaPostfix=javaPostfix
+        return copy
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -43,7 +92,51 @@ class RegexGene(
         } else {
             randomness.nextBoolean()
         }
-        disjunctions.randomize(randomness, tryToForceNewValue)
+
+        if (!requiresAssertionHandling) {
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            return
+        }
+
+        repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
+            disjunctions.randomize(randomness, tryToForceNewValue)
+            if (pattern!!.matcher(getValueAsRawString()).find()) {
+                return
+            }
+            val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
+            setPrefixAndPostfix(assertionRepairResult, randomness)
+            if (pattern.matcher(getValueAsRawString()).find()) {
+                return
+            }
+        }
+
+        // failed to repair regex, the value of this gene does not match the source regex.
+        // this may happen because regex is unsatisfiable, regex bug or because of EMs limited support of regex assertions.
+        val message = "Could not repair value for regex: \"$sourceRegex\", last tried: \"${getValueAsRawString()}\""
+        log.warn(message)
+        assert(false) { message }
+    }
+
+    /**
+     * Set prefix and postfix according to [repairResult], which may carry requirements (like empty prefix
+     * or "a" as postfix). If a side has no requirements (neededPre/Postfix is null) we can randomly set
+     * a pre/postfix.
+     */
+    private fun setPrefixAndPostfix(repairResult: AssertionRepairResult, randomness: Randomness) {
+        if (repairResult.success) {
+            javaPrefix = repairResult.neededPrefix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "prefix_"
+                }
+            javaPostfix = repairResult.neededPostfix
+                ?: if (randomness.nextBoolean()) {
+                    ""
+                } else {
+                    "_postfix"
+                }
+        }
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
@@ -66,7 +159,7 @@ class RegexGene(
 
         if(regexType == RegexType.JVM){
             val matcher = try{
-                Pattern.compile(sourceRegex).matcher(fixedValue!!)
+                pattern!!.matcher(fixedValue!!)
             }catch(e: Exception){
                 return false
             }
@@ -132,7 +225,11 @@ class RegexGene(
             return fixedValue!!
         }
 
-        return disjunctions.getValueAsPrintableString(targetFormat = null)
+        return if(requiresAssertionHandling){
+            javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
+        } else {
+            disjunctions.getValueAsPrintableString(targetFormat = null)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {

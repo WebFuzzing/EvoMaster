@@ -1,8 +1,12 @@
 package org.evomaster.core.output
 
 import org.apache.commons.text.StringEscapeUtils
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.redis.*
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisSaddAction
+import org.evomaster.core.database.redis.RedisSaddFromSinterAction
+import org.evomaster.core.database.redis.RedisSetAction
+import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,7 +26,7 @@ object RedisWriter {
      * @param redisDbInitialization contains the Redis db actions to be generated
      * @param lines is used to save generated textual lines with respect to [redisDbInitialization]
      * @param groupIndex specifies an index of a group of this [redisDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first)
+     * @param redisInsertionVars is a list of previous variable names of the db actions (Pair.first)
      *                      and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failed insertions
      */
@@ -31,7 +35,7 @@ object RedisWriter {
         redisDbInitialization: List<EvaluatedRedisDbAction>,
         lines: Lines,
         groupIndex: String = "",
-        insertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
         if (redisDbInitialization.isEmpty() ||
@@ -42,7 +46,7 @@ object RedisWriter {
 
         val insertionVar = "insertions_redis${groupIndex}"
         val insertionVarResult = "${insertionVar}_result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
+        val previousVar = redisInsertionVars.joinToString(", ") { it.first }
 
         val dslCalls = redisDbInitialization
             .filter { !skipFailure || it.redisResult.getInsertExecutionResult() }
@@ -76,7 +80,7 @@ object RedisWriter {
         )
         lines.appendSemicolon()
 
-        insertionVars.add(insertionVar to insertionVarResult)
+        redisInsertionVars.add(insertionVar to insertionVarResult)
     }
 
     private fun toDslCalls(action: RedisDbAction, format: OutputFormat): List<String> {
