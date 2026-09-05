@@ -31,10 +31,14 @@ class AsyncApiIndividual(
     mainSize: Int = allActions.size,
     sqlSize: Int = 0,
     mongoSize: Int = 0,
-    redisSize: Int = 0,
     dnsSize: Int = 0,
+    /*
+        No Redis group. Every Redis option in EMConfig is still @Experimental, so a new problem
+        type should not inherit that seam; the size is fixed at zero until Redis is fully
+        supported for REST, at which point this is one parameter to add.
+     */
     groups: GroupsOfChildren<StructuralElement> =
-        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, 0, 0)
+        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, 0, dnsSize, 0, 0)
 ) : ApiWsIndividual(
     sampleType,
     trackOperator,
@@ -110,7 +114,6 @@ class AsyncApiIndividual(
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
             sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
             mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
-            redisSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_REDIS),
             dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
 }
