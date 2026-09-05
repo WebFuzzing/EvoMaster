@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.database.sql.solver
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -11,9 +11,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.evomaster.core.database.sql.solver.SmtLibGenerator
-import org.evomaster.core.database.sql.solver.SMTLibZ3DbConstraintSolver
-import org.evomaster.core.database.sql.solver.SMTConditionVisitor
+import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 
 /**
  * Pushes a corpus of SELECT statements through the two steps that [SMTLibZ3DbConstraintSolver.solve]

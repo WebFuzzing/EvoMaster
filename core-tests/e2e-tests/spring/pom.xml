@@ -26,6 +26,7 @@
         <module>spring-rest-bb</module>
         <module>spring-graphql-bb</module>
         <module>spring-rest-multidb</module>
+        <module>spring-rest-polyglot-persistence</module>
         <module>spring-rest-opensearch</module>
         <module>spring-rest-dynamodb</module>
         <module>spring-rest-redis</module>

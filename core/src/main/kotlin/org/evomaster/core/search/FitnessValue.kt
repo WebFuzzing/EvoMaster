@@ -189,8 +189,13 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
-    fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
-        extraToMinimize[actionIndex] = list.sorted()
+    fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
+        if (extraToMinimize[actionIndex] == null) {
+            extraToMinimize[actionIndex] = list.sorted()
+        } else {
+            val mergedList = (extraToMinimize[actionIndex]!! + list).sorted()
+            extraToMinimize[actionIndex] = mergedList
+        }
     }
 
     fun setDatabaseExecution(actionIndex: Int, databaseExecution: DatabaseExecution){

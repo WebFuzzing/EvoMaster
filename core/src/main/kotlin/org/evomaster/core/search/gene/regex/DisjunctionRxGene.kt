@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
@@ -13,6 +12,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.MultiCharacterRange
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -352,20 +352,42 @@ class DisjunctionRxGene(
         var pending = AssertionRepairResult.SUCCESS
         for (idx in terms.indices) {
             val assertion = terms[idx] as? AssertionRxGene ?: continue
-            val backward = assertion.assertionType == AssertionType.LOOKBEHIND
-            val target = if (backward) genesBefore(idx) else genesAfter(idx)
-
-            val resolution = if (target.isEmpty()) {
-                repairAssertionWithNoTarget(assertion, backward, randomness)
-            } else {
-                repairAssertionAgainstTarget(assertion, target, backward, randomness)
-            }
+            val resolution = repairAssertion(assertion, idx, randomness)
             pending = pending.mergedWith(resolution)
             if (!pending.success) {
                 return AssertionRepairResult.FAILURE
             }
         }
         return pending
+    }
+
+    /**
+     * Selects target and dispatches to corresponding repair method for the [assertion] located at index [idx].
+     */
+    private fun repairAssertion(assertion: AssertionRxGene, idx: Int, randomness: Randomness): AssertionRepairResult {
+        val backward = assertion.assertionType.backward
+        val target = if (backward) genesBefore(idx) else genesAfter(idx)
+
+        val resolution = when (assertion.assertionType) {
+            AssertionType.LOOKAHEAD, AssertionType.LOOKBEHIND ->
+                repairLookaroundAssertion(assertion, target, backward, randomness)
+            AssertionType.START_OF_INPUT, AssertionType.END_OF_INPUT ->
+                repairStrictBoundaryAssertion(target, backward)
+            AssertionType.CARET, AssertionType.DOLLAR ->
+                repairCaretOrDollar(assertion, target, backward, randomness)
+        }
+        return resolution
+    }
+
+    /**
+     * Repairs a lookaround [assertion] (lookahead/lookbehind) against a [target].
+     */
+    private fun repairLookaroundAssertion(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if (target.isEmpty()) {
+            repairAssertionWithNoTarget(assertion, backward, randomness)
+        } else {
+            repairAssertionAgainstTarget(assertion, target, backward, randomness)
+        }
     }
 
     /**
@@ -412,6 +434,56 @@ class DisjunctionRxGene(
     }
 
     /**
+     * Repair input boundary assertions (non-multiline `^` and `$` for example) by forcing target
+     * (and whatever follows) to zero width.
+     */
+    private fun repairStrictBoundaryAssertion(target: List<Gene>, backward: Boolean): AssertionRepairResult =
+        resolveEmptyRequirement(target, backward)
+
+    /**
+     * Repairs a (potentially multiline) boundary assertion (^$), which can be either a line terminator
+     * or an end of the string.
+     */
+    private fun repairCaretOrDollar(assertion: AssertionRxGene, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        return if(!assertion.flags.multiline){
+            repairStrictBoundaryAssertion(target, backward)
+        } else {
+            val lineTerminatorRanges = assertion.flags.lineTerminatorRanges
+            tryInRandomOrder(
+                { repairTargetFromCharRanges(lineTerminatorRanges, target, backward, randomness) },
+                { repairStrictBoundaryAssertion(target, backward) },
+                randomness
+            )
+        }
+    }
+
+    /**
+     * Try two repair functions in random order, if the first one tried fails try the other.
+     */
+    private fun tryInRandomOrder(repairA: () -> AssertionRepairResult, repairB: () -> AssertionRepairResult, randomness: Randomness): AssertionRepairResult {
+        val (first, second) = if (randomness.nextBoolean()) {
+            repairA to repairB
+        } else {
+            repairB to repairA
+        }
+
+        val result = first()
+        return if (result.success) result else second()
+    }
+
+    /**
+     * Attempts repair by trying to force a character sampled from [ranges] into [target].
+     */
+    private fun repairTargetFromCharRanges(ranges: MultiCharacterRange, target: List<Gene>, backward: Boolean, randomness: Randomness): AssertionRepairResult {
+        repeat(MAX_LOCAL_ASSERTION_ATTEMPTS){
+            val candidate = ranges.sample(randomness).toString()
+            val result = resolveOutwardRequirement(candidate, target, backward)
+            if(result.success) return result
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
      * The genes in [terms] lying before index [idx], excluding other assertions. This is the forcing
      * target for a [AssertionType.LOOKBEHIND] assertion (or an outward requirement) sitting at [idx].
      */
@@ -446,12 +518,12 @@ class DisjunctionRxGene(
     /**
      * Resolves a "" (empty) requirement: every gene in [target] must collapse to zero width.
      */
-    private fun resolveEmptyRequirement(target: List<Gene>): AssertionRepairResult {
+    private fun resolveEmptyRequirement(target: List<Gene>, backward: Boolean): AssertionRepairResult {
         if (target.any { !(it as RxAbsorbable).canBeZeroWidth }) {
             return AssertionRepairResult.FAILURE
         }
         target.forEach { (it as RxAbsorbable).forceZeroWidth() }
-        return AssertionRepairResult.SUCCESS
+        return AssertionRepairResult.stillNeeded("", backward)
     }
 
     /**
@@ -460,7 +532,7 @@ class DisjunctionRxGene(
      */
     private fun resolveOutwardRequirement(requirement: String, target: List<Gene>, backward: Boolean): AssertionRepairResult {
         if (requirement.isEmpty()) {
-            return resolveEmptyRequirement(target)
+            return resolveEmptyRequirement(target, backward)
         }
         if (target.isEmpty()) {
             return AssertionRepairResult.stillNeeded(requirement, backward)

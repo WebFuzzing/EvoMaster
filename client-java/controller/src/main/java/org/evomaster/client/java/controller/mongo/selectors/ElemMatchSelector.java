@@ -16,11 +16,10 @@ public class ElemMatchSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         Objects.requireNonNull(fieldName);
-        Objects.requireNonNull(value);
 
         if (isBsonDocument(value)) {
             QueryOperation condition = new QueryParser().parse(value);
-            return new ElemMatchOperation(fieldName, condition);
+            return condition == null ? null : new ElemMatchOperation(fieldName, condition);
         } else {
             return null;
         }

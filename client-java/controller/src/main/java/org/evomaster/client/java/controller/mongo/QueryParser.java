@@ -1,17 +1,24 @@
 package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
+import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithField;
 import org.evomaster.client.java.controller.mongo.selectors.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 
 /**
  * Determines to which operation a query correspond.
  */
 public class QueryParser {
+
+    private static final String SYNTHETIC_FIELD_NAME = "$";
 
     List<QuerySelector> selectors = Arrays.asList(
             new EqualsSelector(),
@@ -36,6 +43,8 @@ public class QueryParser {
             new NotSelector(),
             new ExistsSelector(),
             new TypeSelector(),
+            new RegexSelector(),
+            new NearSelector(),
             new NearSphereSelector(),
             new ImplicitSelector()
     );
@@ -45,6 +54,28 @@ public class QueryParser {
             return null;
         }
 
+        QueryOperation operation = parseWithSelectors(bsonDocument);
+        if (operation != null && !usesOperatorAsFieldName(operation)) {
+            return operation;
+        }
+
+        Object normalizedDocument = normalizeTopLevelValueOperatorQuery(bsonDocument);
+        if (normalizedDocument == bsonDocument) {
+            return operation;
+        }
+        return parseWithSelectors(normalizedDocument);
+    }
+
+    private boolean usesOperatorAsFieldName(QueryOperation operation) {
+        if (!(operation instanceof QueryOperationWithField)) {
+            return false;
+        }
+        String fieldName = ((QueryOperationWithField) operation).getFieldName();
+        return fieldName.startsWith(SYNTHETIC_FIELD_NAME)
+                && !fieldName.equals(SYNTHETIC_FIELD_NAME);
+    }
+
+    private QueryOperation parseWithSelectors(Object bsonDocument) {
         List<QueryOperation> results = selectors.stream()
                 .map(selector -> selector.getOperation(bsonDocument))
                 .filter(Objects::nonNull)
@@ -72,5 +103,25 @@ public class QueryParser {
         }
 
         return results.get(0);
+    }
+
+    private Object normalizeTopLevelValueOperatorQuery(Object bsonDocument) {
+        if (!(bsonDocument instanceof Map) || !isBsonDocument(bsonDocument)) {
+            return bsonDocument;
+        }
+
+        Set<String> keys = documentKeys(bsonDocument);
+        if (keys == null || keys.isEmpty()
+                || keys.stream().anyMatch(key -> !key.startsWith(SYNTHETIC_FIELD_NAME))) {
+            return bsonDocument;
+        }
+
+        Object normalized = newDocument(bsonDocument);
+        Object inner = newDocument(bsonDocument);
+        for (String operator : keys) {
+            appendToDocument(inner, operator, getValue(bsonDocument, operator));
+        }
+        appendToDocument(normalized, SYNTHETIC_FIELD_NAME, inner);
+        return normalized;
     }
 }
