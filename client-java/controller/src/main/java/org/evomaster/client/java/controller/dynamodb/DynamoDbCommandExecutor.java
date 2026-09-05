@@ -37,17 +37,32 @@ public final class DynamoDbCommandExecutor {
         }
 
         DynamoDbInsertionResultsDto results = new DynamoDbInsertionResultsDto();
-        results.executionResults = new ArrayList<>(Collections.nCopies(insertions.size(), false));
         for (int i = 0; i < insertions.size(); i++) {
             try {
                 executeOne(client, insertions.get(i));
-                results.executionResults.set(i, true);
             } catch (RuntimeException e) {
-                results.failedInsertionIndex = i;
+                handleFailedInsertion(results, insertions.size(), i);
                 throw new DynamoDbInsertionException(i, results, e);
             }
         }
+        results.executionResults = new ArrayList<>(Collections.nCopies(insertions.size(), true));
         return results;
+    }
+
+    /**
+     * Records the insertion that failed while preserving earlier successes.
+     *
+     * @param results insertion results to update
+     * @param insertionCount number of attempted insertions
+     * @param failedIndex zero-based index of the failed insertion
+     */
+    private static void handleFailedInsertion(
+            DynamoDbInsertionResultsDto results, int insertionCount, int failedIndex) {
+        results.executionResults = new ArrayList<>(Collections.nCopies(insertionCount, false));
+        for (int i = 0; i < failedIndex; i++) {
+            results.executionResults.set(i, true);
+        }
+        results.failedInsertionIndex = failedIndex;
     }
 
     private static void executeOne(Object client, DynamoDbInsertionDto insertion) {
@@ -68,15 +83,15 @@ public final class DynamoDbCommandExecutor {
                 String setter;
                 Object value;
                 switch (attribute.type) {
-                    case S:
+                    case STRING:
                         setter = "s";
                         value = attribute.value;
                         break;
-                    case N:
+                    case NUMBER:
                         setter = "n";
                         value = attribute.value;
                         break;
-                    case BOOL:
+                    case BOOLEAN:
                         setter = "bool";
                         value = Boolean.valueOf(attribute.value);
                         break;

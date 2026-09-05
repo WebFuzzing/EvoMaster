@@ -30,11 +30,11 @@ class DynamoDbInsertBuilderTest {
         val valid = validQuery()
         val invalidNumber = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.N, "ten"))
+            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "ten"))
         )
         val blankTable = DynamoDbFailedQuery(
             "",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.S, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"))
         )
         val missingType = DynamoDbFailedQuery(
             "WorldCupPlayers",
@@ -55,9 +55,9 @@ class DynamoDbInsertBuilderTest {
     private fun validQuery(): DynamoDbFailedQuery = DynamoDbFailedQuery(
         "WorldCupPlayers",
         listOf(
-            DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.S, "Argentina"),
-            DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.N, "10.50"),
-            DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOL, "true")
+            DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"),
+            DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10.50"),
+            DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true")
         )
     )
 }

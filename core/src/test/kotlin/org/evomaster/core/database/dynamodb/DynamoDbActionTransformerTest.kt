@@ -17,9 +17,9 @@ class DynamoDbActionTransformerTest {
         val action = DynamoDbAction(
             "WorldCupPlayers",
             listOf(
-                DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.S, StringGene("country", "Argentina")),
-                DynamoDbAttributeGene("fifaId", DynamoDbScalarTypeDto.N, BigDecimalGene("fifaId", BigDecimal("10.50"))),
-                DynamoDbAttributeGene("captain", DynamoDbScalarTypeDto.BOOL, BooleanGene("captain", true))
+                DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")),
+                DynamoDbAttributeGene("fifaId", DynamoDbScalarTypeDto.NUMBER, BigDecimalGene("fifaId", BigDecimal("10.50"))),
+                DynamoDbAttributeGene("captain", DynamoDbScalarTypeDto.BOOLEAN, BooleanGene("captain", true))
             )
         )
 
@@ -30,7 +30,7 @@ class DynamoDbActionTransformerTest {
         assertEquals("10.50", insertion.attributes[1].value)
         assertEquals("true", insertion.attributes[2].value)
         assertEquals(
-            listOf(DynamoDbScalarTypeDto.S, DynamoDbScalarTypeDto.N, DynamoDbScalarTypeDto.BOOL),
+            listOf(DynamoDbScalarTypeDto.STRING, DynamoDbScalarTypeDto.NUMBER, DynamoDbScalarTypeDto.BOOLEAN),
             insertion.attributes.map { it.type }
         )
     }

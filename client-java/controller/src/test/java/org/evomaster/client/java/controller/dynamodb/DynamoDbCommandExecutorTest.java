@@ -91,9 +91,9 @@ public class DynamoDbCommandExecutorTest {
     private DynamoDbInsertionDto worldCupPlayer() {
         DynamoDbInsertionDto insertion = new DynamoDbInsertionDto();
         insertion.tableName = "WorldCupPlayers";
-        insertion.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.S, "Argentina"));
-        insertion.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.N, "10"));
-        insertion.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOL, "true"));
+        insertion.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"));
+        insertion.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10"));
+        insertion.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true"));
         return insertion;
     }
 }
