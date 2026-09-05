@@ -11,8 +11,9 @@ import org.evomaster.core.search.gene.Gene
  * Publishing one message on one channel: the thing an AsyncAPI search actually does.
  *
  * It follows the shape of [org.evomaster.core.problem.rpc.RPCCallAction], which is the closest
- * analogue in EvoMaster -- a call with no URL, made through a driver, whose mutable state is
- * the input and whose response is read afterwards rather than searched over.
+ * analogue in EvoMaster -- a call with no URL, made through the driver's
+ * `SutController.executeAsyncApiAction`, whose mutable state is the input and whose response is
+ * read afterwards rather than searched over.
  *
  * Note what is deliberately *not* a gene:
  *
