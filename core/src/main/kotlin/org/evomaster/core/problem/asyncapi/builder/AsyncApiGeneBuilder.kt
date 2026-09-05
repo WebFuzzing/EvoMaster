@@ -33,17 +33,40 @@ object AsyncApiGeneBuilder {
      */
     private const val INLINE_PREFIX = "_asyncapi_"
 
+    /*
+        The JSON Schema keywords this builder reads or rewrites. These are JSON Schema's
+        vocabulary, not AsyncAPI's, which is why they live here rather than with the parser.
+     */
+    private const val PROPERTIES = "properties"
+    private const val PATTERN_PROPERTIES = "patternProperties"
+    private const val DEFINITIONS = "definitions"
+    private const val DEFS = "\$defs"
+    private const val REQUIRED = "required"
+    private const val CONST = "const"
+    private const val DEFAULT = "default"
+    private const val ENUM = "enum"
+    private const val EXAMPLE = "example"
+    private const val EXAMPLES = "examples"
+    private const val TYPE = "type"
+    private const val MINIMUM = "minimum"
+    private const val MAXIMUM = "maximum"
+
+    private const val TYPE_STRING = "string"
+    private const val TYPE_INTEGER = "integer"
+    private const val TYPE_NUMBER = "number"
+    private const val TYPE_BOOLEAN = "boolean"
+
     /**
      * The keywords whose value is literal data rather than a schema, so nothing inside them is
      * a keyword either.
      */
-    private val DATA_KEYWORDS = setOf("const", "default", "enum", "example", "examples")
+    private val DATA_KEYWORDS = setOf(CONST, DEFAULT, ENUM, EXAMPLE, EXAMPLES)
 
     /**
      * The keywords whose value maps arbitrary names to schemas. Their keys come from the
      * document, so a field a service happens to call "const" or "default" must still be walked.
      */
-    private val SCHEMA_MAPS = setOf("properties", "patternProperties", "definitions", "\$defs")
+    private val SCHEMA_MAPS = setOf(PROPERTIES, PATTERN_PROPERTIES, DEFINITIONS, DEFS)
 
     /**
      * The genes for a message's payload, or null when it declares none.
@@ -90,14 +113,14 @@ object AsyncApiGeneBuilder {
         }
 
         val field = correlation.fieldName ?: return headers
-        val properties = headers.get("properties")
+        val properties = headers.get(PROPERTIES)
 
         if (properties == null || !properties.has(field)) {
             return headers
         }
 
         val copy = headers.deepCopy<JsonNode>() as ObjectNode
-        val kept = (copy.get("properties") as ObjectNode).apply { remove(field) }
+        val kept = (copy.get(PROPERTIES) as ObjectNode).apply { remove(field) }
 
         /*
             When the stamped id was the only header, there is nothing left to vary. Returning
@@ -109,11 +132,11 @@ object AsyncApiGeneBuilder {
         }
 
         //a field that is no longer there cannot be required either
-        (copy.get("required") as? ArrayNode)?.let { required ->
+        (copy.get(REQUIRED) as? ArrayNode)?.let { required ->
             val kept = required.filter { it.asText() != field }
-            copy.remove("required")
+            copy.remove(REQUIRED)
             if (kept.isNotEmpty()) {
-                copy.putArray("required").apply { kept.forEach { add(it) } }
+                copy.putArray(REQUIRED).apply { kept.forEach { add(it) } }
             }
         }
 
@@ -285,24 +308,24 @@ object AsyncApiGeneBuilder {
         }
 
         val obj = node as ObjectNode
-        val const = obj.get("const")
+        val const = obj.get(CONST)
 
         if (const != null && !const.isContainerNode) {
             when {
                 const.isTextual -> {
-                    obj.remove("const")
-                    obj.putArray("enum").add(const)
-                    obj.put("type", "string")
+                    obj.remove(CONST)
+                    obj.putArray(ENUM).add(const)
+                    obj.put(TYPE, TYPE_STRING)
                 }
                 const.isNumber -> {
-                    obj.remove("const")
-                    obj.set<JsonNode>("minimum", const)
-                    obj.set<JsonNode>("maximum", const)
-                    obj.put("type", if (const.isIntegralNumber) "integer" else "number")
+                    obj.remove(CONST)
+                    obj.set<JsonNode>(MINIMUM, const)
+                    obj.set<JsonNode>(MAXIMUM, const)
+                    obj.put(TYPE, if (const.isIntegralNumber) TYPE_INTEGER else TYPE_NUMBER)
                 }
                 const.isBoolean -> {
-                    obj.remove("const")
-                    obj.put("type", "boolean")
+                    obj.remove(CONST)
+                    obj.put(TYPE, TYPE_BOOLEAN)
                 }
             }
         }
