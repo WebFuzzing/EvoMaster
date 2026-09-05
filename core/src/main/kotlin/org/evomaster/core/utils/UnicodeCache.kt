@@ -347,16 +347,16 @@ object UnicodeCache {
         val predicate = getPredicate(key)
 
         // first we compute and cache the base key (non-negated)
-        cache.computeIfAbsent(key) {
+        val baseMCR = cache.computeIfAbsent(key) {
             computeRanges(predicate)
         }
 
         // if the base kay was requested just return
-        if (!negated) return cache[key]!!
+        if (!negated) return baseMCR
 
         // else compute and cache full key (negated) from base key (non-negated)
         return cache.computeIfAbsent(fullKey) {
-            MultiCharacterRange(true, cache[key]!!.ranges)
+            MultiCharacterRange(true, baseMCR.ranges)
         }
     }
 
@@ -385,14 +385,14 @@ object UnicodeCache {
             key
         }
 
-        cache.computeIfAbsent(key) {
+        val baseMCR = cache.computeIfAbsent(key) {
             computeRanges(wordBoundaryPredicate(flags))
         }
 
-        if (!negated) return cache[key]!!
+        if (!negated) return baseMCR
 
         return cache.computeIfAbsent(fullKey) {
-            MultiCharacterRange(true, cache[key]!!.ranges)
+            MultiCharacterRange(true, baseMCR.ranges)
         }
     }
 
@@ -402,8 +402,9 @@ object UnicodeCache {
      */
     private fun wordBoundaryPredicate(flags: RegexFlags): (Int) -> Boolean {
         val pattern = Pattern.compile("(?s)^.\\b.$", flags.toJavaFlagBitmask())
+        val matcher = pattern.matcher("")
         return { cp: Int ->
-            pattern.matcher("${cp.toChar()} ").matches()
+            matcher.reset("${cp.toChar()} ").matches()
         }
     }
 }

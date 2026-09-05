@@ -572,12 +572,16 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testWordBoundary() {
+        checkSameAsJava("\\b\\bfoo")
+        checkSameAsJava("\\w*\\bfoo")
         checkSameAsJava("\\bfoo\\b")
         checkSameAsJava("foo\\b bar")
         checkSameAsJava("\\w\\b\\W")
         checkSameAsJava("(?U)\\w\\b\\W")
         checkSameAsJava("([\\s\\S]*)(\\b(prescribe[ds]?)\\b)([\\s\\S]*)")
         assertThrows<AssertionError> { checkSameAsJava("a\\bb") }
+        assertThrows<AssertionError> { checkSameAsJava("\\w+\\bfoo") }
+        assertThrows<AssertionError> { checkSameAsJava("a(\\bfoo)") }
     }
 
     @Test
@@ -585,5 +589,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("a\\Bb")
         checkSameAsJava("\\w\\Bfoo\\B\\w")
         checkSameAsJava("\\B")
+        checkSameAsJava("\\d*\\Bfoo")
+        checkSameAsJava("\\W*\\Bfoo")
+        checkSameAsJava("\\w*\\Bfoo")
+        assertThrows<AssertionError> { checkSameAsJava("\\b\\Bfoo") }
     }
 }

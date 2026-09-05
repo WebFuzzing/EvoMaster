@@ -530,13 +530,11 @@ class DisjunctionRxGene(
 
         val before = genesBefore(idx)
         val after = genesAfter(idx)
-        val repairLeftSide = { wordRequired: Boolean -> repairSide(wordRequired, before, backward = true, assertion, randomness) }
-        val repairRightSide = { wordRequired: Boolean -> repairSide(wordRequired, after, backward = false, assertion, randomness) }
 
         for (branch in orderedBranches) {
-            val beforeResult = repairLeftSide(branch.wordBefore)
+            val beforeResult = repairSide(branch.wordBefore, before, backward = true, assertion, randomness)
             if (!beforeResult.success) continue
-            val afterResult = repairRightSide(branch.wordAfter)
+            val afterResult = repairSide(branch.wordAfter, after, backward = false, assertion, randomness)
             if (afterResult.success) {
                 return beforeResult.mergedWith(afterResult)
             }
