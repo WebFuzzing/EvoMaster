@@ -22,7 +22,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    override fun sampleAtRandom(): RestIndividual {
+    override fun doSampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestCallAction>()
         val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())

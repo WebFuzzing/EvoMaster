@@ -29,7 +29,6 @@ import org.evomaster.core.problem.mcp.McpIndividual
 import org.evomaster.core.problem.mcp.service.McpBlackBoxModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
-import org.evomaster.core.problem.rest.service.module.ArazzoRestModule
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
@@ -580,9 +579,7 @@ class Main {
 
             val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    if (config.isEnabledArazzoStrategy()) {
-                        ArazzoRestModule()
-                    } else if (config.blackBox) {
+                    if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
                     } else if (config.isEnabledResourceStrategy()) {
                         /*

@@ -69,7 +69,7 @@ open class ResourceSampler : AbstractRestSampler() {
         ssc.initialize()
     }
 
-    override fun sampleAtRandom() : RestIndividual {
+    override fun doSampleAtRandom() : RestIndividual {
         return sampleAtRandom(randomness.nextInt(1, getMaxTestSizeDuringSampler()))
     }
 

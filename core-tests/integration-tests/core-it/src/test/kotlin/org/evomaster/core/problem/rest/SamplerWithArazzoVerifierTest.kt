@@ -16,17 +16,21 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.Main
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
-import org.evomaster.core.problem.rest.service.module.ArazzoRestModule
-import org.evomaster.core.problem.rest.service.sampler.ArazzoSampler
+import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
+import org.evomaster.core.problem.rest.service.module.RestModule
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.Action
+import com.webfuzzing.arazzo.models.domain.Workflow
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 
-class ArazzoSamplerVerifierTest {
+class SamplerWithArazzoVerifierTest {
 
     companion object {
         init {
@@ -34,15 +38,20 @@ class ArazzoSamplerVerifierTest {
         }
     }
 
-    @Test
-    fun testArazzoSamplerProducesValidIndividuals() {
-        val sampler = createSampler()
+    private data class TestContext(
+        val sampler: RestSampler,
+        val arazzoService: ArazzoWorkflowsService,
+    )
 
-        assertTrue(sampler.arazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
-        assertTrue(sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
+    @Test
+    fun testSamplerWithArazzoProducesValidIndividuals() {
+        val context = createTestContext()
+
+        assertTrue(context.arazzoService.arazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
+        assertTrue(context.sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
 
         repeat(10) {
-            checkInvariant(sampler.sample(forceRandomSample = true))
+            checkInvariant(context.sampler.sample(forceRandomSample = true))
         }
     }
 
@@ -51,12 +60,12 @@ class ArazzoSamplerVerifierTest {
      * Linear workflows only
      */
     @Test
-    fun testArazzoSamplerGeneratesValidIndividualWorkflows() {
-        val sampler = createSampler()
+    fun testSamplerWithArazzoGeneratesValidIndividualWorkflows() {
+        val context = createTestContext()
 
         //apply-coupon
-        var workflow = sampler.arazzoWorkflowsById["apply-coupon"]!!
-        var ind = sampler.buildIndividualFromWorkflow(workflow)
+        var workflow = context.arazzoService.arazzoWorkflowsById["apply-coupon"]!!
+        var ind = buildIndividualFromWorkflow(context, workflow)
         var actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 
         assertEquals(listOf("findPetsByTags", "getPetCoupons", "placeOrder"), actions.map { it.operationId })
@@ -64,8 +73,8 @@ class ArazzoSamplerVerifierTest {
         assertEquals(listOf("/pet/findByTags", "/pet/{petId}/coupons", "/store/order"), actions.map { it.path.toString() })
 
         //buy-available-pet
-        workflow = sampler.arazzoWorkflowsById["buy-available-pet"]!!
-        ind = sampler.buildIndividualFromWorkflow(workflow)
+        workflow = context.arazzoService.arazzoWorkflowsById["buy-available-pet"]!!
+        ind = buildIndividualFromWorkflow(context, workflow)
         actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 
         assertEquals(listOf("findPetsByStatus", "placeOrder"), actions.map { it.operationId })
@@ -73,8 +82,8 @@ class ArazzoSamplerVerifierTest {
         assertEquals(listOf("/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
 
         //place-order
-        workflow = sampler.arazzoWorkflowsById["place-order"]!!
-        ind = sampler.buildIndividualFromWorkflow(workflow)
+        workflow = context.arazzoService.arazzoWorkflowsById["place-order"]!!
+        ind = buildIndividualFromWorkflow(context, workflow)
         actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
 
         assertEquals(listOf("placeOrder"), actions.map { it.operationId })
@@ -82,7 +91,19 @@ class ArazzoSamplerVerifierTest {
         assertEquals(listOf("/store/order"), actions.map { it.path.toString() })
     }
 
-    private fun createSampler(): ArazzoSampler {
+    private fun buildIndividualFromWorkflow(context: TestContext, workflow: Workflow): RestIndividual {
+        return context.arazzoService.buildIndividualFromWorkflow(
+            workflow,
+            actionCluster(context.sampler),
+            context.sampler::createIndividual,
+        )
+    }
+
+    private fun actionCluster(sampler: RestSampler): Map<String, Action> {
+        return sampler.seeAvailableActions().associate { it.getName() to it }
+    }
+
+    private fun createTestContext(): TestContext {
         val openApiPath = testResourcePath("openapi/pet-coupons-openapi.yaml")
         val arazzoPath = testResourcePath("arazzo/pet-coupons-arazzo.yaml")
 
@@ -99,10 +120,14 @@ class ArazzoSamplerVerifierTest {
             "--seed", "42",
             "--arazzoStrategy", "ENABLED",
             "--arazzoLocation", arazzoPath,
+            "--probOfArazzoSampling", "1.0",
         )
 
         val injector = getInjector(sutInfo, controllerInfo, args)
-        return injector.getInstance(ArazzoSampler::class.java)
+        return TestContext(
+            sampler = injector.getInstance(RestSampler::class.java),
+            arazzoService = injector.getInstance(ArazzoWorkflowsService::class.java),
+        )
     }
 
     private fun testResourcePath(relativePath: String): String {
@@ -133,7 +158,7 @@ class ArazzoSamplerVerifierTest {
         args: List<String>,
     ): Injector {
         val base = BaseModule(args.toTypedArray())
-        val problemModule = ArazzoRestModule(bindRemote = false)
+        val problemModule = RestModule(bindRemote = false)
         val faker = FakeModule(sutInfoDto, controllerInfoDto)
 
         return LifecycleInjector.builder()

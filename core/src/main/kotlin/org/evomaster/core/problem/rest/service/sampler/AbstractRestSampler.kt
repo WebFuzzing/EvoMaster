@@ -35,6 +35,7 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
@@ -79,6 +80,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     @Inject
     protected lateinit var dataPool: DataPool
+
+    @Inject
+    protected lateinit var arazzoWorkflowsService: ArazzoWorkflowsService
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -153,6 +157,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateDataPoolBasedOnSchema(actionCluster)
 
+        if (config.isEnabledArazzoStrategy()) {
+            arazzoWorkflowsService.load(schemaHolder.main.schemaParsed, config.arazzoLocation)
+        }
+
         initSqlInfo(infoDto)
 
         initHostnameInfo(infoDto)
@@ -176,8 +184,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
+    override fun sampleAtRandom(): RestIndividual {
+        if (shouldUseArazzoSampling()) {
+            return arazzoWorkflowsService.sampleAtRandom(actionCluster, ::createIndividual)
+        }
+        return doSampleAtRandom()
+    }
 
-
+    protected abstract fun doSampleAtRandom(): RestIndividual
 
     override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
 
@@ -493,6 +507,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             .forEach {
                 dataPool.addValue(it.name, it.getValueAsRawString())
             }
+    }
+
+    private fun shouldUseArazzoSampling(): Boolean {
+        if (!config.isEnabledArazzoStrategy()) {
+            return false
+        }
+
+        return randomness.nextBoolean(config.probOfArazzoSampling)
     }
 
 }
