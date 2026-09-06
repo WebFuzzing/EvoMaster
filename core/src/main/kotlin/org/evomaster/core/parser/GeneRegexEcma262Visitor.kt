@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
+import org.evomaster.core.utils.RegexFlags
 
 private const val EOF_TOKEN = "<EOF>"
 /**
@@ -23,6 +24,12 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     )
 
     private val jsCharacterClassEscapeCharacters = setOf('d', 'D', 's', 'S', 'w', 'W')
+
+    /**
+     * Tracks the flags active in the current lexical scope.
+     * Updated when entering a flag group, restored on exit.
+     */
+    private var currentFlags = RegexFlags(RegexType.ECMA_262) // default flags (all off)
 
     override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
 
@@ -183,7 +190,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlockGene("block", block)
+            val gene = PatternCharacterBlockGene("block", block, currentFlags)
 
             return VisitResult(gene)
         }
@@ -210,7 +217,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         }
 
         if(ctx.DOT() != null){
-            return VisitResult(AnyCharacterRxGene())
+            return VisitResult(AnyCharacterRxGene(currentFlags))
         }
 
         if(ctx.characterClass() != null){
@@ -227,7 +234,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
-        val gene = CharacterRangeRxGene(negated, ranges)
+        val gene = CharacterRangeRxGene(negated, ranges, currentFlags)
 
         return VisitResult(gene)
     }
@@ -390,30 +397,24 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             // \c cases
             ctx.controlLetterExtendedEscape() != null -> {
                 val chars = interpretControlEscapeLetterSequence(txt, inCharClass = false)
-                if (chars.size == 1) PatternCharacterBlockGene(txt, chars[0].toString())
-                else PatternCharacterBlockGene(txt, chars.joinToString("")) // multi-char literal
+                if (chars.size == 1) PatternCharacterBlockGene(txt, chars[0].toString(), currentFlags)
+                else PatternCharacterBlockGene(txt, chars.joinToString(""), currentFlags) // multi-char literal
             }
             txt[1] in escapeMap -> {
                 val escape = escapeMap[txt[1]]!!
-                PatternCharacterBlockGene(txt, escape)
+                PatternCharacterBlockGene(txt, escape, currentFlags)
             }
             txt[1] in hexEscapePrefixes -> {
                 val hexValue =
                     txt.substring(2).toInt(16)
-                PatternCharacterBlockGene(
-                    txt,
-                    hexValue.toChar().toString()
-                )
+                PatternCharacterBlockGene(txt, hexValue.toChar().toString(), currentFlags)
             }
             txt[1].isDigit() -> {
                 val octalValue = txt.substring(1).toInt(8)
-                PatternCharacterBlockGene(
-                    txt,
-                    octalValue.toChar().toString()
-                )
+                PatternCharacterBlockGene(txt, octalValue.toChar().toString(), currentFlags)
             }
-            txt[1] in jsCharacterClassEscapeCharacters -> CharacterClassEscapeRxGene(txt[1].toString())
-            else -> PatternCharacterBlockGene(txt, txt[1].toString())
+            txt[1] in jsCharacterClassEscapeCharacters -> CharacterClassEscapeRxGene(txt[1].toString(), currentFlags)
+            else -> PatternCharacterBlockGene(txt, txt[1].toString(), currentFlags)
         })
     }
 }
