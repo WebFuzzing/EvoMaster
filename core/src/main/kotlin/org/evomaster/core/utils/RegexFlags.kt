@@ -1,5 +1,6 @@
 package org.evomaster.core.utils
 
+import org.evomaster.core.parser.RegexType
 import java.util.regex.Pattern
 
 /**
@@ -11,6 +12,7 @@ data class ParsedFlagExpression(
     private val toDisable: RegexFlags
 ) {
     internal fun applyTo(current: RegexFlags): RegexFlags = RegexFlags(
+        regexType             = current.regexType,
         caseInsensitive       = merge(current.caseInsensitive,       toEnable.caseInsensitive,       toDisable.caseInsensitive),
         unicodeCase           = merge(current.unicodeCase,           toEnable.unicodeCase,           toDisable.unicodeCase),
         dotAll                = merge(current.dotAll,                toEnable.dotAll,                toDisable.dotAll),
@@ -48,6 +50,7 @@ data class ParsedFlagExpression(
 }
 
 data class RegexFlags(
+    val regexType: RegexType = RegexType.JVM,    // regex type, which changes some flag's behavior
     val caseInsensitive: Boolean = false,        // i
     val unicodeCase: Boolean = false,            // u, this flags modifies behaviour of "i" flag
     val dotAll: Boolean = false,                 // s
@@ -64,9 +67,10 @@ data class RegexFlags(
          * Parses a string of flag characters (e.g. "iu", "sm") into a [RegexFlags] instance.
          * Valid characters are: i, u, s, m, d, U, x.
          */
-        fun fromString(s: String): RegexFlags {
+        fun fromString(s: String, regexType: RegexType = RegexType.JVM): RegexFlags {
             require(s.all { c -> c in validFlagCharacters }) { "Invalid flag characters in: '$s'" }
             return RegexFlags(
+                regexType             = regexType,
                 caseInsensitive       = 'i' in s,
                 unicodeCase           = 'u' in s,
                 dotAll                = 's' in s,
@@ -83,7 +87,8 @@ data class RegexFlags(
          * [java.util.regex.Pattern.compile] to be preserved and applied when building
          * the gene tree, mirroring the behaviour of the Java regex engine.
          */
-        fun fromExternalJavaRegexFlagBitmask(externalRegexFlagsBitmask: Int): RegexFlags = RegexFlags(
+        fun fromExternalJavaRegexFlagBitmask(externalRegexFlagsBitmask: Int, regexType: RegexType = RegexType.JVM): RegexFlags = RegexFlags(
+            regexType             = regexType,
             caseInsensitive       = externalRegexFlagsBitmask and Pattern.CASE_INSENSITIVE != 0,
             unicodeCase           = externalRegexFlagsBitmask and Pattern.UNICODE_CASE != 0,
             dotAll                = externalRegexFlagsBitmask and Pattern.DOTALL != 0,
