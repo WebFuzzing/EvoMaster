@@ -185,10 +185,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
     override fun sampleAtRandom(): RestIndividual {
-        if (shouldUseArazzoSampling()) {
-            return arazzoWorkflowsService.sampleAtRandom(actionCluster, ::createIndividual)
+        return if (shouldUseArazzoSampling()) {
+            arazzoWorkflowsService.sampleAtRandom(actionCluster, ::createIndividual)
+        } else {
+            doSampleAtRandom()
         }
-        return doSampleAtRandom()
     }
 
     protected abstract fun doSampleAtRandom(): RestIndividual

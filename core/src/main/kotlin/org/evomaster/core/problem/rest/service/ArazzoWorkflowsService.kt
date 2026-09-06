@@ -19,12 +19,22 @@ class ArazzoWorkflowsService {
     @Inject
     private lateinit var randomness: Randomness
 
+    /**
+     * List of Arazzo workflows. Used to create individuals.
+     */
     var arazzoWorkflows = mutableListOf<Workflow>()
         private set
 
+    /**
+     * Map containing each Arazzo workflow associated with its corresponding ID.
+     * Used to resolve nested workflow references in steps.
+     */
     lateinit var arazzoWorkflowsById: Map<String, Workflow>
         private set
 
+    /**
+     * Load Arazzo workflows from disk
+     */
     fun load(openAPI: OpenAPI, location: String?) {
         if (location.isNullOrBlank()) {
             throw ConfigProblemException("arazzoLocation must not be null when Arazzo strategy is enabled")
