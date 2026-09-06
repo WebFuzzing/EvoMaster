@@ -31,6 +31,25 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
      */
     private var currentFlags = RegexFlags(RegexType.ECMA_262) // default flags (all off)
 
+    /**
+     * Builds DisjunctionListRxGenes from a disjunction context.
+     */
+    private fun buildDisjunctionList(ctx: RegexEcma262Parser.DisjunctionContext): DisjunctionListRxGene {
+        val res = ctx.accept(this)
+
+        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+
+        //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
+        for (gene in disjList.disjunctions) {
+            gene.extraPrefix = false
+            gene.extraPostfix = false
+            gene.matchStart = true
+            gene.matchEnd = true
+        }
+
+        return disjList
+    }
+
     override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -43,7 +62,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val gene = RegexGene(
             "regex",
             disjList,
-            text.substring(0,text.length - EOF_TOKEN.length),
+            text.dropLast(EOF_TOKEN.length),
             RegexType.ECMA_262
         )
 
@@ -200,19 +219,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         }
 
         if(ctx.disjunction() != null){
-
-            val res = ctx.disjunction().accept(this)
-
-            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
-
-            //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
-            for(gene in disjList.disjunctions){
-                gene.extraPrefix = false
-                gene.extraPostfix = false
-                gene.matchStart = true
-                gene.matchEnd = true
-            }
-
+            val disjList = buildDisjunctionList(ctx.disjunction())
             return VisitResult(disjList)
         }
 
