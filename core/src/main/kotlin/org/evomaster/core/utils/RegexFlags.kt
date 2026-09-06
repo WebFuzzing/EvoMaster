@@ -107,7 +107,13 @@ data class RegexFlags(
          */
         val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
 
+        /**
+         * These are the characters that are considered line terminators by default on JS.
+         */
+        val defaultJSLineTerminators = listOf('\n', '\r', '\u2028', '\u2029').map{ CharacterRange(it) }
+
         val defaultLineTerminatorRanges = MultiCharacterRange(false, defaultLineTerminators)
+        val defaultJSLineTerminatorRanges = MultiCharacterRange(false, defaultJSLineTerminators)
         val unixLineTerminatorRanges = MultiCharacterRange(false, unixLinesModeLineTerminators)
     }
 
@@ -177,11 +183,7 @@ data class RegexFlags(
     /**
      * Checks if the provided character is a line terminator according to the flag behavior.
      */
-    fun isLineTerminator(c: Char) = if (unixLines) {
-            c == '\n'
-        } else {
-            c == '\n' || c == '\r' || c == '\u0085' || c == '\u2028' || c == '\u2029'
-        }
+    fun isLineTerminator(c: Char): Boolean = lineTerminatorRanges.contains(c)
 
     /**
      * Checks if the provided character has a case variant according to the flag behavior, checking both caseInsensitive
@@ -193,6 +195,7 @@ data class RegexFlags(
             Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
         }
         else if (caseInsensitive) {
+            // Note: JS caseInsensitive uses more complex case folding than Java, this is a subset implementation for JS
             codePoint in 0..127 && Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
         }
         else {
@@ -205,5 +208,8 @@ data class RegexFlags(
     /**
      * The [MultiCharacterRange] that corresponds to the current flag state of [unixLines].
      */
-    val lineTerminatorRanges = if(unixLines) unixLineTerminatorRanges else defaultLineTerminatorRanges
+    val lineTerminatorRanges = when(regexType){
+        RegexType.ECMA_262 -> defaultJSLineTerminatorRanges
+        else -> if (unixLines) unixLineTerminatorRanges else defaultLineTerminatorRanges
+    }
 }

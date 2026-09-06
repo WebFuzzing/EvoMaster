@@ -91,6 +91,7 @@ atom
  | PAREN_open disjunction PAREN_close
  //TODO
 // | '(' '?' ':' disjunction ')'
+ | FLAG_GROUP_OPEN disjunction PAREN_close // embedded flags are known as regular expression modifiers on JS
  ;
 
 
@@ -142,6 +143,7 @@ patternCharacter
  : BaseChar
  | COMMA
  | MINUS
+ | COLON
  | DecimalDigit
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
@@ -188,7 +190,7 @@ classAtomNoDash
  | BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | COLON ;
 
 
 classEscape
@@ -248,11 +250,12 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+COLON                      : ':';
 
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9,^$\\.*+?()[\]{}|-]
+ : ~[0-9,^$\\.*+?()[\]{}|:-]
  ;
 
 fragment OctalEscapeSequence
@@ -283,6 +286,12 @@ fragment OctalDigit:
 // | [1-9] DecimalDigit*
 // ;
 
+FLAG_GROUP_OPEN
+ /* TODO 'm' flag is allowed on JS, but we currently do not represent ^$ as AssertionRxGenes, since we can not check
+ Pattern for matching behavior to check for sucessful repairs like we do in Java regex. So for now we ignore it here. */
+ : PAREN_open QUESTION [is]+ (MINUS [is]*)? COLON
+ | PAREN_open QUESTION MINUS [is]+ COLON
+ ;
 
 
 

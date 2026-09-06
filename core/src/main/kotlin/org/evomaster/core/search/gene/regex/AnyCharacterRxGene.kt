@@ -20,6 +20,7 @@ import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.RegexFlags
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 private const val DEFAULT_VALUE = 'a'
 private const val ANY_CHARACTER_RX_GENE_DEFAULT_NAME = "."
@@ -41,17 +42,22 @@ class AnyCharacterRxGene(
             so for now we avoid surrogates altogether
          */
         val dotAllValidRanges = MultiCharacterRange(true,listOf(CharacterRange(firstSurrogateChar,lastSurrogateChar))) // all characters accepted
-        val defaultValidRanges = MultiCharacterRange(true,RegexFlags.defaultLineTerminators).intersect(dotAllValidRanges)
-        val unixLinesValidRanges = MultiCharacterRange(true, RegexFlags.unixLinesModeLineTerminators).intersect(dotAllValidRanges)
+
+        private val validRangesCache = ConcurrentHashMap<MultiCharacterRange, MultiCharacterRange>()
+
+        /**
+         * Get the valid character ranges ([MultiCharacterRange]) for regex wildcard `.` from [lineTerminators].
+         */
+        private fun dotValidRangesFor(lineTerminators: MultiCharacterRange): MultiCharacterRange =
+            validRangesCache.getOrPut(lineTerminators) {
+                MultiCharacterRange(true, lineTerminators.ranges).intersect(dotAllValidRanges)
+            }
     }
 
     var value: Char = DEFAULT_VALUE // this default value is throwaway as randomize should be called before first usage
 
-    val validRanges = when {
-        flags.dotAll -> dotAllValidRanges
-        flags.unixLines -> unixLinesValidRanges
-        else -> defaultValidRanges
-    }
+    val validRanges: MultiCharacterRange =
+        if (flags.dotAll) dotAllValidRanges else dotValidRangesFor(flags.lineTerminatorRanges)
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true

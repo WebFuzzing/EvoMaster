@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.RegexFlags
+import org.evomaster.core.utils.ParsedFlagExpression
 
 private const val EOF_TOKEN = "<EOF>"
 /**
@@ -204,6 +205,33 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
     override fun visitAtom(ctx: RegexEcma262Parser.AtomContext): VisitResult {
+
+        // flag group: (?i:disjunction) (?iu:disjunction) (?-i:disjunction) etc.
+        if (ctx.FLAG_GROUP_OPEN() != null) {
+            val previous = currentFlags
+
+            val txt = ctx.FLAG_GROUP_OPEN().text
+
+            //JS does not accept things like (?ii:) or (?i-i:) etc
+            require(txt.toSet().size == txt.length){ "Repeated flag in flag group" }
+
+            val merged = currentFlags.merge(
+                ParsedFlagExpression.fromFlagToken(txt)
+            )
+
+            check(!merged.unixLines && !merged.unicodeCase && !merged.unicodeCharacterClass && !merged.comments){
+                // this should not happen as the ECMA parser does not allow flags other than i, m and s
+                "One of the embedded flags used is not allowed on JS regex"
+            }
+
+            currentFlags = merged
+
+            val disjList = buildDisjunctionList(ctx.disjunction())
+
+            currentFlags = previous
+
+            return VisitResult(disjList)
+        }
 
         if(! ctx.patternCharacter().isEmpty()){
             val block = ctx.patternCharacter().map { it.text }
