@@ -230,6 +230,11 @@
             <artifactId>dynamodb</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb-enhanced</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Some third-party library we use in our test scaffolding might need SLF4j (i.e., Docker) -->
         <dependency>
             <groupId>org.slf4j</groupId>
