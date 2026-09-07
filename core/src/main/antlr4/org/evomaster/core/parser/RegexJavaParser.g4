@@ -182,7 +182,8 @@ decimalDigits
  ;
 
 classEscape
- : atomEscape
+ : CharacterClassEscape   // char class
+ | CharacterEscape        // single char
 // | SLASH 'b'
  ;
 

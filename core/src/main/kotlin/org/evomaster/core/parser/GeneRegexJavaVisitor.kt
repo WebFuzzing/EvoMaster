@@ -109,6 +109,30 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         return false
     }
 
+    private fun resolveCharacterEscapeString(txt: String): String = when (txt[1]) {
+        '0' -> String(Character.toChars(txt.substring(2).toInt(8)))
+        'c' -> {
+            val controlLetterValue = if (txt[2].isLowerCase()) {
+                txt[2].uppercaseChar().code.xor(0x60)
+            } else {
+                txt[2].code.xor(0x40)
+            }
+            controlLetterValue.toChar().toString()
+        }
+        in escapeMap -> escapeMap[txt[1]]!!
+        in hexEscapePrefixes -> {
+            val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt.last() == '}') {
+                txt.substring(3, txt.length - 1).toInt(16)
+            } else {
+                txt.substring(2).toInt(16)
+            }
+            if (hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT)
+                throw IllegalArgumentException("Hexadecimal escape out of range: $txt")
+            String(Character.toChars(hexValue))
+        }
+        else -> txt.substring(1) // identity escape
+    }
+
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -616,31 +640,17 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
     override fun visitClassEscape(ctx: RegexJavaParser.ClassEscapeContext): VisitResult {
 
-        val res = VisitResult()
-        res.data = if(ctx.atomEscape() != null &&
-            (ctx.atomEscape().BackReference() != null || ctx.atomEscape().NamedBackReference() != null)
-            ) {
-            // In Java using backrefs or named backrefs is illegal within char classes. (i.e.: [\1\k<name>])
-            throw IllegalArgumentException("Illegal/unsupported escape sequence")
-        } else if (ctx.atomEscape() != null) {
-            when (val rec = ctx.atomEscape().accept(this).genes[0]) {
-                is CharacterClassEscapeRxGene -> {
-                    rec.multiCharRange.ranges
-                }
-
-                is PatternCharacterBlockGene -> {
-                    if (rec.stringBlock.length > 1) {
-                        throw IllegalArgumentException("CharClass element cannot be strings")
-                    }
-                    else listOf(CharacterRange(rec.stringBlock[0], rec.stringBlock[0]))
-                }
-
-                else -> throw IllegalArgumentException("Unexpected CharClass content")
+        val txt = ctx.text
+        val ranges = when {
+            ctx.CharacterClassEscape() != null ->
+                CharacterClassEscapeRxGene(txt.substring(1), currentFlags).multiCharRange.ranges
+            else -> { // character escape
+                val s = resolveCharacterEscapeString(txt)
+                if (s.length > 1) throw IllegalArgumentException("CharClass element cannot be strings")
+                listOf(CharacterRange(s[0], s[0]))
             }
-        } else {
-            throw IllegalArgumentException("Not implemented yet")
         }
-        return res
+        return VisitResult(data = ranges)
     }
 
     override fun visitAtomEscape(ctx: RegexJavaParser.AtomEscapeContext): VisitResult {
@@ -687,44 +697,11 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             return VisitResult(BackReferenceRxGene(groupIndex, group))
         }
 
-        return VisitResult(when (txt[1]) {
-            '0' -> {
-                val octalValue = txt.substring(2).toInt(8)
-                PatternCharacterBlockGene(
-                        txt,
-                        String(Character.toChars(octalValue)),
-                        currentFlags
-                )
-            }
-            'c' -> {
-                val controlLetterValue = if (txt[2].isLowerCase()){
-                    txt[2].uppercaseChar().code.xor(0x60)
-                } else {
-                    txt[2].code.xor(0x40)
-                }
-                PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString(), currentFlags)
-            }
-            in escapeMap -> {
-                val escape = escapeMap[txt[1]]!!
-                PatternCharacterBlockGene(txt, escape, currentFlags)
-            }
-            in hexEscapePrefixes -> {
-                val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}') {
-                    txt.substring(3, txt.length - 1).toInt(16)
-                } else {
-                    txt.substring(2).toInt(16)
-                }
-                if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
-                    throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
-                }
-                PatternCharacterBlockGene(
-                        txt,
-                        String(Character.toChars(hexValue)),
-                        currentFlags
-                )
-            }
-            !in notIdentityEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
-            else -> CharacterClassEscapeRxGene(txt.substring(1), currentFlags)
-        })
+        if (ctx.CharacterClassEscape() != null) {
+            return VisitResult(CharacterClassEscapeRxGene(ctx.CharacterClassEscape().text.substring(1), currentFlags))
+        }
+
+        // character escape
+        return VisitResult(PatternCharacterBlockGene(txt, resolveCharacterEscapeString(txt), currentFlags))
     }
 }
