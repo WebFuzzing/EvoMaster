@@ -276,7 +276,7 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
-    override fun testJSExclusiveEscapes() {
+    override fun testJSExclusiveOrDifferentFromJava() {
         // JS exclusive
     }
 

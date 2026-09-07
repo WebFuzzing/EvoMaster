@@ -377,7 +377,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     }
 
     @Test
-    open fun testJSExclusiveEscapes(){
+    open fun testJSExclusiveOrDifferentFromJava(){
         checkCanSample("""\a""", "a", 100)
         checkCanSample("""[\c0]""", "\u0010", 100)
         checkCanSample("""[\cP][\c0]""", "\u0010\u0010", 100)
@@ -390,5 +390,19 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkCanSample("""\001\007""", "\u0001\u0007", 100)
         checkCanSample("""\123\377""", "\u0053\u00ff", 100)
         checkCanSample("""a[\bc]d""", "a\bd", 100)
+
+        // in JS 0x85 (NEL) is not considered a line terminator, as such it is matched by . even without DOT_ALL flag
+        checkCanSample(".", "\u0085", 1_000_000)
+    }
+
+    @Test
+    fun testJSRegexModifiers(){
+        checkSameAsJava("""^(?i-s:)$""")
+        checkSameAsJava("""^(?i:a.*[abc]+\w{1,3})$""")
+        checkCanSample("""^(?i:a)(?i:A)$""", listOf("aa", "aA", "Aa", "AA"), 100)
+        checkSameAsJava("""^(?i:\u00C2)$""")
+        checkSameAsJava("""^(?i:[\u03A1\u00C2]*)$""")
+        checkSameAsJava("""^(?s:.+)$""")
+        checkSameAsJava("""^(?s:.+(?i:caseInsensitive.(?-i:caseSensitive.)))$""")
     }
 }
