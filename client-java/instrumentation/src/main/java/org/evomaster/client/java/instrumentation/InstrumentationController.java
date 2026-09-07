@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
-import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
@@ -64,6 +63,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitRedis(executingInitRedis);
     }
 
+    public static void setExecutingInitDynamoDb(boolean executingInitDynamoDb){
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
@@ -83,7 +86,7 @@ public class InstrumentationController {
         Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
         if(ids != null) {
-            ids.stream().forEach(id -> {
+            ids.forEach(id -> {
 
                 String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
 
@@ -103,7 +106,7 @@ public class InstrumentationController {
             /*
              *  If new targets were found, we add them even if not requested by EM
              */
-            ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
+            ObjectiveRecorder.getTargetsSeenFirstTime().forEach(s -> {
 
                 int mappedId = ObjectiveRecorder.getMappedId(s);
 
@@ -137,7 +140,7 @@ public class InstrumentationController {
                         }
                         return info;
                     })
-                    .forEach(e -> list.add(e));
+                    .forEach(list::add);
         }
 
         if(fullyCovered){
