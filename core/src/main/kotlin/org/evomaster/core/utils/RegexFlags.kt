@@ -11,23 +11,6 @@ data class ParsedFlagExpression(
     private val toEnable: RegexFlags,
     private val toDisable: RegexFlags
 ) {
-    internal fun applyTo(current: RegexFlags): RegexFlags = RegexFlags(
-        regexType             = current.regexType,
-        caseInsensitive       = merge(current.caseInsensitive,       toEnable.caseInsensitive,       toDisable.caseInsensitive),
-        unicodeCase           = merge(current.unicodeCase,           toEnable.unicodeCase,           toDisable.unicodeCase),
-        dotAll                = merge(current.dotAll,                toEnable.dotAll,                toDisable.dotAll),
-        multiline             = merge(current.multiline,             toEnable.multiline,             toDisable.multiline),
-        unixLines             = merge(current.unixLines,             toEnable.unixLines,             toDisable.unixLines),
-        unicodeCharacterClass = merge(current.unicodeCharacterClass, toEnable.unicodeCharacterClass, toDisable.unicodeCharacterClass),
-        comments              = merge(current.comments,              toEnable.comments,              toDisable.comments),
-    )
-
-    private fun merge(current: Boolean, enable: Boolean, disable: Boolean) = when {
-        disable -> false
-        enable  -> true
-        else    -> current
-    }
-
     companion object {
         /**
          * Parses a FLAG_GROUP_OPEN or FLAG_SCOPE_OPEN token text like "(?i:", "(?iu:", "(?-i:", "(?i-u:", "(?iu)", etc.
@@ -47,6 +30,23 @@ data class ParsedFlagExpression(
             )
         }
     }
+
+    internal fun applyTo(current: RegexFlags): RegexFlags = RegexFlags(
+        regexType             = current.regexType,
+        caseInsensitive       = merge(current.caseInsensitive,       toEnable.caseInsensitive,       toDisable.caseInsensitive),
+        unicodeCase           = merge(current.unicodeCase,           toEnable.unicodeCase,           toDisable.unicodeCase),
+        dotAll                = merge(current.dotAll,                toEnable.dotAll,                toDisable.dotAll),
+        multiline             = merge(current.multiline,             toEnable.multiline,             toDisable.multiline),
+        unixLines             = merge(current.unixLines,             toEnable.unixLines,             toDisable.unixLines),
+        unicodeCharacterClass = merge(current.unicodeCharacterClass, toEnable.unicodeCharacterClass, toDisable.unicodeCharacterClass),
+        comments              = merge(current.comments,              toEnable.comments,              toDisable.comments),
+    )
+
+    private fun merge(current: Boolean, enable: Boolean, disable: Boolean) = when {
+        disable -> false
+        enable  -> true
+        else    -> current
+    }
 }
 
 data class RegexFlags(
@@ -62,6 +62,23 @@ data class RegexFlags(
 
     companion object {
         val validFlagCharacters = setOf('i', 'u', 's', 'm', 'd', 'U', 'x')
+
+        /**
+         * These are the characters that are considered line terminators by default (i.e.: no flags used).
+         */
+        val defaultLineTerminators = listOf('\n', '\r', '\u0085', '\u2028', '\u2029').map{ CharacterRange(it) }
+        /**
+         * When the `UNIX_LINES` flag is on, only `\n` is considered a line terminator.
+         */
+        val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
+        /**
+         * These are the characters that are considered line terminators by default on JS.
+         */
+        val defaultJSLineTerminators = listOf('\n', '\r', '\u2028', '\u2029').map{ CharacterRange(it) }
+
+        val defaultLineTerminatorRanges = MultiCharacterRange(false, defaultLineTerminators)
+        val unixLineTerminatorRanges = MultiCharacterRange(false, unixLinesModeLineTerminators)
+        val defaultJSLineTerminatorRanges = MultiCharacterRange(false, defaultJSLineTerminators)
 
         /**
          * Parses a string of flag characters (e.g. "iu", "sm") into a [RegexFlags] instance.
@@ -97,24 +114,14 @@ data class RegexFlags(
             unicodeCharacterClass = externalRegexFlagsBitmask and Pattern.UNICODE_CHARACTER_CLASS != 0,
             comments              = externalRegexFlagsBitmask and Pattern.COMMENTS != 0
         )
+    }
 
-        /**
-         * These are the characters that are considered line terminators by default (i.e.: no flags used).
-         */
-        val defaultLineTerminators = listOf('\n', '\r', '\u0085', '\u2028', '\u2029').map{ CharacterRange(it) }
-        /**
-         * When the `UNIX_LINES` flag is on, only `\n` is considered a line terminator.
-         */
-        val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
-
-        /**
-         * These are the characters that are considered line terminators by default on JS.
-         */
-        val defaultJSLineTerminators = listOf('\n', '\r', '\u2028', '\u2029').map{ CharacterRange(it) }
-
-        val defaultLineTerminatorRanges = MultiCharacterRange(false, defaultLineTerminators)
-        val defaultJSLineTerminatorRanges = MultiCharacterRange(false, defaultJSLineTerminators)
-        val unixLineTerminatorRanges = MultiCharacterRange(false, unixLinesModeLineTerminators)
+    /**
+     * The [MultiCharacterRange] that corresponds to the current flag state of [unixLines].
+     */
+    val lineTerminatorRanges = when(regexType){
+        RegexType.ECMA_262 -> defaultJSLineTerminatorRanges
+        else -> if (unixLines) unixLineTerminatorRanges else defaultLineTerminatorRanges
     }
 
     /**
@@ -193,23 +200,20 @@ data class RegexFlags(
         // unicodeCharacterClass implies also unicodeCase
         return if (caseInsensitive && (unicodeCase || unicodeCharacterClass)) {
             Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
-        }
-        else if (caseInsensitive) {
-            // Note: JS caseInsensitive uses more complex case folding than Java, this is a subset implementation for JS
+        } else if (caseInsensitive) {
+            /*
+             * Note: JS case-insensitivity ("i" flag) folds more characters than Java's "i" flag
+             * (which is ASCII only), but does not match Java's Unicode folding ("iu"/"iU").
+             * Without a JS runtime to provide exact JS case-folding rules, we fall back to Java folding (ASCII only).
+             * Furthermore, while JS allows "i" as an embedded flag, it restricts embedding the "u" flag
+             * since that changes regex engine behavior and available features. As a result, JS will only
+             * ever evaluate here or on the else branch (no folding).
+             */
             codePoint in 0..127 && Character.toUpperCase(codePoint) != Character.toLowerCase(codePoint)
-        }
-        else {
+        } else {
             false
         }
     }
     /** @see org.evomaster.core.utils.RegexFlags.isCaseable */
     fun isCaseable(char: Char): Boolean = isCaseable(char.code)
-
-    /**
-     * The [MultiCharacterRange] that corresponds to the current flag state of [unixLines].
-     */
-    val lineTerminatorRanges = when(regexType){
-        RegexType.ECMA_262 -> defaultJSLineTerminatorRanges
-        else -> if (unixLines) unixLineTerminatorRanges else defaultLineTerminatorRanges
-    }
 }
