@@ -120,7 +120,6 @@ patternCharacter
  | BRACE_close
  | BRACKET_close
  | COLON | EQUAL | LESS_THAN
- | DOUBLE_AMPERSAND // char class intersection not supported by default in JS, only supported if "v" flag is turned on.
  ;
 
 
@@ -130,7 +129,7 @@ characterClass
     ;
 
 classContents
-    : classRanges (DOUBLE_AMPERSAND classRanges)*
+    : classRanges (CC_DOUBLE_AMPERSAND classRanges)*
     ;
 
 classRanges
@@ -161,20 +160,10 @@ classAtom
 
 classAtomNoDash
  //SourceCharacter but not one of \ or ] or - or [
- //TODO
  //: ~[-\]\\]
  : classEscape
- | BaseChar
- | DecimalDigit
- | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACE_open | BRACE_close | OR
- | COLON | EQUAL | LESS_THAN
- // should be interpreted literally:
- // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
- // steps to interpret them correctly given the context.
- // [(?iu)] -> FLAG_SCOPE_OPEN, each letter of the token should be interpreted literally.
- | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
- | NAMED_CAPTURE_GROUP_OPEN
+ | CARET
+ | BaseChar // this is the CHAR_CLASS_MODE token (CC_BaseChar), so it includes all chars but \ or ] or - or [ or ^
  ;
 
 decimalDigits
