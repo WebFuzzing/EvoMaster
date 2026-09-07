@@ -1,16 +1,28 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKey;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
+import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
+import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
+import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Processes DynamoDB commands captured from the SUT and computes database heuristics for them.
@@ -19,12 +31,15 @@ public class DynamoDbHandler {
 
     private final List<DynamoDbCommand> commands = new ArrayList<>();
     private final List<DynamoDbCommandWithDistance> evaluatedCommands = new ArrayList<>();
+    private final List<DynamoDbFailedQuery> failedQueries = new ArrayList<>();
+    private final Set<String> insertionKeys = new LinkedHashSet<>();
     private final DynamoDbRequestParser requestParser = new DynamoDbRequestParser();
     private final DynamoDbHeuristicsCalculator calculator =
             new DynamoDbHeuristicsCalculator(new TaintHandlerExecutionTracer());
     private final DynamoDbTableDataAccessor tableDataAccessor = new DynamoDbTableDataAccessor();
 
     private volatile boolean calculateHeuristics;
+    private volatile boolean extractDynamoDbExecution;
     private Object dynamoDbClient;
 
     /**
@@ -32,6 +47,7 @@ public class DynamoDbHandler {
      */
     public DynamoDbHandler() {
         calculateHeuristics = true;
+        extractDynamoDbExecution = true;
     }
 
     /**
@@ -40,6 +56,8 @@ public class DynamoDbHandler {
     public void reset() {
         commands.clear();
         evaluatedCommands.clear();
+        failedQueries.clear();
+        insertionKeys.clear();
     }
 
     /**
@@ -56,6 +74,22 @@ public class DynamoDbHandler {
      */
     public void setCalculateHeuristics(boolean calculateHeuristics) {
         this.calculateHeuristics = calculateHeuristics;
+    }
+
+    /**
+     * @return whether failed DynamoDB reads are extracted
+     */
+    public boolean isExtractDynamoDbExecution() {
+        return extractDynamoDbExecution;
+    }
+
+    /**
+     * Enables or disables extraction of failed DynamoDB reads.
+     *
+     * @param extractDynamoDbExecution new extraction state
+     */
+    public void setExtractDynamoDbExecution(boolean extractDynamoDbExecution) {
+        this.extractDynamoDbExecution = extractDynamoDbExecution;
     }
 
     /**
@@ -84,7 +118,7 @@ public class DynamoDbHandler {
      * @return evaluated commands for the current action
      */
     public List<DynamoDbCommandWithDistance> getEvaluatedDynamoDbCommands() {
-        if (!calculateHeuristics) {
+        if (!calculateHeuristics && !extractDynamoDbExecution) {
             commands.clear();
             return Collections.emptyList();
         }
@@ -95,6 +129,15 @@ public class DynamoDbHandler {
         }
         commands.clear();
         return new ArrayList<>(evaluatedCommands);
+    }
+
+    /**
+     * @return failed reads captured for the current action
+     */
+    public DynamoDbExecutionsDto getExecutionDto() {
+        DynamoDbExecutionsDto dto = new DynamoDbExecutionsDto();
+        dto.failedQueries = new ArrayList<>(failedQueries);
+        return dto;
     }
 
     /**
@@ -131,12 +174,121 @@ public class DynamoDbHandler {
                 }
                 double distance = calculator.computeDistance(
                         parsed.getKeyCondition(), parsed.getFilterExpression(), items);
-                evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName,
-                        new DynamoDbDistanceWithMetrics(distance, items.size(), false)));
+                DynamoDbDistanceWithMetrics metrics = new DynamoDbDistanceWithMetrics(distance, items.size(), false);
+                if (calculateHeuristics) {
+                    evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName, metrics));
+                }
+                if (extractDynamoDbExecution && distance > 0.0d) {
+                    registerFailedQuery(command, tableName, parsed);
+                }
             } catch (RuntimeException e) {
                 registerFailure(command, tableName, e);
             }
         }
+    }
+
+    /**
+     * Registers one positive-distance DynamoDB read when its conditions can define an insertion item.
+     *
+     * @param command intercepted DynamoDB read
+     * @param tableName table read by the command
+     * @param parsed parsed request conditions
+     */
+    private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed) {
+        if (command.getOperationName() != DynamoDbOperationNames.GET_ITEM
+                && command.getOperationName() != DynamoDbOperationNames.QUERY) {
+            return;
+        }
+
+        Map<String, DynamoDbAttributeValueDto> attributes = new LinkedHashMap<>();
+        if (!evaluateEqualitiesAsFlatAttributes(parsed.getKeyCondition(), attributes)
+                || !evaluateEqualitiesAsFlatAttributes(parsed.getFilterExpression(), attributes)
+                || attributes.isEmpty()) {
+            return;
+        }
+
+        List<DynamoDbAttributeValueDto> insertionAttributes = new ArrayList<>(attributes.values());
+        String insertionKey = DynamoDbInsertionKey.fromAttributes(tableName, insertionAttributes);
+        if (insertionKeys.add(insertionKey)) {
+            failedQueries.add(new DynamoDbFailedQuery(tableName, insertionAttributes));
+        }
+    }
+
+    /**
+     * Evaluates whether a condition can be represented as flat scalar insertion attributes.
+     * <p>
+     * The condition must be {@code null}, a conjunction, or a top-level equality whose value is a string,
+     * number, or boolean. Equalities are iteratively flattened into {@code attributes}; the method returns
+     * {@code false} for unsupported predicates, nested document paths, or conflicting values for one attribute.
+     * For example, the resolved condition
+     * {@code country = "Argentina" AND (fifaId = 10 AND captain = true)} produces the flat attributes
+     * {@code country -> (STRING, Argentina)}, {@code fifaId -> (NUMBER, 10)}, and
+     * {@code captain -> (BOOLEAN, true)}.
+     * A syntactically supported condition can still fail: {@code country = "Argentina" AND country = "Brazil"}
+     * returns {@code false}, because one flat insertion item cannot assign two different values to {@code country}.
+     *
+     * @param operation condition to evaluate
+     * @param attributes inferred insertion attributes, populated when the condition is supported
+     * @return {@code true} if the condition is representable as flat scalar attributes
+     */
+    private boolean evaluateEqualitiesAsFlatAttributes(
+            QueryOperation operation,
+            Map<String, DynamoDbAttributeValueDto> attributes) {
+        if (operation == null) {
+            return true;
+        }
+
+        List<QueryOperation> pending = new ArrayList<>();
+        pending.add(operation);
+        while (!pending.isEmpty()) {
+            QueryOperation current = pending.remove(pending.size() - 1);
+            if (current instanceof AndOperation) {
+                List<QueryOperation> conditions = ((AndOperation) current).getConditions();
+                for (int i = conditions.size() - 1; i >= 0; i--) {
+                    pending.add(conditions.get(i));
+                }
+                continue;
+            }
+            if (!(current instanceof EqualsOperation<?>)) {
+                return false;
+            }
+
+            EqualsOperation<?> equality = (EqualsOperation<?>) current;
+            String name = equality.getFieldName();
+            if (name == null || name.isEmpty() || name.contains(".") || name.contains("[")) {
+                return false;
+            }
+            DynamoDbAttributeValueDto attribute = toAttribute(name, equality.getValue());
+            if (attribute == null) {
+                return false;
+            }
+            DynamoDbAttributeValueDto existing = attributes.get(name);
+            if (existing != null && (existing.type != attribute.type || !existing.value.equals(attribute.value))) {
+                return false;
+            }
+            attributes.put(name, attribute);
+        }
+        return true;
+    }
+
+    /**
+     * Converts a supported scalar equality value to the DTO used for a DynamoDB insertion attribute.
+     *
+     * @param name attribute name
+     * @param value equality value
+     * @return the corresponding scalar attribute, or {@code null} when the value is unsupported
+     */
+    private DynamoDbAttributeValueDto toAttribute(String name, Object value) {
+        if (value instanceof String) {
+            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.STRING, (String) value);
+        }
+        if (value instanceof Number) {
+            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.NUMBER, String.valueOf(value));
+        }
+        if (value instanceof Boolean) {
+            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.BOOLEAN, String.valueOf(value));
+        }
+        return null;
     }
 
     /**

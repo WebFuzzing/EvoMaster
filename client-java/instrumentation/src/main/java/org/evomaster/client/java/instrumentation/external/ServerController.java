@@ -122,8 +122,7 @@ public class ServerController {
         }
 
         try {
-            Object obj = in.readObject();
-            return obj;
+            return in.readObject();
         } catch (IOException e) {
             SimpleLogger.error("IO exception while waiting for response", e);
             return null;
@@ -210,6 +209,10 @@ public class ServerController {
 
     public boolean setExecutingInitRedis(boolean executingInitRedis) {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_REDIS, executingInitRedis);
+    }
+
+    public boolean setExecutingInitDynamoDb(boolean executingInitDynamoDb) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_DYNAMODB, executingInitDynamoDb);
     }
 
     public boolean setExecutingAction(boolean executingAction){

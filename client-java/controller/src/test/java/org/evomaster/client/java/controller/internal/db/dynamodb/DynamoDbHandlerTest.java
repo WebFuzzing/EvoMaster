@@ -1,5 +1,9 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
@@ -101,6 +105,43 @@ public class DynamoDbHandlerTest {
         assertTrue(handler.getEvaluatedDynamoDbCommands().isEmpty());
     }
 
+    @Test
+    public void testExtractsAndDeduplicatesNestedWorldCupPlayerQueries() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        handler.handle(nestedQueryCommand());
+        handler.handle(nestedQueryCommand());
+
+        handler.getEvaluatedDynamoDbCommands();
+        DynamoDbExecutionsDto execution = handler.getExecutionDto();
+
+        assertEquals(1, execution.failedQueries.size());
+        DynamoDbFailedQuery failedQuery = execution.failedQueries.get(0);
+        assertEquals(TABLE, failedQuery.tableName);
+        assertAttribute(failedQuery.attributes, "country", DynamoDbScalarTypeDto.STRING, "Argentina");
+        assertAttribute(failedQuery.attributes, "playerName", DynamoDbScalarTypeDto.STRING, "Lionel Scaloni");
+        assertAttribute(failedQuery.attributes, "fifaId", DynamoDbScalarTypeDto.NUMBER, "10");
+        assertAttribute(failedQuery.attributes, "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
+
+        handler.reset();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
+    @Test
+    public void testExtractionCanRunWithoutHeuristicCollection() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        handler.setCalculateHeuristics(false);
+        handler.handle(queryCommand("Lionel Scaloni"));
+
+        assertTrue(handler.getEvaluatedDynamoDbCommands().isEmpty());
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+
+        handler.reset();
+        handler.setExtractDynamoDbExecution(false);
+        handler.handle(queryCommand("Lionel Scaloni"));
+        handler.getEvaluatedDynamoDbCommands();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
     private DynamoDbHandler enabledHandler(Object client) {
         DynamoDbHandler handler = new DynamoDbHandler();
         handler.setCalculateHeuristics(true);
@@ -120,6 +161,35 @@ public class DynamoDbHandlerTest {
                 .build();
         return new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
                 request, true, 1L);
+    }
+
+    private DynamoDbCommand nestedQueryCommand() {
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":country", AttributeValue.builder().s("Argentina").build());
+        values.put(":player", AttributeValue.builder().s("Lionel Scaloni").build());
+        values.put(":fifaId", AttributeValue.builder().n("10").build());
+        values.put(":captain", AttributeValue.builder().bool(true).build());
+        QueryRequest request = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :country")
+                .filterExpression("playerName = :player AND (fifaId = :fifaId AND captain = :captain)")
+                .expressionAttributeValues(values)
+                .build();
+        return new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                request, true, 1L);
+    }
+
+    private void assertAttribute(
+            List<DynamoDbAttributeValueDto> attributes,
+            String name,
+            DynamoDbScalarTypeDto type,
+            String value) {
+        DynamoDbAttributeValueDto attribute = attributes.stream()
+                .filter(candidate -> name.equals(candidate.attributeName))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing attribute " + name));
+        assertEquals(type, attribute.type);
+        assertEquals(value, attribute.value);
     }
 
     private static Map<String, AttributeValue> item(String country, String playerName) {
@@ -154,7 +224,7 @@ public class DynamoDbHandlerTest {
             }
             return ScanResponse.builder()
                     .items(Collections.singletonList(item("Argentina", "Lionel Messi")))
-                    .lastEvaluatedKey(Collections.<String, AttributeValue>emptyMap())
+                    .lastEvaluatedKey(Collections.emptyMap())
                     .build();
         }
     }
