@@ -21,11 +21,22 @@ import java.util.regex.Pattern
  *
  * Results are computed lazily on first access and cached statically for the lifetime of the JVM.
  * The cache is shared across all instances of this class.
+ *
+ * Note: computed against the JDK running EvoMaster core, not necessarily the same JDK
+ * as the SUT. Different JDK versions can bundle different Unicode Character Database
+ * versions. So classification of some code points could differ between the two,
+ * as each Unicode version can add/recategorize characters.
  */
 object UnicodeCache {
     /**
+     * Key: a normalized property or class label, such as "gc=Lu", produced by
+     * [normalizeKey], or a fixed word boundary key from [getWordForBoundaryRanges].
+     * Negated labels are prefixed with "^".
+     *
+     * Value: the [MultiCharacterRange] of code points matched by that key.
+     *
      * WARNING: mutable static state. But as it is just a cache, it is not a problem.
-     * Furthermore, although the hashmap is mutable, the values inside are not
+     * Furthermore, although the hashmap is mutable, the values inside are not.
      */
     private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
 
