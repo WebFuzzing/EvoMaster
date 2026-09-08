@@ -170,6 +170,16 @@ public class MongoHeuristicsCalculatorTest {
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
         assertTrue(distanceNotMatch.isFalse());
+
+        Bson negBsonTrue = Filters.nin("age", new ArrayList<>(Arrays.asList(1, 10, 8)));
+        Bson negBsonFalse = Filters.nin("age", new ArrayList<>(Arrays.asList(1, 15)));
+
+        Truthness negDistanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonTrue), doc);
+        Truthness negDistanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonFalse), doc);
+
+        assertTrue(negDistanceMatch.isFalse());
+        assertTrue(negDistanceNotMatch.isTrue());
+
     }
 
     @Test
@@ -183,6 +193,16 @@ public class MongoHeuristicsCalculatorTest {
 
         assertTrue(distanceMatch.isTrue(), "Should match because null is in the list and undefined is treated as null");
         assertTrue(distanceNotMatch.isFalse(), "Should not match because null is NOT in the list");
+
+        Bson negBsonTrue = Filters.nin("age", new ArrayList<>(Arrays.asList(null, 10, 8)));
+        Bson negBsonFalse = Filters.nin("age", new ArrayList<>(Arrays.asList(1, 15)));
+
+        Truthness negDistanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonTrue), doc);
+        Truthness negDistanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonFalse), doc);
+
+        assertTrue(negDistanceMatch.isFalse());
+        assertTrue(negDistanceNotMatch.isTrue());
+
     }
 
     @Test
@@ -196,6 +216,16 @@ public class MongoHeuristicsCalculatorTest {
 
         assertTrue(distanceMatch.isTrue(), "Should match because null is in the list");
         assertTrue(distanceNotMatch.isFalse(), "Should not match because null is NOT in the list");
+
+        Bson negBsonTrue = Filters.nin("age", new ArrayList<>(Arrays.asList(null, 10, 8)));
+        Bson negBsonFalse = Filters.nin("age", new ArrayList<>(Arrays.asList(1, 15)));
+
+        Truthness negDistanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonTrue), doc);
+        Truthness negDistanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonFalse), doc);
+
+        assertTrue(negDistanceMatch.isFalse());
+        assertTrue(negDistanceNotMatch.isTrue());
+
     }
 
     @Test
@@ -211,6 +241,16 @@ public class MongoHeuristicsCalculatorTest {
 
         assertTrue(distanceMatch.isTrue(), "Should match because 'b' is in both lists");
         assertTrue(distanceNotMatch.isFalse(), "Should not match because no element is in both lists");
+
+        Bson negBsonTrue = Filters.nin("tags", new ArrayList<>(Arrays.asList("b", "z")));
+        Bson negBsonFalse = Filters.nin("tags", new ArrayList<>(Arrays.asList("x", "y")));
+
+        Truthness negDistanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonTrue), doc);
+        Truthness negDistanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(negBsonFalse), doc);
+
+        assertTrue(negDistanceMatch.isFalse(), "Should not match because 'b' is in the list");
+        assertTrue(negDistanceNotMatch.isTrue(), "Should match because no element is in the list");
+
     }
 
     @Test
@@ -1738,7 +1778,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$nin does not look at the elements of an array-valued field")
     public void testNotInAgainstAnArrayField() {
         Document doc = new Document().append("tags", new ArrayList<>(Arrays.asList("a", "b")));
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();

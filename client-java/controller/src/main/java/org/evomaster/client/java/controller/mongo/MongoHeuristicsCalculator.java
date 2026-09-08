@@ -542,20 +542,7 @@ public class MongoHeuristicsCalculator {
             actualValue = null;
         }
 
-        final Truthness res;
-        if (actualValue instanceof List<?>) {
-            List<?> actualValueList = (List<?>) actualValue;
-            if (actualValueList.isEmpty()) {
-                res = C_FALSE;
-            } else {
-                Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
-                        .map(value -> computeHeuristic(value, expectedValueList))
-                        .toArray(Truthness[]::new));
-                res = buildSafeScaledTruthness(orAggregation);
-            }
-        } else {
-            res = computeHeuristic(actualValue, expectedValueList);
-        }
+        final Truthness res = computeInOperation(actualValue, expectedValueList);
         return res;
     }
 
@@ -574,15 +561,36 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristic(NotInOperation<?> operation, Object document) {
         requireNonNullQueryAndDocument(operation, document);
 
-        List<?> expectedValues = operation.getValues();
+        List<?> expectedValueList = operation.getValues();
         final String fieldName = operation.getFieldName();
 
+        final Object actualValue;
         if (!documentContainsField(document, fieldName)) {
-            return TRUE_C;
+            actualValue =null;
         } else {
-            Object actualValue = getValue(document, fieldName);
-            return computeHeuristic(actualValue, expectedValues).invert();
+            actualValue = getValue(document, fieldName);
         }
+
+        final Truthness res = computeInOperation(actualValue, expectedValueList);
+        return res.invert();
+    }
+
+    private Truthness computeInOperation(Object actualValue, List<?> expectedValueList) {
+        final Truthness res;
+        if (actualValue instanceof List<?>) {
+            List<?> actualValueList = (List<?>) actualValue;
+            if (actualValueList.isEmpty()) {
+                res = C_FALSE;
+            } else {
+                Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
+                        .map(value -> computeHeuristic(value, expectedValueList))
+                        .toArray(Truthness[]::new));
+                res = buildSafeScaledTruthness(orAggregation);
+            }
+        } else {
+            res = computeHeuristic(actualValue, expectedValueList);
+        }
+        return res;
     }
 
     private Truthness computeHeuristic(AllOperation<?> operation, Object document) {
@@ -631,6 +639,8 @@ public class MongoHeuristicsCalculator {
     }
 
     private static Truthness buildSafeScaledTruthness(Truthness truthness) {
+        Objects.requireNonNull(truthness);
+
         return buildSafeScaledTruthness(truthness.getOfTrue());
     }
 
