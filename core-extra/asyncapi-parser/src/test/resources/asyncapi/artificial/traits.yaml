@@ -1,0 +1,99 @@
+asyncapi: 3.0.0
+info:
+  title: Boilerplate factored out into traits
+  version: 1.0.0
+
+servers:
+  broker:
+    host: localhost:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+
+channels:
+  tasks:
+    address: tasks.request
+    messages:
+      submit:
+        $ref: '#/components/messages/submit'
+    bindings:
+      amqp:
+        is: queue
+        queue:
+          name: tasks.request
+          durable: true
+
+operations:
+  submitTask:
+    action: receive
+    channel:
+      $ref: '#/channels/tasks'
+    traits:
+      - $ref: '#/components/operationTraits/authenticated'
+    # what the operation states itself must win over the trait
+    summary: Submit a task
+
+  # two traits: the later one must win where they overlap
+  submitUrgentTask:
+    action: receive
+    channel:
+      $ref: '#/channels/tasks'
+    traits:
+      - $ref: '#/components/operationTraits/authenticated'
+      - $ref: '#/components/operationTraits/rateLimited'
+
+  # a trait that is not an object, and one that points nowhere
+  brokenTraits:
+    action: receive
+    channel:
+      $ref: '#/channels/tasks'
+    traits:
+      - 'not an object at all'
+      - $ref: '#/components/operationTraits/absent'
+
+components:
+  operationTraits:
+    authenticated:
+      summary: Overridden by the operation
+      title: From the first trait
+      description: Requires a valid token
+      security:
+        - $ref: '#/components/securitySchemes/userPassword'
+    rateLimited:
+      title: From the second trait
+      description: Also rate limited
+
+  messageTraits:
+    correlated:
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      headers:
+        type: object
+        properties:
+          correlationId:
+            type: string
+
+  securitySchemes:
+    userPassword:
+      type: userPassword
+      description: SASL PLAIN over the broker connection
+
+  messages:
+    submit:
+      name: SubmitTask
+      traits:
+        - $ref: '#/components/messageTraits/correlated'
+      payload:
+        $ref: '#/components/schemas/Task'
+
+  schemas:
+    Task:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: string
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 9

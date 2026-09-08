@@ -256,6 +256,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             }
 
             val assertionType = when{
+                assertionCtx.WordBoundaryAssertion() != null -> AssertionType.WORD_BOUNDARY
+                assertionCtx.NonWordBoundaryAssertion() != null -> AssertionType.NON_WORD_BOUNDARY
                 assertionCtx.StartOfInputAssertion() != null -> AssertionType.START_OF_INPUT
                 assertionCtx.EndOfInputAssertion() != null -> AssertionType.END_OF_INPUT
                 assertionCtx.CARET() != null -> AssertionType.CARET
@@ -263,10 +265,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
                 else -> AssertionType.LOOKAHEAD
             }
-            val innerGene = when (assertionType) {
-                AssertionType.LOOKBEHIND, AssertionType.LOOKAHEAD -> buildDisjunctionList(assertionCtx.disjunction())
-                else -> null
-            }
+            val innerGene = if (assertionType.usesInnerGene) buildDisjunctionList(assertionCtx.disjunction()) else null
 
             val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
             res.genes.add(gene)
