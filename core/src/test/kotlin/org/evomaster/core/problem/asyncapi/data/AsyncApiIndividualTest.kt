@@ -30,6 +30,8 @@ class AsyncApiIndividualTest {
         return cluster.values.map { it.copy() as AsyncApiAction }
     }
 
+    private fun names(individual: AsyncApiIndividual) =
+        individual.seeMainExecutableActions().map { it.getName() }
 
     @Test
     fun testAnIndividualHoldsTheMessagesToPublish() {
@@ -97,5 +99,46 @@ class AsyncApiIndividualTest {
             individual.seeInitializingActions().size,
             copy.seeInitializingActions().size
         )
+    }
+
+    @Test
+    fun testAMessageCanBeInsertedAtAPosition() {
+
+        val actions = ncsActions()
+        val individual = AsyncApiIndividual(SampleType.RANDOM, mutableListOf(actions[0], actions[1]))
+
+        individual.addAction(0, actions[2])
+        //one past the last message is where a new last one goes
+        individual.addAction(3, actions[3])
+
+        assertEquals(
+            listOf(actions[2], actions[0], actions[1], actions[3]).map { it.getName() },
+            names(individual)
+        )
+    }
+
+    @Test
+    fun testAPositionTheIndividualDoesNotHaveIsRejected() {
+
+        val actions = ncsActions()
+        val individual = AsyncApiIndividual(SampleType.RANDOM, mutableListOf(actions[0]))
+
+        /*
+            With a setup action in front of the messages, a position off the front of the main
+            group lands on that action rather than off the end of the children. The check has
+            to be made in terms of messages, or removing "message -1" would remove the setup.
+         */
+        individual.addInitializingMongoDbActions(
+            actions = listOf(MongoDbAction("db", "collection", "collection", listOf()))
+        )
+
+        assertThrows(IllegalArgumentException::class.java) { individual.addAction(2, actions[1]) }
+        assertThrows(IllegalArgumentException::class.java) { individual.addAction(-2, actions[1]) }
+        assertThrows(IllegalArgumentException::class.java) { individual.removeAction(1) }
+        assertThrows(IllegalArgumentException::class.java) { individual.removeAction(-1) }
+
+        //and none of the attempts changed anything
+        assertEquals(listOf(actions[0].getName()), names(individual))
+        assertEquals(1, individual.seeInitializingActions().size)
     }
 }

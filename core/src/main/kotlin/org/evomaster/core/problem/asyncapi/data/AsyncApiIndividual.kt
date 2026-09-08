@@ -77,10 +77,21 @@ class AsyncApiIndividual(
 
     /**
      * Add a message to publish, at [relativePosition] within the main group, or at the end.
+     *
+     * @throws IllegalArgumentException if [relativePosition] is neither -1 nor a position in
+     *                                  the main group, one past its last message included
      */
     fun addAction(relativePosition: Int = -1, action: AsyncApiAction) {
 
         val main = GroupsOfChildren.MAIN
+        val size = groupsView()!!.sizeOfGroup(main)
+
+        if (relativePosition < -1 || relativePosition > size) {
+            throw IllegalArgumentException(
+                "Position $relativePosition is out of range: the individual holds $size messages"
+            )
+        }
+
         val group = EnterpriseActionGroup(mutableListOf(action), AsyncApiAction::class.java)
 
         if (relativePosition == -1) {
@@ -93,8 +104,19 @@ class AsyncApiIndividual(
 
     /**
      * Remove the message at [position] of the main group.
+     *
+     * @throws IllegalArgumentException if there is no message at [position]
      */
     fun removeAction(position: Int) {
+
+        val size = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN)
+
+        if (position < 0 || position >= size) {
+            throw IllegalArgumentException(
+                "Position $position is out of range: the individual holds $size messages"
+            )
+        }
+
         killChildByIndex(firstIndexOfMainGroup() + position)
     }
 
