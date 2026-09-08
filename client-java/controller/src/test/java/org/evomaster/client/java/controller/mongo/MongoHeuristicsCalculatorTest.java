@@ -1999,7 +1999,6 @@ public class MongoHeuristicsCalculatorTest {
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
         List<Document> queries = Arrays.asList(
-                new Document().append("a", 1).append("$comment", "a comment"),
                 new Document().append("$expr",
                         new Document().append("$eq", Arrays.asList("$a", 1))),
                 new Document().append("$jsonSchema",

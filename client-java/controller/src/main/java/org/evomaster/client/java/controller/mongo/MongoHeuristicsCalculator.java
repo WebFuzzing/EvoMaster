@@ -149,8 +149,8 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((NearOperation) operation, document);
         } else if (operation instanceof ElemMatchOperation) {
             return computeHeuristic((ElemMatchOperation) operation, document);
-        } else if (operation instanceof TrueOperation) {
-            return computeHeuristic((TrueOperation) operation, document);
+        } else if (operation instanceof EmptyOperation) {
+            return computeHeuristic((EmptyOperation) operation, document);
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
         }
@@ -244,7 +244,7 @@ public class MongoHeuristicsCalculator {
      * @param document
      * @return
      */
-    private Truthness computeHeuristic(TrueOperation operation, Object document) {
+    private Truthness computeHeuristic(EmptyOperation operation, Object document) {
         requireNonNullQueryAndDocument(operation, document);
         return TRUE_C;
     }

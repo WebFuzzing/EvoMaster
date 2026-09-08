@@ -9,10 +9,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1052,7 +1049,7 @@ class QueryParserTest {
     void testParseImplicitEqualsWithEmptyDocument() {
         Document query = new Document();
         QueryOperation operation = parser.parse(query);
-        assertTrue(operation instanceof TrueOperation);
+        assertTrue(operation instanceof EmptyOperation);
     }
 
     @Test
@@ -1377,7 +1374,7 @@ class QueryParserTest {
 
         QueryOperation operation = parser.parse(query);
         assertNotNull(operation);
-        assertTrue(operation instanceof TrueOperation);
+        assertTrue(operation instanceof EmptyOperation);
 
     }
 
@@ -1393,7 +1390,7 @@ class QueryParserTest {
         assertTrue(operation instanceof NorOperation);
         NorOperation nor = (NorOperation) operation;
         assertEquals(1, nor.getConditions().size());
-        assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
+        assertTrue(nor.getConditions().get(0) instanceof EmptyOperation);
     }
 
     @Test
@@ -1432,6 +1429,110 @@ class QueryParserTest {
         LessThanOperation<?> lessThan = (LessThanOperation<?>) operation;
         assertEquals("age", lessThan.getFieldName());
         assertEquals(65, lessThan.getValue());
+    }
+
+    @Test
+    void testParseAttachedComments() {
+        Document query = new Document("age", 42).append("$comments", "a comment");
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("age", eq.getFieldName());
+        assertEquals(42, eq.getValue());
+    }
+
+    @Test
+    void testParseOnlyComments() {
+        Document query = new Document("$comments", "a comment");
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseOnlyComment() {
+        Document query = new Document("$comment", "a comment");
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseAndWithOnlyCommentElement() {
+        Document query = new Document(
+                "$and",
+                Collections.singletonList(new Document("$comment", "a comment"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(1, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseNorWithOnlyCommentElement() {
+        Document query = new Document(
+                "$nor",
+                Collections.singletonList(new Document("$comment", "a comment"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof NorOperation);
+        NorOperation norOperation = (NorOperation) operation;
+        assertEquals(1, norOperation.getConditions().size());
+        assertTrue(norOperation.getConditions().get(0) instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseAttachedCommentInsideFieldOperatorDocument() {
+        Document query = new Document(
+                "age",
+                new Document("$gt", 18).append("$comments", "a comment")
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("age", gt.getFieldName());
+        assertEquals(18, gt.getValue());
+    }
+
+    @Test
+    void testParseCommentsIgnoredRecursivelyInLogicalQuery() {
+        Document query = new Document(
+                "$and",
+                Arrays.asList(
+                        new Document("age", new Document("$gt", 18).append("$comments", "inner comment")),
+                        new Document(
+                                "$or",
+                                Arrays.asList(
+                                        new Document("name", "John").append("$comments", "leaf comment"),
+                                        new Document("name", "Jane")
+                                )
+                        ).append("$comments", "or comment"),
+                        new Document("$comments", "no-op comment")
+                )
+        ).append("$comments", "top-level comment");
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(3, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof OrOperation);
+        assertTrue(and.getConditions().get(2) instanceof EmptyOperation);
+
+        OrOperation or = (OrOperation) and.getConditions().get(1);
+        assertEquals(2, or.getConditions().size());
+        assertTrue(or.getConditions().get(0) instanceof EqualsOperation);
+        assertTrue(or.getConditions().get(1) instanceof EqualsOperation);
     }
 
     @Test
@@ -1648,7 +1749,7 @@ class QueryParserTest {
         );
 
         assertTrue(operation instanceof ElemMatchOperation);
-        assertTrue(((ElemMatchOperation) operation).getCondition() instanceof TrueOperation);
+        assertTrue(((ElemMatchOperation) operation).getCondition() instanceof EmptyOperation);
     }
 
     @Test
