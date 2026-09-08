@@ -1806,7 +1806,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a field is matched only as a whole, never by an element of the array it holds")
     public void testFieldsAreMatchedByAnElementOfTheArrayTheyHold() {
         /*
             mongo matches all of these. A field holding an array satisfies a condition when

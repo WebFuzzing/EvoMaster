@@ -18,6 +18,7 @@ import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertTo
 
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
@@ -465,10 +466,11 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         } else {
             Object actualValue = getValue(document, fieldName);
-            return computeHeuristicComparisonNullableValues(
-                    expectedValue,
-                    actualValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN);
+            return computeHeuristicForActualValueOrAnyElement(actualValue,
+                    value -> computeHeuristicComparisonNullableValues(
+                            expectedValue,
+                            value,
+                            SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN));
 
         }
     }
@@ -483,10 +485,11 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         } else {
             Object actualValue = getValue(document, fieldName);
-            return computeHeuristicComparisonNullableValues(
-                    expectedValue,
-                    actualValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS);
+            return computeHeuristicForActualValueOrAnyElement(actualValue,
+                    value -> computeHeuristicComparisonNullableValues(
+                            expectedValue,
+                            value,
+                            SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS));
 
         }
     }
@@ -501,10 +504,11 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         } else {
             Object actualValue = getValue(document, fieldName);
-            return computeHeuristicComparisonNullableValues(
-                    expectedValue,
-                    actualValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN);
+            return computeHeuristicForActualValueOrAnyElement(actualValue,
+                    value -> computeHeuristicComparisonNullableValues(
+                            expectedValue,
+                            value,
+                            SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN));
         }
     }
 
@@ -518,12 +522,32 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         } else {
             Object actualValue = getValue(document, fieldName);
-            return computeHeuristicComparisonNullableValues(
-                    expectedValue,
-                    actualValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN_EQUALS);
+            return computeHeuristicForActualValueOrAnyElement(actualValue,
+                    value -> computeHeuristicComparisonNullableValues(
+                            expectedValue,
+                            value,
+                            SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN_EQUALS));
 
         }
+    }
+
+    private Truthness computeHeuristicForActualValueOrAnyElement(Object actualValue,
+                                                                  Function<Object, Truthness> elementHeuristic) {
+        Objects.requireNonNull(elementHeuristic);
+
+        if (!(actualValue instanceof List<?>)) {
+            return elementHeuristic.apply(actualValue);
+        }
+
+        List<?> values = (List<?>) actualValue;
+        if (values.isEmpty()) {
+            return C_FALSE;
+        }
+
+        Truthness orAggregation = buildOrAggregationTruthness(values.stream()
+                .map(elementHeuristic)
+                .toArray(Truthness[]::new));
+        return buildSafeScaledTruthness(orAggregation);
     }
 
     private Truthness computeHeuristic(OrOperation operation, Object document) {
@@ -806,13 +830,18 @@ public class MongoHeuristicsCalculator {
             actualValue = getValue(document, fieldName);
         }
 
-        if (actualValue == null || !(actualValue instanceof Number)) {
+        return computeHeuristicForActualValueOrAnyElement(actualValue,
+                value -> computeHeuristicModOnSingleValue(value, divisor, expectedRemainder));
+    }
+
+    private Truthness computeHeuristicModOnSingleValue(Object value, long divisor, long expectedRemainder) {
+        if (!(value instanceof Number)) {
             return C_FALSE;
-        } else {
-            long actualRemainder = ((Number) actualValue).longValue() % divisor;
-            Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
-            return buildSafeScaledTruthness(res);
         }
+
+        long actualRemainder = ((Number) value).longValue() % divisor;
+        Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
+        return buildSafeScaledTruthness(res);
     }
 
     private Truthness computeHeuristic(BitsOperation operation, Object document) {
@@ -824,11 +853,16 @@ public class MongoHeuristicsCalculator {
         }
 
         Object actualValue = getValue(document, fieldName);
-        if (!(actualValue instanceof Number)) {
+        return computeHeuristicForActualValueOrAnyElement(actualValue,
+                value -> computeHeuristicBitsOnSingleValue(value, operation));
+    }
+
+    private Truthness computeHeuristicBitsOnSingleValue(Object value, BitsOperation operation) {
+        if (!(value instanceof Number)) {
             return C_FALSE;
         }
 
-        final OptionalLong integralValue = getIntegralLongValue((Number) actualValue);
+        final OptionalLong integralValue = getIntegralLongValue((Number) value);
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
