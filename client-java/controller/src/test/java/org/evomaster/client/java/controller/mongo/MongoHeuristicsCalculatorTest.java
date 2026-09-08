@@ -251,6 +251,24 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testAllMissingFieldWithSingleNullExpectedValue() {
+        Document docUndefined = new Document();
+        Bson allQuery = Filters.all("employees", Collections.singletonList(null));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(allQuery), docUndefined).isTrue());
+    }
+
+    @Test
+    public void testAllNullFieldWithSingleNullExpectedValue() {
+        Document docNull = new Document().append("employees", null);
+        Bson allQuery = Filters.all("employees", Collections.singletonList(null));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(allQuery), docNull).isTrue());
+    }
+
+    @Test
     public void testAllExpectedListIsEmpty() {
         Document document = new Document().append("employees", Arrays.asList("Bob", "Alice"));
         Bson allQuery = Filters.all("employees", Collections.emptyList());
@@ -272,6 +290,26 @@ public class MongoHeuristicsCalculatorTest {
         Bson allQuery = Filters.all("employees", Collections.emptyList());
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(allQuery), document).isFalse());
+    }
+
+    @Test
+    public void testAllOnScalarFieldWithSingleDifferentExpectedValue() {
+        Document document = new Document().append("tag", "a");
+        Bson allQuery = Filters.all("tag", Collections.singletonList("b"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(allQuery), document).isFalse());
+    }
+
+    @Test
+    public void testAllListFieldWithNullExpectedValue() {
+        Document document = new Document().append("employees", Arrays.asList("Bob", null, "Alice"));
+        Bson matchingAllQuery = Filters.all("employees", Collections.singletonList(null));
+        Bson nonMatchingAllQuery = Filters.all("employees", Arrays.asList(null, "Carol"));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(matchingAllQuery), document).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(nonMatchingAllQuery), document).isFalse());
     }
 
 

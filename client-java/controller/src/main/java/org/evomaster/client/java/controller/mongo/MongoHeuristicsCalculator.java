@@ -535,28 +535,46 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristic(AllOperation<?> operation, Object document) {
         requireNonNullQueryAndDocument(operation, document);
 
-        List<?> expectedValues = operation.getValues();
+        final List<?> expectedValues = operation.getValues();
         final String fieldName = operation.getFieldName();
 
         if (expectedValues.isEmpty()) {
             return C_FALSE;
-        } else if (!documentContainsField(document, fieldName) || getValue(document, fieldName) == null) {
-            return (expectedValues.size() == 1 && expectedValues.get(0) == null) ? TRUE_C : C_FALSE;
-        } else if (!(getValue(document, fieldName) instanceof List<?>)) {
-            return (expectedValues.size() == 1) ? computeHeuristicComparisonNullableValues(expectedValues.get(0), getValue(document, fieldName), SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) : C_FALSE;
-        } else {
-            List<?> actualValues = (List<?>) getValue(document, fieldName);
-            if (actualValues.isEmpty()) {
+        }
+
+        if (!documentContainsField(document, fieldName)) {
+            return isSingleNullExpectedValue(expectedValues) ? TRUE_C : C_FALSE;
+        }
+
+        final Object actualFieldValue = getValue(document, fieldName);
+        if (actualFieldValue == null) {
+            return isSingleNullExpectedValue(expectedValues) ? TRUE_C : C_FALSE;
+        }
+
+        if (!(actualFieldValue instanceof List<?>)) {
+            if (expectedValues.size() != 1) {
                 return C_FALSE;
             } else {
-                Truthness res = buildAndAggregationTruthness(expectedValues
-                        .stream()
-                        .map(expectedValue ->
-                                computeHeuristic(expectedValue, actualValues))
-                        .toArray(Truthness[]::new));
-                return buildSafeScaledTruthness(res);
+                return computeHeuristicComparisonNullableValues(
+                        expectedValues.get(0),
+                        actualFieldValue,
+                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
             }
         }
+
+        List<?> actualValues = (List<?>) actualFieldValue;
+        if (actualValues.isEmpty()) {
+            return C_FALSE;
+        }
+
+        Truthness res = buildAndAggregationTruthness(expectedValues.stream()
+                .map(expectedValue -> computeHeuristic(expectedValue, actualValues))
+                .toArray(Truthness[]::new));
+        return buildSafeScaledTruthness(res);
+    }
+
+    private static boolean isSingleNullExpectedValue(List<?> expectedValues) {
+        return expectedValues.size() == 1 && expectedValues.get(0) == null;
     }
 
     private static Truthness buildSafeScaledTruthness(Truthness truthness) {
