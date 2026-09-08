@@ -31,6 +31,11 @@ class AsyncApiIndividual(
     index: Int = -1,
     allActions: MutableList<ActionComponent>,
     mainSize: Int = allActions.size,
+    /*
+        TODO Only SQL, Mongo and DNS are handled here for now. EvoMaster is gaining support for
+        several more databases; when one of them is fully supported for REST, it gets a size
+        parameter here and in copyContent(), and a slot in the getEnterpriseTopGroups call.
+     */
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
