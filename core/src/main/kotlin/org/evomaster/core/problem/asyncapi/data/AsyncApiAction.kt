@@ -65,6 +65,12 @@ class AsyncApiAction(
 
 ) : ApiWsAction(auth, false, inputParameters) {
 
+    /**
+     * Whether this action is the only one built for its operation. Set by whoever builds the
+     * cluster, since it depends on the other actions rather than on this one.
+     */
+    var singleMessage: Boolean = true
+
     companion object {
         /**
          * The name an action is known by, which must be unique within a search.
@@ -78,12 +84,6 @@ class AsyncApiAction(
     }
 
     override fun getName(): String = nameFor(operationId, messageId, singleMessage)
-
-    /**
-     * Whether this action is the only one built for its operation. Set by whoever builds the
-     * cluster, since it depends on the other actions rather than on this one.
-     */
-    var singleMessage: Boolean = true
 
     override fun seeTopGenes(): List<Gene> = parameters.flatMap { it.seeGenes() }
 
