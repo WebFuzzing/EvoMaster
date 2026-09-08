@@ -1789,7 +1789,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$not answers true whenever the field is absent, overriding the inner operator")
     public void testNotOnAMissingFieldWithAnInnerOperatorThatMatchesIt() {
         /*
             mongo: no match for any of these. $ne, $nin and $exists:false all match a

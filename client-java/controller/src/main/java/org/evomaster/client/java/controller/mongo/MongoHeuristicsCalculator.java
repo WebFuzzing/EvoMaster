@@ -856,14 +856,8 @@ public class MongoHeuristicsCalculator {
 
     private Truthness computeHeuristic(NotOperation operation, Object document) {
         requireNonNullQueryAndDocument(operation, document);
-
-        String fieldName = operation.getFieldName();
-        if (!documentContainsField(document, fieldName)) {
-            return TRUE_C;
-        } else {
-            QueryOperation condition = operation.getCondition();
-            return computeHeuristicOnDocument(condition, document).invert();
-        }
+        QueryOperation condition = operation.getCondition();
+        return computeHeuristicOnDocument(condition, document).invert();
     }
 
     private Truthness computeHeuristic(NorOperation operation, Object document) {
