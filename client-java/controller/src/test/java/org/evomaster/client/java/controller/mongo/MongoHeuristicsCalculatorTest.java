@@ -2032,7 +2032,6 @@ public class MongoHeuristicsCalculatorTest {
      */
 
     @Test
-    @Disabled("$regex does not look at the elements of an array-valued field")
     public void testRegexMatchingAnElementOfAnArrayField() {
         /*
             mongo: matches, one element of the array matches the expression. $regex follows

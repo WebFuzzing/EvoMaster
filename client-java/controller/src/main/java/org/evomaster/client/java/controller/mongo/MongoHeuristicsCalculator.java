@@ -161,14 +161,39 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation.getPattern());
         Objects.requireNonNull(operation.getOptions());
 
-        Object fieldValue = getValue(document, operation.getFieldName());
-        if (!(fieldValue instanceof String)) {
-            return C_FALSE;
+        final String fieldName = operation.getFieldName();
+        final Pattern pattern = operation.getPattern();
+
+        final Object actualValue;
+        if (documentContainsField(document, fieldName)) {
+            actualValue = getValue(document, fieldName);
+        } else {
+            actualValue = null;
         }
 
-        final String inputValue = (String) fieldValue;
+        if (actualValue == null) {
+            return C_FALSE;
+        } else if (actualValue instanceof String) {
+            final String inputValue = (String) actualValue;
+            return computeHeuristicRegularExpression(inputValue, pattern);
+        } else if (actualValue instanceof List<?>) {
+            List<?> actualValueList = (List<?>) actualValue;
+            if (actualValueList.isEmpty()) {
+                return C_FALSE;
+            } else {
+                Truthness[] results = actualValueList.stream()
+                        .filter(element -> element instanceof String)
+                        .map(element -> (String) element)
+                        .map(element -> computeHeuristicRegularExpression(element, pattern))
+                        .toArray(Truthness[]::new);
+                return buildOrAggregationTruthness(results);
+            }
+        } else {
+            return C_FALSE;
+        }
+    }
 
-        final Pattern pattern = operation.getPattern();
+    private Truthness computeHeuristicRegularExpression(String inputValue, Pattern pattern) {
         final String patternString = pattern.pattern();
 
         if (taintHandler != null) {
@@ -607,7 +632,7 @@ public class MongoHeuristicsCalculator {
             if (isTheValueListEqualToAnyExpectedValueList.isFalse()) {
                 // if we fail, we try to match each element of the actualValueList with any element of the expectedValueList
                 if (actualValueList.isEmpty()) {
-                    res= C_FALSE;
+                    res = C_FALSE;
                 } else {
                     Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
                             .map(actualValueListElement -> computeHeuristicContainsElement(actualValueListElement, expectedValueList))
