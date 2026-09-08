@@ -12,8 +12,11 @@ import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
+import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.*;
+import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
+
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -205,7 +208,7 @@ public class MongoHeuristicsCalculator {
 
         GeoSpatialModel model = operation.hasLegacyCoordinates()
                 ? GeoSpatialModel.PLANAR
-                : GeoSpatialModel.SPHERICAL;
+                : SPHERICAL;
         return computeHeuristic(operation, longitude, latitude, fieldValue, model);
     }
 
@@ -361,10 +364,14 @@ public class MongoHeuristicsCalculator {
             actualValue = null;
         }
 
-        return computeHeuristicComparisonNullableValues(
-                expectedValue,
-                actualValue,
-                SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
+        if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
+            return computeHeuristic(expectedValue, (List<?>) actualValue);
+        } else {
+            return computeHeuristicComparisonNullableValues(
+                    expectedValue,
+                    actualValue,
+                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
+        }
     }
 
     private Truthness computeHeuristicComparisonNullableValues(Object expectedValue, Object actualValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
@@ -418,10 +425,14 @@ public class MongoHeuristicsCalculator {
         } else {
             actualValue = null;
         }
-        return computeHeuristicComparisonNullableValues(
-                expectedValue,
-                actualValue,
-                SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO);
+        if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
+            return computeHeuristic(expectedValue, (List<?>) actualValue).invert();
+        } else {
+            return computeHeuristicComparisonNullableValues(
+                    expectedValue,
+                    actualValue,
+                    SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO);
+        }
     }
 
 
@@ -534,9 +545,14 @@ public class MongoHeuristicsCalculator {
         final Truthness res;
         if (actualValue instanceof List<?>) {
             List<?> actualValueList = (List<?>) actualValue;
-            res = buildOrAggregationTruthness(actualValueList.stream()
-                    .map(value -> computeHeuristic(value, expectedValueList))
-                    .toArray(Truthness[]::new));
+            if (actualValueList.isEmpty()) {
+                res = C_FALSE;
+            } else {
+                Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
+                        .map(value -> computeHeuristic(value, expectedValueList))
+                        .toArray(Truthness[]::new));
+                res = buildSafeScaledTruthness(orAggregation);
+            }
         } else {
             res = computeHeuristic(actualValue, expectedValueList);
         }
@@ -545,11 +561,14 @@ public class MongoHeuristicsCalculator {
 
     private Truthness computeHeuristic(Object actualValue, List<?> expectedValueList) {
         Objects.requireNonNull(expectedValueList);
-
-        Truthness res = buildOrAggregationTruthness(expectedValueList.stream()
-                .map(expectedValue -> computeHeuristicComparisonNullableValues(expectedValue, actualValue, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO))
-                .toArray(Truthness[]::new));
-        return res;
+        if (expectedValueList.isEmpty()) {
+            return C_FALSE;
+        } else {
+            Truthness res = buildOrAggregationTruthness(expectedValueList.stream()
+                    .map(expectedValue -> computeHeuristicComparisonNullableValues(expectedValue, actualValue, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO))
+                    .toArray(Truthness[]::new));
+            return buildSafeScaledTruthness(res);
+        }
     }
 
     private Truthness computeHeuristic(NotInOperation<?> operation, Object document) {
@@ -749,7 +768,7 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         }
 
-        final OptionalLong integralValue = MongoUtils.getIntegralLongValue((Number) actualValue);
+        final OptionalLong integralValue = getIntegralLongValue((Number) actualValue);
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
@@ -826,24 +845,10 @@ public class MongoHeuristicsCalculator {
         final double longitude = operation.getLongitude();
         final double latitude = operation.getLatitude();
 
-        return computeHeuristic(operation, longitude, latitude, fieldValue, GeoSpatialModel.SPHERICAL);
+        return computeHeuristic(operation, longitude, latitude, fieldValue, SPHERICAL);
     }
 
-    /**
-     * Enumeration representing the geospatial model used for distance calculations.
-     * PLANAR: Uses Euclidean distance for flat surfaces.
-     * SPHERICAL: Uses Haversine distance for spherical surfaces (e.g., Earth)
-     */
-    private enum GeoSpatialModel {
-        /**
-         * PLANAR: Uses Euclidean distance for flat surfaces.
-         */
-        PLANAR,
-        /**
-         * SPHERICAL: Uses Haversine distance for spherical surfaces (e.g., Earth)
-         */
-        SPHERICAL
-    }
+
 
     private static Truthness computeHeuristic(AbstractProximityOperation abstractProximityOperation,
                                               double longitude,
@@ -852,8 +857,8 @@ public class MongoHeuristicsCalculator {
                                               GeoSpatialModel geoSpatialModel) {
 
         Objects.requireNonNull(abstractProximityOperation);
-        double x1 = geoSpatialModel == GeoSpatialModel.SPHERICAL ? Math.toRadians(longitude) : longitude;
-        double y1 = geoSpatialModel == GeoSpatialModel.SPHERICAL ? Math.toRadians(latitude) : latitude;
+        double x1 = geoSpatialModel == SPHERICAL ? Math.toRadians(longitude) : longitude;
+        double y1 = geoSpatialModel == SPHERICAL ? Math.toRadians(latitude) : latitude;
         double x2;
         double y2;
 
@@ -865,26 +870,16 @@ public class MongoHeuristicsCalculator {
         if (isBsonDocument(fieldValue)
                 && GeoJsonUtils.isGeoJsonPoint(fieldValue)) {
             GeoJsonPoint geoJsonPoint = GeoJsonUtils.toGeoJsonPoint(fieldValue);
-            x2 = geoSpatialModel == GeoSpatialModel.SPHERICAL
+            x2 = geoSpatialModel == SPHERICAL
                     ? Math.toRadians(geoJsonPoint.getLongitude())
                     : geoJsonPoint.getLongitude();
-            y2 = geoSpatialModel == GeoSpatialModel.SPHERICAL
+            y2 = geoSpatialModel == SPHERICAL
                     ? Math.toRadians(geoJsonPoint.getLatitude())
                     : geoJsonPoint.getLatitude();
         } else {
             return C_FALSE;
         }
-        double distanceBetweenPoints;
-        switch (geoSpatialModel) {
-            case PLANAR:
-                distanceBetweenPoints = euclideanDistance(x1, y1, x2, y2);
-                break;
-            case SPHERICAL:
-                distanceBetweenPoints = haversineDistance(x1, y1, x2, y2);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported GeoSpatialModel: " + geoSpatialModel);
-        }
+        double distanceBetweenPoints = getDistanceBetweenPoints(x1, y1, x2, y2, geoSpatialModel);
         double max = abstractProximityOperation.hasMaxDistance()
                 ? abstractProximityOperation.getMaxDistance()
                 : Double.MAX_VALUE;
@@ -903,77 +898,11 @@ public class MongoHeuristicsCalculator {
                 : getEqualityTruthness(distanceBetweenPoints, min);
     }
 
-
-    /**
-     * Calculates the Haversine distance between two geographical points specified
-     * in radians. The Haversine formula determines the great-circle distance between
-     * two points on a sphere given their latitudes and longitudes.
-     *
-     * @param x1 the longitude of the first point in radians
-     * @param y1 the latitude of the first point in radians
-     * @param x2 the longitude of the second point in radians
-     * @param y2 the latitude of the second point in radians
-     * @return the Haversine distance between the two points in meters
-     */
-    private static double haversineDistance(
-            double x1,
-            double y1,
-            double x2,
-            double y2) {
-
-        // Earth's radius in meters
-        double radius = 6371000.0;
-
-        double dLat = y2 - y1;
-        double dLon = x2 - x1;
-
-        double a = Math.pow(Math.sin(dLat / 2), 2)
-                + Math.cos(y1) * Math.cos(y2)
-                * Math.pow(Math.sin(dLon / 2), 2);
-
-        double c = 2 * Math.atan2(
-                Math.sqrt(a),
-                Math.sqrt(1 - a));
-
-        return radius * c;
-    }
-
-    /**
-     * Calculates the Euclidean distance between two points in a 2D Cartesian coordinate system.
-     * The Euclidean distance is the straight-line distance between two points in Euclidean space.
-     *
-     * @param x1 the x-coordinate of the first point
-     * @param y1 the y-coordinate of the first point
-     * @param x2 the x-coordinate of the second point
-     * @param y2 the y-coordinate of the second point
-     * @return the Euclidean distance between the two points
-     */
-    private static double euclideanDistance(
-            double x1,
-            double y1,
-            double x2,
-            double y2) {
-        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    }
-
     private Truthness calculateTruthnessForListComparison(List<?> actualList, List<?> expectedList, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(actualList);
         Objects.requireNonNull(expectedList);
 
-        final Truthness truthness;
-        if (actualList.size() != expectedList.size()) {
-            truthness = C_FALSE;
-        } else {
-            Truthness[] arrayOfTruthnesses = new Truthness[actualList.size()];
-            for (int i = 0; i < actualList.size(); i++) {
-                arrayOfTruthnesses[i] = computeHeuristicComparisonNullableValues(
-                        actualList.get(i),
-                        expectedList.get(i),
-                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
-            }
-            Truthness unscaledTruthness = buildAndAggregationTruthness(arrayOfTruthnesses);
-            truthness = buildSafeScaledTruthness(unscaledTruthness);
-        }
+        final Truthness truthness = computeHeuristicEquality(actualList, expectedList);
         switch (comparisonOperatorType) {
             case EQUALS_TO:
                 return truthness;
@@ -982,6 +911,28 @@ public class MongoHeuristicsCalculator {
             default:
                 throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
         }
+    }
+
+    private Truthness computeHeuristicEquality(List<?> actualList, List<?> expectedList) {
+
+        if (actualList.size() != expectedList.size()) {
+            return C_FALSE;
+        }
+
+        if (actualList.isEmpty() && expectedList.isEmpty()) {
+            return TRUE_C;
+        }
+
+        Truthness[] arrayOfTruthnesses = new Truthness[actualList.size()];
+        for (int i = 0; i < actualList.size(); i++) {
+            arrayOfTruthnesses[i] = computeHeuristicComparisonNullableValues(
+                    actualList.get(i),
+                    expectedList.get(i),
+                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO);
+        }
+        Truthness unscaledTruthness = buildAndAggregationTruthness(arrayOfTruthnesses);
+        final Truthness truthness = buildSafeScaledTruthness(unscaledTruthness);
+        return truthness;
     }
 
 

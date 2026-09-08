@@ -32,6 +32,18 @@ import static org.mockito.Mockito.*;
 public class MongoHeuristicsCalculatorTest {
 
     @Test
+    public void testEqualsScalarToList() {
+        Document doc = new Document().append("tags", Arrays.asList("red","blue"));
+        Bson bsonTrue = Filters.eq("tags", "red");
+        Bson bsonFalse = Filters.eq("tags", "green");
+        Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
+        Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
+        assertTrue(distanceMatch.isTrue());
+        assertTrue(distanceNotMatch.isFalse());
+    }
+
+
+    @Test
     public void testEquals() {
         Document doc = new Document().append("age", 10);
         Bson bsonTrue = Filters.eq("age", 10);
@@ -1622,7 +1634,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("an empty list of values makes the calculator throw IllegalArgumentException")
     public void testInAndNotInWithAnEmptyListOfValues() {
         // mongo: {$in: []} matches nothing, {$nin: []} matches everything
         Document doc = new Document().append("tags", new ArrayList<>(Arrays.asList("a", "b")));
@@ -1635,7 +1646,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("an empty array in the document makes the calculator throw IllegalArgumentException")
     public void testInAndNotInAgainstAnEmptyArrayField() {
         // mongo: an empty array holds no value, so $in does not match and $nin does
         Document doc = new Document().append("tags", Collections.emptyList());
@@ -1648,7 +1658,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("comparing two empty arrays makes the calculator throw IllegalArgumentException")
     public void testEqualsBetweenEmptyArrays() {
         /*
             mongo: matches, two empty arrays are equal. The two are of equal size, so the
@@ -1886,7 +1895,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("null held as an element of an array is not matched")
     public void testNullInsideAnArrayField() {
         /*
             mongo: {"a": {"$eq": null}} matches, as one element of the array is null, and
