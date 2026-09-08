@@ -2,8 +2,10 @@ package org.evomaster.client.java.controller.mongo.selectors;
 
 import org.evomaster.client.java.controller.mongo.operations.BitsAllClearOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
+import org.evomaster.client.java.controller.mongo.utils.BitmaskUtils;
 
 import java.util.Objects;
+import java.util.OptionalLong;
 
 /**
  * { field: { $bitsAllClear: value } }
@@ -15,7 +17,8 @@ public class BitsAllClearSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         Objects.requireNonNull(fieldName);
-        return value instanceof Long ? new BitsAllClearOperation(fieldName, (Long) value) : null;
+        OptionalLong bitmaskValue = BitmaskUtils.toBitMaskValue(value);
+        return bitmaskValue.isPresent() ? new BitsAllClearOperation(fieldName, bitmaskValue.getAsLong()) : null;
     }
 
     @Override

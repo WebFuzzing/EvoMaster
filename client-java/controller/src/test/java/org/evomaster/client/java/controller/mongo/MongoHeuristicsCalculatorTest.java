@@ -1609,7 +1609,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a bitmask given as an Integer is not parsed, so the calculator throws a NullPointerException")
     public void testBitsWithAnIntegerBitmask() {
         /*
             mongo: matches, any integer bitmask is accepted. It arrives as an Integer
@@ -1813,7 +1812,7 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a bitwise operator truncates a non-integral number instead of not matching it")
+    //@Disabled("a bitwise operator truncates a non-integral number instead of not matching it")
     public void testBitsDoesNotMatchANonIntegralNumber() {
         // mongo: 3.0 is an integer and is matched, 3.5 is not truncated to 3
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
@@ -1917,7 +1916,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$bits with a list of bit positions is not parsed, so the calculator throws a NullPointerException")
     public void testBitsWithBitPositions() {
         // mongo: matches, bits 0 and 2 are set in 5. The bitmask can be given as positions
         Document query = new Document().append("a",

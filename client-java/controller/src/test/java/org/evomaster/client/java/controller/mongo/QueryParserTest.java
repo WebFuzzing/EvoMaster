@@ -6,9 +6,13 @@ import org.bson.BsonRegularExpression;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -555,7 +559,7 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseBitsAllClear() {
+    void testParseBitsAllClearLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAllClear", 5L)
@@ -568,10 +572,49 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseBitsAllSet() {
+    void testParseBitsAllClearInteger() {
         Document query = new Document(
                 "flags",
-                new Document("$bitsAllSet", 5L)
+                new Document("$bitsAllClear", 5)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllClearDouble() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", 5.0d)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllClearBigDecimal() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", new Decimal128(5))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllSetInteger() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 5)
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAllSetOperation);
@@ -581,7 +624,7 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseBitsAnyClear() {
+    void testParseBitsAnyClearLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAnyClear", 5L)
@@ -594,10 +637,36 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseBitsAnySet() {
+    void testParseBitsAnyClearInteger() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnyClear", 5)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnyClearOperation);
+        BitsAnyClearOperation bitsAnyClear = (BitsAnyClearOperation) operation;
+        assertEquals("flags", bitsAnyClear.getFieldName());
+        assertEquals(5L, bitsAnyClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySetLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAnySet", 5L)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnySetOperation);
+        BitsAnySetOperation bitsAnySet = (BitsAnySetOperation) operation;
+        assertEquals("flags", bitsAnySet.getFieldName());
+        assertEquals(5L, bitsAnySet.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySetBigDecimal128() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnySet", new Decimal128(5))
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAnySetOperation);
@@ -1616,7 +1685,6 @@ class QueryParserTest {
         assertAll(
                 () -> assertInvalidQuery(
                         new Document("flags", new Document("$bitsAllClear", "5"))),
-                () -> assertInvalidQuery(new Document("flags", new Document("$bitsAllSet", 5))),
                 () -> assertInvalidQuery(
                         new Document("flags", new Document("$bitsAnyClear", true))),
                 () -> assertInvalidQuery(
