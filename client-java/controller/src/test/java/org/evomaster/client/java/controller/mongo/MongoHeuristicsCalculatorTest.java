@@ -2046,7 +2046,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$not holding more than one operator is not parsed, so the calculator throws a NullPointerException")
     public void testNotWithMoreThanOneInnerOperator() {
         /*
             mongo: {"a": {"$not": {"$gt": 1, "$lt": 9}}} matches {a:1}, as the two inner

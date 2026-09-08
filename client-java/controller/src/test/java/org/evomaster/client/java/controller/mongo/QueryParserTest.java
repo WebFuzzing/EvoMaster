@@ -224,7 +224,6 @@ class QueryParserTest {
     }
 
 
-
     @Test
     void testParseElemMatchWithMultipleConditions() {
         Document query = new Document(
@@ -1456,6 +1455,46 @@ class QueryParserTest {
         assertEquals("age", not.getFieldName());
         assertTrue(not.getCondition() instanceof GreaterThanOperation);
         assertEquals(18, ((GreaterThanOperation<?>) not.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseValidNestedNotQuery() {
+        Document query = new Document(
+                "a",
+                new Document("$not", new Document("$not", new Document("$gt", 1)))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertNotNull(operation);
+        assertTrue(operation instanceof NotOperation);
+        NotOperation outerNot = (NotOperation) operation;
+        assertEquals("a", outerNot.getFieldName());
+        assertTrue(outerNot.getCondition() instanceof NotOperation);
+
+        NotOperation innerNot = (NotOperation) outerNot.getCondition();
+        assertEquals("a", innerNot.getFieldName());
+        assertTrue(innerNot.getCondition() instanceof GreaterThanOperation);
+        assertEquals(1, ((GreaterThanOperation<?>) innerNot.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseInvalidNotWithMultipleComparisonOperators() {
+        Document query = new Document(
+                "a",
+                new Document("$not", new Document("$gt", 1).append("$lt", 9))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof NotOperation);
+        NotOperation not = (NotOperation) operation;
+        assertEquals("a", not.getFieldName());
+        assertTrue(not.getCondition() instanceof AndOperation);
+        AndOperation and = (AndOperation) not.getCondition();
+        assertEquals(2, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof LessThanOperation);
     }
 
     @Test
