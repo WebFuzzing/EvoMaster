@@ -64,6 +64,14 @@ public class AsyncApiProblemTest {
     }
 
     @Test
+    public void testServicesToNotMockCannotBeNull() {
+
+        AsyncApiProblem p = AsyncApiProblem.fromSchemaText("asyncapi: 3.0.0");
+
+        assertThrows(NullPointerException.class, () -> p.withServicesToNotMock(null));
+    }
+
+    @Test
     public void testServicesToNotMockCannotBeChangedFromOutside() {
 
         AsyncApiProblem p = AsyncApiProblem.fromSchemaText("asyncapi: 3.0.0")
