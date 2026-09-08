@@ -252,12 +252,6 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristicComparisonNonNullValues(Object actualValue, Object expectedValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(expectedValue);
-        if (!isTypeSupportedForComparison(actualValue)) {
-            throw new IllegalArgumentException("Unsupported type: " + actualValue.getClass().getName());
-        }
-        if (!isTypeSupportedForComparison(expectedValue)) {
-            throw new IllegalArgumentException("Unsupported type: " + expectedValue.getClass().getName());
-        }
 
         final Truthness truthnessOfComparison;
         if (actualValue instanceof Number && expectedValue instanceof Number) {
@@ -301,8 +295,9 @@ public class MongoHeuristicsCalculator {
 
         } else {
             // If both types are supported, but no actual comparison logic is defined,
-            // we considered them to be incompatible, therefore the comparison returns false.
-            truthnessOfComparison = C_FALSE;
+            // we considered them to be incompatible, therefore the comparison returns true
+            // only if the comparison operator is NOT_EQUALS_TO. Otherwise returns false.
+            truthnessOfComparison = comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO ? TRUE_C : C_FALSE;
         }
         return truthnessOfComparison;
     }

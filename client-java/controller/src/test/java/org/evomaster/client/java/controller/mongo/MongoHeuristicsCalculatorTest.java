@@ -1713,7 +1713,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a value the calculator cannot compare makes it throw IllegalArgumentException")
     public void testFieldsHoldingASubDocument() {
         /*
             mongo: does not fail on any of these, it simply does not match. A sub-document
