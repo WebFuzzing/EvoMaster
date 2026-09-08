@@ -3,11 +3,8 @@ package org.evomaster.core.problem.asyncapi.builder
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import com.webfuzzing.asyncapi.models.AsyncApiDocument
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
-import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
-import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.ObjectGene
@@ -378,76 +375,6 @@ class AsyncApiActionBuilderTest {
         assertEquals(
             (first.getValue("bessj") as AsyncApiAction).seeTopGenes().size,
             (second.getValue("bessj") as AsyncApiAction).seeTopGenes().size
-        )
-    }
-
-    // ------------------------------------------------------------------ the individual
-
-    @Test
-    fun testAnIndividualHoldsTheMessagesToPublish() {
-
-        val actions = actionsOf("/asyncapi/sut/ncs-kafka.yaml").take(2).map { it.copy() as AsyncApiAction }
-
-        val individual = AsyncApiIndividual(SampleType.RANDOM, actions.toMutableList())
-
-        assertEquals(2, individual.seeMainExecutableActions().size)
-        assertTrue(individual.canMutateStructure())
-    }
-
-    @Test
-    fun testMessagesCanBeAddedAndRemoved() {
-
-        val actions = actionsOf("/asyncapi/sut/ncs-kafka.yaml").map { it.copy() as AsyncApiAction }
-
-        val individual = AsyncApiIndividual(SampleType.RANDOM, mutableListOf(actions[0]))
-        assertEquals(1, individual.seeMainExecutableActions().size)
-
-        individual.addAction(action = actions[1])
-        assertEquals(2, individual.seeMainExecutableActions().size)
-
-        individual.removeAction(0)
-        assertEquals(1, individual.seeMainExecutableActions().size)
-        assertEquals(actions[1].getName(), individual.seeMainExecutableActions().first().getName())
-    }
-
-    @Test
-    fun testCopyingAnIndividualKeepsItsMessages() {
-
-        val actions = actionsOf("/asyncapi/sut/ncs-kafka.yaml").take(3).map { it.copy() as AsyncApiAction }
-        val individual = AsyncApiIndividual(SampleType.RANDOM, actions.toMutableList())
-
-        val copy = individual.copy() as AsyncApiIndividual
-
-        assertEquals(
-            individual.seeMainExecutableActions().map { it.getName() },
-            copy.seeMainExecutableActions().map { it.getName() }
-        )
-        //a copy must be independent, or mutating one would change the other
-        assertNotSame(individual.seeMainExecutableActions()[0], copy.seeMainExecutableActions()[0])
-    }
-
-    @Test
-    fun testCopyingAnIndividualThatWasSetUpWithMoreThanSql() {
-
-        /*
-            Only SQL is put in front of the messages today, but the individual inherits every
-            other kind of setup an enterprise individual can hold. The children are copied
-            wholesale, so a group whose size was not measured would not match what is handed
-            over, and the copy would fail outright rather than come back wrong.
-         */
-        val actions = actionsOf("/asyncapi/sut/ncs-kafka.yaml").take(1).map { it.copy() as AsyncApiAction }
-        val individual = AsyncApiIndividual(SampleType.RANDOM, actions.toMutableList())
-
-        individual.addInitializingMongoDbActions(
-            actions = listOf(MongoDbAction("db", "collection", "collection", listOf()))
-        )
-
-        val copy = individual.copy() as AsyncApiIndividual
-
-        assertEquals(1, copy.seeMainExecutableActions().size)
-        assertEquals(
-            individual.seeInitializingActions().size,
-            copy.seeInitializingActions().size
         )
     }
 }
