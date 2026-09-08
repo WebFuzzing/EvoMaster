@@ -32,6 +32,18 @@ object AsyncApiGeneBuilder {
     private const val INLINE_PREFIX = "_asyncapi_"
 
     /**
+     * The keywords whose value is literal data rather than a schema, so nothing inside them is
+     * a keyword either.
+     */
+    private val DATA_KEYWORDS = setOf("const", "default", "enum", "example", "examples")
+
+    /**
+     * The keywords whose value maps arbitrary names to schemas. Their keys come from the
+     * document, so a field a service happens to call "const" or "default" must still be walked.
+     */
+    private val SCHEMA_MAPS = setOf("properties", "patternProperties", "definitions", "\$defs")
+
+    /**
      * The genes for a message's payload, or null when it declares none.
      */
     fun buildPayloadGene(
@@ -255,16 +267,4 @@ object AsyncApiGeneBuilder {
 
         return obj
     }
-
-    /**
-     * The keywords whose value is literal data rather than a schema, so nothing inside them is
-     * a keyword either.
-     */
-    private val DATA_KEYWORDS = setOf("const", "default", "enum", "example", "examples")
-
-    /**
-     * The keywords whose value maps arbitrary names to schemas. Their keys come from the
-     * document, so a field a service happens to call "const" or "default" must still be walked.
-     */
-    private val SCHEMA_MAPS = setOf("properties", "patternProperties", "definitions", "\$defs")
 }
