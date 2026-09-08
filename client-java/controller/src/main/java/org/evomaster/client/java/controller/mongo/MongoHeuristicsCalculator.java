@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
+import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -18,6 +19,8 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -715,8 +718,13 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         }
 
+        final OptionalLong integralValue = MongoUtils.getIntegralLongValue((Number) actualValue);
+        if (!integralValue.isPresent()) {
+            return C_FALSE;
+        }
+
         final long bitmask = operation.getBitmask();
-        final long maskedValue = ((Number) actualValue).longValue() & bitmask;
+        final long maskedValue = integralValue.getAsLong() & bitmask;
         final int numberOfSetBitsInMaskedValue = Long.bitCount(maskedValue);
         final int numberOfBitsInMask = Long.bitCount(bitmask);
         if (operation instanceof BitsAllClearOperation) {
@@ -735,7 +743,6 @@ public class MongoHeuristicsCalculator {
             throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
         }
     }
-
 
     private Truthness computeHeuristic(NotOperation operation, Object document) {
         requireNonNullQueryAndDocument(operation, document);

@@ -1812,7 +1812,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    //@Disabled("a bitwise operator truncates a non-integral number instead of not matching it")
     public void testBitsDoesNotMatchANonIntegralNumber() {
         // mongo: 3.0 is an integer and is matched, 3.5 is not truncated to 3
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
