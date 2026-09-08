@@ -90,7 +90,8 @@ class Neo4jHandlerTest {
     @Test
     void testAFailedEvaluationReportsTheMaximumDistance() {
         // A relationship whose source node is not in the graph: the graph reads fine, but scoring the query
-        // against it fails, and that failure must never look closer to satisfied than a genuine miss.
+        // against it fails, which must be reported as MAX_NEO4J_DISTANCE so it never looks closer to
+        // satisfied than a genuine miss.
         List<FakeRecord> nodes = Arrays.asList(
                 nodeRecord("n1", labels("Person"), props("age", 25L)));
         List<FakeRecord> rels = Arrays.asList(

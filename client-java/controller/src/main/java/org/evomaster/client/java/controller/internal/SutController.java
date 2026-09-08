@@ -569,7 +569,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     try {
                         neo4jHandler.handle(it);
                     } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND");
+                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
                         assert false;
                     }
                 });

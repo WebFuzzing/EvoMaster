@@ -132,7 +132,8 @@ public class Neo4jHandler {
                 double distance = calculator.computeDistance(parsedQuery, graph);
                 metrics = new Neo4jDistanceWithMetrics(distance, graph.nodeCount(), false);
             } catch (Exception e) {
-                SimpleLogger.uniqueWarn("Failed to compute Neo4j heuristic for query: " + query);
+                SimpleLogger.uniqueWarn("Failed to compute Neo4j heuristic for query: " + query
+                        + " | cause: " + e.getClass().getName() + ": " + e.getMessage());
                 metrics = new Neo4jDistanceWithMetrics(Neo4jHeuristicsCalculator.MAX_NEO4J_DISTANCE, graph.nodeCount(), true);
             }
             commandsWithDistances.add(new Neo4jCommandWithDistance(query, metrics));

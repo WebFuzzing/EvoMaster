@@ -38,11 +38,10 @@ public class Neo4jHeuristicsCalculator {
     public static final double C = DistanceHelper.H_NOT_NULL;
 
     /**
-     * Largest distance {@link #computeDistance} can report: the query matched nothing at all. A caller that
-     * cannot compute a distance (for example when the evaluation throws) reports this value, so a failure
-     * never looks closer to satisfied than a genuine miss.
+     * Distance reported when a query could not be evaluated at all, so that a failure never looks closer
+     * to satisfied than a genuine miss.
      */
-    public static final double MAX_NEO4J_DISTANCE = 1.0d;
+    public static final double MAX_NEO4J_DISTANCE = Double.MAX_VALUE;
 
     private final Neo4jStructuralMatcher matcher = new Neo4jStructuralMatcher();
     private final Neo4jConditionEvaluator evaluator;
@@ -72,8 +71,8 @@ public class Neo4jHeuristicsCalculator {
     }
 
     /**
-     * Converts a heuristic to the distance form: {@code 1 - ofTrue}, in
-     * {@code [0, MAX_NEO4J_DISTANCE]}, where 0 means the query is satisfied.
+     * Converts a heuristic to the distance form: {@code 1 - ofTrue}, which lies in
+     * {@code [0,1]} by construction of {@code Truthness}, where 0 means the query is satisfied.
      */
     public double computeDistance(MatchOperation query, Neo4jGraph graph) {
         Truthness heuristic = computeHeuristic(query, graph);
