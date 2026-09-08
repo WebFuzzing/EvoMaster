@@ -62,6 +62,7 @@ public class AsyncApiProblem extends ProblemInfo {
 
     @Override
     public AsyncApiProblem withServicesToNotMock(List<ExternalService> servicesToNotMock) {
+        Objects.requireNonNull(servicesToNotMock, "servicesToNotMock");
         AsyncApiProblem p = new AsyncApiProblem(this.schemaLocation, this.schemaText);
         p.servicesToNotMock.addAll(servicesToNotMock);
         return p;
