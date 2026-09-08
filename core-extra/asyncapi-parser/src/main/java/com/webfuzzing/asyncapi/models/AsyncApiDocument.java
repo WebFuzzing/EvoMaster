@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A parsed AsyncAPI 3.x document, normalised so that a caller never has to walk the raw
@@ -15,7 +16,7 @@ import java.util.Map;
  *
  * <ol>
  * <li>every message is reachable from {@link #getMessages()} by a single id, including those
- *     written inline inside a channel, which are promoted there under a synthetic id;</li>
+ *     written inline inside a channel, which are promoted here under a synthetic id;</li>
  * <li>all {@code $ref} between AsyncAPI constructs (channels, operations, messages, correlation
  *     ids, traits) are already followed, and are represented as plain keys;</li>
  * <li>all {@code $ref} <i>inside</i> a message payload / headers JSON Schema are instead left
@@ -47,6 +48,12 @@ public class AsyncApiDocument {
     private final String defaultContentType;
 
     /**
+     * Key is the server name, i.e. its key under {@code servers}.
+     * Value is the server declared under it.
+     */
+    private final Map<String, AsyncApiServer> servers;
+
+    /**
      * Key is the channel key, i.e. its key under {@code channels} and the one a {@code $ref}
      * addresses it by. Value is the channel declared under it.
      */
@@ -72,6 +79,13 @@ public class AsyncApiDocument {
     private final Map<String, JsonNode> componentSchemas;
 
     /**
+     * Key is the security scheme key, i.e. its key under {@code components.securitySchemes},
+     * or a synthetic name for a scheme written inline where it is used.
+     * Value is the scheme declared under it.
+     */
+    private final Map<String, AsyncApiSecurityScheme> securitySchemes;
+
+    /**
      * Everything that could not be read but did not stop the document being usable, one entry
      * per problem, in the order the parser met them.
      */
@@ -82,10 +96,12 @@ public class AsyncApiDocument {
         this.sourceLocation = builder.sourceLocation;
         this.version = builder.version;
         this.defaultContentType = builder.defaultContentType;
+        this.servers = Collections.unmodifiableMap(builder.servers);
         this.channels = Collections.unmodifiableMap(builder.channels);
         this.operations = Collections.unmodifiableMap(builder.operations);
         this.messages = Collections.unmodifiableMap(builder.messages);
         this.componentSchemas = Collections.unmodifiableMap(builder.componentSchemas);
+        this.securitySchemes = Collections.unmodifiableMap(builder.securitySchemes);
         this.warnings = Collections.unmodifiableList(builder.warnings);
     }
 
@@ -124,6 +140,15 @@ public class AsyncApiDocument {
     }
 
     /**
+     * Server name -&gt; server. Empty when the document declares no {@code servers} block, which
+     * is common: many published specs describe only the message contract and leave the broker
+     * to be supplied at deployment.
+     */
+    public Map<String, AsyncApiServer> getServers() {
+        return servers;
+    }
+
+    /**
      * Channel key -&gt; channel.
      */
     public Map<String, AsyncApiChannel> getChannels() {
@@ -151,6 +176,13 @@ public class AsyncApiDocument {
      */
     public Map<String, JsonNode> getComponentSchemas() {
         return componentSchemas;
+    }
+
+    /**
+     * Security scheme key -&gt; scheme, from {@code components.securitySchemes}.
+     */
+    public Map<String, AsyncApiSecurityScheme> getSecuritySchemes() {
+        return securitySchemes;
     }
 
     /**
@@ -210,6 +242,29 @@ public class AsyncApiDocument {
         return channels.get(operation.getReply().getChannelName());
     }
 
+    /**
+     * The servers a channel is available on. A channel that names none is available on all of
+     * them, which is what the specification prescribes and what callers would otherwise all
+     * have to remember for themselves.
+     */
+    public List<AsyncApiServer> serversOf(AsyncApiChannel channel) {
+
+        if (channel.getServers().isEmpty()) {
+            return new ArrayList<>(servers.values());
+        }
+
+        List<AsyncApiServer> found = new ArrayList<>();
+
+        for (String name : channel.getServers()) {
+            AsyncApiServer server = servers.get(name);
+            if (server != null) {
+                found.add(server);
+            }
+        }
+
+        return found;
+    }
+
     private List<AsyncApiMessage> resolveMessages(List<String> ids) {
 
         List<AsyncApiMessage> found = new ArrayList<>();
@@ -230,6 +285,8 @@ public class AsyncApiDocument {
         private final DocumentLocation sourceLocation;
         private final String version;
         private String defaultContentType = DEFAULT_CONTENT_TYPE;
+        /** @see AsyncApiDocument#servers */
+        private Map<String, AsyncApiServer> servers = Collections.emptyMap();
         /** @see AsyncApiDocument#channels */
         private Map<String, AsyncApiChannel> channels = Collections.emptyMap();
         /** @see AsyncApiDocument#operations */
@@ -238,13 +295,15 @@ public class AsyncApiDocument {
         private Map<String, AsyncApiMessage> messages = Collections.emptyMap();
         /** @see AsyncApiDocument#componentSchemas */
         private Map<String, JsonNode> componentSchemas = Collections.emptyMap();
+        /** @see AsyncApiDocument#securitySchemes */
+        private Map<String, AsyncApiSecurityScheme> securitySchemes = Collections.emptyMap();
         /** @see AsyncApiDocument#warnings */
         private List<String> warnings = Collections.emptyList();
 
         private Builder(String rawText, DocumentLocation sourceLocation, String version) {
-            this.rawText = rawText;
-            this.sourceLocation = sourceLocation;
-            this.version = version;
+            this.rawText = Objects.requireNonNull(rawText, "rawText");
+            this.sourceLocation = Objects.requireNonNull(sourceLocation, "sourceLocation");
+            this.version = Objects.requireNonNull(version, "version");
         }
 
         public Builder defaultContentType(String defaultContentType) {
@@ -252,27 +311,28 @@ public class AsyncApiDocument {
             return this;
         }
 
-        public Builder channels(Map<String, AsyncApiChannel> channels) {
-            this.channels = channels;
-            return this;
-        }
+        public Builder servers(Map<String, AsyncApiServer> servers) { this.servers = Objects.requireNonNull(servers, "servers"); return this; }
+
+        public Builder channels(Map<String, AsyncApiChannel> channels) { this.channels = Objects.requireNonNull(channels, "channels"); return this; }
 
         public Builder operations(Map<String, AsyncApiOperation> operations) {
-            this.operations = operations;
+            this.operations = Objects.requireNonNull(operations, "operations");
             return this;
         }
 
-        public Builder messages(Map<String, AsyncApiMessage> messages) {
-            this.messages = messages;
-            return this;
-        }
+        public Builder messages(Map<String, AsyncApiMessage> messages) { this.messages = Objects.requireNonNull(messages, "messages"); return this; }
 
         public Builder componentSchemas(Map<String, JsonNode> componentSchemas) {
-            this.componentSchemas = componentSchemas;
+            this.componentSchemas = Objects.requireNonNull(componentSchemas, "componentSchemas");
             return this;
         }
 
-        public Builder warnings(List<String> warnings) { this.warnings = warnings; return this; }
+        public Builder securitySchemes(Map<String, AsyncApiSecurityScheme> securitySchemes) {
+            this.securitySchemes = Objects.requireNonNull(securitySchemes, "securitySchemes");
+            return this;
+        }
+
+        public Builder warnings(List<String> warnings) { this.warnings = Objects.requireNonNull(warnings, "warnings"); return this; }
 
         public AsyncApiDocument build() {
             return new AsyncApiDocument(this);
