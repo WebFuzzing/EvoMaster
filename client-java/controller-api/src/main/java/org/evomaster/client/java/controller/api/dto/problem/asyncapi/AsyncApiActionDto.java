@@ -53,6 +53,7 @@ public class AsyncApiActionDto {
 
     /**
      * Headers to publish alongside the body, for a transport that has them.
+     * Key is the header name as the document declares it, value is what to send under it, as text.
      */
     public Map<String, String> headers = new LinkedHashMap<>();
 

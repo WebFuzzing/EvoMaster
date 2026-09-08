@@ -49,6 +49,7 @@ public class AsyncApiReplyDto {
 
     /**
      * The reply's headers, for a transport that has them.
+     * Key is the header name, value is what arrived under it, as text.
      */
     public Map<String, String> replyHeaders = new LinkedHashMap<>();
 
