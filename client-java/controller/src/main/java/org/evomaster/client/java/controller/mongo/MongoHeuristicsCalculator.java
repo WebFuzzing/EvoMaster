@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
-import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
@@ -365,7 +364,7 @@ public class MongoHeuristicsCalculator {
         }
 
         if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
-            return computeHeuristic(expectedValue, (List<?>) actualValue);
+            return computeHeuristicContainsElement(expectedValue, (List<?>) actualValue);
         } else {
             return computeHeuristicComparisonNullableValues(
                     expectedValue,
@@ -426,7 +425,7 @@ public class MongoHeuristicsCalculator {
             actualValue = null;
         }
         if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
-            return computeHeuristic(expectedValue, (List<?>) actualValue).invert();
+            return computeHeuristicContainsElement(expectedValue, (List<?>) actualValue).invert();
         } else {
             return computeHeuristicComparisonNullableValues(
                     expectedValue,
@@ -542,17 +541,29 @@ public class MongoHeuristicsCalculator {
             actualValue = null;
         }
 
-        final Truthness res = computeInOperation(actualValue, expectedValueList);
+        final Truthness res = computeHeuristicInOperation(actualValue, expectedValueList);
         return res;
     }
 
-    private Truthness computeHeuristic(Object actualValue, List<?> expectedValueList) {
-        Objects.requireNonNull(expectedValueList);
-        if (expectedValueList.isEmpty()) {
+    /**
+     * Computes the heuristic score for determining if an element is contained in a list.
+     * The method evaluates the presence of the given element in the provided list and calculates
+     * a heuristic truthness score based on the comparison results.
+     *
+     * @param element the element whose presence in the list is to be evaluated; can be null.
+     * @param list    the list of objects to search; must not be null.
+     * @return a Truthness object representing the heuristic score of the element's presence in the list.
+     */
+    private Truthness computeHeuristicContainsElement(Object element, List<?> list) {
+        Objects.requireNonNull(list);
+
+        if (list.isEmpty()) {
             return C_FALSE;
         } else {
-            Truthness res = buildOrAggregationTruthness(expectedValueList.stream()
-                    .map(expectedValue -> computeHeuristicComparisonNullableValues(expectedValue, actualValue, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO))
+            Truthness res = buildOrAggregationTruthness(list.stream()
+                    .map(expectedValue -> computeHeuristicComparisonNullableValues(expectedValue,
+                            element,
+                            SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO))
                     .toArray(Truthness[]::new));
             return buildSafeScaledTruthness(res);
         }
@@ -566,29 +577,48 @@ public class MongoHeuristicsCalculator {
 
         final Object actualValue;
         if (!documentContainsField(document, fieldName)) {
-            actualValue =null;
+            actualValue = null;
         } else {
             actualValue = getValue(document, fieldName);
         }
 
-        final Truthness res = computeInOperation(actualValue, expectedValueList);
+        final Truthness res = computeHeuristicInOperation(actualValue, expectedValueList);
         return res.invert();
     }
 
-    private Truthness computeInOperation(Object actualValue, List<?> expectedValueList) {
+    private Truthness computeHeuristicInOperation(Object actualValue, List<?> expectedValueList) {
         final Truthness res;
         if (actualValue instanceof List<?>) {
             List<?> actualValueList = (List<?>) actualValue;
-            if (actualValueList.isEmpty()) {
-                res = C_FALSE;
+            // first we try to match the actualValueList as a whole with any element of the expectedValueList
+            Truthness[] arrayOfTruthnesses = expectedValueList.stream()
+                    .filter(expectedValueListElement -> expectedValueListElement instanceof List<?>)
+                    .map(expectedValueListElement -> (List<?>) expectedValueListElement)
+                    .map(expectedValueInnerListElement ->
+                            computeHeuristicListEquality(expectedValueInnerListElement, actualValueList))
+                    .toArray(Truthness[]::new);
+            final Truthness isTheValueListEqualToAnyExpectedValueList;
+            if (arrayOfTruthnesses.length > 0) {
+                isTheValueListEqualToAnyExpectedValueList = buildOrAggregationTruthness(arrayOfTruthnesses);
             } else {
-                Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
-                        .map(value -> computeHeuristic(value, expectedValueList))
-                        .toArray(Truthness[]::new));
-                res = buildSafeScaledTruthness(orAggregation);
+                isTheValueListEqualToAnyExpectedValueList = C_FALSE;
+            }
+
+            if (isTheValueListEqualToAnyExpectedValueList.isFalse()) {
+                // if we fail, we try to match each element of the actualValueList with any element of the expectedValueList
+                if (actualValueList.isEmpty()) {
+                    res= C_FALSE;
+                } else {
+                    Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
+                            .map(actualValueListElement -> computeHeuristicContainsElement(actualValueListElement, expectedValueList))
+                            .toArray(Truthness[]::new));
+                    res = buildSafeScaledTruthness(orAggregation);
+                }
+            } else {
+                res = isTheValueListEqualToAnyExpectedValueList;
             }
         } else {
-            res = computeHeuristic(actualValue, expectedValueList);
+            res = computeHeuristicContainsElement(actualValue, expectedValueList);
         }
         return res;
     }
@@ -629,7 +659,7 @@ public class MongoHeuristicsCalculator {
         }
 
         Truthness res = buildAndAggregationTruthness(expectedValues.stream()
-                .map(expectedValue -> computeHeuristic(expectedValue, actualValues))
+                .map(expectedValue -> computeHeuristicContainsElement(expectedValue, actualValues))
                 .toArray(Truthness[]::new));
         return buildSafeScaledTruthness(res);
     }
@@ -859,7 +889,6 @@ public class MongoHeuristicsCalculator {
     }
 
 
-
     private static Truthness computeHeuristic(AbstractProximityOperation abstractProximityOperation,
                                               double longitude,
                                               double latitude,
@@ -912,7 +941,7 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(actualList);
         Objects.requireNonNull(expectedList);
 
-        final Truthness truthness = computeHeuristicEquality(actualList, expectedList);
+        final Truthness truthness = computeHeuristicListEquality(actualList, expectedList);
         switch (comparisonOperatorType) {
             case EQUALS_TO:
                 return truthness;
@@ -923,7 +952,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private Truthness computeHeuristicEquality(List<?> actualList, List<?> expectedList) {
+    private Truthness computeHeuristicListEquality(List<?> actualList, List<?> expectedList) {
 
         if (actualList.size() != expectedList.size()) {
             return C_FALSE;

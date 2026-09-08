@@ -1847,7 +1847,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$in and $nin compare only the elements of an array, never the array itself")
     public void testInMatchingAnArrayFieldAsAWhole() {
         Document doc = new Document().append("tags", new ArrayList<>(Arrays.asList("a", "b")));
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
@@ -1857,6 +1856,18 @@ public class MongoHeuristicsCalculatorTest {
                 convertToDocument(Filters.in("tags", Arrays.asList(Arrays.asList("a", "b")))), doc).isTrue());
         assertTrue(calculator.computeHeuristicDocument(
                 convertToDocument(Filters.nin("tags", Arrays.asList(Arrays.asList("a", "b")))), doc).isFalse());
+    }
+
+    @Test
+    public void testInMatchingAnEmptyArrayFieldAsAWhole() {
+        Document doc = new Document().append("tags", new ArrayList<>(Arrays.asList()));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        // mongo: matches, one of the listed values is the array itself
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.in("tags", Arrays.asList(Arrays.asList()))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.nin("tags", Arrays.asList(Arrays.asList()))), doc).isFalse());
     }
 
     @Test
