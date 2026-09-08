@@ -8,10 +8,6 @@ import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintType;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
@@ -19,8 +15,6 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -240,7 +234,9 @@ public class MongoHeuristicsCalculator {
 
         final Truthness truthnessOfComparison;
         if (actualValue instanceof Number && expectedValue instanceof Number) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison((Number) actualValue, (Number) expectedValue, comparisonOperatorType);
+            final Number actualNumber = (Number) actualValue;
+            final Number expectedNumber = (Number) expectedValue;
+            truthnessOfComparison = computeHeuristicComparisonNumberValues(actualNumber, expectedNumber, comparisonOperatorType);
 
         } else if (actualValue instanceof String && expectedValue instanceof String) {
             String actualString = (String) actualValue;
@@ -282,6 +278,41 @@ public class MongoHeuristicsCalculator {
             truthnessOfComparison = C_FALSE;
         }
         return truthnessOfComparison;
+    }
+
+    private static Truthness computeHeuristicComparisonNumberValues(Number leftNumber, Number rightNumber, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(leftNumber);
+        Objects.requireNonNull(rightNumber);
+        Objects.requireNonNull(comparisonOperatorType);
+
+        double leftValueAsDouble = leftNumber.doubleValue();
+        double rightValueAsDouble = rightNumber.doubleValue();
+
+        if (Double.isNaN(leftValueAsDouble) || Double.isNaN(rightValueAsDouble)) {
+            // handle case when NaN is involved in the comparison
+            switch (comparisonOperatorType) {
+                case EQUALS_TO: {
+                    return (Double.isNaN(leftValueAsDouble) && Double.isNaN(rightValueAsDouble)) ?
+                            TRUE_C : C_FALSE;
+                }
+                case NOT_EQUALS_TO: {
+                    return (!Double.isNaN(leftValueAsDouble) || !Double.isNaN(rightValueAsDouble)) ?
+                            TRUE_C : C_FALSE;
+                }
+                case GREATER_THAN:
+                case GREATER_THAN_EQUALS:
+                case MINOR_THAN:
+                case MINOR_THAN_EQUALS: {
+                    return C_FALSE;
+                }
+                default:
+                    throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
+            }
+        } else {
+            // if both values are not NaN, we can use the standard comparison logic
+            final Truthness truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(leftNumber, rightNumber, comparisonOperatorType);
+            return truthnessOfComparison;
+        }
     }
 
     private static int toIntValue(Boolean actualValue) {

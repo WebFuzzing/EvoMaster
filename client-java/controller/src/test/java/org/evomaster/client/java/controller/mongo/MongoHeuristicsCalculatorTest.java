@@ -1854,7 +1854,6 @@ public class MongoHeuristicsCalculatorTest {
      */
 
     @Test
-    @Disabled("an ordering comparison involving NaN makes the calculator throw IllegalArgumentException")
     public void testOrderingComparisonWithNaN() {
         /*
             mongo: no match for either, NaN does not order against anything.
