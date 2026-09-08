@@ -1,6 +1,7 @@
 package org.evomaster.core.utils
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
 
 /**
  * Cache for Unicode character ranges used in `\p{}` and `\P{}` regex escape sequences.
@@ -20,15 +21,24 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Results are computed lazily on first access and cached statically for the lifetime of the JVM.
  * The cache is shared across all instances of this class.
+ *
+ * Note: computed against the JDK running EvoMaster core, not necessarily the same JDK
+ * as the SUT. Different JDK versions can bundle different Unicode Character Database
+ * versions. So classification of some code points could differ between the two,
+ * as each Unicode version can add/recategorize characters.
  */
-class UnicodeCache {
-    companion object {
-        /**
-         * WARNING: mutable static state. But as it is just a cache, it is not a problem.
-         * Furthermore, although the hashmap is mutable, the values inside are not
-         */
-        private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
-    }
+object UnicodeCache {
+    /**
+     * Key: a normalized property or class label, such as "gc=Lu", produced by
+     * [normalizeKey], or a fixed word boundary key from [getWordForBoundaryRanges].
+     * Negated labels are prefixed with "^".
+     *
+     * Value: the [MultiCharacterRange] of code points matched by that key.
+     *
+     * WARNING: mutable static state. But as it is just a cache, it is not a problem.
+     * Furthermore, although the hashmap is mutable, the values inside are not.
+     */
+    private val cache = ConcurrentHashMap<String, MultiCharacterRange>()
 
     // UNICODE GENERAL CATEGORIES, keywords (gc, general_category) are case-insensitive,
     // prefix (Is) and names are case-sensitive
@@ -297,7 +307,7 @@ class UnicodeCache {
     /*
     Filters characters by predicate, constructing a list in a way that skips the MultiCharacterRange construction logic.
      */
-    private fun computeRanges(key: String, predicate: (Int) -> Boolean): MultiCharacterRange {
+    private fun computeRanges(predicate: (Int) -> Boolean): MultiCharacterRange {
         val list = mutableListOf<CharacterRange>()
         var start = Character.MIN_VALUE.code
         val end = Character.MAX_VALUE.code
@@ -348,16 +358,16 @@ class UnicodeCache {
         val predicate = getPredicate(key)
 
         // first we compute and cache the base key (non-negated)
-        cache.computeIfAbsent(key) {
-            computeRanges(key, predicate)
+        val baseMCR = cache.computeIfAbsent(key) {
+            computeRanges(predicate)
         }
 
         // if the base kay was requested just return
-        if (!negated) return cache[key]!!
+        if (!negated) return baseMCR
 
         // else compute and cache full key (negated) from base key (non-negated)
         return cache.computeIfAbsent(fullKey) {
-            MultiCharacterRange(true, cache[key]!!.ranges)
+            MultiCharacterRange(true, baseMCR.ranges)
         }
     }
 
@@ -369,5 +379,43 @@ class UnicodeCache {
         in javaCharacterMethodPredicates -> javaCharacterMethodPredicates[key]!!
         in unicodeCharClassModePredicates -> unicodeCharClassModePredicates[key]!!
         else -> throw IllegalArgumentException("Unsupported/illegal category, binary property or java method")
+    }
+
+    /**
+     * Returns a [MultiCharacterRange] representing the set of Unicode code points considered as
+     * word characters by `\b` (or non-word characters if [negated]) word boundary escape.
+     *
+     * The result is computed lazily on first access and cached for subsequent calls.
+     * @see getRanges
+     */
+    fun getWordForBoundaryRanges(negated: Boolean, flags: RegexFlags): MultiCharacterRange {
+        val key = if(flags.unicodeCharacterClass) "boundary=wordUnicodeCharClass" else "boundary=word"
+        val fullKey = if (negated) {
+            "^$key"
+        } else {
+            key
+        }
+
+        val baseMCR = cache.computeIfAbsent(key) {
+            computeRanges(wordBoundaryPredicate(flags))
+        }
+
+        if (!negated) return baseMCR
+
+        return cache.computeIfAbsent(fullKey) {
+            MultiCharacterRange(true, baseMCR.ranges)
+        }
+    }
+
+    /**
+     * Predicate that separates word from non-word characters as considered for word boundary (`\b`).
+     * This changes depending on regex flag [Pattern.UNICODE_CHARACTER_CLASS] and JDK version.
+     */
+    private fun wordBoundaryPredicate(flags: RegexFlags): (Int) -> Boolean {
+        val pattern = Pattern.compile("(?s)^.\\b.$", flags.toJavaFlagBitmask())
+        val matcher = pattern.matcher("")
+        return { cp: Int ->
+            matcher.reset("${cp.toChar()} ").matches()
+        }
     }
 }
