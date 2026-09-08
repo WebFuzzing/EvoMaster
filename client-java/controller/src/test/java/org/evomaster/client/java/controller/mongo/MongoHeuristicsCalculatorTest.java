@@ -1765,7 +1765,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$ne between values of incomparable BSON types is reported as false")
     public void testNotEqualsBetweenIncomparableTypes() {
         // mongo: matches, a number and a string are different from each other
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
