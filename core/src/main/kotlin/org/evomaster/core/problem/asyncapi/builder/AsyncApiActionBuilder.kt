@@ -22,7 +22,8 @@ import org.evomaster.core.search.action.Action
 object AsyncApiActionBuilder {
 
     /**
-     * Build one action per publishable message and add them to [actionCluster].
+     * Build one action per publishable message and add them to [actionCluster], replacing
+     * whatever it held.
      *
      * @return anything that could not be built, to be reported to the user
      */
