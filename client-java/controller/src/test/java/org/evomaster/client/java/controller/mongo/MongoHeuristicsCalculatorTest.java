@@ -1660,7 +1660,6 @@ public class MongoHeuristicsCalculatorTest {
      */
 
     @Test
-    @Disabled("$all is quantified over the elements of the document instead of the expected values")
     public void testAllQuantifiesOverTheExpectedValues() {
         /*
             $all holds when every expected value is present in the array, and is
@@ -1750,7 +1749,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$all on a field that does not hold an array is reported as false")
     public void testAllOnAScalarField() {
         // mongo: a scalar is matched by a $all listing only values equal to it
         Document doc = new Document().append("tag", "a");

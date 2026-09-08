@@ -172,7 +172,7 @@ public class MongoHeuristicsCalculator {
         final Pattern pattern = operation.getPattern();
         final String patternString = pattern.pattern();
 
-        if (taintHandler!=null) {
+        if (taintHandler != null) {
             final int patternFlags = pattern.flags();
             // TODO: tainting should take into account the pattern flags, which can change the matching behavior
             // TODO: regex could be a partial word match (MongoDB $regex) instead of a whole word match (Matcher.matches())
@@ -537,26 +537,24 @@ public class MongoHeuristicsCalculator {
 
         List<?> expectedValues = operation.getValues();
         final String fieldName = operation.getFieldName();
-        if (!documentContainsField(document, fieldName)) {
+
+        if (expectedValues.isEmpty()) {
             return C_FALSE;
-        } else if (expectedValues.isEmpty()) {
-            return C_FALSE;
+        } else if (!documentContainsField(document, fieldName) || getValue(document, fieldName) == null) {
+            return (expectedValues.size() == 1 && expectedValues.get(0) == null) ? TRUE_C : C_FALSE;
+        } else if (!(getValue(document, fieldName) instanceof List<?>)) {
+            return (expectedValues.size() == 1) ? computeHeuristicComparisonNullableValues(expectedValues.get(0), getValue(document, fieldName), SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) : C_FALSE;
         } else {
-            Object actualValues = getValue(document, fieldName);
-            if (actualValues == null || !(actualValues instanceof List<?>)) {
+            List<?> actualValues = (List<?>) getValue(document, fieldName);
+            if (actualValues.isEmpty()) {
                 return C_FALSE;
             } else {
-                List<?> actualValuesList = (List<?>) actualValues;
-                if (actualValuesList.isEmpty()) {
-                    return C_FALSE;
-                } else {
-                    Truthness res = buildAndAggregationTruthness(actualValuesList
-                            .stream()
-                            .map(actualValuesListElement ->
-                                    computeHeuristic(actualValuesListElement, expectedValues))
-                            .toArray(Truthness[]::new));
-                    return buildSafeScaledTruthness(res);
-                }
+                Truthness res = buildAndAggregationTruthness(expectedValues
+                        .stream()
+                        .map(expectedValue ->
+                                computeHeuristic(expectedValue, actualValues))
+                        .toArray(Truthness[]::new));
+                return buildSafeScaledTruthness(res);
             }
         }
     }
