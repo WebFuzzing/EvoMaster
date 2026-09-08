@@ -92,6 +92,8 @@ public class AsyncApiActionDto {
      * There is no right answer here: a slow service and a stuck one look the same from outside,
      * so this is a tuning parameter with no equivalent in a synchronous protocol. It is set
      * generously and reported with the result.
+     *
+     * Null when no reply is expected, as there is then nothing to wait for.
      */
     public Long replyTimeoutMs;
 }

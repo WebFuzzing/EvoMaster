@@ -66,6 +66,8 @@ public class AsyncApiReplyDto {
     /**
      * How long the driver waited, in milliseconds, whether or not anything arrived. Reported
      * because the verdict on silence is only meaningful alongside how long it was waited for.
+     *
+     * Null when the driver did not wait at all: no reply was expected, or nothing was published.
      */
     public Long waitedMs;
 
