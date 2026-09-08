@@ -13,6 +13,13 @@ import java.util.Map;
 public class AsyncApiActionDto {
 
     /**
+     * The two places a correlation id can travel, as {@link #correlationLocation} names them.
+     */
+    public static final String CORRELATION_IN_HEADER = "HEADER";
+
+    public static final String CORRELATION_IN_PAYLOAD = "PAYLOAD";
+
+    /**
      * Key of the operation in the AsyncAPI document. Sent along so the driver can report and
      * log in terms the user will recognise from their own contract.
      */
@@ -86,8 +93,4 @@ public class AsyncApiActionDto {
      * generously and reported with the result.
      */
     public Long replyTimeoutMs;
-
-    public static final String CORRELATION_IN_HEADER = "HEADER";
-
-    public static final String CORRELATION_IN_PAYLOAD = "PAYLOAD";
 }
