@@ -157,7 +157,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateDataPoolBasedOnSchema(actionCluster)
 
-        if (config.isEnabledArazzoStrategy()) {
+        if (config.isEnabledArazzoSampling()) {
             arazzoWorkflowsService.load(schemaHolder.main.schemaParsed, config.arazzoLocation)
         }
 
@@ -184,15 +184,22 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
+    /**
+     * It is decided whether to use the sampleAtRandom with Arazzo or not.
+     */
     override fun sampleAtRandom(): RestIndividual {
         return if (shouldUseArazzoSampling()) {
             arazzoWorkflowsService.sampleAtRandom(actionCluster, ::createIndividual)
         } else {
-            doSampleAtRandom()
+            sampleAtRandomFromOpenApiSchema()
         }
     }
 
-    protected abstract fun doSampleAtRandom(): RestIndividual
+    /**
+     * Random sampling based on the OpenAPI-derived action cluster.
+     * This is the fallback used by [sampleAtRandom] when Arazzo is not active.
+     */
+    protected abstract fun sampleAtRandomFromOpenApiSchema(): RestIndividual
 
     override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
 
@@ -511,7 +518,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
     private fun shouldUseArazzoSampling(): Boolean {
-        if (!config.isEnabledArazzoStrategy()) {
+        if (!config.isEnabledArazzoSampling() && config.arazzoLocation.isNotEmpty()) {
             return false
         }
 

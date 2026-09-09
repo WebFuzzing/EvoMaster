@@ -2290,23 +2290,17 @@ class EMConfig {
 
 
     /**
-     * Enum that enables and disables the generation of individuals based on Arazzo Workflows.
+     * Boolean that enables and disables the generation of individuals based on Arazzo Workflows.
      */
-    enum class ArazzoStrategy {
-        NONE,
-        ENABLED
-    }
-
     @Experimental
-    @Cfg("Enable workflow-based sampling from an Arazzo document. " +
-            "Only applicable for REST with MIO.")
-    var arazzoStrategy = ArazzoStrategy.NONE
+    @Cfg("Enable workflow-based sampling from an Arazzo document.")
+    var enableArazzoWorkflowSampling = false
 
-    fun isEnabledArazzoStrategy() = isUsingAdvancedTechniques() && arazzoStrategy != ArazzoStrategy.NONE
+    fun isEnabledArazzoSampling() = enableArazzoWorkflowSampling
 
     @Experimental
     @Cfg("Probability of controlling the creation of Arazzo individuals.")
-    @Probability
+    @Probability(activating = false)
     var probOfArazzoSampling = 0.5
 
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
@@ -3411,8 +3405,9 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("arazzo location in disk")
-    var arazzoLocation: String? = null
+    @ExistingPath(true,false)
+    @Cfg("arazzo location on disk")
+    var arazzoLocation = ""
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){

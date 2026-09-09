@@ -14,6 +14,11 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
 import java.util.ArrayDeque
 
+/**
+ * Arazzo Specifications: It is an OpenAPI Initiative standard designed to define complex workflows and sequences
+ * of interdependent calls across one or multiple APIs.
+ * Service responsible for parsing Arazzo documents and creating ArazzoWorkflow type individuals.
+ */
 class ArazzoWorkflowsService {
 
     @Inject
@@ -35,13 +40,13 @@ class ArazzoWorkflowsService {
     /**
      * Load Arazzo workflows from disk
      */
-    fun load(openAPI: OpenAPI, location: String?) {
-        if (location.isNullOrBlank()) {
+    fun load(openAPI: OpenAPI, location: String) {
+        if (location.isBlank()) {
             throw ConfigProblemException("arazzoLocation must not be null when Arazzo strategy is enabled")
         }
         val workflows = readArazzoWorkflows(openAPI, location)
         if (workflows.isEmpty()) {
-            throw ConfigProblemException("There must be at least one Arazzo workflow.")
+            throw ConfigProblemException("Arazzo document at '$location' must contain at least one workflow.")
         }
         arazzoWorkflows.clear()
         arazzoWorkflows.addAll(workflows)
@@ -49,8 +54,14 @@ class ArazzoWorkflowsService {
     }
 
     private fun readArazzoWorkflows(openAPI: OpenAPI, location: String): List<Workflow> {
-        val arazzoText = ArazzoAccess.readFromDisk(location)
-        return ArazzoParser.parse(arazzoText, openAPI).workflows
+        return try {
+            val arazzoText = ArazzoAccess.readFromDisk(location)
+            ArazzoParser.parse(arazzoText, openAPI).workflows
+        } catch (e: Exception) {
+            throw ConfigProblemException("Failed to read or parse Arazzo document " +
+                    "at '$location': ${e.message ?: e.javaClass.simpleName}"
+            )
+        }
     }
 
     /**
@@ -65,7 +76,9 @@ class ArazzoWorkflowsService {
     }
 
     /**
-     * Create workflows individuals
+     * Create workflows individuals.
+     * For the moment, it only recognizes a single OpenAPI.
+     * Cases involving multiple APIs are currently being ignored.
      */
     fun buildIndividualFromWorkflow(
         workflow: Workflow,

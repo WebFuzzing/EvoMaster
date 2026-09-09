@@ -118,7 +118,7 @@ class SamplerWithArazzoVerifierTest {
         val args = listOf(
             "--blackBox", "false",
             "--seed", "42",
-            "--arazzoStrategy", "ENABLED",
+            "--enableArazzoWorkflowSampling", "true",
             "--arazzoLocation", arazzoPath,
             "--probOfArazzoSampling", "1.0",
         )
