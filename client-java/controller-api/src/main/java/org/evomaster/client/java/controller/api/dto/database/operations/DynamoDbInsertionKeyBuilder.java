@@ -5,12 +5,12 @@ import java.util.List;
 /**
  * Builds stable identifiers for inferred DynamoDB insertions.
  */
-public final class DynamoDbInsertionKey {
+public final class DynamoDbInsertionKeyBuilder {
 
     /**
      * Prevents instantiation of this utility class.
      */
-    private DynamoDbInsertionKey() {
+    private DynamoDbInsertionKeyBuilder() {
     }
 
     /**

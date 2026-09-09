@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.internal.db.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKey;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
@@ -29,17 +29,35 @@ import java.util.Set;
  */
 public class DynamoDbHandler {
 
+    /** Commands captured from the SUT and awaiting evaluation. */
     private final List<DynamoDbCommand> commands = new ArrayList<>();
+
+    /** Heuristic results accumulated for the current action. */
     private final List<DynamoDbCommandWithDistance> evaluatedCommands = new ArrayList<>();
+
+    /** Failed reads accumulated for insertion generation during the current action. */
     private final List<DynamoDbFailedQuery> failedQueries = new ArrayList<>();
+
+    /** Canonical keys used to avoid reporting duplicate inferred insertions. */
     private final Set<String> insertionKeys = new LinkedHashSet<>();
+
+    /** Parser used to extract predicates and table names from captured requests. */
     private final DynamoDbRequestParser requestParser = new DynamoDbRequestParser();
+
+    /** Calculator used to measure how close table items are to satisfying a request. */
     private final DynamoDbHeuristicsCalculator calculator =
             new DynamoDbHeuristicsCalculator(new TaintHandlerExecutionTracer());
+
+    /** Accessor used to load table items through the configured DynamoDB client. */
     private final DynamoDbTableDataAccessor tableDataAccessor = new DynamoDbTableDataAccessor();
 
+    /** Whether captured commands should produce heuristic results. */
     private volatile boolean calculateHeuristics;
+
+    /** Whether failed reads should be captured for insertion generation. */
     private volatile boolean extractDynamoDbExecution;
+
+    /** SDK v2 synchronous or asynchronous DynamoDB client supplied by the SUT controller. */
     private Object dynamoDbClient;
 
     /**
@@ -208,7 +226,7 @@ public class DynamoDbHandler {
         }
 
         List<DynamoDbAttributeValueDto> insertionAttributes = new ArrayList<>(attributes.values());
-        String insertionKey = DynamoDbInsertionKey.fromAttributes(tableName, insertionAttributes);
+        String insertionKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName, insertionAttributes);
         if (insertionKeys.add(insertionKey)) {
             failedQueries.add(new DynamoDbFailedQuery(tableName, insertionAttributes));
         }

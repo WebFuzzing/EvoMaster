@@ -1,7 +1,7 @@
 package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKey
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
@@ -51,7 +51,7 @@ class DynamoDbAction(
     override fun getActionGroupKey(): String = DynamoDbAction::class.java.name
 
     /** Stable key used to avoid adding the same inferred insertion twice. */
-    fun insertionKey(): String = DynamoDbInsertionKey.fromAttributes(
+    fun insertionKey(): String = DynamoDbInsertionKeyBuilder.fromAttributes(
         tableName,
         attributes.map {
             DynamoDbAttributeValueDto(it.attributeName, it.type, it.gene.getValueAsRawString())
