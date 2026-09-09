@@ -10,7 +10,7 @@ import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.service.Randomness
 import java.util.ArrayDeque
 
@@ -23,6 +23,9 @@ class ArazzoWorkflowsService {
 
     @Inject
     private lateinit var randomness: Randomness
+
+    @Inject
+    private lateinit var sampler: AbstractRestSampler
 
     /**
      * List of Arazzo workflows. Used to create individuals.
@@ -38,7 +41,9 @@ class ArazzoWorkflowsService {
         private set
 
     /**
-     * Load Arazzo workflows from disk
+     * Load Arazzo workflows from disk.
+     * This method must be invoked after the OpenAPI has been processed.
+     * In the case of the RestSampler, this occurs during initialization.
      */
     fun load(openAPI: OpenAPI, location: String) {
         if (location.isBlank()) {
@@ -67,12 +72,9 @@ class ArazzoWorkflowsService {
     /**
      * Choose a random workflow
      */
-    fun sampleAtRandom(
-        actionCluster: Map<String, Action>,
-        createIndividual: (SampleType, MutableList<RestCallAction>) -> RestIndividual,
-    ): RestIndividual {
+    fun sampleAtRandom(): RestIndividual {
         val workflow = randomness.choose(arazzoWorkflows)
-        return buildIndividualFromWorkflow(workflow, actionCluster, createIndividual)
+        return buildIndividualFromWorkflow(workflow)
     }
 
     /**
@@ -80,26 +82,22 @@ class ArazzoWorkflowsService {
      * For the moment, it only recognizes a single OpenAPI.
      * Cases involving multiple APIs are currently being ignored.
      */
-    fun buildIndividualFromWorkflow(
-        workflow: Workflow,
-        actionCluster: Map<String, Action>,
-        createIndividual: (SampleType, MutableList<RestCallAction>) -> RestIndividual,
-    ): RestIndividual {
-        val actions = buildArazzoRestCallActions(workflow.steps, actionCluster)
+    fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
+        val actions = buildArazzoRestCallActions(workflow.steps)
             .onEach {
                 it.doInitialize(randomness)
                 it.forceNewTaints()
             }
             .toMutableList()
 
-        return createIndividual(SampleType.RANDOM, actions)
+        return sampler.createIndividual(SampleType.RANDOM, actions)
     }
 
     /**
      * A RestCallAction must be created for each Step.
      * Steps can be direct (operationId) or reference a sub-workflow
      */
-    private fun buildArazzoRestCallActions(steps: List<Step>, actionCluster: Map<String, Action>): List<RestCallAction> {
+    private fun buildArazzoRestCallActions(steps: List<Step>): List<RestCallAction> {
         val actions = mutableListOf<RestCallAction>()
         val pending = ArrayDeque<Step>()
         pending.addAll(steps)
@@ -108,7 +106,7 @@ class ArazzoWorkflowsService {
             val step = pending.removeFirst()
             when {
                 !step.operationId.isNullOrBlank() ->
-                    actions.add(findActionForOperation(step.operationId, actionCluster))
+                    actions.add(findActionForOperation(step.operationId))
 
                 !step.workflowId.isNullOrBlank() -> {
                     val nested = arazzoWorkflowsById[step.workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
@@ -124,8 +122,8 @@ class ArazzoWorkflowsService {
     /**
      * Every operationId has its corresponding RestCallAction in the actionCluster
      */
-    private fun findActionForOperation(operationId: String, actionCluster: Map<String, Action>): RestCallAction {
-        val template = actionCluster.values
+    private fun findActionForOperation(operationId: String): RestCallAction {
+        val template = sampler.seeAvailableActions()
             .filterIsInstance<RestCallAction>()
             .find { it.operationId == operationId }
             ?: throw IllegalArgumentException("Arazzo: Unknown operationId: $operationId")

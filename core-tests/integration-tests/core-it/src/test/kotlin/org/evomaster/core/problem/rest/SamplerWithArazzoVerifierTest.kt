@@ -22,7 +22,6 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.action.Action
 import com.webfuzzing.arazzo.models.domain.Workflow
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -92,15 +91,7 @@ class SamplerWithArazzoVerifierTest {
     }
 
     private fun buildIndividualFromWorkflow(context: TestContext, workflow: Workflow): RestIndividual {
-        return context.arazzoService.buildIndividualFromWorkflow(
-            workflow,
-            actionCluster(context.sampler),
-            context.sampler::createIndividual,
-        )
-    }
-
-    private fun actionCluster(sampler: RestSampler): Map<String, Action> {
-        return sampler.seeAvailableActions().associate { it.getName() to it }
+        return context.arazzoService.buildIndividualFromWorkflow(workflow)
     }
 
     private fun createTestContext(): TestContext {
