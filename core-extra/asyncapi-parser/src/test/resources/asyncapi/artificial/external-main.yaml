@@ -1,0 +1,52 @@
+asyncapi: 3.0.0
+info:
+  title: References into another document
+  version: 1.0.0
+
+servers:
+  broker:
+    host: localhost:9092
+    protocol: kafka
+
+channels:
+  orders:
+    address: orders.request
+    messages:
+      placeOrder:
+        $ref: '#/components/messages/placeOrder'
+
+operations:
+  placeOrder:
+    action: receive
+    channel:
+      $ref: '#/channels/orders'
+
+components:
+  messages:
+    placeOrder:
+      name: PlaceOrder
+      contentType: application/json
+      payload:
+        $ref: 'external-shared.yaml#/components/schemas/Order'
+
+    # a message living in the other document as well
+    imported:
+      $ref: 'external-shared.yaml#/components/messages/Ack'
+
+    # a pointer into the other document that goes deeper than the schema it names
+    deepPointer:
+      payload:
+        $ref: 'external-shared.yaml#/components/schemas/Order/properties/item'
+
+    # and the same, written by the other document about itself
+    importedDeep:
+      $ref: 'external-shared.yaml#/components/messages/DeepAck'
+
+  schemas:
+    # a schema of our own, whose name deliberately collides with one in the other document
+    Order:
+      type: object
+      required: [localOnly]
+      properties:
+        localOnly:
+          type: boolean

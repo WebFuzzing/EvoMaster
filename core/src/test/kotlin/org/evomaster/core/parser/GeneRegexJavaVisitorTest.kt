@@ -566,6 +566,32 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?m)\\s^b")
         checkCanSample("(?m)\\s^b", listOf("\nb", "\rb"), 500)
         checkSameAsJava("(?m)x?((^z)y)")
+        checkSameAsJava("(?m)abc\\s^def\$\\sghi")
         assertThrows<AssertionError> { checkSameAsJava("(?m)a^b") }
+    }
+
+    @Test
+    fun testWordBoundary() {
+        checkSameAsJava("\\b\\bfoo")
+        checkSameAsJava("\\w*\\bfoo")
+        checkSameAsJava("\\bfoo\\b")
+        checkSameAsJava("foo\\b bar")
+        checkSameAsJava("\\w\\b\\W")
+        checkSameAsJava("(?U)\\w\\b\\W")
+        checkSameAsJava("([\\s\\S]*)(\\b(prescribe[ds]?)\\b)([\\s\\S]*)")
+        assertThrows<AssertionError> { checkSameAsJava("a\\bb") }
+        assertThrows<AssertionError> { checkSameAsJava("\\w+\\bfoo") }
+        assertThrows<AssertionError> { checkSameAsJava("a(\\bfoo)") }
+    }
+
+    @Test
+    fun testNonWordBoundary() {
+        checkSameAsJava("a\\Bb")
+        checkSameAsJava("\\w\\Bfoo\\B\\w")
+        checkSameAsJava("\\B")
+        checkSameAsJava("\\d*\\Bfoo")
+        checkSameAsJava("\\W*\\Bfoo")
+        checkSameAsJava("\\w*\\Bfoo")
+        assertThrows<AssertionError> { checkSameAsJava("\\b\\Bfoo") }
     }
 }

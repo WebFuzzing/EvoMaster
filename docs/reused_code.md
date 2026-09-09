@@ -15,3 +15,17 @@ are listed here:
   
 * _RegexDistanceUtilsTest.java_: from [EvoSuite](http://www.evosuite.org) unit test generator. 
   Released under GNU Lesser General Public
+* _asyncapi/sut/bookworm-rating.yaml_: AsyncAPI description from
+  [BookWorm](https://github.com/foxminchan/BookWorm), used unmodified as a test resource of the
+  `asyncapi-parser` module. Released under MIT license.
+
+* _asyncapi/sut/everest.yaml_: AsyncAPI description from
+  [EVerest](https://github.com/EVerest/EVerest), used unmodified as a test resource of the
+  `asyncapi-parser` module. Released under Apache-2.0 license.
+
+* _asyncapi/sut/microcks.yaml_: AsyncAPI description from
+  [Microcks](https://github.com/microcks/microcks), used unmodified as a test resource of the
+  `asyncapi-parser` module. Released under Apache-2.0 license.
+
+* _asyncapi/sut/openagents-cache.yaml_: AsyncAPI description of the OpenAgents shared-cache API,
+  used unmodified as a test resource of the `asyncapi-parser` module. Released under MIT license.
