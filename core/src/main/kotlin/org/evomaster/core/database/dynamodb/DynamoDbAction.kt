@@ -29,6 +29,12 @@ class DynamoDbAction(
     val attributes: List<DynamoDbAttributeGene>
 ) : EnvironmentAction(listOf()) {
 
+    companion object {
+        private const val ATTRIBUTE_SEPARATOR = '|'
+        private const val TYPE_SEPARATOR = ':'
+        private const val VALUE_SEPARATOR = '='
+    }
+
     init {
         addChildren(attributes.map { it.gene })
     }
@@ -52,8 +58,8 @@ class DynamoDbAction(
     fun insertionKey(): String = buildString {
         append(tableName)
         attributes.forEach {
-            append('|').append(it.attributeName).append(':').append(it.type)
-                .append('=').append(it.gene.getValueAsRawString())
+            append(ATTRIBUTE_SEPARATOR).append(it.attributeName).append(TYPE_SEPARATOR).append(it.type)
+                .append(VALUE_SEPARATOR).append(it.gene.getValueAsRawString())
         }
     }
 }

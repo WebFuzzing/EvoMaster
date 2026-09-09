@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -18,6 +19,29 @@ import java.util.concurrent.CompletionStage;
  */
 public final class DynamoDbCommandExecutor {
 
+    private static final String ATTRIBUTE_VALUE_CLASS_NAME =
+            "software.amazon.awssdk.services.dynamodb.model.AttributeValue";
+    private static final String ATTRIBUTE_VALUE_BUILDER_CLASS_NAME = ATTRIBUTE_VALUE_CLASS_NAME + "$Builder";
+    private static final String PUT_ITEM_REQUEST_CLASS_NAME =
+            "software.amazon.awssdk.services.dynamodb.model.PutItemRequest";
+    private static final String PUT_ITEM_REQUEST_BUILDER_CLASS_NAME = PUT_ITEM_REQUEST_CLASS_NAME + "$Builder";
+    private static final String DYNAMODB_CLIENT_CLASS_NAME =
+            "software.amazon.awssdk.services.dynamodb.DynamoDbClient";
+    private static final String DYNAMODB_ASYNC_CLIENT_CLASS_NAME =
+            "software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient";
+
+    private static final String BUILDER_METHOD_NAME = "builder";
+    private static final String BUILD_METHOD_NAME = "build";
+    private static final String TABLE_NAME_METHOD_NAME = "tableName";
+    private static final String ITEM_METHOD_NAME = "item";
+    private static final String PUT_ITEM_METHOD_NAME = "putItem";
+    private static final String STRING_VALUE_METHOD_NAME = "s";
+    private static final String NUMBER_VALUE_METHOD_NAME = "n";
+    private static final String BOOLEAN_VALUE_METHOD_NAME = "bool";
+
+    /**
+     * Prevents instantiation of this utility class.
+     */
     private DynamoDbCommandExecutor() {
     }
 
@@ -26,87 +50,78 @@ public final class DynamoDbCommandExecutor {
      *
      * @param client DynamoDB client
      * @param insertions items to insert
-     * @return per-insertion results
+     * @return per-insertion results, stopping at the first failed insertion
+     * @throws NullPointerException when the client or insertion list is {@code null}
+     * @throws IllegalArgumentException when the insertion list is empty
      */
     public static DynamoDbInsertionResultsDto executeInsert(Object client, List<DynamoDbInsertionDto> insertions) {
-        if (client == null) {
-            throw new IllegalArgumentException("No DynamoDB client");
-        }
-        if (insertions == null || insertions.isEmpty()) {
+        Objects.requireNonNull(client, "DynamoDB client cannot be null");
+        Objects.requireNonNull(insertions, "DynamoDB insertions cannot be null");
+        if (insertions.isEmpty()) {
             throw new IllegalArgumentException("No data to insert");
         }
 
         DynamoDbInsertionResultsDto results = new DynamoDbInsertionResultsDto();
+        results.executionResults = new ArrayList<>(Collections.nCopies(insertions.size(), false));
         for (int i = 0; i < insertions.size(); i++) {
             try {
                 executeOne(client, insertions.get(i));
-            } catch (RuntimeException e) {
-                handleFailedInsertion(results, insertions.size(), i);
-                throw new DynamoDbInsertionException(i, results, e);
+                results.executionResults.set(i, true);
+            } catch (RuntimeException ignored) {
+                results.failedInsertionIndex = i;
+                return results;
             }
         }
-        results.executionResults = new ArrayList<>(Collections.nCopies(insertions.size(), true));
         return results;
     }
 
     /**
-     * Records the insertion that failed while preserving earlier successes.
+     * Executes one DynamoDB insertion through the AWS SDK v2 reflection API.
      *
-     * @param results insertion results to update
-     * @param insertionCount number of attempted insertions
-     * @param failedIndex zero-based index of the failed insertion
+     * @param client synchronous or asynchronous DynamoDB client
+     * @param insertion item to insert
      */
-    private static void handleFailedInsertion(
-            DynamoDbInsertionResultsDto results, int insertionCount, int failedIndex) {
-        results.executionResults = new ArrayList<>(Collections.nCopies(insertionCount, false));
-        for (int i = 0; i < failedIndex; i++) {
-            results.executionResults.set(i, true);
-        }
-        results.failedInsertionIndex = failedIndex;
-    }
-
     private static void executeOne(Object client, DynamoDbInsertionDto insertion) {
         try {
             ClassLoader loader = client.getClass().getClassLoader();
             Class<?> attributeValueClass = Class.forName(
-                    "software.amazon.awssdk.services.dynamodb.model.AttributeValue", true, loader);
+                    ATTRIBUTE_VALUE_CLASS_NAME, true, loader);
             Class<?> attributeValueBuilderClass = Class.forName(
-                    "software.amazon.awssdk.services.dynamodb.model.AttributeValue$Builder", true, loader);
+                    ATTRIBUTE_VALUE_BUILDER_CLASS_NAME, true, loader);
             Class<?> putItemRequestClass = Class.forName(
-                    "software.amazon.awssdk.services.dynamodb.model.PutItemRequest", true, loader);
+                    PUT_ITEM_REQUEST_CLASS_NAME, true, loader);
             Class<?> putItemRequestBuilderClass = Class.forName(
-                    "software.amazon.awssdk.services.dynamodb.model.PutItemRequest$Builder", true, loader);
+                    PUT_ITEM_REQUEST_BUILDER_CLASS_NAME, true, loader);
 
             Map<String, Object> item = new LinkedHashMap<>();
             for (DynamoDbAttributeValueDto attribute : insertion.attributes) {
-                Object builder = attributeValueClass.getMethod("builder").invoke(null);
+                Object builder = attributeValueClass.getMethod(BUILDER_METHOD_NAME).invoke(null);
                 String setter;
-                Object value;
+                Object value = attribute.value;
                 switch (attribute.type) {
                     case STRING:
-                        setter = "s";
-                        value = attribute.value;
+                        setter = STRING_VALUE_METHOD_NAME;
                         break;
                     case NUMBER:
-                        setter = "n";
-                        value = attribute.value;
+                        setter = NUMBER_VALUE_METHOD_NAME;
                         break;
                     case BOOLEAN:
-                        setter = "bool";
+                        setter = BOOLEAN_VALUE_METHOD_NAME;
                         value = Boolean.valueOf(attribute.value);
                         break;
                     default:
                         throw new IllegalArgumentException("Unsupported DynamoDB attribute type: " + attribute.type);
                 }
                 attributeValueBuilderClass.getMethod(setter, value.getClass()).invoke(builder, value);
-                item.put(attribute.attributeName, attributeValueBuilderClass.getMethod("build").invoke(builder));
+                item.put(attribute.attributeName,
+                        attributeValueBuilderClass.getMethod(BUILD_METHOD_NAME).invoke(builder));
             }
 
-            Object requestBuilder = putItemRequestClass.getMethod("builder").invoke(null);
-            putItemRequestBuilderClass.getMethod("tableName", String.class)
+            Object requestBuilder = putItemRequestClass.getMethod(BUILDER_METHOD_NAME).invoke(null);
+            putItemRequestBuilderClass.getMethod(TABLE_NAME_METHOD_NAME, String.class)
                     .invoke(requestBuilder, insertion.tableName);
-            putItemRequestBuilderClass.getMethod("item", Map.class).invoke(requestBuilder, item);
-            Object request = putItemRequestBuilderClass.getMethod("build").invoke(requestBuilder);
+            putItemRequestBuilderClass.getMethod(ITEM_METHOD_NAME, Map.class).invoke(requestBuilder, item);
+            Object request = putItemRequestBuilderClass.getMethod(BUILD_METHOD_NAME).invoke(requestBuilder);
             Method putItem = findPutItemMethod(client, loader, putItemRequestClass);
             Object response = putItem.invoke(client, request);
             if (response instanceof CompletionStage) {
@@ -120,47 +135,28 @@ public final class DynamoDbCommandExecutor {
         }
     }
 
+    /**
+     * Finds the insertion method exposed by a synchronous or asynchronous AWS SDK v2 client.
+     *
+     * @param client DynamoDB client
+     * @param loader client class loader
+     * @param putItemRequestClass reflected request class
+     * @return reflected {@code putItem} method
+     * @throws ClassNotFoundException when the AWS client types are unavailable
+     * @throws NoSuchMethodException when the client does not expose the expected method
+     */
     private static Method findPutItemMethod(Object client, ClassLoader loader, Class<?> putItemRequestClass)
             throws ClassNotFoundException, NoSuchMethodException {
-        Class<?> syncClientClass = Class.forName("software.amazon.awssdk.services.dynamodb.DynamoDbClient", true, loader);
+        Class<?> syncClientClass = Class.forName(DYNAMODB_CLIENT_CLASS_NAME, true, loader);
         if (syncClientClass.isInstance(client)) {
-            return syncClientClass.getMethod("putItem", putItemRequestClass);
+            return syncClientClass.getMethod(PUT_ITEM_METHOD_NAME, putItemRequestClass);
         }
 
-        Class<?> asyncClientClass = Class.forName("software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient", true, loader);
+        Class<?> asyncClientClass = Class.forName(DYNAMODB_ASYNC_CLIENT_CLASS_NAME, true, loader);
         if (asyncClientClass.isInstance(client)) {
-            return asyncClientClass.getMethod("putItem", putItemRequestClass);
+            return asyncClientClass.getMethod(PUT_ITEM_METHOD_NAME, putItemRequestClass);
         }
 
         throw new IllegalArgumentException("Unsupported DynamoDB client: " + client.getClass().getName());
-    }
-
-    /**
-     * Exception carrying partial insertion results.
-     */
-    public static class DynamoDbInsertionException extends RuntimeException {
-
-        private final int failedIndex;
-        private final DynamoDbInsertionResultsDto results;
-
-        private DynamoDbInsertionException(int failedIndex, DynamoDbInsertionResultsDto results, Throwable cause) {
-            super("Failed DynamoDB insertion at index " + failedIndex, cause);
-            this.failedIndex = failedIndex;
-            this.results = results;
-        }
-
-        /**
-         * @return failed insertion index
-         */
-        public int getFailedIndex() {
-            return failedIndex;
-        }
-
-        /**
-         * @return partial results
-         */
-        public DynamoDbInsertionResultsDto getResults() {
-            return results;
-        }
     }
 }

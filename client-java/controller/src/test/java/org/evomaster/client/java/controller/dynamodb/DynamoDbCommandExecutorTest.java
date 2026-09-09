@@ -58,20 +58,17 @@ public class DynamoDbCommandExecutorTest {
     }
 
     @Test
-    public void testFailureContainsPartialResults() {
+    public void testFailureReturnsPartialResults() {
         DynamoDbClient client = mock(DynamoDbClient.class);
         when(client.putItem(any(PutItemRequest.class)))
                 .thenReturn(PutItemResponse.builder().build())
                 .thenThrow(new IllegalStateException("DynamoDB unavailable"));
 
-        DynamoDbCommandExecutor.DynamoDbInsertionException error = assertThrows(
-                DynamoDbCommandExecutor.DynamoDbInsertionException.class,
-                () -> DynamoDbCommandExecutor.executeInsert(
-                        client, Arrays.asList(worldCupPlayer(), worldCupPlayer())));
+        DynamoDbInsertionResultsDto results = DynamoDbCommandExecutor.executeInsert(
+                client, Arrays.asList(worldCupPlayer(), worldCupPlayer(), worldCupPlayer()));
 
-        assertEquals(1, error.getFailedIndex());
-        assertEquals(Arrays.asList(true, false), error.getResults().executionResults);
-        assertEquals(Integer.valueOf(1), error.getResults().failedInsertionIndex);
+        assertEquals(Arrays.asList(true, false, false), results.executionResults);
+        assertEquals(Integer.valueOf(1), results.failedInsertionIndex);
         verify(client, times(2)).putItem(any(PutItemRequest.class));
     }
 
@@ -79,9 +76,9 @@ public class DynamoDbCommandExecutorTest {
     public void testRejectsMissingClientOrInsertions() {
         DynamoDbClient client = mock(DynamoDbClient.class);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> DynamoDbCommandExecutor.executeInsert(null, Collections.singletonList(worldCupPlayer())));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> DynamoDbCommandExecutor.executeInsert(client, null));
         assertThrows(IllegalArgumentException.class,
                 () -> DynamoDbCommandExecutor.executeInsert(client, Collections.emptyList()));
