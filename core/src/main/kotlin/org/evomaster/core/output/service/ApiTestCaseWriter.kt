@@ -308,22 +308,23 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
                     var needsDot = true
 
-                    val fieldName = if (format.isJava()) {
-                        "'${it.key}'"
-                    } else if (format.isKotlin()){
-                        "'${handleDollarSign(it.key)}'"
+                    val fieldName = if (format.isJavaOrKotlin()) {
+                        "'${escapeJvmGPathFieldName(it.key)}'"
                     } else if (format.isJavaScript()) {
                         //field name could have any character... need to use [] notation then
                         if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
                             it.key
                         } else {
                             needsDot = false
-                            "[\"${it.key}\"]"
+                            "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                         }
                     } else if (format.isPython()) {
                         needsDot = false
-                        "[\"${it.key}\"]"
-                    //TODO need to deal with '' C#? see EscapeRest
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
+                    // C# is no longer a supported output format, but keep the legacy branch safe.
+                    } else if (format.isCsharp()) {
+                        needsDot = false
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                     } else {
                         it.key
                     }
@@ -344,12 +345,34 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }
                 }
     }
+
     /*
-        a quick fix on handling dollar sign in assertion
-        TODO, might move to other places to systematically handle the assertions with special symbols
+        RestAssured evaluates a field path as Groovy source after Java/Kotlin has evaluated the
+        generated string literal. Escape for both layers so that, for example, a JSON key named
+        \g is emitted as '\\\\g' in the GPath expression inside the generated JVM source.
      */
-    private fun handleDollarSign(text: String): String{
-        return text.replace("\$", "\\\$")
+    private fun escapeJvmGPathFieldName(text: String): String {
+        val escapedForGroovySingleQuotedString = text
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\b", "\\b")
+            .replace("\t", "\\t")
+
+        return GeneUtils.applyEscapes(
+            escapedForGroovySingleQuotedString,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
+    }
+
+    private fun escapeFieldNameForStringLiteral(text: String): String {
+        return GeneUtils.applyEscapes(
+            text,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
     }
     /**
      * Formats a field path according to the active output format.
