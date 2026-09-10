@@ -102,6 +102,10 @@ public class AgentController {
                         handleExecutingInitRedis();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_DYNAMODB:
+                        handleExecutingInitDynamoDb();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
@@ -205,6 +209,15 @@ public class AgentController {
             InstrumentationController.setExecutingInitRedis(executingInitRedis);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-redis: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitDynamoDb() {
+        try {
+            Object msg = in.readObject();
+            InstrumentationController.setExecutingInitDynamoDb((Boolean) msg);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-dynamodb: " + e.getMessage());
         }
     }
 

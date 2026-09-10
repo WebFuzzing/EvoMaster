@@ -64,6 +64,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitRedis(executingInitRedis);
     }
 
+    public static void setExecutingInitDynamoDb(boolean executingInitDynamoDb){
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
