@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -18,6 +19,7 @@ import java.util.List;
 public class AgentController {
 
     private static Socket socket;
+    private static Thread thread;
     private static ObjectOutputStream out;
     private static ObjectInputStream in;
 
@@ -33,32 +35,32 @@ public class AgentController {
 
         SimpleLogger.info("Connected to EvoMaster controller");
 
-        Thread thread = new Thread(() -> {
+        thread = new Thread(() ->{
 
-            while (!Thread.interrupted() && socket != null) {
+            while (! Thread.interrupted() && socket != null){
 
                 Object msg;
 
                 try {
                     msg = in.readObject();
                 } catch (IOException e) {
-                    SimpleLogger.error("Failure in receiving message: " + e.getMessage());
+                    SimpleLogger.error("Failure in receiving message: "+e.getMessage());
                     return;
                 } catch (ClassNotFoundException e) {
-                    SimpleLogger.error("Configuration error: " + e.getMessage());
+                    SimpleLogger.error("Configuration error: "+e.getMessage());
                     return;
                 }
 
-                if (!(msg instanceof Command)) {
-                    SimpleLogger.error("Received wrong message type: " + msg);
+                if(msg == null || ! (msg instanceof Command)){
+                    SimpleLogger.error("Received wrong message type: "+msg);
                     continue;
                 }
 
                 Command command = (Command) msg;
                 long start = System.currentTimeMillis();
-                SimpleLogger.debug("Handling command: " + command);
+                SimpleLogger.debug("Handling command: "+command);
 
-                switch (command) {
+                switch(command){
                     case NEW_SEARCH:
                         InstrumentationController.resetForNewSearch();
                         sendCommand(Command.ACK);
@@ -119,12 +121,12 @@ public class AgentController {
                         handleExtractingSpecifiedDto();
                         break;
                     default:
-                        SimpleLogger.error("Unrecognized command: " + command);
+                        SimpleLogger.error("Unrecognized command: "+command);
                         return;
                 }
 
                 long delta = System.currentTimeMillis() - start;
-                SimpleLogger.debug("Command took " + delta + " ms");
+                SimpleLogger.debug("Command took "+delta+" ms");
             }
         });
 
