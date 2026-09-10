@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
@@ -86,7 +87,7 @@ public class InstrumentationController {
         Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
         if(ids != null) {
-            ids.forEach(id -> {
+            ids.stream().forEach(id -> {
 
                 String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
 
@@ -106,7 +107,7 @@ public class InstrumentationController {
             /*
              *  If new targets were found, we add them even if not requested by EM
              */
-            ObjectiveRecorder.getTargetsSeenFirstTime().forEach(s -> {
+            ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
 
                 int mappedId = ObjectiveRecorder.getMappedId(s);
 
@@ -140,7 +141,7 @@ public class InstrumentationController {
                         }
                         return info;
                     })
-                    .forEach(list::add);
+                    .forEach(e -> list.add(e));
         }
 
         if(fullyCovered){
