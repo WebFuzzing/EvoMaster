@@ -35,6 +35,7 @@ import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
@@ -79,6 +80,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     @Inject
     protected lateinit var dataPool: DataPool
+
+    @Inject
+    protected lateinit var arazzoWorkflowsService: ArazzoWorkflowsService
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -153,6 +157,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateDataPoolBasedOnSchema(actionCluster)
 
+        if (isArazzoActive()) {
+            arazzoWorkflowsService.load(schemaHolder.main.schemaParsed, config.arazzoLocation)
+        }
+
         initSqlInfo(infoDto)
 
         initHostnameInfo(infoDto)
@@ -176,8 +184,22 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
+    /**
+     * It is decided whether to use the sampleAtRandom with Arazzo or not.
+     */
+    override fun sampleAtRandom(): RestIndividual {
+        return if (shouldUseArazzoSampling()) {
+            arazzoWorkflowsService.sampleAtRandom()
+        } else {
+            sampleAtRandomFromOpenApiSchema()
+        }
+    }
 
-
+    /**
+     * Random sampling based on the OpenAPI-derived action cluster.
+     * This is the fallback used by [sampleAtRandom] when Arazzo is not active.
+     */
+    protected abstract fun sampleAtRandomFromOpenApiSchema(): RestIndividual
 
     override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
 
@@ -493,6 +515,16 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             .forEach {
                 dataPool.addValue(it.name, it.getValueAsRawString())
             }
+    }
+
+    private fun isArazzoActive(): Boolean =
+        config.isEnabledArazzoSampling() && config.arazzoLocation.isNotBlank()
+
+    private fun shouldUseArazzoSampling(): Boolean {
+        if (!isArazzoActive()) {
+            return false
+        }
+        return randomness.nextBoolean(config.probOfArazzoSampling)
     }
 
 }
