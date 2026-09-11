@@ -1,10 +1,7 @@
 package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.*;
-import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -14,17 +11,37 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.*;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
-import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
+/**
+ * The MongoHeuristicsCalculator class provides methods to compute heuristic scores for MongoDB-like
+ * query operations against a set of documents. These heuristics aim to measure how closely a
+ * document satisfies the given query conditions. The class supports a variety of query operators,
+ * including equality, inequality, comparison, and logical operations.
+ *
+ */
 public class MongoHeuristicsCalculator {
 
 
+    /**
+     * A handler responsible for managing taint propagation and tracking
+     * during the execution of heuristic calculations. This object is used
+     * to process and handle specific taint-related operations, such as
+     * string equality comparisons and regular expression evaluations.
+     */
     private final TaintHandler taintHandler;
+
+    /**
+     * A helper component for handling the internal heuristic computation logic
+     * within the context of Mongo operations. It provides utilities and lower-level
+     * methods that are invoked by the main computation flow in
+     * {@code MongoHeuristicsCalculator}.
+     */
+    private final MongoHeuristicsCalculatorHelper helper;
 
     public MongoHeuristicsCalculator() {
         this(null);
@@ -32,6 +49,7 @@ public class MongoHeuristicsCalculator {
 
     public MongoHeuristicsCalculator(TaintHandler taintHandler) {
         this.taintHandler = taintHandler;
+        this.helper = new MongoHeuristicsCalculatorHelper(taintHandler);
     }
 
 
@@ -153,10 +171,16 @@ public class MongoHeuristicsCalculator {
             return evaluate((SizeOperation) operation, actualValue);
         } else if (operation instanceof ModOperation) {
             return evaluate((ModOperation) operation, actualValue);
-        } else if (operation instanceof BitsOperation) {
-            return evaluate((BitsOperation) operation, actualValue);
+        } else if (operation instanceof BitsAllClearOperation) {
+            return evaluate((BitsAllClearOperation) operation, actualValue);
+        } else if (operation instanceof BitsAllSetOperation) {
+            return evaluate((BitsAllSetOperation) operation, actualValue);
+        } else if (operation instanceof BitsAnyClearOperation) {
+            return evaluate((BitsAnyClearOperation) operation, actualValue);
+        } else if (operation instanceof BitsAnySetOperation) {
+            return evaluate((BitsAnySetOperation) operation, actualValue);
         } else if (operation instanceof NotOperation) {
-            return computeHeuristicOnValue((NotOperation) operation, actualValue);
+            return evaluate((NotOperation) operation, actualValue);
         } else if (operation instanceof RegexOperation) {
             return evaluate((RegexOperation) operation, actualValue);
         } else if (operation instanceof NearSphereOperation) {
@@ -206,7 +230,15 @@ public class MongoHeuristicsCalculator {
         GeoSpatialModel model = operation.hasLegacyCoordinates()
                 ? GeoSpatialModel.PLANAR
                 : SPHERICAL;
-        return evaluate(operation, longitude, latitude, actualValue, model);
+
+        final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
+        final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
+
+        return helper.evaluate(
+                minDistance, maxDistance,
+                longitude, latitude,
+                actualValue,
+                model);
     }
 
     /**
@@ -222,111 +254,6 @@ public class MongoHeuristicsCalculator {
         return TRUE_C;
     }
 
-    private Truthness compareNonNullValues(Object leftValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Object rightValue) {
-        Objects.requireNonNull(leftValue);
-        Objects.requireNonNull(rightValue);
-
-        final Truthness truthnessOfComparison;
-        if (leftValue instanceof Number && rightValue instanceof Number) {
-            final Number actualNumber = (Number) leftValue;
-            final Number expectedNumber = (Number) rightValue;
-            truthnessOfComparison = compareNumberValues(actualNumber, comparisonOperatorType, expectedNumber);
-
-        } else if (leftValue instanceof String && rightValue instanceof String) {
-            String actualString = (String) leftValue;
-            String expectedString = (String) rightValue;
-            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
-            }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
-
-        } else if (leftValue instanceof Boolean && rightValue instanceof Boolean) {
-            int actualIntValue = toIntValue((Boolean) leftValue);
-            int expectedIntValue = toIntValue((Boolean) rightValue);
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(
-                    actualIntValue, expectedIntValue, comparisonOperatorType);
-
-        } else if (leftValue instanceof List<?> && rightValue instanceof List<?>) {
-            truthnessOfComparison = compareNonNullLists((List<?>) leftValue, comparisonOperatorType, (List<?>) rightValue);
-
-        } else if (leftValue instanceof Date && rightValue instanceof Date) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(leftValue), convertToInstant(rightValue), comparisonOperatorType);
-
-
-        } else if (BsonHelper.isBsonTimestamp(leftValue) && BsonHelper.isBsonTimestamp(rightValue)) {
-            long actualTimestamp = BsonHelper.getBsonTimestampValue(leftValue);
-            long expectedTimestamp = BsonHelper.getBsonTimestampValue(rightValue);
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(actualTimestamp, expectedTimestamp, comparisonOperatorType);
-
-        } else if (BsonHelper.isObjectId(leftValue) || BsonHelper.isObjectId(rightValue)) {
-            String actualString = leftValue.toString();
-            String expectedString = rightValue.toString();
-            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
-            }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
-
-        } else {
-            // If both types are supported, but no actual comparison logic is defined,
-            // we considered them to be incompatible, therefore the comparison returns true
-            // only if the comparison operator is NOT_EQUALS_TO. Otherwise returns false.
-            truthnessOfComparison = comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO ? TRUE_C : C_FALSE;
-        }
-        return truthnessOfComparison;
-    }
-
-    private static Truthness compareNumberValues(Number leftNumber, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Number rightNumber) {
-        Objects.requireNonNull(leftNumber);
-        Objects.requireNonNull(rightNumber);
-        Objects.requireNonNull(comparisonOperatorType);
-
-        double leftValueAsDouble = leftNumber.doubleValue();
-        double rightValueAsDouble = rightNumber.doubleValue();
-
-        if (Double.isNaN(leftValueAsDouble) || Double.isNaN(rightValueAsDouble)) {
-            // handle case when NaN is involved in the comparison
-            switch (comparisonOperatorType) {
-                case EQUALS_TO: {
-                    return (Double.isNaN(leftValueAsDouble) && Double.isNaN(rightValueAsDouble)) ?
-                            TRUE_C : C_FALSE;
-                }
-                case NOT_EQUALS_TO: {
-                    return (!Double.isNaN(leftValueAsDouble) || !Double.isNaN(rightValueAsDouble)) ?
-                            TRUE_C : C_FALSE;
-                }
-                case GREATER_THAN:
-                case GREATER_THAN_EQUALS:
-                case MINOR_THAN:
-                case MINOR_THAN_EQUALS: {
-                    return C_FALSE;
-                }
-                default:
-                    throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
-            }
-        } else {
-            // if both values are not NaN, we can use the standard comparison logic
-            final Truthness truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(leftNumber, rightNumber, comparisonOperatorType);
-            return truthnessOfComparison;
-        }
-    }
-
-    /**
-     * Checks if the provided value is of a supported type for comparison.
-     *
-     * @param value
-     * @return
-     */
-    private static boolean isTypeSupportedForComparison(Object value) {
-        Objects.requireNonNull(value);
-
-        return value instanceof String ||
-                value instanceof Number ||
-                value instanceof Boolean ||
-                value instanceof Date ||
-                value instanceof List<?> ||
-                BsonHelper.isObjectId(value) ||
-                BsonHelper.isBsonTimestamp(value);
-    }
 
     /**
      * Computes the heuristic score for a {"f",{"$eq": value }} query.
@@ -343,35 +270,12 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
         Object expectedValue = operation.getValue();
         if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
-            return computeHeuristicContainsElement(expectedValue, (List<?>) actualValue);
+            return helper.computeHeuristicContainsElement(expectedValue, (List<?>) actualValue);
         } else {
-            return compareNullableValues(
+            return helper.compareNullableValues(
                     expectedValue,
                     SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, actualValue
             );
-        }
-    }
-
-    private Truthness compareNullableValues(Object leftValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Object rightValue) {
-        if (leftValue == null || rightValue == null) {
-            switch (comparisonOperatorType) {
-                case EQUALS_TO:
-                    return (leftValue == null && rightValue == null) ? TRUE_C : C_FALSE;
-                case NOT_EQUALS_TO:
-                    return (leftValue == null && rightValue == null) ? C_FALSE : TRUE_C;
-                case GREATER_THAN:
-                case GREATER_THAN_EQUALS:
-                case MINOR_THAN:
-                case MINOR_THAN_EQUALS:
-                    return C_FALSE;
-                default:
-                    throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
-            }
-        } else {
-            Truthness valTruthness = compareNonNullValues(rightValue,
-                    comparisonOperatorType, leftValue
-            );
-            return buildSafeScaledTruthness(valTruthness);
         }
     }
 
@@ -397,9 +301,9 @@ public class MongoHeuristicsCalculator {
 
         Object expectedValue = operation.getValue();
         if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
-            return computeHeuristicContainsElement(expectedValue, (List<?>) actualValue).invert();
+            return helper.computeHeuristicContainsElement(expectedValue, (List<?>) actualValue).invert();
         } else {
-            return compareNullableValues(
+            return helper.compareNullableValues(
                     expectedValue,
                     SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO, actualValue
             );
@@ -411,8 +315,8 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
 
         Object expectedValue = operation.getValue();
-        return evaluateNested(actualValue,
-                value -> compareNullableValues(
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN, value
                 ));
@@ -423,8 +327,8 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
         final Object expectedValue = operation.getValue();
 
-        return evaluateNested(actualValue,
-                value -> compareNullableValues(
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS, value
                 ));
@@ -435,8 +339,8 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
         final Object expectedValue = operation.getValue();
 
-        return evaluateNested(actualValue,
-                value -> compareNullableValues(
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN, value
                 ));
@@ -446,8 +350,8 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
 
         final Object expectedValue = operation.getValue();
-        return evaluateNested(actualValue,
-                value -> compareNullableValues(
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN_EQUALS, value
                 ));
@@ -458,27 +362,28 @@ public class MongoHeuristicsCalculator {
      * For nested structures that are lists, it aggregates the results of applying the heuristic
      * function to each element in the list. For single values, it directly applies the heuristic.
      *
-     * @param value the value to evaluate, which can either be a single value or a list of values
+     * @param value            the value to evaluate, which can either be a single value or a list of values
      * @param elementHeuristic a function to compute the heuristic for each element or the single value
      * @return a Truthness object representing the heuristic of the evaluated input
      */
-    private Truthness evaluateNested(Object value,
-                                     Function<Object, Truthness> elementHeuristic) {
+    private Truthness evaluateWithArrayUnwrapping(Object value,
+                                                  Function<Object, Truthness> elementHeuristic) {
         Objects.requireNonNull(elementHeuristic);
 
         if (!(value instanceof List<?>)) {
+            // value is not an array. Inspect only this value.
             return elementHeuristic.apply(value);
+        } else {
+            // value is an array. Inspect all elements.
+            List<?> values = (List<?>) value;
+            if (values.isEmpty()) {
+                return C_FALSE;
+            }
+            Truthness orAggregation = buildOrAggregationTruthness(values.stream()
+                    .map(elementHeuristic)
+                    .toArray(Truthness[]::new));
+            return buildSafeScaledTruthness(orAggregation);
         }
-
-        List<?> values = (List<?>) value;
-        if (values.isEmpty()) {
-            return C_FALSE;
-        }
-
-        Truthness orAggregation = buildOrAggregationTruthness(values.stream()
-                .map(elementHeuristic)
-                .toArray(Truthness[]::new));
-        return buildSafeScaledTruthness(orAggregation);
     }
 
     private Truthness computeHeuristic(OrOperation operation, Object document) {
@@ -504,77 +409,16 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
 
         List<?> expectedValueList = operation.getValues();
-        final Truthness res = computeHeuristicInOperation(actualValue, expectedValueList);
+        final Truthness res = helper.computeHeuristicInOperation(actualValue, expectedValueList);
         return res;
-    }
-
-    /**
-     * Computes the heuristic score for determining if an element is contained in a list.
-     * The method evaluates the presence of the given element in the provided list and calculates
-     * a heuristic truthness score based on the comparison results.
-     *
-     * @param element the element whose presence in the list is to be evaluated; can be null.
-     * @param list    the list of objects to search; must not be null.
-     * @return a Truthness object representing the heuristic score of the element's presence in the list.
-     */
-    private Truthness computeHeuristicContainsElement(Object element, List<?> list) {
-        Objects.requireNonNull(list);
-
-        if (list.isEmpty()) {
-            return C_FALSE;
-        } else {
-            Truthness res = buildOrAggregationTruthness(list.stream()
-                    .map(expectedValue -> compareNullableValues(expectedValue,
-                            SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, element
-                    ))
-                    .toArray(Truthness[]::new));
-            return buildSafeScaledTruthness(res);
-        }
     }
 
     private Truthness evaluate(NotInOperation<?> operation, Object actualValue) {
         Objects.requireNonNull(operation);
 
         List<?> expectedValueList = operation.getValues();
-        final Truthness res = computeHeuristicInOperation(actualValue, expectedValueList);
+        final Truthness res = helper.computeHeuristicInOperation(actualValue, expectedValueList);
         return res.invert();
-    }
-
-    private Truthness computeHeuristicInOperation(Object actualValue, List<?> expectedValueList) {
-        final Truthness res;
-        if (actualValue instanceof List<?>) {
-            List<?> actualValueList = (List<?>) actualValue;
-            // first we try to match the actualValueList as a whole with any element of the expectedValueList
-            Truthness[] arrayOfTruthnesses = expectedValueList.stream()
-                    .filter(expectedValueListElement -> expectedValueListElement instanceof List<?>)
-                    .map(expectedValueListElement -> (List<?>) expectedValueListElement)
-                    .map(expectedValueInnerListElement ->
-                            computeHeuristicListEquality(expectedValueInnerListElement, actualValueList))
-                    .toArray(Truthness[]::new);
-            final Truthness isTheValueListEqualToAnyExpectedValueList;
-            if (arrayOfTruthnesses.length > 0) {
-                isTheValueListEqualToAnyExpectedValueList = buildOrAggregationTruthness(arrayOfTruthnesses);
-            } else {
-                isTheValueListEqualToAnyExpectedValueList = C_FALSE;
-            }
-
-            if (isTheValueListEqualToAnyExpectedValueList.isFalse()) {
-                // if we fail, we try to match each element of the actualValueList with any element of the expectedValueList
-                if (actualValueList.isEmpty()) {
-                    res = C_FALSE;
-                } else {
-                    Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
-                            .map(actualValueListElement -> computeHeuristicContainsElement(actualValueListElement, expectedValueList))
-                            .toArray(Truthness[]::new));
-                    res = buildSafeScaledTruthness(orAggregation);
-                }
-            } else {
-                res = isTheValueListEqualToAnyExpectedValueList;
-            }
-        } else {
-            res = computeHeuristicContainsElement(actualValue, expectedValueList);
-        }
-        return res;
     }
 
     private Truthness evaluate(AllOperation<?> operation, Object actualValue) {
@@ -596,7 +440,7 @@ public class MongoHeuristicsCalculator {
             if (expectedValues.size() != 1) {
                 return C_FALSE;
             } else {
-                return compareNullableValues(
+                return helper.compareNullableValues(
                         expectedValues.get(0),
                         SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, actualValue
                 );
@@ -609,7 +453,7 @@ public class MongoHeuristicsCalculator {
         }
 
         Truthness res = buildAndAggregationTruthness(expectedValues.stream()
-                .map(expectedValue -> computeHeuristicContainsElement(expectedValue, actualValues))
+                .map(expectedValue -> helper.computeHeuristicContainsElement(expectedValue, actualValues))
                 .toArray(Truthness[]::new));
         return buildSafeScaledTruthness(res);
     }
@@ -639,7 +483,7 @@ public class MongoHeuristicsCalculator {
                 return C_FALSE;
             } else {
                 Truthness orAggregation = buildOrAggregationTruthness(actualList.stream()
-                        .map(listElement -> computeHeuristicOnElement(
+                        .map(listElement -> evaluateOnArrayElement(
                                 operation.getCondition(), listElement))
                         .toArray(Truthness[]::new));
                 return buildSafeScaledTruthness(orAggregation);
@@ -647,14 +491,14 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private Truthness computeHeuristicOnElement(QueryOperation condition, Object element) {
+    private Truthness evaluateOnArrayElement(QueryOperation condition, Object element) {
         if (condition instanceof AndOperation) {
             return buildAndAggregationTruthness(((AndOperation) condition).getConditions().stream()
-                    .map(child -> computeHeuristicOnElement(child, element))
+                    .map(child -> evaluateOnArrayElement(child, element))
                     .toArray(Truthness[]::new));
         } else if (condition instanceof OrOperation) {
             return buildOrAggregationTruthness(((OrOperation) condition).getConditions().stream()
-                    .map(child -> computeHeuristicOnElement(child, element))
+                    .map(child -> evaluateOnArrayElement(child, element))
                     .toArray(Truthness[]::new));
         } else if (condition instanceof QueryOperationWithField
                 && "$".equals(((QueryOperationWithField) condition).getFieldName())) {
@@ -685,7 +529,7 @@ public class MongoHeuristicsCalculator {
         } else {
             Truthness orTruthness = buildOrAggregationTruthness(actualFieldNames.stream()
                     .map(actualFieldName ->
-                            compareNonNullValues(actualFieldName,
+                            helper.compareNonNullValues(actualFieldName,
                                     SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedFieldName
                             ))
                     .toArray(Truthness[]::new));
@@ -714,65 +558,40 @@ public class MongoHeuristicsCalculator {
 
         long divisor = operation.getDivisor().longValue();
         long expectedRemainder = operation.getRemainder().longValue();
-        return evaluateNested(actualValue,
-                value -> computeHeuristicModOnSingleValue(value, divisor, expectedRemainder));
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.computeHeuristicModOnSingleValue(value, divisor, expectedRemainder));
     }
 
-    private Truthness computeHeuristicModOnSingleValue(Object value, long divisor, long expectedRemainder) {
-        if (!(value instanceof Number)) {
-            return C_FALSE;
-        }
-
-        long actualRemainder = ((Number) value).longValue() % divisor;
-        Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
-        return buildSafeScaledTruthness(res);
-    }
-
-    private Truthness evaluate(BitsOperation operation, Object actualValue) {
+    private Truthness evaluate(BitsAllClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        return evaluateNested(actualValue,
-                value -> evaluateOnSingleValue(operation, value));
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAllClearOperation(operation.getBitmask(), value));
     }
 
-    private Truthness evaluateOnSingleValue(BitsOperation operation,
-                                            Object value) {
+    private Truthness evaluate(BitsAnyClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-
-        if (!(value instanceof Number)) {
-            return C_FALSE;
-        }
-
-        final OptionalLong integralValue = getIntegralLongValue((Number) value);
-        if (!integralValue.isPresent()) {
-            return C_FALSE;
-        }
-
-        final long bitmask = operation.getBitmask();
-        final long maskedValue = integralValue.getAsLong() & bitmask;
-        final int numberOfSetBitsInMaskedValue = Long.bitCount(maskedValue);
-        final int numberOfBitsInMask = Long.bitCount(bitmask);
-        if (operation instanceof BitsAllClearOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, 0);
-            return buildSafeScaledTruthness(equalityTruthness);
-        } else if (operation instanceof BitsAllSetOperation) {
-            Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
-            return buildSafeScaledTruthness(equalityTruthness);
-        } else if (operation instanceof BitsAnyClearOperation) {
-            Truthness lessThanTruthness = getLessThanTruthness(numberOfSetBitsInMaskedValue, numberOfBitsInMask);
-            return buildSafeScaledTruthness(lessThanTruthness);
-        } else if (operation instanceof BitsAnySetOperation) {
-            Truthness lessThanTruthness = getLessThanTruthness(0, numberOfSetBitsInMaskedValue);
-            return buildSafeScaledTruthness(lessThanTruthness);
-        } else {
-            throw new IllegalArgumentException("Unsupported BitsOperation type: " + operation.getClass().getName());
-        }
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAnyClearOperation(operation.getBitmask(), value));
     }
 
-    private Truthness computeHeuristicOnValue(NotOperation operation, Object actualValue) {
+    private Truthness evaluate(BitsAllSetOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAllSetOperation(operation.getBitmask(), value));
+    }
+
+    private Truthness evaluate(BitsAnySetOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAnySetOperation(operation.getBitmask(), value));
+
+    }
+
+    private Truthness evaluate(NotOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
 
         QueryOperation condition = operation.getCondition();
-        Truthness conditionTruthness = computeHeuristicOnElement(condition, actualValue);
+        Truthness conditionTruthness = evaluateOnArrayElement(condition, actualValue);
         return conditionTruthness.invert();
     }
 
@@ -814,93 +633,14 @@ public class MongoHeuristicsCalculator {
         final double longitude = operation.getLongitude();
         final double latitude = operation.getLatitude();
 
-        return evaluate(operation, longitude, latitude, actualValue, SPHERICAL);
-    }
+        final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
+        final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
 
-
-    private static Truthness evaluate(AbstractProximityOperation abstractProximityOperation,
-                                      double longitude,
-                                      double latitude,
-                                      Object actualValue,
-                                      GeoSpatialModel geoSpatialModel) {
-
-        Objects.requireNonNull(abstractProximityOperation);
-        double x1 = geoSpatialModel == SPHERICAL ? Math.toRadians(longitude) : longitude;
-        double y1 = geoSpatialModel == SPHERICAL ? Math.toRadians(latitude) : latitude;
-        double x2;
-        double y2;
-
-    /*
-      GeoJSON Point in document.
-      type key is case-sensitive.
-      (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4)
-     */
-        if (isBsonDocument(actualValue)
-                && GeoJsonUtils.isGeoJsonPoint(actualValue)) {
-            GeoJsonPoint geoJsonPoint = GeoJsonUtils.toGeoJsonPoint(actualValue);
-            x2 = geoSpatialModel == SPHERICAL
-                    ? Math.toRadians(geoJsonPoint.getLongitude())
-                    : geoJsonPoint.getLongitude();
-            y2 = geoSpatialModel == SPHERICAL
-                    ? Math.toRadians(geoJsonPoint.getLatitude())
-                    : geoJsonPoint.getLatitude();
-        } else {
-            return C_FALSE;
-        }
-        double distanceBetweenPoints = getDistanceBetweenPoints(x1, y1, x2, y2, geoSpatialModel);
-        double max = abstractProximityOperation.hasMaxDistance()
-                ? abstractProximityOperation.getMaxDistance()
-                : Double.MAX_VALUE;
-
-        double min = abstractProximityOperation.hasMinDistance()
-                ? abstractProximityOperation.getMinDistance()
-                : 0.0;
-
-        if (min <= distanceBetweenPoints
-                && distanceBetweenPoints <= max) {
-            return TRUE_C;
-        }
-
-        return (distanceBetweenPoints > max)
-                ? getEqualityTruthness(distanceBetweenPoints, max)
-                : getEqualityTruthness(distanceBetweenPoints, min);
-    }
-
-    private Truthness compareNonNullLists(List<?> leftList, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, List<?> rightList) {
-        Objects.requireNonNull(leftList);
-        Objects.requireNonNull(rightList);
-
-        final Truthness truthness = computeHeuristicListEquality(leftList, rightList);
-        switch (comparisonOperatorType) {
-            case EQUALS_TO:
-                return truthness;
-            case NOT_EQUALS_TO:
-                return truthness.invert();
-            default:
-                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
-        }
-    }
-
-    private Truthness computeHeuristicListEquality(List<?> actualList, List<?> expectedList) {
-
-        if (actualList.size() != expectedList.size()) {
-            return C_FALSE;
-        }
-
-        if (actualList.isEmpty() && expectedList.isEmpty()) {
-            return TRUE_C;
-        }
-
-        Truthness[] arrayOfTruthnesses = new Truthness[actualList.size()];
-        for (int i = 0; i < actualList.size(); i++) {
-            arrayOfTruthnesses[i] = compareNullableValues(
-                    actualList.get(i),
-                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedList.get(i)
-            );
-        }
-        Truthness unscaledTruthness = buildAndAggregationTruthness(arrayOfTruthnesses);
-        final Truthness truthness = buildSafeScaledTruthness(unscaledTruthness);
-        return truthness;
+        return helper.evaluate(
+                minDistance, maxDistance,
+                longitude, latitude,
+                actualValue,
+                SPHERICAL);
     }
 
 
