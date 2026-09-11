@@ -51,6 +51,22 @@ public class DynamoDbDslTest {
     }
 
     @Test
+    public void testAcceptsPreviousWorldCupPlayerInsertions() {
+        List<DynamoDbInsertionDto> previous = DynamoDbDsl.dynamoDb()
+                .insertInto("WorldCupPlayers")
+                .d("country", "'Argentina'")
+                .dtos();
+
+        List<DynamoDbInsertionDto> current = DynamoDbDsl.dynamoDb(previous)
+                .insertInto("WorldCupPlayers")
+                .d("country", "'Brazil'")
+                .dtos();
+
+        assertEquals(1, current.size());
+        assertInsertion(current.get(0), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Brazil");
+    }
+
+    @Test
     public void testRejectsIncompleteInsertionDefinitions() {
         assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb().insertInto(null));
         assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb().insertInto(""));
