@@ -482,6 +482,44 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testElemMatchScalarConditionsMustMatchSameElement() {
+        Document query = new Document("values",
+                new Document("$elemMatch", new Document("$gt", 2).append("$lt", 5)));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("values", Arrays.asList(1, 3, 6))).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("values", Arrays.asList(1, 6))).isFalse());
+    }
+
+    @Test
+    public void testNotInsideElemMatchNegatesEachElement() {
+        Document condition = new Document("$not", new Document("$gt", 2));
+        Document query = new Document("values", new Document("$elemMatch", condition));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document mixed = new Document("values", Arrays.asList(1, 6));
+
+        assertTrue(calculator.computeHeuristicDocument(query, mixed).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("values", Arrays.asList(3, 6))).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(new Document("values", condition), mixed).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(new Document("values", condition),
+                new Document("values", Arrays.asList(1, 2))).isTrue());
+    }
+
+    @Test
+    public void testElemMatchDocumentConditionOnMixedArray() {
+        Document query = new Document("values", new Document("$elemMatch", new Document("x", null)));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("values", Arrays.asList(null, 1, "abc", new Document("x", 2)))).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("values", Arrays.asList(null, 1, new Document("x", null)))).isTrue());
+    }
+
+    @Test
     public void testElemMatchNotAList() {
         Document doc = new Document().append("results", new Document("product", "abc"));
         Bson query = Filters.elemMatch("results", Filters.eq("product", "abc"));
@@ -624,6 +662,16 @@ public class MongoHeuristicsCalculatorTest {
         Bson bsonTrue = Filters.not(Filters.eq("age", null));
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         assertTrue(distanceMatch.isFalse());
+    }
+
+    @Test
+    public void testNotExistsPreservesMissingAndNullFields() {
+        Document query = convertToDocument(Filters.not(Filters.exists("age")));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("age", null)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("age", 20)).isFalse());
     }
 
     @Test
@@ -1879,7 +1927,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$elemMatch with a condition on a field matches an array of scalars")
     public void testElemMatchOnAnArrayOfScalars() {
         // mongo: no match, no element of the array is a document holding "x"
         Document doc = new Document().append("a", new ArrayList<>(Arrays.asList(1, 2, 3)));
@@ -2059,10 +2106,12 @@ public class MongoHeuristicsCalculatorTest {
         Document twoOperators = new Document().append("a",
                 new Document().append("$not", new Document().append("$gt", 1).append("$lt", 9)));
         assertTrue(calculator.computeHeuristicDocument(twoOperators, doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(twoOperators, new Document("a", 5)).isFalse());
 
         // mongo: no match, the two negations cancel and 1 is not greater than 1
         Document nested = new Document().append("a",
                 new Document().append("$not", new Document().append("$not", new Document().append("$gt", 1))));
         assertTrue(calculator.computeHeuristicDocument(nested, doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(nested, new Document("a", 5)).isTrue());
     }
 }
