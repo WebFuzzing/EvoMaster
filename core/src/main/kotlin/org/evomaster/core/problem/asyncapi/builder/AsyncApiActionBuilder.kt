@@ -10,14 +10,9 @@ import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 
 /**
- * Turns a parsed AsyncAPI document into the actions a search samples from, one per message that
- * can actually be published.
- *
- * This is the AsyncAPI counterpart of
- * [org.evomaster.core.problem.rest.builder.RestActionBuilderV3.addActionsFromSwagger] and
- * [org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder.addActionsFromSchema], and
- * keeps their contract: fill a cluster keyed by action name, and return what had to be skipped
- * rather than raising.
+ * Turns a parsed AsyncAPI document into action templates, one per message that can be
+ * published. Same contract as the REST and GraphQL builders: fill the cluster keyed by action
+ * name, and return the problems found rather than throwing.
  */
 object AsyncApiActionBuilder {
 

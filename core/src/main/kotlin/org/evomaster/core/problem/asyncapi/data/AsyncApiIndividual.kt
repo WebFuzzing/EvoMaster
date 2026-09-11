@@ -122,10 +122,8 @@ class AsyncApiIndividual(
     )
 
     /*
-        Every group has to be measured, not just the two this class creates for itself. The
-        children are copied wholesale, so a size left at its default would not match what is
-        actually being handed over, and the group bookkeeping rejects that outright -- a copy
-        would fail for an individual that had picked up, say, a Mongo insertion along the way.
+        Every group is measured, not just the ones this class creates: the children are copied
+        wholesale, and a size left at its default would not match them.
      */
     override fun copyContent(): AsyncApiIndividual =
         AsyncApiIndividual(

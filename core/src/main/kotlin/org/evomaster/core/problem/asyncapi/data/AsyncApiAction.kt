@@ -8,22 +8,10 @@ import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.search.gene.Gene
 
 /**
- * Publishing one message on one channel: the thing an AsyncAPI search actually does.
+ * Publishing one message on one channel, modelled on [org.evomaster.core.problem.rpc.RPCCallAction].
  *
- * It follows the shape of [org.evomaster.core.problem.rpc.RPCCallAction], which is the closest
- * analogue in EvoMaster -- a call with no URL, made through the driver's
- * `SutController.executeAsyncApiAction`, whose mutable state is the input and whose response is
- * read afterwards rather than searched over.
- *
- * Note what is deliberately *not* a gene:
- *
- * - the **address**, which is fixed by the contract. There is nothing to search over in where
- *   a message goes; sending to a channel the service does not read would only waste executions.
- * - the **correlation id**, which is stamped fresh at each execution. Searching over it could
- *   achieve nothing, since the service only echoes it back, and pairing a reply with its
- *   request needs a value unique to each execution rather than one carried in the genome.
- * - the **reply**, which is an observation. It is read at fitness time to decide what was
- *   covered, exactly as RPC reads its response.
+ * The genes are the payload and the headers. The channel is fixed by the contract, the
+ * correlation id is stamped at execution time, and the reply is observed, so none of them is one.
  */
 class AsyncApiAction(
 

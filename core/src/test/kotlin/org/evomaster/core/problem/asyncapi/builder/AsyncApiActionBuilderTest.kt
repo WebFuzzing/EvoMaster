@@ -151,13 +151,9 @@ class AsyncApiActionBuilderTest {
         val (cluster, _) = build("/asyncapi/sut/scalar.yaml")
 
         /*
-            This is how an operation ends up carrying several messages in practice. No document
-            in the corpus narrows to more than one with a `messages:` array; what happens is
-            the opposite -- an operation declares no array at all, and so inherits everything
-            its channel carries. Here one channel carries five genuinely different payloads and
-            the operation does not say which, so each becomes an action of its own: they are
-            different things to send, and picking between them is a structural choice rather
-            than a mutation.
+            No corpus document narrows an operation to several messages with a `messages:`
+            array; what happens is that the operation declares none and inherits everything its
+            channel carries. Each of the five becomes an action of its own.
          */
         val userEvents = cluster.keys.filter { it.startsWith("subscribeToUserEvents") }.sorted()
 
