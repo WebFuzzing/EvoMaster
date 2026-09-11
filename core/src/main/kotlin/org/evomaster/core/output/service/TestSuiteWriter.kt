@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -508,6 +509,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.redis.dsl.RedisDsl.redis", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionResultsDto", lines)
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if (solution.hasAnyDynamoDbAction()) {
+                addImport("org.evomaster.client.java.controller.dynamodb.dsl.DynamoDbDsl.dynamoDb", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto", lines)
+                addImport(DynamoDbInsertionDto::class.qualifiedName!!, lines)
             }
 
             if (useRestAssured()) {
