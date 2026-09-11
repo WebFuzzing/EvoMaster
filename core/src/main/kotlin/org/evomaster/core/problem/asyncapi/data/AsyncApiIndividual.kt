@@ -12,18 +12,11 @@ import org.evomaster.core.database.sql.SqlAction
 import kotlin.math.max
 
 /**
- * A sequence of messages to publish, and whatever is needed to set the service up first.
+ * A test case for an AsyncAPI service: the messages to publish, in order, after whatever
+ * setup the service needs, such as rows in a database.
  *
- * There is one individual for every transport rather than one per transport: Kafka versus AMQP
- * versus a socket appears nowhere in here. What is being searched over is the operation and the
- * payload, which are the same whatever moves the bytes. Which wire carries a message is decided
- * in the driver, inside its implementation of `SutController.executeAsyncApiAction`: the core
- * hands it an address, a payload and a correlation id, and never learns what broker is behind
- * them. Were the transport to leak in here there would have to be a `KafkaIndividual` and an
- * `AmqpIndividual`, and nothing would be shared between them.
- *
- * Everything structural is inherited: initialization actions for seeding a database, a main
- * group of the messages under test, and cleanup.
+ * Which transport carries the messages is the driver's concern, so one individual serves
+ * them all.
  */
 class AsyncApiIndividual(
     sampleType: SampleType,
