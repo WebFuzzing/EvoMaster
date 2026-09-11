@@ -16,6 +16,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.problem.rest.service.ResourceManageService
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -85,6 +86,8 @@ class ResourceRestFitness : AbstractRestFitness() {
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults)
+
+        doDynamoDbCalls(individual.seeInitializingActions().filterIsInstance<DynamoDbAction>(), actionResults)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()

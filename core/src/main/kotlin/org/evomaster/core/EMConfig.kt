@@ -780,6 +780,16 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateDynamoDbData() && !heuristicsForDynamoDb) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'heuristicsForDynamoDb'")
+        }
+
+        if (shouldGenerateDynamoDbData() && !extractDynamoDbExecutionInfo) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'extractDynamoDbExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1015,6 +1025,8 @@ class EMConfig {
     fun shouldGenerateMongoData() = generateMongoData
 
     fun shouldGenerateRedisData() = generateRedisData
+
+    fun shouldGenerateDynamoDbData() = generateDynamoDbData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -2011,6 +2023,11 @@ class EMConfig {
     var extractRedisExecutionInfo = false
 
     @Experimental
+    @Cfg("Enable extracting DynamoDB execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractDynamoDbExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithZ3 = false
@@ -2069,6 +2086,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateRedisData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
+    @DependsOnFalseFor("blackBox")
+    var generateDynamoDbData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
