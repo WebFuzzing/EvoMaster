@@ -166,6 +166,7 @@ Migrations/
 /core-tests/e2e-tests/spring/emb-json/target/
 /process_data/
 /core-tests/e2e-tests/spring/spring-rest-multidb/target/
+/core-tests/e2e-tests/spring/spring-rest-polyglot-persistence/target/
 /core-tests/e2e-tests/spring/spring-rest-h2-v2/target/
 /core-tests/e2e-tests/spring/spring-rest-rsa/target/
 /core-tests/e2e-tests/spring/spring-rest-dynamodb/target/
