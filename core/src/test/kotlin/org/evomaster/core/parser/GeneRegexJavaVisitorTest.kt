@@ -611,4 +611,13 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("\\w*\\Bfoo")
         assertThrows<AssertionError> { checkSameAsJava("\\b\\Bfoo") }
     }
+
+    @Test
+    fun testLinebreakMatcher() {
+        checkSameAsJava("^\\R\\z")
+        checkSameAsJava("^(?d)\\R\\z")
+        checkCanSample("^\\R\\z", listOf("\n", "\u000B", "\u000C", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 100)
+        // \R is not affected by unixLines flag
+        checkCanSample("^(?d)\\R\\z", listOf("\n", "\u000B", "\u000C", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 100)
+    }
 }

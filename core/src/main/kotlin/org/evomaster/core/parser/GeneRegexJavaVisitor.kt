@@ -12,24 +12,37 @@ import org.evomaster.core.utils.RegexFlags
  */
 class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
 
-    private val hexEscapePrefixes = setOf('x', 'u')
+    companion object {
+        /**
+         * Prefixes for hexadecimal escape sequences like \x00 or \u0000, etc.
+         */
+        private val hexEscapePrefixes = setOf('x', 'u')
 
-    /**
-     * Mappings of various escapes to their matching characters.
-     */
-    private val escapeMap = mapOf(
-        'a' to "\u0007",
-        'e' to "\u001B",
-        'f' to "\u000C",
-        'n' to "\u000A",
-        'r' to "\u000D",
-        't' to "\u0009"
-    )
+        /**
+         * Mappings of various escapes to their matching characters.
+         */
+        private val escapeMap = mapOf(
+            'a' to "\u0007",
+            'e' to "\u001B",
+            'f' to "\u000C",
+            'n' to "\u000A",
+            'r' to "\u000D",
+            't' to "\u0009"
+        )
 
-    /**
-     * None of these can be escaped to be treated as literals. Some may be part of legal escape sequences.
-     */
-    private val notIdentityEscapes = ('a'..'z').toList() + ('A'..'Z').toList() + ('0'..'9').toList()
+        /**
+         * None of these can be escaped to be treated as literals. Some may be part of legal escape sequences.
+         */
+        private val notIdentityEscapes = ('a'..'z').toList() + ('A'..'Z').toList() + ('0'..'9').toList()
+
+        /**
+         * All single character line break characters, part of \R linebreak matcher.
+         */
+        private val linebreakCharRanges = MultiCharacterRange(
+            false,
+            listOf(CharacterRange('\n', '\r'), CharacterRange('\u0085'), CharacterRange('\u2028', '\u2029'))
+        )
+    }
 
     /**
      * Capture groups in order of appearance (1-based index -> list index 0).
@@ -131,6 +144,23 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             String(Character.toChars(hexValue))
         }
         else -> txt.substring(1) // identity escape
+    }
+
+    /**
+     * Builds gene for linebreak matcher `\R`, which is equivalent to `\r\n|[\n-\r\u0085\u2028-\u2029]`.
+     */
+    private fun buildLinebreakMatcherGene(): DisjunctionListRxGene {
+        val crlfBranch = DisjunctionRxGene(
+            "linebreak_crlf",
+            listOf(PatternCharacterBlockGene("crlf", "\r\n")),
+            matchStart = true, matchEnd = true
+        )
+        val singleCharBranch = DisjunctionRxGene(
+            "linebreak_char",
+            listOf(CharacterRangeRxGene(linebreakCharRanges, RegexFlags())),
+            matchStart = true, matchEnd = true
+        )
+        return DisjunctionListRxGene(listOf(crlfBranch, singleCharBranch))
     }
 
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
@@ -686,6 +716,10 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             val group = namedCaptureGroups[name]
             val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
             return VisitResult(BackReferenceRxGene(groupIndex, group))
+        }
+
+        if (ctx.LinebreakMatcher() != null){
+            return VisitResult(buildLinebreakMatcherGene())
         }
 
         if (ctx.CharacterClassEscape() != null) {

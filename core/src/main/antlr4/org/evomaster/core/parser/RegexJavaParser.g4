@@ -180,4 +180,5 @@ atomEscape
  | CharacterEscape
  | BackReference
  | NamedBackReference
+ | LinebreakMatcher // \R
  ;
