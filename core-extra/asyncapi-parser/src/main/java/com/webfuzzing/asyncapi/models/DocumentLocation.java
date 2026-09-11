@@ -1,5 +1,6 @@
 package com.webfuzzing.asyncapi.models;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -16,6 +17,11 @@ public class DocumentLocation {
      * document can be resolved from it.
      */
     public static final DocumentLocation MEMORY = new DocumentLocation("", DocumentLocationType.MEMORY);
+
+    /**
+     * How a file on disk looks when written as a URL rather than as a path.
+     */
+    private static final String FILE_URL_PREFIX = "file:";
 
     private final String location;
 
@@ -44,6 +50,17 @@ public class DocumentLocation {
 
     public DocumentLocationType getType() {
         return type;
+    }
+
+    /**
+     * Whether this is a path on the file system written as a path, rather than as a
+     * {@code file:} URL. Both are read from disk, but only the former is not a URI, so a
+     * relative reference is resolved against it through the file system rather than per
+     * RFC 3986.
+     */
+    public boolean isPlainFilePath() {
+        return type == DocumentLocationType.LOCAL
+                && !location.toLowerCase(Locale.ENGLISH).startsWith(FILE_URL_PREFIX);
     }
 
     @Override

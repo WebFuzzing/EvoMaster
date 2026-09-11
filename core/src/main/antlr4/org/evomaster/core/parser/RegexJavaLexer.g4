@@ -28,8 +28,6 @@ CharacterEscape
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
  | SLASH OctalEscapeSequence
- | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
-                                                        // as on JS this is allowed only while certain flags are enabled
  | SLASH ~[a-zA-Z0-9] // identity escape
  ;
 
@@ -61,10 +59,6 @@ fragment ControlLetter
 // : DecimalIntegerLiteral
 // ;
 
-DOUBLE_AMPERSAND
- : '&&'
- ;
-
 DecimalDigit
  : [0-9]
  ;
@@ -74,10 +68,16 @@ CharacterClassEscape
   // v, V, h and H are java8 exclusive, they represent vertical spaces and horizaontal spaces respectively
   // see https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information
   : SLASH [dDsSwWvVhH]
+  // \p{...} escapes are included here too, since these they also represent predefined char classes
+ | SLASH ('p' | 'P') BRACE_open PCharacterClassEscapeLabel BRACE_close // this is only implemented in Java at the moment
+                                                        // as on JS this is allowed only while certain flags are enabled
  ;
 
 StartOfInputAssertion: SLASH 'A';
 EndOfInputAssertion: SLASH 'z';
+
+WordBoundaryAssertion: SLASH 'b';
+NonWordBoundaryAssertion: SLASH 'B';
 
 EQUAL                      : '=';
 LESS_THAN                  : '<';
@@ -90,7 +90,6 @@ PLUS                       : '+';
 QUESTION                   : '?';
 PAREN_open                 : '(';
 PAREN_close                : ')';
-BRACKET_open               : '[';
 BRACKET_close              : ']';
 BRACE_open                 : '{';
 BRACE_close                : '}';
@@ -143,7 +142,7 @@ QUOTE_OPEN
  : '\\' 'Q' -> pushMode(QUOTE_MODE)
  ;
 
-
+BRACKET_open : '[' -> pushMode(CHAR_CLASS_MODE);
 
 // --------------------------------------------------------------------------------
 // QUOTE_MODE: everything after \Q and before an optional \E is literal text.
@@ -166,3 +165,23 @@ QUOTE_CLOSE
 QUOTE_CONTENT
  : ( '\\' ~[E] | ~[\\] )+
  ;
+
+// ---------------------------------------------------------------
+// CHAR_CLASS_MODE: everything not '\', ']', '[', '^', '-' is a plain
+// literal. This allows us to have a cleaner classAtomNoDash.
+// ---------------------------------------------------------------
+mode CHAR_CLASS_MODE;
+
+// metacharacters: (excluding \)
+CC_BRACKET_CLOSE        : ']' -> type(BRACKET_close), popMode;
+CC_BRACKET_OPEN         : '[' -> type(BRACKET_open), pushMode(CHAR_CLASS_MODE); // Java CC nesting, stacks mode
+CC_CARET                : '^' -> type(CARET);
+CC_MINUS                : '-' -> type(MINUS);
+CC_DOUBLE_AMPERSAND     : '&&'; // this is only a metacharacter within character classes
+
+// constructs using \
+CC_CharacterClassEscape : CharacterClassEscape  -> type(CharacterClassEscape);
+CC_CharacterEscape      : CharacterEscape       -> type(CharacterEscape);
+
+// literal characters
+CC_BaseChar : ~[\\\][^\-] -> type(BaseChar);

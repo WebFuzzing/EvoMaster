@@ -146,6 +146,11 @@ class Statistics : SearchListener {
     private var dynamoDbHeuristicEvaluationFailureCount = 0
     private val dynamoDbItemsAverageCalculator = IncrementalAverage()
 
+    // neo4j heuristic evaluation statistic
+    private var neo4jHeuristicEvaluationSuccessCount = 0
+    private var neo4jHeuristicEvaluationFailureCount = 0
+    private val neo4jNodesAverageCalculator = IncrementalAverage()
+
    class Pair(val header: String, val element: String)
 
 
@@ -245,6 +250,11 @@ class Statistics : SearchListener {
     /** Records the number of items inspected by one DynamoDB heuristic evaluation. */
     fun reportNumberOfEvaluatedItemsForDynamoDbHeuristic(numberOfEvaluatedItems: Int) {
         dynamoDbItemsAverageCalculator.addValue(numberOfEvaluatedItems)
+    }
+
+    /** Records the number of nodes inspected by one Neo4j heuristic evaluation. */
+    fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
+        neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
@@ -379,6 +389,16 @@ class Statistics : SearchListener {
     internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
     internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
+    /** Records one successful Neo4j heuristic evaluation. */
+    fun reportNeo4jHeuristicEvaluationSuccess() {
+        neo4jHeuristicEvaluationSuccessCount++
+    }
+
+    /** Records one failed Neo4j heuristic evaluation. */
+    fun reportNeo4jHeuristicEvaluationFailure() {
+        neo4jHeuristicEvaluationFailureCount++
+    }
+
     // Exposed for tests: verify the failure breakdown adds up to the aggregate, and that the two
     // duration accumulators only ever move forward.
     internal fun getSqlZ3ParseFailureCount() = sqlZ3ParseFailureCount
@@ -406,6 +426,13 @@ class Statistics : SearchListener {
 
     /** Returns the average number of items inspected by DynamoDB heuristics. */
     fun averageNumberOfEvaluatedItemsForDynamoDbHeuristics(): Double = dynamoDbItemsAverageCalculator.mean
+
+    /** Returns the total number of Neo4j heuristic evaluations. */
+    fun getNeo4jHeuristicsEvaluationCount(): Int =
+        neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
+
+    /** Returns the average number of nodes inspected by Neo4j heuristics. */
+    fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -580,6 +607,10 @@ class Statistics : SearchListener {
                 add(Pair("sqlInsertionExecutionTotalMs", "$sqlInsertionExecutionTimeMs"))
                 add(Pair("sqlInsertionExecutions", "$sqlInsertionExecutionCount"))
             }
+
+            // statistics info for Neo4j Heuristics
+            add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
+            add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))

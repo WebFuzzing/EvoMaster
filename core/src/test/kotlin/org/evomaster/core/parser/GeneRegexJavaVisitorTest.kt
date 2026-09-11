@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Test
@@ -132,6 +133,22 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
             checkSameAsJava("\\P{$label}")
         }
         checkSameAsJava("""Pe""")
+    }
+
+    @Test
+    fun testCharacterClass(){
+        checkSameAsJava("^[\\p{Lower}a-z]$")
+        checkSameAsJava("^[a\\p{Lower}]$")
+        checkSameAsJava("^[a[b-c]&&[^x]]$")
+        checkSameAsJava("^a]b$")
+        checkSameAsJava("^a&&b$")
+        checkSameAsJava("^[(?i)-a]$")
+        checkSameAsJava("^[(?i:abc)-a]$")
+        checkCanSample("^[a&b]$", "&", 100)
+        // these are rejected as lexer has no token for \1 or \k<name> here, as they are not available on CHAR_CLASS_MODE
+        // on Java these throw on Pattern.compile since backreferences are not allowed within character classes
+        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\1]$") }
+        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\k<name>]$") }
     }
 
     @Test
@@ -566,6 +583,32 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?m)\\s^b")
         checkCanSample("(?m)\\s^b", listOf("\nb", "\rb"), 500)
         checkSameAsJava("(?m)x?((^z)y)")
+        checkSameAsJava("(?m)abc\\s^def\$\\sghi")
         assertThrows<AssertionError> { checkSameAsJava("(?m)a^b") }
+    }
+
+    @Test
+    fun testWordBoundary() {
+        checkSameAsJava("\\b\\bfoo")
+        checkSameAsJava("\\w*\\bfoo")
+        checkSameAsJava("\\bfoo\\b")
+        checkSameAsJava("foo\\b bar")
+        checkSameAsJava("\\w\\b\\W")
+        checkSameAsJava("(?U)\\w\\b\\W")
+        checkSameAsJava("([\\s\\S]*)(\\b(prescribe[ds]?)\\b)([\\s\\S]*)")
+        assertThrows<AssertionError> { checkSameAsJava("a\\bb") }
+        assertThrows<AssertionError> { checkSameAsJava("\\w+\\bfoo") }
+        assertThrows<AssertionError> { checkSameAsJava("a(\\bfoo)") }
+    }
+
+    @Test
+    fun testNonWordBoundary() {
+        checkSameAsJava("a\\Bb")
+        checkSameAsJava("\\w\\Bfoo\\B\\w")
+        checkSameAsJava("\\B")
+        checkSameAsJava("\\d*\\Bfoo")
+        checkSameAsJava("\\W*\\Bfoo")
+        checkSameAsJava("\\w*\\Bfoo")
+        assertThrows<AssertionError> { checkSameAsJava("\\b\\Bfoo") }
     }
 }

@@ -1,0 +1,349 @@
+# Source: https://github.com/EVerest/EVerest (Apache-2.0), unmodified extract.
+---
+asyncapi: 3.0.0
+id: 'pionix:de:everest:error_history_consumer_API'
+info:
+  title: 'EVerest API definition for error history (consumer)'
+  version: 1.0.0
+  description: >-
+    API for EVerest API clients for error status and history.
+
+  license:
+    name: Apache-2.0
+    url: https://opensource.org/licenses/Apache-2.0
+  tags:
+    - name: EVerest
+    - name: ErrorHistory
+servers:
+  default:
+    pathname: 'everest_api/1/error_history_consumer/{module_id}'
+    host: 'localhost:1883'
+    description: default local MQTT
+    protocol: mqtt
+    variables:
+      module_id:
+        description: The ID of the module as defined in the EVerest config file.
+defaultContentType: application/json
+
+
+channels:
+  send_request_get_errors:
+    address: 'm2e/get_errors'
+    messages:
+      send_request_get_errors:
+        $ref: '#/components/messages/send_request_get_errors'
+  receive_reply_get_errors:
+    address: null
+    messages:
+      receive_reply_get_errors:
+        $ref: '#/components/messages/receive_reply_get_errors'
+  send_request_active_errors:
+    address: 'm2e/active_errors'
+    messages:
+      send_request_active_errors:
+        $ref: '#/components/messages/send_request_active_errors'
+  receive_reply_active_errors:
+    address: null
+    messages:
+      receive_reply_active_errors:
+        $ref: '#/components/messages/receive_reply_active_errors'
+  receive_error_raised:
+    address: 'e2m/error_raised'
+    messages:
+      receive_error_raised:
+        $ref: '#/components/messages/receive_error_raised'
+  receive_error_cleared:
+    address: 'e2m/error_cleared'
+    messages:
+      receive_error_cleared:
+        $ref: '#/components/messages/receive_error_cleared'
+
+
+  receive_heartbeat:
+    address: 'e2m/heartbeat'
+    messages:
+      receive_heartbeat:
+        $ref: '#/components/messages/receive_heartbeat'
+  send_communication_check:
+    address: 'm2e/communication_check'
+    messages:
+      send_communication_check:
+        $ref: '#/components/messages/send_communication_check'
+
+
+
+operations:
+  send_request_get_errors:
+    title: 'Send request with a list of filters to get a list of filtered errors'
+    action: send
+    channel:
+      $ref: '#/channels/send_request_get_errors'
+    description: 'Direction: Module to EVerest'
+    reply:
+      address:
+        location: "$message.header#/replyTo"
+      channel:
+        $ref: '#/channels/receive_reply_get_errors'
+  receive_reply_get_errors:
+    title: 'Receive reply with a list of filtered errors'
+    action: receive
+    description: 'Direction: EVerest to Module'
+    channel:
+      $ref: '#/channels/receive_reply_get_errors'
+  send_request_active_errors:
+    title: 'Send request to transmit the list of currently active errors'
+    action: send
+    channel:
+      $ref: '#/channels/send_request_active_errors'
+    description: 'Direction: Module to EVerest'
+    reply:
+      address:
+        location: "$message.header#/replyTo"
+      channel:
+        $ref: '#/channels/receive_reply_active_errors'
+  receive_reply_active_errors:
+    title: 'Receive reply to transmit the list of currently active errors'
+    action: receive
+    description: 'Direction: EVerest to Module'
+    channel:
+      $ref: '#/channels/receive_reply_active_errors'
+  receive_error_raised:
+    title: 'Receive newly raised error'
+    action: receive
+    channel:
+      $ref: '#/channels/receive_error_raised'
+  receive_error_cleared:
+    title: 'Receive newly cleared error'
+    action: receive
+    channel:
+      $ref: '#/channels/receive_error_cleared'
+
+
+  receive_heartbeat:
+    title: 'Receive heartbeat'
+    action: receive
+    channel:
+      $ref: '#/channels/receive_heartbeat'
+  send_communication_check:
+    title: 'Send communication check'
+    action: send
+    channel:
+      $ref: '#/channels/send_communication_check'
+
+
+
+components:
+  messages:
+    send_request_get_errors:
+      name: send_request_get_errors
+      title: 'Request the list of filtered errors'
+      summary: 'Request the list of filtered errors.'
+      payload:
+        type: object
+        required:
+          - payload
+        properties:
+          headers:
+            type: object
+            properties:
+              replyTo:  # Address for the request to reply to
+                type: string
+                description: Address to send the response to.
+          payload:
+            $ref: '#/components/schemas/FilterArguments'
+    receive_reply_get_errors:
+      name: receive_reply_get_errors
+      title: 'List of filtered errors'
+      summary: 'Reply to the request to send the list of filtered errors'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorList'
+    send_request_active_errors:
+      name: send_request_active_errors
+      title: 'Request the list of active errors'
+      summary: 'Request the list of active errors.'
+      payload:
+        type: object
+        properties:
+          headers:
+            type: object
+            properties:
+              replyTo:  # Address for the request to reply to
+                type: string
+                description: Address to send the response to.
+      examples:
+        - summary: "Request active errors"
+          payload:
+            headers:
+              replyTo: everest_api/1/{interface_type}/{module_id}/e2m/{operation_name}/{uuid}
+    receive_reply_active_errors:
+      name: receive_reply_active_errors
+      title: 'The list of active errors'
+      summary: 'Reply to the request to send the list of active errors'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorList'
+    receive_error_raised:
+      name: receive_error_raised
+      title: 'Receive newly raised error'
+      summary: 'Notifies on every raised error'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorObject'
+    receive_error_cleared:
+      name: receive_error_cleared
+      title: 'Receive cleared error'
+      summary: 'Notifies when an error is cleared'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorObject'
+
+
+    receive_heartbeat:
+      name: receive_heartbeat
+      title: 'Receive heartbeat'
+      summary: Heartbeat produced by EVerest as configured via cfg_heartbeat_interval_ms in the EVerest configuration
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/HeartBeatId'
+      examples:
+        - summary: "Heartbeat"
+          payload: 42
+
+    send_communication_check:
+      name: send_communication_check
+      title: 'Send communication check'
+      summary: Signal to EVerest that communication is good or check shall be stopped
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CommunicationCheck'
+      examples:
+        - summary: "CommunicationCheck"
+          payload:
+            true
+
+
+  schemas:
+    ErrorList:
+      description: A list of ErrorObjects
+      type: object
+      additionalProperties: true
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+    ErrorObject:
+      description: Represents an error
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - description
+        - message
+        - origin
+        - timestamp
+        - uuid
+        - severity
+        - state
+      properties:
+        type:
+          type: string
+          minLength: 2
+        sub_type:
+          type: string
+        description:
+          type: string
+          minLength: 2
+        message:
+          type: string
+          minLength: 2
+        severity:
+          $ref: '#/components/schemas/Severity'
+        origin:
+          $ref: '#/components/schemas/ImplementationIdentifier'
+        timestamp:
+          type: string
+          format: date-time
+        uuid:
+          type: string
+          minLength: 2
+        state:
+          $ref: '#/components/schemas/State'
+    FilterArguments:
+      description: Arguments for the get_errors command
+      type: object
+      additionalProperties: true
+      required: []
+      properties:
+        state_filter:
+          $ref: '#/components/schemas/State'
+        origin_filter:
+          $ref: '#/components/schemas/ImplementationIdentifier'
+        type_filter:
+          type: string
+        severity_filter:
+          $ref: '#/components/schemas/SeverityFilter'
+        timeperiod_filter:
+          $ref: '#/components/schemas/TimeperiodFilter'
+        handle_filter:
+          type: string
+          description: Handle of an error
+    ImplementationIdentifier:
+      description: Identifier of an implementation
+      type: object
+      additionalProperties: true
+      required:
+        - module_id
+        - implementation_id
+      properties:
+        module_id:
+          type: string
+          minLength: 2
+        implementation_id:
+          type: string
+          minLength: 2
+    Severity:
+      description: Severity of an error
+      type: string
+      enum:
+        - High
+        - Medium
+        - Low
+    SeverityFilter:
+      description: Severity filter for errors
+      type: string
+      enum:
+        - HIGH_GE
+        - MEDIUM_GE
+        - LOW_GE
+    State:
+      description: State of an error
+      type: string
+      enum:
+        - Active
+        - ClearedByModule
+        - ClearedByReboot
+    TimeperiodFilter:
+      description: Timeperiod filter for errors
+      type: object
+      additionalProperties: true
+      required:
+        - timestamp_from
+        - timestamp_to
+      properties:
+        timestamp_from:
+          type: string
+          format: date-time
+        timestamp_to:
+          type: string
+          format: date-time
+
+    CommunicationCheck:
+      type: boolean
+      description: "Send 'true' at least every 'cfg_communication_check_to_s' seconds to signal module is alive. Send 'false' to stop communication check'"
+    HeartBeatId:
+      type: integer
+      description: "64bit unsigned integer. The id of every heartbeat increases by 1 and overflows when the maximum representable value is reached"
