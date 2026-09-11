@@ -23,7 +23,7 @@ public class AsyncApiReplyDto {
     /**
      * The index of the action this answers, echoing what was asked.
      */
-    public Integer index;
+    public int index;
 
     /**
      * Whether the message reached the broker. False means the driver could not publish, and
