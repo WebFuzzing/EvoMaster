@@ -2,9 +2,11 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.database.mongo.MongoExecution
@@ -83,6 +85,8 @@ class FitnessValue(
 
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
+    val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
+
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular, the tables and columns in them involved
@@ -106,6 +110,8 @@ class FitnessValue(
      * the type of commands that failed.
      */
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
+
+    private val aggregatedFailedDynamoDbQueries: MutableList<DynamoDbFailedQuery> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -139,9 +145,11 @@ class FitnessValue(
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
+        copy.dynamoDbExecutions.putAll(this.dynamoDbExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
+        copy.aggregateDynamoDbData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -189,6 +197,11 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
+    fun aggregateDynamoDbData() {
+        aggregatedFailedDynamoDbQueries.clear()
+        dynamoDbExecutions.values.forEach { aggregatedFailedDynamoDbQueries.addAll(it.failedQueries) }
+    }
+
     fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
         if (extraToMinimize[actionIndex] == null) {
             extraToMinimize[actionIndex] = list.sorted()
@@ -210,6 +223,10 @@ class FitnessValue(
         redisExecutions[actionIndex] = redisExecution
     }
 
+    fun setDynamoDbExecution(actionIndex: Int, execution: DynamoDbExecution) {
+        dynamoDbExecutions[actionIndex] = execution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -223,6 +240,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
+
+    fun getViewOfAggregatedFailedDynamoDbQueries() = aggregatedFailedDynamoDbQueries
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.score == MAX_VALUE
