@@ -532,6 +532,19 @@ class RemoteControllerImplementation() : RemoteController{
         return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
     }
 
+    override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.DYNAMODB_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        return getDtoFromResponse(
+            response,
+            object : GenericType<WrappedResponseDto<DynamoDbInsertionResultsDto>>() {}
+        )?.data
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
