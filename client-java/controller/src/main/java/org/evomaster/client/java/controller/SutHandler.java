@@ -91,6 +91,14 @@ public interface SutHandler {
     RedisInsertionResultsDto execInsertionsIntoRedisDatabase(List<RedisInsertionDto> insertions);
 
     /**
+     * Executes DynamoDB initialization insertions.
+     *
+     * @param insertions items to insert
+     * @return insertion results
+     */
+    DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions);
+
+    /**
      * <p>
      * return an instance of a client of an RPC service.
      * </p>

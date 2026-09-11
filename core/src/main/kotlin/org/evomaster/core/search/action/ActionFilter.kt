@@ -36,6 +36,9 @@ enum class ActionFilter {
      */
     ONLY_REDIS,
 
+    /** actions which are DynamoDB-related actions */
+    ONLY_DYNAMODB,
+
     /**
      * actions which are not SQL-related actions
      */

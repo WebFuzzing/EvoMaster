@@ -34,4 +34,10 @@ interface DatabaseExecutor {
      * Return the result of whether it success
      */
     fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT DynamoDB command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto?
 }

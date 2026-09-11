@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
@@ -23,6 +24,7 @@ import org.evomaster.core.database.sql.SqlAction
          return SqlAction::class.java.isAssignableFrom(t)
                  || MongoDbAction::class.java.isAssignableFrom(t)
                  || RedisDbAction::class.java.isAssignableFrom(t)
+                 || DynamoDbAction::class.java.isAssignableFrom(t)
                  || HostnameResolutionAction::class.java.isAssignableFrom(t)
                  || ScheduleTaskAction::class.java.isAssignableFrom(t)
      }

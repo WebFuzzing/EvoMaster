@@ -531,6 +531,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitDynamoDb(boolean executingInitDynamoDb) {
+        checkInstrumentation();
+        serverController.setExecutingInitDynamoDb(executingInitDynamoDb);
+        // sync executingInitDynamoDb on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

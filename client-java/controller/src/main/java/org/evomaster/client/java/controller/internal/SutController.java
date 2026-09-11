@@ -28,6 +28,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
+import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
+import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -314,6 +316,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return RedisCommandExecutor.executeInsert(connection, insertions);
     }
 
+    @Override
+    public DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions) {
+        Object connection = getDynamoDbConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to DynamoDB");
+        }
+        return DynamoDbCommandExecutor.executeInsert(connection, insertions);
+    }
+
     public int getActionIndex(){
         return actionIndex;
     }
@@ -476,7 +487,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private boolean isDynamoDbHeuristicsComputationAllowed() {
-        return dynamoDbHandler.isCalculateHeuristics();
+        return dynamoDbHandler.isCalculateHeuristics() || dynamoDbHandler.isExtractDynamoDbExecution();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -658,23 +669,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void computeDynamoDbHeuristics(ExtraHeuristicsDto dto,
                                                  List<AdditionalInfo> additionalInfoList) {
-        if (!dynamoDbHandler.isCalculateHeuristics()) {
-            return;
-        }
         if (!additionalInfoList.isEmpty()) {
             AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
             last.getDynamoDbInfoData().forEach(dynamoDbHandler::handle);
         }
 
-        dynamoDbHandler.getEvaluatedDynamoDbCommands().stream()
-                .map(evaluated -> new ExtraHeuristicEntryDto(
-                        ExtraHeuristicEntryDto.Type.DYNAMODB,
-                        ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                        evaluated.getHeuristicId(),
-                        evaluated.getDistanceWithMetrics().getDistance(),
-                        evaluated.getDistanceWithMetrics().getNumberOfEvaluatedItems(),
-                        evaluated.getDistanceWithMetrics().isEvaluationFailure()))
-                .forEach(dto.heuristics::add);
+        List<DynamoDbCommandWithDistance> evaluated = dynamoDbHandler.getEvaluatedDynamoDbCommands();
+        if (dynamoDbHandler.isCalculateHeuristics()) {
+            evaluated.stream()
+                    .map(command -> new ExtraHeuristicEntryDto(
+                            ExtraHeuristicEntryDto.Type.DYNAMODB,
+                            ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            command.getHeuristicId(),
+                            command.getDistanceWithMetrics().getDistance(),
+                            command.getDistanceWithMetrics().getNumberOfEvaluatedItems(),
+                            command.getDistanceWithMetrics().isEvaluationFailure()))
+                    .forEach(dto.heuristics::add);
+        }
+        if (dynamoDbHandler.isExtractDynamoDbExecution()) {
+            dto.dynamoDbExecutionsDto = dynamoDbHandler.getExecutionDto();
+        }
     }
 
     /**
@@ -1712,6 +1726,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
     public abstract void setExecutingInitRedis(boolean executingInitRedis);
+
+    public abstract void setExecutingInitDynamoDb(boolean executingInitDynamoDb);
 
     public abstract void setExecutingAction(boolean executingAction);
 

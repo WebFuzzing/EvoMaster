@@ -120,6 +120,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitDynamoDb(boolean executingInitDynamoDb) {
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
