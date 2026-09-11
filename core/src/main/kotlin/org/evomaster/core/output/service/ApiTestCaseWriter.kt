@@ -9,10 +9,13 @@ import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
+import org.evomaster.core.search.action.EvaluatedDynamoDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionResult
@@ -50,6 +53,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -68,6 +72,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         val initializingRedisResults = (ind.seeResults(initializingRedisActions))
         if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as RedisDbActionResults")
+
+        val initializingDynamoDbActions = ind.individual.seeInitializingActions().filterIsInstance<DynamoDbAction>()
+        val initializingDynamoDbResults = ind.seeResults(initializingDynamoDbActions)
+        if (initializingDynamoDbResults.any { it !is DynamoDbActionResult })
+            throw IllegalStateException("the type of results are expected as DynamoDbActionResults")
 
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
@@ -105,6 +114,18 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 redisInsertionVars = redisInsertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingDynamoDbActions.isNotEmpty()) {
+            DynamoDbWriter.handleDynamoDbInitialization(
+                format,
+                initializingDynamoDbActions.indices.map {
+                    EvaluatedDynamoDbAction(initializingDynamoDbActions[it], initializingDynamoDbResults[it] as DynamoDbActionResult)
+                },
+                lines,
+                dynamoDbInsertionVars = dynamoDbInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile
+            )
         }
 
         if (initializingHostnameResolutionActions.isNotEmpty()) {

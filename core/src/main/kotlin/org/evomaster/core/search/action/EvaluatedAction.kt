@@ -6,6 +6,8 @@ import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 
 
 open class EvaluatedAction(val action: Action, val result: ActionResult){
@@ -26,3 +28,5 @@ class EvaluatedDbAction(val sqlAction: SqlAction, val sqlResult: SqlActionResult
 class EvaluatedMongoDbAction(val mongoAction: MongoDbAction, val mongoResult: MongoDbActionResult) : EvaluatedAction(mongoAction, mongoResult)
 
 class EvaluatedRedisDbAction(val redisAction: RedisDbAction, val redisResult: RedisDbActionResult) : EvaluatedAction(redisAction, redisResult)
+
+class EvaluatedDynamoDbAction(val dynamoDbAction: DynamoDbAction, val dynamoDbResult: DynamoDbActionResult) : EvaluatedAction(dynamoDbAction, dynamoDbResult)
