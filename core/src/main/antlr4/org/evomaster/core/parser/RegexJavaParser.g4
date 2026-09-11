@@ -54,6 +54,7 @@ assertion
 //// | '(' '?' '!' disjunction ')'
  | StartOfInputAssertion // \A
  | EndOfInputAssertion // \z
+ | EndOfInputOrFinalLineTerminatorAssertion // \Z
  | WordBoundaryAssertion // \b
  | NonWordBoundaryAssertion // \B
  ;

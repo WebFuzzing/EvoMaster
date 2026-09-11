@@ -290,6 +290,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 assertionCtx.NonWordBoundaryAssertion() != null -> AssertionType.NON_WORD_BOUNDARY
                 assertionCtx.StartOfInputAssertion() != null -> AssertionType.START_OF_INPUT
                 assertionCtx.EndOfInputAssertion() != null -> AssertionType.END_OF_INPUT
+                assertionCtx.EndOfInputOrFinalLineTerminatorAssertion() != null -> AssertionType.END_OF_INPUT_OR_FINAL_LINE_TERMINATOR
                 assertionCtx.CARET() != null -> AssertionType.CARET
                 assertionCtx.DOLLAR() != null -> AssertionType.DOLLAR
                 assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND

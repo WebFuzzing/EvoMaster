@@ -403,6 +403,8 @@ class DisjunctionRxGene(
                 repairBidirectional(assertion, wordBoundaryBranches, idx, randomness)
             AssertionType.NON_WORD_BOUNDARY ->
                 repairBidirectional(assertion, nonWordBoundaryBranches, idx, randomness)
+            AssertionType.END_OF_INPUT_OR_FINAL_LINE_TERMINATOR ->
+                repairZAssertion(assertion, genesAfter(idx), randomness)
         }
 
     /**
@@ -558,6 +560,77 @@ class DisjunctionRxGene(
                 randomness
             )
         }
+
+    /**
+     * Repairs `\Z` assertion, which is lookahead for end of input or
+     * final line terminator (line terminator followed by end of input).
+     */
+    private fun repairZAssertion(assertion: AssertionRxGene, target: List<Gene>, randomness: Randomness): AssertionRepairResult {
+        return tryInRandomOrder(
+            { repairStrictBoundaryAssertion(target, false) },
+            { repairTerminatorThenForceRestEmpty(assertion, target, randomness) },
+            randomness
+        )
+    }
+
+    /**
+     * Repairs `\Z` assertion's final line terminator branch (line terminator and then end of string).
+     * In Java, valid line terminators depend on [org.evomaster.core.utils.RegexFlags.unixLines], since if
+     * that flag is on only `\n` is a line terminator otherwise `\r\n|[\n\r\u0085\u2028\u2029]` are terminators.
+     */
+    private fun repairTerminatorThenForceRestEmpty(assertion: AssertionRxGene, target: List<Gene>, randomness: Randomness): AssertionRepairResult {
+        repeat(MAX_LOCAL_ASSERTION_ATTEMPTS) {
+            val tryCrlf = !assertion.flags.unixLines && randomness.nextBoolean()
+            val candidate = if (tryCrlf) {
+                "\r\n"
+            } else {
+                assertion.flags.lineTerminatorRanges.sample(randomness).toString()
+            }
+            if (forceExactMatch(target, candidate)) {
+                return AssertionRepairResult.SUCCESS
+            }
+        }
+        return AssertionRepairResult.FAILURE
+    }
+
+    /**
+     * Forces [terms]' value to match [value] exactly, one of the genes must absorb that value
+     * and the rest must be zero width.
+     *
+     * @return whether [terms] could be forced to render exactly [value].
+     */
+    private fun forceExactMatch(terms: List<Gene>, value: String): Boolean {
+
+        // find the first gene that can absorb the whole value
+        val absorbedAt = terms.indexOfFirst { (it as RxAbsorbable).absorbableCount(value) == value.length }
+        if (absorbedAt == -1) return false
+
+        // verify all other genes can collapse to zero width
+        val allOthersZeroWidth = terms.indices.all { i ->
+            i == absorbedAt || (terms[i] as RxAbsorbable).canBeZeroWidth
+        }
+        if (!allOthersZeroWidth) return false
+
+        // force the genes' values
+        terms.forEachIndexed { i, gene ->
+            val g = gene as RxAbsorbable
+            if (i == absorbedAt) g.tryForce(value) else g.forceZeroWidth()
+        }
+
+        // check the gene produces exactly that char (and nothing else)
+        val gene = terms[absorbedAt]
+        if (gene.getValueAsRawString() == value) {
+            return true
+        }
+
+        // some genes could have trailing characters which we could still trim to make the repair successful
+        return when (gene) {
+            is QuantifierRxGene -> gene.trimToExactValue(value)
+            is DisjunctionListRxGene -> forceExactMatch(gene.disjunctions[gene.activeDisjunction].terms, value)
+            is DisjunctionRxGene -> forceExactMatch(gene.terms, value)
+            else -> false
+        }
+    }
 
     /**
      * The genes in [terms] lying before index [idx], excluding other assertions. This is the forcing

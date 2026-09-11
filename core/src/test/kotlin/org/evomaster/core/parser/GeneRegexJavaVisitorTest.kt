@@ -620,4 +620,17 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         // \R is not affected by unixLines flag
         checkCanSample("^(?d)\\R\\z", listOf("\n", "\u000B", "\u000C", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 100)
     }
+
+    @Test
+    fun testZAssertion(){
+        checkSameAsJava("^\\Z\\R?")
+        checkSameAsJava("(?s)^\\Z.{0,1}")
+        checkSameAsJava("(?s)^\\Z(.*)")
+        checkSameAsJava("(?sd)^\\Z.*")
+        checkCanSample("(?sd)^\\Z.*", listOf("", "\n"), 1000)
+        assertThrows<AssertionError> { checkCanSample("(?sd)^\\Z.*", listOf("\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000) }
+        checkSameAsJava("(?s)^\\Z.*")
+        checkCanSample("(?s)^\\Z.*", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
+        checkCanSample("(?s)^\\Z(.?){5}", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
+    }
 }

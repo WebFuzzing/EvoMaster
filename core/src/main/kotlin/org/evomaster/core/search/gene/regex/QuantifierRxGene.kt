@@ -297,4 +297,45 @@ class QuantifierRxGene(
             atoms.forEach { (it as RxAbsorbable).forceZeroWidth() }
         }
     }
+
+    /**
+     * Attempts to trim [atoms] so that this gene's value becomes exactly [value] (no trailing characters).
+     * Used during repairs for `\Z` assertions.
+     * @see DisjunctionRxGene.repairZAssertion
+     * @see DisjunctionRxGene.forceExactMatch
+     */
+    fun trimToExactValue(value: String): Boolean {
+        var consumed = 0
+        var neededAtoms = 0
+        for (atom in atoms) {
+            if (consumed >= value.length) break
+            consumed += atom.getValueAsRawString().length
+            neededAtoms++
+        }
+        if (consumed != value.length) return false
+        if (getValueAsRawString() == value) return true
+
+        val minimumAtomsToKeep = maxOf(neededAtoms, min)
+
+        // Remove or zero-width trailing atoms so the gene matches the target value exactly.
+        for (i in atoms.size - 1 downTo minimumAtomsToKeep) {
+            val atom = atoms[i]
+            if (atom is RxAbsorbable && atom.canBeZeroWidth) {
+                atom.forceZeroWidth()
+            } else {
+                killChildByIndex(i)
+            }
+        }
+
+        // Zero-width (if possible) atoms required by min but not needed to produce the target value.
+        for (i in neededAtoms until min) {
+            val atom = atoms[i]
+            if (atom !is RxAbsorbable || !atom.canBeZeroWidth) {
+                return false
+            }
+            atom.forceZeroWidth()
+        }
+
+        return getValueAsRawString() == value
+    }
 }

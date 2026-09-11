@@ -75,6 +75,7 @@ CharacterClassEscape
 
 StartOfInputAssertion: SLASH 'A';
 EndOfInputAssertion: SLASH 'z';
+EndOfInputOrFinalLineTerminatorAssertion: SLASH 'Z';
 
 WordBoundaryAssertion: SLASH 'b';
 NonWordBoundaryAssertion: SLASH 'B';
