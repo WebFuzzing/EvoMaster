@@ -529,6 +529,10 @@ class SamplerVerifierTest {
             return null
         }
 
+        override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+            return null
+        }
+
         override fun getSutInfo(): SutInfoDto? {
             return sutInfoDto
         }
