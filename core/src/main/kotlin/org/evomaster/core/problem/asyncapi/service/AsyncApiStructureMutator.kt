@@ -42,7 +42,15 @@ class AsyncApiStructureMutator : ApiWsStructureMutator() {
 
         val size = individual.seeMainExecutableActions().size
 
-        if ((size + 1 < config.maxTestSize) && (size <= 1 || randomness.nextBoolean())) {
+        //a test keeps at least one message, and never grows past what the user allowed
+        val canAdd = size < config.maxTestSize
+        val canRemove = size > 1
+
+        if (!canAdd && !canRemove) {
+            return
+        }
+
+        if (canAdd && (!canRemove || randomness.nextBoolean())) {
             val added = sampler.sampleRandomAction()
             individual.addAction(action = added)
             mutatedGenes?.addRemovedOrAddedByAction(
