@@ -204,14 +204,21 @@ public abstract class GeoJsonUtils {
         }
         List<GeoJsonGeometry> geometries = new ArrayList<>();
         for (Object geometryDocument : (List<?>) geometriesValue) {
-            geometries.add(toGeometry(geometryDocument));
+            geometries.add(toGeoJsonGeometry(geometryDocument));
         }
         return new GeoJsonGeometryCollection(geometries);
     }
 
-    private static GeoJsonGeometry toGeometry(Object document) {
+    /**
+     * Converts a document into whichever supported GeoJSON geometry type it represents
+     * (Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, or
+     * GeometryCollection), trying each type in turn.
+     *
+     * @throws IllegalArgumentException if the document is null or does not match any supported geometry type.
+     */
+    public static GeoJsonGeometry toGeoJsonGeometry(Object document) {
         if (document == null) {
-            throw new IllegalArgumentException("A geometry in a GeometryCollection must not be null.");
+            throw new IllegalArgumentException("A geometry document must not be null.");
         }
         try {
             return toGeoJsonPoint(document);

@@ -1315,6 +1315,137 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(distanceNotMatch.isFalse());
     }
 
+    /*
+        ================================================================================
+        Cases about $geoIntersects with GeoJSON geometries (Point, LineString, Polygon,
+        and combinations of them). The distance heuristic is an approximate planar
+        distance between the query geometry and the document's geometry (see
+        GeoJsonGeometryIntersection); 0 iff they would satisfy $geoIntersects.
+        ================================================================================
+     */
+
+    private static Document geoIntersectsQuery(String fieldName, Document geometry) {
+        return new Document(fieldName,
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+    }
+
+    @Test
+    public void testGeoIntersectsPointInsidePolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOnBoundary = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(0, 5)));
+        Document pointOutside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(20, 20)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOnBoundary).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutside).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsHeuristicIsGradedByDistanceToPolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document closer = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(11, 5)));
+        Document fartherAway = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(100, 5)));
+
+        Truthness closerTruthness = calculator.computeHeuristicDocument(query, closer);
+        Truthness fartherTruthness = calculator.computeHeuristicDocument(query, fartherAway);
+
+        assertTrue(closerTruthness.isFalse());
+        assertTrue(fartherTruthness.isFalse());
+        assertTrue(closerTruthness.getOfTrue() > fartherTruthness.getOfTrue());
+    }
+
+    @Test
+    public void testGeoIntersectsPolygonWithHoleExcludesHoleInterior() {
+        Document squareWithHole = new Document("type", "Polygon")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
+        Document query = geoIntersectsQuery("area", squareWithHole);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInHole = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(3, 3)));
+        Document pointInFilledArea = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(8, 8)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInHole).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, pointInFilledArea).isTrue());
+    }
+
+    @Test
+    public void testGeoIntersectsLineStringCrossingPolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("path", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document crossingLine = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(-5, 5), Arrays.asList(15, 5))));
+        Document disjointLine = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(20, 20), Arrays.asList(30, 30))));
+
+        assertTrue(calculator.computeHeuristicDocument(query, crossingLine).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, disjointLine).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsGeometryCollectionMatchesIfAnyMemberIntersects() {
+        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(100, 80));
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document collection = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(point, square));
+        Document query = geoIntersectsQuery("area", collection);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointFarFromBoth = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(-100, -80)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInsideSquare).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointFarFromBoth).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsWithNonGeometryActualValueIsFalse() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("area", 42)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("area", new Document("type", "NotAGeometry"))).isFalse());
+    }
+
     @Test
     public void testComparisonNull() {
         Document docNull = new Document().append("age", null);
@@ -2053,11 +2184,7 @@ public class MongoHeuristicsCalculatorTest {
                 new Document().append("$text", new Document().append("$search", "x")),
                 new Document().append("a", new Document().append("$geoWithin",
                         new Document().append("$centerSphere",
-                                Arrays.asList(Arrays.asList(1.0, 2.0), 0.1)))),
-                new Document().append("a", new Document().append("$geoIntersects",
-                        new Document().append("$geometry",
-                                new Document().append("type", "Point")
-                                        .append("coordinates", Arrays.asList(1.0, 2.0)))))
+                                Arrays.asList(Arrays.asList(1.0, 2.0), 0.1))))
         );
 
         for (Document query : queries) {
