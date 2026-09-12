@@ -20,6 +20,7 @@ import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
+import org.evomaster.core.problem.asyncapi.service.AsyncApiModule
 import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -627,8 +628,8 @@ class Main {
                 }
 
                 EMConfig.ProblemType.ASYNCAPI -> {
-                    //the sampler, fitness and module for it are being added one at a time
-                    throw IllegalStateException("AsyncAPI is not wired into the search yet")
+                    //one module for both modes: the driver is needed either way, see EMConfig.usesDriver
+                    AsyncApiModule()
                 }
 
                 //this should never happen, unless we add new type and forget to add it here
