@@ -13,6 +13,7 @@ public abstract class GeoJsonUtils {
     private static final String POINT = "Point";
     private static final String COORDINATES = "coordinates";
     private static final String TYPE = "type";
+    private static final String GEOMETRIES = "geometries";
 
     /**
      * Checks whether the given object represents a GeoJSON Point.
@@ -183,6 +184,66 @@ public abstract class GeoJsonUtils {
             polygons.add(toPolygon(polygonCoordinates));
         }
         return new GeoJsonMultiPolygon(polygons);
+    }
+
+    /**
+     * Converts a GeoJSON GeometryCollection document into a typed {@link GeoJsonGeometryCollection}.
+     * The document must have a non-empty "geometries" list, where each element is itself a
+     * supported GeoJSON geometry document (Point, LineString, Polygon, MultiPoint,
+     * MultiLineString, MultiPolygon, or a nested GeometryCollection).
+     */
+    public static GeoJsonGeometryCollection toGeoJsonGeometryCollection(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonGeometryCollection.GEOMETRY_COLLECTION_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON GeometryCollection.");
+        }
+        Object geometriesValue = BsonHelper.getValue(document, GEOMETRIES);
+        if (!(geometriesValue instanceof List<?>) || ((List<?>) geometriesValue).isEmpty()) {
+            throw new IllegalArgumentException("GeometryCollection must contain a non-empty list of geometries.");
+        }
+        List<GeoJsonGeometry> geometries = new ArrayList<>();
+        for (Object geometryDocument : (List<?>) geometriesValue) {
+            geometries.add(toGeometry(geometryDocument));
+        }
+        return new GeoJsonGeometryCollection(geometries);
+    }
+
+    private static GeoJsonGeometry toGeometry(Object document) {
+        if (document == null) {
+            throw new IllegalArgumentException("A geometry in a GeometryCollection must not be null.");
+        }
+        try {
+            return toGeoJsonPoint(document);
+        } catch (IllegalArgumentException e) {
+            // not a Point, try another geometry type
+        }
+        try {
+            return toGeoJsonLineString(document);
+        } catch (IllegalArgumentException e) {
+            // not a LineString
+        }
+        try {
+            return toGeoJsonPolygon(document);
+        } catch (IllegalArgumentException e) {
+            // not a Polygon
+        }
+        try {
+            return toGeoJsonMultiPoint(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiPoint
+        }
+        try {
+            return toGeoJsonMultiLineString(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiLineString
+        }
+        try {
+            return toGeoJsonMultiPolygon(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiPolygon
+        }
+        return toGeoJsonGeometryCollection(document);
     }
 
     private static GeoJsonPolygon toPolygon(Object coordinates) {

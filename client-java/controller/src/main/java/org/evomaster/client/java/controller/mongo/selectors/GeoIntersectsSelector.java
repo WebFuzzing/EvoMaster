@@ -9,7 +9,10 @@ import java.util.Collections;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 
-/** Parses {@code $geoIntersects} queries with a GeoJSON LineString, Polygon, MultiPolygon, MultiPoint, or MultiLineString. */
+/**
+ * Parses {@code $geoIntersects} queries with a GeoJSON LineString, Polygon, MultiPolygon,
+ * MultiPoint, MultiLineString, or GeometryCollection.
+ */
 public class GeoIntersectsSelector extends SingleConditionQuerySelector {
 
     @Override
@@ -55,6 +58,11 @@ public class GeoIntersectsSelector extends SingleConditionQuerySelector {
             return GeoJsonUtils.toGeoJsonMultiLineString(geometry);
         } catch (IllegalArgumentException e) {
             // not a supported GeoJSON MultiLineString
+        }
+        try {
+            return GeoJsonUtils.toGeoJsonGeometryCollection(geometry);
+        } catch (IllegalArgumentException e) {
+            // not a supported GeoJSON GeometryCollection
         }
         return null;
     }

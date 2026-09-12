@@ -8,10 +8,12 @@ import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometryCollection;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiLineString;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPolygon;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
 import org.junit.jupiter.api.Test;
 
@@ -987,6 +989,67 @@ class QueryParserTest {
             assertNull(parser.parse(new Document("location",
                     new Document("$geoIntersects", new Document("$geometry", geometry)))),
                     "Expected rejection of multilinestring coordinates: " + coordinates);
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonGeometryCollection() {
+        Document pointGeometry = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
+        Document lineGeometry = new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
+        Document geometry = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(pointGeometry, lineGeometry));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
+        assertEquals("GeometryCollection", collection.getType());
+        assertEquals(2, collection.getGeometries().size());
+        GeoJsonPoint point = assertInstanceOf(GeoJsonPoint.class, collection.getGeometries().get(0));
+        assertEquals(10.0, point.getLongitude());
+        assertEquals(20.0, point.getLatitude());
+        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, collection.getGeometries().get(1));
+        assertEquals(2, line.getPoints().size());
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonGeometryCollectionWithNestedCollection() {
+        Document innerPoint = new Document("type", "Point").append("coordinates", Arrays.asList(1, 1));
+        Document nestedCollection = new Document("type", "GeometryCollection")
+                .append("geometries", Collections.singletonList(innerPoint));
+        Document geometry = new Document("type", "GeometryCollection")
+                .append("geometries", Collections.singletonList(nestedCollection));
+        Document query = new Document("area",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("area", operation.getFieldName());
+        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
+        assertEquals(1, collection.getGeometries().size());
+        GeoJsonGeometryCollection nested = assertInstanceOf(GeoJsonGeometryCollection.class, collection.getGeometries().get(0));
+        assertEquals(1, nested.getGeometries().size());
+        assertInstanceOf(GeoJsonPoint.class, nested.getGeometries().get(0));
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidGeometryCollections() {
+        Document validPoint = new Document("type", "Point").append("coordinates", Arrays.asList(0, 0));
+        Document invalidPolygon = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 10), Arrays.asList(0, 10))));
+        for (Object geometries : Arrays.asList(null, "invalid", Collections.emptyList(),
+                // An element that is not even a BSON document.
+                Collections.singletonList("invalid"),
+                // An element with an unsupported/unknown geometry type.
+                Collections.singletonList(new Document("type", "NotAGeometry").append("coordinates", Arrays.asList(0, 0))),
+                // A single invalid geometry among otherwise valid ones invalidates the whole collection.
+                Arrays.asList(validPoint, invalidPolygon))) {
+            Document geometry = new Document("type", "GeometryCollection").append("geometries", geometries);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
+                    "Expected rejection of geometry collection geometries: " + geometries);
         }
     }
 
