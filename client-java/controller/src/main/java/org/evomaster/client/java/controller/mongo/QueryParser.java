@@ -4,7 +4,9 @@ import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithField;
 import org.evomaster.client.java.controller.mongo.selectors.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,6 +21,7 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 public class QueryParser {
 
     private static final String SYNTHETIC_FIELD_NAME = "$";
+    private static final Set<String> COMMENTS_OPERATORS = new HashSet<>(Arrays.asList("$comment", "$comments"));
 
     List<QuerySelector> selectors = Arrays.asList(
             new EqualsSelector(),
@@ -54,16 +57,41 @@ public class QueryParser {
             return null;
         }
 
-        QueryOperation operation = parseWithSelectors(bsonDocument);
+        Object normalizedWithoutComments = removeCommentsOperators(bsonDocument);
+
+        QueryOperation operation = parseWithSelectors(normalizedWithoutComments);
         if (operation != null && !usesOperatorAsFieldName(operation)) {
             return operation;
         }
 
-        Object normalizedDocument = normalizeTopLevelValueOperatorQuery(bsonDocument);
-        if (normalizedDocument == bsonDocument) {
+        Object normalizedDocument = normalizeTopLevelValueOperatorQuery(normalizedWithoutComments);
+        if (normalizedDocument == normalizedWithoutComments) {
             return operation;
         }
         return parseWithSelectors(normalizedDocument);
+    }
+
+    private Object removeCommentsOperators(Object bsonValue) {
+        if (isBsonDocument(bsonValue)) {
+            Object normalized = newDocument(bsonValue);
+            for (String key : documentKeys(bsonValue)) {
+                if (COMMENTS_OPERATORS.contains(key)) {
+                    continue;
+                }
+                appendToDocument(normalized, key, removeCommentsOperators(getValue(bsonValue, key)));
+            }
+            return normalized;
+        }
+
+        if (bsonValue instanceof List<?>) {
+            List<Object> normalized = new ArrayList<>();
+            for (Object item : (List<?>) bsonValue) {
+                normalized.add(removeCommentsOperators(item));
+            }
+            return normalized;
+        }
+
+        return bsonValue;
     }
 
     private boolean usesOperatorAsFieldName(QueryOperation operation) {

@@ -27,7 +27,7 @@ public class ImplicitSelector extends QuerySelector {
 
         Set<String> keys = documentKeys(query);
         if (keys.isEmpty()) {
-            return new TrueOperation(); // Represents the "{}" MongoDB query, which matches all documents
+            return new EmptyOperation(); // Represents the "{}" MongoDB query, which matches all documents
         }
 
         if (!isUniqueEntry((Map<?, ?>) query)) {

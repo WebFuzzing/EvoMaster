@@ -5,9 +5,9 @@ package org.evomaster.client.java.controller.mongo.operations;
  * This query matches all documents in a collection, effectively
  * returning all documents without any filtering.
  */
-public class TrueOperation  extends QueryOperation {
+public class EmptyOperation extends QueryOperation {
 
-    public TrueOperation() {
+    public EmptyOperation() {
 
     }
 }
