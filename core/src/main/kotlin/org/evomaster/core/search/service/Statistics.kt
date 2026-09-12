@@ -469,7 +469,7 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val sutInfo : SutInfoDto? = if(!config.blackBox || config.bbExperiments) {
+        val sutInfo : SutInfoDto? = if(config.usesDriver()) {
             remoteController?.getSutInfo()
         } else {
             null
@@ -852,7 +852,7 @@ class Statistics : SearchListener {
 
 
         // append boot-time targets
-        if(!config.blackBox || config.bbExperiments) {
+        if(config.usesDriver()) {
             remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
                 if (isNotEmpty()){
                     content.add(System.lineSeparator())
