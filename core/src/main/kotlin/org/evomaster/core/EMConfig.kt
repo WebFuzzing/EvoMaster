@@ -1020,6 +1020,15 @@ class EMConfig {
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
 
+    /**
+     * Whether an EvoMaster Driver takes part in this run.
+     *
+     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * exception: there is no universal wire to speak to a message-driven service, so the driver
+     * holds the connection to the broker even when the SUT itself is treated as a black box.
+     */
+    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+
     fun activatedExperimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1506,7 +1515,8 @@ class EMConfig {
         GRAPHQL(experimental = false),
         RPC(experimental = true),
         WEBFRONTEND(experimental = true),
-        MCP(experimental = true);
+        MCP(experimental = true),
+        ASYNCAPI(experimental = true);
 
         override fun isExperimental() = experimental
     }
