@@ -47,6 +47,7 @@ public class QueryParser {
             new ExistsSelector(),
             new TypeSelector(),
             new RegexSelector(),
+            new GeoIntersectsSelector(),
             new NearSelector(),
             new NearSphereSelector(),
             new ImplicitSelector()

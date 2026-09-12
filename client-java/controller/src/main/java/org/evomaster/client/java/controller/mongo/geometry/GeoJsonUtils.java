@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo.geometry;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public abstract class GeoJsonUtils {
@@ -81,5 +82,40 @@ public abstract class GeoJsonUtils {
         return new GeoJsonPoint(longitude, latitude);
     }
 
+
+    /**
+     * Converts a GeoJSON LineString document into typed points.
+     * Coordinates must be finite longitude/latitude pairs. Malformed documents,
+     * unsupported CRS declarations, and lines with fewer than two distinct
+     * consecutive positions cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonLineString toGeoJsonLineString(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonLineString.LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON LineString.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("LineString coordinates must be a list of positions.");
+        }
+        List<GeoJsonPoint> points = new ArrayList<>();
+        for (Object position : (List<?>) coordinates) {
+            if (!(position instanceof List<?>) || ((List<?>) position).size() != 2) {
+                throw new IllegalArgumentException("A LineString position must contain longitude and latitude.");
+            }
+            List<?> pair = (List<?>) position;
+            if (!(pair.get(0) instanceof Number) || !(pair.get(1) instanceof Number)) {
+                throw new IllegalArgumentException("LineString coordinates must be numbers.");
+            }
+            double longitude = ((Number) pair.get(0)).doubleValue();
+            double latitude = ((Number) pair.get(1)).doubleValue();
+            if (!Double.isFinite(longitude) || !Double.isFinite(latitude)) {
+                throw new IllegalArgumentException("LineString coordinates must be finite.");
+            }
+            points.add(new GeoJsonPoint(longitude, latitude));
+        }
+        return new GeoJsonLineString(points);
+    }
 
 }

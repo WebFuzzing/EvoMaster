@@ -8,6 +8,7 @@ import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -701,6 +702,74 @@ class QueryParserTest {
         // Radians to meters: 6371000 * distance
         assertEquals(6371000 * 10.0, ns.getMaxDistance());
         assertEquals(6371000 * 1.0, ns.getMinDistance());
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonLineString() {
+        Document geometry = new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(10, 20L), Arrays.asList(30.5, 40), Arrays.asList(50, 60.5)));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, operation.getGeometry());
+        assertEquals("LineString", line.getType());
+        assertEquals(3, line.getPoints().size());
+        assertEquals(10.0, line.getPoints().get(0).getLongitude());
+        assertEquals(20.0, line.getPoints().get(0).getLatitude());
+        assertEquals(30.5, line.getPoints().get(1).getLongitude());
+        assertEquals(40.0, line.getPoints().get(1).getLatitude());
+        assertEquals(50.0, line.getPoints().get(2).getLongitude());
+        assertEquals(60.5, line.getPoints().get(2).getLatitude());
+    }
+
+    @Test
+    void testParseGeoIntersectsLineStringRemovesConsecutiveDuplicates() {
+        Document geometry = new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(10, 20), Arrays.asList(10.0, 20.0),
+                        Arrays.asList(30, 40), Arrays.asList(10, 20)));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, operation.getGeometry());
+        assertEquals(3, line.getPoints().size());
+        assertEquals(10.0, line.getPoints().get(0).getLongitude());
+        assertEquals(30.0, line.getPoints().get(1).getLongitude());
+        assertEquals(10.0, line.getPoints().get(2).getLongitude());
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidLineStrings() {
+        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Arrays.asList(10, 20)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0)),
+                Arrays.asList(Arrays.asList(10, 20), null),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40, 50)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList("30", 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(Double.NaN, 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, Double.POSITIVE_INFINITY)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(181, 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, -91)))) {
+            Document geometry = new Document("type", "LineString").append("coordinates", coordinates);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))));
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsMissingOrUnsupportedGeometry() {
+        for (Object value : Arrays.asList(null, 42, new Document(),
+                new Document("$geometry", null), new Document("$geometry", "invalid"),
+                new Document("$geometry", new Document("type", "Unknown")),
+                new Document("type", "LineString").append("coordinates", Arrays.asList(
+                        Arrays.asList(10, 20), Arrays.asList(30, 40))))) {
+            assertNull(parser.parse(new Document("location", new Document("$geoIntersects", value))));
+        }
     }
 
     @Test
