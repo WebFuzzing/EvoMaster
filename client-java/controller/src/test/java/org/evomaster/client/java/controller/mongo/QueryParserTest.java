@@ -1335,6 +1335,15 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseGeoWithinRejectsMultipleShapeKeys() {
+        Document value = new Document("$box",
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)))
+                .append("$center", Arrays.asList(Arrays.asList(5, 5), 3));
+        Document query = new Document("location", new Document("$geoWithin", value));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
     void testParseNearSphereGeoJson() {
         Document geometry = new Document("type", "Point")
                 .append("coordinates", Arrays.asList(40.0, 70.0));
