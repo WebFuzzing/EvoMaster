@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.mongo.geometry;
 
+import java.util.Objects;
+
 public class GeoJsonPoint extends GeoJsonObject {
 
     public static final String POINT_TYPE = "Point";
@@ -35,5 +37,28 @@ public class GeoJsonPoint extends GeoJsonObject {
 
     public double getLatitude() {
         return latitude;
+    }
+
+    public String toString() {
+        return "GeoJsonPoint{" +
+                "longitude=" + longitude +
+                ", latitude=" + latitude +
+                '}';
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        GeoJsonPoint that = (GeoJsonPoint) obj;
+        return Double.compare(that.longitude, longitude) == 0 &&
+                Double.compare(that.latitude, latitude) == 0;
+    }
+
+    public int hashCode() {
+        return Objects.hash(longitude, latitude);
     }
 }

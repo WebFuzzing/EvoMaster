@@ -44,4 +44,25 @@ public class GeoJsonLineString extends GeoJsonObject {
     public List<GeoJsonPoint> getPoints() {
         return points;
     }
+
+    public String toString() {
+        return "GeoJsonLineString{" +
+                "points=" + points +
+                '}';
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof GeoJsonLineString)) {
+            return false;
+        }
+        GeoJsonLineString that = (GeoJsonLineString) obj;
+        return points.equals(that.points);
+    }
+
+    public int hashCode() {
+        return Objects.hash(points);
+    }
 }
