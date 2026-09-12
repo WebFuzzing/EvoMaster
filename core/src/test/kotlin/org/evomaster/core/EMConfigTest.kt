@@ -777,11 +777,26 @@ internal class EMConfigTest{
             connection to the broker even when the service itself is a black box.
          */
         val asyncApi = EMConfig()
-        asyncApi.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "ASYNCAPI"))
+        asyncApi.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false"))
         assertTrue(asyncApi.usesDriver())
 
         val whiteBox = EMConfig()
         whiteBox.updateProperties(parser.parse("--$blackBox", "false"))
         assertTrue(whiteBox.usesDriver())
+    }
+
+    @Test
+    fun testAsyncApiCannotWriteTestsYet(){
+
+        val parser = EMConfig.getOptionParser()
+
+        //createTests is on by default, and there is no test writer for AsyncAPI yet
+        val e = assertThrows<ConfigProblemException> {
+            EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI"))
+        }
+        assertTrue(e.message!!.contains("createTests"), e.message)
+
+        //so a run has to say it only wants the search
+        EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
     }
 }

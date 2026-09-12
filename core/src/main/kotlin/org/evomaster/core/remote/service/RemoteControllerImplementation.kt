@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
@@ -405,6 +406,25 @@ class RemoteControllerImplementation() : RemoteController{
         val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
 
         if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
+    }
+
+    override fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto): AsyncApiReplyDto? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<AsyncApiReplyDto>>() {})
+
+        if (!checkResponse(response, dto, "Failed to publish an AsyncAPI message")) {
             return null
         }
 
