@@ -19,6 +19,11 @@ public class GeoJsonMultiPoint extends GeoJsonGeometry {
     }
 
     @Override
+    public boolean hasArea() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("GeoJsonMultiPoint{");

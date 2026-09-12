@@ -18,6 +18,11 @@ public class GeoJsonMultiPolygon extends GeoJsonGeometry {
         return polygons;
     }
 
+    @Override
+    public boolean hasArea() {
+        return true;
+    }
+
     public String toString() {
         return "GeoJsonMultiPolygon{" +
                 "polygons=" + polygons +

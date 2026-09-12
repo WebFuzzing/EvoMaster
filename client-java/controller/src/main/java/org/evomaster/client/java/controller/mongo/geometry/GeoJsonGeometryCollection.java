@@ -17,4 +17,9 @@ public class GeoJsonGeometryCollection extends GeoJsonGeometry {
     public List<GeoJsonGeometry> getGeometries() {
         return geometries;
     }
+
+    @Override
+    public boolean hasArea() {
+        return geometries.stream().anyMatch(GeoJsonGeometry::hasArea);
+    }
 }

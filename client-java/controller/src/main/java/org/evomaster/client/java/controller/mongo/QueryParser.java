@@ -48,6 +48,7 @@ public class QueryParser {
             new TypeSelector(),
             new RegexSelector(),
             new GeoIntersectsSelector(),
+            new GeoWithinSelector(),
             new NearSelector(),
             new NearSphereSelector(),
             new ImplicitSelector()

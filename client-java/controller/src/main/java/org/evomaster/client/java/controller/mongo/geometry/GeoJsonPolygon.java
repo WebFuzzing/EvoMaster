@@ -27,6 +27,11 @@ public class GeoJsonPolygon extends GeoJsonGeometry {
         return interiorRings;
     }
 
+    @Override
+    public boolean hasArea() {
+        return true;
+    }
+
     public String toString() {
         return "GeoJsonPolygon{" +
                 "exteriorRing=" + exteriorRing +

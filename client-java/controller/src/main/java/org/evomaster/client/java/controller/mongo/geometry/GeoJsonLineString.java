@@ -45,6 +45,11 @@ public class GeoJsonLineString extends GeoJsonGeometry {
         return points;
     }
 
+    @Override
+    public boolean hasArea() {
+        return false;
+    }
+
     public String toString() {
         return "GeoJsonLineString{" +
                 "points=" + points +

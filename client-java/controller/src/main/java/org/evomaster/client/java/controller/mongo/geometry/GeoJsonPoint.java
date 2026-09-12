@@ -39,6 +39,11 @@ public class GeoJsonPoint extends GeoJsonGeometry {
         return latitude;
     }
 
+    @Override
+    public boolean hasArea() {
+        return false;
+    }
+
     public String toString() {
         return "GeoJsonPoint{" +
                 "longitude=" + longitude +

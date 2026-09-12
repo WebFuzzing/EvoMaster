@@ -1065,6 +1065,125 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseGeoWithinGeoJsonPolygon() {
+        Document geometry = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
+                        Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))));
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        assertEquals("Polygon", polygon.getType());
+    }
+
+    @Test
+    void testParseGeoWithinGeoJsonMultiPolygon() {
+        Document geometry = new Document("type", "MultiPolygon")
+                .append("coordinates", Arrays.asList(
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(20, 20), Arrays.asList(30, 20),
+                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
+        Document query = new Document("area",
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("area", operation.getFieldName());
+        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
+        assertEquals("MultiPolygon", multiPolygon.getType());
+        assertEquals(2, multiPolygon.getPolygons().size());
+    }
+
+    @Test
+    void testParseGeoWithinRejectsGeometryWithoutArea() {
+        // $geoWithin requires a geometry that encloses an area: Point, LineString, MultiPoint,
+        // MultiLineString (and a GeometryCollection made up only of those) must all be rejected.
+        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
+        Document lineString = new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
+        Document multiPoint = new Document("type", "MultiPoint")
+                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
+        Document multiLineString = new Document("type", "MultiLineString")
+                .append("coordinates", Collections.singletonList(
+                        Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40))));
+        Document collectionWithoutArea = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(point, lineString));
+
+        for (Document geometry : Arrays.asList(point, lineString, multiPoint, multiLineString, collectionWithoutArea)) {
+            Document query = new Document("location",
+                    new Document("$geoWithin", new Document("$geometry", geometry)));
+            assertNull(parser.parse(query), "Expected rejection of area-less geometry: " + geometry.toJson());
+        }
+    }
+
+    @Test
+    void testParseGeoWithinAcceptsGeometryCollectionWithAnAreaMember() {
+        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document geometry = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(point, square));
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
+        assertTrue(collection.hasArea());
+    }
+
+    @Test
+    void testParseGeoWithinRejectsInvalidGeometry() {
+        for (Object geometry : Arrays.asList(
+                new Document("type", "Polygon").append("coordinates", "invalid"),
+                new Document("type", "Polygon").append("coordinates", Collections.emptyList()),
+                new Document("type", "Unknown").append("coordinates", Arrays.asList(0, 0)),
+                new Document("coordinates", Arrays.asList(0, 0)))) {
+            Document query = new Document("location",
+                    new Document("$geoWithin", new Document("$geometry", geometry)));
+            assertNull(parser.parse(query), "Expected rejection of geometry: " + geometry);
+        }
+    }
+
+    @Test
+    void testParseGeoWithinRejectsMissingOrUnsupportedGeometry() {
+        for (Object value : Arrays.asList(null, 42, new Document(),
+                new Document("$geometry", null), new Document("$geometry", "invalid"),
+                new Document("$geometry", new Document("type", "Unknown")),
+                new Document("type", "Polygon").append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 10),
+                        Arrays.asList(0, 10), Arrays.asList(0, 0)))))) {
+            assertNull(parser.parse(new Document("location", new Document("$geoWithin", value))));
+        }
+    }
+
+    @Test
+    void testParseGeoWithinIsDistinctFromGeoIntersects() {
+        Document geometry = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+
+        Document geoWithinQuery = new Document("location",
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+        Document geoIntersectsQuery = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        QueryOperation geoWithinOperation = parser.parse(geoWithinQuery);
+        QueryOperation geoIntersectsOperation = parser.parse(geoIntersectsQuery);
+
+        assertInstanceOf(GeoWithinOperation.class, geoWithinOperation);
+        assertInstanceOf(GeoIntersectsOperation.class, geoIntersectsOperation);
+    }
+
+    @Test
     void testParseNearSphereGeoJson() {
         Document geometry = new Document("type", "Point")
                 .append("coordinates", Arrays.asList(40.0, 70.0));
