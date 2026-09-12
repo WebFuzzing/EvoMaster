@@ -9,6 +9,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPolygon;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
 import org.junit.jupiter.api.Test;
@@ -874,6 +875,76 @@ class QueryParserTest {
             assertNull(parser.parse(new Document("location",
                     new Document("$geoIntersects", new Document("$geometry", geometry)))),
                     "Expected rejection of multipolygon coordinates: " + coordinates);
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonMultiPoint() {
+        Document geometry = new Document("type", "MultiPoint")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(10, 20L), Arrays.asList(30.5, 40), Arrays.asList(50, 60.5)));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonMultiPoint multiPoint = assertInstanceOf(GeoJsonMultiPoint.class, operation.getGeometry());
+        assertEquals("MultiPoint", multiPoint.getType());
+        assertEquals(3, multiPoint.getPoints().size());
+        assertEquals(10.0, multiPoint.getPoints().get(0).getLongitude());
+        assertEquals(20.0, multiPoint.getPoints().get(0).getLatitude());
+        assertEquals(30.5, multiPoint.getPoints().get(1).getLongitude());
+        assertEquals(40.0, multiPoint.getPoints().get(1).getLatitude());
+        assertEquals(50.0, multiPoint.getPoints().get(2).getLongitude());
+        assertEquals(60.5, multiPoint.getPoints().get(2).getLatitude());
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonMultiPointKeepsDuplicatesAndSinglePoints() {
+        // Unlike LineString, MultiPoint has no minimum size and does not dedupe repeated positions.
+        Document geometry = new Document("type", "MultiPoint")
+                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0)));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        GeoJsonMultiPoint multiPoint = assertInstanceOf(GeoJsonMultiPoint.class, operation.getGeometry());
+        assertEquals(2, multiPoint.getPoints().size());
+
+        Document singlePointGeometry = new Document("type", "MultiPoint")
+                .append("coordinates", Collections.singletonList(Arrays.asList(10, 20)));
+        GeoIntersectsOperation singlePointOperation = assertInstanceOf(GeoIntersectsOperation.class,
+                parser.parse(new Document("location",
+                        new Document("$geoIntersects", new Document("$geometry", singlePointGeometry)))));
+        GeoJsonMultiPoint singlePointMultiPoint = assertInstanceOf(GeoJsonMultiPoint.class,
+                singlePointOperation.getGeometry());
+        assertEquals(1, singlePointMultiPoint.getPoints().size());
+
+        Document emptyGeometry = new Document("type", "MultiPoint").append("coordinates", Collections.emptyList());
+        GeoIntersectsOperation emptyOperation = assertInstanceOf(GeoIntersectsOperation.class,
+                parser.parse(new Document("location",
+                        new Document("$geoIntersects", new Document("$geometry", emptyGeometry)))));
+        GeoJsonMultiPoint emptyMultiPoint = assertInstanceOf(GeoJsonMultiPoint.class, emptyOperation.getGeometry());
+        assertEquals(0, emptyMultiPoint.getPoints().size());
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidMultiPoints() {
+        for (Object coordinates : Arrays.asList(null, "invalid",
+                // MultiPoint coordinates must be a list of positions, not a single position directly.
+                Arrays.asList(10, 20),
+                Arrays.asList(Arrays.asList(10, 20), null),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40, 50)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList("30", 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(Double.NaN, 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, Double.POSITIVE_INFINITY)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(181, 40)),
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, -91)))) {
+            Document geometry = new Document("type", "MultiPoint").append("coordinates", coordinates);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
+                    "Expected rejection of multipoint coordinates: " + coordinates);
         }
     }
 

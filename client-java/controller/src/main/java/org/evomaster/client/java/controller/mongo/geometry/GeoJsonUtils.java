@@ -105,6 +105,24 @@ public abstract class GeoJsonUtils {
     }
 
     /**
+     * Converts a GeoJSON MultiPoint document into a typed {@link GeoJsonMultiPoint}.
+     * Coordinates must be finite longitude/latitude pairs. Malformed documents and
+     * unsupported CRS declarations cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonMultiPoint toGeoJsonMultiPoint(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiPoint.MULTI_POINT_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPoint.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("MultiPoint coordinates must be a list of positions.");
+        }
+        return new GeoJsonMultiPoint(toPoints((List<?>) coordinates));
+    }
+
+    /**
      * Converts a GeoJSON Polygon document into a typed {@link GeoJsonPolygon}.
      * The first ring in the coordinates is the exterior ring, and any subsequent
      * rings are holes. Each ring must be a closed linear ring, as validated by
