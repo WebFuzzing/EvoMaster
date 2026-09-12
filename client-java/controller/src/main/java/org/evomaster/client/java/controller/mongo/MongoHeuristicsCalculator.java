@@ -234,7 +234,7 @@ public class MongoHeuristicsCalculator {
         final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
         final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
 
-        return helper.evaluate(
+        return helper.evaluateDistanceBetweenPoints(
                 minDistance, maxDistance,
                 longitude, latitude,
                 actualValue,
@@ -559,7 +559,7 @@ public class MongoHeuristicsCalculator {
         long divisor = operation.getDivisor().longValue();
         long expectedRemainder = operation.getRemainder().longValue();
         return evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.computeHeuristicModOnSingleValue(value, divisor, expectedRemainder));
+                value -> helper.evaluateMod(divisor, expectedRemainder, value));
     }
 
     private Truthness evaluate(BitsAllClearOperation operation, Object actualValue) {
@@ -636,7 +636,7 @@ public class MongoHeuristicsCalculator {
         final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
         final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
 
-        return helper.evaluate(
+        return helper.evaluateDistanceBetweenPoints(
                 minDistance, maxDistance,
                 longitude, latitude,
                 actualValue,

@@ -101,7 +101,7 @@ public class MongoHeuristicsCalculatorHelper {
         Objects.requireNonNull(leftList);
         Objects.requireNonNull(rightList);
 
-        final Truthness truthness = computeHeuristicListEquality(leftList, rightList);
+        final Truthness truthness = evaluateListEquality(leftList, rightList);
         switch (comparisonOperatorType) {
             case EQUALS_TO:
                 return truthness;
@@ -112,7 +112,7 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    Truthness computeHeuristicListEquality(List<?> actualList, List<?> expectedList) {
+    Truthness evaluateListEquality(List<?> actualList, List<?> expectedList) {
 
         if (actualList.size() != expectedList.size()) {
             return C_FALSE;
@@ -280,7 +280,7 @@ public class MongoHeuristicsCalculatorHelper {
                     .filter(expectedValueListElement -> expectedValueListElement instanceof List<?>)
                     .map(expectedValueListElement -> (List<?>) expectedValueListElement)
                     .map(expectedValueInnerListElement ->
-                            computeHeuristicListEquality(expectedValueInnerListElement, actualValueList))
+                            evaluateListEquality(expectedValueInnerListElement, actualValueList))
                     .toArray(Truthness[]::new);
             final Truthness isTheValueListEqualToAnyExpectedValueList;
             if (arrayOfTruthnesses.length > 0) {
@@ -308,12 +308,12 @@ public class MongoHeuristicsCalculatorHelper {
         return res;
     }
 
-    Truthness computeHeuristicModOnSingleValue(Object value, long divisor, long expectedRemainder) {
-        if (!(value instanceof Number)) {
+    Truthness evaluateMod(long divisor, long expectedRemainder, Object actualValue) {
+        if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
 
-        long actualRemainder = ((Number) value).longValue() % divisor;
+        long actualRemainder = ((Number) actualValue).longValue() % divisor;
         Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
         return buildSafeScaledTruthness(res);
     }
@@ -324,14 +324,15 @@ public class MongoHeuristicsCalculatorHelper {
         if (!(value instanceof Number)) {
             return C_FALSE;
         }
-        final OptionalLong integralValue = getIntegralLongValue((Number) value);
+        final Number number = (Number) value;
+        final OptionalLong integralValue = getIntegralLongValue(number);
+
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
 
         final long maskedValue = integralValue.getAsLong() & bitmask;
         final int numberOfSetBitsInMaskedValue = Long.bitCount(maskedValue);
-        final int numberOfBitsInMask = Long.bitCount(bitmask);
         Truthness equalityTruthness = getEqualityTruthness(numberOfSetBitsInMaskedValue, 0);
         return buildSafeScaledTruthness(equalityTruthness);
     }
@@ -342,7 +343,8 @@ public class MongoHeuristicsCalculatorHelper {
         if (!(value instanceof Number)) {
             return C_FALSE;
         }
-        final OptionalLong integralValue = getIntegralLongValue((Number) value);
+        final Number number = (Number) value;
+        final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
@@ -361,8 +363,8 @@ public class MongoHeuristicsCalculatorHelper {
         if (!(value instanceof Number)) {
             return C_FALSE;
         }
-
-        final OptionalLong integralValue = getIntegralLongValue((Number) value);
+        final Number number = (Number) value;
+        final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
@@ -382,7 +384,8 @@ public class MongoHeuristicsCalculatorHelper {
             return C_FALSE;
         }
 
-        final OptionalLong integralValue = getIntegralLongValue((Number) value);
+        Number number = (Number) value;
+        final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
         }
@@ -393,12 +396,12 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(lessThanTruthness);
     }
 
-    static Truthness evaluate(double minDistance,
-                              double maxDistance,
-                              double longitude,
-                              double latitude,
-                              Object actualValue,
-                              MongoUtils.GeoSpatialModel geoSpatialModel) {
+    static Truthness evaluateDistanceBetweenPoints(double minDistance,
+                                                   double maxDistance,
+                                                   double longitude,
+                                                   double latitude,
+                                                   Object actualValue,
+                                                   MongoUtils.GeoSpatialModel geoSpatialModel) {
 
         double x1 = geoSpatialModel == SPHERICAL ? Math.toRadians(longitude) : longitude;
         double y1 = geoSpatialModel == SPHERICAL ? Math.toRadians(latitude) : latitude;
