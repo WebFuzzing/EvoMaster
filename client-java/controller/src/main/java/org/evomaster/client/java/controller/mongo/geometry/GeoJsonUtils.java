@@ -97,7 +97,32 @@ public abstract class GeoJsonUtils {
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON LineString.");
         }
+        return toLineString(BsonHelper.getValue(document, COORDINATES));
+    }
+
+    /**
+     * Converts a GeoJSON MultiLineString document into a typed {@link GeoJsonMultiLineString}.
+     * The coordinates must be a non-empty list of LineString coordinate arrays, each one
+     * validated the same way as a standalone LineString's coordinates.
+     */
+    public static GeoJsonMultiLineString toGeoJsonMultiLineString(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiLineString.MULTI_LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiLineString.");
+        }
         Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("MultiLineString coordinates must be a non-empty list of line coordinates.");
+        }
+        List<GeoJsonLineString> lineStrings = new ArrayList<>();
+        for (Object lineCoordinates : (List<?>) coordinates) {
+            lineStrings.add(toLineString(lineCoordinates));
+        }
+        return new GeoJsonMultiLineString(lineStrings);
+    }
+
+    private static GeoJsonLineString toLineString(Object coordinates) {
         if (!(coordinates instanceof List<?>)) {
             throw new IllegalArgumentException("LineString coordinates must be a list of positions.");
         }

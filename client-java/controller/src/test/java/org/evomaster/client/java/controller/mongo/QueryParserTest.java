@@ -9,6 +9,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiLineString;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPolygon;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
@@ -945,6 +946,47 @@ class QueryParserTest {
             assertNull(parser.parse(new Document("location",
                     new Document("$geoIntersects", new Document("$geometry", geometry)))),
                     "Expected rejection of multipoint coordinates: " + coordinates);
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonMultiLineString() {
+        Document geometry = new Document("type", "MultiLineString")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(10, 20L), Arrays.asList(30.5, 40)),
+                        Arrays.asList(Arrays.asList(50, 60), Arrays.asList(70, 80), Arrays.asList(90, 60.5))));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonMultiLineString multiLineString = assertInstanceOf(GeoJsonMultiLineString.class, operation.getGeometry());
+        assertEquals("MultiLineString", multiLineString.getType());
+        assertEquals(2, multiLineString.getLineStrings().size());
+        assertEquals(2, multiLineString.getLineStrings().get(0).getPoints().size());
+        assertEquals(3, multiLineString.getLineStrings().get(1).getPoints().size());
+        assertEquals(10.0, multiLineString.getLineStrings().get(0).getPoints().get(0).getLongitude());
+        assertEquals(20.0, multiLineString.getLineStrings().get(0).getPoints().get(0).getLatitude());
+        assertEquals(90.0, multiLineString.getLineStrings().get(1).getPoints().get(2).getLongitude());
+        assertEquals(60.5, multiLineString.getLineStrings().get(1).getPoints().get(2).getLatitude());
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidMultiLineStrings() {
+        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
+                // Each line's coordinates must have at least two distinct points.
+                Collections.singletonList(Collections.singletonList(Arrays.asList(10, 20))),
+                Collections.singletonList(Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0))),
+                // MultiLineString coordinates must contain line coordinate arrays, not positions directly.
+                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)),
+                // A single invalid line among otherwise valid ones invalidates the whole MultiLineString.
+                Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)),
+                        Collections.singletonList(Arrays.asList(30, -91))))) {
+            Document geometry = new Document("type", "MultiLineString").append("coordinates", coordinates);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
+                    "Expected rejection of multilinestring coordinates: " + coordinates);
         }
     }
 
