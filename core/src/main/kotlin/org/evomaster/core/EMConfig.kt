@@ -811,6 +811,10 @@ class EMConfig {
                     " For the time being, run with '--createTests false' to only search for faults.")
         }
 
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
+        }
+
         if (problemType == ProblemType.RPC
                 && createTests
                 && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance)

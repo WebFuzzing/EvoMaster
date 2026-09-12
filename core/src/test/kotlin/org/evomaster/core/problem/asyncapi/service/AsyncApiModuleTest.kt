@@ -1,22 +1,14 @@
 package org.evomaster.core.problem.asyncapi.service
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.inject.AbstractModule
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
-import com.google.inject.util.Modules
-import com.netflix.governator.guice.LifecycleInjector
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
-import org.evomaster.core.BaseModule
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
@@ -27,7 +19,7 @@ import org.junit.jupiter.api.Test
  * A whole search, through the module Main binds, against a driver standing in for the NCS
  * service over Kafka: the first time `--problemType ASYNCAPI` does everything but write tests.
  */
-class AsyncApiSearchTest {
+class AsyncApiModuleTest {
 
     companion object {
         private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
@@ -87,34 +79,18 @@ class AsyncApiSearchTest {
     @Test
     fun testASearchReachesBothDeclaredRepliesOfAnOperation() {
 
-        val info = SutInfoDto().apply {
-            asyncApiProblem = AsyncApiProblemDto().apply { schemaText = AsyncApiAccess.readFromResource(NCS) }
-            defaultOutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
-        }
-        val driver = FakeAsyncApiDriver(info) { ncsLike(it) }
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) { ncsLike(it) }
 
         //MIO is asked for explicitly, since it is what is instantiated below and tracking follows the option
-        val args = arrayOf(
-            "--seed=42",
-            "--problemType=ASYNCAPI",
+        val injector = AsyncApiTestInjector.create(
+            driver,
             "--blackBox=true",
             "--algorithm=MIO",
-            "--createTests=false",
             "--stoppingCriterion=ACTION_EVALUATIONS",
             "--maxEvaluations=100",
             "--maxTestSize=3",
             "--useTimeInFeedbackSampling=false"
         )
-
-        val fake = object : AbstractModule() {
-            override fun configure() {
-                bind(RemoteController::class.java).toInstance(driver)
-            }
-        }
-
-        val injector = LifecycleInjector.builder()
-            .withModules(listOf(BaseModule(args), Modules.override(AsyncApiModule()).with(fake)))
-            .build().createInjector()
 
         val mio = injector.getInstance(Key.get(object : TypeLiteral<MioAlgorithm<AsyncApiIndividual>>() {}))
         val solution = mio.search()

@@ -1,18 +1,12 @@
 package org.evomaster.core.problem.asyncapi.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.inject.AbstractModule
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
-import com.google.inject.util.Modules
-import com.netflix.governator.guice.LifecycleInjector
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
-import org.evomaster.core.BaseModule
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -23,7 +17,6 @@ import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
@@ -58,10 +51,16 @@ class AsyncApiBlackBoxFitnessTest {
                   event:
                     headers:
                       type: object
-                      required: [tenant]
+                      required: [tenant, meta]
                       properties:
                         tenant:
                           type: string
+                        meta:
+                          type: object
+                          required: [v]
+                          properties:
+                            v:
+                              type: integer
                         correlationId:
                           type: string
                     correlationId:
@@ -78,6 +77,41 @@ class AsyncApiBlackBoxFitnessTest {
                 channel:
                   ${'$'}ref: '#/channels/events'
         """.trimIndent()
+
+        /**
+         * A request whose reply comes back wherever the request says, rather than on a channel
+         * the contract fixes.
+         */
+        private val DYNAMIC_REPLY = """
+            asyncapi: 3.0.0
+            info:
+              title: Dynamic reply
+              version: 1.0.0
+            channels:
+              requests:
+                address: app.requests
+                messages:
+                  request:
+                    headers:
+                      type: object
+                      properties:
+                        replyTo:
+                          type: string
+                    payload:
+                      type: object
+                      required: [id]
+                      properties:
+                        id:
+                          type: string
+            operations:
+              ask:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/requests'
+                reply:
+                  address:
+                    location: '${'$'}message.header#/replyTo'
+        """.trimIndent()
     }
 
     private lateinit var injector: Injector
@@ -93,23 +127,8 @@ class AsyncApiBlackBoxFitnessTest {
 
     private fun start(schemaText: String, answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) {
 
-        val info = SutInfoDto().apply {
-            asyncApiProblem = AsyncApiProblemDto().apply { this.schemaText = schemaText }
-            defaultOutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
-        }
-        driver = FakeAsyncApiDriver(info, answer)
-
-        val args = arrayOf("--seed=42", "--problemType=ASYNCAPI", "--blackBox=false", "--createTests=false")
-
-        val fake = object : AbstractModule() {
-            override fun configure() {
-                bind(RemoteController::class.java).toInstance(driver)
-            }
-        }
-
-        injector = LifecycleInjector.builder()
-            .withModules(listOf(BaseModule(args), Modules.override(AsyncApiModule()).with(fake)))
-            .build().createInjector()
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(schemaText), answer)
+        injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
 
         sampler = injector.getInstance(AsyncApiSampler::class.java)
         fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
@@ -277,10 +296,80 @@ class AsyncApiBlackBoxFitnessTest {
 
         val dto = driver.published.single()
 
-        //the tenant header is the search's to vary; the correlation id is the driver's to stamp
-        assertEquals(setOf("tenant"), dto.headers.keys)
+        //the declared headers are the search's to vary; the correlation id is the driver's to stamp
+        assertEquals(setOf("tenant", "meta"), dto.headers.keys)
         assertEquals(AsyncApiActionDto.CORRELATION_IN_HEADER, dto.correlationLocation)
         assertEquals("/correlationId", dto.correlationPointer)
+
+        //a header that is itself structured travels as its JSON
+        val meta = ObjectMapper().readTree(dto.headers.getValue("meta"))
+        assertTrue(meta.isObject && meta.has("v"), "meta header: ${dto.headers["meta"]}")
+    }
+
+    @Test
+    fun testTheCorrelationIdMayBelongInThePayload() {
+
+        start(AsyncApiAccess.readFromResource("/asyncapi/artificial/websocket-reply.yaml")) {
+            replied("""{"request_id": "r", "legs": []}""")
+        }
+
+        evaluate("recv_list_legs")
+
+        val dto = driver.published.single()
+
+        //MQTT 3.1.1 and raw WebSocket have no metadata, so such documents carry the id inside the message
+        assertEquals(AsyncApiActionDto.CORRELATION_IN_PAYLOAD, dto.correlationLocation)
+        assertEquals("/request_id", dto.correlationPointer)
+        assertEquals("/v1/vsi", dto.address)
+        assertEquals("/v1/vsi", dto.replyAddress)
+    }
+
+    @Test
+    fun testAReplyAddressAnnouncedAtRunTimeIsNotWaitedForYet() {
+
+        start(DYNAMIC_REPLY) { fireAndForget() }
+
+        val evaluated = evaluate("ask")
+
+        //the contract does promise a reply, but there is nowhere fixed to wait for it
+        assertTrue((sampler.seeAvailableActions().single() as AsyncApiAction).expectsReply())
+        val dto = driver.published.single()
+        assertNull(dto.replyAddress)
+        assertNull(dto.replyTimeoutMs)
+
+        assertEquals(AsyncApiOutcome.PUBLISHED, results(evaluated).single().getOutcome())
+        assertTrue(coveredIds(evaluated).none { IdMapper.isFault(it) })
+    }
+
+    @Test
+    fun testADriverThatCouldNotPublishSaysWhy() {
+
+        startNcs { AsyncApiReplyDto().apply { published = false; errorMessage = "broker unreachable" } }
+
+        val evaluated = evaluate("bessj", "expint")
+
+        val first = results(evaluated).first()
+        assertEquals(AsyncApiOutcome.PUBLISH_FAILED, first.getOutcome())
+        assertEquals("broker unreachable", first.getErrorMessage())
+        assertTrue(first.stopping)
+        assertEquals(1, driver.published.size)
+    }
+
+    @Test
+    fun testAReplyThatDidNotCarryTheCorrelationIdBackIsRecordedAsSuch() {
+
+        startNcs { replied(DOUBLE_RESULT, correlationMatched = false) }
+
+        val evaluated = evaluate("bessj")
+
+        /*
+            From outside there is no telling a defect from a service that correlates by some
+            business key instead, so this is recorded, not judged: the reply still counts.
+         */
+        val result = results(evaluated).single()
+        assertEquals(AsyncApiOutcome.REPLIED, result.getOutcome())
+        assertEquals(false, result.getCorrelationMatched())
+        assertTrue(coveredIds(evaluated).contains("ASYNCAPI_REPLY:doubleResult:bessj"))
     }
 
     @Test
