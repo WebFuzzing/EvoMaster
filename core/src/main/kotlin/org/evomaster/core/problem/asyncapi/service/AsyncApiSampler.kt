@@ -41,6 +41,13 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
      */
     private val adHocInitialIndividuals: MutableList<AsyncApiIndividual> = mutableListOf()
 
+    /**
+     * The document the actions were built from. The fitness needs it again at execution time,
+     * to resolve addresses and to recognise which declared reply came back.
+     */
+    lateinit var document: AsyncApiDocument
+        private set
+
     @PostConstruct
     fun initialize() {
 
@@ -59,14 +66,14 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         val problem = infoDto.asyncApiProblem
             ?: throw SutProblemException("Missing problem definition object")
 
-        val schema = readSchema(problem)
+        document = readSchema(problem)
 
         val messages = AsyncApiActionBuilder.addActionsFromSchema(
-            schema,
+            document,
             actionCluster,
             AsyncApiGeneBuilder.options(config)
         )
-        handleMessages(schema.warnings + messages)
+        handleMessages(document.warnings + messages)
 
         initSqlInfo(infoDto)
 
