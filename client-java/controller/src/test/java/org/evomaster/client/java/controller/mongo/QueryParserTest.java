@@ -9,6 +9,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPolygon;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
 import org.junit.jupiter.api.Test;
 
@@ -810,6 +811,69 @@ class QueryParserTest {
             assertNull(parser.parse(new Document("location",
                     new Document("$geoIntersects", new Document("$geometry", geometry)))),
                     "Expected rejection of polygon coordinates: " + coordinates);
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonMultiPolygon() {
+        Document geometry = new Document("type", "MultiPolygon")
+                .append("coordinates", Arrays.asList(
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
+                                Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))),
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(20, 20), Arrays.asList(30, 20),
+                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
+        assertEquals("MultiPolygon", multiPolygon.getType());
+        assertEquals(2, multiPolygon.getPolygons().size());
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonMultiPolygonWithHole() {
+        Document geometry = new Document("type", "MultiPolygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2)))));
+        Document query = new Document("area",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("area", operation.getFieldName());
+        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
+        assertEquals("MultiPolygon", multiPolygon.getType());
+        assertEquals(1, multiPolygon.getPolygons().size());
+        assertEquals(1, multiPolygon.getPolygons().get(0).getInteriorRings().size());
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidMultiPolygons() {
+        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Collections.emptyList()),
+                // MultiPolygon coordinates must contain polygon coordinate arrays, not a ring directly.
+                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
+                // A polygon's exterior ring must be closed and have at least three distinct points.
+                Collections.singletonList(Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10)))),
+                // A single invalid polygon among otherwise valid ones invalidates the whole MultiPolygon.
+                Arrays.asList(
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
+                        Collections.singletonList(Collections.emptyList())))) {
+            Document geometry = new Document("type", "MultiPolygon").append("coordinates", coordinates);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
+                    "Expected rejection of multipolygon coordinates: " + coordinates);
         }
     }
 

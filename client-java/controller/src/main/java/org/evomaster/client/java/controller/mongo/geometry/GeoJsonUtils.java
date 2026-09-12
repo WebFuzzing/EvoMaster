@@ -117,7 +117,32 @@ public abstract class GeoJsonUtils {
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON Polygon.");
         }
+        return toPolygon(BsonHelper.getValue(document, COORDINATES));
+    }
+
+    /**
+     * Converts a GeoJSON MultiPolygon document into a typed {@link GeoJsonMultiPolygon}.
+     * The coordinates must be a non-empty list of Polygon coordinate arrays, each one
+     * validated the same way as a standalone Polygon's coordinates.
+     */
+    public static GeoJsonMultiPolygon toGeoJsonMultiPolygon(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiPolygon.MULTI_POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPolygon.");
+        }
         Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("MultiPolygon coordinates must be a non-empty list of polygon coordinates.");
+        }
+        List<GeoJsonPolygon> polygons = new ArrayList<>();
+        for (Object polygonCoordinates : (List<?>) coordinates) {
+            polygons.add(toPolygon(polygonCoordinates));
+        }
+        return new GeoJsonMultiPolygon(polygons);
+    }
+
+    private static GeoJsonPolygon toPolygon(Object coordinates) {
         if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
             throw new IllegalArgumentException("Polygon coordinates must be a non-empty list of linear rings.");
         }
