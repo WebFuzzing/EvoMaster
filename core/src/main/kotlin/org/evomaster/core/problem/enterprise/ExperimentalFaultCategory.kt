@@ -85,6 +85,14 @@ enum class ExperimentalFaultCategory(
     //5xx: Web Frontend
     WEB_BROKEN_LINK(980, "Broken Link", "returnsBrokenLink",
         "TODO"),
+
+    //7xx: AsyncAPI
+    // the contract promised a reply, and none arrived within the time waited
+    ASYNCAPI_NO_REPLY(970, "No Reply", "getsNoReply",
+        "TODO"),
+    // a reply arrived, but it matches none of the messages the contract says a reply can be
+    ASYNCAPI_UNDECLARED_REPLY(971, "Undeclared Reply", "repliesWithUndeclaredMessage",
+        "TODO"),
     //6xx: mobile
 
     ;

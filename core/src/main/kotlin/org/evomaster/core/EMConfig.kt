@@ -806,6 +806,15 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
+        if (problemType == ProblemType.ASYNCAPI && createTests) {
+            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
+                    " For the time being, run with '--createTests false' to only search for faults.")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
+        }
+
         if (problemType == ProblemType.RPC
                 && createTests
                 && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance)
@@ -2819,6 +2828,13 @@ class EMConfig {
 
     @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
     var enableRPCExtraResponseTargets = true
+
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
+            " treating it as unanswered, in milliseconds. A slow service and a stuck one look the same from" +
+            " outside, so this is a tuning parameter with no equivalent in a synchronous protocol.")
+    @Min(1.0)
+    var asyncApiReplyTimeoutMs = 5000
 
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
