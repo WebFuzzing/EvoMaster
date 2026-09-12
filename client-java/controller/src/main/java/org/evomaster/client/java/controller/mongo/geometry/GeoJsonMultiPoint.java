@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.mongo.geometry;
 import java.util.Collections;
 import java.util.List;
 
-public class GeoJsonMultiPoint extends GeoJsonObject {
+public class GeoJsonMultiPoint extends GeoJsonGeometry {
 
     public static final String MULTI_POINT_TYPE = "MultiPoint";
 

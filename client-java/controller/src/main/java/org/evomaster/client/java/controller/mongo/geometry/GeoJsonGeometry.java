@@ -1,10 +1,10 @@
 package org.evomaster.client.java.controller.mongo.geometry;
 
-public abstract class GeoJsonObject {
+public abstract class GeoJsonGeometry {
 
     private final String type;
 
-    protected GeoJsonObject(String type) {
+    protected GeoJsonGeometry(String type) {
         this.type = type;
     }
 

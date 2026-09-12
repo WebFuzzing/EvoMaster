@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.mongo.geometry;
 
 import java.util.Objects;
 
-public class GeoJsonPoint extends GeoJsonObject {
+public class GeoJsonPoint extends GeoJsonGeometry {
 
     public static final String POINT_TYPE = "Point";
 

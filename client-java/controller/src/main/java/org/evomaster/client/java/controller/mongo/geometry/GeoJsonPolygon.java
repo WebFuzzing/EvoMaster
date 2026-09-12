@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-public class GeoJsonPolygon extends GeoJsonObject {
+public class GeoJsonPolygon extends GeoJsonGeometry {
 
     public static final String POLYGON_TYPE = "Polygon";
 

@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.mongo.geometry;
 import java.util.Collections;
 import java.util.List;
 
-public class GeoJsonMultiPolygon extends GeoJsonObject {
+public class GeoJsonMultiPolygon extends GeoJsonGeometry {
 
     public static final String MULTI_POLYGON_TYPE = "MultiPolygon";
 

@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public class GeoJsonLineString extends GeoJsonObject {
+public class GeoJsonLineString extends GeoJsonGeometry {
 
     public static final String LINE_STRING_TYPE = "LineString";
 

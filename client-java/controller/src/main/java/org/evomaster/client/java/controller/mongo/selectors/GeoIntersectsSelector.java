@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.mongo.selectors;
 
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonObject;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometry;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.GeoIntersectsOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
@@ -23,14 +23,14 @@ public class GeoIntersectsSelector extends SingleConditionQuerySelector {
                 || !documentKeys(value).equals(Collections.singleton("$geometry"))) {
             return null;
         }
-        GeoJsonObject geometry = parseGeometry(getValue(value, "$geometry"));
+        GeoJsonGeometry geometry = parseGeometry(getValue(value, "$geometry"));
         if (geometry == null) {
             return null;
         }
         return new GeoIntersectsOperation(fieldName, geometry);
     }
 
-    private GeoJsonObject parseGeometry(Object geometry) {
+    private GeoJsonGeometry parseGeometry(Object geometry) {
         try {
             return GeoJsonUtils.toGeoJsonLineString(geometry);
         } catch (IllegalArgumentException e) {

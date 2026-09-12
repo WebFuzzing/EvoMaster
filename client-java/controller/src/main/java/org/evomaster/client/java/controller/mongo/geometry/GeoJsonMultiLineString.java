@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.mongo.geometry;
 import java.util.Collections;
 import java.util.List;
 
-public class GeoJsonMultiLineString extends GeoJsonObject {
+public class GeoJsonMultiLineString extends GeoJsonGeometry {
 
     public static final String MULTI_LINE_STRING_TYPE = "MultiLineString";
 
