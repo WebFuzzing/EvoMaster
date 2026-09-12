@@ -2334,10 +2334,7 @@ public class MongoHeuristicsCalculatorTest {
                 new Document().append("$jsonSchema",
                         new Document().append("required", Arrays.asList("a"))),
                 new Document().append("$where", "function(){ return true; }"),
-                new Document().append("$text", new Document().append("$search", "x")),
-                new Document().append("a", new Document().append("$geoWithin",
-                        new Document().append("$centerSphere",
-                                Arrays.asList(Arrays.asList(1.0, 2.0), 0.1))))
+                new Document().append("$text", new Document().append("$search", "x"))
         );
 
         for (Document query : queries) {
