@@ -1183,6 +1183,157 @@ class QueryParserTest {
         assertInstanceOf(GeoIntersectsOperation.class, geoIntersectsOperation);
     }
 
+    /*
+        ================================================================================
+        Cases about $geoWithin's legacy shapes ($box, $polygon, $center, $centerSphere).
+        Each is converted into an equivalent GeoJsonPolygon (see GeoWithinSelector); a shape
+        whose legacy coordinates fall outside valid GeoJSON longitude/latitude ranges cannot
+        be represented that way and must be rejected (returning null), not thrown.
+        ================================================================================
+     */
+
+    @Test
+    void testParseGeoWithinBox() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$box",
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)))));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        // 4 distinct corners plus the closing point that repeats the first.
+        assertEquals(5, polygon.getExteriorRing().getPoints().size());
+        assertTrue(polygon.getInteriorRings().isEmpty());
+    }
+
+    @Test
+    void testParseGeoWithinBoxRejectsInvalidShape() {
+        for (Object box : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Arrays.asList(0, 0)),
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10), Arrays.asList(20, 20)),
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList("10", 10)),
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, Double.NaN)))) {
+            Document query = new Document("location", new Document("$geoWithin", new Document("$box", box)));
+            assertNull(parser.parse(query), "Expected rejection of box: " + box);
+        }
+    }
+
+    @Test
+    void testParseGeoWithinBoxRejectsOutOfRangeCoordinates() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$box",
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(200, 10)))));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
+    void testParseGeoWithinLegacyPolygon() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$polygon",
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10)))));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        // MongoDB implicitly closes the legacy $polygon ring: 4 distinct vertices plus the
+        // closing point that repeats the first.
+        assertEquals(5, polygon.getExteriorRing().getPoints().size());
+    }
+
+    @Test
+    void testParseGeoWithinLegacyPolygonRejectsInvalidShape() {
+        for (Object polygon : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)),
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList("10", 10)))) {
+            Document query = new Document("location", new Document("$geoWithin", new Document("$polygon", polygon)));
+            assertNull(parser.parse(query), "Expected rejection of legacy polygon: " + polygon);
+        }
+    }
+
+    @Test
+    void testParseGeoWithinLegacyPolygonRejectsOutOfRangeCoordinates() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$polygon",
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 100)))));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
+    void testParseGeoWithinCenter() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$center",
+                        Arrays.asList(Arrays.asList(5, 5), 3))));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        // The circle is approximated as a many-sided regular polygon.
+        assertTrue(polygon.getExteriorRing().getPoints().size() > 8);
+    }
+
+    @Test
+    void testParseGeoWithinCenterRejectsInvalidShape() {
+        for (Object center : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Arrays.asList(5, 5)),
+                Arrays.asList(Arrays.asList(5, 5), 0),
+                Arrays.asList(Arrays.asList(5, 5), -1),
+                Arrays.asList(Arrays.asList(5, "5"), 3))) {
+            Document query = new Document("location", new Document("$geoWithin", new Document("$center", center)));
+            assertNull(parser.parse(query), "Expected rejection of center: " + center);
+        }
+    }
+
+    @Test
+    void testParseGeoWithinCenterRejectsOutOfRangeCoordinates() {
+        // A circle around a point near the pole, wide enough that it crosses latitude 90.
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$center",
+                        Arrays.asList(Arrays.asList(0, 89), 5))));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
+    void testParseGeoWithinCenterSphere() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$centerSphere",
+                        Arrays.asList(Arrays.asList(5, 5), 0.001))));
+
+        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        assertTrue(polygon.getExteriorRing().getPoints().size() > 8);
+    }
+
+    @Test
+    void testParseGeoWithinCenterSphereRejectsInvalidShape() {
+        for (Object centerSphere : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Arrays.asList(5, 5)),
+                Arrays.asList(Arrays.asList(5, 5), 0),
+                Arrays.asList(Arrays.asList(5, 5), -0.1))) {
+            Document query = new Document("location",
+                    new Document("$geoWithin", new Document("$centerSphere", centerSphere)));
+            assertNull(parser.parse(query), "Expected rejection of centerSphere: " + centerSphere);
+        }
+    }
+
+    @Test
+    void testParseGeoWithinCenterSphereRejectsOutOfRangeCoordinates() {
+        // A radius of 1.5 radians (~85.9 degrees) around a point near the pole pushes the
+        // approximated circle well past latitude 90.
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$centerSphere",
+                        Arrays.asList(Arrays.asList(0, 89), 1.5))));
+        assertNull(parser.parse(query));
+    }
+
+    @Test
+    void testParseGeoWithinRejectsUnrecognizedShapeOperator() {
+        Document query = new Document("location",
+                new Document("$geoWithin", new Document("$unknownShape", Arrays.asList(0, 0))));
+        assertNull(parser.parse(query));
+    }
+
     @Test
     void testParseNearSphereGeoJson() {
         Document geometry = new Document("type", "Point")
