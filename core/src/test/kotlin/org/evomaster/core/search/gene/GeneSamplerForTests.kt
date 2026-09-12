@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.parser.RegexType
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -185,6 +186,9 @@ object GeneSamplerForTests {
 
             // Mongo genes
             ObjectIdGene::class -> sampleMongoObjectIdGene(rand) as T
+
+            // Cassandra genes
+            CqlDurationGene::class -> sampleCqlDurationGene(rand) as T
 
             // JSON Patch genes
             JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
@@ -417,6 +421,10 @@ object GeneSamplerForTests {
 
     private fun sampleMongoObjectIdGene(rand: Randomness): ObjectIdGene {
         return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
+    }
+
+    private fun sampleCqlDurationGene(rand: Randomness): CqlDurationGene {
+        return CqlDurationGene("rand CqlDurationGene ${rand.nextInt()}")
     }
 
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {

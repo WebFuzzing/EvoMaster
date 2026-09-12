@@ -46,7 +46,7 @@ public class CassandraScriptRunnerTest {
         connection.execute("CREATE KEYSPACE IF NOT EXISTS " + KEYSPACE +
                 " WITH replication = {'class':'SimpleStrategy','replication_factor':1}");
         connection.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + TABLE +
-                " (id int PRIMARY KEY, name text)");
+                " (id int PRIMARY KEY, name text, elapsed duration)");
     }
 
     @AfterAll
@@ -75,6 +75,26 @@ public class CassandraScriptRunnerTest {
 
         assertTrue(resultsDto.executionResults.get(0));
         assertTrue(connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).iterator().hasNext());
+    }
+
+    /**
+     * A duration is written as a bare literal, ie not enclosed in quotes the way a text is, and it
+     * carries at most one leading sign, applying to the whole value. This is what
+     * CassandraLiteralRenderer in the core module relies on when rendering the value of a
+     * CqlDurationGene, so it is checked here against a real Cassandra.
+     */
+    @Test
+    public void testInsertDuration() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, TABLE).d("id", "1").d("elapsed", "1mo2d3ns")
+                .and().insertInto(KEYSPACE, TABLE).d("id", "2").d("elapsed", "-1mo2d3ns")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertTrue(resultsDto.executionResults.get(1));
+        assertEquals(2, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
     }
 
     @Test
