@@ -8,12 +8,12 @@ import java.util.List;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.PLANAR;
 
 /**
- * Computes an approximate planar distance between two GeoJSON geometries, used as a branch-distance
- * heuristic for {@code $geoIntersects} queries. The distance is 0 when the geometries share at least
- * one point (i.e. they would satisfy {@code $geoIntersects}), and otherwise a positive value
- * approximating how far apart they are, treating longitude/latitude as planar Cartesian coordinates.
- * This intentionally ignores MongoDB's spherical GeoJSON semantics: it is a simplification adequate
- * for guiding a search-based test generator, not for exact geometric computation.
+ * Computes approximate planar distances between GeoJSON geometries, used as branch-distance
+ * heuristics for {@code $geoIntersects} ({@link #distance}) and {@code $geoWithin}
+ * ({@link #distanceToContainment}) queries, treating longitude/latitude as planar Cartesian
+ * coordinates. This intentionally ignores MongoDB's spherical GeoJSON semantics: it is a
+ * simplification adequate for guiding a search-based test generator, not for exact geometric
+ * computation.
  */
 public abstract class GeoJsonGeometryIntersection {
 
@@ -37,6 +37,97 @@ public abstract class GeoJsonGeometryIntersection {
             }
         }
         return min;
+    }
+
+    /**
+     * Distance from full containment: 0 when every point of {@code actual} lies within (or on the
+     * boundary of) the area(s) enclosed by {@code area}, otherwise the distance of the
+     * farthest-outside point of {@code actual} from that area. Used as a branch-distance heuristic
+     * for {@code $geoWithin}. {@code area} must be a geometry with {@link GeoJsonGeometry#hasArea()}.
+     */
+    public static double distanceToContainment(GeoJsonGeometry actual, GeoJsonGeometry area) {
+        List<GeoJsonPoint> points = new ArrayList<>();
+        collectPoints(actual, points);
+        if (points.isEmpty()) {
+            return Double.MAX_VALUE;
+        }
+
+        double max = 0.0;
+        for (GeoJsonPoint point : points) {
+            double d = distanceOutsideArea(point, area);
+            if (d > max) {
+                max = d;
+            }
+        }
+        return max;
+    }
+
+    private static void collectPoints(GeoJsonGeometry geometry, List<GeoJsonPoint> points) {
+        if (geometry instanceof GeoJsonPoint) {
+            points.add((GeoJsonPoint) geometry);
+        } else if (geometry instanceof GeoJsonLineString) {
+            points.addAll(((GeoJsonLineString) geometry).getPoints());
+        } else if (geometry instanceof GeoJsonPolygon) {
+            collectPolygonPoints((GeoJsonPolygon) geometry, points);
+        } else if (geometry instanceof GeoJsonMultiPoint) {
+            points.addAll(((GeoJsonMultiPoint) geometry).getPoints());
+        } else if (geometry instanceof GeoJsonMultiLineString) {
+            for (GeoJsonLineString line : ((GeoJsonMultiLineString) geometry).getLineStrings()) {
+                points.addAll(line.getPoints());
+            }
+        } else if (geometry instanceof GeoJsonMultiPolygon) {
+            for (GeoJsonPolygon polygon : ((GeoJsonMultiPolygon) geometry).getPolygons()) {
+                collectPolygonPoints(polygon, points);
+            }
+        } else if (geometry instanceof GeoJsonGeometryCollection) {
+            for (GeoJsonGeometry inner : ((GeoJsonGeometryCollection) geometry).getGeometries()) {
+                collectPoints(inner, points);
+            }
+        }
+    }
+
+    private static void collectPolygonPoints(GeoJsonPolygon polygon, List<GeoJsonPoint> points) {
+        points.addAll(polygon.getExteriorRing().getPoints());
+        for (GeoJsonLineRing hole : polygon.getInteriorRings()) {
+            points.addAll(hole.getPoints());
+        }
+    }
+
+    /** Distance of a point outside the area(s) enclosed by a geometry; 0 if it lies within (or on) one. */
+    private static double distanceOutsideArea(GeoJsonPoint point, GeoJsonGeometry area) {
+        if (area instanceof GeoJsonPolygon) {
+            GeoJsonPolygon polygon = (GeoJsonPolygon) area;
+            return distancePointPolygon(point, polygon.getExteriorRing().getPoints(), polygonHoles(polygon));
+        } else if (area instanceof GeoJsonMultiPolygon) {
+            double min = Double.MAX_VALUE;
+            for (GeoJsonPolygon polygon : ((GeoJsonMultiPolygon) area).getPolygons()) {
+                double d = distancePointPolygon(point, polygon.getExteriorRing().getPoints(), polygonHoles(polygon));
+                if (d < min) {
+                    min = d;
+                }
+            }
+            return min;
+        } else if (area instanceof GeoJsonGeometryCollection) {
+            double min = Double.MAX_VALUE;
+            for (GeoJsonGeometry inner : ((GeoJsonGeometryCollection) area).getGeometries()) {
+                if (inner.hasArea()) {
+                    double d = distanceOutsideArea(point, inner);
+                    if (d < min) {
+                        min = d;
+                    }
+                }
+            }
+            return min;
+        }
+        return Double.MAX_VALUE;
+    }
+
+    private static List<List<GeoJsonPoint>> polygonHoles(GeoJsonPolygon polygon) {
+        List<List<GeoJsonPoint>> holes = new ArrayList<>();
+        for (GeoJsonLineRing hole : polygon.getInteriorRings()) {
+            holes.add(hole.getPoints());
+        }
+        return holes;
     }
 
     private enum Kind {POINT, LINE, POLYGON}

@@ -468,4 +468,34 @@ public class MongoHeuristicsCalculatorHelper {
         return getEqualityTruthness(distance, 0.0);
     }
 
+    /**
+     * Computes the heuristic score for a {@code $geoWithin} query. The document's actual value
+     * must itself be a supported GeoJSON geometry document; otherwise the condition is considered
+     * not satisfied. When it is, the heuristic is based on the approximate planar distance of the
+     * farthest-outside point of the document's geometry from the area(s) enclosed by
+     * {@code areaGeometry} (see {@link GeoJsonGeometryIntersection#distanceToContainment}): 0 (true)
+     * when the document's geometry lies entirely within (or on the boundary of) that area, and a
+     * scaled falseness proportional to how far outside it otherwise.
+     */
+    static Truthness evaluateGeoWithin(GeoJsonGeometry areaGeometry, Object actualValue) {
+        Objects.requireNonNull(areaGeometry);
+
+        if (!isBsonDocument(actualValue)) {
+            return C_FALSE;
+        }
+
+        final GeoJsonGeometry actualGeometry;
+        try {
+            actualGeometry = GeoJsonUtils.toGeoJsonGeometry(actualValue);
+        } catch (IllegalArgumentException e) {
+            return C_FALSE;
+        }
+
+        double distance = GeoJsonGeometryIntersection.distanceToContainment(actualGeometry, areaGeometry);
+        if (distance <= 0.0) {
+            return TRUE_C;
+        }
+        return getEqualityTruthness(distance, 0.0);
+    }
+
 }

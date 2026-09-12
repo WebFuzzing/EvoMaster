@@ -1446,6 +1446,159 @@ public class MongoHeuristicsCalculatorTest {
                 new Document("area", new Document("type", "NotAGeometry"))).isFalse());
     }
 
+    /*
+        ================================================================================
+        Cases about $geoWithin with GeoJSON geometries. Unlike $geoIntersects (any overlap),
+        $geoWithin requires the document's geometry to lie entirely within the query area; the
+        distance heuristic is based on the farthest-outside point of the document's geometry
+        (see GeoJsonGeometryIntersection#distanceToContainment).
+        ================================================================================
+     */
+
+    private static Document geoWithinQuery(String fieldName, Document geometry) {
+        return new Document(fieldName,
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+    }
+
+    @Test
+    public void testGeoWithinPointInsidePolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOnBoundary = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(0, 5)));
+        Document pointOutside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(20, 20)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOnBoundary).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutside).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinHeuristicIsGradedByDistanceOutsideArea() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document closer = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(11, 5)));
+        Document fartherAway = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(100, 5)));
+
+        Truthness closerTruthness = calculator.computeHeuristicDocument(query, closer);
+        Truthness fartherTruthness = calculator.computeHeuristicDocument(query, fartherAway);
+
+        assertTrue(closerTruthness.isFalse());
+        assertTrue(fartherTruthness.isFalse());
+        assertTrue(closerTruthness.getOfTrue() > fartherTruthness.getOfTrue());
+    }
+
+    @Test
+    public void testGeoWithinExcludesPointInHole() {
+        Document squareWithHole = new Document("type", "Polygon")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
+        Document query = geoWithinQuery("area", squareWithHole);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInHole = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(3, 3)));
+        Document pointInFilledArea = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(8, 8)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInHole).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, pointInFilledArea).isTrue());
+    }
+
+    @Test
+    public void testGeoWithinRequiresTheWholeLineStringToBeContained() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("path", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document lineFullyInside = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(2, 2), Arrays.asList(8, 8))));
+        Document lineCrossingBoundary = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(2, 2), Arrays.asList(15, 15))));
+
+        assertTrue(calculator.computeHeuristicDocument(query, lineFullyInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, lineCrossingBoundary).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinMultiPolygonAreaMember() {
+        Document multiPolygon = new Document("type", "MultiPolygon")
+                .append("coordinates", Arrays.asList(
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(20, 20), Arrays.asList(30, 20),
+                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
+        Document query = geoWithinQuery("area", multiPolygon);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInSecondPolygon = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(25, 25)));
+        Document pointOutsideBoth = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(50, 50)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInSecondPolygon).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutsideBoth).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinGeometryCollectionOnlyConsidersAreaMembers() {
+        Document farAwayPoint = new Document("type", "Point").append("coordinates", Arrays.asList(80, 80));
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document collection = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(farAwayPoint, square));
+        Document query = geoWithinQuery("area", collection);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOutsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(50, 50)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInsideSquare).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutsideSquare).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinWithNonGeometryActualValueIsFalse() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("area", 42)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("area", new Document("type", "NotAGeometry"))).isFalse());
+    }
+
     @Test
     public void testComparisonNull() {
         Document docNull = new Document().append("age", null);

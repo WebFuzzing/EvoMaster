@@ -191,6 +191,8 @@ public class MongoHeuristicsCalculator {
             return evaluate((ElemMatchOperation) operation, actualValue);
         } else if (operation instanceof GeoIntersectsOperation) {
             return evaluate((GeoIntersectsOperation) operation, actualValue);
+        } else if (operation instanceof GeoWithinOperation) {
+            return evaluate((GeoWithinOperation) operation, actualValue);
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
         }
@@ -648,6 +650,11 @@ public class MongoHeuristicsCalculator {
     private Truthness evaluate(GeoIntersectsOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
         return helper.evaluateGeoIntersects(operation.getGeometry(), actualValue);
+    }
+
+    private Truthness evaluate(GeoWithinOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateGeoWithin(operation.getGeometry(), actualValue);
     }
 
 }
