@@ -799,4 +799,15 @@ internal class EMConfigTest{
         //so a run has to say it only wants the search
         EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
     }
+
+    @Test
+    fun testAsyncApiCannotSeedTestsYet(){
+
+        val parser = EMConfig.getOptionParser()
+
+        assertThrows<ConfigProblemException> {
+            EMConfig().updateProperties(parser.parse(
+                "--problemType", "ASYNCAPI", "--createTests", "false", "--seedTestCases", "true", "--seedTestCasesPath", "seeds.json"))
+        }
+    }
 }
