@@ -4,7 +4,9 @@ import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract class GeoJsonUtils {
 
@@ -99,23 +101,60 @@ public abstract class GeoJsonUtils {
         if (!(coordinates instanceof List<?>)) {
             throw new IllegalArgumentException("LineString coordinates must be a list of positions.");
         }
+        return new GeoJsonLineString(toPoints((List<?>) coordinates));
+    }
+
+    /**
+     * Converts a GeoJSON Polygon document into a typed {@link GeoJsonPolygon}.
+     * The first ring in the coordinates is the exterior ring, and any subsequent
+     * rings are holes. Each ring must be a closed linear ring, as validated by
+     * {@link GeoJsonLineRing}. Malformed documents, unsupported CRS declarations,
+     * and polygons without an exterior ring cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonPolygon toGeoJsonPolygon(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonPolygon.POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON Polygon.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("Polygon coordinates must be a non-empty list of linear rings.");
+        }
+        List<?> rings = (List<?>) coordinates;
+        GeoJsonLineRing exteriorRing = toGeoJsonLineRing(rings.get(0));
+        Set<GeoJsonLineRing> interiorRings = new LinkedHashSet<>();
+        for (int i = 1; i < rings.size(); i++) {
+            interiorRings.add(toGeoJsonLineRing(rings.get(i)));
+        }
+        return new GeoJsonPolygon(exteriorRing, interiorRings);
+    }
+
+    private static GeoJsonLineRing toGeoJsonLineRing(Object ringCoordinates) {
+        if (!(ringCoordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("A linear ring must be a list of positions.");
+        }
+        return new GeoJsonLineRing(toPoints((List<?>) ringCoordinates));
+    }
+
+    private static List<GeoJsonPoint> toPoints(List<?> positions) {
         List<GeoJsonPoint> points = new ArrayList<>();
-        for (Object position : (List<?>) coordinates) {
+        for (Object position : positions) {
             if (!(position instanceof List<?>) || ((List<?>) position).size() != 2) {
-                throw new IllegalArgumentException("A LineString position must contain longitude and latitude.");
+                throw new IllegalArgumentException("A position must contain longitude and latitude.");
             }
             List<?> pair = (List<?>) position;
             if (!(pair.get(0) instanceof Number) || !(pair.get(1) instanceof Number)) {
-                throw new IllegalArgumentException("LineString coordinates must be numbers.");
+                throw new IllegalArgumentException("Coordinates must be numbers.");
             }
             double longitude = ((Number) pair.get(0)).doubleValue();
             double latitude = ((Number) pair.get(1)).doubleValue();
             if (!Double.isFinite(longitude) || !Double.isFinite(latitude)) {
-                throw new IllegalArgumentException("LineString coordinates must be finite.");
+                throw new IllegalArgumentException("Coordinates must be finite.");
             }
             points.add(new GeoJsonPoint(longitude, latitude));
         }
-        return new GeoJsonLineString(points);
+        return points;
     }
 
 }

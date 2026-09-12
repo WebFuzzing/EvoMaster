@@ -9,6 +9,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -758,6 +759,57 @@ class QueryParserTest {
             Document geometry = new Document("type", "LineString").append("coordinates", coordinates);
             assertNull(parser.parse(new Document("location",
                     new Document("$geoIntersects", new Document("$geometry", geometry)))));
+        }
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonPolygon() {
+        Document geometry = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
+                        Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))));
+        Document query = new Document("location",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("location", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        assertEquals("Polygon", polygon.getType());
+    }
+
+    @Test
+    void testParseGeoIntersectsGeoJsonPolygonWithHole() {
+        Document geometry = new Document("type", "Polygon")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
+        Document query = new Document("area",
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+
+        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
+        assertEquals("area", operation.getFieldName());
+        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
+        assertEquals("Polygon", polygon.getType());
+    }
+
+    @Test
+    void testParseGeoIntersectsRejectsInvalidPolygons() {
+        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
+                Collections.singletonList(Collections.emptyList()),
+                // Polygon coordinates must contain rings, not positions directly.
+                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 0)),
+                // An exterior ring must be closed and have at least three distinct points.
+                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10))),
+                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(0, 0))))) {
+            Document geometry = new Document("type", "Polygon").append("coordinates", coordinates);
+            assertNull(parser.parse(new Document("location",
+                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
+                    "Expected rejection of polygon coordinates: " + coordinates);
         }
     }
 

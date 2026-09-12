@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.mongo.selectors;
 
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonObject;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.operations.GeoIntersectsOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
@@ -8,7 +9,7 @@ import java.util.Collections;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 
-/** Parses {@code $geoIntersects} queries with a GeoJSON LineString. */
+/** Parses {@code $geoIntersects} queries with a GeoJSON LineString or Polygon. */
 public class GeoIntersectsSelector extends SingleConditionQuerySelector {
 
     @Override
@@ -22,11 +23,24 @@ public class GeoIntersectsSelector extends SingleConditionQuerySelector {
                 || !documentKeys(value).equals(Collections.singleton("$geometry"))) {
             return null;
         }
-        try {
-            return new GeoIntersectsOperation(fieldName,
-                    GeoJsonUtils.toGeoJsonLineString(getValue(value, "$geometry")));
-        } catch (IllegalArgumentException e) {
+        GeoJsonObject geometry = parseGeometry(getValue(value, "$geometry"));
+        if (geometry == null) {
             return null;
         }
+        return new GeoIntersectsOperation(fieldName, geometry);
+    }
+
+    private GeoJsonObject parseGeometry(Object geometry) {
+        try {
+            return GeoJsonUtils.toGeoJsonLineString(geometry);
+        } catch (IllegalArgumentException e) {
+            // not a supported GeoJSON LineString, try another geometry type
+        }
+        try {
+            return GeoJsonUtils.toGeoJsonPolygon(geometry);
+        } catch (IllegalArgumentException e) {
+            // not a supported GeoJSON Polygon
+        }
+        return null;
     }
 }
