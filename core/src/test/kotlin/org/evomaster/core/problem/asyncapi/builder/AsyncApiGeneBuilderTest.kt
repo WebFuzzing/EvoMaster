@@ -14,6 +14,8 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -442,5 +444,144 @@ class AsyncApiGeneBuilderTest {
                 "no gene could be built for message '${message.id}'"
             )
         }
+    }
+
+    // ------------------------------------------------------------------ message examples
+
+    /**
+     * Options asking for the example every time, so that what is published is deterministic.
+     */
+    private val alwaysExamples = AsyncApiGeneBuilder.options(EMConfig().apply { probAsyncApiExamples = 1.0 })
+
+    private fun printed(gene: Gene): String {
+        gene.doInitialize(Randomness().apply { updateSeed(42) })
+        return gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
+    }
+
+    private fun document(text: String): AsyncApiDocument = AsyncApiAccess.parseFromText(text.trimIndent())
+
+    @Test
+    fun testAMessageExampleIsOfferedAsAWholePayload() {
+
+        val schema = AsyncApiAccess.getAsyncApiFromResource("/asyncapi/sut/scalar.yaml")
+        val message = schema.messages.getValue("PlanetCreated")
+
+        val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, message, alwaysExamples)!!
+
+        //a choice between the example and the schema-derived genes, as REST offers schema examples
+        assertTrue(gene is ChoiceGene<*>, gene::class.simpleName)
+
+        //asked for every time, what goes out is the payload the author wrote, whole
+        val json = printed(gene)
+        assertTrue(json.contains("evt_1234567890"), json)
+        assertTrue(json.contains("\"Mars\""), json)
+        assertTrue(json.contains("\"CO2\""), json)
+    }
+
+    @Test
+    fun testExamplesAreNotUsedUnlessAskedFor() {
+
+        //the default options leave the probability at zero, so nothing changes shape
+        val gene = payloadOf("/asyncapi/sut/scalar.yaml", "PlanetCreated")
+
+        assertTrue(gene is ObjectGene, gene::class.simpleName)
+    }
+
+    @Test
+    fun testAnExampleForANonObjectPayloadIsLeftAlone() {
+
+        /*
+            The gene builder complains about 'example' on anything but an object, and that
+            complaint would reach the user about a document that is in order. So a scalar
+            payload keeps its schema-derived gene, example or not.
+         */
+        val schema = document("""
+            asyncapi: 3.0.0
+            info:
+              title: Heartbeat
+              version: 1.0.0
+            components:
+              messages:
+                beat:
+                  payload:
+                    type: integer
+                  examples:
+                    - payload: 42
+        """)
+
+        val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("beat"), alwaysExamples)!!
+
+        assertTrue(gene is IntegerGene, gene::class.simpleName)
+    }
+
+    @Test
+    fun testAHeadersExampleLeavesOutTheStampedCorrelationId() {
+
+        val schema = document("""
+            asyncapi: 3.0.0
+            info:
+              title: Headers
+              version: 1.0.0
+            components:
+              messages:
+                order:
+                  headers:
+                    type: object
+                    required: [tenant, correlationId]
+                    properties:
+                      tenant:
+                        type: string
+                      correlationId:
+                        type: string
+                  correlationId:
+                    location: '${'$'}message.header#/correlationId'
+                  payload:
+                    type: object
+                  examples:
+                    - headers:
+                        tenant: acme
+                        correlationId: abc-123
+                      payload: {}
+        """)
+
+        val gene = AsyncApiGeneBuilder.buildHeadersGene(schema, schema.messages.getValue("order"), alwaysExamples)!!
+
+        //the tenant comes from the example; the correlation id is the driver's to stamp, so it is not there to copy
+        val json = printed(gene)
+        assertTrue(json.contains("\"acme\""), json)
+        assertFalse(json.contains("abc-123"), json)
+        assertFalse(json.contains("correlationId"), json)
+    }
+
+    @Test
+    fun testOnlyTheFirstExampleIsUsedForNow() {
+
+        //pins the limitation described on firstExample(): the parser the genes go through keeps one
+        val schema = document("""
+            asyncapi: 3.0.0
+            info:
+              title: Two examples
+              version: 1.0.0
+            components:
+              messages:
+                greeting:
+                  payload:
+                    type: object
+                    required: [text]
+                    properties:
+                      text:
+                        type: string
+                  examples:
+                    - payload:
+                        text: first
+                    - payload:
+                        text: second
+        """)
+
+        val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("greeting"), alwaysExamples)!!
+
+        val json = printed(gene)
+        assertTrue(json.contains("\"first\""), json)
+        assertFalse(json.contains("\"second\""), json)
     }
 }
