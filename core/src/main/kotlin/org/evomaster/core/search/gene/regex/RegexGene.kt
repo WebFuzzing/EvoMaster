@@ -98,14 +98,16 @@ class RegexGene(
             return
         }
 
+        val matcher = pattern!!.matcher("")
+
         repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
             disjunctions.randomize(randomness, tryToForceNewValue)
-            if (pattern!!.matcher(getValueAsRawString()).find()) {
+            if (matcher.reset(getValueAsRawString()).find()) {
                 return
             }
             val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
             setPrefixAndPostfix(assertionRepairResult, randomness)
-            if (pattern.matcher(getValueAsRawString()).find()) {
+            if (matcher.reset(getValueAsRawString()).find()) {
                 return
             }
         }
@@ -113,8 +115,8 @@ class RegexGene(
         // failed to repair regex, the value of this gene does not match the source regex.
         // this may happen because regex is unsatisfiable, regex bug or because of EMs limited support of regex assertions.
         val message = "Could not repair value for regex: \"$sourceRegex\", last tried: \"${getValueAsRawString()}\""
-        log.warn(message)
         assert(false) { message }
+        log.warn(message)
     }
 
     /**

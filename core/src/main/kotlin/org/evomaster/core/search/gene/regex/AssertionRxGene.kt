@@ -14,13 +14,15 @@ import org.evomaster.core.utils.RegexFlags
 /**
  * Distinguishes the different assertion types an [AssertionRxGene] represents.
  */
-enum class AssertionType(val backward: Boolean, val hasContent: Boolean) {
-    LOOKAHEAD(false, hasContent = true),
-    LOOKBEHIND(true, hasContent = true),
-    START_OF_INPUT(true, hasContent = false),
-    END_OF_INPUT(false, hasContent = false),
-    CARET(true, hasContent = false),
-    DOLLAR(false, hasContent = false)
+enum class AssertionType(val usesInnerGene: Boolean) {
+    LOOKAHEAD(usesInnerGene = true),
+    LOOKBEHIND(usesInnerGene = true),
+    START_OF_INPUT(usesInnerGene = false),
+    END_OF_INPUT(usesInnerGene = false),
+    CARET(usesInnerGene = false),
+    DOLLAR(usesInnerGene = false),
+    WORD_BOUNDARY(usesInnerGene = false),
+    NON_WORD_BOUNDARY(usesInnerGene = false)
 }
 
 /**
@@ -47,7 +49,7 @@ class AssertionRxGene(
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
 
     init {
-        require(assertionType.hasContent || innerGene == null) {
+        require(assertionType.usesInnerGene || innerGene == null) {
             "$assertionType is a boundary assertion type and cannot carry inner content"
         }
     }
@@ -59,7 +61,7 @@ class AssertionRxGene(
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
-    override fun isUnsatisfiable(): Boolean = assertionType.hasContent && innerGene == null
+    override fun isUnsatisfiable(): Boolean = assertionType.usesInnerGene && innerGene == null
 
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 
