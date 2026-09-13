@@ -105,6 +105,10 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         throw SutProblemException("No info on the AsyncAPI document was provided")
     }
 
+    /*
+        TODO Line for line the same as AbstractRestSampler.handleMessages. Once a third sampler
+        needs it, hoist it to EnterpriseSampler.
+     */
     /**
      * What the parser and the action builder had to skip. Reported to the user, and kept for
      * the final report.
@@ -139,6 +143,11 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         return createIndividual(SampleType.RANDOM, actions)
     }
 
+    /*
+        TODO Message examples (AsyncApiMessage.getExamples) are parsed and never read. Sampling
+        from them some of the time, as REST does with probRestExamples, would start the search
+        from payloads the author knows the service accepts.
+     */
     /**
      * A copy of one of the action templates, chosen at random, with its genes initialized.
      */
@@ -150,6 +159,11 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         return action
     }
 
+    /*
+        TODO No AsyncAPI-specific strategy yet, only the single-message individuals and then
+        random tests. The one that matters is chaining: a message whose payload needs an id
+        that only the reply to a previous message produces.
+     */
     /**
      * The next single-message individual while any are left, then a random test.
      */
@@ -180,6 +194,7 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
      * Not supported yet: there is no format to read AsyncAPI test cases from.
      */
     override fun initSeededTests(infoDto: SutInfoDto?) {
+        //TODO There is no format to read message-based test cases from yet, as Postman is for REST
         throw IllegalStateException("Seeding test cases is not supported for AsyncAPI yet")
     }
 
