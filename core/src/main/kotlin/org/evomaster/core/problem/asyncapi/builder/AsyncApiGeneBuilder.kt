@@ -51,10 +51,17 @@ object AsyncApiGeneBuilder {
     private const val MINIMUM = "minimum"
     private const val MAXIMUM = "maximum"
 
+    private const val TYPE_OBJECT = "object"
     private const val TYPE_STRING = "string"
     private const val TYPE_INTEGER = "integer"
     private const val TYPE_NUMBER = "number"
     private const val TYPE_BOOLEAN = "boolean"
+
+    /*
+        The two parts of a Message Example Object this builder reads.
+     */
+    private const val EXAMPLE_PAYLOAD = "payload"
+    private const val EXAMPLE_HEADERS = "headers"
 
     /**
      * The keywords whose value is literal data rather than a schema, so nothing inside them is
@@ -70,12 +77,22 @@ object AsyncApiGeneBuilder {
 
     /**
      * The genes for a message's payload, or null when it declares none.
+     *
+     * When the message declares examples and [options] ask for them, the first example's payload
+     * is offered as a whole value beside the schema-derived genes, with the probability the
+     * options give.
      */
     fun buildPayloadGene(
         schema: AsyncApiDocument,
         message: AsyncApiMessage,
         options: RestActionBuilderV3.Options
-    ): Gene? = build(message.payload, "${message.id}.payload", schema, options)
+    ): Gene? = build(
+        message.payload,
+        "${message.id}.payload",
+        schema,
+        options,
+        firstExample(message, EXAMPLE_PAYLOAD)
+    )
 
     /**
      * The genes for a message's headers, or null when it declares none.
@@ -98,7 +115,42 @@ object AsyncApiGeneBuilder {
         schema: AsyncApiDocument,
         message: AsyncApiMessage,
         options: RestActionBuilderV3.Options
-    ): Gene? = build(withoutCorrelationId(message), "${message.id}.headers", schema, options)
+    ): Gene? = build(
+        withoutCorrelationId(message),
+        "${message.id}.headers",
+        schema,
+        options,
+        firstExample(message, EXAMPLE_HEADERS)?.let { withoutCorrelationField(it, message) }
+    )
+
+    /**
+     * The [part] of the message's first example that has one, or null.
+     *
+     * Only the first is used. The gene builder reads a schema's `example`, and the `examples`
+     * that could carry several are dropped by the OpenAPI parser it goes through, which reads
+     * them as a 3.0 document. TODO pass them all once RestActionBuilderV3 can take them.
+     */
+    private fun firstExample(message: AsyncApiMessage, part: String): JsonNode? =
+        message.examples.asSequence()
+            .mapNotNull { it.get(part) }
+            .firstOrNull { !it.isNull }
+
+    /**
+     * The example headers without the one the correlation id is stamped into, which the headers
+     * gene does not have either.
+     */
+    private fun withoutCorrelationField(example: JsonNode, message: AsyncApiMessage): JsonNode {
+
+        val correlation = message.correlationId
+        val field = correlation?.fieldName
+
+        if (correlation == null || correlation.source != AsyncApiCorrelationId.Source.HEADER
+            || field == null || !example.isObject) {
+            return example
+        }
+
+        return (example.deepCopy<JsonNode>() as ObjectNode).apply { remove(field) }
+    }
 
     /**
      * The headers schema without the property the correlation id is stamped into.
@@ -146,6 +198,9 @@ object AsyncApiGeneBuilder {
     /**
      * Options for building AsyncAPI payloads.
      *
+     * `probUseExamples` is the probability of publishing a message's declared example as it is;
+     * it is off unless the user asks, since it is a way of steering the search.
+     *
      * Note `invalidData = false`, which is not what REST does. That flag makes the builder add
      * a bogus "EVOMASTER" member to every enum, on purpose, to probe how a service handles a
      * value it never declared. In a message payload that backfires: an enum of one value is how
@@ -160,6 +215,7 @@ object AsyncApiGeneBuilder {
     fun options(config: EMConfig) = RestActionBuilderV3.Options(
         enableConstraintHandling = config.enableSchemaConstraintHandling,
         invalidData = false,
+        probUseExamples = config.probAsyncApiExamples,
         usingWhiteBox = !config.blackBox,
         enableAdvancedFormats = config.enableAdvancedFormats,
         inferFormatFromNames = config.inferFormatFromNames
@@ -169,7 +225,8 @@ object AsyncApiGeneBuilder {
         declared: JsonNode?,
         inlineName: String,
         schema: AsyncApiDocument,
-        options: RestActionBuilderV3.Options
+        options: RestActionBuilderV3.Options,
+        example: JsonNode?
     ): Gene? {
 
         if (declared == null) {
@@ -198,6 +255,10 @@ object AsyncApiGeneBuilder {
         schema.componentSchemas.forEach { (key, node) -> schemas.set<JsonNode>(key, usable(node)) }
         if (referenced == null) {
             schemas.set<JsonNode>(name, usable(pointedAt(ref, declared, schema)))
+        }
+
+        if (example != null) {
+            offerExample(schemas.get(name), example)
         }
 
         //the format createGeneForDTO expects: the name of the wanted schema, then all of them
@@ -252,6 +313,26 @@ object AsyncApiGeneBuilder {
 
         return current
     }
+
+    /**
+     * Make [example] the `example` of [target], for the gene builder to offer as a whole value.
+     *
+     * Only an object schema takes one: the builder attaches a deprecation warning to `example`
+     * on anything else, which would reach the user as a complaint about a document that is in
+     * order. A message's own example outranks one the schema may already carry, being the more
+     * specific of the two.
+     */
+    private fun offerExample(target: JsonNode?, example: JsonNode) {
+
+        if (target !is ObjectNode || !example.isObject || !describesObject(target)) {
+            return
+        }
+
+        target.set<JsonNode>(EXAMPLE, example.deepCopy())
+    }
+
+    private fun describesObject(schema: ObjectNode) =
+        schema.get(TYPE)?.asText() == TYPE_OBJECT || schema.has(PROPERTIES)
 
     /**
      * JSON Pointer escaping: "~1" is a "/" and "~0" is a "~", undone in that order.
