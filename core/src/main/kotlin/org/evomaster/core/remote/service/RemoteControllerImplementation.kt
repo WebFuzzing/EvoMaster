@@ -36,6 +36,12 @@ import javax.ws.rs.core.Response
 class RemoteControllerImplementation() : RemoteController{
 
     companion object {
+
+        /**
+         * Query parameter telling the driver whether SQL heuristics are computed from what it
+         * reads back, rather than from what was inserted.
+         */
+        private const val QUERY_FROM_DATABASE = "queryFromDatabase"
         val log: Logger = LoggerFactory.getLogger(RemoteControllerImplementation::class.java)
     }
 
@@ -343,7 +349,7 @@ class RemoteControllerImplementation() : RemoteController{
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .queryParam("fullyCovered", fullyCovered)
                     .queryParam("descriptiveIds", descriptiveIds)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .post(Entity.entity(ids, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -398,7 +404,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -417,7 +423,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -491,7 +497,7 @@ class RemoteControllerImplementation() : RemoteController{
             getWebTarget()
                 .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
                 // shall we set `killSwitch` as true?
-                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                 .request()
                 .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
         }

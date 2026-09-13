@@ -50,9 +50,25 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
          */
         const val REPLY_TARGET_PREFIX = "ASYNCAPI_REPLY"
 
+        private const val TARGET_SEPARATOR = ":"
+
+        private const val CORRELATION_SEPARATOR = "-"
+
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
         private val mapper = ObjectMapper()
+
+        /**
+         * The id of the target covered when publishing to [actionName] had [outcome].
+         */
+        fun outcomeTargetId(outcome: AsyncApiOutcome, actionName: String): String =
+            listOf(OUTCOME_TARGET_PREFIX, outcome.name, actionName).joinToString(TARGET_SEPARATOR)
+
+        /**
+         * The id of the target covered when a reply to [actionName] was recognised as [messageId].
+         */
+        fun replyTargetId(messageId: String, actionName: String): String =
+            listOf(REPLY_TARGET_PREFIX, messageId, actionName).joinToString(TARGET_SEPARATOR)
     }
 
     @Inject
@@ -168,7 +184,7 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
         val name = action.getName()
         val outcome = result.getOutcome()!!
 
-        fv.updateTarget(idMapper.handleLocalTarget("$OUTCOME_TARGET_PREFIX:${outcome.name}:$name"), 1.0, index)
+        fv.updateTarget(idMapper.handleLocalTarget(outcomeTargetId(outcome, name)), 1.0, index)
 
         when (outcome) {
 
@@ -204,7 +220,7 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         result.setReplyMessage(recognised.id)
-        fv.updateTarget(idMapper.handleLocalTarget("$REPLY_TARGET_PREFIX:${recognised.id}:$name"), 1.0, index)
+        fv.updateTarget(idMapper.handleLocalTarget(replyTargetId(recognised.id, name)), 1.0, index)
     }
 
     /**
@@ -233,7 +249,7 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
         dto.contentType = message?.contentType ?: document.defaultContentType ?: DEFAULT_CONTENT_TYPE
         dto.headers = headersOf(action)
 
-        dto.correlationId = "$runId-${published++}"
+        dto.correlationId = runId + CORRELATION_SEPARATOR + published++
         message?.correlationId?.let {
             dto.correlationLocation = if (it.source == AsyncApiCorrelationId.Source.HEADER) {
                 AsyncApiActionDto.CORRELATION_IN_HEADER
