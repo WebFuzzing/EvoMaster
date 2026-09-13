@@ -18,6 +18,11 @@ class FakeAsyncApiDriver(
     private val answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
 ) : RemoteController by DummyController() {
 
+    /**
+     * Everything this driver was asked to publish, in order.
+     */
+    val published: MutableList<AsyncApiActionDto> = mutableListOf()
+
     companion object {
 
         fun replied(payload: String, correlationMatched: Boolean = true) = AsyncApiReplyDto().apply {
@@ -41,11 +46,6 @@ class FakeAsyncApiDriver(
             replyExpected = false
         }
     }
-
-    /**
-     * Everything this driver was asked to publish, in order.
-     */
-    val published: MutableList<AsyncApiActionDto> = mutableListOf()
 
     override fun checkConnection() {}
 
