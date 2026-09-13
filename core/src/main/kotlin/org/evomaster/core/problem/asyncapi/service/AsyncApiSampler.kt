@@ -150,11 +150,6 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         return createIndividual(SampleType.RANDOM, actions)
     }
 
-    /*
-        TODO Message examples (AsyncApiMessage.getExamples) are parsed and never read. Sampling
-        from them some of the time, as REST does with probRestExamples, would start the search
-        from payloads the author knows the service accepts.
-     */
     /**
      * A copy of one of the action templates, chosen at random, with its genes initialized.
      */
