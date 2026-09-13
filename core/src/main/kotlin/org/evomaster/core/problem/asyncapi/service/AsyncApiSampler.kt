@@ -41,6 +41,10 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
      */
     private val adHocInitialIndividuals: MutableList<AsyncApiIndividual> = mutableListOf()
 
+    /**
+     * Start the service through the driver, read its document, and build one action per
+     * publishable message. Anything the parser or the builder had to skip is reported.
+     */
     @PostConstruct
     fun initialize() {
 
@@ -124,6 +128,9 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         }
     }
 
+    /**
+     * A test of one to `maxTestSize` messages, each a random action with fresh genes.
+     */
     override fun sampleAtRandom(): AsyncApiIndividual {
 
         val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
@@ -143,6 +150,9 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         return action
     }
 
+    /**
+     * The next single-message individual while any are left, then a random test.
+     */
     override fun smartSample(): AsyncApiIndividual {
 
         if (adHocInitialIndividuals.isNotEmpty()) {
@@ -152,18 +162,30 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         return sampleAtRandom()
     }
 
+    /**
+     * Whether single-message individuals are still waiting to be handed out.
+     */
     override fun hasSpecialInitForSmartSampler(): Boolean {
         return adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling()
     }
 
+    /**
+     * Prepare the single-message individuals again, so every operation is tried once more.
+     */
     override fun resetSpecialInit() {
         initAdHocInitialIndividuals()
     }
 
+    /**
+     * Not supported yet: there is no format to read AsyncAPI test cases from.
+     */
     override fun initSeededTests(infoDto: SutInfoDto?) {
         throw IllegalStateException("Seeding test cases is not supported for AsyncAPI yet")
     }
 
+    /**
+     * One individual per action, publishing that one message.
+     */
     private fun initAdHocInitialIndividuals() {
 
         adHocInitialIndividuals.clear()
@@ -175,6 +197,13 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         }
     }
 
+    /**
+     * Wrap [actions] as an individual ready for the search: tracked if tracking is on, and
+     * with its global state and local ids set.
+     *
+     * @param sampleType how the individual came to be, which the structure mutators read to
+     *                   choose how to change it
+     */
     private fun createIndividual(
         sampleType: SampleType,
         actions: MutableList<AsyncApiAction>
