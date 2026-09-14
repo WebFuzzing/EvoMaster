@@ -295,14 +295,14 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
     private fun addForInjections() {
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS)) {
             log.debug("Skipping security test for XSS as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
             handleXSSCheck()
         }
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SQL_INJECTION)) {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
             if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
@@ -313,7 +313,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
             }
         }
 
-        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             if(hasPhaseTimedOut()) return
             ssrfAnalyser.apply()
         }
@@ -487,7 +487,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
                 val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-                if(DefinedFaultCategory.SQL_INJECTION in faultsCategories){
+                if(DefinedFaultCategory.SECURITY_SQL_INJECTION in faultsCategories){
                     val added = archive.addIfNeeded(evaluatedIndividual)
                     assert(added)
                     continue@mainloop
@@ -1322,7 +1322,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
                     val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-                    if(DefinedFaultCategory.XSS in faultsCategories){
+                    if(DefinedFaultCategory.SECURITY_XSS in faultsCategories){
                         archive.addIfNeeded(evaluatedIndividual)
                         continue@mainloop
                     }

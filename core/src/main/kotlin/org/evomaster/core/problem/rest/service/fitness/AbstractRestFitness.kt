@@ -892,7 +892,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -1345,39 +1345,39 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_NONWORKING_DELETE)) {
             handleDeleteShouldDelete(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
             handlePartialUpdatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
             handleMisleadingCreatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
             handleNonIdempotentPut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_INVALID_LOCATION)) {
             handleInvalidLocation(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_ALLOW)) {
             handleInvalidAllow(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
             handleInvalidMergePatch(individual, actionResults, fv)
         }
     }
@@ -1419,7 +1419,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
             if (extra.isEmpty() && missing.isEmpty()) continue
 
-            val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
+            val category = DefinedFaultCategory.SCHEMA_INVALID_ALLOW
             val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
             fv.updateTarget(scenarioId, 1.0, index)
             val localMessage = listOfNotNull(
@@ -1448,7 +1448,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH
         }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
+        val category = DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1470,7 +1470,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT
+        val category = DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
         )
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
@@ -1494,7 +1494,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if(res.nonWorking) {
-            val category = ExperimentalFaultCategory.HTTP_NONWORKING_DELETE
+            val category = DefinedFaultCategory.HTTP_NONWORKING_DELETE
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(category, res.name)
             )
@@ -1518,7 +1518,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val category = DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1535,7 +1535,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val patch = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PATCH }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH
+        val category = DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, patch.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1552,7 +1552,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT
+        val category = DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1571,7 +1571,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         // sequence ends with: PUT, GET, PUT, GET — flag the 2nd PUT as the offending action
         val secondPut = actions[actions.size - 2]
 
-        val category = ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT
+        val category = DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, secondPut.getName()))
         fv.updateTarget(scenarioId, 1.0, actions.size - 2)
 
@@ -1589,7 +1589,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val actions = individual.seeMainExecutableActions()
         val creator = actions[actions.size - 2]
 
-        val category = ExperimentalFaultCategory.HTTP_INVALID_LOCATION
+        val category = DefinedFaultCategory.HTTP_INVALID_LOCATION
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, creator.getName()))
         fv.updateTarget(scenarioId, 1.0, actions.size - 2)
 

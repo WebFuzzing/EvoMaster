@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationForbiddenController
 import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationNotFoundController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -38,7 +39,7 @@ class FailModificationNotFoundEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION in faultsCategories)
+            assertTrue(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION in faultsCategories)
         }
     }
 }
