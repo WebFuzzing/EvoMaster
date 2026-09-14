@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.httporacle.misleadingcreateput
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.misleadingcreateput.HttpMisleadingCreatePutController
 import com.foo.rest.examples.spring.openapi.v3.httporacle.partialupdateput.HttpPartialUpdatePutController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -42,7 +43,7 @@ class MisleadingCreatePutEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT in faultsCategories)
+            assertTrue(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT in faultsCategories)
 
         }
     }
