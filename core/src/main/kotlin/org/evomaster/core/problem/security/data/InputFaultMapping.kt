@@ -18,6 +18,6 @@ class InputFaultMapping(
     }
 
     fun hasSSRFFaults(): Boolean {
-        return securityFaults.contains(DefinedFaultCategory.SSRF)
+        return securityFaults.contains(DefinedFaultCategory.SECURITY_SSRF)
     }
 }

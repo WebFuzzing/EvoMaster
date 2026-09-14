@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidallow
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidallow.missing.HttpMissingAllowController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -37,10 +38,10 @@ class HttpMissingAllowEMTest : SpringTestBase() {
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue(ExperimentalFaultCategory.HTTP_INVALID_ALLOW in faults)
+            assertTrue(DefinedFaultCategory.SCHEMA_INVALID_ALLOW in faults)
 
             val allowFaults = DetectedFaultUtils.getDetectedFaults(solution)
-                .filter { it.category == ExperimentalFaultCategory.HTTP_INVALID_ALLOW }
+                .filter { it.category == DefinedFaultCategory.SCHEMA_INVALID_ALLOW }
 
             assertTrue(allowFaults.any { it.operationId.contains("/api/products/") })
             assertTrue(allowFaults.none { it.operationId.contains("/api/orders/") })

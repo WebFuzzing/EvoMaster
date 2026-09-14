@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationURLEncodedController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -39,7 +40,7 @@ class URLEncodedFailModificationEMTest : SpringTestBase(){
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
+            assertEquals(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
         }
     }
 }

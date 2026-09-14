@@ -3520,15 +3520,15 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SQL_INJECTION && (!sqli || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SSRF && (!ssrf || !security)){
             return false
         }
 
