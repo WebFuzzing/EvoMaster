@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -68,6 +67,127 @@ public class RedisCommand implements Serializable {
          * <a href="https://redis.io/docs/latest/commands/hset/">HSET Documentation</a>
          */
         INCR("incr", "string", false),
+        /**
+         * Append one or more json values into the array at path after the last element in it.
+         * <a href="https://redis.io/docs/latest/commands/json.arrappend/">JSON.ARRAPPEND Documentation</a>
+         */
+        JSON_ARRAPPEND("json.arrappend", "json", false),
+        /**
+         * Returns the index of the first occurrence of a JSON scalar value in the array at path.
+         * <a href="https://redis.io/docs/latest/commands/json.arrindex/">JSON.ARRINDEX Documentation</a>
+         */
+        JSON_ARRINDEX("json.arrindex", "json", true),
+        /**
+         * Inserts the JSON scalar(s) value at the specified index in the array at path.
+         * <a href="https://redis.io/docs/latest/commands/json.arrinsert/">JSON.ARRINSERT Documentation</a>
+         */
+        JSON_ARRINSERT("json.arrinsert", "json", false),
+        /**
+         * Returns the length of the array at path.
+         * <a href="https://redis.io/docs/latest/commands/json.arrlen/">JSON.ARRLEN Documentation</a>
+         */
+        JSON_ARRLEN("json.arrlen", "json", true),
+        /**
+         * Removes and returns the element at the specified index in the array at path.
+         * <a href="https://redis.io/docs/latest/commands/json.arrpop/">JSON.ARRPOP Documentation</a>
+         */
+        JSON_ARRPOP("json.arrpop", "json", false),
+        /**
+         * Trims the array at path to contain only the specified inclusive range of indices from start to stop.
+         * <a href="https://redis.io/docs/latest/commands/json.arrtrim/">JSON.ARRTRIM Documentation</a>
+         */
+        JSON_ARRTRIM("json.arrtrim", "json", false),
+        /**
+         * Clears all values from an array or an object and sets numeric values to 0.
+         * <a href="https://redis.io/docs/latest/commands/json.clear/">JSON.CLEAR Documentation</a>
+         */
+        JSON_CLEAR("json.clear", "json", false),
+        /**
+         * Debugging container command.
+         * <a href="https://redis.io/docs/latest/commands/json.debug/">JSON.DEBUG Documentation</a>
+         */
+        JSON_DEBUG("json.debug", "json", false),
+        /**
+         * Deletes a value.
+         * <a href="https://redis.io/docs/latest/commands/json.del/">JSON.DEL Documentation</a>
+         */
+        JSON_DEL("json.del", "json", false),
+        /**
+         * Deletes a value.
+         * <a href="https://redis.io/docs/latest/commands/json.forget/">JSON.FORGET Documentation</a>
+         */
+        JSON_FORGET("json.forget", "json", false),
+        /**
+         * Gets the value at one or more paths in JSON serialized form.
+         * <a href="https://redis.io/docs/latest/commands/json.get/">JSON.GET Documentation</a>
+         */
+        JSON_GET("json.get", "json", true),
+        /**
+         * Merges a given JSON value into matching paths. Consequently, JSON values at matching paths
+         * are updated, deleted, or expanded with new children.
+         * <a href="https://redis.io/docs/latest/commands/json.merge/">JSON.MERGE Documentation</a>
+         */
+        JSON_MERGE("json.merge", "json", false),
+        /**
+         * Returns the values at a path from one or more keys.
+         * <a href="https://redis.io/docs/latest/commands/json.mget/">JSON.MGET Documentation</a>
+         */
+        JSON_MGET("json.mget", "json", true),
+        /**
+         * Sets or updates the JSON value of one or more keys.
+         * <a href="https://redis.io/docs/latest/commands/json.mset/">JSON.MSET Documentation</a>
+         */
+        JSON_MSET("json.mset", "json", false),
+        /**
+         * Increments the numeric value at path by a value.
+         * <a href="https://redis.io/docs/latest/commands/json.numincrby/">JSON.NUMINCRBY Documentation</a>
+         */
+        JSON_NUMINCRBY("json.numincrby", "json", false),
+        /**
+         * Multiplies the numeric value at path by a value.
+         * <a href="https://redis.io/docs/latest/commands/json.nummultby/">JSON.NUMMULTBY Documentation</a>
+         */
+        JSON_NUMMULTBY("json.nummultby", "json", false),
+        /**
+         * Returns the key names of JSON objects at the paths matching a given path expression.
+         * <a href="https://redis.io/docs/latest/commands/json.objkeys/">JSON.OBJKEYS Documentation</a>
+         */
+        JSON_OBJKEYS("json.objkeys", "json", true),
+        /**
+         * Returns the number of keys in JSON objects at the paths matching a given path expression.
+         * <a href="https://redis.io/docs/latest/commands/json.objlen/">JSON.OBJLEN Documentation</a>
+         */
+        JSON_OBJLEN("json.objlen", "json", true),
+        /**
+         * Returns the JSON value at path in Redis Serialization Protocol (RESP).
+         * <a href="https://redis.io/docs/latest/commands/json.resp/">JSON.RESP Documentation</a>
+         */
+        JSON_RESP("json.resp", "json", true),
+        /**
+         * Sets or updates the JSON value at a path.
+         * <a href="https://redis.io/docs/latest/commands/json.set/">JSON.SET Documentation</a>
+         */
+        JSON_SET("json.set", "json", false),
+        /**
+         * Appends a string to JSON strings at the paths matching a given path expression.
+         * <a href="https://redis.io/docs/latest/commands/json.strappend/">JSON.STRAPPEND Documentation</a>
+         */
+        JSON_STRAPPEND("json.strappend", "json", false),
+        /**
+         * Returns the length of JSON strings at the paths matching a given path expression.
+         * <a href="https://redis.io/docs/latest/commands/json.strlen/">JSON.STRLEN Documentation</a>
+         */
+        JSON_STRLEN("json.strlen", "json", true),
+        /**
+         * Toggles a boolean value.
+         * <a href="https://redis.io/docs/latest/commands/json.toggle/">JSON.TOGGLE Documentation</a>
+         */
+        JSON_TOGGLE("json.toggle", "json", false),
+        /**
+         * Returns the type of the JSON value at path.
+         * <a href="https://redis.io/docs/latest/commands/json.type/">JSON.TYPE Documentation</a>
+         */
+        JSON_TYPE("json.type", "json", true),
         /**
          * Returns all keys matching pattern.
          * <a href="https://redis.io/docs/latest/commands/keys/">KEYS Documentation</a>
@@ -181,8 +301,7 @@ public class RedisCommand implements Serializable {
     private final RedisCommandType type;
 
     /**
-     * Keys or values used in query. Keys are used in most queries. Values are used in Set commands.
-     * Keys are wrapped in {@literal key<...>} while values in {@literal value<...>}
+     * Already-parsed argument values, in the order the command received them.
      */
     private final String[] args;
 
@@ -215,11 +334,7 @@ public class RedisCommand implements Serializable {
     }
 
     public List<String> extractArgs(){
-        List<String> parameters = new ArrayList<>();
-        for(String arg : args){
-                parameters.add(arg.substring(arg.indexOf('<')+1, arg.indexOf('>')));
-        }
-        return parameters;
+        return Arrays.asList(args);
     }
 
     public boolean getSuccessfullyExecuted() {
