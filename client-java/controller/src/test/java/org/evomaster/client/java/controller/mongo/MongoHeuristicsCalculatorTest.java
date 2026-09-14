@@ -2114,4 +2114,455 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(nested, doc).isFalse());
         assertTrue(calculator.computeHeuristicDocument(nested, new Document("a", 5)).isTrue());
     }
+
+    /*
+        ================================================================================
+        Further cases, in the same form: every expected value comes from a MongoDB
+        7.0.41 server answering that query against that document, one test per defect,
+        and @Disabled on the ones that fail today.
+
+        Where the database refuses the query outright there is no answer to copy, so
+        those tests assert that the calculator answers false without throwing, that
+        being the only answer available to it.
+        ================================================================================
+     */
+
+    @Test
+    @Disabled("$regex against an array holding no strings throws IllegalArgumentException")
+    public void testRegexAgainstAnArrayWithoutStringElements() {
+        /*
+            mongo: no match, and no error. The elements are compared one by one and a
+            number never matches a regex.
+
+            The array branch keeps only the strings and then aggregates what is left,
+            and the aggregation rejects an empty array. The scalar branch of the same
+            operator answers C_FALSE for a number, as this one used to.
+         */
+        Document doc = new Document().append("a", new ArrayList<>(Arrays.asList(1, 2, 3)));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$regex", new BsonRegularExpression("x")));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("a bitmask held as org.bson.types.Binary is not parsed, so the calculator throws")
+    public void testBitmaskGivenAsBinaryData() {
+        /*
+            mongo: matches, bit 1 of the mask is set and so is bit 1 of the value.
+
+            A bitmask given as binary data is only recognised when it is a byte[]. A
+            query that has been through a BSON decode holds a Binary instead, which
+            leaves the mask unparsed, and the whole query then parses to null.
+         */
+        Document doc = new Document().append("a", 2);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$bitsAllSet", new Binary(new byte[]{(byte) 0x02})));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isTrue());
+    }
+
+    @Test
+    public void testBitmaskGivenAsAByteArray() {
+        // the shape of binary bitmask that is handled today, next to the one above
+        Document doc = new Document().append("a", 2);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$bitsAllSet", new byte[]{(byte) 0x02}));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("$not holding a bare regex is not parsed, so the calculator throws a NullPointerException")
+    public void testNotWithABareRegex() {
+        /*
+            mongo: matches, {"a": {"$not": /x/}} is a documented form of the operator.
+            Only a document is accepted as the value of $not today, so this parses to
+            null.
+         */
+        Document doc = new Document().append("a", "aa");
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$not", new BsonRegularExpression("x")));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isTrue());
+    }
+
+    @Test
+    @Disabled("$comment is removed from documents that are values rather than operators")
+    public void testCommentInsideALiteralValue() {
+        /*
+            mongo: matches. A field name that starts with "$" is storable since 5.0, and
+            under an explicit $eq the document is compared as a literal. The implicit
+            form, {"a": {"$comment": ...}}, is rejected instead.
+
+            The comment operator is removed everywhere it appears in the query, so the
+            value being compared loses the key as well and no longer equals the stored
+            document.
+         */
+        Document doc = new Document().append("a",
+                new Document().append("$comment", "note").append("x", 1));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", new Document().append("$eq",
+                new Document().append("$comment", "note").append("x", 1)));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    public void testCommentAtTopLevel() {
+        // the placement of $comment that the query is actually allowed to use
+        Document doc = new Document().append("a", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", 1).append("$comment", "note");
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("$all with a repeated element does not match a field that is not an array")
+    public void testAllWithARepeatedElement() {
+        // mongo: matches. $all is an $and of $eq, so a repeat holds against a scalar.
+        Document doc = new Document().append("a", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$all", Arrays.asList(1, 1)));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("$all holding more than one null does not match a missing field")
+    public void testAllWithRepeatedNullsAgainstAMissingField() {
+        // mongo: matches, null matches a missing field however many times it is asked for
+        Document doc = new Document().append("b", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$all", Arrays.asList(null, null)));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    public void testAllWithASingleNullAgainstAMissingField() {
+        // the single element case, which is special-cased today
+        Document doc = new Document().append("b", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$all", Collections.singletonList(null)));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("$in does not match an element of the list that is a regex")
+    public void testInWithARegexElement() {
+        // mongo: matches, $in accepts regexes among its elements
+        Document doc = new Document().append("a", "xy");
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", new Document().append("$in",
+                Collections.singletonList(new BsonRegularExpression("x"))));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("two sub-documents are never equal to one another, so the query never matches")
+    public void testEqualityBetweenTwoSubDocuments() {
+        /*
+            mongo: matches every one of these. A sub-document is compared field by field
+            in order, and an array is searched for it as an element.
+
+            compareNonNullValues has a branch for numbers, strings, booleans, lists,
+            dates, timestamps and object ids, but none for two documents, so they reach
+            the branch for values of types that cannot be compared and answer false.
+            testFieldsHoldingASubDocument above covers a sub-document against a scalar,
+            where answering false is right, which is why this one is not caught there.
+         */
+        Document doc = new Document().append("a", new Document().append("x", 1));
+        Document arrayOfSubDocuments = new Document().append("a", new ArrayList<>(
+                Arrays.asList(new Document().append("x", 1), new Document().append("x", 2))));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document implicitEquality = new Document().append("a", new Document().append("x", 1));
+        assertTrue(calculator.computeHeuristicDocument(implicitEquality, doc).isTrue());
+
+        Document explicitEquality = new Document().append("a",
+                new Document().append("$eq", new Document().append("x", 1)));
+        assertTrue(calculator.computeHeuristicDocument(explicitEquality, doc).isTrue());
+
+        // mongo: matches, the array is searched for the sub-document as one of its elements
+        assertTrue(calculator.computeHeuristicDocument(implicitEquality, arrayOfSubDocuments).isTrue());
+    }
+
+    @Test
+    @Disabled("$ne and $nin report a match between two sub-documents that are equal")
+    public void testInequalityBetweenTwoSubDocuments() {
+        /*
+            mongo: no match for either, the sub-document held by the field is the one the
+            query names.
+
+            The same gap as the test above, in the direction that hurts: two documents
+            reach the branch for values of types that cannot be compared, which answers
+            true for $ne, and $nin reaches the same answer by inverting it once more.
+         */
+        Document doc = new Document().append("a", new Document().append("x", 1));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document notEquals = new Document().append("a",
+                new Document().append("$ne", new Document().append("x", 1)));
+        assertTrue(calculator.computeHeuristicDocument(notEquals, doc).isFalse());
+
+        Document notIn = new Document().append("a", new Document().append("$nin",
+                Collections.singletonList(new Document().append("x", 1))));
+        assertTrue(calculator.computeHeuristicDocument(notIn, doc).isFalse());
+    }
+
+    @Test
+    @Disabled("$eq does not match an array holding the given array as one of its elements")
+    public void testEqualsMatchingAnArrayThatIsAnElement() {
+        /*
+            mongo: matches, the field holds [1,2] as one of its elements. The other half
+            of this operator, an array equal to the query value as a whole, is covered by
+            testEqualsMatchingAnArrayFieldAsAWhole above and already answers correctly.
+
+            $in and $all both find a nested array in this position, so $eq is the one of
+            the three that does not.
+         */
+        Document doc = new Document().append("a", new ArrayList<>(
+                Arrays.asList(new ArrayList<>(Arrays.asList(1, 2)), 3)));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$eq", Arrays.asList(1, 2)));
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("two binary values are never equal to one another, so the query never matches")
+    public void testComparisonBetweenTwoBinaryValues() {
+        /*
+            mongo: the first three match and the last two do not.
+
+            The same gap as testEqualityBetweenTwoSubDocuments, reached by the other value
+            compareNonNullValues has no branch for. testFieldsHoldingASubDocument above
+            covers binary data against a number, where answering false is right.
+         */
+        Document doc = new Document().append("a", new Binary(new byte[]{1, 2}));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(
+                new Document().append("a", new Binary(new byte[]{1, 2})), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(
+                new Document().append("a", new Document().append("$eq", new Binary(new byte[]{1, 2}))),
+                doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(
+                new Document().append("a", new Document().append("$in",
+                        Collections.singletonList(new Binary(new byte[]{1, 2})))), doc).isTrue());
+
+        // mongo: no match, the value held by the field is the one the query names
+        assertTrue(calculator.computeHeuristicDocument(
+                new Document().append("a", new Document().append("$ne", new Binary(new byte[]{1, 2}))),
+                doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(
+                new Document().append("a", new Document().append("$nin",
+                        Collections.singletonList(new Binary(new byte[]{1, 2})))), doc).isFalse());
+    }
+
+    @Test
+    @Disabled("$all holding an $elemMatch is compared as a value instead of applied as a condition")
+    public void testAllHoldingAnElemMatch() {
+        /*
+            mongo: matches both. $all accepts $elemMatch among its elements, and then every
+            one of them has to be satisfied by some element of the array.
+
+            Each element of $all is compared for equality against the elements of the field
+            instead, so the document holding the operator never equals any of them.
+         */
+        Document doc = new Document().append("a", new ArrayList<>(Arrays.asList(1, 5)));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document one = new Document().append("a", new Document().append("$all",
+                Collections.singletonList(new Document().append("$elemMatch",
+                        new Document().append("$gt", 2)))));
+        assertTrue(calculator.computeHeuristicDocument(one, doc).isTrue());
+
+        // mongo: matches, 5 satisfies the first and 1 satisfies the second
+        Document two = new Document().append("a", new Document().append("$all", Arrays.asList(
+                new Document().append("$elemMatch", new Document().append("$gt", 4)),
+                new Document().append("$elemMatch", new Document().append("$lt", 2)))));
+        assertTrue(calculator.computeHeuristicDocument(two, doc).isTrue());
+    }
+
+    @Test
+    @Disabled("an ordering operator given null is not parsed, so the calculator throws")
+    public void testOrderingComparisonsGivenANullArgument() {
+        /*
+            mongo: runs all four and matches nothing, null orders against nothing. It is a
+            query the database accepts, unlike $mod with a zero divisor or a negative $size.
+
+            $eq and $ne accept null and answer, so the four below are the odd ones out in
+            their own family.
+         */
+        Document doc = new Document().append("a", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        for (String operator : Arrays.asList("$gt", "$gte", "$lt", "$lte")) {
+            Document query = new Document().append("a", new Document().append(operator, null));
+            Truthness truthness = assertDoesNotThrow(
+                    () -> calculator.computeHeuristicDocument(query, doc), operator);
+            assertTrue(truthness.isFalse(), operator);
+        }
+    }
+
+    @Test
+    @Disabled("$exists given anything but a boolean is not parsed, so the calculator throws")
+    public void testExistsGivenAValueThatIsNotABoolean() {
+        /*
+            mongo: takes any value for $exists and reads it as a truth value, so 1 and a
+            string ask for the field to be present, and 0 and null ask for it to be absent.
+            All four are queries the database accepts and answers.
+         */
+        Document doc = new Document().append("a", 1);
+        Document without = new Document().append("b", 1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document truthy = new Document().append("a", new Document().append("$exists", 1));
+        assertTrue(assertDoesNotThrow(() -> calculator.computeHeuristicDocument(truthy, doc)).isTrue());
+
+        Document falsy = new Document().append("a", new Document().append("$exists", 0));
+        assertTrue(assertDoesNotThrow(() -> calculator.computeHeuristicDocument(falsy, doc)).isFalse());
+        assertTrue(assertDoesNotThrow(() -> calculator.computeHeuristicDocument(falsy, without)).isTrue());
+
+        Document nullValue = new Document().append("a", new Document().append("$exists", null));
+        assertTrue(assertDoesNotThrow(() -> calculator.computeHeuristicDocument(nullValue, doc)).isFalse());
+    }
+
+    @Test
+    @Disabled("a negative bit position is read as bit 63 instead of being rejected")
+    public void testBitmaskWithANegativeBitPosition() {
+        /*
+            mongo: "Failed to parse bit position. Expected a non-negative number in: 0: -1".
+
+            A shift count is masked to its low six bits in Java, so 1L << -1 sets bit 63
+            and the mask becomes Long.MIN_VALUE, which the value below then matches.
+            Rejecting the mask on its own is not enough here: if the mask stops parsing,
+            the selector answers null and the query goes unparsed, which is the throwing
+            case rather than a fix.
+         */
+        Document doc = new Document().append("a", Long.MIN_VALUE);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$bitsAllSet", Collections.singletonList(-1)));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("a bitmask that is not an integer is truncated instead of being rejected")
+    public void testBitmaskThatIsNotAnInteger() {
+        // mongo: "Expected an integer: $bitsAllSet: 3.9". Here 3.9 is read as the mask 3.
+        Document doc = new Document().append("a", 3);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", new Document().append("$bitsAllSet", 3.9d));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("a negative bitmask is read as all ones instead of being rejected")
+    public void testBitmaskThatIsNegative() {
+        // mongo: "Expected a non-negative number in: $bitsAllSet: -1"
+        Document doc = new Document().append("a", -1);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", new Document().append("$bitsAllSet", -1));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("$mod with a divisor of 0 throws ArithmeticException")
+    public void testModByZero() {
+        // mongo: "divisor cannot be 0"
+        Document doc = new Document().append("a", 5);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a",
+                new Document().append("$mod", Arrays.asList(0, 0)));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("$size with a negative value is not parsed, so the calculator throws a NullPointerException")
+    public void testNegativeSize() {
+        // mongo: "Expected a non-negative number in: $size: -1"
+        Document doc = new Document().append("a", Arrays.asList(1, 2));
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document query = new Document().append("a", new Document().append("$size", -1));
+        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
+        assertTrue(truthness.isFalse());
+    }
+
+    @Test
+    @Disabled("the documents are traversed more than once, so a one-shot Iterable is scored wrongly")
+    public void testDocumentsThatCanOnlyBeTraversedOnce() {
+        /*
+            Not a question of MongoDB semantics but of the contract of the calculator.
+
+            computeDistanceDocuments counts the documents, computeHeuristicOnDocuments
+            counts them again, and the loop then walks them a third time. What is passed
+            in today is a FindIterable, which replays, so this costs a round trip to the
+            database per traversal rather than a wrong answer. The signature accepts any
+            Iterable though, and one that cannot be replayed is scored as if the
+            collection were empty while still reporting the documents counted first.
+         */
+        List<Document> docs = Arrays.asList(
+                new Document().append("a", 1),
+                new Document().append("a", 2));
+        Document query = convertToDocument(Filters.eq("a", 2));
+
+        // the second document matches the query, so the distance is 0 over either Iterable
+        MongoDistanceWithMetrics fromList = new MongoHeuristicsCalculator()
+                .computeDistanceDocuments(query, docs);
+        assertEquals(2, fromList.numberOfEvaluatedDocuments);
+        assertEquals(0d, fromList.mongoDistance, 0.000001d);
+
+        MongoDistanceWithMetrics fromOneShot = new MongoHeuristicsCalculator()
+                .computeDistanceDocuments(query, new OneShotIterable<>(docs));
+        assertEquals(2, fromOneShot.numberOfEvaluatedDocuments);
+        assertEquals(0d, fromOneShot.mongoDistance, 0.000001d);
+    }
+
+    /**
+     * An Iterable that can be traversed only once.
+     */
+    private static final class OneShotIterable<T> implements Iterable<T> {
+
+        private final Iterable<T> delegate;
+        private boolean consumed = false;
+
+        private OneShotIterable(Iterable<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            if (consumed) {
+                return Collections.emptyIterator();
+            }
+            consumed = true;
+            return delegate.iterator();
+        }
+    }
 }
