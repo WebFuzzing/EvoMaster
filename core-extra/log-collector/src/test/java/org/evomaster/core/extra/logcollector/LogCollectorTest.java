@@ -42,16 +42,14 @@ public class LogCollectorTest {
     }
 
     @Test
-    void logCollector_goingToStartExecutingNewTest_doesNotThrow() {
-        LogCollector plugin = new LogCollector();
-        Assertions.assertDoesNotThrow(() -> plugin.goingToStartExecutingNewTest());
-    }
+    void logCollector_testFinishedCollectResult_returnsEmptyOnDaemonError() throws Exception {
+        Path script = getResource("error_daemon.py");
+        String[] daemonCmd = {"python3", script.toString()};
 
-    @Test
-    void logCollector_testFinishedCollectResult_returnsNonNull() {
-        LogCollector plugin = new LogCollector();
+        LogCollector plugin = new LogCollector(daemonCmd);
         plugin.goingToStartExecutingNewTest();
         List<?> result = plugin.testFinishedCollectResult();
-        Assertions.assertNotNull(result, "testFinishedCollectResult should never return null");
+
+        Assertions.assertTrue(result.isEmpty(), "Should return empty list when daemon reports error");
     }
 }
