@@ -39,20 +39,20 @@ class XSSReflectedJSONEMTest : SpringTestBase() {
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertTrue(DefinedFaultCategory.XSS in faultsCategories)
+            assertTrue(DefinedFaultCategory.SECURITY_XSS in faultsCategories)
 
             assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "POST:/api/reflected/json/comment"
             })
 
             assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "GET:/api/reflected/json/search"
             })
 
             assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "GET:/api/reflected/json/user/{username}"
             })
         }
