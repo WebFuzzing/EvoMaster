@@ -9,6 +9,7 @@ import redis.clients.jedis.Connection;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.args.RawableFactory;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.search.SearchProtocol;
 import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.List;
@@ -78,5 +79,26 @@ public class ConnectionClassReplacementTest {
 
         assertEquals("JSON_GET", redisCmd.getType().name());
         assertArrayEquals(new String[]{key}, redisCmd.getArgs());
+    }
+
+    @Test
+    public void testExecuteCommandFtSearch() {
+        String indexName = "myIndex";
+        String query = "@title:redis";
+        CommandArguments args = new CommandArguments(SearchProtocol.SearchCommand.SEARCH)
+                .add(indexName)
+                .add(query);
+        CommandObject<Object> commandObject = new CommandObject<>(args, null);
+
+        ConnectionClassReplacement.executeCommand(mockConnection, commandObject);
+
+        List<AdditionalInfo> infoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, infoList.size());
+
+        org.evomaster.client.java.instrumentation.RedisCommand redisCmd =
+                infoList.get(0).getRedisCommandData().iterator().next();
+
+        assertEquals("FT_SEARCH", redisCmd.getType().name());
+        assertArrayEquals(new String[]{indexName, query}, redisCmd.getArgs());
     }
 }
