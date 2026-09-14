@@ -45,6 +45,13 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
                     + "(?:\\s*\\.\\s*(?<second>" + IDENTIFIER + "))?"
     );
 
+    /**
+     * Sentinel {@link TableReference} with all fields {@code null}, returned by
+     * {@link #extractTableReference(String)} when the CQL text doesn't match a recognised
+     * SELECT/INSERT/UPDATE/DELETE table reference shape (eg DDL, batches).
+     */
+    private static final TableReference NO_TABLE_REFERENCE = new TableReference(null, null, null, null);
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "com.datastax.oss.driver.api.core.CqlSession";
@@ -78,10 +85,14 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
             long end = System.currentTimeMillis();
             long executionTime = end - start;
             TableReference ref = extractTableReference(queryForTracking);
+            String keyspaceName = ref.keyspaceName;
             if (ref.rawTableName != null) {
                 captureTableSchema(cqlSession, ref);
+                if (keyspaceName == null) {
+                    keyspaceName = resolveDefaultKeyspaceName(cqlSession);
+                }
             }
-            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, ref.keyspaceName, ref.tableName, false, executionTime);
+            ExecutedCqlCommand info = new ExecutedCqlCommand(queryForTracking, keyspaceName, ref.tableName, false, executionTime);
             ExecutionTracer.addCqlInfo(info);
             return result;
         } catch (IllegalAccessException e) {
@@ -102,14 +113,17 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     /**
-     * Sentinel {@link TableReference} with all fields {@code null}, returned by
-     * {@link #extractTableReference(String)} when the CQL text doesn't match a recognised
-     * SELECT/INSERT/UPDATE/DELETE table reference shape (eg DDL, batches).
+     * Resolves the session's current default keyspace, for a statement that didn't
+     * qualify its table with an explicit keyspace, so {@link ExecutedCqlCommand#getKeyspaceName()}
+     * carries the same (never-null) keyspace {@link CassandraSchemaTracer} resolved the table's
+     * schema under, instead of staying null.
      */
-    private static final TableReference NO_TABLE_REFERENCE = new TableReference(null, null, null, null);
+    private static String resolveDefaultKeyspaceName(Object cqlSession) {
+        return CassandraSchemaTracer.resolveKeyspaceName(cqlSession, null);
+    }
 
     /**
-     * Best-effort extraction of keyspace/table from the CQL text. Returns both fields as
+     * Extraction of keyspace/table from the CQL text. Returns both fields as
      * null when the query doesn't match a recognised SELECT/INSERT/UPDATE/DELETE shape
      * (eg DDL, batches).
      */

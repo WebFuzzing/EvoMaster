@@ -54,16 +54,19 @@ object TokenWriter {
             when {
                 format.isJava() -> lines.add("final String ${tokenName(k)} = ")
                 format.isKotlin() -> lines.add("val ${tokenName(k)} : String = ")
-                format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
+                format.isJavaScript() && format.isPlaywright() -> lines.add("let ${tokenName(k)};")
+                format.isJavaScript() && !format.isPlaywright()-> lines.add("let ${tokenName(k)} = ")
             }
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
                 format.isJavaScript() -> {
-                    lines.append("\"\"")
-                    lines.appendSemicolon()
-                    lines.addEmpty()
-                    lines.append("await superagent")
+                    if (format.isPlaywright()) {
+                        testCaseWriter.startRequest(lines) //handled in HttpWsTestCaseWriter with startRequest(lines) and await request
+                    } else {lines.append("\"\"")
+                        lines.appendSemicolon()
+                        lines.addEmpty()
+                        lines.append("await superagent")}
                 }
             }
 
@@ -88,8 +91,10 @@ object TokenWriter {
             when(token.extractFrom){
                 TokenHandling.ExtractFrom.BODY -> {
                     if (format.isJavaScript()) {
-                        lines.add(".then(res => {${tokenName(k)} = res.body.$path;},")
-                        lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")})") }
+                        if (format.isPlaywright()) {
+                            lines.add(".then(async res => {${tokenName(k)} = (await res.json()).$path;})")
+                        } else {lines.add(".then(res => {${tokenName(k)} = res.body.$path;},")
+                            lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")})") }}
                     } else if (format.isPython()) {
                         lines.add("${tokenName(k)} =  ${responseName(k)}.json()$path")
                     }else if (format.isJavaOrKotlin()) {
@@ -103,8 +108,14 @@ object TokenWriter {
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = token.extractSelector
                     if (format.isJavaScript()) {
-                        lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")
-                        lines.indented { lines.add("error => {console.log(error.response.headers); throw Error(\"Auth failed.\")})") }
+                        if (format.isPlaywright()) {
+                            // In Playwright, use a single-callback then; do not append a separate error handler
+                            lines.add(".then(async res => {${tokenName(k)} = res.headers()[\"${header.lowercase()}\"];})")
+                        } else {
+                            // In SuperAgent, support success and error callbacks in the same then(...)
+                            lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")
+                            lines.indented { lines.add("error => {console.log(error.response.headers); throw Error(\"Auth failed.\")})") }
+                        }
                     } else if (format.isPython()) {
                         lines.add("${tokenName(k)} =  ${responseName(k)}.headers[\"$header\"]")
                     }else if (format.isJavaOrKotlin()) {

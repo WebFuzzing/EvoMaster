@@ -51,8 +51,8 @@ public class ImplicitSelector extends QuerySelector {
             return true;
         }
 
-        // If any key starts with $, this is not an implicit query
-        return keys.stream().noneMatch(k -> k.startsWith(PREFIX_OPERATOR));
+        // "$" is the synthetic field used for operators that target a scalar array element.
+        return keys.stream().noneMatch(k -> k.startsWith(PREFIX_OPERATOR) && !k.equals(PREFIX_OPERATOR));
     }
 
     private QueryOperation handleMultipleFields(Object query) {

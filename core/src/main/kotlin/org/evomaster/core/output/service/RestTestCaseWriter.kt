@@ -71,17 +71,27 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
+        super.handleTestInitialization(lines,
+            baseUrlOfSut,
+            ind,
+            sqlInsertionVars,
+            mongoInsertionVars,
+            redisInsertionVars,
+            testName)
     }
 
     override fun handleActionCalls(
             lines: Lines,
             baseUrlOfSut: String,
             ind: EvaluatedIndividual<*>,
-            insertionVars: MutableList<Pair<String, String>>,
+            sqlInsertionVars: MutableList<Pair<String, String>>,
+            mongoInsertionVars: MutableList<Pair<String, String>>,
+            redisInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     ) {
@@ -97,7 +107,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             lines,
                             ind.individual.seeSqlDbActions(),
                             groupIndex = index.toString(),
-                            insertionVars = insertionVars,
+                            sqlInsertionVars = sqlInsertionVars,
                             skipFailure = config.skipFailureSQLInTestFile
                         )
                     //actions
@@ -217,14 +227,26 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val call = _call as RestCallAction
         val verb = call.verb.name.lowercase()
 
-        if (format.isCsharp()) {
-            lines.append(".${StringUtils.capitalization(verb)}Async(")
-        } else {
-            if (verb == "trace" && format.isJavaOrKotlin()) {
-                //currently, RestAssured does not have a trace() method
-                lines.add(".request(io.restassured.http.Method.TRACE, ")
-            } else {
-                lines.add(".$verb(")
+        when {
+            format.isPlaywright() -> {
+                val verbToUse = call.verb.name.lowercase()
+                // Playwright provides direct helpers for common verbs. For the rest, use fetch with explicit method.
+                val hasDirectHelper = setOf("get", "post", "put", "patch", "delete", "head").contains(verbToUse)
+                if (!hasDirectHelper) {
+                    lines.add("await request.fetch(")
+                } else {
+                    lines.add("await request.$verbToUse(")
+                }
+                // Note: the options object is appended in HttpWsTestCaseWriter.makeHttpCall.
+            }
+            format.isCsharp() -> lines.append(".${StringUtils.capitalization(verb)}Async(")
+            else -> {
+                if (verb == "trace" && format.isJavaOrKotlin()) {
+                    //currently, RestAssured does not have a trace() method
+                    lines.add(".request(io.restassured.http.Method.TRACE, ")
+                } else {
+                    lines.add(".$verb(")
+                }
             }
         }
 
@@ -407,7 +429,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
 
                 format.isJavaScript() -> {
-                    lines.add("const $location = $resVarName.header['location'];")
+                    val extract = if (format.isPlaywright()) {
+                        "$resVarName.headers()['location']"
+                    } else {
+                        "$resVarName.header['location']"
+                    }
+                    lines.add("const $location = $extract;")
                     val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                     lines.add("expect($validCheck).toBe(true);")
                 }
