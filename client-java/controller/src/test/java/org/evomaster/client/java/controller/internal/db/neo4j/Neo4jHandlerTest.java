@@ -119,6 +119,49 @@ class Neo4jHandlerTest {
         assertTrue(handler.getEvaluatedNeo4jCommands().isEmpty());
     }
 
+    private static final String PARAMETERISED_QUERY = "MATCH (a:Person {name: $name}) RETURN a";
+
+    private static double distanceOf(Neo4jHandler handler) {
+        List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
+        assertEquals(1, evaluated.size());
+        assertFalse(evaluated.get(0).getDistanceWithMetrics().isEvaluationFailure());
+        return evaluated.get(0).getDistanceWithMetrics().getDistance();
+    }
+
+    @Test
+    void testParametersCapturedWithTheQueryAreResolved() {
+        Map<String, Object> hit = new LinkedHashMap<>();
+        hit.put("name", "Ana");
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(example1Driver());
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, hit, true, 1));
+        assertEquals(0.0, distanceOf(handler), 0.0);
+
+        Map<String, Object> miss = new LinkedHashMap<>();
+        miss.put("name", "Zoe");
+        handler.reset();
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, miss, true, 1));
+        assertTrue(distanceOf(handler) > 0.0);
+    }
+
+    @Test
+    void testDriverValuesInsideTheParameterMapAreUnwrapped() {
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("name", new FakeValue("Ana"));
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(example1Driver());
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, parameters, true, 1));
+        assertEquals(0.0, distanceOf(handler), 0.0);
+    }
+
+    @Test
+    void testParametersCapturedAsADriverMapValueAreRead() {
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(example1Driver());
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Ana")), true, 1));
+        assertEquals(0.0, distanceOf(handler), 0.0);
+    }
+
     // Fake Neo4j driver, exposing only the methods the reader reflects over.
 
     public static final class FakeDriver {
@@ -203,6 +246,10 @@ class Neo4jHandlerTest {
         @SuppressWarnings("unchecked")
         public Map<String, Object> asMap() {
             return (Map<String, Object>) value;
+        }
+
+        public Object asObject() {
+            return value;
         }
     }
 
