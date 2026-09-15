@@ -23,6 +23,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstra
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
@@ -1927,6 +1929,41 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     @Override
     public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
         return false;
+    }
+
+    /**
+     * Publish one message, and wait for the reply that answers it when one is expected.
+     *
+     * This is where a driver for an AsyncAPI service does its work, and it is the counterpart
+     * of {@link #executeAction(RPCActionDto, ActionResponseDto)} for RPC: the core decides
+     * what to send and reads what comes back, while everything that knows about a broker lives
+     * on this side. Only publish and await are protocol-specific, and they never leave here.
+     *
+     * A driver that does not test an AsyncAPI service has no reason to override this.
+     *
+     * Sketch of what an implementation does, for a transport whose correlation rides in
+     * metadata:
+     *
+     * <pre>
+     * publish(dto.address, dto.payload, dto.headers + {correlationId: dto.correlationId});
+     * reply.published = true;
+     * if (dto.replyAddress != null) {
+     *     reply.replyExpected = true;
+     *     awaitOn(dto.replyAddress, matching dto.correlationId, within dto.replyTimeoutMs);
+     * }
+     * </pre>
+     *
+     * Note what is not asked of the driver: it does not judge the reply, only reports it.
+     * Deciding what an outcome means is the core's job, so that it means the same thing
+     * whatever the transport.
+     *
+     * @param dto   what to publish, and where a reply is expected
+     * @param reply to be filled in with what happened
+     */
+    public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
+        throw new IllegalStateException(
+                "Trying to publish a message, but this driver does not implement" +
+                        " executeAsyncApiAction. It must be overridden to test an AsyncAPI service.");
     }
 
     @Override
