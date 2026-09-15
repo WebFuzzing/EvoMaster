@@ -1,5 +1,7 @@
 package org.evomaster.core.database.dynamodb
 
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
@@ -29,12 +31,6 @@ class DynamoDbAction(
     val attributes: List<DynamoDbAttributeGene>
 ) : EnvironmentAction(listOf()) {
 
-    companion object {
-        private const val ATTRIBUTE_SEPARATOR = '|'
-        private const val TYPE_SEPARATOR = ':'
-        private const val VALUE_SEPARATOR = '='
-    }
-
     init {
         addChildren(attributes.map { it.gene })
     }
@@ -55,11 +51,10 @@ class DynamoDbAction(
     override fun getActionGroupKey(): String = DynamoDbAction::class.java.name
 
     /** Stable key used to avoid adding the same inferred insertion twice. */
-    fun insertionKey(): String = buildString {
-        append(tableName)
-        attributes.forEach {
-            append(ATTRIBUTE_SEPARATOR).append(it.attributeName).append(TYPE_SEPARATOR).append(it.type)
-                .append(VALUE_SEPARATOR).append(it.gene.getValueAsRawString())
+    fun insertionKey(): String = DynamoDbInsertionKeyBuilder.fromAttributes(
+        tableName,
+        attributes.map {
+            DynamoDbAttributeValueDto(it.attributeName, it.type, it.gene.getValueAsRawString())
         }
-    }
+    )
 }
