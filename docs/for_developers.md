@@ -375,7 +375,7 @@ Push the last one.
 
 At times, you might make a push and then, after a moment, realize you forgot something, and need to make a new commit. 
 This is fine. 
-However, have a look at [GitHub Actions page](https://github.com/WebFuzzing/EvoMaster/actions/runs/34935707803) to see if there are other jobs waiting in the queue. 
+However, have a look at [GitHub Actions page](https://github.com/WebFuzzing/EvoMaster/actions/) to see if there are other jobs waiting (and not running) in the queue. 
 If so, to avoid delays to other people working on _EvoMaster_, you can manually stop the outdated jobs your push started and that are no longer needed.  
 
 
