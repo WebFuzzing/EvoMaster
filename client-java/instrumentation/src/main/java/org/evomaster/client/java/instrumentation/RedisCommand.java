@@ -245,7 +245,7 @@ public class RedisCommand implements Serializable {
          * Runs a search query on an index and performs aggregate transformations on the results.
          * <a href="https://redis.io/docs/latest/commands/ft.aggregate/">FT.AGGREGATE Documentation</a>
          */
-        FT_AGGREGATE("ft.aggregate", "search", false),
+        FT_AGGREGATE("ft.aggregate", "search", true),
         /**
          * Adds an alias to an index.
          * <a href="https://redis.io/docs/latest/commands/ft.aliasadd/">FT.ALIASADD Documentation</a>
@@ -325,7 +325,7 @@ public class RedisCommand implements Serializable {
          * Searches the index with a textual query, returning either documents or just ids.
          * <a href="https://redis.io/docs/latest/commands/ft.search/">FT.SEARCH Documentation</a>
          */
-        FT_SEARCH("ft.search", "search", false),
+        FT_SEARCH("ft.search", "search", true),
         /**
          * Performs spelling correction on a query, returning suggestions for misspelled terms.
          * <a href="https://redis.io/docs/latest/commands/ft.spellcheck/">FT.SPELLCHECK Documentation</a>

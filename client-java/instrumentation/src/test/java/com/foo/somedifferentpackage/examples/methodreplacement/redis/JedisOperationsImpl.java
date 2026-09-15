@@ -4,6 +4,10 @@ import org.evomaster.client.java.instrumentation.example.redis.JedisOperations;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.UnifiedJedis;
 
+/**
+ * {@link JedisOperations} implementation backed by a real {@link UnifiedJedis} connection,
+ * used as the instrumentation target in JedisInstrumentedTest.
+ */
 public class JedisOperationsImpl implements JedisOperations {
 
     private final UnifiedJedis jedis;
