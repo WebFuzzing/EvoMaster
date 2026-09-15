@@ -22,7 +22,8 @@ enum class AssertionType(val usesInnerGene: Boolean) {
     CARET(usesInnerGene = false),
     DOLLAR(usesInnerGene = false),
     WORD_BOUNDARY(usesInnerGene = false),
-    NON_WORD_BOUNDARY(usesInnerGene = false)
+    NON_WORD_BOUNDARY(usesInnerGene = false),
+    END_OF_INPUT_OR_FINAL_LINE_TERMINATOR(usesInnerGene = false)
 }
 
 /**
