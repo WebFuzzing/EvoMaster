@@ -25,7 +25,7 @@ else
     exit 1
 fi
 
-VERSION=6.1.2
+VERSION=6.2.0
 
 RELEASE=release
 BUILD=build
