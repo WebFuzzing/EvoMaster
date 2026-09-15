@@ -35,7 +35,8 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         ForgottenAuthenticationApplication.reset()
         getEMConfig().security = true
         getEMConfig().schemaOracles = false
-        getEMConfig().useExperimentalOracles = true
+        getEMConfig().httpOracles = false
+        getEMConfig().statusOracles = false
     }
 
     @Test
