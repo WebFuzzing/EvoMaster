@@ -1,7 +1,9 @@
 package org.evomaster.core.search.service
 
 import com.webfuzzing.commons.faults.FaultCategory
+import com.webfuzzing.commons.faults.FaultCategoryGroup
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.core.problem.enterprise.EmployedOracles
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -105,6 +107,11 @@ class IdMapper {
     }
 
     fun getFaultDescriptiveId(category: FaultCategory, postfix: String): String{
+        if(category.group != FaultCategoryGroup.G_9XX && !EmployedOracles.hasCategory(category.code)){
+            //if adding a new non-custom oracle, must be added to EmployedOracles
+            throw IllegalArgumentException("Unrecognized category code ${category.code}")
+        }
+
         return "$FAULT_OBJECTIVE_PREFIX ${category.label} $postfix"
     }
 
