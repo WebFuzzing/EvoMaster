@@ -85,6 +85,11 @@ class FitnessValue(
 
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
+    /**
+     * Key -> index of the action in the evaluated individual.
+     *
+     * Value -> information about failed DynamoDB reads observed while executing that action.
+     */
     val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
 
     /**
