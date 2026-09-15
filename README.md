@@ -156,7 +156,7 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
 * _Web Report_: besides generating executable tests in different programming language, an interactive _index.html_ web report is created as well by default, visualizing and summarizing the results of the generated tests. 
 
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
-  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas and access policy violations.
+  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas, access policy violations like BOLA, and SQL Injection. More than 30 oracles are currently used. Full details with documentation at [faults.md](docs/faults.md).
 
 * _Self-contained tests_: for white-box testing, the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
