@@ -49,7 +49,15 @@ You can then run it on the command-line with `evomster <args>`, like for example
 
 It will fuzz the PetClinic example API from Swagger, for 60 seconds. 
 
-If you prefer, you can rather use Docker, as shown in the following video. 
+If instead of downloading for first time, you need to update it, you can run
+
+`pip install --upgrade evomaster`
+
+Note: some Mac users have reported issues with that command, not picking up latest version of _EvoMaster. In such cases, you should use:
+
+`python3 -m pip install --upgrade evomaster`
+
+If you prefer, you can rather use __Docker__, as shown in the following video. 
 
 ```
 docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json

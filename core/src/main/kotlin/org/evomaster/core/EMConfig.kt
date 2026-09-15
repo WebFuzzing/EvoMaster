@@ -3222,13 +3222,11 @@ class EMConfig {
             " created.")
     var createConfigPathIfMissing: Boolean = true
 
-    @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
-    var httpOracles = false
+    var httpOracles = true
 
-    @Experimental
     @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
-    var statusOracles = false
+    var statusOracles = true
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
