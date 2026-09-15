@@ -9,11 +9,21 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.RegexFlags
 
 /**
- * Distinguishes which direction an [AssertionRxGene] forces a candidate during repair.
+ * Distinguishes the different assertion types an [AssertionRxGene] represents.
  */
-enum class AssertionType { LOOKAHEAD, LOOKBEHIND }
+enum class AssertionType(val usesInnerGene: Boolean) {
+    LOOKAHEAD(usesInnerGene = true),
+    LOOKBEHIND(usesInnerGene = true),
+    START_OF_INPUT(usesInnerGene = false),
+    END_OF_INPUT(usesInnerGene = false),
+    CARET(usesInnerGene = false),
+    DOLLAR(usesInnerGene = false),
+    WORD_BOUNDARY(usesInnerGene = false),
+    NON_WORD_BOUNDARY(usesInnerGene = false)
+}
 
 /**
  * Represents a zero-width assertion in the regex gene tree.
@@ -34,8 +44,15 @@ class AssertionRxGene(
      * in that case [innerGene] is null.
      */
     val innerGene: DisjunctionListRxGene?,
-    val assertionType: AssertionType
+    val assertionType: AssertionType,
+    val flags: RegexFlags = RegexFlags()
 ) : RxTerm, CompositeFixedGene("assertion:${assertionType.name}", listOfNotNull(innerGene)) {
+
+    init {
+        require(assertionType.usesInnerGene || innerGene == null) {
+            "$assertionType is a boundary assertion type and cannot carry inner content"
+        }
+    }
 
     /**
      *  To handle null [innerGene], in which case the assertion is unsatisfiable.
@@ -44,12 +61,12 @@ class AssertionRxGene(
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
 
-    override fun isUnsatisfiable(): Boolean = innerGene == null
+    override fun isUnsatisfiable(): Boolean = assertionType.usesInnerGene && innerGene == null
 
     override fun isMutable(): Boolean = innerGene?.isMutable() ?: false
 
     override fun copyContent(): Gene {
-        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene, assertionType)
+        val copy = AssertionRxGene(innerGene?.copy() as? DisjunctionListRxGene, assertionType, flags)
         copy.name = this.name
         return copy
     }

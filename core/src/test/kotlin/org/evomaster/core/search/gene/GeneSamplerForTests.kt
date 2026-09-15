@@ -430,8 +430,10 @@ object GeneSamplerForTests {
     }
 
     fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {
-        val innerGene = sampleDisjunctionListRxGene(rand)
-        innerGene.doInitialize(rand)
+        // since we do not want assertion repairs to fail for sampleRegexGene
+        // we make trivial assertions "(?=)", which always succeed repairs
+        val innerDisj = DisjunctionRxGene("emptyDisj", emptyList(), true, true)
+        val innerGene = DisjunctionListRxGene(listOf(innerDisj))
         return AssertionRxGene(innerGene=innerGene, AssertionType.LOOKAHEAD)
     }
 
@@ -439,8 +441,9 @@ object GeneSamplerForTests {
         return RegexGene(
             name = "rand RegexGene",
             disjunctions = sampleDisjunctionListRxGene(rand),
-            ".*", //TODO tricky, we want to sample different structures,
+            "(?s).*", //TODO tricky, we want to sample different structures,
                                 // but still validation should not fail
+                            // (?s) makes "." match all chars instead of excluding line terminators
             RegexType.JVM
         )
     }

@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -580,7 +581,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
                 val ei = prepareEvaluateAndSave(ind)
                 if (ei != null && DetectedFaultUtils.getDetectedFaultCategories(ei)
-                        .contains(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+                        .contains(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
                     return@forEach
                 }
             }

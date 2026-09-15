@@ -8,6 +8,7 @@ Under development in `master` branch.
 ### Fixed Bugs
 - Update to WFC 0.7.0, which fixed few bugs in Web Report
 - Fixed issue that auth configurations could not be read from read-only folders.
+- Fixed bug in minimization phase in white-box testing that led to lose coverage info
 
 # Version 6.1.1
 
