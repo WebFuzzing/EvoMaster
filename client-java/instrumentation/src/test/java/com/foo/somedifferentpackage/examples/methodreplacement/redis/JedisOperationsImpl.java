@@ -3,6 +3,11 @@ package com.foo.somedifferentpackage.examples.methodreplacement.redis;
 import org.evomaster.client.java.instrumentation.example.redis.JedisOperations;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.search.FTCreateParams;
+import redis.clients.jedis.search.schemafields.SchemaField;
+import redis.clients.jedis.search.schemafields.TextField;
+
+import java.util.Collections;
 
 /**
  * {@link JedisOperations} implementation backed by a real {@link UnifiedJedis} connection,
@@ -22,12 +27,18 @@ public class JedisOperationsImpl implements JedisOperations {
     }
 
     @Override
-    public Object jsonGet(String key) {
-        return jedis.jsonGet(key);
+    public void ftCreate(String index, String prefix, String textField) {
+        FTCreateParams params = FTCreateParams.createParams().prefix(prefix);
+        jedis.ftCreate(index, params, Collections.<SchemaField>singletonList(TextField.of(textField)));
     }
 
     @Override
-    public void jsonSet(String key, Object value) {
-        jedis.jsonSet(key, value);
+    public void hset(String key, String field, String value) {
+        jedis.hset(key, field, value);
+    }
+
+    @Override
+    public long ftSearch(String index, String query) {
+        return jedis.ftSearch(index, query).getTotalResults();
     }
 }

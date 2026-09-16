@@ -6,6 +6,7 @@ package org.evomaster.client.java.instrumentation.example.redis;
  */
 public interface JedisOperations {
     String get(String key);
-    Object jsonGet(String key);
-    void jsonSet(String key, Object value);
+    void ftCreate(String index, String prefix, String textField);
+    void hset(String key, String field, String value);
+    long ftSearch(String index, String query);
 }

@@ -18,15 +18,14 @@ public class JedisInstrumentedTest {
 
     private static final int REDIS_PORT = 6379;
 
-    // redis-stack-server, not plain redis, so the JSON module is loaded
-    // server-side and JSON.GET/JSON.SET don't error out
+    // redis-stack-server, not plain redis, so the RediSearch module is loaded
+    // server-side and FT.CREATE/FT.SEARCH don't error out
     private static final GenericContainer<?> redisContainer =
             new GenericContainer<>("redis/redis-stack-server:latest")
                     .withExposedPorts(REDIS_PORT);
 
     private static final String GET = "GET";
-    private static final String JSON_GET = "JSON_GET";
-    private static final String JSON_SET = "JSON_SET";
+    private static final String FT_SEARCH = "FT_SEARCH";
 
     @BeforeAll
     public static void setupAll() {
@@ -73,36 +72,23 @@ public class JedisInstrumentedTest {
     }
 
     @Test
-    public void testJsonGetInstrumentationWithClassLoader() throws Exception {
+    public void testFtSearchInstrumentationWithClassLoader() throws Exception {
         ExecutionTracer.reset();
 
         JedisOperations jedisInstrumented = getInstance();
-        jedisInstrumented.jsonGet("foo");
+        jedisInstrumented.ftCreate("idx:products", "product:", "title");
+        jedisInstrumented.hset("product:1", "title", "redis handbook");
+        long total = jedisInstrumented.ftSearch("idx:products", "@title:redis");
+
+        assertEquals(1, total, "Expected the indexed document to be found by FT.SEARCH");
 
         List<AdditionalInfo> infoList = ExecutionTracer.exposeAdditionalInfoList();
         assertFalse(infoList.isEmpty(), "Expected Redis instrumentation data");
 
-        boolean foundJsonGet = infoList.stream()
+        boolean foundFtSearch = infoList.stream()
                 .flatMap(i -> i.getRedisCommandData().stream())
-                .anyMatch(cmd -> cmd.getType().name().equals(JSON_GET));
+                .anyMatch(cmd -> cmd.getType().name().equals(FT_SEARCH));
 
-        assertTrue(foundJsonGet, "Expected a JSON.GET command to be instrumented via ConnectionClassReplacement");
-    }
-
-    @Test
-    public void testJsonSetInstrumentationWithClassLoader() throws Exception {
-        ExecutionTracer.reset();
-
-        JedisOperations jedisInstrumented = getInstance();
-        jedisInstrumented.jsonSet("fooSet", "{\"field\":\"bar\"}");
-
-        List<AdditionalInfo> infoList = ExecutionTracer.exposeAdditionalInfoList();
-        assertFalse(infoList.isEmpty(), "Expected Redis instrumentation data");
-
-        boolean foundJsonSet = infoList.stream()
-                .flatMap(i -> i.getRedisCommandData().stream())
-                .anyMatch(cmd -> cmd.getType().name().equals(JSON_SET));
-
-        assertTrue(foundJsonSet, "Expected a JSON.SET command to be instrumented via ConnectionClassReplacement");
+        assertTrue(foundFtSearch, "Expected an FT.SEARCH command to be instrumented via ConnectionClassReplacement");
     }
 }

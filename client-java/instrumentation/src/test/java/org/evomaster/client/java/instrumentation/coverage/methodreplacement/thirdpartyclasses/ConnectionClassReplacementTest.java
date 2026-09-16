@@ -7,10 +7,7 @@ import redis.clients.jedis.CommandArguments;
 import redis.clients.jedis.CommandObject;
 import redis.clients.jedis.Connection;
 import redis.clients.jedis.Protocol;
-import redis.clients.jedis.args.RawableFactory;
-import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.search.SearchProtocol;
-import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.List;
 
@@ -27,21 +24,6 @@ public class ConnectionClassReplacementTest {
     public void setup() {
         ExecutionTracer.reset();
         mockConnection = mock(Connection.class);
-    }
-
-    private enum FakeJsonCommand implements ProtocolCommand {
-        GET("JSON.GET");
-
-        private final byte[] raw;
-
-        FakeJsonCommand(String alt) {
-            raw = SafeEncoder.encode(alt);
-        }
-
-        @Override
-        public byte[] getRaw() {
-            return raw;
-        }
     }
 
     @Test
@@ -63,10 +45,15 @@ public class ConnectionClassReplacementTest {
     }
 
     @Test
-    public void testExecuteCommandJsonGet() {
-        String key = "mykey";
-        CommandArguments args = new CommandArguments(FakeJsonCommand.GET)
-                .add(RawableFactory.from(key));
+    public void testExecuteCommandFtAggregate() {
+        String indexName = "myIndex";
+        String query = "*";
+        CommandArguments args = new CommandArguments(SearchProtocol.SearchCommand.AGGREGATE)
+                .add(indexName)
+                .add(query)
+                .add("GROUPBY")
+                .add("1")
+                .add("@category");
         CommandObject<Object> commandObject = new CommandObject<>(args, null);
 
         ConnectionClassReplacement.executeCommand(mockConnection, commandObject);
@@ -77,8 +64,8 @@ public class ConnectionClassReplacementTest {
         org.evomaster.client.java.instrumentation.RedisCommand redisCmd =
                 infoList.get(0).getRedisCommandData().iterator().next();
 
-        assertEquals("JSON_GET", redisCmd.getType().name());
-        assertArrayEquals(new String[]{key}, redisCmd.getArgs());
+        assertEquals("FT_AGGREGATE", redisCmd.getType().name());
+        assertArrayEquals(new String[]{indexName, query, "GROUPBY", "1", "@category"}, redisCmd.getArgs());
     }
 
     @Test
