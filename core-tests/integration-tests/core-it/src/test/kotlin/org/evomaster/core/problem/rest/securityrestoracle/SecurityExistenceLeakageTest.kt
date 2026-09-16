@@ -36,6 +36,8 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
         ExistenceLeakageApplication.reset()
         getEMConfig().security = true
         getEMConfig().schemaOracles = false
+        getEMConfig().httpOracles = false
+        getEMConfig().statusOracles = false
     }
 
     @Test
