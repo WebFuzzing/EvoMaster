@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
+import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.output.OutputFormat
@@ -85,6 +86,10 @@ where T : Individual {
 
     fun hasAnyRedisAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is RedisDbAction}}
+    }
+
+    fun hasAnyCassandraAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is CassandraDbAction}}
     }
 
     /**

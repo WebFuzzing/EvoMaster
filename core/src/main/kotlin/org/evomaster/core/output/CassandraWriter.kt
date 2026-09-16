@@ -20,7 +20,8 @@ object CassandraWriter {
      * @param cassandraDbInitialization contains the db actions to be generated
      * @param lines is used to save generated textual lines with respects to [cassandraDbInitialization]
      * @param groupIndex specifies an index of a group of this [cassandraDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
+     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second).
+     * The variable generated here is added to it, but none of the ones already in it is passed on to the DSL, see below.
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleCassandraDbInitialization(
@@ -39,16 +40,22 @@ object CassandraWriter {
 
         val insertionVar = "insertions_cassandra${groupIndex}"
         val insertionVarResult = "${insertionVar}_result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
 
+        /*
+            Unlike the SQL DSL, which checks the ids referenced by a foreign key against the previous
+            insertions, the Cassandra one has no use for them, as there is no reference between rows in
+            Cassandra. Moreover, the previous variables are the ones of the insertions into the other
+            databases, written before these ones in the same test, and their types could not be
+            passed to the Cassandra DSL anyway, so the generated test would not compile.
+         */
         cassandraDbInitialization
             .filter { !skipFailure || it.cassandraResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedCassandraDbAction ->
 
                 lines.add(
                     when {
-                        index == 0 && format.isJava() -> "List<CassandraInsertionDto> $insertionVar = cassandra($previousVar)"
-                        index == 0 && format.isKotlin() -> "val $insertionVar = cassandra($previousVar)"
+                        index == 0 && format.isJava() -> "List<CassandraInsertionDto> $insertionVar = cassandra()"
+                        index == 0 && format.isKotlin() -> "val $insertionVar = cassandra()"
                         else -> ".and()"
                     } + ".insertInto(\"${evaluatedCassandraDbAction.cassandraAction.keyspace}\"" + ", " +
                             "\"${evaluatedCassandraDbAction.cassandraAction.table}\")"
