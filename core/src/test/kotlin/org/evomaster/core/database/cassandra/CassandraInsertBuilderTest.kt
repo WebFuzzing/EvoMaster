@@ -3,7 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto
 import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto
 import org.evomaster.core.search.gene.UUIDGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -132,14 +132,14 @@ class CassandraInsertBuilderTest {
      */
     @Test
     fun testTableWithACollectionAsPartitionKeyIsAccepted() {
-        val schema = "tags set<text> PARTITION KEY, v int"
+        val schema = schema("ks", "images", partitionKey("tags", "set<text>"), column("v", "int"))
 
         assertTrue(builder.canBuildInsertionFor(schema))
 
-        val action = builder.createCassandraInsertionAction("ks", "images", schema)
+        val action = builder.createCassandraInsertionAction(schema)
 
         assertEquals(listOf("tags", "v"), action.seeTopGenes().map { it.name })
-        assertTrue(action.seeTopGenes()[0] is CqlCollectionGene)
+        assertTrue(action.seeTopGenes()[0] is ArrayGene<*>)
     }
 
     @Test

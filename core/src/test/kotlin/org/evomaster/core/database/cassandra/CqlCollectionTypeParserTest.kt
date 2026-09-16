@@ -1,6 +1,5 @@
 package org.evomaster.core.database.cassandra
 
-import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -10,18 +9,18 @@ class CqlCollectionTypeParserTest {
 
     @Test
     fun testList() {
-        assertEquals(CqlCollectionType(CqlCollectionKind.LIST, listOf("int")), CqlCollectionTypeParser.parse("list<int>"))
+        assertEquals(CqlCollectionType(CqlCollectionTypeParser.LIST_TYPE, listOf("int")), CqlCollectionTypeParser.parse("list<int>"))
     }
 
     @Test
     fun testSet() {
-        assertEquals(CqlCollectionType(CqlCollectionKind.SET, listOf("text")), CqlCollectionTypeParser.parse("set<text>"))
+        assertEquals(CqlCollectionType(CqlCollectionTypeParser.SET_TYPE, listOf("text")), CqlCollectionTypeParser.parse("set<text>"))
     }
 
     @Test
     fun testMap() {
         assertEquals(
-            CqlCollectionType(CqlCollectionKind.MAP, listOf("text", "int")),
+            CqlCollectionType(CqlCollectionTypeParser.MAP_TYPE, listOf("text", "int")),
             CqlCollectionTypeParser.parse("map<text, int>")
         )
     }
@@ -33,20 +32,20 @@ class CqlCollectionTypeParserTest {
     @Test
     fun testNestedCollectionIsNotSplitOn() {
         assertEquals(
-            CqlCollectionType(CqlCollectionKind.MAP, listOf("text", "map<int, text>")),
+            CqlCollectionType(CqlCollectionTypeParser.MAP_TYPE, listOf("text", "map<int, text>")),
             CqlCollectionTypeParser.parse("map<text, map<int, text>>")
         )
     }
 
     @Test
     fun testFrozenMarkerIsPeeledOff() {
-        assertEquals(CqlCollectionType(CqlCollectionKind.LIST, listOf("int")), CqlCollectionTypeParser.parse("frozen<list<int>>"))
+        assertEquals(CqlCollectionType(CqlCollectionTypeParser.LIST_TYPE, listOf("int")), CqlCollectionTypeParser.parse("frozen<list<int>>"))
     }
 
     @Test
     fun testFrozenMarkerOfANestedCollectionIsKeptForTheRecursion() {
         assertEquals(
-            CqlCollectionType(CqlCollectionKind.MAP, listOf("text", "frozen<list<int>>")),
+            CqlCollectionType(CqlCollectionTypeParser.MAP_TYPE, listOf("text", "frozen<list<int>>")),
             CqlCollectionTypeParser.parse("map<text, frozen<list<int>>>")
         )
     }

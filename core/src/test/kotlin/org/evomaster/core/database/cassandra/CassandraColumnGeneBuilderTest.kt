@@ -3,8 +3,6 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.UUIDGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
@@ -100,12 +98,10 @@ class CassandraColumnGeneBuilderTest {
 
     @Test
     fun testListType() {
-        val gene = buildFor("list<int>") as CqlCollectionGene
+        val gene = buildFor("list<int>") as ArrayGene<*>
 
-        assertEquals(CqlCollectionKind.LIST, gene.kind)
-        val content = gene.content as ArrayGene<*>
-        assertFalse(content.uniqueElements)
-        assertTrue(content.template is IntegerGene)
+        assertFalse(gene.uniqueElements)
+        assertTrue(gene.template is IntegerGene)
     }
 
     /**
@@ -116,32 +112,29 @@ class CassandraColumnGeneBuilderTest {
      */
     @Test
     fun testSetTypeAsksForUniqueElements() {
-        val gene = buildFor("set<text>") as CqlCollectionGene
+        val gene = buildFor("set<text>") as ArrayGene<*>
 
-        assertEquals(CqlCollectionKind.SET, gene.kind)
-        val content = gene.content as ArrayGene<*>
-        assertTrue(content.uniqueElements)
-        assertTrue(content.template is StringGene)
+        assertTrue(gene.uniqueElements)
+        assertTrue(gene.template is StringGene)
     }
 
     @Test
     fun testMapType() {
-        val gene = buildFor("map<text, int>") as CqlCollectionGene
+        val gene = buildFor("map<text, int>") as FixedMapGene<*, *>
 
-        assertEquals(CqlCollectionKind.MAP, gene.kind)
-        val content = gene.content as FixedMapGene<*, *>
-        assertTrue(content.template.first is StringGene)
-        assertTrue(content.template.second is IntegerGene)
+        assertTrue(gene.template.first is StringGene)
+        assertTrue(gene.template.second is IntegerGene)
     }
 
     @Test
     fun testNestedCollectionType() {
-        val gene = buildFor("list<set<int>>") as CqlCollectionGene
+        val gene = buildFor("list<set<int>>") as ArrayGene<*>
 
-        assertEquals(CqlCollectionKind.LIST, gene.kind)
-        val element = (gene.content as ArrayGene<*>).template as CqlCollectionGene
-        assertEquals(CqlCollectionKind.SET, element.kind)
-        assertTrue((element.content as ArrayGene<*>).template is IntegerGene)
+        assertFalse(gene.uniqueElements)
+
+        val element = gene.template as ArrayGene<*>
+        assertTrue(element.uniqueElements)
+        assertTrue(element.template is IntegerGene)
     }
 
     /**
@@ -149,10 +142,10 @@ class CassandraColumnGeneBuilderTest {
      */
     @Test
     fun testFrozenCollectionIsHandledAsAPlainOne() {
-        val gene = buildFor("frozen<list<int>>") as CqlCollectionGene
+        val gene = buildFor("frozen<list<int>>") as ArrayGene<*>
 
-        assertEquals(CqlCollectionKind.LIST, gene.kind)
-        assertTrue((gene.content as ArrayGene<*>).template is IntegerGene)
+        assertFalse(gene.uniqueElements)
+        assertTrue(gene.template is IntegerGene)
     }
 
     /**

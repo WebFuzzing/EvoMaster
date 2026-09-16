@@ -3,8 +3,6 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.UUIDGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
@@ -43,6 +41,7 @@ object CassandraColumnGeneBuilder {
     private const val DOUBLE_TYPE = "double"
     private const val BOOLEAN_TYPE = "boolean"
     private const val UUID_TYPE = "uuid"
+    private const val INET_TYPE = "inet"
     private const val TIMESTAMP_TYPE = "timestamp"
     private const val DATE_TYPE = "date"
     private const val TIME_TYPE = "time"
@@ -78,7 +77,7 @@ object CassandraColumnGeneBuilder {
             Only IPv4 addresses are generated for now, although the CQL type also accepts IPv6 ones, as
             that is what InetGene builds. The same restriction already applies to the SQL types.
          */
-        "inet" to { name -> InetGene(name) },
+        INET_TYPE to { name -> InetGene(name) },
         /*
             Only valid values are generated, as these genes are used to set up the state of the
             database, and Cassandra would just reject an insertion carrying an invalid one.
@@ -121,19 +120,26 @@ object CassandraColumnGeneBuilder {
         return builder(name)
     }
 
+    /**
+     * A CQL collection is generated with the gene already handling that kind of collection, ie an
+     * [ArrayGene] for a list and a set, and a [FixedMapGene] for a map. How a value of it is written
+     * in a CQL literal is recovered from the gene itself by [CassandraLiteralRenderer], a set being
+     * the array asking for unique elements.
+     */
     private fun buildCollectionGene(name: String, type: CqlCollectionType): Gene {
 
-        val content = when (type.kind) {
-            CqlCollectionKind.LIST -> ArrayGene(name, template = elementGene(type, 0))
+        return when (type.name) {
+            CqlCollectionTypeParser.LIST_TYPE -> ArrayGene(name, template = elementGene(type, 0))
             /*
                 Cassandra collapses the repeated elements of a set literal into a single one, so
                 generating them would just be wasted search effort.
              */
-            CqlCollectionKind.SET -> ArrayGene(name, template = elementGene(type, 0), uniqueElements = true)
-            CqlCollectionKind.MAP -> FixedMapGene(name, key = elementGene(type, 0), value = elementGene(type, 1))
+            CqlCollectionTypeParser.SET_TYPE ->
+                ArrayGene(name, template = elementGene(type, 0), uniqueElements = true)
+            CqlCollectionTypeParser.MAP_TYPE ->
+                FixedMapGene(name, key = elementGene(type, 0), value = elementGene(type, 1))
+            else -> throw IllegalArgumentException("Not a supported CQL collection type: ${type.name}")
         }
-
-        return CqlCollectionGene(name, type.kind, content)
     }
 
     private fun elementGene(type: CqlCollectionType, index: Int) =

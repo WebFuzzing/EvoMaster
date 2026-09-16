@@ -3,8 +3,6 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.UUIDGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionGene
-import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
@@ -109,9 +107,13 @@ class CassandraLiteralRendererTest {
         assertEquals("'${gene.getValueAsRawString()}'", CassandraLiteralRenderer.toCqlLiteral(gene))
     }
 
-    private fun arrayGeneOf(vararg values: Int): ArrayGene<IntegerGene> {
+    private fun arrayGeneOf(vararg values: Int) = arrayGeneOf(false, *values)
 
-        val gene = ArrayGene("elements", template = IntegerGene("element"))
+    private fun setGeneOf(vararg values: Int) = arrayGeneOf(true, *values)
+
+    private fun arrayGeneOf(uniqueElements: Boolean, vararg values: Int): ArrayGene<IntegerGene> {
+
+        val gene = ArrayGene("elements", template = IntegerGene("element"), uniqueElements = uniqueElements)
         values.forEach { gene.addElement(IntegerGene("element", it)) }
 
         return gene
@@ -119,14 +121,14 @@ class CassandraLiteralRendererTest {
 
     @Test
     fun testListIsWrittenBetweenSquareBrackets() {
-        val gene = CqlCollectionGene("scores", CqlCollectionKind.LIST, arrayGeneOf(1, 2))
+        val gene = arrayGeneOf(1, 2)
 
         assertEquals("[1, 2]", CassandraLiteralRenderer.toCqlLiteral(gene))
     }
 
     @Test
     fun testSetIsWrittenBetweenBraces() {
-        val gene = CqlCollectionGene("tags", CqlCollectionKind.SET, arrayGeneOf(1, 2))
+        val gene = setGeneOf(1, 2)
 
         assertEquals("{1, 2}", CassandraLiteralRenderer.toCqlLiteral(gene))
     }
@@ -136,9 +138,7 @@ class CassandraLiteralRendererTest {
         val content = FixedMapGene("entries", key = StringGene("element"), value = IntegerGene("element"))
         content.addElement(PairGene("entry", StringGene("element", "a"), IntegerGene("element", 1)))
 
-        val gene = CqlCollectionGene("favs", CqlCollectionKind.MAP, content)
-
-        assertEquals("{'a': 1}", CassandraLiteralRenderer.toCqlLiteral(gene))
+        assertEquals("{'a': 1}", CassandraLiteralRenderer.toCqlLiteral(content))
     }
 
     /**
@@ -147,28 +147,21 @@ class CassandraLiteralRendererTest {
      */
     @Test
     fun testTextElementsAreQuotedAndEscaped() {
-        val content = ArrayGene("elements", template = StringGene("element"))
+        val content = ArrayGene("elements", template = StringGene("element"), uniqueElements = true)
         content.addElement(StringGene("element", "a"))
         content.addElement(StringGene("element", "l'Alice"))
 
-        val gene = CqlCollectionGene("tags", CqlCollectionKind.SET, content)
-
-        assertEquals("{'a', 'l''Alice'}", CassandraLiteralRenderer.toCqlLiteral(gene))
+        assertEquals("{'a', 'l''Alice'}", CassandraLiteralRenderer.toCqlLiteral(content))
     }
 
     @Test
     fun testEmptyCollectionsAreWrittenWithTheirDelimitersOnly() {
-        assertEquals("[]", CassandraLiteralRenderer.toCqlLiteral(
-            CqlCollectionGene("scores", CqlCollectionKind.LIST, arrayGeneOf())))
+        assertEquals("[]", CassandraLiteralRenderer.toCqlLiteral(arrayGeneOf()))
+
+        assertEquals("{}", CassandraLiteralRenderer.toCqlLiteral(setGeneOf()))
 
         assertEquals("{}", CassandraLiteralRenderer.toCqlLiteral(
-            CqlCollectionGene("tags", CqlCollectionKind.SET, arrayGeneOf())))
-
-        assertEquals("{}", CassandraLiteralRenderer.toCqlLiteral(CqlCollectionGene(
-            "favs",
-            CqlCollectionKind.MAP,
-            FixedMapGene("entries", key = StringGene("element"), value = IntegerGene("element"))
-        )))
+            FixedMapGene("entries", key = StringGene("element"), value = IntegerGene("element"))))
     }
 
     @Test
@@ -176,17 +169,15 @@ class CassandraLiteralRendererTest {
         val content = FixedMapGene(
             "entries",
             key = StringGene("element"),
-            value = CqlCollectionGene("element", CqlCollectionKind.LIST, arrayGeneOf())
+            value = arrayGeneOf()
         )
         content.addElement(PairGene(
             "entry",
             StringGene("element", "a"),
-            CqlCollectionGene("element", CqlCollectionKind.LIST, arrayGeneOf(1, 2))
+            arrayGeneOf(1, 2)
         ))
 
-        val gene = CqlCollectionGene("data", CqlCollectionKind.MAP, content)
-
-        assertEquals("{'a': [1, 2]}", CassandraLiteralRenderer.toCqlLiteral(gene))
+        assertEquals("{'a': [1, 2]}", CassandraLiteralRenderer.toCqlLiteral(content))
     }
 
     @Test

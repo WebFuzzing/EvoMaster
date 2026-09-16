@@ -1,12 +1,24 @@
 package org.evomaster.core.database.cassandra
 
-import org.evomaster.core.search.gene.cassandra.CqlCollectionKind
-
 /**
  * Recognizes the CQL collection types and recovers their parameters, ie the CQL types of what they
  * hold, so that a gene can be built for each of them.
  */
 object CqlCollectionTypeParser {
+
+    const val LIST_TYPE = "list"
+    const val SET_TYPE = "set"
+    const val MAP_TYPE = "map"
+
+    /**
+     * Key -> the name of a CQL collection type.
+     * Value -> how many CQL types parameterize it, ie one for the elements of a list and of a set,
+     * two for the keys and the values of a map.
+     *
+     * Being the single place where the collection types are enumerated, it is also what tells them
+     * apart from the other parameterized types, ie the tuples and the vectors.
+     */
+    private val ARITIES: Map<String, Int> = mapOf(LIST_TYPE to 1, SET_TYPE to 1, MAP_TYPE to 2)
 
     private const val FROZEN_PREFIX = "frozen"
 
@@ -33,19 +45,20 @@ object CqlCollectionTypeParser {
             return null
         }
 
-        val kind = CqlCollectionKind.entries.find { it.cqlName == unfrozen.substring(0, parametersStart).trim() }
-            ?: return null
+        val name = unfrozen.substring(0, parametersStart).trim()
+
+        val arity = ARITIES[name] ?: return null
 
         val parameters = CqlTypeParameters
             .splitAtTopLevel(unfrozen.substring(parametersStart + 1, unfrozen.length - 1), TYPE_PARAMETER_SEPARATOR)
             .map { it.trim() }
 
-        if (parameters.size != kind.arity) {
-            throw IllegalArgumentException("A CQL ${kind.cqlName} is parameterized by ${kind.arity}" +
+        if (parameters.size != arity) {
+            throw IllegalArgumentException("A CQL $name is parameterized by $arity" +
                     " type(s), but ${parameters.size} were given: $cqlType")
         }
 
-        return CqlCollectionType(kind, parameters)
+        return CqlCollectionType(name, parameters)
     }
 
     /**
@@ -71,17 +84,20 @@ object CqlCollectionTypeParser {
 }
 
 /**
- * A CQL collection type, ie its kind and the CQL types of what it holds: the type of the elements
+ * A CQL collection type, ie its name and the CQL types of what it holds: the type of the elements
  * for a list and a set, and the types of the keys and of the values for a map.
  */
 data class CqlCollectionType(
 
-    val kind: CqlCollectionKind,
+    /**
+     * The name of the type in CQL, ie one of [CqlCollectionTypeParser.LIST_TYPE],
+     * [CqlCollectionTypeParser.SET_TYPE] and [CqlCollectionTypeParser.MAP_TYPE].
+     */
+    val name: String,
 
     /**
      * The CQL types parameterizing the collection, in the order they are written in, ie the type of
      * the elements for a list and a set, and the types of the keys and then of the values for a map.
-     * There are exactly as many as the arity of [kind].
      */
     val parameters: List<String>
 )
