@@ -10,7 +10,18 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.FlakinessDetector
+import org.evomaster.core.search.service.Minimizer
+import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.mutator.StructureMutator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,9 +33,9 @@ import org.junit.jupiter.api.Test
 class AsyncApiModuleTest {
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
+        private const val NCS = AsyncApiTestInjector.NCS
 
-        private val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
+        private val NCS_OPERATIONS = AsyncApiTestInjector.NCS_OPERATIONS
 
         private val mapper = ObjectMapper()
     }
@@ -119,5 +130,31 @@ class AsyncApiModuleTest {
         assertTrue(solution.individuals.isNotEmpty())
         assertTrue(driver.published.size >= 50, "only ${driver.published.size} messages published")
         assertEquals(driver.published.size, driver.published.map { it.correlationId }.toSet().size)
+    }
+
+    @Test
+    fun testEverythingMainResolvesIsBound() {
+
+        /*
+            The module deliberately does not inherit EnterpriseModule's bindings, so anything
+            Main asks the injector for has to be bound here. A missing one is invisible until a
+            real run reaches that line, which is usually right after the search.
+         */
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+            replied("""{"resultAsInt": 1}""")
+        }
+        val injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
+
+        injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>() {}))
+        injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
+        injector.getInstance(Key.get(object : TypeLiteral<Minimizer<*>>() {}))
+        injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<*>>() {}))
+        injector.getInstance(Archive::class.java)
+        injector.getInstance(StructureMutator::class.java)
+        injector.getInstance(TestSuiteWriter::class.java)
+        injector.getInstance(RemoteController::class.java)
+
+        //no test writer for AsyncAPI yet, so the one that writes nothing
+        assertTrue(injector.getInstance(TestCaseWriter::class.java) is NoTestCaseWriter)
     }
 }

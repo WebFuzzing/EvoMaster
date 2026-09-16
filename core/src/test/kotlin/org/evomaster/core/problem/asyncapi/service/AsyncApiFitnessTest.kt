@@ -26,12 +26,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class AsyncApiBlackBoxFitnessTest {
+class AsyncApiFitnessTest {
 
     companion object {
         private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
 
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
+
+        /**
+         * Both AsyncAPI fault categories are experimental, so nothing reports them until the
+         * user asks for experimental oracles.
+         */
+        private const val EXPERIMENTAL_ORACLES = "--useExperimentalOracles=true"
 
         private const val ERROR = """{"error": {"code": 400, "message": "n must be >= 3"}}"""
 
@@ -125,18 +131,29 @@ class AsyncApiBlackBoxFitnessTest {
         RestActionBuilderV3.cleanCache()
     }
 
-    private fun start(schemaText: String, answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) {
+    private fun start(
+        schemaText: String,
+        vararg options: String,
+        answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
+    ) {
 
         driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(schemaText), answer)
-        injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
+        injector = AsyncApiTestInjector.create(driver, "--blackBox=false", *options)
 
         sampler = injector.getInstance(AsyncApiSampler::class.java)
         fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
         idMapper = injector.getInstance(IdMapper::class.java)
     }
 
-    private fun startNcs(answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) =
-        start(AsyncApiAccess.readFromResource(NCS), answer)
+    private fun startNcs(vararg options: String, answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) =
+        start(AsyncApiAccess.readFromResource(NCS), *options, answer = answer)
+
+    /**
+     * The faults an evaluation recorded on its action results, which is where the reports read
+     * them from -- as opposed to the targets the search aims at.
+     */
+    private fun faultsOn(evaluated: EvaluatedIndividual<AsyncApiIndividual>) =
+        results(evaluated).flatMap { it.getFaults() }
 
     private fun individualOf(vararg names: String): AsyncApiIndividual {
 
@@ -239,7 +256,7 @@ class AsyncApiBlackBoxFitnessTest {
     @Test
     fun testAReplyTheContractDoesNotDeclareIsAFault() {
 
-        startNcs { replied("""{"something": "else"}""") }
+        startNcs(EXPERIMENTAL_ORACLES) { replied("""{"something": "else"}""") }
 
         val evaluated = evaluate("bessj")
         val faults = evaluated.fitness.coveredTargets().filter { idMapper.isFault(it) }
@@ -247,12 +264,17 @@ class AsyncApiBlackBoxFitnessTest {
         assertEquals(1, faults.size, coveredIds(evaluated).toString())
         assertTrue(idMapper.isSpecifiedFault(faults.single(), ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY))
         assertNull(results(evaluated).single().getReplyMessage())
+
+        //the reports count faults off the action result, not off the covered targets
+        assertEquals(
+            listOf(ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY),
+            faultsOn(evaluated).map { it.category })
     }
 
     @Test
     fun testSilenceAfterAPromisedReplyIsAFault() {
 
-        startNcs { silence(waited = 5000) }
+        startNcs(EXPERIMENTAL_ORACLES) { silence(waited = 5000) }
 
         val evaluated = evaluate("bessj")
         val covered = coveredIds(evaluated)
@@ -267,6 +289,10 @@ class AsyncApiBlackBoxFitnessTest {
         assertEquals(5000L, result.getWaitedMs())
         //silence is a finding, not a broken setup: the test goes on
         assertFalse(result.stopping)
+
+        assertEquals(
+            listOf(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY),
+            faultsOn(evaluated).map { it.category })
     }
 
     @Test
@@ -389,5 +415,103 @@ class AsyncApiBlackBoxFitnessTest {
 
         //a broken setup is not a finding about the service, so nothing is covered by it
         assertTrue(coveredIds(evaluated).none { it.startsWith("ASYNCAPI") }, coveredIds(evaluated).toString())
+    }
+
+    @Test
+    fun testFaultsAreNotReportedUntilExperimentalOraclesAreAskedFor() {
+
+        //both AsyncAPI categories are experimental, and nothing experimental is on by default
+        startNcs { silence() }
+
+        val evaluated = evaluate("bessj")
+
+        assertTrue(coveredIds(evaluated).contains("ASYNCAPI_OUTCOME:NO_REPLY:bessj"))
+        assertTrue(evaluated.fitness.coveredTargets().none { idMapper.isFault(it) })
+        assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    @Test
+    fun testAReplyWithNoBodyIsNotAnUndeclaredReply() {
+
+        /*
+            The contract declares what a reply may be, and one arrived carrying nothing to match
+            against it -- an acknowledgement, or a transport that answers in its metadata.
+            Nothing was declared to be wrong, so this is not the undeclared-reply fault.
+         */
+        startNcs(EXPERIMENTAL_ORACLES) { replied(payload = "") }
+
+        val evaluated = evaluate("bessj")
+
+        assertEquals(AsyncApiOutcome.REPLIED, results(evaluated).single().getOutcome())
+        assertTrue(evaluated.fitness.coveredTargets().none { idMapper.isFault(it) }, coveredIds(evaluated).toString())
+        assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    @Test
+    fun testAnOperationWhoseReplyDeclaresNoMessageIsNotAFault() {
+
+        /*
+            A reply channel that carries no message: the contract promises an answer but does not
+            say what it looks like, so there is nothing to recognise and nothing to report.
+         */
+        val document = """
+            asyncapi: 3.0.0
+            info:
+              title: Unspecified reply
+              version: 1.0.0
+            channels:
+              requests:
+                address: app.requests
+                messages:
+                  request:
+                    payload:
+                      type: object
+                      required: [id]
+                      properties:
+                        id:
+                          type: string
+              replies:
+                address: app.replies
+            operations:
+              ask:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/requests'
+                reply:
+                  channel:
+                    ${'$'}ref: '#/channels/replies'
+        """.trimIndent()
+
+        start(document, EXPERIMENTAL_ORACLES) { replied("""{"anything": 1}""") }
+
+        val evaluated = evaluate("ask")
+
+        assertEquals(AsyncApiOutcome.REPLIED, results(evaluated).single().getOutcome())
+        assertNull(results(evaluated).single().getReplyMessage())
+        assertTrue(evaluated.fitness.coveredTargets().none { idMapper.isFault(it) }, coveredIds(evaluated).toString())
+    }
+
+    @Test
+    fun testTheTopicOfAProtocolBindingOverridesTheChannelAddress() {
+
+        /*
+            A Kafka channel often names no address of its own and puts the topic in its binding.
+            Publishing to the channel's name instead would reach nobody.
+         */
+        start(AsyncApiAccess.readFromResource("/asyncapi/sut/microcks.yaml")) { fireAndForget() }
+
+        evaluate("receivedServiceChanges")
+
+        assertEquals("microcks-services-updates", driver.published.single().address)
+    }
+
+    @Test
+    fun testTheReplyTimeoutIsTheConfiguredOne() {
+
+        startNcs("--asyncApiReplyTimeoutMs=1234") { replied(DOUBLE_RESULT) }
+
+        evaluate("bessj")
+
+        assertEquals(1234L, driver.published.single().replyTimeoutMs)
     }
 }

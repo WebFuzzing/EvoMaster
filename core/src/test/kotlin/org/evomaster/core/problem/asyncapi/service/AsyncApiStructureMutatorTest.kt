@@ -8,6 +8,7 @@ import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -16,9 +17,9 @@ import org.junit.jupiter.api.Test
 class AsyncApiStructureMutatorTest {
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
+        private const val NCS = AsyncApiTestInjector.NCS
 
-        private val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
+        private val NCS_OPERATIONS = AsyncApiTestInjector.NCS_OPERATIONS
     }
 
     private lateinit var sampler: AsyncApiSampler
@@ -100,6 +101,44 @@ class AsyncApiStructureMutatorTest {
             assertTrue(copy.seeMainExecutableActions().all { it.getName() in NCS_OPERATIONS })
             evaluated = evaluate(copy)
         }
+    }
+
+    @Test
+    fun testWhatWasAddedOrRemovedIsRecordedForTheSearch() {
+
+        /*
+            The archive and the impact bookkeeping are fed from this specification, and they are
+            shared with the other problem types, so a wrong entry degrades the search silently.
+         */
+        start(maxTestSize = 4)
+
+        var evaluated = evaluate(sampler.sample(forceRandomSample = true))
+        var added = 0
+        var removed = 0
+
+        repeat(30) {
+            val before = evaluated.individual.seeMainExecutableActions().size
+            val copy = evaluated.individual.copy() as AsyncApiIndividual
+            val recorded = MutatedGeneSpecification()
+
+            mutator.mutateStructure(copy, evaluated, recorded, setOf())
+
+            val after = copy.seeMainExecutableActions().size
+            val grew = after > before
+
+            /*
+                One entry per top gene of the action that moved, so what matters is that there is
+                at least one and that they all say the same thing.
+             */
+            val types = recorded.mutatedGenes.map { it.type }.toSet()
+            assertEquals(setOf(if (grew) MutatedGeneSpecification.MutatedType.ADD else MutatedGeneSpecification.MutatedType.REMOVE), types, "size went $before -> $after")
+
+            if (grew) added++ else removed++
+            evaluated = evaluate(copy)
+        }
+
+        //both directions were taken, so neither assertion above passed only by never happening
+        assertTrue(added > 0 && removed > 0, "added=$added removed=$removed")
     }
 
     @Test
