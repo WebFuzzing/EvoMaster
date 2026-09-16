@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto.database.cassandra;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The shape of a Cassandra table, ie the columns a row of it is composed of, as read from the
@@ -25,10 +26,16 @@ public class CassandraTableSchemaDto {
     public CassandraTableSchemaDto() {
     }
 
+    /**
+     * @param keyspaceName the keyspace the table belongs to
+     * @param tableName    the name of the table
+     * @param columns      all the columns of the table
+     * @throws NullPointerException if any of the arguments is null
+     */
     public CassandraTableSchemaDto(String keyspaceName, String tableName, List<CassandraColumnDto> columns) {
-        this.keyspaceName = keyspaceName;
-        this.tableName = tableName;
-        this.columns = columns;
+        this.keyspaceName = Objects.requireNonNull(keyspaceName, "keyspaceName cannot be null");
+        this.tableName = Objects.requireNonNull(tableName, "tableName cannot be null");
+        this.columns = Objects.requireNonNull(columns, "columns cannot be null");
     }
 
     public String getKeyspaceName() {
@@ -36,7 +43,7 @@ public class CassandraTableSchemaDto {
     }
 
     public void setKeyspaceName(String keyspaceName) {
-        this.keyspaceName = keyspaceName;
+        this.keyspaceName = Objects.requireNonNull(keyspaceName, "keyspaceName cannot be null");
     }
 
     public String getTableName() {
@@ -44,7 +51,7 @@ public class CassandraTableSchemaDto {
     }
 
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        this.tableName = Objects.requireNonNull(tableName, "tableName cannot be null");
     }
 
     public List<CassandraColumnDto> getColumns() {
@@ -52,6 +59,6 @@ public class CassandraTableSchemaDto {
     }
 
     public void setColumns(List<CassandraColumnDto> columns) {
-        this.columns = columns;
+        this.columns = Objects.requireNonNull(columns, "columns cannot be null");
     }
 }
