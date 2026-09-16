@@ -2846,8 +2846,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
-            " treating it as unanswered, in milliseconds. A slow service and a stuck one look the same from" +
-            " outside, so this is a tuning parameter with no equivalent in a synchronous protocol.")
+            " treating it as unanswered, in milliseconds.")
     @Min(1.0)
     var asyncApiReplyTimeoutMs = 5000
 

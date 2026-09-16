@@ -14,6 +14,11 @@ import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
  */
 class AsyncApiStructureMutator : ApiWsStructureMutator() {
 
+    /*
+        TODO Most of this is the same as RPCStructureMutator, which in turn shares it with the
+        REST one. Should be pulled up into ApiWsStructureMutator rather than copied a third time.
+     */
+
     @Inject
     private lateinit var sampler: AsyncApiSampler
 
