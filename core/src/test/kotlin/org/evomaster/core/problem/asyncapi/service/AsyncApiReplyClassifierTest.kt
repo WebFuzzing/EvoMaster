@@ -226,15 +226,120 @@ class AsyncApiReplyClassifierTest {
     }
 
     @Test
-    fun testAReferenceIntoTheMiddleOfASchemaCannotBeJudgedSoItIsNotRejected() {
+    fun testAReferenceIntoTheMiddleOfASchemaIsFollowed() {
 
         /*
-            "#/components/schemas/Pinned/properties/kind" names a part of a schema, which is
-            legal and which the classifier does not follow. Rejecting on what it cannot read
-            would turn every such reply into a false fault, so it matches instead -- and loses
-            to anything specific that also matches.
+            "#/components/schemas/Pinned/properties/kind" names one property of a schema, which
+            is legal. Left unresolved it would match anything, and an operation whose only reply
+            is written that way could then never report an undeclared reply.
          */
-        assertEquals("part", classifyAmong("""{"anything": 1}""", "part"))
-        assertEquals("pinned", classifyAmong("""{"kind": "pinned"}""", "part", "pinned"))
+        assertEquals("part", classifyAmong("\"pinned\"", "part"))
+        assertNull(classifyAmong("""{"anything": 1}""", "part"))
+    }
+
+    @Test
+    fun testANumberIsComparedByValueNotByHowItIsWritten() {
+
+        //JSON Schema counts 1 and 1.0 as the same number; Jackson's own equality does not
+        val versions = AsyncApiAccess.parseFromText(
+            """
+            asyncapi: 3.0.0
+            info:
+              title: Versions
+              version: 1.0.0
+            components:
+              messages:
+                v1:
+                  payload:
+                    type: object
+                    properties:
+                      version:
+                        const: 1.0
+            """.trimIndent()
+        )
+
+        fun classifyVersion(payload: String) = AsyncApiReplyClassifier.classify(
+            payload, listOf(versions.messages.getValue("v1")), versions.componentSchemas)?.id
+
+        assertEquals("v1", classifyVersion("""{"version": 1}"""))
+        assertEquals("v1", classifyVersion("""{"version": 1.0}"""))
+        assertNull(classifyVersion("""{"version": 2}"""))
+    }
+
+    @Test
+    fun testANumberTooLargeToBeADecimalDoesNotCrash() {
+
+        /*
+            A float that overflows a double becomes an infinity, which has no BigDecimal. Asking
+            it for one used to throw, and nothing between here and the search loop catches it.
+         */
+        assertNull(classify(ncs, "checkTriangle", """{"resultAsInt": 1E+400}"""))
+        assertEquals("intResult", classify(ncs, "checkTriangle", """{"resultAsInt": 1E+30}"""))
+    }
+
+    @Test
+    fun testTheMostSpecificMatchIsFoundThroughACombinator() {
+
+        /*
+            A message that says what it requires inside an allOf is no less specific for having
+            written it that way, and must still win over a permissive one that also matches.
+         */
+        val combined = AsyncApiAccess.parseFromText(
+            """
+            asyncapi: 3.0.0
+            info:
+              title: Combined
+              version: 1.0.0
+            components:
+              messages:
+                generic:
+                  payload:
+                    type: object
+                    required: [requestId]
+                detailed:
+                  payload:
+                    allOf:
+                      - type: object
+                        required: [requestId]
+                      - type: object
+                        required: [error]
+            """.trimIndent()
+        )
+
+        val both = listOf(combined.messages.getValue("generic"), combined.messages.getValue("detailed"))
+
+        assertEquals(
+            "detailed",
+            AsyncApiReplyClassifier.classify(
+                """{"requestId": "r1", "error": {"code": 404}}""", both, combined.componentSchemas)?.id
+        )
+        assertEquals(
+            "generic",
+            AsyncApiReplyClassifier.classify("""{"requestId": "r1"}""", both, combined.componentSchemas)?.id
+        )
+    }
+
+    @Test
+    fun testAnEmptyBodyIsNoMessageAtAll() {
+
+        //an empty body parses to nothing, which must not be read as matching a permissive schema
+        val anything = AsyncApiAccess.parseFromText(
+            """
+            asyncapi: 3.0.0
+            info:
+              title: Permissive
+              version: 1.0.0
+            components:
+              messages:
+                loose:
+                  payload:
+                    required: [id]
+            """.trimIndent()
+        )
+
+        assertNull(
+            AsyncApiReplyClassifier.classify(
+                "", listOf(anything.messages.getValue("loose")), anything.componentSchemas)
+        )
     }
 }

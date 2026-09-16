@@ -15,6 +15,16 @@ import org.evomaster.core.remote.service.RemoteController
 object AsyncApiTestInjector {
 
     /**
+     * The NCS document, the corpus fixture these suites drive most of their cases from.
+     */
+    const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
+
+    /**
+     * The operations NCS declares, all of them publishable.
+     */
+    val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
+
+    /**
      * What a driver declares for a service whose document it hands over as text.
      */
     fun sutInfo(schemaText: String): SutInfoDto = SutInfoDto().apply {

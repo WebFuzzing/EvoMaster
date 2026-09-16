@@ -11,10 +11,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.external.service.DummyController
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.WarningsAggregator
 import org.evomaster.core.search.warning.WarningCategory
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.charset.StandardCharsets
@@ -22,6 +24,15 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class AsyncApiSamplerTest {
+
+    /**
+     * RestActionBuilderV3 keeps its built genes in a static cache, so a test that did not clear
+     * it could be handed one built by another.
+     */
+    @BeforeEach
+    fun reset() {
+        RestActionBuilderV3.cleanCache()
+    }
 
     companion object {
         private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
