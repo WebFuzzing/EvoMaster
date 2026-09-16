@@ -144,6 +144,7 @@ There are 3 types of options:
 |`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `true`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *DEBUG option*. *Default value*: `impact.csv`.|
 |`instrumentMR_BASE`| __Boolean__. Execute instrumentation for method replace with category BASE. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
@@ -230,6 +231,7 @@ There are 3 types of options:
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`statisticsColumnId`| __String__. An id that will be part as a column of the statistics file (if any is generated). *Default value*: `-`.|
 |`statisticsFile`| __String__. Where the statistics file (if any) is going to be written (in CSV format). *Default value*: `statistics.csv`.|
+|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `true`.|
 |`stoppingCriterion`| __Enum__. Stopping criterion for the search. *Valid values*: `TIME, ACTION_EVALUATIONS, INDIVIDUAL_EVALUATIONS`. *Default value*: `TIME`.|
 |`structureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`taintAnalysisForMapsAndArrays`| __Boolean__. Apply taint analysis to handle special cases of Maps and Arrays. *Default value*: `true`.|
@@ -313,7 +315,6 @@ There are 3 types of options:
 |`heuristicsForNeo4j`| __Boolean__. Tracking of Neo4j commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
-|`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`inferFormatFromNames`| __Boolean__. When dealing with string data, infer constraints based on the name or description. For example, a string field called 'uuid' likely is going to represent an UUID. A string property referring to 'ISO 8601' in its description might be a date. And so on. This is just an heuristics though, and unrestricted strings would still be sampled with a given probability. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_CASSANDRA`| __Boolean__. Execute instrumentation for method replace with category CASSANDRA. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -358,7 +359,6 @@ There are 3 types of options:
 |`sqlZ3CacheSize`| __Int__. Maximum number of entries kept in each of the two bounded Z3 solver caches: the one holding solver results, and the one remembering queries that could not be translated. When the bound is reached, the least recently used entry is evicted and would have to be solved again if seen later. Sizing it below the number of distinct queries a search issues turns a large share of cache misses into re-solves of already-known queries. Only meaningful when generateSqlDataWithZ3=true. *Constraints*: `min=1.0`. *Depends on*: `generateSqlDataWithZ3=true`. *Default value*: `5000`.|
 |`sqlZ3NumberOfRows`| __Int__. Number of rows the Z3 solver generates per table when solving a failed SQL query. The default of 1 is sufficient for the currently supported queries; generating a single row per table already forces the query to return a non-empty result. This will need to be increased once support for more complex JOINs (matching arbitrary row combinations, not just the diagonal pairing of row i with row i) is added. Only meaningful when generateSqlDataWithZ3=true. *Constraints*: `min=1.0`. *Depends on*: `generateSqlDataWithZ3=true`. *Default value*: `1`.|
 |`sqlZ3TimeoutMs`| __Int__. Soft timeout, in milliseconds, for each Z3 solver invocation when generating SQL data. If a query exceeds it, Z3 returns 'unknown' for that query instead of running unbounded. A value of 0 disables the timeout. Only meaningful when generateSqlDataWithZ3=true. *Constraints*: `min=0.0`. *Depends on*: `generateSqlDataWithZ3=true`. *Default value*: `5000`.|
-|`statusOracles`| __Boolean__. Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|
