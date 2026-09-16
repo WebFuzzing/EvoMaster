@@ -49,7 +49,15 @@ You can then run it on the command-line with `evomster <args>`, like for example
 
 It will fuzz the PetClinic example API from Swagger, for 60 seconds. 
 
-If you prefer, you can rather use Docker, as shown in the following video. 
+If instead of downloading for first time, you need to update it, you can run
+
+`pip install --upgrade evomaster`
+
+Note: some Mac users have reported issues with that command, not picking up latest version of _EvoMaster. In such cases, you should use:
+
+`python3 -m pip install --upgrade evomaster`
+
+If you prefer, you can rather use __Docker__, as shown in the following video. 
 
 ```
 docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --schema  https://petstore.swagger.io/v2/swagger.json
@@ -148,7 +156,7 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
 * _Web Report_: besides generating executable tests in different programming language, an interactive _index.html_ web report is created as well by default, visualizing and summarizing the results of the generated tests. 
 
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
-  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas and access policy violations.
+  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas, access policy violations like BOLA, and SQL Injection. More than 30 oracles are currently used. Full details with documentation at [faults.md](docs/faults.md).
 
 * _Self-contained tests_: for white-box testing, the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository

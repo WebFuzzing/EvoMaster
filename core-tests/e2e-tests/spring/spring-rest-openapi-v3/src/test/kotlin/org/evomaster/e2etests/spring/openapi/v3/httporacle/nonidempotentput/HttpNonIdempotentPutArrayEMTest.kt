@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.nonidempotentput
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.nonidempotentput.array.HttpNonIdempotentPutArrayController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -39,7 +40,7 @@ class HttpNonIdempotentPutArrayEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT, faults.first())
+            assertEquals(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT, faults.first())
         }
     }
 }

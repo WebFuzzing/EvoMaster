@@ -2293,6 +2293,21 @@ class EMConfig {
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
+
+    /**
+     * Boolean that enables and disables the generation of individuals based on Arazzo Workflows.
+     */
+    @Experimental
+    @Cfg("Enable workflow-based sampling from an Arazzo document.")
+    var enableArazzoWorkflowSampling = false
+
+    fun isEnabledArazzoSampling() = enableArazzoWorkflowSampling
+
+    @Experimental
+    @Cfg("Probability of controlling the creation of Arazzo individuals.")
+    @Probability(activating = false)
+    var probOfArazzoSampling = 0.5
+
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
@@ -3207,13 +3222,11 @@ class EMConfig {
             " created.")
     var createConfigPathIfMissing: Boolean = true
 
-    @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
-    var httpOracles = false
+    var httpOracles = true
 
-    @Experimental
     @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
-    var statusOracles = false
+    var statusOracles = true
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3394,6 +3407,11 @@ class EMConfig {
     var inferFormatFromNames = false
 
 
+    @Experimental
+    @ExistingPath(true,false)
+    @Cfg("arazzo location on disk")
+    var arazzoLocation = ""
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -3520,15 +3538,15 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SQL_INJECTION && (!sqli || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SSRF && (!ssrf || !security)){
             return false
         }
 
