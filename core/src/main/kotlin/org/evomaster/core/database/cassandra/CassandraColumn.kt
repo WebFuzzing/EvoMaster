@@ -1,8 +1,10 @@
 package org.evomaster.core.database.cassandra
 
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto
+
 /**
- * A single column of a Cassandra table, as recovered from the schema description string carried by
- * a failed CQL query reported by the SUT driver.
+ * A single column of a Cassandra table, as reported by the SUT driver in the schema of the table a
+ * failed CQL query targeted.
  */
 data class CassandraColumn(
 
@@ -22,4 +24,18 @@ data class CassandraColumn(
      * Whether this column is one of the table's clustering columns.
      */
     val isClusteringColumn: Boolean = false
-)
+) {
+
+    companion object {
+
+        /**
+         * @param dto the column of a table, as reported by the SUT driver
+         */
+        fun fromDto(dto: CassandraColumnDto) = CassandraColumn(
+            name = dto.name,
+            cqlType = dto.cqlType,
+            isPartitionKey = dto.isPartitionKey,
+            isClusteringColumn = dto.isClusteringColumn
+        )
+    }
+}

@@ -30,6 +30,24 @@ import org.evomaster.core.search.gene.string.StringGene
  */
 object CassandraColumnGeneBuilder {
 
+    private const val ASCII_TYPE = "ascii"
+    private const val TEXT_TYPE = "text"
+    private const val VARCHAR_TYPE = "varchar"
+    private const val TINYINT_TYPE = "tinyint"
+    private const val SMALLINT_TYPE = "smallint"
+    private const val INT_TYPE = "int"
+    private const val BIGINT_TYPE = "bigint"
+    private const val VARINT_TYPE = "varint"
+    private const val DECIMAL_TYPE = "decimal"
+    private const val FLOAT_TYPE = "float"
+    private const val DOUBLE_TYPE = "double"
+    private const val BOOLEAN_TYPE = "boolean"
+    private const val UUID_TYPE = "uuid"
+    private const val TIMESTAMP_TYPE = "timestamp"
+    private const val DATE_TYPE = "date"
+    private const val TIME_TYPE = "time"
+    private const val DURATION_TYPE = "duration"
+
     /**
      * The name given to the genes generating what a collection holds. Such genes are not bound to a
      * column of their own, and the elements of a collection are written with no name in a CQL
@@ -43,19 +61,19 @@ object CassandraColumnGeneBuilder {
      * enumerated, it is also what [isSupported] answers from, so that the two cannot disagree.
      */
     private val GENE_BUILDERS: Map<String, (String) -> Gene> = mapOf(
-        "ascii" to { name -> StringGene(name) },
-        "text" to { name -> StringGene(name) },
-        "varchar" to { name -> StringGene(name) },
-        "tinyint" to { name -> IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt()) },
-        "smallint" to { name -> IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt()) },
-        "int" to { name -> IntegerGene(name) },
-        "bigint" to { name -> LongGene(name) },
-        "varint" to { name -> BigIntegerGene(name) },
-        "decimal" to { name -> BigDecimalGene(name) },
-        "float" to { name -> FloatGene(name) },
-        "double" to { name -> DoubleGene(name) },
-        "boolean" to { name -> BooleanGene(name) },
-        "uuid" to { name -> UUIDGene(name) },
+        ASCII_TYPE to { name -> StringGene(name) },
+        TEXT_TYPE to { name -> StringGene(name) },
+        VARCHAR_TYPE to { name -> StringGene(name) },
+        TINYINT_TYPE to { name -> IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt()) },
+        SMALLINT_TYPE to { name -> IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt()) },
+        INT_TYPE to { name -> IntegerGene(name) },
+        BIGINT_TYPE to { name -> LongGene(name) },
+        VARINT_TYPE to { name -> BigIntegerGene(name) },
+        DECIMAL_TYPE to { name -> BigDecimalGene(name) },
+        FLOAT_TYPE to { name -> FloatGene(name) },
+        DOUBLE_TYPE to { name -> DoubleGene(name) },
+        BOOLEAN_TYPE to { name -> BooleanGene(name) },
+        UUID_TYPE to { name -> UUIDGene(name) },
         /*
             Only IPv4 addresses are generated for now, although the CQL type also accepts IPv6 ones, as
             that is what InetGene builds. The same restriction already applies to the SQL types.
@@ -65,10 +83,10 @@ object CassandraColumnGeneBuilder {
             Only valid values are generated, as these genes are used to set up the state of the
             database, and Cassandra would just reject an insertion carrying an invalid one.
          */
-        "timestamp" to { name -> DateTimeGene(name, onlyValid = true) },
-        "date" to { name -> DateGene(name, onlyValidDates = true) },
-        "time" to { name -> TimeGene(name, onlyValidTimes = true) },
-        "duration" to { name -> CqlDurationGene(name) }
+        TIMESTAMP_TYPE to { name -> DateTimeGene(name, onlyValid = true) },
+        DATE_TYPE to { name -> DateGene(name, onlyValidDates = true) },
+        TIME_TYPE to { name -> TimeGene(name, onlyValidTimes = true) },
+        DURATION_TYPE to { name -> CqlDurationGene(name) }
     )
 
     /**

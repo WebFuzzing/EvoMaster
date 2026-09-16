@@ -15,7 +15,7 @@ class CqlDurationGeneTest {
             months = IntegerGene("months", months),
             days = IntegerGene("days", days),
             nanos = LongGene("nanos", nanos)
-        ).apply { this.negative.value = negative }
+        ).apply { this.isNegative.value = negative }
 
     @Test
     fun testValueIsRenderedWithTheThreeUnits() {
@@ -41,7 +41,7 @@ class CqlDurationGeneTest {
 
     @Test
     fun testDurationIsPositiveByDefault() {
-        assertFalse(CqlDurationGene("elapsed").negative.value)
+        assertFalse(CqlDurationGene("elapsed").isNegative.value)
     }
 
     @Test
