@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.asyncapi.data
 
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.search.action.Action
 
 /**
  * What happened when one message was published: the outcome, and the reply when there was one.
@@ -21,6 +22,10 @@ class AsyncApiCallResult : EnterpriseActionResult {
 
     override fun copy(): AsyncApiCallResult {
         return AsyncApiCallResult(this)
+    }
+
+    override fun matchedType(action: Action): Boolean {
+        return action is AsyncApiAction
     }
 
     fun setOutcome(outcome: AsyncApiOutcome) {

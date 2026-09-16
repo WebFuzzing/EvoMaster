@@ -7,21 +7,17 @@ import com.webfuzzing.asyncapi.models.AsyncApiMessage
 import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver
 
 /**
- * Recognises which of the messages a contract declares for a reply an observed reply is.
+ * Recognises which of the messages a contract declares for a reply an observed reply is, by
+ * matching its payload against each declared schema.
  *
- * A reply channel often carries several messages -- a result and an error, say -- and telling
- * them apart is what gives a black-box search distinct outcomes to cover. There are no status
- * codes to read, so the payload is matched against each declared schema instead.
- *
- * The matching is structural and deliberately lenient: it checks the parts of JSON Schema that
- * tell one message from another (type, required fields, const and enum discriminators, the
- * combinators), and gives the benefit of the doubt on anything it does not understand. It is a
- * classifier, not a validator: its job is to tell which declared message a reply is, not to
- * find every way in which it deviates from its schema.
+ * It is a classifier rather than a validator: it reads what tells the declared messages apart
+ * and gives the benefit of the doubt on anything it cannot read, because a reply it fails to
+ * recognise is reported as a fault.
  */
 object AsyncApiReplyClassifier {
 
     private const val REF = "\$ref"
+    private const val PATH_SEPARATOR = "/"
     private const val TYPE = "type"
     private const val PROPERTIES = "properties"
     private const val REQUIRED = "required"
@@ -41,11 +37,15 @@ object AsyncApiReplyClassifier {
     private const val TYPE_NULL = "null"
 
     /**
-     * How far to follow references and nesting before giving up. A schema that refers to
-     * itself is legitimate, and the payload it describes is finite, so this is only reached by
-     * a cycle in the schema that the data never enters.
+     * How deep to descend into a schema before giving up and accepting what is left. Nesting and
+     * the combinators both count towards it, so a deeply combinated schema can reach it.
      */
-    private const val MAX_DEPTH = 32
+    private const val MAX_SCHEMA_DEPTH = 32
+
+    /**
+     * How many `$ref` hops to follow before deciding the references form a cycle.
+     */
+    private const val MAX_REF_CHAIN = 32
 
     private val mapper = ObjectMapper()
 
@@ -70,10 +70,15 @@ object AsyncApiReplyClassifier {
 
         val node = try {
             mapper.readTree(payload)
-        } catch (e: JsonProcessingException) {
+        } catch (_: JsonProcessingException) {
             //not JSON, so it is none of the JSON-described messages
             return null
-        } ?: return null
+        }
+
+        //an empty body parses to nothing at all, which is no message either
+        if (node == null || node.isMissingNode) {
+            return null
+        }
 
         return candidates
             .filter { it.payload != null && matches(node, it.payload, componentSchemas, 0) }
@@ -82,34 +87,52 @@ object AsyncApiReplyClassifier {
 
     private fun matches(node: JsonNode, schema: JsonNode, schemas: Map<String, JsonNode>, depth: Int): Boolean {
 
-        if (depth > MAX_DEPTH) {
+        if (depth >= MAX_SCHEMA_DEPTH) {
             return true
         }
 
         //a reference that cannot be followed is something this cannot judge, so it does not reject
-        val s = resolve(schema, schemas) ?: return true
+        val resolved = resolve(schema, schemas) ?: return true
 
-        if (!s.isObject) {
+        if (!resolved.isObject) {
             return true
         }
 
-        s.get(CONST)?.let { if (node != it) return false }
+        val const = resolved.get(CONST)
+        if (const != null && !sameValue(node, const)) {
+            return false
+        }
 
-        s.get(ENUM)?.let { allowed -> if (allowed.isArray && allowed.none { it == node }) return false }
+        val allowed = resolved.get(ENUM)
+        if (allowed != null && allowed.isArray && allowed.none { sameValue(node, it) }) {
+            return false
+        }
 
-        s.get(TYPE)?.let { if (!isOfType(node, it)) return false }
+        val type = resolved.get(TYPE)
+        if (type != null && !isOfType(node, type)) {
+            return false
+        }
 
-        s.get(ALL_OF)?.let { all -> if (all.any { !matches(node, it, schemas, depth + 1) }) return false }
+        val all = getBranches(resolved, ALL_OF)
+        if (all != null && all.any { !matches(node, it, schemas, depth + 1) }) {
+            return false
+        }
 
-        s.get(ANY_OF)?.let { any -> if (any.none { matches(node, it, schemas, depth + 1) }) return false }
+        val any = getBranches(resolved, ANY_OF)
+        if (any != null && any.none { matches(node, it, schemas, depth + 1) }) {
+            return false
+        }
 
         //oneOf is read as "at least one": exclusivity is a validator's concern, not a classifier's
-        s.get(ONE_OF)?.let { one -> if (one.none { matches(node, it, schemas, depth + 1) }) return false }
+        val one = getBranches(resolved, ONE_OF)
+        if (one != null && one.none { matches(node, it, schemas, depth + 1) }) {
+            return false
+        }
 
         if (node.isObject) {
-            s.get(REQUIRED)?.let { required -> if (required.any { !node.has(it.asText()) }) return false }
+            resolved.get(REQUIRED)?.let { required -> if (required.any { !node.has(it.asText()) }) return false }
 
-            s.get(PROPERTIES)?.fields()?.forEach { (name, property) ->
+            resolved.get(PROPERTIES)?.fields()?.forEach { (name, property) ->
                 val value = node.get(name)
                 if (value != null && !matches(value, property, schemas, depth + 1)) {
                     return false
@@ -118,7 +141,7 @@ object AsyncApiReplyClassifier {
         }
 
         if (node.isArray) {
-            s.get(ITEMS)?.let { items ->
+            resolved.get(ITEMS)?.let { items ->
                 if (items.isObject && node.any { !matches(it, items, schemas, depth + 1) }) return false
             }
         }
@@ -127,20 +150,60 @@ object AsyncApiReplyClassifier {
     }
 
     /**
+     * The branches of a combinator, or null when it is not a usable list of them. A combinator
+     * written as anything but a non-empty array says nothing, and must not reject everything.
+     */
+    private fun getBranches(schema: JsonNode, keyword: String): List<JsonNode>? {
+
+        val branches = schema.get(keyword) ?: return null
+
+        return if (branches.isArray && !branches.isEmpty) branches.toList() else null
+    }
+
+    /**
+     * Whether two JSON values are the same as JSON Schema counts sameness. Numbers compare by
+     * value, so that a schema written `const: 1.0` accepts a reply carrying `1`; Jackson's own
+     * equality would say those differ, being of different node types.
+     */
+    private fun sameValue(node: JsonNode, other: JsonNode): Boolean {
+
+        if (node.isNumber && other.isNumber && hasDecimalValue(node) && hasDecimalValue(other)) {
+            return node.decimalValue().compareTo(other.decimalValue()) == 0
+        }
+
+        return node == other
+    }
+
+    /**
+     * Whether the number has a decimal value at all. Only a floating-point node can hold an
+     * infinity or a NaN, and asking those for a [java.math.BigDecimal] throws.
+     */
+    private fun hasDecimalValue(node: JsonNode): Boolean {
+        return !(node.isDouble || node.isFloat) || node.doubleValue().isFinite()
+    }
+
+    /**
      * Whether [node] is of one of the types [type] names. JSON Schema writes it as one name or a
      * list of them, and counts a number with no fractional part as an integer.
+     *
+     * A `type` that is neither is not something this can read, so nothing is rejected on it.
      */
     private fun isOfType(node: JsonNode, type: JsonNode): Boolean {
 
-        val names = if (type.isArray) type.map { it.asText() } else listOf(type.asText())
+        val names = when {
+            type.isArray && !type.isEmpty -> type.map { it.asText() }
+            type.isTextual -> listOf(type.asText())
+            else -> return true
+        }
 
         return names.any { name ->
             when (name) {
                 TYPE_OBJECT -> node.isObject
                 TYPE_ARRAY -> node.isArray
                 TYPE_STRING -> node.isTextual
-                TYPE_INTEGER -> node.isIntegralNumber
-                        || (node.isNumber && node.decimalValue().stripTrailingZeros().scale() <= 0)
+                //a whole number written with a decimal point is an integer; canConvertToExactIntegral
+                //also answers for a value too large to be a BigDecimal, where decimalValue() throws
+                TYPE_INTEGER -> node.isIntegralNumber || (node.isNumber && node.canConvertToExactIntegral())
                 TYPE_NUMBER -> node.isNumber
                 TYPE_BOOLEAN -> node.isBoolean
                 TYPE_NULL -> node.isNull
@@ -150,33 +213,79 @@ object AsyncApiReplyClassifier {
     }
 
     /**
-     * The schema itself, once any chain of `$ref` to a component schema is followed. Null when
-     * a reference points at something other than a whole component schema.
+     * The schema itself, once any chain of `$ref` has been followed. Null when a reference leads
+     * nowhere, which is the one case this cannot judge.
+     *
+     * A pointer may go deeper than the schema it names, as in
+     * `#/components/schemas/Order/properties/item`, which is a legitimate way of saying "the
+     * shape of that one property".
      */
-    private fun resolve(schema: JsonNode, schemas: Map<String, JsonNode>): JsonNode? {
+    private fun resolve(schema: JsonNode, schemas: Map<String, JsonNode>, depth: Int = 0): JsonNode? {
+
+        if (depth >= MAX_REF_CHAIN) {
+            return null
+        }
 
         var current = schema
 
-        repeat(MAX_DEPTH) {
+        repeat(MAX_REF_CHAIN - depth) {
+
             val ref = AsyncApiRefResolver.refOf(current) ?: return current
-            val key = AsyncApiRefResolver.refKey(ref, AsyncApiRefResolver.SCHEMA_PREFIX) ?: return null
-            current = schemas[key] ?: return null
+            val key = AsyncApiRefResolver.schemaKeyOf(ref) ?: return null
+            val target = schemas[key] ?: return null
+
+            val pointer = ref.removePrefix(AsyncApiRefResolver.SCHEMA_PREFIX).substringAfter(PATH_SEPARATOR, "")
+
+            if (pointer.isEmpty()) {
+                current = target
+            } else {
+                //the schema the pointer goes into may itself be a reference, so follow that first
+                val base = resolve(target, schemas, depth + 1) ?: return null
+                current = base.at(PATH_SEPARATOR + pointer)
+                if (current.isMissingNode) {
+                    return null
+                }
+            }
         }
 
         return null
     }
 
     /**
-     * How many fields the schema pins down at its top level, which is what tells a specific
-     * message from a permissive one when both match.
+     * How many fields a schema pins down, which is what tells a specific message from a
+     * permissive one when a reply matches both.
+     *
+     * Counted through the combinators as well: a message that says what it requires inside an
+     * `allOf` is no less specific for having written it that way.
      */
-    private fun specificity(schema: JsonNode, schemas: Map<String, JsonNode>): Int {
+    private fun specificity(schema: JsonNode, schemas: Map<String, JsonNode>, depth: Int = 0): Int {
 
-        val s = resolve(schema, schemas) ?: return 0
+        if (depth >= MAX_SCHEMA_DEPTH) {
+            return 0
+        }
 
-        val required = s.get(REQUIRED)?.size() ?: 0
-        val pinned = s.get(PROPERTIES)?.count { it.has(CONST) || it.has(ENUM) } ?: 0
+        val resolved = resolve(schema, schemas) ?: return 0
 
-        return required + pinned
+        if (!resolved.isObject) {
+            return 0
+        }
+
+        val required = resolved.get(REQUIRED)?.size() ?: 0
+
+        val pinned = resolved.get(PROPERTIES)?.count { property ->
+            val target = resolve(property, schemas)
+            target != null && (target.has(CONST) || target.has(ENUM))
+        } ?: 0
+
+        //every branch of an allOf has to hold, so all of them count
+        val fromAll = getBranches(resolved, ALL_OF)
+            ?.sumOf { specificity(it, schemas, depth + 1) } ?: 0
+
+        //only one branch of a choice has to hold, so it is worth what its weakest branch is
+        val fromChoice = listOf(ANY_OF, ONE_OF).sumOf { keyword ->
+            getBranches(resolved, keyword)?.minOf { specificity(it, schemas, depth + 1) } ?: 0
+        }
+
+        return required + pinned + fromAll + fromChoice
     }
 }

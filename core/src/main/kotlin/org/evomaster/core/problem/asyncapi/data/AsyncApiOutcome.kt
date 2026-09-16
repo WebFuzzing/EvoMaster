@@ -2,9 +2,6 @@ package org.evomaster.core.problem.asyncapi.data
 
 /**
  * What came of publishing one message, as the driver reported it.
- *
- * Only [NO_REPLY] is a fault in itself. [PUBLISH_FAILED] is a broken setup rather than a finding
- * about the service, and the other two are the service doing what its contract says.
  */
 enum class AsyncApiOutcome {
 

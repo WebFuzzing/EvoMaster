@@ -53,11 +53,11 @@ class AsyncApiModule : EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {})
-            .to(AsyncApiBlackBoxFitness::class.java)
+            .to(AsyncApiFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
-            .to(AsyncApiBlackBoxFitness::class.java)
+            .to(AsyncApiFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<AsyncApiIndividual>>() {})
