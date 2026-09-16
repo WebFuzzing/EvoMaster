@@ -572,6 +572,18 @@ class Main {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
                 } else if (info.asyncApiProblem != null) {
                     config.problemType = EMConfig.ProblemType.ASYNCAPI
+                    if (config.createTests) {
+                        /*
+                            There is no test writer for AsyncAPI yet, and the constraints checked
+                            below refuse the combination. As the problem type was inferred rather
+                            than asked for, turning test generation off is better than failing.
+                         */
+                        LoggingUtil.uniqueUserWarn(
+                            "The driver describes an AsyncAPI service, for which test generation is not" +
+                                    " available yet. Continuing with 'createTests' off."
+                        )
+                        config.createTests = false
+                    }
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }

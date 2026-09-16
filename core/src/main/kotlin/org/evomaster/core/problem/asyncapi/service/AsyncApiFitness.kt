@@ -3,6 +3,7 @@ package org.evomaster.core.problem.asyncapi.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
@@ -15,6 +16,7 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
 import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
+import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -24,31 +26,24 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Publishes the messages of a test through the driver and turns what comes back into targets.
- *
- * The targets are the AsyncAPI analogue of REST's `(status x endpoint)`: for every operation,
- * what publishing to it was seen to do ([AsyncApiOutcome]), and, when a reply came back, which
- * of the messages the contract declares for the reply it was recognised as. A contract that
- * enumerates a result and an error thus gives the search two things to reach.
- *
- * Two outcomes are faults: a promised reply that never arrives, and a reply matching none of
- * the declared messages. A message the driver could not publish is neither; it is a broken
- * setup, and the test stops there.
+ * Publishes the messages of a test through the driver and turns what comes back into targets:
+ * for every operation what publishing to it did, and which of the replies the contract declares
+ * was recognised.
  */
-class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
+class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AsyncApiBlackBoxFitness::class.java)
+        private val log: Logger = LoggerFactory.getLogger(AsyncApiFitness::class.java)
 
         /**
          * Prefix of the `(outcome x operation)` targets, written as PREFIX:OUTCOME:action.
          */
-        const val OUTCOME_TARGET_PREFIX = "ASYNCAPI_OUTCOME"
+        private const val OUTCOME_TARGET_PREFIX = "ASYNCAPI_OUTCOME"
 
         /**
          * Prefix of the `(declared reply x operation)` targets, written as PREFIX:messageId:action.
          */
-        const val REPLY_TARGET_PREFIX = "ASYNCAPI_REPLY"
+        private const val REPLY_TARGET_PREFIX = "ASYNCAPI_REPLY"
 
         private const val TARGET_SEPARATOR = ":"
 
@@ -56,18 +51,23 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
+        /**
+         * What a {placeholder} in a channel address starts with.
+         */
+        private const val PARAMETER_OPENING = "{"
+
         private val mapper = ObjectMapper()
 
         /**
          * The id of the target covered when publishing to [actionName] had [outcome].
          */
-        fun outcomeTargetId(outcome: AsyncApiOutcome, actionName: String): String =
+        private fun getOutcomeTargetId(outcome: AsyncApiOutcome, actionName: String): String =
             listOf(OUTCOME_TARGET_PREFIX, outcome.name, actionName).joinToString(TARGET_SEPARATOR)
 
         /**
          * The id of the target covered when a reply to [actionName] was recognised as [messageId].
          */
-        fun replyTargetId(messageId: String, actionName: String): String =
+        private fun getReplyTargetId(messageId: String, actionName: String): String =
             listOf(REPLY_TARGET_PREFIX, messageId, actionName).joinToString(TARGET_SEPARATOR)
     }
 
@@ -156,13 +156,16 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
             return false
         }
 
-        record(reply, result)
-        handleTargets(fv, action, result, index)
+        val outcome = record(reply, result)
+        handleTargets(fv, action, result, outcome, index)
 
         return true
     }
 
-    private fun record(reply: AsyncApiReplyDto, result: AsyncApiCallResult) {
+    /**
+     * Copy what the driver reported onto the result, and say what it amounts to.
+     */
+    private fun record(reply: AsyncApiReplyDto, result: AsyncApiCallResult): AsyncApiOutcome {
 
         val outcome = when {
             !reply.replyExpected -> AsyncApiOutcome.PUBLISHED
@@ -177,33 +180,71 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
             reply.replyPayload?.let { result.setReplyPayload(it) }
             result.setCorrelationMatched(reply.correlationMatched)
         }
+
+        return outcome
     }
 
-    private fun handleTargets(fv: FitnessValue, action: AsyncApiAction, result: AsyncApiCallResult, index: Int) {
+    private fun handleTargets(
+        fv: FitnessValue,
+        action: AsyncApiAction,
+        result: AsyncApiCallResult,
+        outcome: AsyncApiOutcome,
+        index: Int
+    ) {
 
         val name = action.getName()
-        val outcome = result.getOutcome()!!
 
-        fv.updateTarget(idMapper.handleLocalTarget(outcomeTargetId(outcome, name)), 1.0, index)
+        fv.updateTarget(idMapper.handleLocalTarget(getOutcomeTargetId(outcome, name)), 1.0, index)
 
         when (outcome) {
 
             AsyncApiOutcome.REPLIED -> handleReplyTargets(fv, action, result, index)
 
-            AsyncApiOutcome.NO_REPLY -> {
-                val fault = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY, name)
-                fv.updateTarget(idMapper.handleLocalTarget(fault), 1.0, index)
-            }
+            AsyncApiOutcome.NO_REPLY ->
+                handleFault(fv, result, ExperimentalFaultCategory.ASYNCAPI_NO_REPLY, name, index)
 
+            /*
+                Nothing more to aim at. PUBLISH_FAILED never reaches here -- publishing gives up
+                before this is called -- but the compiler wants every outcome named.
+             */
             AsyncApiOutcome.PUBLISHED, AsyncApiOutcome.PUBLISH_FAILED -> Unit
         }
+    }
+
+    /**
+     * Register a fault, unless the user has switched off the category it belongs to.
+     *
+     * It goes both on the fitness value, where the search can aim at it, and on the action
+     * result, which is where the reports count faults from.
+     */
+    private fun handleFault(
+        fv: FitnessValue,
+        result: AsyncApiCallResult,
+        category: ExperimentalFaultCategory,
+        actionName: String,
+        index: Int
+    ) {
+        if (!config.isEnabledFaultCategory(category)) {
+            return
+        }
+
+        val descriptiveId = idMapper.getFaultDescriptiveId(category, actionName)
+        fv.updateTarget(idMapper.handleLocalTarget(descriptiveId), 1.0, index)
+        result.addFault(DetectedFault(category, actionName, null))
     }
 
     private fun handleReplyTargets(fv: FitnessValue, action: AsyncApiAction, result: AsyncApiCallResult, index: Int) {
 
         val name = action.getName()
         val document = asyncApiSampler.document
-        val operation = document.operations[action.operationId] ?: return
+        val operation = document.operations[action.operationId]
+
+        if (operation == null) {
+            LoggingUtil.uniqueUserWarn(
+                "No operation '" + action.operationId + "' in the document, so its replies cannot be recognised"
+            )
+            return
+        }
         val declared = document.replyMessagesOf(operation)
 
         if (declared.isEmpty()) {
@@ -211,16 +252,26 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
             return
         }
 
-        val recognised = AsyncApiReplyClassifier.classify(result.getReplyPayload(), declared, document.componentSchemas)
+        val payload = result.getReplyPayload()
+
+        if (payload.isNullOrBlank()) {
+            /*
+                A reply did arrive, but carries no body to match against the contract -- an
+                acknowledgement, or a transport that answers in metadata. Nothing was declared
+                to be wrong, so this is not the undeclared-reply fault.
+             */
+            return
+        }
+
+        val recognised = AsyncApiReplyClassifier.classify(payload, declared, document.componentSchemas)
 
         if (recognised == null) {
-            val fault = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY, name)
-            fv.updateTarget(idMapper.handleLocalTarget(fault), 1.0, index)
+            handleFault(fv, result, ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY, name, index)
             return
         }
 
         result.setReplyMessage(recognised.id)
-        fv.updateTarget(idMapper.handleLocalTarget(replyTargetId(recognised.id, name)), 1.0, index)
+        fv.updateTarget(idMapper.handleLocalTarget(getReplyTargetId(recognised.id, name)), 1.0, index)
     }
 
     /**
@@ -238,16 +289,12 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
         dto.channelName = action.channelName
         dto.messageId = action.messageId
 
-        /*
-            A channel may declare no address, meaning it is decided at run time. The driver is
-            then given the channel's name and left to map it, being the one that knows the broker.
-         */
-        dto.address = channel?.address ?: action.channelName
+        dto.address = getAddress(channel, action.channelName)
 
         dto.payload = action.parameters.firstOrNull { it.name == AsyncApiParam.PAYLOAD }
             ?.gene?.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
         dto.contentType = message?.contentType ?: document.defaultContentType ?: DEFAULT_CONTENT_TYPE
-        dto.headers = headersOf(action)
+        dto.headers = LinkedHashMap(buildHeaders(action))
 
         dto.correlationId = runId + CORRELATION_SEPARATOR + published++
         message?.correlationId?.let {
@@ -260,7 +307,7 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         action.replyTemplate?.let { reply ->
-            dto.replyAddress = replyAddressOf(reply, action)
+            dto.replyAddress = getReplyAddress(reply, action)
             if (dto.replyAddress != null) {
                 dto.replyTimeoutMs = config.asyncApiReplyTimeoutMs.toLong()
             }
@@ -270,10 +317,14 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
     }
 
     /**
-     * The headers gene as a map, by way of its own JSON printing, which is what knows which
-     * optional headers are on.
+     * The headers to publish alongside the body: key is the header name as the document declares
+     * it, value is what to send under it, as text.
+     *
+     * They are read back from the gene's own JSON printing, which is what knows which optional
+     * headers are on. A header whose value prints as JSON null is left out rather than sent as
+     * the text "null".
      */
-    private fun headersOf(action: AsyncApiAction): MutableMap<String, String> {
+    private fun buildHeaders(action: AsyncApiAction): Map<String, String> {
 
         val headers = LinkedHashMap<String, String>()
 
@@ -284,13 +335,19 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         val node = try {
             mapper.readTree(json)
-        } catch (e: JsonProcessingException) {
+        } catch (e: Exception) {
             log.warn("The headers of '{}' did not print as JSON: {}", action.getName(), e.message)
             return headers
         }
 
-        if (node.isObject) {
-            node.fields().forEach { (name, value) ->
+        if (!node.isObject) {
+            log.warn("The headers of '{}' printed as {}, not as an object, so none are sent",
+                action.getName(), json)
+            return headers
+        }
+
+        node.fields().forEach { (name, value) ->
+            if (!value.isNull) {
                 headers[name] = if (value.isValueNode) value.asText() else value.toString()
             }
         }
@@ -301,7 +358,7 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
     /**
      * Where the driver should wait for the reply, or null when there is nowhere to wait yet.
      */
-    private fun replyAddressOf(reply: AsyncApiReply, action: AsyncApiAction): String? {
+    private fun getReplyAddress(reply: AsyncApiReply, action: AsyncApiAction): String? {
 
         val channelName = reply.channelName
 
@@ -319,6 +376,48 @@ class AsyncApiBlackBoxFitness : ApiWsFitness<AsyncApiIndividual>() {
             return null
         }
 
-        return asyncApiSampler.document.channels[channelName]?.address ?: channelName
+        return getAddress(asyncApiSampler.document.channels[channelName], channelName)
+    }
+
+    /**
+     * Where a message on [channel] actually goes on the wire.
+     *
+     * Usually the channel's address, but a protocol binding may override it: the Kafka binding
+     * carries its own topic, and a document that uses one often declares no address at all. A
+     * channel that declares neither is decided at run time, so the driver is given the channel's
+     * name and left to map it, being the one that knows the broker.
+     *
+     * Publishing to the wrong destination is silent -- the messages simply reach nobody -- so it
+     * is worth taking the binding into account rather than assuming the address is the whole story.
+     */
+    private fun getAddress(channel: AsyncApiChannel?, channelName: String): String {
+
+        if (channel == null) {
+            return channelName
+        }
+
+        val protocol = asyncApiSampler.document.serversOf(channel).firstOrNull()?.protocol
+
+        /*
+            A channel that declares no address of its own is normal for Kafka, where the topic
+            lives in the binding. The protocol is only known when the document declares a server,
+            so when there is no address to keep, the binding's topic is taken whatever it says:
+            it is the one destination the document actually names.
+         */
+        val address = channel.effectiveAddress(protocol)
+            ?: channel.bindings?.kafkaTopic
+            ?: return channelName
+
+        if (address.contains(PARAMETER_OPENING)) {
+            /*
+                The address has {placeholders} backed by the channel's parameters, which are not
+                filled in yet. Publishing to it verbatim reaches nobody.
+             */
+            LoggingUtil.uniqueUserWarn(
+                "The address of channel '" + channelName + "' has parameters that are not supported yet: " + address
+            )
+        }
+
+        return address
     }
 }
