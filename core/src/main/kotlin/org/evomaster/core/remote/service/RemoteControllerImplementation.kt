@@ -419,6 +419,21 @@ class RemoteControllerImplementation() : RemoteController{
     }
 
     override fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto): AsyncApiReplyDto? {
+        return executeNewAction(
+            actionDto,
+            object : GenericType<WrappedResponseDto<AsyncApiReplyDto>>() {},
+            "Failed to publish an AsyncAPI message")
+    }
+
+    /**
+     * Hand one action to the driver to execute, and read back what it reports. Null when the
+     * driver could not be reached, or answered with an error.
+     */
+    private fun <T> executeNewAction(
+        actionDto: ActionDto,
+        type: GenericType<WrappedResponseDto<T>>,
+        errorMessage: String
+    ): T? {
 
         val response = makeHttpCall {
             getWebTarget()
@@ -428,9 +443,9 @@ class RemoteControllerImplementation() : RemoteController{
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<AsyncApiReplyDto>>() {})
+        val dto = getDtoFromResponse(response, type)
 
-        if (!checkResponse(response, dto, "Failed to publish an AsyncAPI message")) {
+        if (!checkResponse(response, dto, errorMessage)) {
             return null
         }
 
