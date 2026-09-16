@@ -275,7 +275,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
      * @param allCassandraActions Cassandra actions to be transformed into insertion commands and executed.
      * @param actionResults mutable list shared with the caller where the result of each Cassandra
      *                      action will be appended, preserving the same order as [allCassandraActions].
-     * @return whether [allCassandraActions] execute successfully.
+     * @return always true, as a failed insertion does not stop the evaluation of the individual: the
+     * outcome of each insertion is instead recorded in the [CassandraDbActionResult] of its action
      * @throws IllegalStateException if the controller answers with a number of results different from
      * the number of insertions sent
      */
