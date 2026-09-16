@@ -42,7 +42,10 @@ class RestResourceCalls(
     randomness: Randomness? = null
 ) : ActionTree(
     children,
-    { k -> SqlAction::class.java.isAssignableFrom(k) || MongoDbAction::class.java.isAssignableFrom(k)  || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
+    { k -> SqlAction::class.java.isAssignableFrom(k) ||
+            MongoDbAction::class.java.isAssignableFrom(k)  ||
+            RedisDbAction::class.java.isAssignableFrom(k)  ||
+            EnterpriseActionGroup::class.java.isAssignableFrom(k) }
 ) {
 
     constructor(
