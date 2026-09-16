@@ -682,6 +682,10 @@ abstract class RestIndividualTestBase {
             return null
         }
 
+        override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
+            return null
+        }
+
         override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
             return null
         }

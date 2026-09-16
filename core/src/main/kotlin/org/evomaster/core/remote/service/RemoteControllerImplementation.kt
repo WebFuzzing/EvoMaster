@@ -529,6 +529,10 @@ class RemoteControllerImplementation() : RemoteController{
         return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
     }
 
+    override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
+        return executeCassandraDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<CassandraInsertionResultsDto>>() {})
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
@@ -571,6 +575,25 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                 .path(ControllerConstants.REDIS_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        return dto?.data
+    }
+
+    /**
+     * execute [dto] through [ControllerConstants.CASSANDRA_INSERTION] endpoints of EMController,
+     * @return execution response
+     */
+    private fun <T> executeCassandraDatabaseCommandAndGetResults(dto: CassandraDatabaseCommandDto,
+                                                                 type: GenericType<WrappedResponseDto<T>>): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.CASSANDRA_INSERTION)
                 .request()
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }

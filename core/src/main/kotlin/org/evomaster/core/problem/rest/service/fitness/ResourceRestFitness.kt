@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service.fitness
 
 
 import com.google.inject.Inject
+import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
@@ -85,6 +86,8 @@ class ResourceRestFitness : AbstractRestFitness() {
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults)
+
+        doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()

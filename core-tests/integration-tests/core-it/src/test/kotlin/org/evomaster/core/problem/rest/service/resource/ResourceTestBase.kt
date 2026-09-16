@@ -94,6 +94,10 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             return null
         }
 
+        override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
+            return null
+        }
+
         override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
             return SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }

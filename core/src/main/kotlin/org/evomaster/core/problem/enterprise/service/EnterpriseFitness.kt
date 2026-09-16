@@ -6,6 +6,9 @@ import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.cassandra.CassandraDbActionTransformer
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.mongo.MongoDbActionTransformer
@@ -264,6 +267,51 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 redisResults[actionIndex].setInsertExecutionResult(success)
                 dtoIndex += count
             }
+        }
+
+        return true
+    }
+
+    /**
+     * Transforms and executes a list of [CassandraDbAction] as insertion commands against the
+     * remote Cassandra database via the SUT controller.
+     *
+     * @param allCassandraActions Cassandra actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each Cassandra
+     *                      action will be appended, preserving the same order as [allCassandraActions].
+     * @return whether [allCassandraActions] execute successfully.
+     * @throws IllegalStateException if the controller answers with a number of results different from
+     * the number of insertions sent
+     */
+    fun doCassandraDbCalls(
+        allCassandraActions: List<CassandraDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+
+        if (allCassandraActions.isEmpty()) {
+            return true
+        }
+
+        val cassandraResults = allCassandraActions.map { CassandraDbActionResult(it.getLocalId()) }
+        actionResults.addAll(cassandraResults)
+
+        val dto = CassandraDbActionTransformer.transform(allCassandraActions)
+
+        // null when the controller could not be reached or rejected the command, leaving all the insertions as failed
+        val executedResults = rc.executeCassandraDatabaseInsertions(dto)?.executionResults ?: return true
+
+        /*
+            The controller records one result per insertion, even for a failed one, and the transformer
+            builds exactly one insertion per action, so any other number of results is a bug rather than
+            a degraded answer.
+         */
+        if (executedResults.size != allCassandraActions.size) {
+            throw IllegalStateException("Received ${executedResults.size} insertion results for" +
+                    " ${allCassandraActions.size} Cassandra insertions")
+        }
+
+        executedResults.forEachIndexed { index, success ->
+            cassandraResults[index].setInsertExecutionResult(success)
         }
 
         return true
