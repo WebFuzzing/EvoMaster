@@ -25,8 +25,8 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamRes
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
-import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.client.java.sql.DbInfoExtractor
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.SqlAction
@@ -42,8 +42,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.search.service.mutator.StandardMutator
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*

@@ -1,16 +1,16 @@
 package org.evomaster.core.problem.rest.service.fitness
 
 import org.evomaster.core.database.cassandra.CassandraDbAction
-import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

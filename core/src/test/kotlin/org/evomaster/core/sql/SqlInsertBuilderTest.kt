@@ -6,7 +6,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.database.sql.DatabaseExecutor
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
