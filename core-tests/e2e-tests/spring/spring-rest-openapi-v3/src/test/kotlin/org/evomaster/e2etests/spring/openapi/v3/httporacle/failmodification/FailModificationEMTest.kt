@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.failmodification
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.failmodification.FailModificationController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -39,7 +40,7 @@ class FailModificationEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            val found = faults.filter { it.category ==  ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION}
+            val found = faults.filter { it.category ==  DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION}
 
             assertEquals(2, found.size)
         }

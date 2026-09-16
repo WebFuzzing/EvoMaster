@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <version>6.1.2-SNAPSHOT</version>
+        <version>6.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring</artifactId>
@@ -26,6 +26,7 @@
         <module>spring-rest-bb</module>
         <module>spring-graphql-bb</module>
         <module>spring-rest-multidb</module>
+        <module>spring-rest-polyglot-persistence</module>
         <module>spring-rest-opensearch</module>
         <module>spring-rest-dynamodb</module>
         <module>spring-rest-redis</module>

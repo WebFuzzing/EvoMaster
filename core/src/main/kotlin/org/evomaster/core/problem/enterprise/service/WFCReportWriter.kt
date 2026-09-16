@@ -2,7 +2,7 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
-import com.webfuzzing.commons.faults.VersionNumbers
+import com.webfuzzing.commons.VersionNumbers
 import com.webfuzzing.commons.report.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestCaseCode

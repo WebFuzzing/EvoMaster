@@ -47,7 +47,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -77,7 +79,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingSqlActions.indices.map {
                         EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as SqlActionResult)
                     },
-                    lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                    lines, sqlInsertionVars = sqlInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingMongoActions.isNotEmpty()) {
@@ -86,7 +88,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingMongoActions.indices.map {
                     EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
                 },
-                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                lines, mongoInsertionVars = mongoInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingRedisActions.isNotEmpty()) {
@@ -100,7 +102,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     EvaluatedRedisDbAction(initializingRedisActions[it], result)
                 },
                 lines,
-                insertionVars = insertionVars,
+                redisInsertionVars = redisInsertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }

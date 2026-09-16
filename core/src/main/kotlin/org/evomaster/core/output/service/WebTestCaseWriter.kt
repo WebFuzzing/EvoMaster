@@ -17,7 +17,9 @@ class WebTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
         //nothing to do? at least for now...
@@ -27,7 +29,9 @@ class WebTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
         testCaseName: String,
         testSuitePath: Path?
     ) {

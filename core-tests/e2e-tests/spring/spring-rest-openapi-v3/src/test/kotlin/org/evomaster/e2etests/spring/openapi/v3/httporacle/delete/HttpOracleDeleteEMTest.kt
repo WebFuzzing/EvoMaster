@@ -48,7 +48,7 @@ class HttpOracleDeleteEMTest : SpringTestBase(){
 
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue({ ExperimentalFaultCategory.HTTP_NONWORKING_DELETE in faults })
+            assertTrue({ DefinedFaultCategory.HTTP_NONWORKING_DELETE in faults })
 
         }
     }
