@@ -4,7 +4,10 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
-import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
+import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.WebProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
@@ -13,14 +16,16 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.problem.*;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.glassfish.jersey.internal.util.Producer;
 
@@ -391,6 +396,7 @@ public class EMController {
                         noKillSwitch(() -> sutController.initOpenSearchHandler());
                         noKillSwitch(() -> sutController.initRedisHandler());
                         noKillSwitch(() -> sutController.initDynamoDbHandler());
+                        noKillSwitch(() -> sutController.initCassandraHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
