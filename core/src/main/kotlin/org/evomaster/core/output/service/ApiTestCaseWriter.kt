@@ -3,19 +3,22 @@ package org.evomaster.core.output.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
-import org.evomaster.core.output.*
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
+import org.evomaster.core.output.*
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.EvaluatedCassandraDbAction
 import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -69,6 +72,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as RedisDbActionResults")
 
+        val initializingCassandraActions = ind.individual.seeInitializingActions().filterIsInstance<CassandraDbAction>()
+        val initializingCassandraResults = (ind.seeResults(initializingCassandraActions))
+        if (initializingCassandraResults.any { (it as? CassandraDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as CassandraDbActionResults")
+
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()
@@ -103,6 +111,21 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 },
                 lines,
                 redisInsertionVars = redisInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
+            // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingCassandraActions.isNotEmpty()) {
+            CassandraWriter.handleCassandraDbInitialization(
+                format,
+                initializingCassandraActions.indices.map {
+                    EvaluatedCassandraDbAction(
+                        initializingCassandraActions[it],
+                        initializingCassandraResults[it] as CassandraDbActionResult
+                    )
+                },
+                lines,
+                insertionVars = insertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }

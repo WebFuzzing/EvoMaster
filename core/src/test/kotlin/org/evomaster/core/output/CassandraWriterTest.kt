@@ -130,12 +130,23 @@ class CassandraWriterTest {
         assertTrue(insertionVars.contains("insertions_cassandra" to "insertions_cassandra_result"))
     }
 
+    /**
+     * The previous variables belong to the insertions into the other databases, written before the
+     * Cassandra ones in the same test. Their types cannot be passed to the Cassandra DSL, so passing
+     * them on would make the generated test not compile.
+     */
     @Test
-    fun testPreviousInsertionVarsArePassedOn() {
-        val insertionVars = mutableListOf("insertions" to "insertionsresult")
+    fun testPreviousInsertionVarsAreNotPassedOn() {
+        val kotlin = write(listOf(makeEvaluated()),
+            insertionVars = mutableListOf("insertions" to "insertionsresult"), groupIndex = "1")
 
-        val output = write(listOf(makeEvaluated()), insertionVars = insertionVars, groupIndex = "1")
+        assertTrue(kotlin.contains("val insertions_cassandra1 = cassandra()"))
+        assertFalse(kotlin.contains("cassandra(insertions)"))
 
-        assertTrue(output.contains("val insertions_cassandra1 = cassandra(insertions)"))
+        val java = write(listOf(makeEvaluated()), format = OutputFormat.JAVA_JUNIT_5,
+            insertionVars = mutableListOf("insertions" to "insertionsresult"), groupIndex = "1")
+
+        assertTrue(java.contains("List<CassandraInsertionDto> insertions_cassandra1 = cassandra()"))
+        assertFalse(java.contains("cassandra(insertions)"))
     }
 }
