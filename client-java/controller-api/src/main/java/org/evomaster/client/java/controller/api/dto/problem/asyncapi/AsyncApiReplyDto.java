@@ -23,24 +23,32 @@ public class AsyncApiReplyDto {
     /**
      * The index of the action this answers, echoing what was asked.
      */
-    public int index;
+    public Integer index;
 
     /**
      * Whether the message reached the broker. False means the driver could not publish, and
      * {@link #errorMessage} says why.
+     *
+     * Null means the driver did not say, which is read the same way as false: without an answer
+     * here there is no knowing whether the message went out, and the rest of the test would
+     * mean nothing.
      */
-    public boolean published;
+    public Boolean published;
 
     /**
      * Whether a reply arrived and was recognised as answering this message.
+     *
+     * Null means the driver did not say, and is read as no reply having arrived.
      */
-    public boolean replyReceived;
+    public Boolean replyReceived;
 
     /**
      * Whether the driver waited for a reply at all. False for a fire-and-forget operation, so
      * that the absence of a reply is not mistaken for silence in answer to a promise.
+     *
+     * Null means the driver did not say, and is read as not having waited.
      */
-    public boolean replyExpected;
+    public Boolean replyExpected;
 
     /**
      * The reply body, as it arrived.
@@ -60,8 +68,11 @@ public class AsyncApiReplyDto {
      * echoing the id is the service's own behaviour. A reply that arrives without it is
      * recorded rather than treated as a fault, since from outside there is no telling a defect
      * from a service that correlates by some business key instead.
+     *
+     * Null means the driver does not track correlation at all, which is not the same as having
+     * checked and found the id missing, and is recorded as neither.
      */
-    public boolean correlationMatched;
+    public Boolean correlationMatched;
 
     /**
      * How long the driver waited, in milliseconds, whether or not anything arrived. Reported
