@@ -209,12 +209,16 @@ public class MongoHeuristicsCalculator {
             if (actualValueList.isEmpty()) {
                 return C_FALSE;
             } else {
-                Truthness[] results = actualValueList.stream()
-                        .filter(element -> element instanceof String)
-                        .map(element -> (String) element)
-                        .map(element -> evaluateRegularExpression(element, pattern, taintHandler))
-                        .toArray(Truthness[]::new);
-                return buildOrAggregationTruthness(results);
+                if (actualValueList.stream().anyMatch(element -> !(element instanceof String))) {
+                    return C_FALSE;
+                } else {
+                    Truthness[] results = actualValueList.stream()
+                            .filter(element -> element instanceof String)
+                            .map(element -> (String) element)
+                            .map(element -> evaluateRegularExpression(element, pattern, taintHandler))
+                            .toArray(Truthness[]::new);
+                    return buildOrAggregationTruthness(results);
+                }
             }
         } else {
             return C_FALSE;
