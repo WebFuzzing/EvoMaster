@@ -2490,31 +2490,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$mod with a divisor of 0 throws ArithmeticException")
-    public void testModByZero() {
-        // mongo: "divisor cannot be 0"
-        Document doc = new Document().append("a", 5);
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
-        Document query = new Document().append("a",
-                new Document().append("$mod", Arrays.asList(0, 0)));
-        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
-        assertTrue(truthness.isFalse());
-    }
-
-    @Test
-    @Disabled("$size with a negative value is not parsed, so the calculator throws a NullPointerException")
-    public void testNegativeSize() {
-        // mongo: "Expected a non-negative number in: $size: -1"
-        Document doc = new Document().append("a", Arrays.asList(1, 2));
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
-        Document query = new Document().append("a", new Document().append("$size", -1));
-        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
-        assertTrue(truthness.isFalse());
-    }
-
-    @Test
     @Disabled("the documents are traversed more than once, so a one-shot Iterable is scored wrongly")
     public void testDocumentsThatCanOnlyBeTraversedOnce() {
         /*

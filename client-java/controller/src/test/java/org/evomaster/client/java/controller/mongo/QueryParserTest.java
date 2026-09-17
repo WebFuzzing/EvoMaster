@@ -555,6 +555,16 @@ class QueryParserTest {
     }
 
     @Test
+    void testModRejectZeroDivisor() {
+        Document query = new Document(
+                "age",
+                new Document("$mod", Arrays.asList(0L, 0L))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
     void testParseBitsAllClearLong() {
         Document query = new Document(
                 "flags",
