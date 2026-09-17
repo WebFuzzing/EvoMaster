@@ -9,6 +9,7 @@ import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 
 
 class Solution<T>(
@@ -85,6 +86,10 @@ where T : Individual {
 
     fun hasAnyRedisAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is RedisDbAction}}
+    }
+
+    fun hasAnyDynamoDbAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a -> a is DynamoDbAction } }
     }
 
     /**
