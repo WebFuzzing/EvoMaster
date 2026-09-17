@@ -2,12 +2,19 @@
 
 Under development in `master` branch.
 
+### Addressed GitHub Issues
+- #711: What are the type of faults that can be detected with this tool?  
+
+# Version 6.2.0
+
 ### New Features
+- 25 new automated oracles to detect faults have been added, based on HTTP semantics. 
 - New test output option `JS_PLAYWRIGHT` to generate JavaScript tests where HTTP calls are done with PlayWright instead of SuperAgent. 
 
 ### Fixed Bugs
-- Update to WFC 0.7.0, which fixed few bugs in Web Report
+- Update to WFC 0.8.0, which fixed few bugs in Web Report
 - Fixed issue that auth configurations could not be read from read-only folders.
+- Fixed bug in minimization phase in white-box testing that led to lose coverage info
 
 # Version 6.1.1
 

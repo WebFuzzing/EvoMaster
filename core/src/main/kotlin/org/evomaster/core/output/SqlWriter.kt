@@ -24,7 +24,7 @@ object SqlWriter {
      * @param lines is used to save generated textual lines with respects to [dbInitialization]
      * @param allDbInitialization are all db actions in this test
      * @param groupIndex specifies an index of a group of this [dbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
+     * @param sqlInsertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleDbInitialization(
@@ -33,7 +33,7 @@ object SqlWriter {
         lines: Lines,
         allDbInitialization: List<SqlAction> = dbInitialization.map { it.sqlAction },
         groupIndex: String ="",
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean) {
 
         if (dbInitialization.isEmpty()
@@ -43,8 +43,8 @@ object SqlWriter {
 
         val insertionVar = "insertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
-        val previousVarResults = insertionVars.joinToString(", ") { it.second }
+        val previousVar = sqlInsertionVars.joinToString(", ") { it.first }
+        val previousVarResults = sqlInsertionVars.joinToString(", ") { it.second }
         dbInitialization
                 .filter { !it.sqlAction.representExistingData && (!skipFailure || it.sqlResult.getInsertExecutionResult())}
                 .forEachIndexed { index, evaluatedDbAction ->
@@ -96,7 +96,7 @@ object SqlWriter {
         } + "$insertionVarResult = controller.execInsertionsIntoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})")
         lines.appendSemicolon()
 
-        insertionVars.add(insertionVar to insertionVarResult)
+        sqlInsertionVars.add(insertionVar to insertionVarResult)
 
     }
 

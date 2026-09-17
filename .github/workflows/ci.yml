@@ -22,6 +22,7 @@ on:
       - '!docs/**'
       - '!release_notes.md'
       - '!outdated/**'
+      - '!wfe.dockerfile'
       - 'docs/options.md'
 ### Unfortunately, had to disable this. Originally added to be able to run CI from PRs from forks (eg from external people).
 ### But this leads to run CI 2 twice on each push on an open PR, regardless of fork.
@@ -32,7 +33,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 6.1.2
+  evomaster-version: 6.2.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of

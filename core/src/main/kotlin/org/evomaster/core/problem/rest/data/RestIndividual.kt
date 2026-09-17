@@ -14,6 +14,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.EnvironmentAction
@@ -43,8 +44,9 @@ class RestIndividual(
     dnsSize: Int = 0,
     scheduleSize : Int = 0,
     cleanupSize: Int = 0,
+    dynamoDbSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> =
-        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize),
+        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize, dynamoDbSize),
 ): ApiWsIndividual(
     sampleType,
     trackOperator,
@@ -111,6 +113,7 @@ class RestIndividual(
                 redisSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_REDIS),
                 dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS),
                 cleanupSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.CLEANUP),
+                dynamoDbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DYNAMODB),
         )
     }
 
@@ -143,6 +146,8 @@ class RestIndividual(
 
         val redisDbActions = resources.flatMap { it.seeActions(ONLY_REDIS) } as List<RedisDbAction>
 
+        val dynamoDbActions = resources.flatMap { it.seeActions(ONLY_DYNAMODB) } as List<DynamoDbAction>
+
         val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
 
         removeResourceCall(resources)
@@ -151,6 +156,7 @@ class RestIndividual(
         addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(redisDbActions, GroupsOfChildren.INITIALIZATION_REDIS)
+        addChildrenToGroup(dynamoDbActions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
 
 
@@ -169,7 +175,7 @@ class RestIndividual(
         /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
          */
-        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty()
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty() || dynamoDbActions.isNotEmpty()
 
         // re-generate local id
 //        resetLocalIdRecursively()

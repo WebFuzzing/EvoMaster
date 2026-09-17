@@ -14,6 +14,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedPar
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
+import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
@@ -391,6 +392,7 @@ public class EMController {
                         noKillSwitch(() -> sutController.initSqlHandler());
                         noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded(true));
                         noKillSwitch(() -> sutController.initMongoHandler());
+                        noKillSwitch(() -> sutController.initNeo4jHandler());
                         noKillSwitch(() -> sutController.initOpenSearchHandler());
                         noKillSwitch(() -> sutController.initRedisHandler());
                         noKillSwitch(() -> sutController.initDynamoDbHandler());
@@ -456,6 +458,21 @@ public class EMController {
     }
 
 
+    /**
+     * Return the coverage of the test executed so far, plus the extra heuristics.
+     *
+     * <p>
+     * This is kept as the compatibility form of the endpoint. EvoMaster Core no longer calls it:
+     * it uses the POST variant below, because the ids of the targets do not always fit in a URI.
+     * It is still part of the public contract of the Driver, though, and is what any Core older
+     * than this change talks to. It is also the only form usable by hand, eg with curl, to inspect
+     * a running Driver.
+     * </p>
+     *
+     * <p>
+     * Both forms share the exact same logic: see {@link #computeTestResults}.
+     * </p>
+     */
     @Path(ControllerConstants.TEST_RESULTS)
     @GET
     public Response getTestResults(
@@ -464,6 +481,9 @@ public class EMController {
              * If none specified, return everything.
              * If a target was seen for first time, it is returned even if
              * not asked for.
+             *
+             * Note: on a large search there can be thousands of them, and they would not fit
+             * in the URI. Use the POST variant of this endpoint in that case.
              */
             @QueryParam("ids")
             @DefaultValue("")
@@ -485,29 +505,89 @@ public class EMController {
             boolean queryFromDatabase,
             @Context HttpServletRequest httpServletRequest) {
 
+        prepareForTestResults(httpServletRequest);
+
+        Set<Integer> ids;
+        if(idList != null && !idList.isEmpty()) {
+            try {
+                ids = Arrays.stream(idList.split(","))
+                        .filter(s -> !s.trim().isEmpty())
+                        .map(Integer::parseInt)
+                        .collect(Collectors.toSet());
+            } catch (NumberFormatException e) {
+                String msg = "Invalid parameter 'ids': " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+        } else {
+            ids = null;
+        }
+
+        return computeTestResults(ids, killSwitch, fullyCovered, descriptiveIds, queryFromDatabase);
+    }
+
+    /**
+     * Same as the GET variant, but with the ids of the targets in the body payload instead of
+     * in the URI. This is the form EvoMaster Core uses.
+     *
+     * <p>
+     * A search can easily end up asking for thousands of targets at once. Their ids do not fit
+     * in the request line: Jetty rejects with a 414 anything above 8192 bytes, well before the
+     * request reaches this class. Sending them in the body has no such limit.
+     * </p>
+     *
+     * <p>
+     * A POST for what is a read is not great REST, but there is no alternative: a GET carrying a
+     * body cannot be sent by the HTTP client in use (the JDK rewrites the method to POST on its
+     * own as soon as anything is written to the connection).
+     * </p>
+     *
+     * @param idList the ids of the targets to return fitness score for. As in the GET variant,
+     *               an empty (or missing) list means "return everything".
+     */
+    @Path(ControllerConstants.TEST_RESULTS)
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response getTestResultsWithIdsInBody(
+            List<Integer> idList,
+            @QueryParam("killSwitch") @DefaultValue("false")
+            boolean killSwitch,
+            @QueryParam("fullyCovered") @DefaultValue("false")
+            boolean fullyCovered,
+            @QueryParam("descriptiveIds") @DefaultValue("false")
+            boolean descriptiveIds,
+            @QueryParam("queryFromDatabase") @DefaultValue("true")
+            boolean queryFromDatabase,
+            @Context HttpServletRequest httpServletRequest) {
+
+        prepareForTestResults(httpServletRequest);
+
+        /*
+            An empty list must mean "all targets", exactly like an empty 'ids' query parameter
+            does in the GET variant. Passing an empty set here instead of null would silently
+            return no target at all.
+         */
+        Set<Integer> ids = (idList == null || idList.isEmpty()) ? null : new HashSet<>(idList);
+
+        return computeTestResults(ids, killSwitch, fullyCovered, descriptiveIds, queryFromDatabase);
+    }
+
+    private void prepareForTestResults(HttpServletRequest httpServletRequest) {
 
         // notify that actions execution is done.
         noKillSwitch(() -> sutController.setExecutingAction(false));
 
         assert trackRequestSource(httpServletRequest);
+    }
+
+    private Response computeTestResults(
+            Set<Integer> ids,
+            boolean killSwitch,
+            boolean fullyCovered,
+            boolean descriptiveIds,
+            boolean queryFromDatabase) {
 
         try {
-            Set<Integer> ids;
-            if(idList != null && !idList.isEmpty()) {
-                try {
-                    ids = Arrays.stream(idList.split(","))
-                            .filter(s -> !s.trim().isEmpty())
-                            .map(Integer::parseInt)
-                            .collect(Collectors.toSet());
-                } catch (NumberFormatException e) {
-                    String msg = "Invalid parameter 'ids': " + e.getMessage();
-                    SimpleLogger.warn(msg);
-                    return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-                }
-            } else {
-                ids = null;
-            }
-
             List<TargetInfo> targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids, fullyCovered, descriptiveIds));
             if (targetInfos == null) {
                 String label = "all";
@@ -990,6 +1070,49 @@ public class EMController {
                     .entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitRedis(false);
+        }
+    }
+
+    /**
+     * Executes DynamoDB initialization insertions.
+     *
+     * @param dto insertion commands
+     * @param httpServletRequest request metadata
+     * @return insertion results
+     */
+    @Path(ControllerConstants.DYNAMODB_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeDynamoDbInsertion(
+            DynamoDbDatabaseCommandsDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+        try {
+            sutController.setExecutingInitDynamoDb(true);
+            Object connection = noKillSwitch(sutController::getDynamoDbConnection);
+            if (connection == null) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("No active DynamoDB connection")).build();
+            }
+            if (dto == null || dto.insertions == null || dto.insertions.isEmpty()) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("No input command")).build();
+            }
+            if (dto.insertions.stream().anyMatch(i -> i == null || i.tableName == null
+                    || i.tableName.isEmpty() || i.attributes == null || i.attributes.isEmpty())) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("Insertion with no table or attributes")).build();
+            }
+            DynamoDbInsertionResultsDto results = DynamoDbCommandExecutor.executeInsert(
+                    connection, dto.insertions);
+            return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitDynamoDb(false);
         }
     }
 }
