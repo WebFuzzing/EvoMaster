@@ -125,7 +125,6 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     )
                 },
                 lines,
-                insertionVars = insertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }

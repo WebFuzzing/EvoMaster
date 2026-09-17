@@ -20,16 +20,17 @@ object CassandraWriter {
      * @param cassandraDbInitialization contains the db actions to be generated
      * @param lines is used to save generated textual lines with respects to [cassandraDbInitialization]
      * @param groupIndex specifies an index of a group of this [cassandraDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second).
-     * The variable generated here is added to it, but none of the ones already in it is passed on to the DSL, see below.
      * @param skipFailure specifies whether to skip failure tests
+     *
+     * Unlike [SqlWriter], [MongoWriter] and [RedisWriter], no list of the insertion variables written
+     * so far is taken: see below, none of them can be passed on to the Cassandra DSL, and the variable
+     * generated here is not referenced by anything written afterwards either.
      */
     fun handleCassandraDbInitialization(
         format: OutputFormat,
         cassandraDbInitialization: List<EvaluatedCassandraDbAction>,
         lines: Lines,
         groupIndex: String = "",
-        insertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
 
@@ -42,11 +43,10 @@ object CassandraWriter {
         val insertionVarResult = "${insertionVar}_result"
 
         /*
-            Unlike the SQL DSL, which checks the ids referenced by a foreign key against the previous
-            insertions, the Cassandra one has no use for them, as there is no reference between rows in
-            Cassandra. Moreover, the previous variables are the ones of the insertions into the other
-            databases, written before these ones in the same test, and their types could not be
-            passed to the Cassandra DSL anyway, so the generated test would not compile.
+            The DSL is always started with a bare cassandra(), never with the variables of the
+            insertions written before in the same test. Unlike the SQL one, which checks the ids
+            referenced by a foreign key against the previous insertions, the Cassandra DSL has no use
+            for them, as there is no reference between rows in Cassandra.
          */
         cassandraDbInitialization
             .filter { !skipFailure || it.cassandraResult.getInsertExecutionResult() }
@@ -88,8 +88,6 @@ object CassandraWriter {
             } + "$insertionVarResult = controller.execInsertionsIntoCassandraDatabase($insertionVar)"
         )
         lines.appendSemicolon()
-
-        insertionVars.add(insertionVar to insertionVarResult)
     }
 
     /**
