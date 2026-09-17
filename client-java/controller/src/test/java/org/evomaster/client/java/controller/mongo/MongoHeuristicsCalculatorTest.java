@@ -33,7 +33,7 @@ public class MongoHeuristicsCalculatorTest {
 
     @Test
     public void testEqualsScalarToList() {
-        Document doc = new Document().append("tags", Arrays.asList("red","blue"));
+        Document doc = new Document().append("tags", Arrays.asList("red", "blue"));
         Bson bsonTrue = Filters.eq("tags", "red");
         Bson bsonFalse = Filters.eq("tags", "green");
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
@@ -1118,7 +1118,7 @@ public class MongoHeuristicsCalculatorTest {
     public void testNotEqualsLists() {
         Document doc = new Document().append("employees", Arrays.asList("Alice"));
         Bson bsonTrue = Filters.ne("employees", Arrays.asList("Alice", "Bob"));
-        Bson bsonFalse = Filters.ne ("employees", Arrays.asList("Alice"));
+        Bson bsonFalse = Filters.ne("employees", Arrays.asList("Alice"));
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
@@ -1945,6 +1945,18 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.x", 1)),
                 new Document().append("a", new ArrayList<>(Arrays.asList(
                         new Document().append("x", 1), new Document().append("x", 2))))).isTrue());
+    }
+
+    @Test
+    public void testEqualityWithListOfLists() {
+        Document doc = new Document().append("a", Arrays.asList(Arrays.asList(1, 2)));
+
+        Document query = new Document().append("a", new Document().append("$eq", Arrays.asList(1, 2)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Truthness score = calculator.computeHeuristicDocument(query, doc);
+
+        assertTrue(score.isTrue());
     }
 
     /*

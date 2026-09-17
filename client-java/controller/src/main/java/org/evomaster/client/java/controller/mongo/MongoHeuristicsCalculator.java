@@ -272,15 +272,24 @@ public class MongoHeuristicsCalculator {
      */
     private Truthness evaluate(EqualsOperation<?> operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        Object expectedValue = operation.getValue();
-        if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
-            return helper.computeHeuristicContainsElement(expectedValue, (List<?>) actualValue);
-        } else {
-            return helper.compareNullableValues(
-                    expectedValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, actualValue
-            );
+        final Object expectedValue = operation.getValue();
+
+        if ((actualValue instanceof List<?>) && (expectedValue instanceof List<?>)) {
+            List<?> actualList = (List<?>) actualValue;
+            List<?> expectedList = (List<?>) expectedValue;
+            Truthness wholeListComparison = helper.compareNullableValues(actualList, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedList);
+            if (wholeListComparison.isTrue()) {
+                return wholeListComparison;
+            }
         }
+
+        return evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
+                        expectedValue,
+                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, value
+                ));
+
+
     }
 
 
@@ -336,7 +345,6 @@ public class MongoHeuristicsCalculator {
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS, value
                 ));
-
     }
 
     private Truthness evaluate(LessThanOperation<?> operation, Object actualValue) {
