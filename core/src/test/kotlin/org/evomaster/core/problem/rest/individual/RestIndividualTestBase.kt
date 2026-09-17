@@ -682,6 +682,10 @@ abstract class RestIndividualTestBase {
             return null
         }
 
+        override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+            return null
+        }
+
         override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
             return null
         }
