@@ -144,14 +144,14 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         val reply = rc.executeNewAsyncApiActionAndGetReply(dto)
 
-        if (reply == null || !reply.published) {
+        if (reply == null || reply.published != true) {
             /*
                 Not a finding about the service: the driver could not put the message on the
-                wire, or could not be reached at all. Nothing published after this point would
-                mean anything, so the test stops here, and no target is registered for it.
+                wire, could not be reached at all, or did not say. Nothing published after this
+                point would mean anything, so the test stops here, and no target is registered.
              */
             result.setOutcome(AsyncApiOutcome.PUBLISH_FAILED)
-            result.setErrorMessage(reply?.errorMessage ?: "No response from the driver")
+            result.setErrorMessage(describeFailure(reply))
             result.stopping = true
             return false
         }
@@ -167,9 +167,14 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      */
     private fun record(reply: AsyncApiReplyDto, result: AsyncApiCallResult): AsyncApiOutcome {
 
+        /*
+            Every flag here may be absent: they are boxed so that a driver which did not set one
+            can be told from a driver that set it to false. What was not said is read as not
+            having happened.
+         */
         val outcome = when {
-            !reply.replyExpected -> AsyncApiOutcome.PUBLISHED
-            reply.replyReceived -> AsyncApiOutcome.REPLIED
+            reply.replyExpected != true -> AsyncApiOutcome.PUBLISHED
+            reply.replyReceived == true -> AsyncApiOutcome.REPLIED
             else -> AsyncApiOutcome.NO_REPLY
         }
 
@@ -178,7 +183,12 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         if (outcome == AsyncApiOutcome.REPLIED) {
             reply.replyPayload?.let { result.setReplyPayload(it) }
-            result.setCorrelationMatched(reply.correlationMatched)
+            /*
+                Only when the driver actually checked. A driver that does not track correlation
+                says nothing here, which must not be recorded as the service having failed to
+                echo the id back.
+             */
+            reply.correlationMatched?.let { result.setCorrelationMatched(it) }
         }
 
         return outcome
@@ -209,6 +219,23 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
              */
             AsyncApiOutcome.PUBLISHED, AsyncApiOutcome.PUBLISH_FAILED -> Unit
         }
+    }
+
+    /**
+     * Why a message did not go out, as far as can be told from what came back.
+     */
+    private fun describeFailure(reply: AsyncApiReplyDto?): String {
+
+        if (reply == null) {
+            return "No response from the driver"
+        }
+
+        return reply.errorMessage
+            ?: if (reply.published == null) {
+                "The driver did not report whether the message was published"
+            } else {
+                "The driver could not publish the message"
+            }
     }
 
     /**
