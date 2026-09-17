@@ -1,0 +1,57 @@
+asyncapi: 3.0.0
+info:
+  title: An operation that narrows to a message which cannot be read
+  version: 1.0.0
+
+channels:
+  events:
+    address: events
+    messages:
+      usable:
+        $ref: '#/components/messages/usable'
+      unreadable:
+        $ref: '#/components/messages/unreadable'
+
+operations:
+  # narrows to the one message that has to be skipped: it must NOT fall back to the other one
+  onUnreadable:
+    action: receive
+    channel:
+      $ref: '#/channels/events'
+    messages:
+      - $ref: '#/channels/events/messages/unreadable'
+
+  # narrows to the good one
+  onUsable:
+    action: receive
+    channel:
+      $ref: '#/channels/events'
+    messages:
+      - $ref: '#/channels/events/messages/usable'
+
+  # no selection at all: everything the channel still carries
+  onAnything:
+    action: receive
+    channel:
+      $ref: '#/channels/events'
+
+components:
+  messages:
+    usable:
+      name: Usable
+      payload:
+        $ref: '#/components/schemas/Fine'
+    unreadable:
+      name: Unreadable
+      payload:
+        schemaFormat: application/vnd.apache.avro;version=1.9.0
+        schema:
+          type: record
+          name: Whatever
+
+  schemas:
+    Fine:
+      type: object
+      properties:
+        value:
+          type: string

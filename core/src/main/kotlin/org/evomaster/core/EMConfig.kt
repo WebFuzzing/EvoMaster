@@ -1378,10 +1378,6 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
-    @Experimental
-    @Cfg("Enable multipart/form-data support when building REST actions.")
-    var enableMultipartFormDataSupport = false
-
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1447,6 +1443,22 @@ class EMConfig {
 
 
     //-------- other options -------------
+
+    @Experimental
+    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
+            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
+    var enableJsonPatchSupport = false
+
+    @Experimental
+    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
+            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
+            " names fall back to the pre-feature behavior (schema ref name or 'body').")
+    var enableXmlWithAttributesSupport = false
+
+    @Experimental
+    @Cfg("Enable multipart/form-data support when building REST actions.")
+    var enableMultipartFormDataSupport = false
+
 
     @Cfg("Inform EvoMaster process that it is running inside Docker." +
             " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
@@ -1981,6 +1993,11 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForDynamoDb = false
 
+    @Experimental
+    @Cfg("Tracking of Neo4j commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForNeo4j = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2276,6 +2293,21 @@ class EMConfig {
     @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
+
+
+    /**
+     * Boolean that enables and disables the generation of individuals based on Arazzo Workflows.
+     */
+    @Experimental
+    @Cfg("Enable workflow-based sampling from an Arazzo document.")
+    var enableArazzoWorkflowSampling = false
+
+    fun isEnabledArazzoSampling() = enableArazzoWorkflowSampling
+
+    @Experimental
+    @Cfg("Probability of controlling the creation of Arazzo individuals.")
+    @Probability(activating = false)
+    var probOfArazzoSampling = 0.5
 
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
@@ -3191,13 +3223,11 @@ class EMConfig {
             " created.")
     var createConfigPathIfMissing: Boolean = true
 
-    @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
-    var httpOracles = false
+    var httpOracles = true
 
-    @Experimental
     @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
-    var statusOracles = false
+    var statusOracles = true
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3378,6 +3408,11 @@ class EMConfig {
     var inferFormatFromNames = false
 
 
+    @Experimental
+    @ExistingPath(true,false)
+    @Cfg("arazzo location on disk")
+    var arazzoLocation = ""
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -3504,15 +3539,15 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SQL_INJECTION && (!sqli || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SSRF && (!ssrf || !security)){
             return false
         }
 

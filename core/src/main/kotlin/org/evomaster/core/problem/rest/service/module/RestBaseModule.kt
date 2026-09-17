@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
@@ -74,5 +75,9 @@ open class RestBaseModule : EnterpriseModule() {
 
         bind(RestSecurityBuilder::class.java)
             .asEagerSingleton()
+
+        bind(ArazzoWorkflowsService::class.java)
+            .asEagerSingleton()
+
     }
 }

@@ -1,9 +1,16 @@
 package com.webfuzzing.asyncapi;
 
 import com.webfuzzing.asyncapi.access.AsyncApiAccess;
+import com.webfuzzing.asyncapi.models.AsyncApiChannel;
+import com.webfuzzing.asyncapi.models.AsyncApiChannelBindings;
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId;
 import com.webfuzzing.asyncapi.models.AsyncApiDocument;
 import com.webfuzzing.asyncapi.models.AsyncApiMessage;
+import com.webfuzzing.asyncapi.models.AsyncApiOperation;
+import com.webfuzzing.asyncapi.models.AsyncApiReply;
+import com.webfuzzing.asyncapi.models.AsyncApiSecurityScheme;
+import com.webfuzzing.asyncapi.models.AsyncApiServer;
+import com.webfuzzing.asyncapi.models.AsyncApiServerVariable;
 import com.webfuzzing.asyncapi.parser.AsyncApiParsingException;
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -64,6 +72,17 @@ public class AsyncApiParserTest {
 
     private static Set<String> setOf(String... values) {
         return new LinkedHashSet<>(Arrays.asList(values));
+    }
+
+    private static List<String> namesOf(List<AsyncApiMessage> messages) {
+
+        List<String> names = new ArrayList<>();
+
+        for (AsyncApiMessage message : messages) {
+            names.add(message.getName());
+        }
+
+        return names;
     }
 
     // ------------------------------------------------------------------ the shape of a document
@@ -199,6 +218,7 @@ public class AsyncApiParserTest {
         assertTrue(document.getMessages().isEmpty());
         assertTrue(document.getComponentSchemas().isEmpty());
         assertTrue(document.getWarnings().isEmpty());
+        assertTrue(document.getOperations().isEmpty());
     }
 
     // ------------------------------------------------------------------ correlation
@@ -549,4 +569,909 @@ public class AsyncApiParserTest {
         assertTrue(document.getComponentSchemas().containsKey("Node"));
     }
 
+    // ------------------------------------------------------------------ channels and operations
+
+    @Test
+    public void testInlineMessagesArePromoted() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        //no components.messages at all: everything was written inside its channel
+        assertEquals(2, document.getMessages().size());
+        assertTrue(document.getMessages().containsKey("signup.request"));
+        assertTrue(document.getMessages().containsKey("signupReply.ok"));
+
+        AsyncApiChannel channel = document.getChannels().get("signup");
+        assertEquals("user/signup", channel.getAddress());
+        assertEquals(setOf("request"), channel.getMessageKeys().keySet());
+        assertEquals("signup.request", channel.getMessageKeys().get("request"));
+
+        AsyncApiMessage message = document.getMessages().get("signup.request");
+        assertEquals("SignupRequest", message.getName());
+        //assert the content, so that swapping payload and headers would be caught
+        assertTrue(message.getPayload().get("properties").has("email"));
+        assertTrue(message.getHeaders().get("properties").has("correlationId"));
+    }
+
+    @Test
+    public void testInlineChannelMessageThatIsNotAnObjectIsDroppedWithAWarning() {
+
+        /*
+            A message written inside a channel is dropped like any other when its payload is not
+            a schema that can be read. The channel is the path where that used to happen in
+            silence: nothing is registered under the local key, and unlike a message referenced
+            by '$ref' there is no second warning about the channel to hint at what went missing.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: An inline message that cannot be read\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      broken:\n"
+                        + "        payload: not a schema\n"
+                        + "      fine:\n"
+                        + "        payload:\n"
+                        + "          type: object\n");
+
+        AsyncApiChannel channel = document.getChannels().get("c");
+
+        //the one that could be read is still there, so the channel is not lost with it
+        assertEquals(setOf("fine"), channel.getMessageKeys().keySet());
+        assertTrue(warns(document, "not a schema"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testChannelWithoutAddressAndDynamicReplyAddress() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        //an explicit 'address: null' means the address is only known at run time
+        assertNull(document.getChannels().get("signupReply").getAddress());
+
+        AsyncApiReply reply = document.getOperations().get("onSignup").getReply();
+        assertNotNull(reply);
+        assertEquals("signupReply", reply.getChannelName());
+        assertEquals("$message.header#/replyTo", reply.getAddressLocation());
+        //no explicit message selection: everything the reply channel carries
+        assertEquals(Arrays.asList("signupReply.ok"), reply.getMessageIds());
+    }
+
+    @Test
+    public void testOperationSelectsSubsetOfChannelMessages() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/websocket-reply.yaml");
+
+        //one duplex channel carrying five different messages
+        AsyncApiChannel channel = document.getChannels().get("vsi");
+        assertEquals(5, channel.getMessageIds().size());
+
+        AsyncApiOperation operation = document.getOperations().get("recv_list_legs");
+        assertEquals(Arrays.asList("listLegs"), operation.getMessageIds());
+
+        AsyncApiReply reply = operation.getReply();
+        //the reply comes back on the very same channel: there is only one socket
+        assertEquals("vsi", reply.getChannelName());
+        assertEquals(Arrays.asList("listLegsResult", "error"), reply.getMessageIds());
+    }
+
+    @Test
+    public void testChannelLocalMessageKeysDifferFromMessageIds() {
+
+        AsyncApiChannel channel =
+                load("/asyncapi/artificial/websocket-reply.yaml").getChannels().get("vsi");
+
+        //the key a $ref uses is the channel's own, not the component id
+        assertEquals("listLegsResult", channel.getMessageKeys().get("list_legs.result"));
+        assertEquals("error", channel.getMessageKeys().get("error"));
+    }
+
+    @Test
+    public void testNarrowedSelectionIsNotWidenedWhenItsMessageIsSkipped() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/narrowed-selection.yaml");
+
+        //the Avro message could not be read, so the channel is left with only the other one
+        assertEquals(Arrays.asList("usable"), document.getChannels().get("events").getMessageIds());
+
+        //an operation that asked for the skipped message gets nothing, rather than the other one
+        assertTrue(document.getOperations().get("onUnreadable").getMessageIds().isEmpty());
+        assertEquals(Arrays.asList("usable"), document.getOperations().get("onUsable").getMessageIds());
+
+        //while one that asked for nothing in particular gets what is left
+        assertEquals(Arrays.asList("usable"), document.getOperations().get("onAnything").getMessageIds());
+
+        assertTrue(warns(document, "not available"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAChannelMayOverrideWhatItReferences() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: A channel adding to a shared message\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        $ref: '#/components/messages/shared'\n"
+                        + "        title: only on this channel\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "components:\n"
+                        + "  messages:\n"
+                        + "    shared:\n"
+                        + "      name: Shared\n"
+                        + "      payload:\n"
+                        + "        type: object\n");
+
+        /*
+            The override makes it a variant belonging to this channel, registered under its own
+            id. The shared definition must be left alone, or every other channel carrying the
+            same message would silently inherit something meant for this one.
+         */
+        assertEquals(Arrays.asList("c.m"), document.getOperations().get("o").getMessageIds());
+        assertEquals("only on this channel", document.getMessages().get("c.m").getTitle());
+        assertEquals("Shared", document.getMessages().get("c.m").getName());
+        assertNull(document.getMessages().get("shared").getTitle());
+    }
+
+    @Test
+    public void testSendAndReceiveKeepTheirDirection() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+
+        /*
+            The polarity matters and is easy to invert: 'receive' is what the service consumes,
+            so it is what a tester would publish to, and 'send' is what it emits.
+         */
+        assertEquals(AsyncApiOperation.Action.RECEIVE, document.getOperations().get("works").getAction());
+        assertEquals(
+                AsyncApiOperation.Action.SEND,
+                document.getOperations().get("badCorrelationTarget").getAction());
+    }
+
+    @Test
+    public void testOperationTraitsAreMerged() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Boilerplate factored out of the operations\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: a\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        payload:\n"
+                        + "          type: object\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "    traits:\n"
+                        + "      - $ref: '#/components/operationTraits/documented'\n"
+                        + "    summary: what the operation states itself\n"
+                        + "components:\n"
+                        + "  operationTraits:\n"
+                        + "    documented:\n"
+                        + "      summary: overridden by the operation\n"
+                        + "      description: from the trait\n");
+
+        AsyncApiOperation operation = document.getOperations().get("o");
+        assertEquals("what the operation states itself", operation.getSummary());
+        assertEquals("from the trait", operation.getDescription());
+    }
+
+    // ------------------------------------------------------------------ degrading gracefully
+
+    @Test
+    public void testBrokenPartsAreSkippedAndTheRestSurvives() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+
+        //only the two well-formed operations are kept
+        assertEquals(setOf("works", "badCorrelationTarget"), document.getOperations().keySet());
+
+        assertTrue(warns(document, "noAction"), document.getWarnings().toString());
+        assertTrue(warns(document, "wrongAction"), document.getWarnings().toString());
+        assertTrue(warns(document, "missingChannel"), document.getWarnings().toString());
+        assertTrue(warns(document, "doesNotExist"), document.getWarnings().toString());
+
+        //the dangling message reference costs only that one message
+        assertEquals(Arrays.asList("request"), document.getChannels().get("good").getMessageIds());
+    }
+
+    // ------------------------------------------------------------------ the model's read API
+
+    @Test
+    public void testResolvingOperationsToTheirChannelAndMessages() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/websocket-reply.yaml");
+        AsyncApiOperation operation = document.getOperations().get("recv_list_legs");
+
+        assertEquals("vsi", document.channelOf(operation).getName());
+        assertEquals("vsi", document.replyChannelOf(operation).getName());
+        assertEquals(Arrays.asList("ListLegs"), namesOf(document.messagesOf(operation)));
+        assertEquals(
+                Arrays.asList("ListLegsResult", "Error"),
+                namesOf(document.replyMessagesOf(operation)));
+    }
+
+    @Test
+    public void testResolvingAnOperationThatDeclaresNoReply() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/broken-parts.yaml");
+        AsyncApiOperation operation = document.getOperations().get("works");
+
+        assertNull(operation.getReply());
+        assertNull(document.replyChannelOf(operation));
+        assertTrue(document.replyMessagesOf(operation).isEmpty());
+    }
+
+    // ------------------------------------------------------------------ other documents
+
+    @Test
+    public void testSchemasFromAnotherDocumentAreInlined() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+
+        List<String> imported = new ArrayList<>();
+        for (String key : document.getComponentSchemas().keySet()) {
+            if (key.startsWith("_ext_")) {
+                imported.add(key);
+            }
+        }
+        assertEquals(2, imported.size(), "expected Order and Item to be imported, got " + imported);
+
+        //the local schema of the same name must not have been overwritten
+        assertTrue(document.getComponentSchemas().containsKey("Order"));
+        assertTrue(document.getComponentSchemas().get("Order").get("properties").has("localOnly"));
+
+        //the payload now points at the imported copy, not at the local schema of the same name
+        String payloadRef = document.getMessages().get("placeOrder").getPayload().get("$ref").asText();
+        assertTrue(payloadRef.startsWith("#/components/schemas/_ext_"), payloadRef);
+        assertTrue(document.getComponentSchemas().containsKey(
+                payloadRef.substring("#/components/schemas/".length())));
+    }
+
+    @Test
+    public void testReferencesInsideAnImportedDocumentAreRewritten() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        Pattern expected = Pattern.compile("^_ext_[0-9a-f]{8}_Order$");
+        String importedOrderKey = null;
+
+        for (String key : document.getComponentSchemas().keySet()) {
+            if (expected.matcher(key).matches()) {
+                importedOrderKey = key;
+                break;
+            }
+        }
+
+        assertNotNull(importedOrderKey, document.getComponentSchemas().keySet().toString());
+
+        String itemRef = document.getComponentSchemas().get(importedOrderKey)
+                .get("properties").get("item").get("$ref").asText();
+
+        //'#/components/schemas/Item' inside the other document means *its* Item
+        String prefix = importedOrderKey.substring(0, importedOrderKey.length() - "Order".length());
+        assertEquals("#/components/schemas/" + prefix + "Item", itemRef);
+        assertTrue(document.getComponentSchemas().containsKey(
+                itemRef.substring("#/components/schemas/".length())));
+    }
+
+    @Test
+    public void testMessagesFromAnotherDocumentAreInlined() {
+
+        AsyncApiMessage imported =
+                load("/asyncapi/artificial/external-main.yaml").getMessages().get("imported");
+
+        assertEquals("Ack", imported.getName());
+        assertTrue(imported.getPayload().get("$ref").asText().startsWith("#/components/schemas/_ext_"));
+    }
+
+    @Test
+    public void testPointerDeeperThanAnImportedSchemaKeepsItsTail() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        /*
+            Only the component key is renamed. Everything past it describes a way into the
+            imported schema and has to survive, or the reference would name the primary
+            document's own 'Order' -- a different schema that happens to share the name.
+         */
+        String ref = document.getMessages().get("deepPointer").getPayload().get("$ref").asText();
+
+        assertTrue(ref.matches("^#/components/schemas/_ext_[0-9a-f]{8}_Order/properties/item$"), ref);
+    }
+
+    @Test
+    public void testDeepLocalPointerInsideAnImportedDocumentIsRewritten() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-main.yaml");
+
+        //the imported document wrote '#/components/schemas/Order/...' meaning its own Order
+        String ref = document.getMessages().get("importedDeep").getPayload().get("$ref").asText();
+
+        assertTrue(ref.matches("^#/components/schemas/_ext_[0-9a-f]{8}_Order/properties/id$"), ref);
+
+        //and what it now names is the imported copy, which has the fields the other document declared
+        String key = ref.substring("#/components/schemas/".length(), ref.indexOf("/properties/"));
+        assertTrue(document.getComponentSchemas().get(key).get("properties").has("id"));
+        assertFalse(document.getComponentSchemas().get(key).get("properties").has("localOnly"));
+    }
+
+    @Test
+    public void testReferenceIntoANonComponentPartOfAnotherDocumentIsRejected() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/external-deep.yaml");
+
+        //what could be imported was, and the message using it is fine
+        assertTrue(document.getMessages().containsKey("placed"));
+
+        //the other one points into an extension section, which cannot be brought in. Leaving it
+        //with a reference out of the document would only fail later, so it is dropped now
+        assertFalse(document.getMessages().containsKey("shipped"));
+        assertEquals(Arrays.asList("placed"), document.getChannels().get("shipments").getMessageIds());
+
+        //both halves are reported: what could not be imported, and what that cost
+        assertTrue(warns(document, "x-webhooks", "can be imported"), document.getWarnings().toString());
+        assertTrue(warns(document, "message 'shipped'", "is ignored"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testAReferenceIsResolvedAgainstTheDocumentThatMakesIt() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/nested/main.yaml");
+
+        /*
+            'sub/nested.yaml' refers to 'shared.yaml', which for it means 'sub/shared.yaml' and
+            does not exist. Resolving that against the primary document's directory instead
+            would silently bind it to the shared.yaml next to main.yaml -- a different schema,
+            with no sign that anything went wrong.
+         */
+        assertTrue(
+                warns(document, "Failed to retrieve", "sub/shared.yaml"),
+                document.getWarnings().toString());
+
+        //what could be imported was
+        assertTrue(document.getMessages().containsKey("fromShared"));
+        String sharedKey = document.getMessages().get("fromShared").getPayload().get("$ref").asText()
+                .substring("#/components/schemas/".length());
+        assertEquals(
+                "the-one-next-to-main",
+                document.getComponentSchemas().get(sharedKey).get("title").asText());
+
+        //and the one that could not be is dropped rather than bound to the wrong schema
+        assertFalse(document.getMessages().containsKey("fromNested"));
+        assertEquals(Arrays.asList("fromShared"), document.getChannels().get("c").getMessageIds());
+    }
+
+    @Test
+    public void testADocumentThatNamesItselfIsNotImportedIntoItself() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/self-reference.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+
+        //one copy of everything, not two
+        assertEquals(setOf("Thing"), document.getComponentSchemas().keySet());
+        assertEquals(setOf("m"), document.getMessages().keySet());
+
+        //and the long-winded reference now reads as the local one it always was
+        assertEquals(
+                "#/components/schemas/Thing",
+                document.getMessages().get("m").getPayload().get("$ref").asText());
+    }
+
+    @Test
+    public void testTextOnlyDocumentReportsUnresolvableExternalReferences() {
+
+        AsyncApiDocument document = parse(
+                AsyncApiAccess.readFromResource("/asyncapi/artificial/external-main.yaml"));
+
+        assertTrue(
+                warns(document, "supplied as text"),
+                "expected a warning about references that cannot be resolved: " + document.getWarnings());
+    }
+
+    // ------------------------------------------------------------------ servers and bindings
+
+    @Test
+    public void testServers() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        assertEquals(setOf("kafka", "rabbit"), document.getServers().keySet());
+
+        AsyncApiServer rabbit = document.getServers().get("rabbit");
+        assertEquals("localhost:5672", rabbit.getHost());
+        assertEquals("amqp", rabbit.getProtocol());
+        //the one field that separates AMQP 0-9-1 from the incompatible 1.0
+        assertEquals("0.9.1", rabbit.getProtocolVersion());
+    }
+
+    @Test
+    public void testServerPathnameAndVariables() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: A server whose path is templated\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  default:\n"
+                        + "    host: localhost:1883\n"
+                        + "    protocol: mqtt\n"
+                        + "    pathname: 'api/1/{module_id}'\n"
+                        + "    variables:\n"
+                        + "      module_id:\n"
+                        + "        description: The id of the module\n"
+                        + "        default: main\n"
+                        + "        enum: [main, spare]\n");
+
+        AsyncApiServer server = document.getServers().get("default");
+        assertEquals("api/1/{module_id}", server.getPathname());
+
+        //the placeholder is declared and left to be resolved at run time, not substituted here
+        AsyncApiServerVariable variable = server.getVariables().get("module_id");
+        assertEquals("The id of the module", variable.getDescription());
+        assertEquals("main", variable.getDefaultValue());
+        assertEquals(Arrays.asList("main", "spare"), variable.getEnumeration());
+    }
+
+    @Test
+    public void testDocumentWithoutServers() {
+
+        //describing only the contract, and leaving the broker to deployment, is common
+        AsyncApiDocument document = load("/asyncapi/artificial/inline-messages.yaml");
+
+        assertTrue(document.getServers().isEmpty());
+        assertEquals(1, document.getOperations().size());
+    }
+
+    @Test
+    public void testKafkaTopicBindingWinsOverTheDeclaredAddress() {
+
+        AsyncApiChannel channel = load("/asyncapi/artificial/bindings.yaml").getChannels().get("both");
+
+        //the declared address is kept as written...
+        assertEquals("events.declared", channel.getAddress());
+        //...but on Kafka the binding's topic is what a client must actually use
+        assertEquals("events.from.binding", channel.effectiveAddress("kafka"));
+        assertEquals("events.from.binding", channel.effectiveAddress("KAFKA"));
+
+        //on any other transport the topic means nothing
+        assertEquals("events.declared", channel.effectiveAddress("amqp"));
+        assertEquals("events.declared", channel.effectiveAddress(null));
+
+        assertEquals("routingKey", channel.getBindings().getAmqpIs());
+        assertEquals("events.exchange", channel.getBindings().getAmqpExchange());
+    }
+
+    @Test
+    public void testKafkaBindingWithoutATopicLeavesTheAddressAlone() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        AsyncApiChannel emptyTopic = document.getChannels().get("emptyTopic");
+        assertNull(emptyTopic.getBindings().getKafkaTopic());
+        assertEquals("events.declared", emptyTopic.effectiveAddress("kafka"));
+
+        AsyncApiChannel plain = document.getChannels().get("plain");
+        assertTrue(plain.getBindings().getRaw().isEmpty());
+        assertEquals("events.declared", plain.effectiveAddress("kafka"));
+    }
+
+    @Test
+    public void testAmqpAndWebSocketChannelBindings() {
+
+        AsyncApiChannelBindings amqp =
+                load("/asyncapi/artificial/traits.yaml").getChannels().get("tasks").getBindings();
+        assertEquals("queue", amqp.getAmqpIs());
+        assertEquals("tasks.request", amqp.getAmqpQueue());
+        assertTrue(amqp.getRaw().containsKey("amqp"));
+
+        AsyncApiChannelBindings ws =
+                load("/asyncapi/artificial/websocket-reply.yaml").getChannels().get("vsi").getBindings();
+        assertEquals("GET", ws.getWsMethod());
+    }
+
+    @Test
+    public void testBindingsBehindAReferenceAreFollowed() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Bindings shared through components\n"
+                        + "  version: 1.0.0\n"
+                        + "channels:\n"
+                        + "  c:\n"
+                        + "    address: declared\n"
+                        + "    bindings:\n"
+                        + "      $ref: '#/components/channelBindings/kafkaTopic'\n"
+                        + "    messages:\n"
+                        + "      m:\n"
+                        + "        payload:\n"
+                        + "          type: object\n"
+                        + "operations:\n"
+                        + "  o:\n"
+                        + "    action: receive\n"
+                        + "    channel:\n"
+                        + "      $ref: '#/channels/c'\n"
+                        + "components:\n"
+                        + "  channelBindings:\n"
+                        + "    kafkaTopic:\n"
+                        + "      kafka:\n"
+                        + "        topic: the.real.topic\n");
+
+        /*
+            Reading a binding without following the reference would leave the channel on its
+            declared address, and a client would publish to the wrong topic. That is a wrong
+            answer rather than a missing one, so it is worth a test of its own.
+         */
+        AsyncApiChannel channel = document.getChannels().get("c");
+        assertEquals("the.real.topic", channel.getBindings().getKafkaTopic());
+        assertEquals("the.real.topic", channel.effectiveAddress("kafka"));
+    }
+
+    @Test
+    public void testChannelParametersAreKeptAsDeclared() {
+
+        AsyncApiChannel channel =
+                load("/asyncapi/artificial/inline-messages.yaml").getChannels().get("signup");
+
+        assertEquals(setOf("tenantId"), channel.getParameters().keySet());
+        assertEquals("acme", channel.getParameters().get("tenantId").get("default").asText());
+    }
+
+    @Test
+    public void testTheServersAChannelIsOn() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/bindings.yaml");
+
+        List<String> names = new ArrayList<>();
+        for (AsyncApiServer server : document.serversOf(document.getChannels().get("both"))) {
+            names.add(server.getName());
+        }
+
+        //no 'servers' on the channel means every server, as the specification has it
+        assertEquals(Arrays.asList("kafka", "rabbit"), names);
+    }
+
+    // ------------------------------------------------------------------ security
+
+    @Test
+    public void testSecuritySchemesAreRead() {
+
+        AsyncApiDocument document = load("/asyncapi/artificial/traits.yaml");
+        AsyncApiSecurityScheme scheme = document.getSecuritySchemes().get("userPassword");
+
+        assertEquals("userpassword", scheme.getType());
+        assertEquals("SASL PLAIN over the broker connection", scheme.getDescription());
+
+        //and an operation says which of them it needs, through a trait in this document
+        assertEquals(
+                Arrays.asList("userPassword"),
+                document.getOperations().get("submitTask").getSecurity());
+    }
+
+    @Test
+    public void testSecuritySchemeWrittenInlineWhereItIsUsed() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Security stated on the server itself\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - type: userPassword\n"
+                        + "        description: An authentication method for the server\n");
+
+        AsyncApiServer server = document.getServers().get("dev");
+        assertEquals(1, server.getSecurity().size());
+
+        //an inline scheme is registered under a name derived from where it appears
+        AsyncApiSecurityScheme scheme = document.getSecuritySchemes().get(server.getSecurity().get(0));
+        assertEquals("userpassword", scheme.getType());
+        assertEquals("An authentication method for the server", scheme.getDescription());
+    }
+
+    @Test
+    public void testSecurityThatCannotBeUsedIsReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Security pointing nowhere\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - $ref: '#/components/securitySchemes/absent'\n"
+                        + "      - description: no type at all\n");
+
+        assertTrue(document.getServers().get("dev").getSecurity().isEmpty());
+        assertTrue(warns(document, "not a declared"), document.getWarnings().toString());
+        assertTrue(warns(document, "no 'type'"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testDeclaredSecuritySchemeWithNoTypeIsReported() {
+
+        /*
+            A scheme written inline with no 'type' was already reported; one declared under
+            components was dropped in silence. A server referring to it then failed for what
+            looked like a second, unrelated reason.
+         */
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Scheme with no type\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  dev:\n"
+                        + "    host: dev:5672\n"
+                        + "    protocol: amqp\n"
+                        + "    security:\n"
+                        + "      - $ref: '#/components/securitySchemes/halfWritten'\n"
+                        + "components:\n"
+                        + "  securitySchemes:\n"
+                        + "    halfWritten:\n"
+                        + "      description: someone meant to finish this\n");
+
+        assertFalse(document.getSecuritySchemes().containsKey("halfWritten"));
+        assertTrue(warns(document, "halfWritten", "no 'type'"), document.getWarnings().toString());
+    }
+
+    @Test
+    public void testServerMissingWhatItNeedsIsReported() {
+
+        AsyncApiDocument document = parse(
+                "asyncapi: 3.0.0\n"
+                        + "info:\n"
+                        + "  title: Incomplete servers\n"
+                        + "  version: 1.0.0\n"
+                        + "servers:\n"
+                        + "  noProtocol:\n"
+                        + "    host: localhost:9092\n"
+                        + "  nothing:\n"
+                        + "    description: neither host nor protocol\n");
+
+        assertTrue(document.getServers().isEmpty());
+        assertTrue(warns(document, "noProtocol", "protocol"), document.getWarnings().toString());
+        //both missing fields are named, not just the first
+        assertTrue(warns(document, "nothing", "host and protocol"), document.getWarnings().toString());
+    }
+
+    // ------------------------------------------------------------------ real documents
+
+    /*
+        Everything above is written to pin down one thing at a time. What follows runs the
+        parser against documents taken as published from real services, because the shapes that
+        actually break a parser are not the ones you think to write yourself: a channel with no
+        address whose topic hides in a binding, a reply whose address is announced inside the
+        request, a document with four servers and no way to tell which is meant.
+     */
+
+    private AsyncApiDocument loadSut(String name) {
+        return AsyncApiAccess.getAsyncApiFromResource("/asyncapi/sut/" + name);
+    }
+
+    @Test
+    public void testNcsOverKafka() {
+
+        AsyncApiDocument document = loadSut("ncs-kafka.yaml");
+
+        assertTrue(document.getWarnings().isEmpty(), "unexpected warnings: " + document.getWarnings());
+        assertEquals(12, document.getChannels().size());
+        assertEquals(6, document.getOperations().size());
+        assertEquals(9, document.getComponentSchemas().size());
+
+        //every operation is one the service consumes, and every one of them answers
+        for (AsyncApiOperation operation : document.getOperations().values()) {
+            assertEquals(AsyncApiOperation.Action.RECEIVE, operation.getAction(), operation.getName());
+            assertNotNull(operation.getReply(), operation.getName());
+        }
+
+        AsyncApiOperation bessj = document.getOperations().get("bessj");
+        assertEquals("bessjRequest", bessj.getChannelName());
+        assertEquals(Arrays.asList("bessjRequest"), bessj.getMessageIds());
+        assertEquals("bessjReply", bessj.getReply().getChannelName());
+        //two declared outcomes: a result and an error, which is what a search can tell apart
+        assertEquals(Arrays.asList("doubleResult", "error"), bessj.getReply().getMessageIds());
+
+        //an operation whose contract declares a single outcome, for contrast
+        assertEquals(
+                Arrays.asList("intResult"),
+                document.getOperations().get("checkTriangle").getReply().getMessageIds());
+
+        assertEquals("ncs.bessj.request", document.getChannels().get("bessjRequest").getAddress());
+        assertEquals("kafka", document.getServers().get("kafka").getProtocol());
+    }
+
+    @Test
+    public void testNcsPayloadsAndCorrelation() {
+
+        AsyncApiDocument document = loadSut("ncs-kafka.yaml");
+
+        AsyncApiMessage request = document.getMessages().get("bessjRequest");
+        assertEquals("application/json", request.getContentType());
+
+        //the payload keeps its reference, and what it points at is available
+        assertEquals("#/components/schemas/BessjRequest", request.getPayload().get("$ref").asText());
+        assertEquals(3, document.getComponentSchemas().get("BessjRequest")
+                .get("properties").get("n").get("minimum").asInt());
+
+        AsyncApiCorrelationId correlation = request.getCorrelationId();
+        assertEquals(AsyncApiCorrelationId.Source.HEADER, correlation.getSource());
+        assertEquals("correlationId", correlation.getFieldName());
+    }
+
+    @Test
+    public void testNcsOverAmqpDiffersOnlyInBindings() {
+
+        AsyncApiDocument kafka = loadSut("ncs-kafka.yaml");
+        AsyncApiDocument amqp = loadSut("ncs-amqp.yaml");
+
+        //the same interactions and the same message shapes, over a different transport
+        assertEquals(kafka.getOperations().keySet(), amqp.getOperations().keySet());
+        assertEquals(kafka.getChannels().keySet(), amqp.getChannels().keySet());
+        assertEquals(kafka.getMessages().keySet(), amqp.getMessages().keySet());
+        assertEquals(kafka.getComponentSchemas().keySet(), amqp.getComponentSchemas().keySet());
+
+        assertEquals("amqp", amqp.getServers().get("rabbitmq").getProtocol());
+        assertEquals("queue", amqp.getChannels().get("bessjRequest").getBindings().getAmqpIs());
+        assertNull(kafka.getChannels().get("bessjRequest").getBindings().getAmqpIs());
+    }
+
+    @Test
+    public void testAChannelWhoseTopicOnlyExistsInItsBinding() {
+
+        AsyncApiDocument document = loadSut("microcks.yaml");
+
+        AsyncApiChannel channel = document.getChannels().get("service-changes");
+
+        //this channel declares no address at all: the Kafka binding carries the topic
+        assertNull(channel.getAddress());
+        assertEquals("microcks-services-updates", channel.effectiveAddress("kafka"));
+        //the same document also declares a WebSocket binding, where the topic means nothing
+        assertEquals("POST", channel.getBindings().getWsMethod());
+        assertNull(channel.effectiveAddress("ws"));
+    }
+
+    @Test
+    public void testAChannelAddingAKeyToASharedMessage() {
+
+        AsyncApiDocument document = loadSut("microcks.yaml");
+
+        AsyncApiOperation operation = document.getOperations().get("receivedServiceChanges");
+        assertEquals(AsyncApiOperation.Action.RECEIVE, operation.getAction());
+
+        /*
+            The channel adds a Kafka key on top of the shared definition, which makes it a
+            variant belonging to this channel. The shared definition must be left alone, or
+            every other channel carrying the same message would inherit a key meant for this
+            one.
+         */
+        assertEquals(Arrays.asList("service-changes.serviceChangeEvent"), operation.getMessageIds());
+
+        AsyncApiMessage variant = document.getMessages().get("service-changes.serviceChangeEvent");
+        assertEquals("string", variant.getKafkaKey().get("type").asText());
+        assertNotNull(variant.getPayload());
+
+        assertNull(document.getMessages().get("serviceChangeEvent").getKafkaKey());
+    }
+
+    @Test
+    public void testAReplyAddressAnnouncedInTheRequest() {
+
+        AsyncApiDocument document = loadSut("everest.yaml");
+
+        assertEquals(8, document.getOperations().size());
+
+        AsyncApiReply reply = document.getOperations().get("send_request_get_errors").getReply();
+
+        assertEquals("receive_reply_get_errors", reply.getChannelName());
+        //the reply channel has no address of its own: the requester picks one per request
+        assertNull(document.getChannels().get("receive_reply_get_errors").getAddress());
+        assertEquals("$message.header#/replyTo", reply.getAddressLocation());
+    }
+
+    @Test
+    public void testAServerWhosePathIsTemplated() {
+
+        AsyncApiServer server = loadSut("everest.yaml").getServers().get("default");
+
+        assertEquals("mqtt", server.getProtocol());
+        assertEquals("localhost:1883", server.getHost());
+        assertEquals("everest_api/1/error_history_consumer/{module_id}", server.getPathname());
+        assertEquals(
+                "The ID of the module as defined in the EVerest config file.",
+                server.getVariables().get("module_id").getDescription());
+    }
+
+    @Test
+    public void testFourServersAndAContentTypeOfItsOwn() {
+
+        AsyncApiDocument document = loadSut("bookworm-rating.yaml");
+
+        assertEquals("application/vnd.masstransit+json", document.getDefaultContentType());
+        assertEquals(4, document.getServers().size());
+
+        AsyncApiServer development = document.getServers().get("development");
+        assertEquals("amqp", development.getProtocol());
+        assertEquals("0.9.1", development.getProtocolVersion());
+
+        //the scheme is written inline on the server rather than declared in components
+        assertEquals(1, development.getSecurity().size());
+        assertEquals(
+                "userpassword",
+                document.getSecuritySchemes().get(development.getSecurity().get(0)).getType());
+
+        //messages inherit the document's content type when they declare none
+        for (AsyncApiMessage message : document.getMessages().values()) {
+            assertEquals("application/vnd.masstransit+json", message.getContentType(), message.getId());
+        }
+    }
+
+    @Test
+    public void testRequestAndResponseModelledAsSeparateOperations() {
+
+        AsyncApiDocument document = loadSut("openagents-cache.yaml");
+
+        assertEquals(11, document.getOperations().size());
+
+        int send = 0;
+        int receive = 0;
+
+        for (AsyncApiOperation operation : document.getOperations().values()) {
+            //no operation declares a reply: request and response are separate channels here,
+            //which is exactly the shape a black-box tester cannot pair up on its own
+            assertNull(operation.getReply(), operation.getName());
+            if (operation.getAction() == AsyncApiOperation.Action.SEND) {
+                send++;
+            } else {
+                receive++;
+            }
+        }
+
+        /*
+            Note the polarity. This document is written from the point of view of the agent
+            *using* the cache, so issuing a request is 'send' and the answer is 'receive'. The
+            parser reports what the document says and nothing more: which end is the system
+            under test is not something the document settles.
+         */
+        assertEquals(
+                AsyncApiOperation.Action.SEND,
+                document.getOperations().get("createCache").getAction());
+        assertEquals(
+                AsyncApiOperation.Action.RECEIVE,
+                document.getOperations().get("receiveCacheCreateResponse").getAction());
+        assertEquals(4, send);
+        assertEquals(7, receive);
+
+        assertEquals("shared_cache.create", document.getChannels().get("cacheCreate").getAddress());
+    }
 }

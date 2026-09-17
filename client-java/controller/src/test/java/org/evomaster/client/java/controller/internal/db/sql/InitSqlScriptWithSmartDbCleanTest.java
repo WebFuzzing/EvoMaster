@@ -82,7 +82,9 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
             assertEquals(2, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -118,7 +120,9 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -157,7 +161,9 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
 
             RestAssured.given().accept(ContentType.JSON)
-                .get(url + ControllerConstants.TEST_RESULTS)
+                .contentType(ContentType.JSON)
+                .body("[]")
+                .post(url + ControllerConstants.TEST_RESULTS)
                 .then()
                 .statusCode(200);
 

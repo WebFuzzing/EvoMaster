@@ -27,7 +27,9 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
     default SqlExecutionsDto getSqlExecutionDto(int index, String url) {
 
         TestResultsDto dto = RestAssured.given().accept(ContentType.JSON)
-                .get(url + ControllerConstants.TEST_RESULTS)
+                .contentType(ContentType.JSON)
+                .body("[]")
+                .post(url + ControllerConstants.TEST_RESULTS)
                 .then()
                 .statusCode(200)
                 .extract().body().jsonPath()

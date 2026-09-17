@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +20,7 @@ import java.util.Map;
 public class ReflectionBasedNeo4jClient {
 
     private static final String AS_LIST_METHOD = "asList";
+    private static final String AS_OBJECT_METHOD = "asObject";
     private static final String AS_MAP_METHOD = "asMap";
     private static final String AS_STRING_METHOD = "asString";
     private static final String CLOSE_METHOD = "close";
@@ -95,6 +98,61 @@ public class ReflectionBasedNeo4jClient {
     @SuppressWarnings("unchecked")
     public Map<String, Object> asMap(Object value) {
         return (Map<String, Object>) invoke(value, AS_MAP_METHOD);
+    }
+
+    /**
+     * Turns the parameters captured with a query into a plain map of Java values, whatever shape the
+     * driver overload took them in: a {@code Map<String, Object>} (whose values may be driver
+     * {@code Value}s), a {@code Value} holding a map, or a {@code Record}. Nested driver values are
+     * unwrapped, so the result never references the driver's types.
+     *
+     * @param captured what {@code Neo4JRunCommand.getParameters()} holds, possibly {@code null}
+     * @return the parameters by name; empty when there are none
+     * @throws IllegalArgumentException if the captured object is of a shape the driver never produces
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> parametersAsMap(Object captured) {
+        if (captured == null) {
+            return Collections.emptyMap();
+        }
+        if (captured instanceof Map) {
+            Map<String, Object> plain = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> e : ((Map<String, Object>) captured).entrySet()) {
+                plain.put(e.getKey(), unwrap(e.getValue()));
+            }
+            return plain;
+        }
+        if (hasMethod(captured, AS_MAP_METHOD)) {
+            return (Map<String, Object>) invokeStatic(captured, AS_MAP_METHOD);
+        }
+        throw new IllegalArgumentException("Unsupported Neo4j parameters type: " + captured.getClass().getName());
+    }
+
+    /** A driver {@code Value} becomes the Java object it wraps; anything else is already plain. */
+    private static Object unwrap(Object value) {
+        if (value != null && hasMethod(value, AS_OBJECT_METHOD)) {
+            return invokeStatic(value, AS_OBJECT_METHOD);
+        }
+        return value;
+    }
+
+    private static boolean hasMethod(Object target, String method) {
+        try {
+            target.getClass().getMethod(method);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    private static Object invokeStatic(Object target, String method) {
+        try {
+            Method m = target.getClass().getMethod(method);
+            m.setAccessible(true);
+            return m.invoke(target);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to call the Neo4j driver via reflection (" + method + ")", e);
+        }
     }
 
     private Object invoke(Object target, String method) {

@@ -55,7 +55,7 @@ class SqlWriterTest {
             format = format,
             dbInitialization = dbInitialization,
             lines = lines,
-            insertionVars = mutableListOf(),
+            sqlInsertionVars = mutableListOf(),
             skipFailure = false
         )
 

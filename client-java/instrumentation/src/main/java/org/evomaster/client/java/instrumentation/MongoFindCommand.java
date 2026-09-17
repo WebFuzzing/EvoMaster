@@ -58,4 +58,16 @@ public class MongoFindCommand implements Serializable {
     public String getDatabaseName() {
         return databaseName;
     }
+
+    /**
+     * Indicates whether the find command
+     * was successfully executed or it
+     * threw a RuntimeException due to
+     * an invalid query.
+     *
+     * @return if the lazy command was successfully executed
+     */
+    public boolean isSuccessfullyExecuted() {
+        return successfullyExecuted;
+    }
 }

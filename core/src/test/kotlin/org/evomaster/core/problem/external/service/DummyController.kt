@@ -87,6 +87,10 @@ class DummyController: RemoteController {
         TODO("Not yet implemented")
     }
 
+    override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
     override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
         TODO("Not yet implemented")
     }
