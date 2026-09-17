@@ -118,7 +118,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             return
         }
 
@@ -127,12 +127,12 @@ class RestSecurityOracle {
             if (ar != null) {
                 if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
                     val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
 
                     val paramName = ssrfAnalyser.getVulnerableParameterName(it)
-                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SECURITY_SSRF, it.getName(), paramName))
                 }
             }
         }
@@ -219,7 +219,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SQL_INJECTION)) {
             return
         }
 
@@ -273,10 +273,10 @@ class RestSecurityOracle {
         }
 
         val scenarioId = idMapper.handleLocalTarget(
-            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_SQL_INJECTION, actionWithPayload.getName())
         )
         fv.updateTarget(scenarioId, 1.0, index)
-        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SECURITY_SQL_INJECTION, actionWithPayload.getName(), null))
         injectedResult.setVulnerableForSQLI(true)
     }
 
@@ -397,7 +397,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS)){
             return
         }
 
@@ -422,10 +422,10 @@ class RestSecurityOracle {
             for(payload in XSS_PAYLOADS){
                 if(responseBody.contains(payload, ignoreCase = false)){
                     val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_XSS, a.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, index)
-                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_XSS, a.getName(), null))
                     break // Only add one fault per action
                 }
             }

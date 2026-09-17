@@ -28,6 +28,10 @@ class FakeController : SutHandler {
         return null
     }
 
+    override fun execInsertionsIntoDynamoDb(insertions: List<DynamoDbInsertionDto?>?): DynamoDbInsertionResultsDto? {
+        return null
+    }
+
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }

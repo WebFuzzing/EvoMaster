@@ -347,6 +347,39 @@ Current usage:
 - `Backlog-*`: different backlogs, divided by topic.
 
 
+### WORKING WITH BRANCHES
+
+The `master` branch of _EvoMaster_ is protected. 
+You cannot push to it.
+You need to work on a branch, and, when your work is finished, make a Pull Request (PR) towards the master branch. 
+
+A feature does not need to be fully completed before making a PR, as long as all test cases on Continuous Integration (CI) in GitHub Actions (our current CI provider) are "green" (i.e., they all pass, with no failures). 
+
+Currently, there is no enforced standard or convention on how to name branches.
+Just choose something reasonable.
+
+When a PR is ready, you need on GitHub Actions to ask for a _review_ by the architect of _EvoMaster_ (or your direct supervisor if you are a student, see [notes for students](./for_msc_bsc_students.md)).
+
+When making PRs, please remember that _small is beautiful_. If you can divide your work in small separated units that can be reviewed separately, that would be better than a 10k-50k LOCs single PR...
+
+While working on branch, make as many _commits_ as you see fit. 
+However, remember that each commit should have some brief message to explain what is the commit about. 
+
+Although you are allowed to make as many commits as you see fit, please be mindful of making _push_(es).
+Each Git push trigger a new CI run.
+Those are computationally __expensive__, taking several hours.
+Even if the build is parallelized, there are limits on how many jobs can be run in parallel on GA. 
+When a work is finished, you need to push it. 
+However, if you are doing several commits in a short amount of time in the same branch, do not push each of them, unless you have a good reason for it. 
+Push the last one. 
+
+At times, you might make a push and then, after a moment, realize you forgot something, and need to make a new commit. 
+This is fine. 
+However, have a look at [GitHub Actions page](https://github.com/WebFuzzing/EvoMaster/actions/) to see if there are other jobs waiting (and not running) in the queue. 
+If so, to avoid delays to other people working on _EvoMaster_, you can manually stop the outdated jobs your push started and that are no longer needed.  
+
+
+
 ### MAKING A NEW RELEASE
 Only the project manager should make a new release, as it requires a password.
 Instructions can be found [here](./release.md).

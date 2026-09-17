@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,6 +37,16 @@ public class RedisCommand implements Serializable {
          */
         EXISTS("exists", "mixed", true),
         /**
+         * Runs a search query on an index and performs aggregate transformations on the results.
+         * <a href="https://redis.io/docs/latest/commands/ft.aggregate/">FT.AGGREGATE Documentation</a>
+         */
+        FT_AGGREGATE("ft.aggregate", "search", true),
+        /**
+         * Searches the index with a textual query, returning either documents or just ids.
+         * <a href="https://redis.io/docs/latest/commands/ft.search/">FT.SEARCH Documentation</a>
+         */
+        FT_SEARCH("ft.search", "search", true),
+        /**
          * Get the value of key.
          * <a href="https://redis.io/docs/latest/commands/get/">GET Documentation</a>
          */
@@ -53,19 +62,19 @@ public class RedisCommand implements Serializable {
          */
         HGETALL("hgetall", "hash", true),
         /**
+         * Sets the specified fields to their respective values in the hash stored at key.
+         * This command overwrites the values of specified fields that exist in the hash.
+         * If key doesn't exist, a new key holding a hash is created.
+         * <a href="https://redis.io/docs/latest/commands/hset/">HSET Documentation</a>
+         */
+        HSET("hset", "hash", false),
+        /**
          * Increments the number stored at key by one.
          * If the key does not exist, it is set to 0 before performing the operation.
          * An error is returned if the key contains a value of the wrong type
          * or contains a string that can not be represented as integer.
          * This operation is limited to 64-bit signed integers.
          * <a href="https://redis.io/docs/latest/commands/incr/">INCR Documentation</a>
-         */
-        HSET("hset", "hash", false),
-        /**
-         * Sets the specified fields to their respective values in the hash stored at key.
-         * This command overwrites the values of specified fields that exist in the hash.
-         * If key doesn't exist, a new key holding a hash is created.
-         * <a href="https://redis.io/docs/latest/commands/hset/">HSET Documentation</a>
          */
         INCR("incr", "string", false),
         /**
@@ -181,8 +190,7 @@ public class RedisCommand implements Serializable {
     private final RedisCommandType type;
 
     /**
-     * Keys or values used in query. Keys are used in most queries. Values are used in Set commands.
-     * Keys are wrapped in {@literal key<...>} while values in {@literal value<...>}
+     * Already-parsed argument values, in the order the command received them.
      */
     private final String[] args;
 
@@ -215,11 +223,7 @@ public class RedisCommand implements Serializable {
     }
 
     public List<String> extractArgs(){
-        List<String> parameters = new ArrayList<>();
-        for(String arg : args){
-                parameters.add(arg.substring(arg.indexOf('<')+1, arg.indexOf('>')));
-        }
-        return parameters;
+        return Arrays.asList(args);
     }
 
     public boolean getSuccessfullyExecuted() {

@@ -91,6 +91,14 @@ public interface SutHandler {
     RedisInsertionResultsDto execInsertionsIntoRedisDatabase(List<RedisInsertionDto> insertions);
 
     /**
+     * Executes DynamoDB initialization insertions.
+     *
+     * @param insertions items to insert
+     * @return insertion results
+     */
+    DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions);
+
+    /**
      * <p>
      * return an instance of a client of an RPC service.
      * </p>
@@ -178,6 +186,14 @@ public interface SutHandler {
     List<DbSpecification> getDbSpecifications();
 
     default Object getMongoConnection() {return null;}
+
+    /**
+     * @return the Neo4j {@code org.neo4j.driver.Driver} of the SUT, or {@code null} if the SUT does
+     * not use Neo4j. Returned as {@code Object} and accessed by reflection, so the driver does not
+     * hard-depend on a specific {@code neo4j-java-driver} version. Used both to read the live graph
+     * when computing Cypher heuristics and (later) to insert test data.
+     */
+    default Object getNeo4jConnection() {return null;}
 
     default Object getOpenSearchConnection() {return null;}
 

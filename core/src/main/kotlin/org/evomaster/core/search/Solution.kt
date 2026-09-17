@@ -63,7 +63,7 @@ where T : Individual {
 
     fun hasSsrfFaults(): Boolean {
         return DetectedFaultUtils.getDetectedFaultCategories(this).any {
-            it == DefinedFaultCategory.SSRF
+            it == DefinedFaultCategory.SECURITY_SSRF
         }
     }
 

@@ -8,6 +8,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
@@ -52,7 +53,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0, 0),
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0, 0, 0),
 ) : Individual(
     trackOperator,
     index,
@@ -76,11 +77,12 @@ abstract class EnterpriseIndividual(
             sizeDNS: Int,
             sizeScheduleTasks: Int,
             sizeCleanUp: Int,
+            sizeDynamoDb: Int = 0,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
+            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDynamoDb + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
+                        " got main=$sizeMain, sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dynamodb=$sizeDynamoDb, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
@@ -90,6 +92,9 @@ abstract class EnterpriseIndividual(
             }
             if(sizeRedis < 0){
                 throw IllegalArgumentException("Negative size for sizeRedis: $sizeMain")
+            }
+            if(sizeDynamoDb < 0){
+                throw IllegalArgumentException("Negative size for sizeDynamoDb: $sizeDynamoDb")
             }
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
@@ -128,6 +133,12 @@ abstract class EnterpriseIndividual(
                 if(sizeRedis==0) -1 else startIndexRedis , if(sizeRedis==0) -1 else endIndexRedis
             )
 
+            val startIndexDynamoDb = children.indexOfFirst { a -> a is DynamoDbAction }
+            val endIndexDynamoDb = children.indexOfLast { a -> a is DynamoDbAction }
+            val dynamodb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DYNAMODB,{ e -> e is ActionComponent && e.flatten().all { a -> a is DynamoDbAction }},
+                if (sizeDynamoDb == 0) -1 else startIndexDynamoDb, if (sizeDynamoDb == 0) -1 else endIndexDynamoDb
+            )
+
             val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
             val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
             val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
@@ -140,7 +151,7 @@ abstract class EnterpriseIndividual(
                 if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDNS+sizeScheduleTasks
+            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDynamoDb+sizeDNS+sizeScheduleTasks
             val startIndexMain = initSize
             val endIndexMain =  initSize + sizeMain - 1
 
@@ -150,7 +161,7 @@ abstract class EnterpriseIndividual(
             val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
                 if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dns, schedule, main, cleanup))
+            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dynamodb, dns, schedule, main, cleanup))
         }
     }
 
@@ -249,6 +260,7 @@ abstract class EnterpriseIndividual(
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_REDIS).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_DYNAMODB).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()} + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
@@ -256,9 +268,10 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
             ActionFilter.ONLY_REDIS -> seeAllActions().filterIsInstance<RedisDbAction>()
+            ActionFilter.ONLY_DYNAMODB -> seeAllActions().filterIsInstance<DynamoDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
-            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction }
-            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction }
+            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction || it is DynamoDbAction }
+            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
@@ -326,6 +339,8 @@ abstract class EnterpriseIndividual(
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
     fun seeRedisDbActions() : List<RedisDbAction> = seeActions(ActionFilter.ONLY_REDIS) as List<RedisDbAction>
+
+    fun seeDynamoDbActions() : List<DynamoDbAction> = seeActions(ActionFilter.ONLY_DYNAMODB) as List<DynamoDbAction>
 
     fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
 
@@ -396,6 +411,9 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfRedisDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
 
+    private fun getLastIndexOfDynamoDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DYNAMODB)
+
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
@@ -410,6 +428,9 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfRedisDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_REDIS)
+
+    private fun getFirstIndexOfDynamoDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DYNAMODB)
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
@@ -427,7 +448,7 @@ abstract class EnterpriseIndividual(
      */
     fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
-        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is HostnameResolutionAction }
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
             throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
@@ -438,6 +459,7 @@ abstract class EnterpriseIndividual(
         skipped += addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
         addInitializingRedisDbActions(actions = actions.filterIsInstance<RedisDbAction>())
+        addInitializingDynamoDbActions(actions = actions.filterIsInstance<DynamoDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
         //we don't need duplicates in hostname actions
@@ -517,6 +539,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfRedisDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_REDIS)
         } else{
             addChildrenToGroup(getFirstIndexOfRedisDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_REDIS)
+        }
+    }
+
+    fun addInitializingDynamoDbActions(relativePosition: Int = -1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfDynamoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
+        } else {
+            addChildrenToGroup(getFirstIndexOfDynamoDbActionToAdd() + relativePosition, actions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
         }
     }
 

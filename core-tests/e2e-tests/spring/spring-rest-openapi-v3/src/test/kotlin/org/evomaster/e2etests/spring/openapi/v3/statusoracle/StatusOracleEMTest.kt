@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.statusoracle
 
 import com.foo.rest.examples.spring.openapi.v3.statusoracle.StatusOracleController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -43,58 +44,58 @@ class StatusOracleEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.GET, 42, "/api/statusoracle/no-non-standard-codes/42", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 912, "/api/statusoracle/no-non-standard-codes/912", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 1024, "/api/statusoracle/no-non-standard-codes/1024", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES })
 
             //201
             assertHasAtLeastOne(solution, HttpVerb.GET, 201, "/api/statusoracle/no-201-if-get", null)
             assertHasAtLeastOne(solution, HttpVerb.DELETE, 201, "/api/statusoracle/no-201-if-delete", null)
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 201, "/api/statusoracle/no-201-if-patch", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_DELETE })
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_PATCH })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_201_IF_DELETE })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_201_IF_PATCH })
 
             //204
             //Unfortunately, we cannot test this, at least in SpringBoot, as HTTP server will automatically
             // strip the body if status is 204. it seems this cannot be configured
             //assertHasAtLeastOne(solution, HttpVerb.GET, 204, "/api/statusoracle/no-204-if-content", "Hello")
-            //assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT })
+            //assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT })
 
             //205
             //Same issue as 204
             //assertHasAtLeastOne(solution, HttpVerb.GET, 205, "/api/statusoracle/no-205-if-content", "Hello")
-            //assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT })
+            //assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT })
 
             //304
             assertHasAtLeastOne(solution, HttpVerb.POST, 304, "/api/statusoracle/no-304-if-no-get-or-head", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD })
 
             //401 and 403
             assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/statusoracle/no-401-if-no-auth", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/statusoracle/no-403-if-no-401", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH })
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401 })
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.SCHEMA_STATUS_NO_403_IF_NO_401 })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
 
             //405
             assertHasAtLeastOne(solution, HttpVerb.GET, 405, "/api/statusoracle/no-405-if-no-allow", null)
-            assertTrue(faultsCategories.any{ it == ExperimentalFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW})
+            assertTrue(faultsCategories.any{ it == DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW})
 
             //406
             assertHasAtLeastOne(solution, HttpVerb.POST, 406, "/api/statusoracle/has-406-if-accept", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT })
 
             //413, 415
             assertHasAtLeastOne(solution, HttpVerb.POST, 413, "/api/statusoracle/no-413-if-no-payload", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 415, "/api/statusoracle/no-415-if-no-payload", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD })
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD })
 
             //426
             assertHasAtLeastOne(solution, HttpVerb.GET, 426, "/api/statusoracle/no-426-if-no-upgrade", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
 
             //501
             assertHasAtLeastOne(solution, HttpVerb.GET, 501, "/api/statusoracle/no-501-if-implemented", null)
-            assertTrue(faultsCategories.any { it == ExperimentalFaultCategory.HTTP_STATUS_NO_501_IF_IMPLEMENTED })
+            assertTrue(faultsCategories.any { it == DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED })
         }
     }
 }

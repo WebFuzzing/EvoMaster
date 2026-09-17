@@ -173,8 +173,8 @@ class SSRFAnalyser {
                         }
 
                         if (answer) {
-                            paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
-                            actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+                            paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SECURITY_SSRF)
+                            actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SECURITY_SSRF)
                             actionFaultMapping.isVulnerable = true
                         }
                     }
@@ -323,7 +323,7 @@ class SSRFAnalyser {
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
-            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SECURITY_SSRF)
             // Create a testing target
             archive.addIfNeeded(executedIndividual)
         }
@@ -333,7 +333,7 @@ class SSRFAnalyser {
         if (actionVulnerabilityMapping.containsKey(actionName)) {
             val g = actionVulnerabilityMapping[actionName]!!.params[gene.name]
             if (g != null) {
-                if (g.securityFaults.contains(DefinedFaultCategory.SSRF)) {
+                if (g.securityFaults.contains(DefinedFaultCategory.SECURITY_SSRF)) {
                     // Only change the param marked for SSRF
                     // This updates the children also recursively
                     gene.setFromStringValue(callBackUrl)
