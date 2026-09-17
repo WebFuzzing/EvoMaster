@@ -2128,7 +2128,6 @@ public class MongoHeuristicsCalculatorTest {
      */
 
     @Test
-    //@Disabled("$regex against an array holding no strings throws IllegalArgumentException")
     public void testRegexAgainstAnArrayWithoutStringElements() {
         /*
             mongo: no match, and no error. The elements are compared one by one and a
