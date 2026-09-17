@@ -32,6 +32,10 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
     @BeforeEach
     fun initializeTest(){
         SecurityForbiddenOperationApplication.reset()
+        getEMConfig().security = true
+        getEMConfig().schemaOracles = false
+        getEMConfig().httpOracles = false
+        getEMConfig().statusOracles = false
     }
 
     private fun makeSureCanRunSecurityPhase(){

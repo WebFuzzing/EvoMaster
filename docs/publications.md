@@ -13,6 +13,10 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* A. Decrop, A. Arcuri, M. Papadakis, P. Schobbens, G. Perrouin.
+  *Detecting HTTP Status Code Misuses in REST APIs via Static and Dynamic Analysis*.
+  [[arXiv](https://arxiv.org/abs/2609.12770)]
+
 * O. Sahin, A. Arcuri.
   *Validating HTTP Semantics in REST APIs With Constructed Call Sequence Scenarios*.
   [[arXiv](https://arxiv.org/abs/2608.16239)]

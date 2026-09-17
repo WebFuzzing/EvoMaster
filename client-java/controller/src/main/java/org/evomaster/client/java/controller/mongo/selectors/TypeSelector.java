@@ -14,9 +14,14 @@ public class TypeSelector extends SingleConditionQuerySelector {
 
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (value instanceof Integer) return new TypeOperation(fieldName, getTypeFromNumber((Integer) value));
-        if (value instanceof String) return new TypeOperation(fieldName, getTypeFromAlias((String) value));
-        return null;
+        Object type = null;
+        if (value instanceof Integer) {
+            type = getTypeFromNumber((Integer) value);
+        }
+        if (value instanceof String) {
+            type = getTypeFromAlias((String) value);
+        }
+        return type == null ? null : new TypeOperation(fieldName, type);
     }
 
     @Override

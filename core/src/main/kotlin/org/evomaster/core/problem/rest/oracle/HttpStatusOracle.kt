@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.oracle
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -52,26 +53,26 @@ object HttpStatusOracle {
             ?: return faults // all oracles depend on checking the status code
 
         if(status !in 100..599){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES)
         }
 
         val verb = call.verb
 
         if(status == 201){
             when(verb){
-                HttpVerb.GET -> faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_GET)
-                HttpVerb.DELETE -> faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_DELETE)
-                HttpVerb.PATCH -> faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_201_IF_PATCH)
+                HttpVerb.GET -> faults.add(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_GET)
+                HttpVerb.DELETE -> faults.add(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_DELETE)
+                HttpVerb.PATCH -> faults.add(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_PATCH)
                 else -> {}
             }
         }
 
         if(status == 204  && result.hasBody()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT)
         }
 
         if(status == 205  && result.hasBody()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT)
         }
 
         val bodyParam = call.parameters.filterIsInstance<BodyParam>()
@@ -80,43 +81,43 @@ object HttpStatusOracle {
         val hasBody = bodyParam != null && bodyParam.primaryGene().getValueAsRawString().isNotEmpty()
 
         if(status == 304 && (verb != HttpVerb.GET && verb != HttpVerb.HEAD)){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD)
         }
 
         if(status == 401 && !SchemaUtils.hasAuthDefinition(schema)){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_AUTH)
+            faults.add(DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH)
         }
 
         if(status == 401 && result.getHeader("www-authenticate").isNullOrEmpty()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE)
         }
 
         if(status == 403 && !SchemaUtils.getDeclaredStatusInResponse(call.endpoint, schema).contains(401)){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_403_IF_NO_401)
+            faults.add(DefinedFaultCategory.SCHEMA_STATUS_NO_403_IF_NO_401)
         }
 
         if(status == 405 && result.getHeader("allow").isNullOrEmpty()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW)
         }
 
         if(status == 406 && !call.isForRobustnessTesting()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_HAS_406_IF_ACCEPT)
+            faults.add(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT)
         }
 
         if(status == 413 && !hasBody){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD)
         }
 
         if(status == 415 && !hasBody){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD)
         }
 
         if(status == 426 && result.getHeader("upgrade").isNullOrEmpty()){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE)
+            faults.add(DefinedFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE)
         }
 
         if(status == 501){
-            faults.add(ExperimentalFaultCategory.HTTP_STATUS_NO_501_IF_IMPLEMENTED)
+            faults.add(DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED)
         }
 
         return faults

@@ -328,20 +328,23 @@ class RemoteControllerImplementation() : RemoteController{
         descriptiveIds: Boolean
     ): TestResultsDto? {
 
-        val queryParam = ids.joinToString(",")
-
         if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
 
+        /*
+            The ids go in the body payload, and not as a query parameter, because there can be
+            thousands of them. Sent in the URI they would not fit in the request line, and the
+            driver would answer 414 before even receiving the request.
+            Note: an empty list means "all targets", and the driver treats it as such.
+         */
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
-                    .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .queryParam("fullyCovered", fullyCovered)
                     .queryParam("descriptiveIds", descriptiveIds)
                     .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
-                    .get()
+                    .post(Entity.entity(ids, MediaType.APPLICATION_JSON_TYPE))
         }
         if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
 
@@ -360,7 +363,7 @@ class RemoteControllerImplementation() : RemoteController{
 
         val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve target coverage for $queryParam")){
+        if(!checkResponse(response, dto, "Failed to retrieve target coverage for ${ids.size} ids")){
             return null
         }
 
@@ -527,6 +530,19 @@ class RemoteControllerImplementation() : RemoteController{
 
     override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
         return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
+    }
+
+    override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.DYNAMODB_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        return getDtoFromResponse(
+            response,
+            object : GenericType<WrappedResponseDto<DynamoDbInsertionResultsDto>>() {}
+        )?.data
     }
 
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
