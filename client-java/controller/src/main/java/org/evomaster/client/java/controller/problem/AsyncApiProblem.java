@@ -31,7 +31,8 @@ public class AsyncApiProblem extends ProblemInfo {
 
     private AsyncApiProblem(String schemaLocation, String schemaText) {
 
-        if ((schemaLocation == null) == (schemaText == null)) {
+        if ((schemaLocation == null && schemaText == null)
+                || (schemaLocation != null && schemaText != null)) {
             throw new IllegalArgumentException(
                     "An AsyncAPI problem needs exactly one of a schema location and a schema text");
         }
