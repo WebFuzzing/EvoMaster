@@ -186,8 +186,8 @@ public interface SutHandler {
     /**
      * Returns the Cassandra session used by the SUT, when available.
      *
-     * @return a {@code com.datastax.oss.driver.api.core.CqlSession}, or {@code null} if the SUT does
-     *         not use any Cassandra database
+     * @return a {@code com.datastax.oss.driver.api.core.CqlSession},
+     * or {@code null} if the SUT does not use any Cassandra database
      */
     default Object getCassandraConnection() {return null;}
 
