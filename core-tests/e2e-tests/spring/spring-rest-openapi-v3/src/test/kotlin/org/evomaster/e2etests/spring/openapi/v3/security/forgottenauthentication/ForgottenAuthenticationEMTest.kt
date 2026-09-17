@@ -33,6 +33,8 @@ class ForgottenAuthenticationEMTest : SpringTestBase(){
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
             setOption(args, "useExperimentalOracles", "true")
+            setOption(args, "httpOracles", "false")
+            setOption(args, "statusOracles", "false")
 
             val solution = initAndRun(args)
 

@@ -32,6 +32,8 @@ public class ControllerConstants {
 
     public static final String REDIS_INSERTION = "/redisInsertion";
 
+    public static final String DYNAMODB_INSERTION = "/dynamoDbInsertion";
+
     public static final String CASSANDRA_INSERTION = "/cassandraInsertion";
 
     public static final String POST_SEARCH_ACTION = "/postSearchAction";

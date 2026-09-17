@@ -49,12 +49,14 @@ term
 assertion
  : CARET
  | DOLLAR
- //TODO
-//// | '\\' 'b'
-//// | '\\' 'B'
  | PAREN_open QUESTION EQUAL disjunction PAREN_close                  // lookahead (?=...)
  | PAREN_open QUESTION LESS_THAN EQUAL disjunction PAREN_close        // lookbehind (?<=...)
 //// | '(' '?' '!' disjunction ')'
+ | StartOfInputAssertion // \A
+ | EndOfInputAssertion // \z
+ | EndOfInputOrFinalLineTerminatorAssertion // \Z
+ | WordBoundaryAssertion // \b
+ | NonWordBoundaryAssertion // \B
  ;
 
 quantifier
@@ -118,7 +120,6 @@ patternCharacter
  | BRACE_close
  | BRACKET_close
  | COLON | EQUAL | LESS_THAN
- | DOUBLE_AMPERSAND // char class intersection not supported by default in JS, only supported if "v" flag is turned on.
  ;
 
 
@@ -128,17 +129,13 @@ characterClass
     ;
 
 classContents
-    : classUnion (DOUBLE_AMPERSAND classUnion)*
-    ;
-
-classUnion
-    : characterClass+                          // one or more nested classes = UNION
-    | classRanges                           // bare ranges
+    : classRanges (CC_DOUBLE_AMPERSAND classRanges)*
     ;
 
 classRanges
  :
  | nonemptyClassRanges
+ | characterClass classRanges
  ;
 
 
@@ -152,6 +149,7 @@ nonemptyClassRangesNoDash
  : classAtom
  | classAtomNoDash nonemptyClassRangesNoDash
  | classAtomNoDash MINUS classAtom classRanges
+ | characterClass classRanges
  ;
 
 classAtom
@@ -161,21 +159,11 @@ classAtom
 
 
 classAtomNoDash
- //SourceCharacter but not one of \ or ] or -
- //TODO
+ //SourceCharacter but not one of \ or ] or - or [
  //: ~[-\]\\]
  : classEscape
- | BaseChar
- | DecimalDigit
- | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR
- | COLON | EQUAL | LESS_THAN
- // should be interpreted literally:
- // As they are lexer tokens, these character sequences are captured as such. In particular these require some extra
- // steps to interpret them correctly given the context.
- // [(?iu)] -> FLAG_SCOPE_OPEN, each letter of the token should be interpreted literally.
- | FLAG_SCOPE_OPEN | FLAG_GROUP_OPEN
- | NAMED_CAPTURE_GROUP_OPEN
+ | CARET
+ | BaseChar // this is the CHAR_CLASS_MODE token (CC_BaseChar), so it includes all chars but \ or ] or - or [ or ^
  ;
 
 decimalDigits
@@ -183,7 +171,8 @@ decimalDigits
  ;
 
 classEscape
- : atomEscape
+ : CharacterClassEscape   // char class
+ | CharacterEscape        // single char
 // | SLASH 'b'
  ;
 
@@ -192,4 +181,5 @@ atomEscape
  | CharacterEscape
  | BackReference
  | NamedBackReference
+ | LinebreakMatcher // \R
  ;

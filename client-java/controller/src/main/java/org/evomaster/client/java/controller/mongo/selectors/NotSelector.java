@@ -24,7 +24,7 @@ public class NotSelector extends SingleConditionQuerySelector {
             // A $not cannot contain $and, $or, $nor, etc. (logical operators at field level)
             // or other $not
             Set<String> keys = documentKeys(value);
-            if (keys == null || keys.isEmpty()) {
+            if (keys == null || keys.isEmpty() || keys.stream().anyMatch(key -> !key.startsWith("$"))) {
                 return null;
             }
             String innerOp = keys.iterator().next();

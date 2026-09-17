@@ -16,7 +16,7 @@ public class SizeSelector extends SingleConditionQuerySelector {
         Objects.requireNonNull(fieldName);
         Objects.requireNonNull(value);
 
-        if (value instanceof Integer) {
+        if (value instanceof Integer && (Integer) value >= 0) {
             return new SizeOperation(fieldName, (Integer) value);
         } else {
             return null;

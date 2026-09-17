@@ -39,20 +39,20 @@ class XSSReflectedEMTest : SpringTestBase() {
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            Assertions.assertTrue(DefinedFaultCategory.XSS in faultsCategories)
+            Assertions.assertTrue(DefinedFaultCategory.SECURITY_XSS in faultsCategories)
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "POST:/api/reflected/comment"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "GET:/api/reflected/search"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS
                         && it.operationId == "GET:/api/reflected/user/{username}"
             })
         }

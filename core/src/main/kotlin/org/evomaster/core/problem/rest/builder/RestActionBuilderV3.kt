@@ -118,6 +118,10 @@ object RestActionBuilderV3 {
 
         val inferFormatFromNames: Boolean = true,
 
+        val enableJsonPatchSupport: Boolean = true,
+
+        val enableXmlWithAttributesSupport: Boolean = true,
+
         val enableMultipartFormDataSupport: Boolean = false,
     ){
         constructor(config: EMConfig): this(
@@ -128,6 +132,8 @@ object RestActionBuilderV3 {
             usingWhiteBox = !config.blackBox,
             enableAdvancedFormats = config.enableAdvancedFormats,
             inferFormatFromNames = config.inferFormatFromNames,
+            enableJsonPatchSupport = config.enableJsonPatchSupport,
+            enableXmlWithAttributesSupport = config.enableXmlWithAttributesSupport,
             enableMultipartFormDataSupport = config.enableMultipartFormDataSupport,
         )
 
@@ -753,7 +759,8 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        val isJsonPatch = verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch") }
+        val isJsonPatch = options.enableJsonPatchSupport &&
+                verb == HttpVerb.PATCH && bodies.keys.any { it.contains("json-patch", ignoreCase = true) }
 
         val name: String
         var gene: Gene
@@ -779,9 +786,14 @@ object RestActionBuilderV3 {
             }
             gene = JsonPatchDocumentGene(name, resourceGene)
         } else {
-            // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
-            val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
-            name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            if (options.enableXmlWithAttributesSupport) {
+                // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
+                val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
+                name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+            } else {
+                // Pre-feature behaviour: the body gene was unconditionally named "body"
+                name = "body"
+            }
             gene = getGene(name, obj.schema, schemaHolder, currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
         }
 
@@ -1138,8 +1150,14 @@ object RestActionBuilderV3 {
                     }
 
                     // Use the XML name from schema.xml.name (the name of the array element in XML)
-                    // if available, otherwise fallback to name + "_item"
-                    val itemName = schema.xml?.name ?: (name + "_item")
+                    // if available, otherwise fallback to name + "_item".
+                    // When XML support is disabled, ignore xml.name and always use the generic
+                    // fallback, so we emulate the pre-XML-support behaviour of EvoMaster.
+                    val itemName = if (options.enableXmlWithAttributesSupport) {
+                        schema.xml?.name ?: (name + "_item")
+                    } else {
+                        name + "_item"
+                    }
                     val template = getGene(
                         itemName,
                         arrayType,
@@ -1171,9 +1189,16 @@ object RestActionBuilderV3 {
             "object" -> {
                 val properties = schema.properties ?: emptyMap()
 
-                val attributeNames = properties
-                    .filterValues { it.xml?.attribute == true }
-                    .keys
+                // Only detect XML attribute fields when XML support is enabled. When disabled,
+                // this stays empty so we fall back to a plain ObjectGene (attributes rendered as
+                // child elements), matching how EvoMaster behaved before ObjectWithAttributesGene.
+                val attributeNames = if (options.enableXmlWithAttributesSupport) {
+                    properties
+                        .filterValues { it.xml?.attribute == true }
+                        .keys
+                } else {
+                    emptySet()
+                }
 
                 if (attributeNames.isNotEmpty()) {
                     val fields = properties.map { (propName, propSchema) ->
@@ -1628,10 +1653,16 @@ object RestActionBuilderV3 {
                 valueTemplate.copy())
         }
 
-        val attributeNames = schema.properties
-            ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
-            ?.map { it.key }
-            ?: emptyList()
+        // Same as above: skip XML attribute detection when XML support is disabled, so the object
+        // is assembled as a plain ObjectGene (pre-XML-support behaviour).
+        val attributeNames = if (options.enableXmlWithAttributesSupport) {
+            schema.properties
+                ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
+                ?.map { it.key }
+                ?: emptyList()
+        } else {
+            emptyList()
+        }
 
         if (attributeNames.isNotEmpty()) {
             return ObjectWithAttributesGene(
