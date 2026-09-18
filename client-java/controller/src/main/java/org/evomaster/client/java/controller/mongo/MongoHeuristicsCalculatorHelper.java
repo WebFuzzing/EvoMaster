@@ -178,6 +178,11 @@ public class MongoHeuristicsCalculatorHelper {
             long actualValueAsTimestampValue = BsonHelper.getBsonTimestampValue(actualValue);
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(expectedValueAsTimestampValue, actualValueAsTimestampValue, comparisonOperatorType);
 
+        }else if (BsonHelper.isBsonRegularExpression(expectedValue) && BsonHelper.isBsonRegularExpression(actualValue)) {
+            String expectedValuePatternAsString = BsonHelper.bsonRegexGetPattern(expectedValue);
+            String actualValuePatternAsString = BsonHelper.bsonRegexGetPattern(actualValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(expectedValuePatternAsString, actualValuePatternAsString, comparisonOperatorType);
+
         } else if (BsonHelper.isObjectId(expectedValue) || BsonHelper.isObjectId(actualValue)) {
             String expectedValueAsString = expectedValue.toString();
             String actualValueAsString = actualValue.toString();

@@ -436,6 +436,14 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseEqBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$eq", new BsonRegularExpression("x")));
+
+        assertNotNull(parser.parse(query));
+    }
+
+    @Test
     void testParseFiltersRegex() {
         Document query = convertToDocument(Filters.regex("name", "^hospital.*", "i"));
 

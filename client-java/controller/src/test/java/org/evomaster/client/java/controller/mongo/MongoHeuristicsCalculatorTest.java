@@ -2407,6 +2407,26 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
+    void testEqBsonRegularExpression() {
+        Document doc = new Document().append("name", "x");
+        Document query = new Document("name",
+                new Document("$eq", new BsonRegularExpression("x")));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isFalse());
+    }
+
+    @Test
+    void testEqBetweenBsonRegularExpression() {
+        Document doc = new Document().append("name", new BsonRegularExpression("x"));
+        Document query = new Document("name",
+                new Document("$eq", new BsonRegularExpression("x")));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
     public void testOrderingComparisonsGivenANullArgument() {
         /*
             mongo: runs all four and matches nothing, null orders against nothing. It is a
