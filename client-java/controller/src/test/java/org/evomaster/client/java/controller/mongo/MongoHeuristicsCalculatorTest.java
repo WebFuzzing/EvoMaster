@@ -2247,7 +2247,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$all holding more than one null does not match a missing field")
     public void testAllWithRepeatedNullsAgainstAMissingField() {
         // mongo: matches, null matches a missing field however many times it is asked for
         Document doc = new Document().append("b", 1);
