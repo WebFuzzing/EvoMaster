@@ -1985,7 +1985,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("an ObjectId is compared against any other value as a string, which orders it wrongly")
     public void testOrderingComparisonBetweenAnObjectIdAndANumber() {
         /*
             mongo: no match, an ObjectId and a number are of different BSON types and do

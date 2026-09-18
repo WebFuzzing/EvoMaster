@@ -27,6 +27,7 @@ public class BsonHelper {
     public static final String NULL_TYPE = "null";
     public static final String BSON_TYPE_NULL = "NULL";
     public static final String GET_DATA = "getData";
+    public static final String TO_BYTE_ARRAY = "toByteArray";
 
 
     public static Object newDocument(Object bsonDocument) {
@@ -283,4 +284,15 @@ public class BsonHelper {
         }
     }
 
+    public static byte[] toByteArray(Object actualValue) {
+        Objects.requireNonNull(actualValue, "The provided value cannot be null");
+        if (!isObjectId(actualValue)) {
+            throw new IllegalArgumentException("The provided value is not a BSON ObjectId but class: " + actualValue.getClass().getName());
+        }
+        try {
+            return (byte[]) actualValue.getClass().getMethod(TO_BYTE_ARRAY).invoke(actualValue);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

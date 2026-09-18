@@ -177,17 +177,16 @@ public class MongoHeuristicsCalculatorHelper {
 
 
     Truthness compareNonNullValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
-
-        Objects.requireNonNull(expectedValue);
         Objects.requireNonNull(actualValue);
+        Objects.requireNonNull(expectedValue);
 
         final Truthness truthnessOfComparison;
-        if (expectedValue instanceof Number && actualValue instanceof Number) {
+        if (actualValue instanceof Number && expectedValue instanceof Number) {
             final Number expectedValueAsNumber = (Number) expectedValue;
             final Number actualNumberAsValue = (Number) actualValue;
             truthnessOfComparison = compareNumberValues(actualNumberAsValue, op, expectedValueAsNumber);
 
-        } else if (expectedValue instanceof String && actualValue instanceof String) {
+        } else if (actualValue instanceof String && expectedValue instanceof String) {
             String expectedValueAsString = (String) expectedValue;
             String actualValueAsString = (String) actualValue;
             if (taintHandler != null && op == EQUALS_TO) {
@@ -196,46 +195,45 @@ public class MongoHeuristicsCalculatorHelper {
             truthnessOfComparison = calculateTruthnessForStringComparison(
                     actualValueAsString, expectedValueAsString, op);
 
-        } else if (expectedValue instanceof Boolean && actualValue instanceof Boolean) {
+        } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
             int expectedValueAsInt = toIntValue((Boolean) expectedValue);
             int actualValueAsInt = toIntValue((Boolean) actualValue);
             truthnessOfComparison = calculateTruthnessForNumberComparison(
                     actualValueAsInt, expectedValueAsInt, op);
 
-        } else if (expectedValue instanceof List<?> && actualValue instanceof List<?>) {
+        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
             final List<?> expectedValueAsList = (List<?>) expectedValue;
             final List<?> actualValueAsList = (List<?>) actualValue;
             truthnessOfComparison = compareNonNullLists(actualValueAsList, op, expectedValueAsList);
 
-        } else if (expectedValue instanceof Date && actualValue instanceof Date) {
+        } else if (actualValue instanceof Date && expectedValue instanceof Date) {
             final Instant expectedValueAsInstant = convertToInstant(expectedValue);
             final Instant actualValueAsInstant = convertToInstant(actualValue);
             truthnessOfComparison = calculateTruthnessForInstantComparison(
                     actualValueAsInstant, expectedValueAsInstant, op);
 
-        } else if (BsonHelper.isBsonTimestamp(expectedValue) && BsonHelper.isBsonTimestamp(actualValue)) {
+        } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
             long expectedValueAsTimestampValue = BsonHelper.getBsonTimestampValue(expectedValue);
             long actualValueAsTimestampValue = BsonHelper.getBsonTimestampValue(actualValue);
             truthnessOfComparison = calculateTruthnessForNumberComparison(actualValueAsTimestampValue, expectedValueAsTimestampValue, op);
 
-        } else if (BsonHelper.isBsonRegularExpression(expectedValue) && BsonHelper.isBsonRegularExpression(actualValue)) {
+        } else if (BsonHelper.isBsonRegularExpression(actualValue) && BsonHelper.isBsonRegularExpression(expectedValue)) {
             String expectedValuePatternAsString = BsonHelper.bsonRegexGetPattern(expectedValue);
             String actualValuePatternAsString = BsonHelper.bsonRegexGetPattern(actualValue);
             truthnessOfComparison = calculateTruthnessForStringComparison(actualValuePatternAsString, expectedValuePatternAsString, op);
 
-        } else if (BsonHelper.isObjectId(expectedValue) || BsonHelper.isObjectId(actualValue)) {
-            String expectedValueAsString = expectedValue.toString();
-            String actualValueAsString = actualValue.toString();
-            if (taintHandler != null && op == EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
-            }
-            truthnessOfComparison = calculateTruthnessForStringComparison(actualValueAsString, expectedValueAsString, op);
+        } else if (BsonHelper.isObjectId(actualValue) && BsonHelper.isObjectId(expectedValue)) {
 
-        } else if (BsonHelper.isBsonBinary(expectedValue) && BsonHelper.isBsonBinary(actualValue)) {
-            byte[] expectedValueAsByteArray = BsonHelper.getBinaryData(expectedValue);
-            byte[] actualValueAsByteArray = BsonHelper.getBinaryData(actualValue);
-
+            byte[] actualValueAsByteArray = BsonHelper.toByteArray(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.toByteArray(expectedValue);
             truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
+
+        } else if (BsonHelper.isBsonBinary(actualValue) && BsonHelper.isBsonBinary(expectedValue)) {
+
+            byte[] actualValueAsByteArray = BsonHelper.getBinaryData(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.getBinaryData(expectedValue);
+            truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
+
         } else if (BsonHelper.isBsonDocument(expectedValue) && BsonHelper.isBsonDocument(actualValue)) {
             truthnessOfComparison = compareDocumentValues(actualValue, op, expectedValue);
         } else {
@@ -243,6 +241,17 @@ public class MongoHeuristicsCalculatorHelper {
             // we considered them to be incompatible, therefore the comparison returns true
             // only if the comparison operator is NOT_EQUALS_TO. Otherwise returns false.
             truthnessOfComparison = op == NOT_EQUALS_TO ? TRUE_C : C_FALSE;
+        }
+
+        /**
+         * Taint Analysis
+         */
+        if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
+            String expectedValueAsString = expectedValue.toString();
+            String actualValueAsString = actualValue.toString();
+            if (taintHandler != null && op == EQUALS_TO) {
+                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
+            }
         }
         return truthnessOfComparison;
     }
@@ -262,9 +271,9 @@ public class MongoHeuristicsCalculatorHelper {
         return buildAndAggregationTruthness(truthnesses.toArray(new Truthness[0]));
     }
 
-    private Truthness compareBinaryData(byte[] expectedValueAsByteArray,
+    private Truthness compareBinaryData(byte[] actualValueAsByteArray,
                                         ComparisonOperatorType op,
-                                        byte[] actualValueAsByteArray) {
+                                        byte[] expectedValueAsByteArray) {
 
         final Truthness equalityTruthness = getEqualityTruthness(actualValueAsByteArray, expectedValueAsByteArray);
         switch (op) {
