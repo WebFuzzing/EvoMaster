@@ -5,6 +5,7 @@ import com.google.inject.Injector
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.netflix.governator.guice.LifecycleInjector
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
@@ -22,7 +23,6 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
-import com.webfuzzing.arazzo.models.domain.Workflow
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -46,7 +46,7 @@ class SamplerWithArazzoVerifierTest {
     fun testSamplerWithArazzoProducesValidIndividuals() {
         val context = createTestContext()
 
-        assertTrue(context.arazzoService.arazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
+        assertTrue(context.arazzoService.arazzoArazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
         assertTrue(context.sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
 
         repeat(10) {
@@ -90,8 +90,8 @@ class SamplerWithArazzoVerifierTest {
         assertEquals(listOf("/store/order"), actions.map { it.path.toString() })
     }
 
-    private fun buildIndividualFromWorkflow(context: TestContext, workflow: Workflow): RestIndividual {
-        return context.arazzoService.buildIndividualFromWorkflow(workflow)
+    private fun buildIndividualFromWorkflow(context: TestContext, arazzoWorkflow: ArazzoWorkflow): RestIndividual {
+        return context.arazzoService.buildIndividualFromWorkflow(arazzoWorkflow)
     }
 
     private fun createTestContext(): TestContext {

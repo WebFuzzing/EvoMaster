@@ -1,8 +1,8 @@
 package com.webfuzzing.arazzo.mapper;
 
 import com.webfuzzing.arazzo.models.domain.ArazzoSpecifications;
-import com.webfuzzing.arazzo.models.domain.Step;
-import com.webfuzzing.arazzo.models.domain.Workflow;
+import com.webfuzzing.arazzo.models.domain.ArazzoStep;
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow;
 import com.webfuzzing.arazzo.models.unresolved.UnresolvedArazzoSpecifications;
 import com.webfuzzing.arazzo.models.unresolved.UnresolvedStep;
 import com.webfuzzing.arazzo.models.unresolved.UnresolvedWorkflow;
@@ -41,8 +41,8 @@ public class ArazzoMapper {
     /**
      * Maps UnresolvedWorkflow to Workflow
      */
-    public Workflow toDomain(UnresolvedWorkflow unresolvedWorkflow) {
-        return Workflow.builder()
+    public ArazzoWorkflow toDomain(UnresolvedWorkflow unresolvedWorkflow) {
+        return ArazzoWorkflow.builder()
                 .workflowId(unresolvedWorkflow.getWorkflowId())
                 .summary(unresolvedWorkflow.getSummary())
                 .description(unresolvedWorkflow.getDescription())
@@ -61,8 +61,8 @@ public class ArazzoMapper {
     /**
      * Maps UnresolvedStep to Step
      */
-    public Step toDomain(UnresolvedStep unresolvedStep) {
-        return Step.builder()
+    public ArazzoStep toDomain(UnresolvedStep unresolvedStep) {
+        return ArazzoStep.builder()
                 .description(unresolvedStep.getDescription())
                 .stepId(unresolvedStep.getStepId())
                 .operationId(unresolvedStep.getOperationId())

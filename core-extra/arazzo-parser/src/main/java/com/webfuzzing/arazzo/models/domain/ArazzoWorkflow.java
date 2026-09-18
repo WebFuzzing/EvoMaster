@@ -15,8 +15,7 @@ import java.util.Map;
  * This model only have SuccessAction, FailureAction and Parameter.
  * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
  */
-//TODO to rename it to ArazzoWorkflow
-public class Workflow {
+public class ArazzoWorkflow {
     /**
      * Unique string to represent the workflow.
      */
@@ -45,7 +44,7 @@ public class Workflow {
     /**
      * An ordered list of steps where each step represents a call to an API operation or to another workflow.
      */
-    private List<Step> steps;
+    private List<ArazzoStep> arazzoSteps;
 
     /**
      * A list of success actions that are applicable for all steps described under this workflow.
@@ -67,13 +66,13 @@ public class Workflow {
      */
     private List<Parameter> parameters;
 
-    private Workflow(Builder builder) {
+    private ArazzoWorkflow(Builder builder) {
         this.workflowId = builder.workflowId;
         this.summary = builder.summary;
         this.description = builder.description;
         this.inputs = builder.inputs;
         this.dependsOn = builder.dependsOn;
-        this.steps = builder.steps;
+        this.arazzoSteps = builder.arazzoSteps;
         this.successActions = builder.successActions;
         this.failureActions = builder.failureActions;
         this.outputs = builder.outputs;
@@ -100,8 +99,8 @@ public class Workflow {
         return dependsOn;
     }
 
-    public List<Step> getSteps() {
-        return steps;
+    public List<ArazzoStep> getSteps() {
+        return arazzoSteps;
     }
 
     public List<SuccessAction> getSuccessActions() {
@@ -130,7 +129,7 @@ public class Workflow {
         private String description;
         private Schema<?> inputs;
         private List<String> dependsOn;
-        private List<Step> steps;
+        private List<ArazzoStep> arazzoSteps;
         private List<SuccessAction> successActions;
         private List<FailureAction> failureActions;
         private Map<String, String> outputs;
@@ -141,14 +140,14 @@ public class Workflow {
         public Builder description(String description) { this.description = description; return this; }
         public Builder inputs(Schema<?> inputs) { this.inputs = inputs; return this; }
         public Builder dependsOn(List<String> dependsOn) { this.dependsOn = dependsOn; return this; }
-        public Builder steps(List<Step> steps) { this.steps = steps; return this; }
+        public Builder steps(List<ArazzoStep> arazzoSteps) { this.arazzoSteps = arazzoSteps; return this; }
         public Builder successActions(List<SuccessAction> successActions) { this.successActions = successActions; return this; }
         public Builder failureActions(List<FailureAction> failureActions) { this.failureActions = failureActions; return this; }
         public Builder outputs(Map<String, String> outputs) { this.outputs = outputs; return this; }
         public Builder parameters(List<Parameter> parameters) { this.parameters = parameters; return this; }
 
-        public Workflow build() {
-            return new Workflow(this);
+        public ArazzoWorkflow build() {
+            return new ArazzoWorkflow(this);
         }
     }
 

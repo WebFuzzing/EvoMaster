@@ -2,8 +2,8 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import com.webfuzzing.arazzo.access.ArazzoAccess
-import com.webfuzzing.arazzo.models.domain.Step
-import com.webfuzzing.arazzo.models.domain.Workflow
+import com.webfuzzing.arazzo.models.domain.ArazzoStep
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow
 import com.webfuzzing.arazzo.parser.ArazzoParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.config.ConfigProblemException
@@ -30,14 +30,14 @@ class ArazzoWorkflowsService {
     /**
      * List of Arazzo workflows. Used to create individuals.
      */
-    var arazzoWorkflows = mutableListOf<Workflow>()
+    var arazzoArazzoWorkflows = mutableListOf<ArazzoWorkflow>()
         private set
 
     /**
      * Map containing each Arazzo workflow associated with its corresponding ID.
      * Used to resolve nested workflow references in steps.
      */
-    lateinit var arazzoWorkflowsById: Map<String, Workflow>
+    lateinit var arazzoWorkflowsById: Map<String, ArazzoWorkflow>
         private set
 
     /**
@@ -53,12 +53,12 @@ class ArazzoWorkflowsService {
         if (workflows.isEmpty()) {
             throw ConfigProblemException("Arazzo document at '$location' must contain at least one workflow.")
         }
-        arazzoWorkflows.clear()
-        arazzoWorkflows.addAll(workflows)
+        arazzoArazzoWorkflows.clear()
+        arazzoArazzoWorkflows.addAll(workflows)
         arazzoWorkflowsById = workflows.associateBy { it.workflowId }
     }
 
-    private fun readArazzoWorkflows(openAPI: OpenAPI, location: String): List<Workflow> {
+    private fun readArazzoWorkflows(openAPI: OpenAPI, location: String): List<ArazzoWorkflow> {
         return try {
             val arazzoText = ArazzoAccess.readFromDisk(location)
             ArazzoParser.parse(arazzoText, openAPI).workflows
@@ -73,7 +73,7 @@ class ArazzoWorkflowsService {
      * Choose a random workflow
      */
     fun sampleAtRandom(): RestIndividual {
-        val workflow = randomness.choose(arazzoWorkflows)
+        val workflow = randomness.choose(arazzoArazzoWorkflows)
         return buildIndividualFromWorkflow(workflow)
     }
 
@@ -82,8 +82,8 @@ class ArazzoWorkflowsService {
      * For the moment, it only recognizes a single OpenAPI.
      * Cases involving multiple APIs are currently being ignored.
      */
-    fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
-        val actions = buildArazzoRestCallActions(workflow.steps)
+    fun buildIndividualFromWorkflow(arazzoWorkflow: ArazzoWorkflow): RestIndividual {
+        val actions = buildArazzoRestCallActions(arazzoWorkflow.steps)
             .onEach {
                 it.doInitialize(randomness)
                 it.forceNewTaints()
@@ -97,10 +97,10 @@ class ArazzoWorkflowsService {
      * A RestCallAction must be created for each Step.
      * Steps can be direct (operationId) or reference a sub-workflow
      */
-    private fun buildArazzoRestCallActions(steps: List<Step>): List<RestCallAction> {
+    private fun buildArazzoRestCallActions(arazzoSteps: List<ArazzoStep>): List<RestCallAction> {
         val actions = mutableListOf<RestCallAction>()
-        val pending = ArrayDeque<Step>()
-        pending.addAll(steps)
+        val pending = ArrayDeque<ArazzoStep>()
+        pending.addAll(arazzoSteps)
 
         while (pending.isNotEmpty()) {
             val step = pending.removeFirst()
