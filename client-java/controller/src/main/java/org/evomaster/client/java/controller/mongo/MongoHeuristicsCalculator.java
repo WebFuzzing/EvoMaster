@@ -239,9 +239,8 @@ public class MongoHeuristicsCalculator {
         final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
 
         return helper.evaluateDistanceBetweenPoints(
-                minDistance, maxDistance,
+                actualValue, minDistance, maxDistance,
                 longitude, latitude,
-                actualValue,
                 model);
     }
 
@@ -301,9 +300,7 @@ public class MongoHeuristicsCalculator {
             return helper.computeHeuristicContainsElement(expectedValue, (List<?>) actualValue).invert();
         } else {
             return helper.compareNullableValues(
-                    expectedValue,
-                    NOT_EQUALS_TO,
-                    actualValue
+                    actualValue, NOT_EQUALS_TO, expectedValue
             );
         }
     }
@@ -315,9 +312,7 @@ public class MongoHeuristicsCalculator {
         Object expectedValue = operation.getValue();
         return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
-                        expectedValue,
-                        GREATER_THAN,
-                        value
+                        value, GREATER_THAN, expectedValue
                 ));
 
     }
@@ -327,7 +322,7 @@ public class MongoHeuristicsCalculator {
         final Object expectedValue = operation.getValue();
 
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(expectedValue, GREATER_THAN_EQUALS, value));
+                value -> helper.compareNullableValues(value, GREATER_THAN_EQUALS, expectedValue));
     }
 
     private Truthness evaluate(LessThanOperation<?> operation, Object actualValue) {
@@ -335,7 +330,7 @@ public class MongoHeuristicsCalculator {
         final Object expectedValue = operation.getValue();
 
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(expectedValue, MINOR_THAN, value));
+                value -> helper.compareNullableValues(value, MINOR_THAN, expectedValue));
     }
 
     private Truthness evaluate(LessThanEqualsOperation<?> operation, Object actualValue) {
@@ -343,7 +338,7 @@ public class MongoHeuristicsCalculator {
 
         final Object expectedValue = operation.getValue();
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(expectedValue, MINOR_THAN_EQUALS, value
+                value -> helper.compareNullableValues(value, MINOR_THAN_EQUALS, expectedValue
                 ));
     }
 
@@ -473,7 +468,7 @@ public class MongoHeuristicsCalculator {
         } else {
             Truthness orTruthness = buildOrAggregationTruthness(actualFieldNames.stream()
                     .map(actualFieldName ->
-                            helper.compareNonNullValues(expectedFieldName, EQUALS_TO, actualFieldName))
+                            helper.compareNonNullValues(actualFieldName, EQUALS_TO, expectedFieldName))
                     .toArray(Truthness[]::new));
             res = buildSafeScaledTruthness(orTruthness);
         }
@@ -501,31 +496,31 @@ public class MongoHeuristicsCalculator {
         long divisor = operation.getDivisor().longValue();
         long expectedRemainder = operation.getRemainder().longValue();
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.evaluateMod(divisor, expectedRemainder, value));
+                value -> helper.evaluateMod(value, divisor, expectedRemainder));
     }
 
     private Truthness evaluate(BitsAllClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.evaluateBitsAllClearOperation(operation.getBitmask(), value));
+                value -> helper.evaluateBitsAllClearOperation(value, operation.getBitmask()));
     }
 
     private Truthness evaluate(BitsAnyClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.evaluateBitsAnyClearOperation(operation.getBitmask(), value));
+                value -> helper.evaluateBitsAnyClearOperation(value, operation.getBitmask()));
     }
 
     private Truthness evaluate(BitsAllSetOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.evaluateBitsAllSetOperation(operation.getBitmask(), value));
+                value -> helper.evaluateBitsAllSetOperation(value, operation.getBitmask()));
     }
 
     private Truthness evaluate(BitsAnySetOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.evaluateBitsAnySetOperation(operation.getBitmask(), value));
+                value -> helper.evaluateBitsAnySetOperation(value, operation.getBitmask()));
 
     }
 
@@ -579,9 +574,8 @@ public class MongoHeuristicsCalculator {
         final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
 
         return helper.evaluateDistanceBetweenPoints(
-                minDistance, maxDistance,
+                actualValue, minDistance, maxDistance,
                 longitude, latitude,
-                actualValue,
                 SPHERICAL);
     }
 

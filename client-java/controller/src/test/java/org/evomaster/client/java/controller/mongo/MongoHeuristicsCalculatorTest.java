@@ -2280,7 +2280,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("two sub-documents are never equal to one another, so the query never matches")
     public void testEqualityBetweenTwoSubDocuments() {
         /*
             mongo: matches every one of these. A sub-document is compared field by field
@@ -2307,6 +2306,75 @@ public class MongoHeuristicsCalculatorTest {
         // mongo: matches, the array is searched for the sub-document as one of its elements
         assertTrue(calculator.computeHeuristicDocument(implicitEquality, arrayOfSubDocuments).isTrue());
     }
+
+    @Test
+    public void testEqualityBetweenTwoDocuments() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1).append("y", 2));
+        Document query = new Document().append("a", new Document().append("$eq",
+                new Document().append("x", 1).append("y", 2)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    public void testInEqualityBetweenTwoDocuments() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1).append("y", 2));
+        Document query = new Document().append("a", new Document().append("$eq",
+                new Document().append("x", 1)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isFalse());
+    }
+
+    @Test
+    public void testLessThanInSubDocuments() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1));
+        Document query = new Document().append("a", new Document().append("$lte",
+                new Document().append("x", 2)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+    @Test
+    public void testLessThanEqualInSubDocuments() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1));
+        Document query = new Document().append("a", new Document().append("$lte",
+                new Document().append("x", 0)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isFalse());
+    }
+
+
+    @Test
+    public void testLessThanEqualWithDifferentFields() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1));
+        Document query = new Document().append("a", new Document().append("$lte",
+                new Document().append("y", 1)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
+    }
+
+
+    @Test
+    public void testLessThanEqualWithMoreFields() {
+        Document doc = new Document().append("a",
+                new Document().append("x", 1).append("y", 2));
+        Document query = new Document().append("a", new Document().append("$lte",
+                new Document().append("x", 1)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        assertTrue(calculator.computeHeuristicDocument(query, doc).isFalse());
+    }
+
 
     @Test
     @Disabled("$ne and $nin report a match between two sub-documents that are equal")
