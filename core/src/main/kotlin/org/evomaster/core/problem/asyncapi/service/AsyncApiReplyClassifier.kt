@@ -12,7 +12,16 @@ import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver
  *
  * It is a classifier rather than a validator: it reads what tells the declared messages apart
  * and gives the benefit of the doubt on anything it cannot read, because a reply it fails to
- * recognise is reported as a fault.
+ * recognise is reported as a fault. Nothing else here has to do this -- REST is told which
+ * response applies by the status code, GraphQL by its `errors` field, and RPC by the driver --
+ * so there was no existing answer to borrow.
+ *
+ * The matching is done by hand rather than with a schema validator. The one already on the
+ * classpath, pulled in by swagger-request-validator, understands draft-04 only, and so does not
+ * know `const`: the very keyword AsyncAPI documents lean on to tell message variants apart, and
+ * the reason [org.evomaster.core.problem.asyncapi.builder.AsyncApiGeneBuilder] has to rewrite it
+ * before the gene builder sees it. A validator that reads a modern draft would replace most of
+ * this, at the cost of a new dependency.
  */
 object AsyncApiReplyClassifier {
 

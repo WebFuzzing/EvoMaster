@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
+import java.util.UUID
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.database.sql.SqlAction
@@ -45,6 +46,12 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
          */
         private const val REPLY_TARGET_PREFIX = "ASYNCAPI_REPLY"
 
+        /**
+         * Prefix of the targets covered when a reply matched no declared message, written as
+         * PREFIX:action.
+         */
+        private const val UNRECOGNISED_REPLY_TARGET_PREFIX = "ASYNCAPI_UNRECOGNISED_REPLY"
+
         private const val TARGET_SEPARATOR = ":"
 
         private const val CORRELATION_SEPARATOR = "-"
@@ -69,16 +76,25 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
          */
         private fun getReplyTargetId(messageId: String, actionName: String): String =
             listOf(REPLY_TARGET_PREFIX, messageId, actionName).joinToString(TARGET_SEPARATOR)
+
+        /**
+         * The id of the target covered when a reply to [actionName] matched no declared message.
+         */
+        private fun getUnrecognisedReplyTargetId(actionName: String): String =
+            listOf(UNRECOGNISED_REPLY_TARGET_PREFIX, actionName).joinToString(TARGET_SEPARATOR)
     }
 
     @Inject
     private lateinit var asyncApiSampler: AsyncApiSampler
 
     /**
-     * Tells this run's correlation ids from those of an earlier run against the same broker.
-     * Drawn from [randomness], so that a seeded run is reproducible.
+     * Tells this run's correlation ids from those of an earlier run against the same broker, so
+     * that a reply left over from a previous run is not read as an answer to this one.
+     *
+     * Deliberately not drawn from [randomness]: a run repeated under the same seed would reuse
+     * the ids it used before, which is the one case this exists to tell apart.
      */
-    private val runId: String by lazy { Integer.toHexString(randomness.nextInt()) }
+    private val runId: String = UUID.randomUUID().toString().take(8)
 
     /**
      * How many messages this run has published, which is what makes each correlation id unique.
@@ -110,6 +126,13 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             }
         }
 
+        /*
+            There is no separate black-box fitness here, unlike REST and GraphQL: AsyncAPI publishes
+            through the driver in both modes, which is what EMConfig.usesDriver() states. What
+            changes is only what this call adds on top of the outcome and reply targets above: an
+            instrumented SUT reports the lines and branches the messages reached, an uninstrumented
+            one reports none.
+         */
         val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
             ?: return null
         handleExtra(dto, fv)
@@ -213,11 +236,15 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             AsyncApiOutcome.NO_REPLY ->
                 handleFault(fv, result, ExperimentalFaultCategory.ASYNCAPI_NO_REPLY, name, index)
 
+            AsyncApiOutcome.PUBLISHED -> Unit
+
             /*
-                Nothing more to aim at. PUBLISH_FAILED never reaches here -- publishing gives up
-                before this is called -- but the compiler wants every outcome named.
+                Publishing gives up before this is called, so getting here means the caller
+                changed. There is no `else` branch on purpose: a newly added outcome should fail
+                to compile here rather than fall through unnoticed at run time.
              */
-            AsyncApiOutcome.PUBLISHED, AsyncApiOutcome.PUBLISH_FAILED -> Unit
+            AsyncApiOutcome.PUBLISH_FAILED ->
+                throw IllegalStateException("A message that was not published reached target handling")
         }
     }
 
@@ -293,6 +320,13 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         val recognised = AsyncApiReplyClassifier.classify(payload, declared, document.componentSchemas)
 
         if (recognised == null) {
+            /*
+                Registered apart from the fault, and not subject to it being enabled: a reply that
+                matches nothing the contract declares is a behaviour worth reaching whether or not
+                it is also reported as a fault. Without this the search would have nothing to aim
+                at here, since no declared message was matched either.
+             */
+            fv.updateTarget(idMapper.handleLocalTarget(getUnrecognisedReplyTargetId(name)), 1.0, index)
             handleFault(fv, result, ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY, name, index)
             return
         }

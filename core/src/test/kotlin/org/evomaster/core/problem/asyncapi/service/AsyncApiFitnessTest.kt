@@ -263,6 +263,7 @@ class AsyncApiFitnessTest {
 
         assertEquals(1, faults.size, coveredIds(evaluated).toString())
         assertTrue(idMapper.isSpecifiedFault(faults.single(), ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY))
+        assertTrue(coveredIds(evaluated).contains("ASYNCAPI_UNRECOGNISED_REPLY:bessj"))
         assertNull(results(evaluated).single().getReplyMessage())
 
         //the reports count faults off the action result, not off the covered targets
@@ -415,6 +416,25 @@ class AsyncApiFitnessTest {
 
         //a broken setup is not a finding about the service, so nothing is covered by it
         assertTrue(coveredIds(evaluated).none { it.startsWith("ASYNCAPI") }, coveredIds(evaluated).toString())
+    }
+
+    @Test
+    fun testAnUnrecognisedReplyIsStillATargetWithoutExperimentalOracles() {
+
+        /*
+            The fault is experimental, but the behaviour it reports is not: a reply matching none
+            of the declared messages is somewhere the search should still be able to aim, or
+            turning the oracle off would quietly cost coverage rather than only reporting.
+         */
+        startNcs { replied("""{"something": "else"}""") }
+
+        val evaluated = evaluate("bessj")
+
+        assertTrue(
+            coveredIds(evaluated).contains("ASYNCAPI_UNRECOGNISED_REPLY:bessj"),
+            coveredIds(evaluated).toString())
+        assertTrue(evaluated.fitness.coveredTargets().none { idMapper.isFault(it) })
+        assertTrue(faultsOn(evaluated).isEmpty())
     }
 
     @Test
