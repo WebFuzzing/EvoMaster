@@ -11,9 +11,9 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.*;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
+import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.ComparisonOperatorType.*;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
@@ -202,8 +202,8 @@ public class MongoHeuristicsCalculator {
         if (actualValue == null) {
             return C_FALSE;
         } else if (actualValue instanceof String) {
-            final String inputValue = (String) actualValue;
-            return evaluateRegularExpression(inputValue, pattern, taintHandler);
+            final String actualValueAsString = (String) actualValue;
+            return evaluateRegularExpression(actualValueAsString, pattern, taintHandler);
         } else if (actualValue instanceof List<?>) {
             List<?> actualValueList = (List<?>) actualValue;
             if (actualValueList.isEmpty()) {
@@ -302,7 +302,8 @@ public class MongoHeuristicsCalculator {
         } else {
             return helper.compareNullableValues(
                     expectedValue,
-                    SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO, actualValue
+                    NOT_EQUALS_TO,
+                    actualValue
             );
         }
     }
@@ -315,7 +316,8 @@ public class MongoHeuristicsCalculator {
         return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
                         expectedValue,
-                        SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN, value
+                        GREATER_THAN,
+                        value
                 ));
 
     }
@@ -325,10 +327,7 @@ public class MongoHeuristicsCalculator {
         final Object expectedValue = operation.getValue();
 
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(
-                        expectedValue,
-                        SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS, value
-                ));
+                value -> helper.compareNullableValues(expectedValue, GREATER_THAN_EQUALS, value));
     }
 
     private Truthness evaluate(LessThanOperation<?> operation, Object actualValue) {
@@ -336,10 +335,7 @@ public class MongoHeuristicsCalculator {
         final Object expectedValue = operation.getValue();
 
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(
-                        expectedValue,
-                        SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN, value
-                ));
+                value -> helper.compareNullableValues(expectedValue, MINOR_THAN, value));
     }
 
     private Truthness evaluate(LessThanEqualsOperation<?> operation, Object actualValue) {
@@ -347,9 +343,7 @@ public class MongoHeuristicsCalculator {
 
         final Object expectedValue = operation.getValue();
         return helper.evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(
-                        expectedValue,
-                        SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN_EQUALS, value
+                value -> helper.compareNullableValues(expectedValue, MINOR_THAN_EQUALS, value
                 ));
     }
 
@@ -401,7 +395,7 @@ public class MongoHeuristicsCalculator {
         Truthness truthness = buildAndAggregationTruthness(
                 expectedValues.stream()
                         .map(expectedElementValue ->
-                                helper.evaluateEquality(actualValue,expectedElementValue))
+                                helper.evaluateEquality(actualValue, expectedElementValue))
                         .toArray(Truthness[]::new));
 
         return truthness;
@@ -479,9 +473,7 @@ public class MongoHeuristicsCalculator {
         } else {
             Truthness orTruthness = buildOrAggregationTruthness(actualFieldNames.stream()
                     .map(actualFieldName ->
-                            helper.compareNonNullValues(actualFieldName,
-                                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedFieldName
-                            ))
+                            helper.compareNonNullValues(expectedFieldName, EQUALS_TO, actualFieldName))
                     .toArray(Truthness[]::new));
             res = buildSafeScaledTruthness(orTruthness);
         }
