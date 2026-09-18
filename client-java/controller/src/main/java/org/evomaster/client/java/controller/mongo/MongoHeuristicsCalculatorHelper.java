@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -435,6 +436,47 @@ public class MongoHeuristicsCalculatorHelper {
         return (distanceBetweenPoints > maxDistance)
                 ? getEqualityTruthness(distanceBetweenPoints, maxDistance)
                 : getEqualityTruthness(distanceBetweenPoints, minDistance);
+    }
+
+    Truthness evaluateEquality(Object actualValue, Object expectedValue) {
+        Truthness topLevelTruthness = this.compareNullableValues(actualValue, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedValue);
+        if (topLevelTruthness.isTrue()) {
+            return topLevelTruthness;
+        } else {
+            return evaluateWithArrayUnwrapping(actualValue,
+                    value -> this.compareNullableValues(
+                            expectedValue,
+                            SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, value));
+        }
+    }
+
+    /**
+     * Evaluates a nested structure or a single value using a provided heuristic function.
+     * For nested structures that are lists, it aggregates the results of applying the heuristic
+     * function to each element in the list. For single values, it directly applies the heuristic.
+     *
+     * @param value            the value to evaluate, which can either be a single value or a list of values
+     * @param elementHeuristic a function to compute the heuristic for each element or the single value
+     * @return a Truthness object representing the heuristic of the evaluated input
+     */
+    Truthness evaluateWithArrayUnwrapping(Object value,
+                                          Function<Object, Truthness> elementHeuristic) {
+        Objects.requireNonNull(elementHeuristic);
+
+        if (!(value instanceof List<?>)) {
+            // value is not an array. Inspect only this value.
+            return elementHeuristic.apply(value);
+        } else {
+            // value is an array. Inspect all elements.
+            List<?> values = (List<?>) value;
+            if (values.isEmpty()) {
+                return C_FALSE;
+            }
+            Truthness orAggregation = buildOrAggregationTruthness(values.stream()
+                    .map(elementHeuristic)
+                    .toArray(Truthness[]::new));
+            return buildSafeScaledTruthness(orAggregation);
+        }
     }
 
 }

@@ -274,9 +274,9 @@ public class MongoHeuristicsCalculatorTest {
 
     @Test
     public void testAll() {
-        Document doc = new Document().append("employees", new ArrayList<>(Arrays.asList(1, 5, 6)));
-        Bson bsonTrue = Filters.all("employees", new ArrayList<>(Arrays.asList(1, 5, 6)));
-        Bson bsonFalse = Filters.all("employees", new ArrayList<>(Arrays.asList(1, 7, 8)));
+        Document doc = new Document().append("employees", Arrays.asList(1, 5, 6));
+        Bson bsonTrue = Filters.all("employees", Arrays.asList(1, 5, 6));
+        Bson bsonFalse = Filters.all("employees", Arrays.asList(1, 7, 8));
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
@@ -2237,14 +2237,13 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$all with a repeated element does not match a field that is not an array")
     public void testAllWithARepeatedElement() {
         // mongo: matches. $all is an $and of $eq, so a repeat holds against a scalar.
         Document doc = new Document().append("a", 1);
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
         Document query = new Document().append("a",
                 new Document().append("$all", Arrays.asList(1, 1)));
+
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
         assertTrue(calculator.computeHeuristicDocument(query, doc).isTrue());
     }
 

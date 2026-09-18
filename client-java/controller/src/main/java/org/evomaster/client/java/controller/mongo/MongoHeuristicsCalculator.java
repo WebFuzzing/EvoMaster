@@ -273,23 +273,7 @@ public class MongoHeuristicsCalculator {
     private Truthness evaluate(EqualsOperation<?> operation, Object actualValue) {
         Objects.requireNonNull(operation);
         final Object expectedValue = operation.getValue();
-
-        if ((actualValue instanceof List<?>) && (expectedValue instanceof List<?>)) {
-            List<?> actualList = (List<?>) actualValue;
-            List<?> expectedList = (List<?>) expectedValue;
-            Truthness wholeListComparison = helper.compareNullableValues(actualList, SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedList);
-            if (wholeListComparison.isTrue()) {
-                return wholeListComparison;
-            }
-        }
-
-        return evaluateWithArrayUnwrapping(actualValue,
-                value -> helper.compareNullableValues(
-                        expectedValue,
-                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, value
-                ));
-
-
+        return helper.evaluateEquality(actualValue, expectedValue);
     }
 
 
@@ -328,7 +312,7 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
 
         Object expectedValue = operation.getValue();
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN, value
@@ -340,7 +324,7 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
         final Object expectedValue = operation.getValue();
 
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.GREATER_THAN_EQUALS, value
@@ -351,7 +335,7 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
         final Object expectedValue = operation.getValue();
 
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN, value
@@ -362,41 +346,13 @@ public class MongoHeuristicsCalculator {
         Objects.requireNonNull(operation);
 
         final Object expectedValue = operation.getValue();
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.compareNullableValues(
                         expectedValue,
                         SqlExpressionEvaluator.ComparisonOperatorType.MINOR_THAN_EQUALS, value
                 ));
     }
 
-    /**
-     * Evaluates a nested structure or a single value using a provided heuristic function.
-     * For nested structures that are lists, it aggregates the results of applying the heuristic
-     * function to each element in the list. For single values, it directly applies the heuristic.
-     *
-     * @param value            the value to evaluate, which can either be a single value or a list of values
-     * @param elementHeuristic a function to compute the heuristic for each element or the single value
-     * @return a Truthness object representing the heuristic of the evaluated input
-     */
-    private Truthness evaluateWithArrayUnwrapping(Object value,
-                                                  Function<Object, Truthness> elementHeuristic) {
-        Objects.requireNonNull(elementHeuristic);
-
-        if (!(value instanceof List<?>)) {
-            // value is not an array. Inspect only this value.
-            return elementHeuristic.apply(value);
-        } else {
-            // value is an array. Inspect all elements.
-            List<?> values = (List<?>) value;
-            if (values.isEmpty()) {
-                return C_FALSE;
-            }
-            Truthness orAggregation = buildOrAggregationTruthness(values.stream()
-                    .map(elementHeuristic)
-                    .toArray(Truthness[]::new));
-            return buildSafeScaledTruthness(orAggregation);
-        }
-    }
 
     private Truthness computeHeuristic(OrOperation operation, Object document) {
         Objects.requireNonNull(operation);
@@ -442,32 +398,14 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         }
 
-        if (actualValue == null) {
-            return (expectedValues.size() == 1 && expectedValues.get(0) == null)
-                    ? TRUE_C
-                    : C_FALSE;
-        }
+        Truthness truthness = buildAndAggregationTruthness(
+                expectedValues.stream()
+                        .map(expectedElementValue ->
+                                helper.evaluateEquality(actualValue,expectedElementValue))
+                        .toArray(Truthness[]::new));
 
-        if (!(actualValue instanceof List<?>)) {
-            if (expectedValues.size() != 1) {
-                return C_FALSE;
-            } else {
-                return helper.compareNullableValues(
-                        expectedValues.get(0),
-                        SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, actualValue
-                );
-            }
-        }
+        return truthness;
 
-        List<?> actualValues = (List<?>) actualValue;
-        if (actualValues.isEmpty()) {
-            return C_FALSE;
-        }
-
-        Truthness res = buildAndAggregationTruthness(expectedValues.stream()
-                .map(expectedValue -> helper.computeHeuristicContainsElement(expectedValue, actualValues))
-                .toArray(Truthness[]::new));
-        return buildSafeScaledTruthness(res);
     }
 
     private Truthness evaluate(SizeOperation operation, Object actualValue) {
@@ -570,31 +508,31 @@ public class MongoHeuristicsCalculator {
 
         long divisor = operation.getDivisor().longValue();
         long expectedRemainder = operation.getRemainder().longValue();
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.evaluateMod(divisor, expectedRemainder, value));
     }
 
     private Truthness evaluate(BitsAllClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.evaluateBitsAllClearOperation(operation.getBitmask(), value));
     }
 
     private Truthness evaluate(BitsAnyClearOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.evaluateBitsAnyClearOperation(operation.getBitmask(), value));
     }
 
     private Truthness evaluate(BitsAllSetOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.evaluateBitsAllSetOperation(operation.getBitmask(), value));
     }
 
     private Truthness evaluate(BitsAnySetOperation operation, Object actualValue) {
         Objects.requireNonNull(operation);
-        return evaluateWithArrayUnwrapping(actualValue,
+        return helper.evaluateWithArrayUnwrapping(actualValue,
                 value -> helper.evaluateBitsAnySetOperation(operation.getBitmask(), value));
 
     }
