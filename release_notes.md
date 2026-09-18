@@ -2,6 +2,11 @@
 
 Under development in `master` branch.
 
+### Addressed GitHub Issues
+- #711: What are the type of faults that can be detected with this tool?  
+
+# Version 6.2.0
+
 ### New Features
 - 25 new automated oracles to detect faults have been added, based on HTTP semantics. 
 - New test output option `JS_PLAYWRIGHT` to generate JavaScript tests where HTTP calls are done with PlayWright instead of SuperAgent. 

@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedPar
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
+import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
@@ -1063,6 +1064,49 @@ public class EMController {
                     .entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitRedis(false);
+        }
+    }
+
+    /**
+     * Executes DynamoDB initialization insertions.
+     *
+     * @param dto insertion commands
+     * @param httpServletRequest request metadata
+     * @return insertion results
+     */
+    @Path(ControllerConstants.DYNAMODB_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeDynamoDbInsertion(
+            DynamoDbDatabaseCommandsDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+        try {
+            sutController.setExecutingInitDynamoDb(true);
+            Object connection = noKillSwitch(sutController::getDynamoDbConnection);
+            if (connection == null) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("No active DynamoDB connection")).build();
+            }
+            if (dto == null || dto.insertions == null || dto.insertions.isEmpty()) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("No input command")).build();
+            }
+            if (dto.insertions.stream().anyMatch(i -> i == null || i.tableName == null
+                    || i.tableName.isEmpty() || i.attributes == null || i.attributes.isEmpty())) {
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError("Insertion with no table or attributes")).build();
+            }
+            DynamoDbInsertionResultsDto results = DynamoDbCommandExecutor.executeInsert(
+                    connection, dto.insertions);
+            return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitDynamoDb(false);
         }
     }
 }

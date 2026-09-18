@@ -45,7 +45,7 @@ public class StatefulConnectionClassReplacementTest {
 
         org.evomaster.client.java.instrumentation.RedisCommand redisCmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(GET, redisCmd.getType().name());
-        assertArrayEquals(new String[]{createKeyArg(key)}, redisCmd.getArgs());
+        assertArrayEquals(new String[]{key}, redisCmd.getArgs());
     }
 
     @Test
@@ -66,13 +66,6 @@ public class StatefulConnectionClassReplacementTest {
 
         org.evomaster.client.java.instrumentation.RedisCommand redisCmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(HGET, redisCmd.getType().name());
-        assertArrayEquals(new String[]{
-                createKeyArg(key),
-                createKeyArg(field)
-        }, redisCmd.getArgs());
-    }
-
-    private String createKeyArg(String key) {
-        return "key<" + key + ">";
+        assertArrayEquals(new String[]{key, field}, redisCmd.getArgs());
     }
 }

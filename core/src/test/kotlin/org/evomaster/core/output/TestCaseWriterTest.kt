@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import io.restassured.path.json.JsonPath
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
@@ -143,6 +144,92 @@ class TestCaseWriterTest : WriterTestBase(){
 
         assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
         assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJvmResponseAssertionEscapesBackslashForSourceAndGPath() {
+        val body = """{"\\g":{"name":"disabled"}}"""
+
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val output = generateJsonResponseAssertions(format, body)
+
+            assertTrue(
+                output.contains(".body(\"'\\\\\\\\g'.'name'\", containsString(\"disabled\"))"),
+                "Expected a backslash escaped for both the JVM source and Groovy GPath in $format, got:\n$output"
+            )
+            assertFalse(
+                output.contains(".body(\"'\\g'.'name'\""),
+                "An unescaped backslash would make the generated JVM test invalid in $format"
+            )
+        }
+    }
+
+    @Test
+    fun testJvmResponseAssertionGPathResolvesBackslashAndSingleQuoteKeys() {
+        val body = """{"\\g":{"single'quote":"disabled"}}"""
+        val pathAsGroovySource = "'\\\\g'.'single\\'quote'"
+
+        assertEquals("disabled", JsonPath.from(body).getString(pathAsGroovySource))
+
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val output = generateJsonResponseAssertions(format, body)
+
+            assertTrue(
+                output.contains(".body(\"'\\\\\\\\g'.'single\\\\'quote'\", containsString(\"disabled\"))"),
+                "Expected field names to be escaped for both JVM source and Groovy GPath in $format, got:\n$output"
+            )
+        }
+    }
+
+    @Test
+    fun testKotlinResponseAssertionStillEscapesDollarInFieldName() {
+        val output = generateJsonResponseAssertions(
+            OutputFormat.KOTLIN_JUNIT_5,
+            """{"dollar${'$'}key":"value"}"""
+        )
+
+        assertTrue(
+            output.contains(".body(\"'dollar\\\$key'\", containsString(\"value\"))"),
+            "Expected the dollar sign to remain escaped in generated Kotlin, got:\n$output"
+        )
+    }
+
+    @Test
+    fun testNonJvmResponseAssertionsEscapeBackslashInBracketAccess() {
+        val body = """{"\\g":{"name":"disabled"}}"""
+
+        val javaScriptOutput = generateJsonResponseAssertions(OutputFormat.JS_JEST, body)
+        assertTrue(
+            javaScriptOutput.contains("expect(res_0.body[\"\\\\g\"].name).toBe(\"disabled\");"),
+            "Expected a JavaScript string-safe bracket access, got:\n$javaScriptOutput"
+        )
+
+        val pythonOutput = generateJsonResponseAssertions(OutputFormat.PYTHON_UNITTEST, body)
+        assertTrue(
+            pythonOutput.contains("assert res_0.json()[\"\\\\g\"][\"name\"] == \"disabled\""),
+            "Expected a Python string-safe bracket access, got:\n$pythonOutput"
+        )
+    }
+
+    private fun generateJsonResponseAssertions(format: OutputFormat, body: String): String {
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val (_, baseUrlOfSut, evaluatedIndividual) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(mutableListOf<SqlAction>() to mutableListOf(action)),
+            format = format
+        )
+
+        val result = evaluatedIndividual.seeResult(action.getLocalId()) as RestCallResult
+        result.setTimedout(false)
+        result.setStatusCode(200)
+        result.setBody(body)
+        result.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        return writer.convertToCompilableTestCode(
+            TestCase(test = evaluatedIndividual, name = "test"),
+            baseUrlOfSut
+        ).toString()
     }
 
 
