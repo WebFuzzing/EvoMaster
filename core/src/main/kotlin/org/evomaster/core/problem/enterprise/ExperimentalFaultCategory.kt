@@ -11,6 +11,13 @@ enum class ExperimentalFaultCategory(
 
     //9xx for experimental, work-in-progress oracles
 
+    //AsyncAPI
+    // the contract promised a reply, and none arrived within the time waited
+    ASYNCAPI_NO_REPLY(950, "No Reply", "getsNoReply",
+        "TODO"),
+    // a reply arrived, but it matches none of the messages the contract says a reply can be
+    ASYNCAPI_UNDECLARED_REPLY(951, "Undeclared Reply", "repliesWithUndeclaredMessage",
+        "TODO"),
 
     //Implemented
     HTTP_TIMEOUT(960, "Request Timeout", "requestTimeout", "TODO"),
