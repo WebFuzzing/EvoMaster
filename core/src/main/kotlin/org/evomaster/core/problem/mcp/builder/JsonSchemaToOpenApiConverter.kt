@@ -33,15 +33,12 @@ object JsonSchemaToOpenApiConverter {
         // Work on a deep copy so the caller's node is never mutated.
         var rootCopy = inputSchema.deepCopy<JsonNode>()
 
-        val typeNode = rootCopy.get("type")
-        val isObject = rootCopy is ObjectNode && (typeNode == null || typeNode.asText() == "object" || (typeNode.isArray && typeNode.any { it.asText() == "object" }))
-
-        if (!isObject) {
+        if (!isObjectSchema(rootCopy)) {
             messages.add("Schema at $rootName expected to be an object; replaced with empty object")
             val newRoot = mapper.createObjectNode()
             newRoot.put("type", "object")
             rootCopy = newRoot
-        } else if (!rootCopy.has("type")) {
+        } else if (rootCopy is ObjectNode && !rootCopy.has("type")) {
             rootCopy.put("type", "object")
         }
 
@@ -66,6 +63,13 @@ object JsonSchemaToOpenApiConverter {
     }
 
     // -------------------------------------------------------------------------
+
+    private fun isObjectSchema(node: JsonNode): Boolean {
+        if (node !is ObjectNode) return false
+
+        val type = node.get("type") ?: return true
+        return type.asText() == "object" || (type.isArray && type.any { it.asText() == "object" })
+    }
 
     private fun collectDefNames(node: JsonNode, sink: MutableSet<String>) {
         if (node !is ObjectNode) {
