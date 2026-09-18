@@ -45,6 +45,15 @@ public class NotSelector extends SingleConditionQuerySelector {
             } else {
                 return new NotOperation(fieldName, condition);
             }
+        } else if (isBsonRegularExpression(value)) {
+            String pattern = bsonRegexGetPattern(value);
+            String options = bsonRegexGetOptions(value);
+            RegexOperation regexOperation = RegexSelector.buildRegexOperation(fieldName, pattern, options);
+            if (regexOperation == null) {
+                return null;
+            } else {
+                return new NotOperation(fieldName, regexOperation);
+            }
         } else {
             return null;
         }

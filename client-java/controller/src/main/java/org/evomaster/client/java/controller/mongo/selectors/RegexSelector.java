@@ -102,6 +102,10 @@ public class RegexSelector extends QuerySelector {
             return null;
         }
 
+        return buildRegexOperation(fieldName, pattern, options);
+    }
+
+    public static RegexOperation buildRegexOperation(String fieldName, String pattern, String options) {
         RegexOptions parsedOptions = parseOptions(options);
         if (parsedOptions == null) {
             return null;
@@ -117,7 +121,7 @@ public class RegexSelector extends QuerySelector {
         return new RegexOperation(fieldName, compile, parsedOptions);
     }
 
-    private RegexOptions parseOptions(String options) {
+    private static RegexOptions parseOptions(String options) {
 
         for (char option : options.toCharArray()) {
             if (!REGEX_OPTIONS.contains(option)) {
@@ -132,7 +136,7 @@ public class RegexSelector extends QuerySelector {
                 options.indexOf(MONGO_REGEX_OPTION_UNICODE) >= 0);
     }
 
-    private int javaRegexFlagsFromOptions(RegexOptions options) {
+    private static int javaRegexFlagsFromOptions(RegexOptions options) {
         int flags = 0;
         if (options.isCaseInsensitive()) {
             flags |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;

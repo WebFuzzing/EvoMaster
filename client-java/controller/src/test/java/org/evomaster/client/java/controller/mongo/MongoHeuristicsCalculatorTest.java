@@ -2188,7 +2188,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$not holding a bare regex is not parsed, so the calculator throws a NullPointerException")
     public void testNotWithABareRegex() {
         /*
             mongo: matches, {"a": {"$not": /x/}} is a documented form of the operator.

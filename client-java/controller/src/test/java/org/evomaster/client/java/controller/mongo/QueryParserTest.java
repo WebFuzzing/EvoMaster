@@ -436,6 +436,18 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseNotRegexBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$not", new BsonRegularExpression("x")));
+
+        NotOperation notOperation = assertInstanceOf(NotOperation.class, parser.parse(query));
+        assertEquals("name", notOperation.getFieldName());
+        assertTrue(notOperation.getCondition() instanceof RegexOperation);
+        RegexOperation regex = (RegexOperation) notOperation.getCondition();
+        assertEquals("x", regex.getPattern().pattern());
+    }
+
+    @Test
     void testParseEqBsonRegularExpression() {
         Document query = new Document("name",
                 new Document("$eq", new BsonRegularExpression("x")));
