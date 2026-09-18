@@ -206,4 +206,20 @@ class BsonHelperTest {
         assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetPattern("hospital"));
         assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetOptions("hospital"));
     }
+
+    @Test
+    void testIsBsonBinary() {
+        assertTrue(BsonHelper.isBsonBinary(new Binary((byte) 0x01, new byte[]{0x01, 0x02})));
+        assertFalse(BsonHelper.isBsonBinary(new byte[]{0x01, 0x02}));
+        assertFalse(BsonHelper.isBsonBinary("not a Binary"));
+        assertFalse(BsonHelper.isBsonBinary(null));
+    }
+
+    @Test
+    void testGetBinaryData() {
+        byte[] data = new byte[]{0x01, 0x02, 0x03};
+        Binary binary = new Binary((byte) 0x01, data);
+
+        assertArrayEquals(data, BsonHelper.getBinaryData(binary));
+    }
 }

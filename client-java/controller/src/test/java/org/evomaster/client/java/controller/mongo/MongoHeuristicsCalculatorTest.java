@@ -2159,7 +2159,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a bitmask held as org.bson.types.Binary is not parsed, so the calculator throws")
     public void testBitmaskGivenAsBinaryData() {
         /*
             mongo: matches, bit 1 of the mask is set and so is bit 1 of the value.

@@ -1,18 +1,22 @@
 package org.evomaster.client.java.controller.mongo;
 
 import com.mongodb.client.model.Filters;
+import org.bson.BsonBinary;
 import org.bson.Document;
 import org.bson.BsonRegularExpression;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.bson.types.Binary;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.utils.BitmaskUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.OptionalLong;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1926,6 +1930,40 @@ class QueryParserTest {
                 "$nor",
                 Arrays.asList(new Document("age", 30), "invalid")
         ));
+    }
+
+    @Test
+    void testBinaryBitmask() {
+        Binary mask = new Binary(new byte[] { 0x30 }); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testBsonBinaryBitmask() {
+        BsonBinary mask = new BsonBinary(new byte[] { 0x30 }); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
     }
 
     private ElemMatchOperation parseElemMatchCondition(

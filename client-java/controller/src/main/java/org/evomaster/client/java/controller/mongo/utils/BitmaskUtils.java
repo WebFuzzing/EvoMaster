@@ -43,17 +43,25 @@ public abstract class BitmaskUtils {
         // value can be a byte array
         if (value instanceof byte[]) {
             byte[] bytes = (byte[]) value;
-            for (int i = Long.BYTES; i < bytes.length; i++) {
-                if (bytes[i] != 0) {
-                    return OptionalLong.empty();                     // significant bits above 63
-                }
-            }
-            long mask = 0L;
-            for (int i = 0; i < Math.min(bytes.length, Long.BYTES); i++) {
-                mask |= (bytes[i] & 0xFFL) << (8 * i);               // byte 0 holds positions 0-7
-            }
-            return OptionalLong.of(mask);
+            return toBitMaskValue0(bytes);
+        }
+        if (BsonHelper.isBsonBinary(value)) {
+            byte[] bytes = BsonHelper.getBinaryData(value);
+            return toBitMaskValue0(bytes);
         }
         return OptionalLong.empty();
+    }
+
+    private static OptionalLong toBitMaskValue0(byte[] bytes) {
+        for (int i = Long.BYTES; i < bytes.length; i++) {
+            if (bytes[i] != 0) {
+                return OptionalLong.empty();
+            }
+        }
+        long mask = 0L;
+        for (int i = 0; i < Math.min(bytes.length, Long.BYTES); i++) {
+            mask |= (bytes[i] & 0xFFL) << (8 * i);               // byte 0 holds positions 0-7
+        }
+        return OptionalLong.of(mask);
     }
 }
