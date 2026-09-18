@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.builder
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.parser.OpenAPIParser
@@ -439,6 +440,52 @@ object RestActionBuilderV3 {
         }
 
         return dtoSchemas.map { dtoCache[it]!!.copy() }
+    }
+
+    /**
+     * Create a Gene from a set of related JSON-Schema definitions supplied as already-parsed
+     * [JsonNode]s.
+     *
+     * @param rootName the key in [schemasByName] whose gene is returned
+     * @param schemasByName every schema to register, keyed by component name; must contain [rootName]
+     * @param options the options to customize the gene creation process
+     * @return the Gene for [rootName]
+     * @throws IllegalArgumentException if [rootName] is not present in [schemasByName]
+     */
+    fun createGeneForDTOs(
+        rootName: String,
+        schemasByName: Map<String, JsonNode>,
+        options: Options
+    ): Gene {
+
+        if (!schemasByName.containsKey(rootName)) {
+            throw IllegalArgumentException("Root schema '$rootName' not present among provided schemas")
+        }
+
+        val root = mapper.createObjectNode()
+        root.put("openapi", "3.1.0")
+        val schemasNode = root.putObject(OPENAPI_COMPONENT_NAME).putObject(OPENAPI_SCHEMA_NAME)
+        schemasByName.forEach { (name, node) -> schemasNode.set<JsonNode>(name, node) }
+
+        val schemaText = mapper.writeValueAsString(root)
+
+        val parsed = OpenAPIParser().readContents(schemaText, null, null)
+        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
+        val schemaHolder = RestSchema(currentSchema)
+
+        val schema = parsed.openAPI.components.schemas[rootName]
+            ?: throw IllegalStateException("Cannot find schema '$rootName' after parsing")
+
+        return getGene(
+            rootName,
+            schema,
+            schemaHolder,
+            currentSchema,
+            ArrayDeque(),
+            rootName,
+            options,
+            messages = mutableListOf()
+        ).copy()
     }
 
 
