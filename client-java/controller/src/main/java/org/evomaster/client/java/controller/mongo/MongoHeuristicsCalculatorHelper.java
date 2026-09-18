@@ -207,8 +207,14 @@ public class MongoHeuristicsCalculatorHelper {
                 return getEqualityTruthness(expectedValueAsByteArray, actualValueAsByteArray);
             case NOT_EQUALS_TO:
                 return getEqualityTruthness(expectedValueAsByteArray, actualValueAsByteArray).invert();
+            case GREATER_THAN:
+            case GREATER_THAN_EQUALS:
+            case MINOR_THAN:
+            case MINOR_THAN_EQUALS:
+                // TODO: Must implement comparison operator type for byte[] values. Currently only EQUALS_TO and NOT_EQUALS_TO are supported.
+                throw new IllegalArgumentException("Must implement comparison operator type: " + comparisonOperatorType);
             default:
-                throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
+                throw new IllegalArgumentException("Unknown operator type: " + comparisonOperatorType);
         }
     }
 
