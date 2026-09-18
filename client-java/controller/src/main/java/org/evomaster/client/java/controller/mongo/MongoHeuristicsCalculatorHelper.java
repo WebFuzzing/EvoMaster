@@ -258,14 +258,14 @@ public class MongoHeuristicsCalculatorHelper {
                                     Object actualValue) {
         if (expectedValue == null || actualValue == null) {
             switch (comparisonOperatorType) {
+                case MINOR_THAN_EQUALS:
+                case GREATER_THAN_EQUALS:
                 case EQUALS_TO:
                     return (expectedValue == null && actualValue == null) ? TRUE_C : C_FALSE;
                 case NOT_EQUALS_TO:
                     return (expectedValue == null && actualValue == null) ? C_FALSE : TRUE_C;
                 case GREATER_THAN:
-                case GREATER_THAN_EQUALS:
                 case MINOR_THAN:
-                case MINOR_THAN_EQUALS:
                     return C_FALSE;
                 default:
                     throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);

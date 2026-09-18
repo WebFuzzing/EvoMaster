@@ -2407,7 +2407,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("an ordering operator given null is not parsed, so the calculator throws")
     public void testOrderingComparisonsGivenANullArgument() {
         /*
             mongo: runs all four and matches nothing, null orders against nothing. It is a
@@ -2419,13 +2418,45 @@ public class MongoHeuristicsCalculatorTest {
         Document doc = new Document().append("a", 1);
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
-        for (String operator : Arrays.asList("$gt", "$gte", "$lt", "$lte")) {
-            Document query = new Document().append("a", new Document().append(operator, null));
-            Truthness truthness = assertDoesNotThrow(
-                    () -> calculator.computeHeuristicDocument(query, doc), operator);
-            assertTrue(truthness.isFalse(), operator);
-        }
+        Document queryGreaterThan = new Document().append("a", new Document().append("$gt", null));
+        Truthness truthnessGreaterThan = calculator.computeHeuristicDocument(queryGreaterThan, doc);
+        assertTrue(truthnessGreaterThan.isFalse());
+
+        Document queryGreaterOrEqual = new Document().append("a", new Document().append("$gte", null));
+        Truthness truthnessGreaterOrEqual = calculator.computeHeuristicDocument(queryGreaterOrEqual, doc);
+        assertTrue(truthnessGreaterOrEqual.isFalse());
+
+        Document queryLessThan = new Document().append("a", new Document().append("$lt", null));
+        Truthness truthnessLessThan = calculator.computeHeuristicDocument(queryLessThan, doc);
+        assertTrue(truthnessLessThan.isFalse());
+
+        Document queryLessOrEqual = new Document().append("a", new Document().append("$lte", null));
+        Truthness truthnessLessOrEqual = calculator.computeHeuristicDocument(queryLessOrEqual,doc);
+        assertTrue(truthnessLessOrEqual.isFalse());
     }
+
+    @Test
+    public void testOrderingComparisonsGivenBothNullValues() {
+        Document doc = new Document().append("a", null);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document queryGreaterThan = new Document().append("a", new Document().append("$gt", null));
+        Truthness truthnessGreaterThan = calculator.computeHeuristicDocument(queryGreaterThan, doc);
+        assertTrue(truthnessGreaterThan.isFalse());
+
+        Document queryGreaterOrEqual = new Document().append("a", new Document().append("$gte", null));
+        Truthness truthnessGreaterOrEqual = calculator.computeHeuristicDocument(queryGreaterOrEqual, doc);
+        assertTrue(truthnessGreaterOrEqual.isTrue());
+
+        Document queryLessThan = new Document().append("a", new Document().append("$lt", null));
+        Truthness truthnessLessThan = calculator.computeHeuristicDocument(queryLessThan, doc);
+        assertTrue(truthnessLessThan.isFalse());
+
+        Document queryLessOrEqual = new Document().append("a", new Document().append("$lte", null));
+        Truthness truthnessLessOrEqual = calculator.computeHeuristicDocument(queryLessOrEqual,doc);
+        assertTrue(truthnessLessOrEqual.isTrue());
+    }
+
 
     @Test
     @Disabled("$exists given anything but a boolean is not parsed, so the calculator throws")

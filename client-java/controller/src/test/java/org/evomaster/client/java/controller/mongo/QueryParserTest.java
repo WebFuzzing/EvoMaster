@@ -1260,27 +1260,6 @@ class QueryParserTest {
         assertNull(operation);
     }
 
-    @Test
-    void testParseInvalidComparisonOperatorWithMissingValue() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-
-        QueryOperation operation = parser.parse(query);
-
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseInvalidLessThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
 
     @Test
     void testParseInvalidLessEqualsThanNull() {
@@ -1291,27 +1270,6 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertNull(operation);
     }
-
-    @Test
-    void testParseGreaterThenEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseGreaterThenThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
 
     @Test
     void testParseInvalidMultipleOperatorsIncludingUnknownOperator() {
@@ -1965,6 +1923,60 @@ class QueryParserTest {
         assertTrue(expectedBitmask.isPresent());
         assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
     }
+
+    @Test
+    void testParseGreaterThanOrEqualsNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanEqualsOperation);
+        GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) operation;
+        assertEquals("age", gte.getFieldName());
+        assertEquals(null, gte.getValue());
+    }
+
+    @Test
+    void testParseGreaterThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("age", gt.getFieldName());
+        assertEquals(null, gt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanOperation);
+        LessThanOperation<?> lt = (LessThanOperation<?>) operation;
+        assertEquals("age", lt.getFieldName());
+        assertEquals(null, lt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanOrEqualNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanEqualsOperation);
+        LessThanEqualsOperation<?> lte = (LessThanEqualsOperation<?>) operation;
+        assertEquals("age", lte.getFieldName());
+        assertEquals(null, lte.getValue());
+    }
+
+
 
     private ElemMatchOperation parseElemMatchCondition(
             Document condition,
