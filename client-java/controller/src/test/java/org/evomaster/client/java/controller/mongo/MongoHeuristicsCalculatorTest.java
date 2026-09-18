@@ -2352,7 +2352,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("two binary values are never equal to one another, so the query never matches")
     public void testComparisonBetweenTwoBinaryValues() {
         /*
             mongo: the first three match and the last two do not.

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -185,6 +186,11 @@ public class MongoHeuristicsCalculatorHelper {
             }
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(expectedValueAsString, actualValueAsString, comparisonOperatorType);
 
+        } else if (BsonHelper.isBsonBinary(expectedValue) && BsonHelper.isBsonBinary(actualValue)) {
+            byte[] expectedValueAsByteArray = BsonHelper.getBinaryData(expectedValue);
+            byte[] actualValueAsByteArray = BsonHelper.getBinaryData(actualValue);
+
+            truthnessOfComparison = compareBinaryData(expectedValueAsByteArray, comparisonOperatorType, actualValueAsByteArray);
         } else {
             // If both types are supported, but no actual comparison logic is defined,
             // we considered them to be incompatible, therefore the comparison returns true
@@ -192,6 +198,18 @@ public class MongoHeuristicsCalculatorHelper {
             truthnessOfComparison = comparisonOperatorType == NOT_EQUALS_TO ? TRUE_C : C_FALSE;
         }
         return truthnessOfComparison;
+    }
+
+    private Truthness compareBinaryData(byte[] expectedValueAsByteArray, ComparisonOperatorType comparisonOperatorType, byte[] actualValueAsByteArray) {
+        TruthnessUtils.getEqualityTruthness(expectedValueAsByteArray, actualValueAsByteArray);
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
+                return getEqualityTruthness(expectedValueAsByteArray, actualValueAsByteArray);
+            case NOT_EQUALS_TO:
+                return getEqualityTruthness(expectedValueAsByteArray, actualValueAsByteArray).invert();
+            default:
+                throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
+        }
     }
 
     static Truthness compareNumberValues(Number expectedValueAsNumber, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Number actualValueAsNumber) {
