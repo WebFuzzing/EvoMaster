@@ -129,6 +129,14 @@ class TaintedArrayGene(
            return false
         }
 
+        /*
+            Resolving a taint adds the array as a child, so a resolved and an unresolved gene do not
+            have the same structure, and copying a value cannot turn one into the other
+         */
+        if(this.isResolved() != other.isResolved()){
+            return false
+        }
+
         return this.arrayGene?.unsafeCopyValueFrom(other.arrayGene!!)
             ?: true
     }
