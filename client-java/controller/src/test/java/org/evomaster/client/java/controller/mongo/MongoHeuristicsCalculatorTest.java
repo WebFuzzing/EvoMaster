@@ -2333,7 +2333,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$eq does not match an array holding the given array as one of its elements")
     public void testEqualsMatchingAnArrayThatIsAnElement() {
         /*
             mongo: matches, the field holds [1,2] as one of its elements. The other half
