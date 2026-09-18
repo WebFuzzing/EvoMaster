@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Rege
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -57,7 +58,7 @@ public class MongoHeuristicsCalculatorHelper {
      * Optionally, a {@link TaintHandler} can be used to handle tainting information
      * related to the regular expression processing.
      *
-     * @param actualValue   the input string to be matched against the regular expression
+     * @param actualValue  the input string to be matched against the regular expression
      * @param pattern      the compiled {@link Pattern} representing the regular expression to match
      * @param taintHandler an optional implementation of {@link TaintHandler} to handle taint-related processing;
      *                     may be null if taint handling is not required
@@ -136,50 +137,53 @@ public class MongoHeuristicsCalculatorHelper {
     }
 
     Truthness compareNonNullValues(Object expectedValue,
-                                   SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType,
+                                   ComparisonOperatorType comparisonOperatorType,
                                    Object actualValue) {
         Objects.requireNonNull(expectedValue);
         Objects.requireNonNull(actualValue);
 
         final Truthness truthnessOfComparison;
         if (expectedValue instanceof Number && actualValue instanceof Number) {
-            final Number actualNumber = (Number) expectedValue;
-            final Number expectedNumber = (Number) actualValue;
-            truthnessOfComparison = compareNumberValues(actualNumber, comparisonOperatorType, expectedNumber);
+            final Number expectedValueAsNumber = (Number) expectedValue;
+            final Number actualNumberAsValue = (Number) actualValue;
+            truthnessOfComparison = compareNumberValues(expectedValueAsNumber, comparisonOperatorType, actualNumberAsValue);
 
         } else if (expectedValue instanceof String && actualValue instanceof String) {
-            String actualString = (String) expectedValue;
-            String expectedString = (String) actualValue;
+            String expectedValueAsString = (String) expectedValue;
+            String actualValueAsString = (String) actualValue;
             if (taintHandler != null && comparisonOperatorType == EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
+                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
             }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(expectedValueAsString, actualValueAsString, comparisonOperatorType);
 
         } else if (expectedValue instanceof Boolean && actualValue instanceof Boolean) {
-            int actualIntValue = toIntValue((Boolean) expectedValue);
-            int expectedIntValue = toIntValue((Boolean) actualValue);
+            int expectedValueAsInt = toIntValue((Boolean) expectedValue);
+            int actualValueAsInt = toIntValue((Boolean) actualValue);
             truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(
-                    actualIntValue, expectedIntValue, comparisonOperatorType);
+                    expectedValueAsInt, actualValueAsInt, comparisonOperatorType);
 
         } else if (expectedValue instanceof List<?> && actualValue instanceof List<?>) {
-            truthnessOfComparison = compareNonNullLists((List<?>) expectedValue, comparisonOperatorType, (List<?>) actualValue);
+            final List<?> expectedValueAsList = (List<?>) expectedValue;
+            final List<?> actualValueAsList = (List<?>) actualValue;
+            truthnessOfComparison = compareNonNullLists(expectedValueAsList, comparisonOperatorType, actualValueAsList);
 
         } else if (expectedValue instanceof Date && actualValue instanceof Date) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(expectedValue), convertToInstant(actualValue), comparisonOperatorType);
-
+            final Instant expectedValueAsInstant = convertToInstant(expectedValue);
+            final Instant actualValueAsInstant = convertToInstant(actualValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(expectedValueAsInstant, actualValueAsInstant, comparisonOperatorType);
 
         } else if (BsonHelper.isBsonTimestamp(expectedValue) && BsonHelper.isBsonTimestamp(actualValue)) {
-            long actualTimestamp = BsonHelper.getBsonTimestampValue(expectedValue);
-            long expectedTimestamp = BsonHelper.getBsonTimestampValue(actualValue);
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(actualTimestamp, expectedTimestamp, comparisonOperatorType);
+            long expectedValueAsTimestampValue = BsonHelper.getBsonTimestampValue(expectedValue);
+            long actualValueAsTimestampValue = BsonHelper.getBsonTimestampValue(actualValue);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(expectedValueAsTimestampValue, actualValueAsTimestampValue, comparisonOperatorType);
 
         } else if (BsonHelper.isObjectId(expectedValue) || BsonHelper.isObjectId(actualValue)) {
-            String actualString = expectedValue.toString();
-            String expectedString = actualValue.toString();
+            String expectedValueAsString = expectedValue.toString();
+            String actualValueAsString = actualValue.toString();
             if (taintHandler != null && comparisonOperatorType == EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
+                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
             }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(expectedValueAsString, actualValueAsString, comparisonOperatorType);
 
         } else {
             // If both types are supported, but no actual comparison logic is defined,
@@ -457,7 +461,7 @@ public class MongoHeuristicsCalculatorHelper {
      * For nested structures that are lists, it aggregates the results of applying the heuristic
      * function to each element in the list. For single values, it directly applies the heuristic.
      *
-     * @param actualValue            the actualValue to evaluate, which can either be a single actualValue or a list of values
+     * @param actualValue      the actualValue to evaluate, which can either be a single actualValue or a list of values
      * @param elementHeuristic a function to compute the heuristic for each element or the single actualValue
      * @return a Truthness object representing the heuristic of the evaluated input
      */
