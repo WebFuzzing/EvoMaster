@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.asyncapi.kafka;
 import com.foo.asyncapi.ncs.NcsKafkaController;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.AsyncApiTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,7 +83,54 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
 
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+
+                    //the oracles are off here, so a well-behaved service must report nothing
+                    assertTrue(faultsOf(solution).isEmpty(), "faults were reported: " + faultsOf(solution));
                 },
                 5);
+    }
+
+    /**
+     * The no-reply oracle, end to end. Given a deadline no round trip through a broker can meet,
+     * every message goes unanswered, and that is reported as a fault once experimental oracles
+     * are asked for.
+     */
+    @Test
+    public void testAPromisedReplyThatNeverArrivesIsAFault() throws Throwable {
+
+        runTestHandlingFlaky(
+                "NcsKafkaNoReplyEM",
+                "org.foo.asyncapi.NcsKafkaNoReplyEM",
+                30,
+                false,
+                (args) -> {
+
+                    /*
+                        Shorter than any round trip through a broker. The service answers as it
+                        always does, just never in time, which is how an unanswered message tends
+                        to look in practice. Nothing has to be broken on purpose for it.
+                     */
+                    args.add("--asyncApiReplyTimeoutMs");
+                    args.add("1");
+
+                    //as in testRunEM: the kill switch would stop the consumer thread for good
+                    args.add("--killSwitch");
+                    args.add("false");
+
+                    /*
+                        Both AsyncAPI categories are experimental, so without this the outcome is
+                        still reached and still a target, but nothing is reported as a fault.
+                     */
+                    args.add("--useExperimentalOracles");
+                    args.add("true");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.NO_REPLY) > 0,
+                            "every message was answered in time, so the oracle had nothing to find");
+                    assertTrue(faultsOf(solution).contains(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY),
+                            "the unanswered messages were not reported as a fault: " + faultsOf(solution));
+                },
+                3);
     }
 }
