@@ -18,12 +18,17 @@ public class BsonHelper {
     private static final String GET_PATTERN_METHOD = "getPattern";
     private static final String GET_OPTIONS_METHOD = "getOptions";
 
+    public static final String ORG_BSON_BSON_BINARY = "org.bson.BsonBinary";
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
-    private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
     private static final String BSON_REGEX_CLASS = "org.bson.BsonRegularExpression";
+    private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
+    public static final String ORG_BSON_TYPES_BINARY = "org.bson.types.Binary";
 
     public static final String NULL_TYPE = "null";
     public static final String BSON_TYPE_NULL = "NULL";
+    public static final String GET_DATA = "getData";
+    public static final String TO_BYTE_ARRAY = "toByteArray";
+
 
     public static Object newDocument(Object bsonDocument) {
         Objects.requireNonNull(bsonDocument);
@@ -248,6 +253,44 @@ public class BsonHelper {
         }
         try {
             return (String) value.getClass().getMethod(GET_OPTIONS_METHOD).invoke(value);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Checks if the given object is a BSON binary type.
+     *
+     * @param value the object to check; should be non-null to determine if it is a BSON binary type
+     * @return true if the object is non-null and of BSON binary type, false otherwise
+     */
+    public static boolean isBsonBinary(Object value) {
+        if (value == null) {
+            return false;
+        }
+        String className = value.getClass().getName();
+        return className.equals(ORG_BSON_BSON_BINARY) || className.equals(ORG_BSON_TYPES_BINARY);
+    }
+
+    public static byte[] getBinaryData(Object value) {
+        Objects.requireNonNull(value, "The provided value cannot be null");
+        if (!isBsonBinary(value)) {
+            throw new IllegalArgumentException("The provided value is not a BSON binary type but class: " + value.getClass().getName());
+        }
+        try {
+            return (byte[]) value.getClass().getMethod(GET_DATA).invoke(value);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] toByteArray(Object actualValue) {
+        Objects.requireNonNull(actualValue, "The provided value cannot be null");
+        if (!isObjectId(actualValue)) {
+            throw new IllegalArgumentException("The provided value is not a BSON ObjectId but class: " + actualValue.getClass().getName());
+        }
+        try {
+            return (byte[]) actualValue.getClass().getMethod(TO_BYTE_ARRAY).invoke(actualValue);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
