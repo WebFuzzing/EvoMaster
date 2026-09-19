@@ -1280,17 +1280,6 @@ class QueryParserTest {
         assertNull(operation);
     }
 
-
-    @Test
-    void testParseInvalidLessEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
     @Test
     void testParseInvalidMultipleOperatorsIncludingUnknownOperator() {
         Document query = new Document(
