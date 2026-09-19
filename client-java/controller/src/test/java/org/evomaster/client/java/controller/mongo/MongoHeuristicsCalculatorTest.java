@@ -2376,7 +2376,6 @@ public class MongoHeuristicsCalculatorTest {
 
 
     @Test
-    @Disabled("$ne and $nin report a match between two sub-documents that are equal")
     public void testInequalityBetweenTwoSubDocuments() {
         /*
             mongo: no match for either, the sub-document held by the field is the one the
