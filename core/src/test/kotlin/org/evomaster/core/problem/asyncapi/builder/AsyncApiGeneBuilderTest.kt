@@ -9,6 +9,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -488,12 +489,12 @@ class AsyncApiGeneBuilderTest {
     }
 
     @Test
-    fun testAnExampleForANonObjectPayloadIsLeftAlone() {
+    fun testAnExampleForANonObjectPayloadIsOfferedToo() {
 
         /*
-            The gene builder complains about 'example' on anything but an object, and that
-            complaint would reach the user about a document that is in order. So a scalar
-            payload keeps its schema-derived gene, example or not.
+            Passed beside the schema rather than written into it, an example draws no complaint
+            from the gene builder about 'example' on a scalar, so a scalar payload gets the same
+            choice an object does.
          */
         val schema = document("""
             asyncapi: 3.0.0
@@ -511,7 +512,8 @@ class AsyncApiGeneBuilderTest {
 
         val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("beat"), alwaysExamples)!!
 
-        assertTrue(gene is IntegerGene, gene::class.simpleName)
+        assertTrue(gene is ChoiceGene<*>, gene::class.simpleName)
+        assertEquals("42", printed(gene))
     }
 
     @Test
@@ -554,9 +556,9 @@ class AsyncApiGeneBuilderTest {
     }
 
     @Test
-    fun testOnlyTheFirstExampleIsUsedForNow() {
+    fun testEveryExampleIsOffered() {
 
-        //pins the limitation described on firstExample(): the parser the genes go through keeps one
+        //both are there to choose from, not only the first
         val schema = document("""
             asyncapi: 3.0.0
             info:
@@ -580,8 +582,73 @@ class AsyncApiGeneBuilderTest {
 
         val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("greeting"), alwaysExamples)!!
 
-        val json = printed(gene)
-        assertTrue(json.contains("\"first\""), json)
-        assertFalse(json.contains("\"second\""), json)
+        //each example pins the field to its own value, so every value the field can take is one of them
+        val offered = gene.flatView()
+            .filterIsInstance<EnumGene<*>>()
+            .filter { it.name == "text" }
+            .flatMap { it.values }
+            .toSet()
+
+        assertEquals(setOf("first", "second"), offered)
+    }
+
+    @Test
+    fun testAnExampleKeepsItsName() {
+
+        //the name is what the sampler keys on to keep a whole example together across fields
+        val schema = AsyncApiAccess.getAsyncApiFromResource("/asyncapi/sut/scalar.yaml")
+        val message = schema.messages.getValue("PlanetCreated")
+
+        val gene = AsyncApiGeneBuilder.buildPayloadGene(schema, message, alwaysExamples)!!
+
+        val named = gene.flatView()
+            .filterIsInstance<UserExamplesGene>()
+            .filter { it.isUsedForExamples() }
+            .flatMap { it.getAvailableExampleNames() }
+
+        assertEquals(listOf("Mars Discovery"), named)
+    }
+
+    @Test
+    fun testTwoMessagesSharingASchemaKeepTheirOwnExamples() {
+
+        /*
+            The gene builder caches what it builds by schema text. Two messages may well share a
+            schema, a request and its reply say, and each must still get the example it declares
+            rather than whichever was built first.
+         */
+        val schema = document("""
+            asyncapi: 3.0.0
+            info:
+              title: Shared
+              version: 1.0.0
+            components:
+              schemas:
+                Note:
+                  type: object
+                  required: [text]
+                  properties:
+                    text:
+                      type: string
+              messages:
+                first:
+                  payload:
+                    ${'$'}ref: '#/components/schemas/Note'
+                  examples:
+                    - payload:
+                        text: from-first
+                second:
+                  payload:
+                    ${'$'}ref: '#/components/schemas/Note'
+                  examples:
+                    - payload:
+                        text: from-second
+        """)
+
+        val first = printed(AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("first"), alwaysExamples)!!)
+        val second = printed(AsyncApiGeneBuilder.buildPayloadGene(schema, schema.messages.getValue("second"), alwaysExamples)!!)
+
+        assertTrue(first.contains("from-first"), first)
+        assertTrue(second.contains("from-second"), second)
     }
 }

@@ -259,4 +259,18 @@ class AsyncApiSamplerTest {
 
         assertTrue(payload.contains(anExampleValue), "expected '$anExampleValue' in $payload")
     }
+
+    @Test
+    fun testANamedExampleReachesTheAction() {
+
+        //what the sampler's named-example pass keys on, so a whole example can be kept together
+        val scalar = AsyncApiAccess.readFromResource("/asyncapi/sut/scalar.yaml")
+        val sampler = sampler(sutInfo { schemaText = scalar }, "--blackBox=false", "--probAsyncApiExamples=1.0")
+
+        val named = sampler.seeAvailableActions()
+            .map { it as AsyncApiAction }
+            .flatMap { it.getNamedExamples().keys }
+
+        assertTrue(named.contains("Mars Discovery"), named.toString())
+    }
 }
