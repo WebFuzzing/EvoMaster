@@ -51,17 +51,18 @@ object AsyncApiGeneBuilder {
     private const val MINIMUM = "minimum"
     private const val MAXIMUM = "maximum"
 
-    private const val TYPE_OBJECT = "object"
     private const val TYPE_STRING = "string"
     private const val TYPE_INTEGER = "integer"
     private const val TYPE_NUMBER = "number"
     private const val TYPE_BOOLEAN = "boolean"
 
     /*
-        The two parts of a Message Example Object this builder reads.
+        What this builder reads off a Message Example Object: the two parts a gene is built for,
+        and the name that lets the search keep a whole example together.
      */
     private const val EXAMPLE_PAYLOAD = "payload"
     private const val EXAMPLE_HEADERS = "headers"
+    private const val EXAMPLE_NAME = "name"
 
     /**
      * The keywords whose value is literal data rather than a schema, so nothing inside them is
@@ -78,9 +79,8 @@ object AsyncApiGeneBuilder {
     /**
      * The genes for a message's payload, or null when it declares none.
      *
-     * When the message declares examples and [options] ask for them, the first example's payload
-     * is offered as a whole value beside the schema-derived genes, with the probability the
-     * options give.
+     * When the message declares examples and [options] ask for them, their payloads are offered
+     * as whole values beside the schema-derived genes, with the probability the options give.
      */
     fun buildPayloadGene(
         schema: AsyncApiDocument,
@@ -91,7 +91,7 @@ object AsyncApiGeneBuilder {
         "${message.id}.payload",
         schema,
         options,
-        firstExample(message, EXAMPLE_PAYLOAD)
+        examplesOf(message, EXAMPLE_PAYLOAD)
     )
 
     /**
@@ -120,20 +120,26 @@ object AsyncApiGeneBuilder {
         "${message.id}.headers",
         schema,
         options,
-        firstExample(message, EXAMPLE_HEADERS)?.let { withoutCorrelationField(it, message) }
+        examplesOf(message, EXAMPLE_HEADERS).map { (headers, name) ->
+            Pair(withoutCorrelationField(headers, message), name)
+        }
     )
 
     /**
-     * The [part] of the message's first example that has one, or null.
+     * The [part] of every example the message declares that has one, each with the example's
+     * name where it gives one.
      *
-     * Only the first is used. The gene builder reads a schema's `example`, and the `examples`
-     * that could carry several are dropped by the OpenAPI parser it goes through, which reads
-     * them as a 3.0 document. TODO pass them all once RestActionBuilderV3 can take them.
+     * They go to the gene builder beside the schema, the way REST passes a parameter's
+     * examples, rather than written into it: that path never crosses the OpenAPI parser, which
+     * would keep only one, and draws no complaint on a scalar. The name is what lets the search
+     * pick a whole example consistently across fields, when asked to with probNamedExamples.
      */
-    private fun firstExample(message: AsyncApiMessage, part: String): JsonNode? =
-        message.examples.asSequence()
-            .mapNotNull { it.get(part) }
-            .firstOrNull { !it.isNull }
+    private fun examplesOf(message: AsyncApiMessage, part: String): List<Pair<JsonNode, String?>> =
+        message.examples.mapNotNull { example ->
+            example.get(part)
+                ?.takeUnless { it.isNull }
+                ?.let { Pair(it, example.get(EXAMPLE_NAME)?.takeIf { n -> n.isTextual }?.asText()) }
+        }
 
     /**
      * The example headers without the one the correlation id is stamped into, which the headers
@@ -226,7 +232,7 @@ object AsyncApiGeneBuilder {
         inlineName: String,
         schema: AsyncApiDocument,
         options: RestActionBuilderV3.Options,
-        example: JsonNode?
+        examples: List<Pair<Any, String?>>
     ): Gene? {
 
         if (declared == null) {
@@ -257,12 +263,8 @@ object AsyncApiGeneBuilder {
             schemas.set<JsonNode>(name, usable(pointedAt(ref, declared, schema)))
         }
 
-        if (example != null) {
-            offerExample(schemas.get(name), example)
-        }
-
         //the format createGeneForDTO expects: the name of the wanted schema, then all of them
-        return RestActionBuilderV3.createGeneForDTO(name, "\"$name\":$schemas", options)
+        return RestActionBuilderV3.createGeneForDTO(name, "\"$name\":$schemas", options, examples)
     }
 
     /**
@@ -313,26 +315,6 @@ object AsyncApiGeneBuilder {
 
         return current
     }
-
-    /**
-     * Make [example] the `example` of [target], for the gene builder to offer as a whole value.
-     *
-     * Only an object schema takes one: the builder attaches a deprecation warning to `example`
-     * on anything else, which would reach the user as a complaint about a document that is in
-     * order. A message's own example outranks one the schema may already carry, being the more
-     * specific of the two.
-     */
-    private fun offerExample(target: JsonNode?, example: JsonNode) {
-
-        if (target !is ObjectNode || !example.isObject || !describesObject(target)) {
-            return
-        }
-
-        target.set<JsonNode>(EXAMPLE, example.deepCopy())
-    }
-
-    private fun describesObject(schema: ObjectNode) =
-        schema.get(TYPE)?.asText() == TYPE_OBJECT || schema.has(PROPERTIES)
 
     /**
      * JSON Pointer escaping: "~1" is a "/" and "~0" is a "~", undone in that order.
