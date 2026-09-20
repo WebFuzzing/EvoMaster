@@ -57,6 +57,32 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         else -> txt.substring(1) // identity escape
     }
 
+    /**
+     * Resolves a single character-class range endpoint (the classAtom/classAtomNoDash on either side
+     * of a MINUS) to the Char it represents.
+     *
+     * @throws IllegalArgumentException when [escapeCtx] does not resolve to a valid range endpoint.
+     */
+    private fun resolveClassRangeEndpoint(escapeCtx: RegexEcma262Parser.ClassEscapeContext?, text: String): Char {
+        if (escapeCtx == null) return text[0]
+
+        require(escapeCtx.CharacterClassEscape() == null){
+            "Illegal range near '$text': character class escapes (\\w, etc.) cannot be used as a range boundary"
+        }
+
+        val ranges = escapeCtx.accept(this).data as List<CharacterRange>
+        require(ranges.size == 1 && ranges[0].start == ranges[0].end){
+            "Illegal range near '$text': escape does not resolve to a single character"
+        }
+        return ranges[0].start
+    }
+
+    private fun resolveClassRangeEndpoint(ctx: RegexEcma262Parser.ClassAtomContext): Char =
+        resolveClassRangeEndpoint(ctx.classAtomNoDash()?.classEscape(), ctx.text)
+
+    private fun resolveClassRangeEndpoint(ctx: RegexEcma262Parser.ClassAtomNoDashContext): Char =
+        resolveClassRangeEndpoint(ctx.classEscape(), ctx.text)
+
     override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
@@ -284,35 +310,19 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val list = mutableListOf<CharacterRange>()
 
-        if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
-            if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
+        if (ctx.MINUS() != null) {
+            // range, get endpoints and build CharacterRange
+            val start = resolveClassRangeEndpoint(ctx.classAtom()[0])
+            val end = resolveClassRangeEndpoint(ctx.classAtom()[1])
+            list.add(CharacterRange(start, end))
+        } else if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
+            // class escape (like \d, \w, \cX, etc.), keep all ranges
             val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
         } else {
-            val startText = ctx.classAtom()[0].text
-            assert(startText.length == 1 || startText.length == 2) // single chars or \+ and \. escaped chars
-
-            val start: Char
-            val end: Char
-
-            if (startText.length == 1) {
-                start = startText[0]
-                end = if (ctx.classAtom().size == 2) {
-                    ctx.classAtom()[1].text[0]
-                } else {
-                    //single char, not an actual range
-                    start
-                }
-            } else {
-                // This case handles the \. and \+ cases
-                // wheren . and + should be treated as
-                // regular chars
-                assert(startText == "\\+" || startText == "\\.")
-                start = startText[1]
-                end = start
-            }
-
-            list.add(CharacterRange(start, end))
+            // character, build a 1 char range
+            val c = resolveClassRangeEndpoint(ctx.classAtom()[0])
+            list.add(CharacterRange(c, c))
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
@@ -338,8 +348,8 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         if(ctx.MINUS() != null){
 
-            val start = ctx.classAtomNoDash().text[0]
-            val end = ctx.classAtom().text[0]
+            val start = resolveClassRangeEndpoint(ctx.classAtomNoDash())
+            val end = resolveClassRangeEndpoint(ctx.classAtom())
             list.add(CharacterRange(start, end))
 
         } else {
