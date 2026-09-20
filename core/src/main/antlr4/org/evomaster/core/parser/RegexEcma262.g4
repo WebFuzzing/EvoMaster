@@ -100,6 +100,7 @@ CharacterEscape
  | SLASH HexEscapeSequence
  | SLASH UnicodeEscapeSequence
  | SLASH OctalEscapeSequence // legacy octal escapes are deprecated, but this also works for null escape (\u0000)
+ | SLASH ControlLetterEscape
  | SLASH IdentityEscape
  ;
 
@@ -109,13 +110,13 @@ CharacterEscape
 // which reference the capture groups by order of appearance. There are also named capture groups which work similarly.
 // Currently in both Java/JS the capture groups are just regular parenthesis and do not save the matched result yet.
 
-ControlLetterExtendedEscape
+fragment ControlLetterEscape
  // This handles both control letter escapes (\ca, \cZ, etc.) and literal interpretations of \c.
  // As in JS: "\c" + [^a-zA-Z]? is taken literally as "\c" + [^a-zA-Z]? outside charclasses
  // while "\c" + [^a-zA-Z0-9_]? is taken literally as "\c" + [^a-zA-Z0-9_]? within charclasses.
  // Therefore, as all characters following "\c" (or none) are permitted we accept "\c" + .? here
  // and handle each case in visitor.
- : SLASH 'c' .?   // matches \c, \c<anything>
+ : 'c' .?   // matches \c, \c<anything>
  ;
 
 fragment ControlEscape
@@ -192,8 +193,8 @@ classAtomNoDash
 
 
 classEscape
- : controlLetterExtendedEscape // this needs to be first so that we can accept things like \c and \c0 within charclasses
- | atomEscape
+ : CharacterClassEscape
+ | CharacterEscape
  | LowerCaseBEscape
  ;
 
@@ -202,17 +203,10 @@ atomEscape
  //TODO
 // | '\\' DecimalEscape
  | CharacterEscape
- | controlLetterExtendedEscape
  ;
 
 decimalDigits
  : DecimalDigit+
- ;
-
-controlLetterExtendedEscape
- // we need this as a parser rule because differentiating between being inside a charclass or outside is important
- // as behavior changes in each case
- : ControlLetterExtendedEscape
  ;
 
 //------ LEXER ------------------------------

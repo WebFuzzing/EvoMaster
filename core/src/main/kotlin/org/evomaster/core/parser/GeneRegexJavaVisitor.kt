@@ -117,16 +117,12 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         return false
     }
 
+    /**
+     * Shared code for `AtomEscape` and `ClassEscape`, resolving `CharacterEscape`s into the required string.
+     */
     private fun resolveCharacterEscapeString(txt: String): String = when (txt[1]) {
-        '0' -> String(Character.toChars(txt.substring(2).toInt(8)))
-        'c' -> {
-            val controlLetterValue = if (txt[2].isLowerCase()) {
-                txt[2].uppercaseChar().code.xor(0x60)
-            } else {
-                txt[2].code.xor(0x40)
-            }
-            controlLetterValue.toChar().toString()
-        }
+        '0' -> Character.toString(txt.substring(2).toInt(8))
+        'c' -> Character.toString(txt.codePointAt(2).xor(0x40))
         in escapeMap -> escapeMap[txt[1]]!!
         in hexEscapePrefixes -> {
             val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt.last() == '}') {
@@ -136,7 +132,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             }
             if (hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT)
                 throw IllegalArgumentException("Hexadecimal escape out of range: $txt")
-            String(Character.toChars(hexValue))
+            Character.toString(hexValue)
         }
         else -> txt.substring(1) // identity escape
     }
