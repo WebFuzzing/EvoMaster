@@ -13,11 +13,12 @@ import java.util.Map;
 public class AsyncApiActionDto {
 
     /**
-     * The two places a correlation id can travel, as {@link #correlationLocation} names them.
+     * The two places a correlation id can travel, as the document declares them.
      */
-    public static final String CORRELATION_IN_HEADER = "HEADER";
-
-    public static final String CORRELATION_IN_PAYLOAD = "PAYLOAD";
+    public enum CorrelationLocation {
+        HEADER,
+        PAYLOAD
+    }
 
     /**
      * Key of the operation in the AsyncAPI document. Sent along so the driver can report and
@@ -67,12 +68,11 @@ public class AsyncApiActionDto {
     public String correlationId;
 
     /**
-     * Where the correlation id has to be written, as the document declares it. One of
-     * {@link #CORRELATION_IN_HEADER} or {@link #CORRELATION_IN_PAYLOAD}, or null when the
+     * Where the correlation id has to be written, as the document declares it. Null when the
      * document says nothing, in which case it is up to the driver to decide -- a transport with
      * native correlation should use it.
      */
-    public String correlationLocation;
+    public CorrelationLocation correlationLocation;
 
     /**
      * JSON Pointer to the field the correlation id goes in, within whatever
