@@ -54,7 +54,13 @@ class LlmServiceTestCaseNamingStrategy(
 
     // LLM is sometimes returning names as "\n\ntheNewName_" so we need to fix that and return "theNewName".
     private fun sanitizeName(testName: String): String {
-        return TestWriterUtils.safeVariableName(testName.trim().replace("\n", ""), "")
+
+        val name = testName.trim().replace("\n", "")
+        if(name.isBlank()){
+            return "invalidLLMGeneratedName"
+        }
+
+        return TestWriterUtils.safeVariableName(name, "")
     }
 
     private fun getNewName(test: TestCase): String {
