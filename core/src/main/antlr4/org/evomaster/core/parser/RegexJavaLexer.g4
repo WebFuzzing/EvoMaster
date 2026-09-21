@@ -75,6 +75,7 @@ CharacterClassEscape
 
 StartOfInputAssertion: SLASH 'A';
 EndOfInputAssertion: SLASH 'z';
+EndOfInputOrFinalLineTerminatorAssertion: SLASH 'Z';
 
 WordBoundaryAssertion: SLASH 'b';
 NonWordBoundaryAssertion: SLASH 'B';
@@ -134,6 +135,11 @@ fragment OctalDigit:
 // \k<name>, first character must be letter, following characters may be letters or digits
 NamedBackReference
  : SLASH 'k<' [a-zA-Z] [a-zA-Z0-9]* '>'
+ ;
+
+// \R, equivalent to \r\n|[\n-\r\u0085\u2028-\u2029]
+LinebreakMatcher
+ : SLASH 'R'
  ;
 
 // Special for Java: \Q...\E literal quoting.

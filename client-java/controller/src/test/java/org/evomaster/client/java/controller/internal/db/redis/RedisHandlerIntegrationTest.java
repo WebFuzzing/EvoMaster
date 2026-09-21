@@ -51,13 +51,13 @@ class RedisHandlerIntegrationTest {
 
         RedisCommand similarKeyCmd = new RedisCommand(
                 RedisCommand.RedisCommandType.EXISTS,
-                new String[]{"key<user:3>"},
+                new String[]{"user:3"},
                 true,
                 10
         );
         RedisCommand differentKeyCmd = new RedisCommand(
                 RedisCommand.RedisCommandType.EXISTS,
-                new String[]{"key<user:82bd3bff-4567-40f4-a42e-27f87276199f>"},
+                new String[]{"user:82bd3bff-4567-40f4-a42e-27f87276199f"},
                 true,
                 10
         );
@@ -94,7 +94,7 @@ class RedisHandlerIntegrationTest {
     void testResetClearsCommands() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.EXISTS,
-                new String[]{"key<user:1>"},
+                new String[]{"user:1"},
                 true,
                 5
         );

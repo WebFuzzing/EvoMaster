@@ -54,6 +54,7 @@ assertion
 //// | '(' '?' '!' disjunction ')'
  | StartOfInputAssertion // \A
  | EndOfInputAssertion // \z
+ | EndOfInputOrFinalLineTerminatorAssertion // \Z
  | WordBoundaryAssertion // \b
  | NonWordBoundaryAssertion // \B
  ;
@@ -180,4 +181,5 @@ atomEscape
  | CharacterEscape
  | BackReference
  | NamedBackReference
+ | LinebreakMatcher // \R
  ;

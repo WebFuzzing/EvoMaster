@@ -26,7 +26,7 @@ class RedisHeuristicsCalculatorTest {
     void testKeysPatternExactMatch() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.KEYS,
-                new String[]{"key<user*>"},
+                new String[]{"user*"},
                 true,
                 5
         );
@@ -46,7 +46,7 @@ class RedisHeuristicsCalculatorTest {
     void testKeysPatternNoMatch() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.KEYS,
-                new String[]{"key<thiskeydoesnotexist*>"},
+                new String[]{"thiskeydoesnotexist*"},
                 true,
                 5
         );
@@ -65,14 +65,14 @@ class RedisHeuristicsCalculatorTest {
     void testExistsCommandSimilarity() {
         RedisCommand closeKey = new RedisCommand(
                 RedisCommand.RedisCommandType.EXISTS,
-                new String[]{"key<user:3>"},
+                new String[]{"user:3"},
                 true,
                 5
         );
 
         RedisCommand farKey = new RedisCommand(
                 RedisCommand.RedisCommandType.EXISTS,
-                new String[]{"key<abcxyz>"},
+                new String[]{"abcxyz"},
                 true,
                 5
         );
@@ -93,7 +93,7 @@ class RedisHeuristicsCalculatorTest {
     void testHGetFieldExists() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<profile>", "key<name>"},
+                new String[]{"profile", "name"},
                 true,
                 3
         );
@@ -114,7 +114,7 @@ class RedisHeuristicsCalculatorTest {
     void testHGetFieldNotExists() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<profile>", "key<age>"},
+                new String[]{"profile", "age"},
                 true,
                 3
         );
@@ -133,19 +133,19 @@ class RedisHeuristicsCalculatorTest {
     void testHGetFieldDistance() {
         RedisCommand lowerDistanceCmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<profile>", "key<weight>"},
+                new String[]{"profile", "weight"},
                 true,
                 3
         );
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<profile>", "key<age>"},
+                new String[]{"profile", "age"},
                 true,
                 3
         );
         RedisCommand greaterDistanceCmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<user>", "key<direction>"},
+                new String[]{"user", "direction"},
                 true,
                 3
         );
@@ -168,7 +168,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterSetsIntersectionAndNoIntersection() {
         RedisCommand cmdIntersect = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>"},
+                new String[]{"setA", "setB"},
                 true,
                 1
         );
@@ -184,7 +184,7 @@ class RedisHeuristicsCalculatorTest {
 
         RedisCommand cmdNoIntersect = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setC>", "key<setD>"},
+                new String[]{"setC", "setD"},
                 true,
                 1
         );
@@ -203,7 +203,7 @@ class RedisHeuristicsCalculatorTest {
 
         RedisCommand cmdNoIntersectFarDistance = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setE>", "key<setF>"},
+                new String[]{"setE", "setF"},
                 true,
                 1
         );
@@ -225,7 +225,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterSeveralSets() {
         RedisCommand cmdIntersect = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>", "key<setC>", "key<setD>"},
+                new String[]{"setA", "setB", "setC", "setD"},
                 true,
                 1
         );
@@ -260,13 +260,13 @@ class RedisHeuristicsCalculatorTest {
     void testSMembersSimilarity() {
         RedisCommand similar = new RedisCommand(
                 RedisCommand.RedisCommandType.SMEMBERS,
-                new String[]{"key<user:set1>"},
+                new String[]{"user:set1"},
                 true,
                 2
         );
         RedisCommand different = new RedisCommand(
                 RedisCommand.RedisCommandType.SMEMBERS,
-                new String[]{"key<orders>"},
+                new String[]{"orders"},
                 true,
                 2
         );
@@ -288,14 +288,14 @@ class RedisHeuristicsCalculatorTest {
     void testGetCommandSimilarity() {
         RedisCommand similar = new RedisCommand(
                 RedisCommand.RedisCommandType.GET,
-                new String[]{"key<session:1234>"},
+                new String[]{"session:1234"},
                 true,
                 1
         );
 
         RedisCommand different = new RedisCommand(
                 RedisCommand.RedisCommandType.GET,
-                new String[]{"key<orders>"},
+                new String[]{"orders"},
                 true,
                 1
         );
@@ -317,7 +317,7 @@ class RedisHeuristicsCalculatorTest {
     void testComputeDistanceHandlesInternalExceptionOk() {
         RedisCommand malformedHGet = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
-                new String[]{"key<profile>"},
+                new String[]{"profile"},
                 true,
                 3
         );
@@ -338,7 +338,7 @@ class RedisHeuristicsCalculatorTest {
     void testUnsupportedCommandTypeReturnsMaxDistance() {
         RedisCommand unsupported = new RedisCommand(
                 RedisCommand.RedisCommandType.SET,
-                new String[]{"key<foo>", "key<bar>"},
+                new String[]{"foo", "bar"},
                 true,
                 1
         );
@@ -358,7 +358,7 @@ class RedisHeuristicsCalculatorTest {
     void testHGetAllCommand() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGETALL,
-                new String[]{"key<profile>"},
+                new String[]{"profile"},
                 true,
                 1
         );
@@ -376,7 +376,7 @@ class RedisHeuristicsCalculatorTest {
     void testKeyMatchAgainstEmptyDatabase() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.GET,
-                new String[]{"key<anykey>"},
+                new String[]{"anykey"},
                 true,
                 1
         );
@@ -394,7 +394,7 @@ class RedisHeuristicsCalculatorTest {
     void testKeysInvalidPatternIsHandledOk() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.KEYS,
-                new String[]{"key<[abc>"},
+                new String[]{"[abc"},
                 true,
                 1
         );
@@ -416,7 +416,7 @@ class RedisHeuristicsCalculatorTest {
     void testKeysAgainstEmptyDatabase() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.KEYS,
-                new String[]{"key<user*>"},
+                new String[]{"user*"},
                 true,
                 1
         );
@@ -453,7 +453,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterAgainstEmptyDatabase() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>"},
+                new String[]{"setA", "setB"},
                 true,
                 1
         );
@@ -471,7 +471,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterWithMissingSetKeyReturnsMaxDistance() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>"},
+                new String[]{"setA", "setB"},
                 true,
                 1
         );
@@ -490,7 +490,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterWithAllEmptySetsReturnsMaxDistance() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>"},
+                new String[]{"setA", "setB"},
                 true,
                 1
         );
@@ -510,7 +510,7 @@ class RedisHeuristicsCalculatorTest {
     void testSInterOneEmptySetAmongNonEmptySetsDoesNotThrow() {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.SINTER,
-                new String[]{"key<setA>", "key<setB>"},
+                new String[]{"setA", "setB"},
                 true,
                 1
         );
