@@ -74,6 +74,8 @@ There are 3 types of options:
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
 |`addTestComments`| __Boolean__. Add summary comments on each test. *Default value*: `true`.|
 |`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
+|`aiEndpointSnapshotStatisticsFile`| __String__. Where per-endpoint AI metric snapshots are written in CSV format when writeStatistics and AI response classification are enabled and snapshotInterval is positive. *Default value*: `ai-endpoint-snapshots.csv`.|
+|`aiEndpointStatisticsFile`| __String__. Where per-endpoint AI model metrics are written in CSV format when writeStatistics and AI response classification are enabled. *Default value*: `ai-endpoint-statistics.csv`.|
 |`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS, CRO`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
@@ -267,7 +269,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `FULL_HISTORY`.|
-|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_HARMONIC_MEAN, MAX_OF_MIN`. *Default value*: `MAX_OF_AVERAGE`.|
+|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_HARMONIC_MEAN, MAX_OF_MIN`. *Default value*: `MAX_OF_MIN`.|
 |`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.8`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|

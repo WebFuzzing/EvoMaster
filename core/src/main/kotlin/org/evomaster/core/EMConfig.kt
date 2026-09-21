@@ -1618,6 +1618,16 @@ class EMConfig {
     @FilePath(false,true)
     var statisticsFile = "statistics.csv"
 
+    @Cfg("Where per-endpoint AI model metrics are written in CSV format when " +
+            "writeStatistics and AI response classification are enabled.")
+    @FilePath(false,true)
+    var aiEndpointStatisticsFile = "ai-endpoint-statistics.csv"
+
+    @Cfg("Where per-endpoint AI metric snapshots are written in CSV format when " +
+            "writeStatistics and AI response classification are enabled and snapshotInterval is positive.")
+    @FilePath(false,true)
+    var aiEndpointSnapshotStatisticsFile = "ai-endpoint-snapshots.csv"
+
 
     enum class AIResponseClassifierModel {
         /**
@@ -1800,7 +1810,7 @@ class EMConfig {
     @Experimental
     @Cfg("Strategy used to select the best-performing model when a combination of AI models " +
             "are used as an ensemble model for response classification.")
-    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE
+    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
