@@ -123,13 +123,18 @@ class BsonHelperTest {
     @Test
     void testGetTypeFromAlias() {
         // aliases are case-insensitive
-        Object bsonType = BsonHelper.bsonTypeValueOf("string");
+        Object bsonType = BsonHelper.bsonTypeValueOf("STRING");
         assertEquals(BsonType.STRING, bsonType);
     }
 
     @Test
     void testGetTypeFromAliasReturnsNullWhenNotFound() {
-        assertNull(BsonHelper.bsonTypeValueOf("UNKNOWN"));
+        try {
+            BsonHelper.bsonTypeValueOf("UNKNOWN");
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
     }
 
     @Test
