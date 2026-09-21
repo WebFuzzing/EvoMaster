@@ -15,12 +15,13 @@ class NoTestCaseWriter : TestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
         // empty
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, sqlInsertionVars: MutableList<Pair<String, String>>, mongoInsertionVars: MutableList<Pair<String, String>>, redisInsertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?) {
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, sqlInsertionVars: MutableList<Pair<String, String>>, mongoInsertionVars: MutableList<Pair<String, String>>, redisInsertionVars: MutableList<Pair<String, String>>, dynamoDbInsertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?) {
         //empty
     }
 
