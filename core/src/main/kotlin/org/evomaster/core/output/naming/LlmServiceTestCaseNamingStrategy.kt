@@ -60,7 +60,9 @@ class LlmServiceTestCaseNamingStrategy(
             return "invalidLLMGeneratedName"
         }
 
-        return TestWriterUtils.safeVariableName(name, "")
+        //we cannot replace chars with empty "", because, if LLM decides to answer in a language that
+        //is not English, then we would end up with an empty string
+        return TestWriterUtils.safeVariableName(name, "x")
     }
 
     private fun getNewName(test: TestCase): String {
