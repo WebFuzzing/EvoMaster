@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.api.schema.JsonSchemaValidator
 import org.evomaster.core.problem.mcp.McpCallResult
 import org.evomaster.core.problem.mcp.McpIndividual
 import org.evomaster.core.problem.mcp.McpResourceReadAction
@@ -147,22 +148,10 @@ class McpBlackBoxFitness : McpFitness() {
         val outcomeId = idMapper.handleLocalTarget("tool_outcome:$name:$code")
         fv.updateTarget(outcomeId, 1.0, indexOfAction)
 
-        // Goal 4: Tool output chema validation
-        val outputSchema = sampler.getOutputSchema(name)
-        if (outputSchema != null && protocolError == null && !toolResult.isError) {
-            for ((violationKey, message) in McpSchemaValidator.findViolations(outputSchema, toolResult.structuredContent)) {
-                val discriminant = "tool:$name -> $violationKey"
-                val faultId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
-                )
-                fv.updateTarget(faultId, 1.0, indexOfAction)
-                result.addFault(
-                    DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, "tool:$name", violationKey, message)
-                )
-            }
-        }
+        // Goal 4: Tool output schema validation
+        handleOutputSchemaViolations(name, toolResult, sampler.getCompiledOutputSchema(name), fv, result, indexOfAction)
 
-        // Goal 4: MCP internal error fault
+        // Goal 5: MCP internal error fault
         if (protocolError != null && protocolError.code == JSON_RPC_INTERNAL_ERROR) {
             val faultId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.MCP_INTERNAL_ERROR, name)
@@ -171,6 +160,47 @@ class McpBlackBoxFitness : McpFitness() {
             result.addFault(
                 DetectedFault(ExperimentalFaultCategory.MCP_INTERNAL_ERROR, "tool:$name", null, protocolError.message)
             )
+        }
+    }
+
+    internal fun handleOutputSchemaViolations(
+        name: String,
+        toolResult: McpToolResult,
+        outputSchema: JsonSchemaValidator.CompiledSchema?,
+        fv: FitnessValue,
+        result: McpCallResult,
+        indexOfAction: Int
+    ) {
+        val protocolError = toolResult.protocolError
+        if (config.schemaOracles
+            && config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)
+            && outputSchema != null
+            && protocolError == null
+            && !toolResult.isError
+        ) {
+            val violations = toolResult.structuredContent?.let(outputSchema::validate)
+                ?: listOf(
+                    JsonSchemaValidator.Violation(
+                        key = "mcp:missing-structured-content",
+                        keyword = "structuredContent",
+                        message = "Tool declares an outputSchema but returned no structuredContent"
+                    )
+                )
+            for (violation in violations) {
+                val discriminant = "tool:$name -> ${violation.key}"
+                val faultId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+                )
+                fv.updateTarget(faultId, 1.0, indexOfAction)
+                result.addFault(
+                    DetectedFault(
+                        DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                        "tool:$name",
+                        violation.key,
+                        violation.message
+                    )
+                )
+            }
         }
     }
 

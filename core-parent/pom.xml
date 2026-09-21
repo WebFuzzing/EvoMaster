@@ -21,6 +21,7 @@
         <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
         <swagger.parser-v3.version>2.1.14</swagger.parser-v3.version>
         <swagger.annotations.version>2.2.7</swagger.annotations.version>
+        <networknt.json-schema-validator.version>1.5.1</networknt.json-schema-validator.version>
         <langchain4j.version>1.15.0</langchain4j.version>
     </properties>
 
@@ -88,6 +89,11 @@
                 <groupId>com.atlassian.oai</groupId>
                 <artifactId>swagger-request-validator-core</artifactId>
                 <version>2.44.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>json-schema-validator</artifactId>
+                <version>${networknt.json-schema-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.webfuzzing</groupId>

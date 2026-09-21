@@ -225,8 +225,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         return fetchPaginatedList(McpConst.METHOD_TOOLS_LIST, "tools", { tool ->
             McpToolDefinition(
                 name = tool["name"] as String,
-                description = tool["description"] as String,
-                inputSchema = mapper.valueToTree(tool["inputSchema"])
+                description = tool["description"] as? String ?: "",
+                inputSchema = mapper.valueToTree(tool["inputSchema"]),
+                outputSchema = tool["outputSchema"]?.let(mapper::valueToTree)
             )
         })
     }
@@ -261,7 +262,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         }
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
         val content = getToolResponseContent(name, result)
-        val structuredContent = result["structuredContent"] as? Map<String, Any?>
+        val structuredContent = result["structuredContent"]?.let { mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(it) }
         return McpToolResult(
             content = content,
             structuredContent = structuredContent,

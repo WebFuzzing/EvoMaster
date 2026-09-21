@@ -2,6 +2,7 @@ package org.evomaster.core.problem.mcp.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.api.schema.JsonSchemaValidator
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
@@ -12,6 +13,7 @@ import org.evomaster.core.problem.mcp.McpToolCallAction
 import org.evomaster.core.problem.mcp.McpUriParam
 import org.evomaster.core.problem.mcp.builder.McpActionBuilder
 import org.evomaster.core.problem.mcp.client.HttpMcpClient
+import org.evomaster.core.problem.mcp.client.McpToolDefinition
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.gene.string.StringGene
@@ -39,8 +41,13 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     /** Actions for MCP tool calls, keyed by "tool:<toolName>" */
     private val toolActionCluster: MutableMap<String, McpToolCallAction> = mutableMapOf()
 
-    /** Declared output JSON Schema per tool name, as returned by `tools/list` (null if the tool declares none) */
-    private val outputSchemas: MutableMap<String, Map<String, Any?>?> = mutableMapOf()
+    /** Compiled output JSON Schema per tool name, as returned by `tools/list`. */
+    private val outputSchemas: MutableMap<String, JsonSchemaValidator.CompiledSchema> = mutableMapOf()
+
+    /** Compilation issues for output schemas that could not safely be validated. */
+    private val outputSchemaIssues: MutableMap<String, List<JsonSchemaValidator.CompilationIssue>> = mutableMapOf()
+
+    private var schemaValidator = JsonSchemaValidator()
 
     /** Actions for MCP resource reads, keyed by "resource:<uri>" or template key */
     private val resourceActionCluster: MutableMap<String, McpResourceReadAction> = mutableMapOf()
@@ -55,8 +62,24 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         val messages = McpActionBuilder.addActionsFromToolList(tools, toolActionCluster, options)
         messages.forEach { log.warn(it) }
         toolActionCluster.values.forEach { actionCluster[it.id] = it }
-        // TODO: redefine how this will be populated
-        // outputSchemas[tool.name] = tool.outputSchema
+        cacheOutputSchemas(tools)
+    }
+
+    internal fun cacheOutputSchemas(tools: List<McpToolDefinition>) {
+        outputSchemas.clear()
+        outputSchemaIssues.clear()
+        for (tool in tools) {
+            val schema = tool.outputSchema ?: continue
+            when (val result = schemaValidator.compile(schema)) {
+                is JsonSchemaValidator.CompilationResult.Success -> outputSchemas[tool.name] = result.schema
+                is JsonSchemaValidator.CompilationResult.Failure -> {
+                    outputSchemaIssues[tool.name] = result.issues
+                    result.issues.forEach { issue ->
+                        log.warn("Invalid outputSchema detected for MCP tool '{}': {}", tool.name, issue.message)
+                    }
+                }
+            }
+        }
     }
 
     /** Builds the resource actions cluster as part of the initialization process */
@@ -95,6 +118,9 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         actionCluster.clear()
         toolActionCluster.clear()
         resourceActionCluster.clear()
+        outputSchemas.clear()
+        outputSchemaIssues.clear()
+        schemaValidator = JsonSchemaValidator(config.allowExternalSchemaReferences)
 
         // MCP requires initialize handshake before any other call
         try {
@@ -186,5 +212,8 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
     fun getMcpClient(): HttpMcpClient = mcpClient
 
-    fun getOutputSchema(toolName: String): Map<String, Any?>? = outputSchemas[toolName]
+    fun getCompiledOutputSchema(toolName: String): JsonSchemaValidator.CompiledSchema? = outputSchemas[toolName]
+
+    internal fun getOutputSchemaIssues(toolName: String): List<JsonSchemaValidator.CompilationIssue> =
+        outputSchemaIssues[toolName].orEmpty()
 }
