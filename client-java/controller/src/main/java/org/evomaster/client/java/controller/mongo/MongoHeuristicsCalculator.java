@@ -27,6 +27,9 @@ import java.util.stream.StreamSupport;
 public class MongoHeuristicsCalculator {
 
 
+    private static final String JAVA_UTIL_LIST = "java.util.List";
+    private static final String NULL = "null";
+
     /**
      * A handler responsible for managing taint propagation and tracking
      * during the execution of heuristic calculations. This object is used
@@ -551,15 +554,36 @@ public class MongoHeuristicsCalculator {
 
         String fieldName = operation.getFieldName();
         if (!documentContainsField(document, fieldName)) {
+            /**
+             * If the document does not contain the specified field, the $type operation cannot be satisfied.
+             * Even if the expected BSON type is "null", the absence of the field does not satisfy the condition,
+             * as the $type operator checks for the type of an existing field, not its absence. Therefore,
+             * the heuristic score is set to C_FALSE, indicating that the document does not meet the condition.
+             */
             return C_FALSE;
         } else {
-            final Object bsonType = operation.getType();
-            String expectedType = getType(bsonType);
+            final Object actualValue = getValue(document, fieldName);
+            final String actualTypeAsString;
+            if (actualValue != null && actualValue instanceof List<?>) {
+                /**
+                 * If the actual value is a List, we consider its type as "java.util.List" for the purpose of type comparison.
+                 */
+                actualTypeAsString = JAVA_UTIL_LIST;
+            } else {
+                actualTypeAsString  = actualValue == null ? NULL : actualValue.getClass().getTypeName();
+            }
 
-            Object actualValue = getValue(document, fieldName);
-            String actualType = actualValue == null ? "null" : actualValue.getClass().getTypeName();
+            final List<Object> expectedBsonTypes = operation.getBsonTypes();
+            final List<Truthness> truthnesses = new LinkedList<>();
+            for (Object expectedBsonType : expectedBsonTypes) {
+                String expectedTypeAsString = getType(expectedBsonType);
+                final Truthness equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness(
+                        actualTypeAsString,
+                        expectedTypeAsString);
+                truthnesses.add(equalityTruthness);
+            }
 
-            final Truthness equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness(actualType, expectedType);
+            Truthness equalityTruthness = buildOrAggregationTruthness(truthnesses.toArray(new Truthness[0]));
             return buildSafeScaledTruthness(equalityTruthness);
         }
     }

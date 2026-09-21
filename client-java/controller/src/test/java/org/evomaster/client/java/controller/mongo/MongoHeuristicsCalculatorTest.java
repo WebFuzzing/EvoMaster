@@ -709,10 +709,9 @@ public class MongoHeuristicsCalculatorTest {
 
     @Test
     public void testTypeAliasVersion() {
-        // This is not exactly the alias. Should be?
         Document doc = new Document().append("age", 20);
-        Bson bsonTrue = Filters.type("age", BsonType.INT32.name());
-        Bson bsonFalse = Filters.type("age", BsonType.DOUBLE.name());
+        Bson bsonTrue = Filters.type("age", "int");
+        Bson bsonFalse = Filters.type("age", "double");
         Truthness distanceMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonTrue), doc);
         Truthness distanceNotMatch = new MongoHeuristicsCalculator().computeHeuristicDocument(convertToDocument(bsonFalse), doc);
         assertTrue(distanceMatch.isTrue());
@@ -1687,7 +1686,6 @@ public class MongoHeuristicsCalculatorTest {
      */
 
     @Test
-    @Disabled("$type with a string alias is not parsed, so the calculator throws a NullPointerException")
     public void testTypeWithAStringAlias() {
         /*
             mongo: {"a": {"$type": "string"}} matches {a:'abc'} and not {a:5}.
@@ -2015,7 +2013,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$type with a list of aliases is not parsed, so the calculator throws a NullPointerException")
     public void testTypeWithAListOfAliases() {
         // mongo: matches, the field holds one of the listed types
         Document query = new Document().append("a",

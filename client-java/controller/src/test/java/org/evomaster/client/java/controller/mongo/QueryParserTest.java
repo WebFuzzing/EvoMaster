@@ -10,13 +10,11 @@ import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.selectors.TypeSelector;
 import org.evomaster.client.java.controller.mongo.utils.BitmaskUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.OptionalLong;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -360,14 +358,27 @@ class QueryParserTest {
     void testParseType() {
         Document query = new Document(
                 "name",
-                new Document("$type", "STRING")
+                new Document("$type", "string")
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
         assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertNotNull(type.getBsonTypes());
+        List<Object> expectedBsonTypes = TypeSelector.parseToBsonTypes("string");
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
     }
+
+    @Test
+    void testParseInvalidType() {
+        Document query = new Document(
+                "name",
+                new Document("$type", "STRING")
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
 
     @Test
     void testParseTypeWithNumber() {
@@ -379,7 +390,7 @@ class QueryParserTest {
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
         assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertNotNull(type.getBsonTypes());
     }
 
     @Test
@@ -1634,6 +1645,64 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseTypeWithListOfTypes() {
+        // mongo: matches, the field holds one of the listed types
+        Document query = new Document().append("a",
+                new Document().append("$type", Arrays.asList("string", "double")));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("string"));
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("double"));
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
+    }
+
+    @Test
+    void testParseAllTypes() {
+        // mongo: matches, the field holds one of the listed types
+        final List<String> aliases = Arrays.asList(
+                "double",
+                "string",
+                "object",
+                "array",
+                "binData",
+                "undefined",
+                "objectId",
+                "bool",
+                "date",
+                "null",
+                "regex",
+                "dbPointer",
+                "javascript",
+                "symbol",
+                "javascriptWithScope",
+                "int",
+                "timestamp",
+                "long",
+                "decimal",
+                "minKey",
+                "maxKey",
+                "number"
+        );
+        Document query = new Document().append("a",
+                new Document().append("$type",
+                        aliases));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        for (String alias : aliases) {
+            expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes(alias));
+        }
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
+    }
+
+    @Test
     void testParseElemMatchWithInOperator() {
         ElemMatchOperation elemMatch = parseElemMatchCondition(
                 new Document("$in", Arrays.asList("a", "b")),
@@ -1901,7 +1970,7 @@ class QueryParserTest {
 
     @Test
     void testBinaryBitmask() {
-        Binary mask = new Binary(new byte[] { 0x30 }); // 0011 0000: bits 4 and 5
+        Binary mask = new Binary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
 
         Document query = new Document(
                 "flags",
@@ -1918,7 +1987,7 @@ class QueryParserTest {
 
     @Test
     void testBsonBinaryBitmask() {
-        BsonBinary mask = new BsonBinary(new byte[] { 0x30 }); // 0011 0000: bits 4 and 5
+        BsonBinary mask = new BsonBinary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
 
         Document query = new Document(
                 "flags",
@@ -1984,7 +2053,6 @@ class QueryParserTest {
         assertEquals("age", lte.getFieldName());
         assertEquals(null, lte.getValue());
     }
-
 
 
     private ElemMatchOperation parseElemMatchCondition(

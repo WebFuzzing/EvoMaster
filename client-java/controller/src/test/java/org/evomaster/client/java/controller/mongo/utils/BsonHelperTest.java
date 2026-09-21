@@ -122,14 +122,14 @@ class BsonHelperTest {
 
     @Test
     void testGetTypeFromAlias() {
-        Object bsonType = BsonHelper.getTypeFromAlias("STRING");
-
+        // aliases are case-insensitive
+        Object bsonType = BsonHelper.bsonTypeValueOf("string");
         assertEquals(BsonType.STRING, bsonType);
     }
 
     @Test
     void testGetTypeFromAliasReturnsNullWhenNotFound() {
-        assertNull(BsonHelper.getTypeFromAlias("UNKNOWN"));
+        assertNull(BsonHelper.bsonTypeValueOf("UNKNOWN"));
     }
 
     @Test
@@ -221,5 +221,12 @@ class BsonHelperTest {
         Binary binary = new Binary((byte) 0x01, data);
 
         assertArrayEquals(data, BsonHelper.getBinaryData(binary));
+    }
+
+    @Test
+    void testIsBsonType() {
+        assertTrue(BsonHelper.isBsonType(BsonType.INT32));
+        assertFalse(BsonHelper.isBsonType("not a BsonType"));
+        assertFalse(BsonHelper.isBsonType(null));
     }
 }

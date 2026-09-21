@@ -116,7 +116,7 @@ public class BsonHelper {
      * @return true if the object is a BSON ObjectId, false otherwise
      */
     public static boolean isObjectId(Object obj) {
-        return obj!=null && obj.getClass().getName().equals(ORG_BSON_TYPES_OBJECT_ID);
+        return obj != null && obj.getClass().getName().equals(ORG_BSON_TYPES_OBJECT_ID);
     }
 
     /**
@@ -127,6 +127,16 @@ public class BsonHelper {
      */
     public static boolean isBsonTimestamp(Object obj) {
         return obj != null && obj.getClass().getName().equals(ORG_BSON_BSON_TIMESTAMP);
+    }
+
+    /**
+     * Determines whether the given object is a BSON type.
+     *
+     * @param obj the object to check; should be non-null to determine if it is a BSON type
+     * @return true if the object is a BSON type, false otherwise
+     */
+    public static boolean isBsonType(Object obj) {
+        return (obj != null) && obj.getClass().getName().equals(ORG_BSON_BSON_TYPE);
     }
 
     /**
@@ -192,18 +202,21 @@ public class BsonHelper {
     /**
      * Retrieves the BSON type corresponding to the given alias string.
      *
-     * @param alias the alias string representing the BSON type
+     * @param name the string representing the BSON type
      * @return the BSON type object, or null if not found
      */
-    public static Object getTypeFromAlias(String alias) {
+    public static Object bsonTypeValueOf(String name) {
         Class<?> bsonTypeClass;
         try {
             bsonTypeClass = Class.forName(ORG_BSON_BSON_TYPE);
-            Method valueOf = bsonTypeClass.getMethod(VALUE_OF_METHOD, String.class);
-            return valueOf.invoke(null, alias);
-        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
-           return null;
+            if (bsonTypeClass.isEnum()) {
+                Enum<?> bsonTypeEnum = Enum.valueOf((Class<Enum>) bsonTypeClass, name);
+                return bsonTypeEnum;
+            } else {
+                throw new IllegalArgumentException("BSON type expected to be an enum but is not. Class: " + bsonTypeClass.getName());
+            }
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -222,9 +235,9 @@ public class BsonHelper {
      *
      * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
      * @return a String representing the pattern of the BSON regular expression.
-     * @throws NullPointerException if the provided value is null.
+     * @throws NullPointerException     if the provided value is null.
      * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
-     * @throws RuntimeException if an error occurs while invoking the method to retrieve the pattern.
+     * @throws RuntimeException         if an error occurs while invoking the method to retrieve the pattern.
      */
     public static String bsonRegexGetPattern(Object value) {
         Objects.requireNonNull(value, "The provided value cannot be null");
@@ -243,7 +256,7 @@ public class BsonHelper {
      *
      * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
      * @return a String representing the options associated with the BSON regular expression.
-     * @throws NullPointerException if the provided value is null.
+     * @throws NullPointerException     if the provided value is null.
      * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
      **/
     public static String bsonRegexGetOptions(Object value) {
