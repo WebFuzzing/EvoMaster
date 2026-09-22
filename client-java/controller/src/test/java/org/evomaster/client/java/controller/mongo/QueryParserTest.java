@@ -24,6 +24,26 @@ class QueryParserTest {
     private final QueryParser parser = new QueryParser();
 
     @Test
+    void testParseElemMatchWithinAll() {
+        // { "a": { "$all": [ { "$elemMatch": { "$gt": 2 } } ] } }
+        Document query = new Document().append("a", new Document().append("$all",
+                Collections.singletonList(new Document().append("$elemMatch",
+                        new Document().append("$gt", 2)))));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof AllOperation);
+        AllOperation<?> allOperation = (AllOperation<?>) operation;
+        assertEquals("a", allOperation.getFieldName());
+        assertEquals(1, allOperation.getValues().size());
+        Object elemMatchValue = allOperation.getValues().get(0);
+        assertTrue(elemMatchValue instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatchOperation = (ElemMatchOperation) elemMatchValue;
+        assertEquals("a", elemMatchOperation.getFieldName());
+        assertTrue(elemMatchOperation.getCondition() instanceof GreaterThanOperation);
+        assertEquals(2, ((GreaterThanOperation) elemMatchOperation.getCondition()).getValue());
+    }
+
+    @Test
     void testParseEquals() {
         Document query = new Document(
                 "age",
