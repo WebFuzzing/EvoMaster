@@ -15,9 +15,11 @@ public class BsonHelper {
     private static final String GET_TYPE_NAME_METHOD = "getTypeName";
     private static final String GET_VALUE_METHOD = "getValue";
     private static final String FIND_BY_VALUE_METHOD = "findByValue";
-    private static final String VALUE_OF_METHOD = "valueOf";
     private static final String GET_PATTERN_METHOD = "getPattern";
     private static final String GET_OPTIONS_METHOD = "getOptions";
+    private static final String GET_DATA_METHOD = "getData";
+    private static final String TO_BYTE_ARRAY_METHOD = "toByteArray";
+    private static final String BIG_DECIMAL_VALUE_METHOD = "bigDecimalValue";
 
     private static final String ORG_BSON_BSON_BINARY = "org.bson.BsonBinary";
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
@@ -25,13 +27,11 @@ public class BsonHelper {
     private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
     private static final String ORG_BSON_TYPES_BINARY = "org.bson.types.Binary";
     private static final String ORG_BSON_TYPES_DECIMAL_128 = "org.bson.types.Decimal128";
+    private static final String ORG_BSON_BSON_UNDEFINED = "org.bson.BsonUndefined";
+    private static final String ORG_BSON_TYPES_UNDEFINED = "org.bson.types.Undefined";
 
     public static final String NULL_TYPE = "null";
     private static final String BSON_TYPE_NULL = "NULL";
-    private static final String GET_DATA = "getData";
-    private static final String TO_BYTE_ARRAY = "toByteArray";
-    private static final String BIG_DECIMAL_VALUE = "bigDecimalValue";
-
 
     public static Object newDocument(Object bsonDocument) {
         Objects.requireNonNull(bsonDocument);
@@ -268,7 +268,8 @@ public class BsonHelper {
             throw new IllegalArgumentException("The provided value is not a BSON regular expression but class: " + value.getClass().getName());
         }
         try {
-            return (String) value.getClass().getMethod(GET_OPTIONS_METHOD).invoke(value);
+            final Method getOptionsMethod = value.getClass().getMethod(GET_OPTIONS_METHOD);
+            return (String) getOptionsMethod.invoke(value);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -294,7 +295,8 @@ public class BsonHelper {
             throw new IllegalArgumentException("The provided value is not a BSON binary type but class: " + value.getClass().getName());
         }
         try {
-            return (byte[]) value.getClass().getMethod(GET_DATA).invoke(value);
+            final Method getDataMethod = value.getClass().getMethod(GET_DATA_METHOD);
+            return (byte[]) getDataMethod.invoke(value);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -306,14 +308,15 @@ public class BsonHelper {
             throw new IllegalArgumentException("The provided value is not a BSON ObjectId but class: " + actualValue.getClass().getName());
         }
         try {
-            return (byte[]) actualValue.getClass().getMethod(TO_BYTE_ARRAY).invoke(actualValue);
+            final Method toByteArrayMethod = actualValue.getClass().getMethod(TO_BYTE_ARRAY_METHOD);
+            return (byte[]) toByteArrayMethod.invoke(actualValue);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static boolean isDecimal128(Number n) {
-        return n!=null && n.getClass().getName().equals(ORG_BSON_TYPES_DECIMAL_128);
+    public static boolean isDecimal128(Object v) {
+        return v!=null && v.getClass().getName().equals(ORG_BSON_TYPES_DECIMAL_128);
     }
 
     public static BigDecimal getBigDecimalValue(Number n) {
@@ -323,8 +326,8 @@ public class BsonHelper {
             throw new IllegalArgumentException("The provided number is not a BSON Decimal128 but class: " + n.getClass().getName());
         }
         try {
-            Method getValueMethod = n.getClass().getMethod(BIG_DECIMAL_VALUE);
-            Object decimalValue = getValueMethod.invoke(n);
+            Method bigDecimalValueMethod = n.getClass().getMethod(BIG_DECIMAL_VALUE_METHOD);
+            Object decimalValue = bigDecimalValueMethod.invoke(n);
             if (decimalValue instanceof BigDecimal) {
                 return (BigDecimal) decimalValue;
             } else {
@@ -334,4 +337,41 @@ public class BsonHelper {
             throw new RuntimeException(e);
         }
     }
+
+    public static boolean isBsonUndefined(Object v) {
+        if (v == null) {
+            return false;
+        }
+        String className = v.getClass().getName();
+        return className.equals(ORG_BSON_BSON_UNDEFINED) || className.equals(ORG_BSON_TYPES_UNDEFINED);
+    }
+
+    public static boolean isNaN(Object v) {
+        Objects.requireNonNull(v);
+        if (!isDecimal128(v)) {
+            throw new IllegalArgumentException("The provided value is not a BSON Decimal128 but class: " + v.getClass().getName());
+        }
+        try {
+            Method isNaNMethod = v.getClass().getMethod("isNaN");
+            boolean result = (boolean) isNaNMethod.invoke(v);
+            return result;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean isInfinite(Object v) {
+        Objects.requireNonNull(v);
+        if (!isDecimal128(v)) {
+            throw new IllegalArgumentException("The provided value is not a BSON Decimal128 but class: " + v.getClass().getName());
+        }
+        try {
+            Method isInfiniteMethod = v.getClass().getMethod("isInfinite");
+            boolean result = (boolean) isInfiniteMethod.invoke(v);
+            return result;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

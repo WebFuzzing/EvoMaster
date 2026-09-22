@@ -1321,7 +1321,11 @@ class QueryParserTest {
                 new Document("$exists", null)
         );
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertNotNull(operation);
+        assertTrue(operation instanceof ExistsOperation);
+        ExistsOperation exists = (ExistsOperation) operation;
+        assertEquals("age", exists.getFieldName());
+        assertFalse(exists.getBoolean());
     }
 
     @Test

@@ -2541,7 +2541,6 @@ public class MongoHeuristicsCalculatorTest {
 
 
     @Test
-    @Disabled("$exists given anything but a boolean is not parsed, so the calculator throws")
     public void testExistsGivenAValueThatIsNotABoolean() {
         /*
             mongo: takes any value for $exists and reads it as a truth value, so 1 and a
