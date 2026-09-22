@@ -2200,7 +2200,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$comment is removed from documents that are values rather than operators")
     public void testCommentInsideALiteralValue() {
         /*
             mongo: matches. A field name that starts with "$" is storable since 5.0, and

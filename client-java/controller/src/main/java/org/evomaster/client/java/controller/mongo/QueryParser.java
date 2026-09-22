@@ -21,7 +21,10 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 public class QueryParser {
 
     private static final String SYNTHETIC_FIELD_NAME = "$";
-    private static final Set<String> COMMENTS_OPERATORS = new HashSet<>(Arrays.asList("$comment", "$comments"));
+    private static final String COMMENT_OPERATOR = "$comment";
+    // "$comments" is not a real MongoDB operator: it is treated as noise/metadata to be
+    // stripped wherever it appears, unlike "$comment" which is the real comment operator.
+    private static final Set<String> COMMENTS_OPERATORS = new HashSet<>(Arrays.asList("$comments"));
 
     List<QuerySelector> selectors = Arrays.asList(
             new EqualsSelector(),
@@ -57,7 +60,18 @@ public class QueryParser {
             return null;
         }
 
-        Object normalizedWithoutComments = removeCommentsOperators(bsonDocument);
+        // A document made up entirely of "$comments" noise, with nothing else to query on,
+        // does not represent any real condition.
+        if (isOnlyNoiseComments(bsonDocument)) {
+            return null;
+        }
+
+        // "$comments" is noise and gets stripped wherever it appears, however deeply nested,
+        // since it never carries query semantics. "$comment" is the real MongoDB operator: it
+        // only has meaning as a predicate-level key (this document's own keys), so it is
+        // stripped shallowly here and left untouched inside field values/literals (e.g. under
+        // an explicit $eq, or as the entire value of a field), where it must be compared as-is.
+        Object normalizedWithoutComments = removeTopLevelCommentOperator(removeCommentsOperators(bsonDocument));
 
         QueryOperation operation = parseWithSelectors(normalizedWithoutComments);
         if (operation != null && !usesOperatorAsFieldName(operation)) {
@@ -69,6 +83,28 @@ public class QueryParser {
             return operation;
         }
         return parseWithSelectors(normalizedDocument);
+    }
+
+    private boolean isOnlyNoiseComments(Object bsonDocument) {
+        if (!isBsonDocument(bsonDocument)) {
+            return false;
+        }
+        Set<String> keys = documentKeys(bsonDocument);
+        return keys != null && !keys.isEmpty() && keys.stream().allMatch(COMMENTS_OPERATORS::contains);
+    }
+
+    private Object removeTopLevelCommentOperator(Object bsonValue) {
+        if (!isBsonDocument(bsonValue)) {
+            return bsonValue;
+        }
+        Object normalized = newDocument(bsonValue);
+        for (String key : documentKeys(bsonValue)) {
+            if (key.equals(COMMENT_OPERATOR)) {
+                continue;
+            }
+            appendToDocument(normalized, key, getValue(bsonValue, key));
+        }
+        return normalized;
     }
 
     private Object removeCommentsOperators(Object bsonValue) {

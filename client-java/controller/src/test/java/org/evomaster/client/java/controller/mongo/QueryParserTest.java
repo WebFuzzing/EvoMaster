@@ -1449,11 +1449,29 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseTopLevelDollar() {
+        Document query = new Document("$foo", "bar");
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
     void testParseOnlyComments() {
         Document query = new Document("$comments", "a comment");
         QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
 
-        assertTrue(operation instanceof EmptyOperation);
+    @Test
+    void testParseQueryWithComment() {
+        Document query = new Document().append("a", 1).append("$comment", "note");
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("a", eq.getFieldName());
+        assertEquals(1, eq.getValue());
     }
 
     @Test
@@ -1462,6 +1480,18 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
 
         assertTrue(operation instanceof EmptyOperation);
+    }
+
+    @Test
+    void testCommentAsField() {
+        Document query =  new Document("foo" ,new Document("$comment", "bar"));
+        QueryOperation operation = parser.parse(query);
+
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("foo", eq.getFieldName());
+        assertEquals(new Document("$comment", "bar"), eq.getValue());
     }
 
     @Test
