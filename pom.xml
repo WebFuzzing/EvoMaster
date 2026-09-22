@@ -243,6 +243,7 @@
         <snakeyaml.version>1.33</snakeyaml.version>
         <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <kafka-clients.version>3.7.2</kafka-clients.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
 <!--        <selenium.version>4.31.0</selenium.version>-->
@@ -896,6 +897,19 @@
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- A Kafka broker in Docker, for the AsyncAPI E2E tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- Only used by the artificial SUTs and drivers of the AsyncAPI E2E tests. Not shipped. -->
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka-clients.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>

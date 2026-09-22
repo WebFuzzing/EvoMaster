@@ -34,6 +34,7 @@
         <module>spring-rpc-grpc</module>
         <module>spring-rpc-thrift</module>
         <module>spring-mcp-bb</module>
+        <module>spring-asyncapi-kafka</module>
     </modules>
 
     <dependencyManagement>
@@ -42,6 +43,11 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
             <dependency>
