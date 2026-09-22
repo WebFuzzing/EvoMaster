@@ -211,6 +211,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_REDIS, executingInitRedis);
     }
 
+    public boolean setExecutingInitNeo4j(boolean executingInitNeo4j) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_NEO4J, executingInitNeo4j);
+    }
+
     public boolean setExecutingInitDynamoDb(boolean executingInitDynamoDb) {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_DYNAMODB, executingInitDynamoDb);
     }
