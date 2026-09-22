@@ -26,7 +26,6 @@ import java.util.stream.StreamSupport;
  */
 public class MongoHeuristicsCalculator {
 
-
     private static final String JAVA_UTIL_LIST = "java.util.List";
     private static final String NULL = "null";
 
@@ -57,39 +56,32 @@ public class MongoHeuristicsCalculator {
 
 
     public MongoDistanceWithMetrics computeDistanceDocuments(Object query, Iterable<?> documents) {
-        long count = StreamSupport.stream(documents.spliterator(), false).count();
-        Truthness heuristicScoreCollection = getTruthnessToEmpty((int) count).invert();
-
         QueryOperation queryOperation = parseQuery(query);
-        Truthness hCondition = computeHeuristicOnDocuments(queryOperation, documents);
 
-        Truthness hQuery = buildAndAggregationTruthness(heuristicScoreCollection, hCondition);
+        double maxOfTrue = 0d;
+        boolean isFirstDocument = true;
+        int documentCount = 0;
+        for (Object doc : documents) {
+            double ofTrue = computeHeuristicQueryOperation(queryOperation, doc).getOfTrue();
+            if (isFirstDocument || ofTrue > maxOfTrue) {
+                maxOfTrue = ofTrue;
+            }
+            isFirstDocument = false;
+            documentCount++;
+        }
+
+        Truthness heuristicScoreCollection = documentCount>0 ? TRUE_C : C_FALSE;
+        Truthness hCondition = buildSafeScaledTruthness(maxOfTrue);
+
+        Truthness hQuery = buildAndAggregationTruthness(
+                heuristicScoreCollection,
+                hCondition);
 
         // Map truthness to distance where 0 is true.
         // If it's true, distance 0.
         // If it's false, distance is 1.0 - ofTrue.
         double distance = hQuery.isTrue() ? 0.0 : 1.0 - hQuery.getOfTrue();
-
-        return new MongoDistanceWithMetrics(distance, (int) count);
-    }
-
-    private Truthness computeHeuristicOnDocuments(QueryOperation operation, Iterable<?> documents) {
-        long count = StreamSupport.stream(documents.spliterator(), false).count();
-        if (count == 0) {
-            return C_FALSE;
-        }
-
-        double maxOfTrue = 0;
-        boolean first = true;
-        for (Object doc : documents) {
-            double ofTrue = computeHeuristicQueryOperation(operation, doc).getOfTrue();
-            if (first || ofTrue > maxOfTrue) {
-                maxOfTrue = ofTrue;
-            }
-            first = false;
-        }
-
-        return buildSafeScaledTruthness(maxOfTrue);
+        return new MongoDistanceWithMetrics(distance, documentCount);
     }
 
     /**

@@ -2563,7 +2563,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("the documents are traversed more than once, so a one-shot Iterable is scored wrongly")
     public void testDocumentsThatCanOnlyBeTraversedOnce() {
         /*
             Not a question of MongoDB semantics but of the contract of the calculator.
