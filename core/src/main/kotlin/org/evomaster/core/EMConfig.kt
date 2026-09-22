@@ -1618,13 +1618,19 @@ class EMConfig {
     @FilePath(false,true)
     var statisticsFile = "statistics.csv"
 
+    @Cfg("Whether to write per-endpoint AI model statistics to CSV.")
+    var writeAIEndpointStatistics = false
+
+    @Cfg("Whether to write per-endpoint AI model snapshot statistics to CSV.")
+    var writeAIEndpointSnapshotStatistics = false
+
     @Cfg("Where per-endpoint AI model metrics are written in CSV format when " +
-            "writeStatistics and AI response classification are enabled.")
+            "writeAIEndpointStatistics and AI response classification are enabled.")
     @FilePath(false,true)
     var aiEndpointStatisticsFile = "ai-endpoint-statistics.csv"
 
     @Cfg("Where per-endpoint AI metric snapshots are written in CSV format when " +
-            "writeStatistics and AI response classification are enabled and snapshotInterval is positive.")
+            "writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive.")
     @FilePath(false,true)
     var aiEndpointSnapshotStatisticsFile = "ai-endpoint-snapshots.csv"
 

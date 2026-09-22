@@ -166,7 +166,14 @@ class Statistics : SearchListener {
      */
     private val snapshots: MutableMap<Double, List<Pair>> = mutableMapOf()
 
-    /** Values captured at each interval, rather than recomputed from the final classifier state. */
+    /**
+     * Values captured at each interval rather than recomputed from the final classifier state.
+     * Endpoint-level AI statistics are captured at each snapshot interval.
+     *
+     * Key: snapshot interval/progress value (as 0.0,5.0, 10.0,...,100).
+     * Value: one CSV row per REST endpoint, where each inner List<String>
+     * contains the endpoint metadata and AI metrics returned by [getAIEndpointRows].
+     */
     private val aiEndpointSnapshots: MutableMap<Double, List<List<String>>> = mutableMapOf()
 
     private var snapshotThreshold = -1.0
@@ -218,7 +225,14 @@ class Statistics : SearchListener {
     }
 
     private fun canReportAIEndpointStatistics(): Boolean =
-        config.isEnabledAIModelForResponseClassification() && this::aiResponseClassifier.isInitialized
+        config.writeAIEndpointStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
+
+    private fun canReportAIEndpointSnapshotStatistics(): Boolean =
+        config.writeAIEndpointSnapshotStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
 
     private fun getAIEndpointRows(): List<List<String>> {
         val endpoints = sampler?.seeAvailableActions().orEmpty()
@@ -289,7 +303,7 @@ class Statistics : SearchListener {
                 path.toFile().appendText("$key,$elements\n")
             }
 
-        if (config.snapshotInterval > 0 && canReportAIEndpointStatistics()) {
+        if (config.snapshotInterval > 0 && canReportAIEndpointSnapshotStatistics()) {
             val rows = aiEndpointSnapshots.toSortedMap().asSequence().flatMap { (interval, endpoints) ->
                 endpoints.asSequence().map { listOf(interval.toString()) + it }
             }
@@ -535,7 +549,7 @@ class Statistics : SearchListener {
 
         snapshots[key] = snap
 
-        if (config.writeStatistics && canReportAIEndpointStatistics()) {
+        if (config.writeStatistics && canReportAIEndpointSnapshotStatistics()) {
             aiEndpointSnapshots[key] = getAIEndpointRows()
         }
 
