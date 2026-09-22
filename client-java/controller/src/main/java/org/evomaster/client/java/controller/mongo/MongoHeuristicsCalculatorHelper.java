@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
+import org.evomaster.client.java.controller.mongo.operations.RegexOptions;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
@@ -365,9 +366,18 @@ public class MongoHeuristicsCalculatorHelper {
             return C_FALSE;
         } else {
             Truthness res = buildOrAggregationTruthness(list.stream()
-                    .map(expectedValue -> compareNullableValues(element, EQUALS_TO, expectedValue
-                    ))
+                    .map(expectedValue -> {
+                        if (BsonHelper.isBsonRegularExpression(expectedValue)) {
+                            String expectedPattern = BsonHelper.bsonRegexGetPattern(expectedValue);
+                            String expectedOptions = BsonHelper.bsonRegexGetOptions(expectedValue);
+                            Pattern pattern = Pattern.compile(expectedPattern);
+                            return evaluateRegularExpression(element.toString(), pattern, taintHandler);
+                        } else {
+                            return compareNullableValues(element, EQUALS_TO, expectedValue);
+                        }
+                    })
                     .toArray(Truthness[]::new));
+
             return buildSafeScaledTruthness(res);
         }
     }

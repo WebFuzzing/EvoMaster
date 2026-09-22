@@ -2263,7 +2263,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$in does not match an element of the list that is a regex")
     public void testInWithARegexElement() {
         // mongo: matches, $in accepts regexes among its elements
         Document doc = new Document().append("a", "xy");
