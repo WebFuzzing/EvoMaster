@@ -18,12 +18,12 @@ public class CassandraColumnDto {
     /**
      * Whether this column is part of the partition key of the table.
      */
-    private boolean partitionKey;
+    private Boolean partitionKey;
 
     /**
      * Whether this column is one of the clustering columns of the table.
      */
-    private boolean clusteringColumn;
+    private Boolean clusteringColumn;
 
     /**
      * Needed to deserialize the DTO, as it is sent over HTTP.
@@ -38,7 +38,7 @@ public class CassandraColumnDto {
      * @param clusteringColumn whether this column is one of the clustering columns of the table
      * @throws NullPointerException if the name or the type is null
      */
-    public CassandraColumnDto(String name, String cqlType, boolean partitionKey, boolean clusteringColumn) {
+    public CassandraColumnDto(String name, String cqlType, Boolean partitionKey, Boolean clusteringColumn) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.cqlType = Objects.requireNonNull(cqlType, "cqlType cannot be null");
         this.partitionKey = partitionKey;
@@ -65,7 +65,7 @@ public class CassandraColumnDto {
         return partitionKey;
     }
 
-    public void setPartitionKey(boolean partitionKey) {
+    public void setPartitionKey(Boolean partitionKey) {
         this.partitionKey = partitionKey;
     }
 
@@ -73,7 +73,7 @@ public class CassandraColumnDto {
         return clusteringColumn;
     }
 
-    public void setClusteringColumn(boolean clusteringColumn) {
+    public void setClusteringColumn(Boolean clusteringColumn) {
         this.clusteringColumn = clusteringColumn;
     }
 }

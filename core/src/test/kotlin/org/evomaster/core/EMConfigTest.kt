@@ -762,4 +762,26 @@ internal class EMConfigTest{
         assertThrows (Exception::class.java,{config.updateProperties(optionAllSpecifiedNotRest)})
 
     }
+
+    @Test
+    fun testAsyncApiNeedsTheDriverEvenAsABlackBox(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val rest = EMConfig()
+        rest.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "REST"))
+        assertFalse(rest.usesDriver())
+
+        /*
+            There is no universal wire to a message-driven service, so the driver holds the
+            connection to the broker even when the service itself is a black box.
+         */
+        val asyncApi = EMConfig()
+        asyncApi.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "ASYNCAPI"))
+        assertTrue(asyncApi.usesDriver())
+
+        val whiteBox = EMConfig()
+        whiteBox.updateProperties(parser.parse("--$blackBox", "false"))
+        assertTrue(whiteBox.usesDriver())
+    }
 }
