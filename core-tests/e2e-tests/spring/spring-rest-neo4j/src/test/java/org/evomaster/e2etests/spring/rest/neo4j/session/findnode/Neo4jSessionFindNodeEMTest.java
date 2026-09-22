@@ -36,7 +36,7 @@ public class Neo4jSessionFindNodeEMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/neo4jsessionfindnode/person/{name}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/neo4jsessionfindnode/x/foo/{y}/bar", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/neo4jsessionfindnode/findPerson/{name}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/neo4jsessionfindnode/findPerson/{name}", null);
                 },

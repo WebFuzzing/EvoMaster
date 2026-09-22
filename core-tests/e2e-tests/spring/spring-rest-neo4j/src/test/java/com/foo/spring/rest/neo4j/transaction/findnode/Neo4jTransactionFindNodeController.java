@@ -1,7 +1,7 @@
 package com.foo.spring.rest.neo4j.transaction.findnode;
 
 import com.foo.spring.rest.neo4j.Neo4jController;
-import com.neo4j.transaction.findnode.Neo4jTransactionFindNodeApp;
+import com.foo.neo4j.transaction.findnode.Neo4jTransactionFindNodeApp;
 
 public class Neo4jTransactionFindNodeController extends Neo4jController {
 
@@ -11,6 +11,6 @@ public class Neo4jTransactionFindNodeController extends Neo4jController {
 
     @Override
     public String getPackagePrefixesToCover() {
-        return "com.neo4j.transaction.findnode";
+        return "com.foo.neo4j.transaction.findnode";
     }
 }

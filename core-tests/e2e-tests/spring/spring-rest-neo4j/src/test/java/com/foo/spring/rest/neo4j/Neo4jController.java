@@ -1,6 +1,6 @@
 package com.foo.spring.rest.neo4j;
 
-import com.neo4j.AbstractNeo4jRest;
+import com.foo.neo4j.AbstractNeo4jRest;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
@@ -88,7 +88,7 @@ public abstract class Neo4jController extends EmbeddedSutController {
     @Override
     public ProblemInfo getProblemInfo() {
         return new RestProblem(
-                "http://localhost:" + getSutPort() + "/v2/api-docs",
+                "http://localhost:" + getSutPort() + "/v3/api-docs",
                 null
         );
     }

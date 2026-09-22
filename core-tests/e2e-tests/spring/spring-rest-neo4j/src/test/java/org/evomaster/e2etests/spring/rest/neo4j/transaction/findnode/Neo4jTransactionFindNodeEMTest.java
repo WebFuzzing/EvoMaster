@@ -36,7 +36,7 @@ public class Neo4jTransactionFindNodeEMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/neo4jtransactionfindnode/person/{name}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/neo4jtransactionfindnode/x/foo/{y}/bar", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/neo4jtransactionfindnode/findPerson/{name}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/neo4jtransactionfindnode/findPerson/{name}", null);
                 },

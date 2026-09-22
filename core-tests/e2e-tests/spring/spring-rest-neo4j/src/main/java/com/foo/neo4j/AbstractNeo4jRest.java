@@ -1,4 +1,4 @@
-package com.neo4j;
+package com.foo.neo4j;
 
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;

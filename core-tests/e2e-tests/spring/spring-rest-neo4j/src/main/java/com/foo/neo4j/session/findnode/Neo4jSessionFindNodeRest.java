@@ -1,6 +1,6 @@
-package com.neo4j.transaction.findnode;
+package com.foo.neo4j.session.findnode;
 
-import com.neo4j.AbstractNeo4jRest;
+import com.foo.neo4j.AbstractNeo4jRest;
 import org.neo4j.driver.Session;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,18 +12,16 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Collections;
 
 /**
- * Runs its queries inside managed transactions, so they go through {@code Transaction.run} and
- * never through {@code Session.run}.
+ * Runs its queries directly on the session, in auto-commit transactions.
  */
 @RestController
-@RequestMapping(path = "/neo4jtransactionfindnode")
-public class Neo4jTransactionFindNodeRest extends AbstractNeo4jRest {
+@RequestMapping(path = "/neo4jsessionfindnode")
+public class Neo4jSessionFindNodeRest extends AbstractNeo4jRest {
 
-    @PostMapping("/person/{name}")
-    public ResponseEntity<Void> savePerson(@PathVariable String name) {
+    @PostMapping("/x/foo/{y}/bar")
+    public ResponseEntity<Void> savePerson(@PathVariable String y) {
         try (Session session = driver.session()) {
-            session.writeTransaction(tx ->
-                    tx.run("CREATE (:Person {name: $name})", Collections.singletonMap("name", name)).consume());
+            session.run("CREATE (:Person {name: $name})", Collections.singletonMap("name", y)).consume();
         }
         return ResponseEntity.status(200).build();
     }
@@ -31,9 +29,9 @@ public class Neo4jTransactionFindNodeRest extends AbstractNeo4jRest {
     @GetMapping("/findPerson/{name}")
     public ResponseEntity<Void> findPerson(@PathVariable String name) {
         try (Session session = driver.session()) {
-            boolean found = session.readTransaction(tx ->
-                    tx.run("MATCH (p:Person {name: $name}) RETURN p", Collections.singletonMap("name", name))
-                            .hasNext());
+            boolean found = session
+                    .run("MATCH (p:Person {name: $name}) RETURN p", Collections.singletonMap("name", name))
+                    .hasNext();
             return ResponseEntity.status(found ? 200 : 404).build();
         }
     }
