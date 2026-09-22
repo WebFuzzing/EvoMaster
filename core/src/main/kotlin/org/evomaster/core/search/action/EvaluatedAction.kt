@@ -1,13 +1,15 @@
 package org.evomaster.core.search.action
 
-import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.database.sql.SqlActionResult
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
-import org.evomaster.core.database.dynamodb.DynamoDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 
 
 open class EvaluatedAction(val action: Action, val result: ActionResult){
@@ -30,3 +32,5 @@ class EvaluatedMongoDbAction(val mongoAction: MongoDbAction, val mongoResult: Mo
 class EvaluatedRedisDbAction(val redisAction: RedisDbAction, val redisResult: RedisDbActionResult) : EvaluatedAction(redisAction, redisResult)
 
 class EvaluatedDynamoDbAction(val dynamoDbAction: DynamoDbAction, val dynamoDbResult: DynamoDbActionResult) : EvaluatedAction(dynamoDbAction, dynamoDbResult)
+
+class EvaluatedCassandraDbAction(val cassandraAction: CassandraDbAction, val cassandraResult: CassandraDbActionResult) : EvaluatedAction(cassandraAction, cassandraResult)
