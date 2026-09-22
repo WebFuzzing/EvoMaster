@@ -665,6 +665,16 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseInvalidFractionalBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 3.5d)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
     void testParseBitsAnyClearLong() {
         Document query = new Document(
                 "flags",
@@ -1983,6 +1993,28 @@ class QueryParserTest {
         OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
         assertTrue(expectedBitmask.isPresent());
         assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testNegativeBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", -1)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testNegativeArrayBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", Arrays.asList(-1))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
     }
 
     @Test

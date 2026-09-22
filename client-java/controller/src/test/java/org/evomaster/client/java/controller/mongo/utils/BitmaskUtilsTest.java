@@ -63,4 +63,36 @@ class BitmaskUtilsTest {
         );
     }
 
+    @Test
+    void testToBitMaskValueWithNegativePosition() {
+        assertEquals(OptionalLong.empty(), BitmaskUtils.toBitMaskValue(Arrays.asList(-1, 0, 1)));
+    }
+
+    @Test
+    void testToBitMaskValueWithNegative() {
+        assertEquals(OptionalLong.empty(), BitmaskUtils.toBitMaskValue(-1));
+    }
+
+    @Test
+    void testToBitMaskValueWithFractionalNumber() {
+        assertEquals(OptionalLong.empty(), BitmaskUtils.toBitMaskValue(3.5d));
+    }
+
+    @Test
+    void testToBitMaskValueWithNoFractionalNumber() {
+        assertEquals(OptionalLong.of(3L), BitmaskUtils.toBitMaskValue(3.0d));
+    }
+
+    @Test
+    void testHasFractionalPart() {
+        assertTrue(BitmaskUtils.hasFractionalPart(3.5d));
+        assertFalse(BitmaskUtils.hasFractionalPart(3.0d));
+        assertFalse(BitmaskUtils.hasFractionalPart(3L));
+        assertFalse(BitmaskUtils.hasFractionalPart(new BigDecimal("3.0")));
+        assertTrue(BitmaskUtils.hasFractionalPart(new BigDecimal("3.5")));
+        assertTrue(BitmaskUtils.hasFractionalPart(3.5f));
+        assertFalse(BitmaskUtils.hasFractionalPart(3.0f));
+        assertTrue(BitmaskUtils.hasFractionalPart(new Decimal128(new BigDecimal("3.5"))));
+        assertFalse(BitmaskUtils.hasFractionalPart(new Decimal128(new BigDecimal("3.0"))));
+    }
 }

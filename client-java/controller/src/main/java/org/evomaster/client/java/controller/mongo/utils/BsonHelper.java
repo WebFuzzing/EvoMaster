@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.mongo.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Set;
 
@@ -18,16 +19,18 @@ public class BsonHelper {
     private static final String GET_PATTERN_METHOD = "getPattern";
     private static final String GET_OPTIONS_METHOD = "getOptions";
 
-    public static final String ORG_BSON_BSON_BINARY = "org.bson.BsonBinary";
+    private static final String ORG_BSON_BSON_BINARY = "org.bson.BsonBinary";
     private static final String ORG_BSON_BSON_TYPE = "org.bson.BsonType";
     private static final String BSON_REGEX_CLASS = "org.bson.BsonRegularExpression";
     private static final String ORG_BSON_DOCUMENT = "org.bson.Document";
-    public static final String ORG_BSON_TYPES_BINARY = "org.bson.types.Binary";
+    private static final String ORG_BSON_TYPES_BINARY = "org.bson.types.Binary";
+    private static final String ORG_BSON_TYPES_DECIMAL_128 = "org.bson.types.Decimal128";
 
     public static final String NULL_TYPE = "null";
-    public static final String BSON_TYPE_NULL = "NULL";
-    public static final String GET_DATA = "getData";
-    public static final String TO_BYTE_ARRAY = "toByteArray";
+    private static final String BSON_TYPE_NULL = "NULL";
+    private static final String GET_DATA = "getData";
+    private static final String TO_BYTE_ARRAY = "toByteArray";
+    private static final String BIG_DECIMAL_VALUE = "bigDecimalValue";
 
 
     public static Object newDocument(Object bsonDocument) {
@@ -304,6 +307,29 @@ public class BsonHelper {
         }
         try {
             return (byte[]) actualValue.getClass().getMethod(TO_BYTE_ARRAY).invoke(actualValue);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean isDecimal128(Number n) {
+        return n!=null && n.getClass().getName().equals(ORG_BSON_TYPES_DECIMAL_128);
+    }
+
+    public static BigDecimal getBigDecimalValue(Number n) {
+        Objects.requireNonNull(n, "n");
+
+        if (!isDecimal128(n)) {
+            throw new IllegalArgumentException("The provided number is not a BSON Decimal128 but class: " + n.getClass().getName());
+        }
+        try {
+            Method getValueMethod = n.getClass().getMethod(BIG_DECIMAL_VALUE);
+            Object decimalValue = getValueMethod.invoke(n);
+            if (decimalValue instanceof BigDecimal) {
+                return (BigDecimal) decimalValue;
+            } else {
+                throw new IllegalStateException("Expected BigDecimal value but got: " + decimalValue.getClass().getName());
+            }
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

@@ -14,6 +14,7 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -233,5 +234,19 @@ class BsonHelperTest {
         assertTrue(BsonHelper.isBsonType(BsonType.INT32));
         assertFalse(BsonHelper.isBsonType("not a BsonType"));
         assertFalse(BsonHelper.isBsonType(null));
+    }
+
+    @Test
+    void testIsDecimal128() {
+        assertTrue(BsonHelper.isDecimal128(new Decimal128(1234567890123456789L)));
+        assertFalse(BsonHelper.isDecimal128(123.45));
+        assertFalse(BsonHelper.isDecimal128(null));
+    }
+
+    @Test
+    void testGetBigDecimalValue() {
+        Decimal128 decimal128 = new Decimal128(1234567890123456789L);
+        final BigDecimal expectedBigDecimalValue = decimal128.bigDecimalValue();
+        assertEquals(expectedBigDecimalValue, BsonHelper.getBigDecimalValue(decimal128));
     }
 }

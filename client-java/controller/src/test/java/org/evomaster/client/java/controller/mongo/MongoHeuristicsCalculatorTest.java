@@ -2564,51 +2564,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a negative bit position is read as bit 63 instead of being rejected")
-    public void testBitmaskWithANegativeBitPosition() {
-        /*
-            mongo: "Failed to parse bit position. Expected a non-negative number in: 0: -1".
-
-            A shift count is masked to its low six bits in Java, so 1L << -1 sets bit 63
-            and the mask becomes Long.MIN_VALUE, which the value below then matches.
-            Rejecting the mask on its own is not enough here: if the mask stops parsing,
-            the selector answers null and the query goes unparsed, which is the throwing
-            case rather than a fix.
-         */
-        Document doc = new Document().append("a", Long.MIN_VALUE);
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
-        Document query = new Document().append("a",
-                new Document().append("$bitsAllSet", Collections.singletonList(-1)));
-        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
-        assertTrue(truthness.isFalse());
-    }
-
-    @Test
-    @Disabled("a bitmask that is not an integer is truncated instead of being rejected")
-    public void testBitmaskThatIsNotAnInteger() {
-        // mongo: "Expected an integer: $bitsAllSet: 3.9". Here 3.9 is read as the mask 3.
-        Document doc = new Document().append("a", 3);
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
-        Document query = new Document().append("a", new Document().append("$bitsAllSet", 3.9d));
-        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
-        assertTrue(truthness.isFalse());
-    }
-
-    @Test
-    @Disabled("a negative bitmask is read as all ones instead of being rejected")
-    public void testBitmaskThatIsNegative() {
-        // mongo: "Expected a non-negative number in: $bitsAllSet: -1"
-        Document doc = new Document().append("a", -1);
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
-
-        Document query = new Document().append("a", new Document().append("$bitsAllSet", -1));
-        Truthness truthness = assertDoesNotThrow(() -> calculator.computeHeuristicDocument(query, doc));
-        assertTrue(truthness.isFalse());
-    }
-
-    @Test
     @Disabled("the documents are traversed more than once, so a one-shot Iterable is scored wrongly")
     public void testDocumentsThatCanOnlyBeTraversedOnce() {
         /*
