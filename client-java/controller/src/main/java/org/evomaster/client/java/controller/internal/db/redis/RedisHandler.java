@@ -180,7 +180,7 @@ public class RedisHandler {
     }
 
     /**
-     * TODO (data generation, phase 2): an FT.SEARCH/FT.AGGREGATE against an index that does not
+     * Note: an FT.SEARCH/FT.AGGREGATE against an index that does not
      * exist currently fails outright (Redis raises "No such index"), so ConnectionClassReplacement
      * never records it as a successfully-executed command, and it never reaches this handler at
      * all. Making that case actionable would need capturing failed executions too, plus a
@@ -208,7 +208,7 @@ public class RedisHandler {
             return null;
         }
         if (info == null || !info.isHashIndex()) {
-            // Unknown index (or one over a non-HASH key type, out of scope): see the TODO above.
+            // Unknown indexes or one over a non-HASH key type are out of scope.
             return null;
         }
 
@@ -225,8 +225,6 @@ public class RedisHandler {
                 : Collections.emptyList();
 
         return new RedisFailedCommand(
-                // Unlike other commands, FT_SEARCH/FT_AGGREGATE's label uses a dot ("ft.search"),
-                // so upper-casing it would not round-trip to the enum constant name.
                 type.name(),
                 index,
                 info.getPrefixes(),
