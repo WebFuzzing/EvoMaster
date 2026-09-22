@@ -2251,6 +2251,12 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category NEO4J." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NEO4J = false
+
     @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
@@ -3495,6 +3501,7 @@ class EMConfig {
         if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_NEO4J) categories.add(ReplacementCategory.NEO4J.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
