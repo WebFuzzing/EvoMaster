@@ -151,6 +151,9 @@ class Statistics : SearchListener {
     private var neo4jHeuristicEvaluationFailureCount = 0
     private val neo4jNodesAverageCalculator = IncrementalAverage()
 
+    //how long time spent in choosing names for the generated test cases
+    private var timeSpentChoosingTestNamesMs = 0L
+
    class Pair(val header: String, val element: String)
 
 
@@ -225,6 +228,13 @@ class Statistics : SearchListener {
             }
     }
 
+
+    fun reportTimeSpentInChoosingTestNames(ms: Long) {
+        if(ms < 0){
+            throw IllegalArgumentException("Passed time cannot be negative: $ms")
+        }
+        timeSpentChoosingTestNamesMs += ms
+    }
 
     fun reportTimeout() {
         timeouts++
@@ -611,6 +621,8 @@ class Statistics : SearchListener {
             // statistics info for Neo4j Heuristics
             add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
             add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
+
+            add(Pair("timeSpentChoosingTestNamesMs", "$timeSpentChoosingTestNamesMs"))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
