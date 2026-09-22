@@ -293,12 +293,17 @@ object RestActionBuilderV3 {
      * @throws IllegalArgumentException if the provided 'name' is not found at the beginning of 'allSchemas'.
      * @throws IllegalStateException if the schema with the specified 'name' cannot be found in 'allSchemas'.
      *
+     * @param examples values to offer for the wanted schema as a whole, each with an optional
+     *                 name, beside the genes derived from it. They take the same path as a REST
+     *                 parameter's examples, so they never go through the OpenAPI parser, and as
+     *                 for those, none is offered unless [Options.probUseExamples] gives it a chance.
      * @see Gene
      * @see Options
      */
     fun createGeneForDTO(dtoSchemaName: String,
                          allSchemas: String,
-                         options: Options
+                         options: Options,
+                         examples: List<Pair<Any,String?>> = listOf()
     ) : Gene{
         if(!allSchemas.startsWith("\"$dtoSchemaName\"")){
             throw IllegalArgumentException("Invalid name $dtoSchemaName for schema $allSchemas")
@@ -309,7 +314,14 @@ object RestActionBuilderV3 {
         val schemas = getMapStringFromSchemas(allSchemasValue)
         val dtoSchema = schemas[dtoSchemaName] ?: throw IllegalStateException("cannot find the schema with $dtoSchemaName from $allSchemas")
 
-        if(dtoCache.containsKey(dtoSchema)){
+        //gated here rather than left to the assembler, which would wrap them in a choice weighted at zero
+        val offered = if (options.probUseExamples > 0) examples else listOf()
+
+        /*
+            The cache is keyed on the schema text alone, so it can only serve a call that brings
+            no examples: two callers may share a schema and still offer different examples for it.
+         */
+        if(offered.isEmpty() && dtoCache.containsKey(dtoSchema)){
             return dtoCache[dtoSchema]!!.copy()
         }
 
@@ -328,7 +340,10 @@ object RestActionBuilderV3 {
         val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
         val schemaHolder = RestSchema(currentSchema)
 
+        var wanted: Gene? = null
+
         schemas.forEach { (t, u) ->
+            val forThisOne = if (t == dtoSchemaName) offered else listOf()
             val gene = getGene(t,
                 swagger.openAPI.components.schemas[t]!!,
                 schemaHolder,
@@ -336,11 +351,17 @@ object RestActionBuilderV3 {
                 ArrayDeque(),
                 t,
                 options,
+                examples = forThisOne,
                 messages = mutableListOf())
-            dtoCache[u] = gene
+            if (forThisOne.isEmpty()) {
+                dtoCache[u] = gene
+            }
+            if (t == dtoSchemaName) {
+                wanted = gene
+            }
         }
 
-        return dtoCache[dtoSchema]!!.copy()
+        return (wanted ?: throw IllegalStateException("No gene was built for $dtoSchemaName")).copy()
     }
 
     /**
