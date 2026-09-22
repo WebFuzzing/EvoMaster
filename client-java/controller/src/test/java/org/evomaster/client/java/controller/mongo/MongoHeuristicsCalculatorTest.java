@@ -1603,24 +1603,6 @@ public class MongoHeuristicsCalculatorTest {
         return documentCodec.decode(bsonDocument.asBsonReader(), DecoderContext.builder().build());
     }
 
-
-    /*
-        ================================================================================
-        MongoDB semantics: behaviour that is currently not reproduced by the calculator.
-
-        Every expected value below was obtained by running the same query and the same
-        document against a real MongoDB 7.0.40 server, so the assertions state what the
-        database actually does rather than an interpretation of the documentation.
-
-        The @Disabled tests fail today. Removing the annotation is all that is needed
-        once the corresponding behaviour is implemented, and they are deliberately one
-        per defect so they can be enabled independently, in any order.
-
-        First, a few tests of behaviour that is already correct, as a guard while the
-        heuristic is being changed.
-        ================================================================================
-     */
-
     @Test
     public void testOrderingComparisonsDoNotMatchAcrossIncomparableTypes() {
         // mongo: {value:42} is matched by none of these, a number and a string do not compare
@@ -2122,18 +2104,6 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(nested, doc).isFalse());
         assertTrue(calculator.computeHeuristicDocument(nested, new Document("a", 5)).isTrue());
     }
-
-    /*
-        ================================================================================
-        Further cases, in the same form: every expected value comes from a MongoDB
-        7.0.41 server answering that query against that document, one test per defect,
-        and @Disabled on the ones that fail today.
-
-        Where the database refuses the query outright there is no answer to copy, so
-        those tests assert that the calculator answers false without throwing, that
-        being the only answer available to it.
-        ================================================================================
-     */
 
     @Test
     public void testRegexAgainstAnArrayWithoutStringElements() {
