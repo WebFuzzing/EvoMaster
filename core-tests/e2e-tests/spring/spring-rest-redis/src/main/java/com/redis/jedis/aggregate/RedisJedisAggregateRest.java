@@ -23,11 +23,8 @@ public class RedisJedisAggregateRest extends AbstractRedisJedisRest {
     private static final String INDEX = "idx:items";
     private static final String PREFIX = "item:";
 
-    /**
-     * Index definitions do not survive a flush of the database, so they are made sure to exist
-     * before any operation relies on them.
-     */
-    private void ensureIndexes() {
+    @Override
+    protected void ensureIndexes() {
         try {
             jedis.ftCreate(INDEX,
                     FTCreateParams.createParams().prefix(PREFIX),
@@ -44,7 +41,6 @@ public class RedisJedisAggregateRest extends AbstractRedisJedisRest {
 
     @PostMapping("/item/{name}/{category}/{price}")
     public ResponseEntity<Void> saveItem(@PathVariable String name, @PathVariable String category, @PathVariable int price) {
-        ensureIndexes();
         Map<String, String> fields = new HashMap<>();
         fields.put("name", name);
         fields.put("category", category);
@@ -66,7 +62,6 @@ public class RedisJedisAggregateRest extends AbstractRedisJedisRest {
     }
 
     private ResponseEntity<Void> aggregate(AggregationBuilder aggregation) {
-        ensureIndexes();
         try {
             boolean hasGroups = !jedis.ftAggregate(INDEX, aggregation).getRows().isEmpty();
             return hasGroups ? ResponseEntity.status(200).build() : ResponseEntity.status(404).build();

@@ -83,7 +83,7 @@ public class RedisHeuristicsCalculator {
 
                 case FT_AGGREGATE: {
                     String query = redisCommand.extractArgs().get(1);
-                    List<String> groupByFields = extractGroupByFields(redisCommand.extractArgs());
+                    List<String> groupByFields = redisCommand.extractGroupByFields();
                     t = hFtAggregate(query, groupByFields, redisData.getData());
                     return toMetrics(t, redisData.getData().size());
                 }
@@ -583,32 +583,4 @@ public class RedisHeuristicsCalculator {
         return TruthnessUtils.TRUE_TRUTHNESS;
     }
 
-    /**
-     * FT.AGGREGATE's GROUPBY stage is encoded on the wire as "GROUPBY" nargs field..., with each
-     * field prefixed by "@" (e.g. "@category"); the prefix is stripped to match hash field names.
-     */
-    private List<String> extractGroupByFields(List<String> args) {
-        List<String> fields = new ArrayList<>();
-        int groupByIndex = args.indexOf("GROUPBY");
-        if (groupByIndex < 0 || groupByIndex + 1 >= args.size()) {
-            return fields;
-        }
-
-        int count;
-        try {
-            count = Integer.parseInt(args.get(groupByIndex + 1));
-        } catch (NumberFormatException e) {
-            return fields;
-        }
-
-        for (int i = 0; i < count; i++) {
-            int argIndex = groupByIndex + 2 + i;
-            if (argIndex >= args.size()) {
-                break;
-            }
-            String field = args.get(argIndex);
-            fields.add(field.startsWith("@") ? field.substring(1) : field);
-        }
-        return fields;
-    }
 }

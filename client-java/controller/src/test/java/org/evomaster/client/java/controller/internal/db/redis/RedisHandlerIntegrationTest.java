@@ -1,7 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
+import org.evomaster.client.java.controller.redis.RedisIndexInfo;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -146,25 +149,36 @@ class RedisHandlerIntegrationTest {
     // ---------------------------------------------------------------------------------------
 
     @Test
-    void testGetIndexPrefixesForSinglePrefixIndex() {
-        assertEquals(Collections.singletonList("person:"), client.getIndexPrefixes(PEOPLE_INDEX));
+    void testGetIndexInfoForSinglePrefixIndex() {
+        RedisIndexInfo info = client.getIndexInfo(PEOPLE_INDEX);
+
+        assertNotNull(info);
+        assertTrue(info.isHashIndex());
+        assertEquals(Collections.singletonList("person:"), info.getPrefixes());
+        assertEquals("TEXT", info.getAttributes().get("name"));
+        assertEquals("NUMERIC", info.getAttributes().get("age"));
+        assertEquals("TAG", info.getAttributes().get("street"));
     }
 
     @Test
-    void testGetIndexPrefixesForMultiPrefixIndex() {
-        List<String> prefixes = client.getIndexPrefixes(MULTI_PREFIX_INDEX);
+    void testGetIndexInfoForMultiPrefixIndex() {
+        RedisIndexInfo info = client.getIndexInfo(MULTI_PREFIX_INDEX);
 
-        assertEquals(new HashSet<>(Arrays.asList("a:", "b:")), new HashSet<>(prefixes));
+        assertNotNull(info);
+        assertEquals(new HashSet<>(Arrays.asList("a:", "b:")), new HashSet<>(info.getPrefixes()));
     }
 
     @Test
-    void testGetIndexPrefixesForIndexWithoutPrefixCoversEverything() {
-        assertEquals(Collections.singletonList(""), client.getIndexPrefixes(NO_PREFIX_INDEX));
+    void testGetIndexInfoForIndexWithoutPrefixCoversEverything() {
+        RedisIndexInfo info = client.getIndexInfo(NO_PREFIX_INDEX);
+
+        assertNotNull(info);
+        assertEquals(Collections.singletonList(""), info.getPrefixes());
     }
 
     @Test
-    void testGetIndexPrefixesForUnknownIndexIsEmpty() {
-        assertTrue(client.getIndexPrefixes("idx:does-not-exist").isEmpty());
+    void testGetIndexInfoForUnknownIndexIsNull() {
+        assertNull(client.getIndexInfo("idx:does-not-exist"));
     }
 
     // ---------------------------------------------------------------------------------------
@@ -312,5 +326,57 @@ class RedisHandlerIntegrationTest {
 
         assertEquals(H_MIN_VALUE, matching, 1e-6);
         assertTrue(nonMatching > matching);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // FT.SEARCH / FT.AGGREGATE: data generation - failed command registration against a real index
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void testFtSearchFailedCommandCarriesRealIndexSchema() {
+        seedPeople();
+
+        handler.handle(new RedisCommand(RedisCommand.RedisCommandType.FT_SEARCH,
+                new String[]{PEOPLE_INDEX, "@name:zzzz"}, true, 1));
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failedCommands = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failedCommands.size());
+
+        RedisFailedCommand failed = failedCommands.get(0);
+        assertEquals("FT_SEARCH", failed.command);
+        assertEquals(PEOPLE_INDEX, failed.indexName);
+        assertEquals(Collections.singletonList("person:"), failed.indexPrefixes);
+        assertEquals("TEXT", failed.indexAttributes.get("name"));
+        assertEquals("NUMERIC", failed.indexAttributes.get("age"));
+        assertEquals("TAG", failed.indexAttributes.get("street"));
+
+        assertEquals(1, failed.filters.size());
+        assertEquals(RedisSearchFilterDto.TEXT, failed.filters.get(0).type);
+        assertEquals("name", failed.filters.get(0).field);
+        assertEquals("zzzz", failed.filters.get(0).term);
+    }
+
+    @Test
+    void testFtSearchOnUnknownIndexDoesNotRegisterFailedCommand() {
+        handler.handle(new RedisCommand(RedisCommand.RedisCommandType.FT_SEARCH,
+                new String[]{"idx:does-not-exist", "*"}, true, 1));
+        handler.getEvaluatedRedisCommands();
+
+        assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
+    }
+
+    @Test
+    void testFtAggregateFailedCommandCarriesGroupByFields() {
+        seedPeople();
+
+        handler.handle(new RedisCommand(RedisCommand.RedisCommandType.FT_AGGREGATE,
+                new String[]{PEOPLE_INDEX, "*", "GROUPBY", "1", "@country"}, true, 1));
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failedCommands = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failedCommands.size());
+        assertEquals("FT_AGGREGATE", failedCommands.get(0).command);
+        assertEquals(Collections.singletonList("country"), failedCommands.get(0).groupByFields);
     }
 }

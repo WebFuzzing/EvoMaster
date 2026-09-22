@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisQueryAction
 import org.evomaster.core.database.redis.RedisSaddAction
 import org.evomaster.core.database.redis.RedisSaddFromSinterAction
 import org.evomaster.core.database.redis.RedisSetAction
@@ -110,6 +111,13 @@ object RedisWriter {
                 val member = action.memberGene.getValueAsPrintableString(targetFormat = format)
                 action.keys.map { key ->
                     ".sadd(\"${escape(key, format)}\", $member)"
+                }
+            }
+            is RedisQueryAction -> {
+                val key = "\"${escape(action.key, format)}\""
+                action.fields.map { field ->
+                    val value = "\"${escape(field.rawValue(), format)}\""
+                    ".hset($key, \"${escape(field.name, format)}\", $value)"
                 }
             }
         }
