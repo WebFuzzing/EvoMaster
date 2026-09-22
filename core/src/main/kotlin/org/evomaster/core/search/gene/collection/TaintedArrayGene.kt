@@ -129,16 +129,20 @@ class TaintedArrayGene(
            return false
         }
 
-        /*
-            Resolving a taint adds the array as a child, so a resolved and an unresolved gene do not
-            have the same structure, and copying a value cannot turn one into the other
-         */
-        if(this.isResolved() != other.isResolved()){
+        val otherArray = other.arrayGene
+        if(otherArray == null){
+            // other is unresolved: drop the array, if any
+            killAllChildren()
+        } else if(arrayGene == null){
+            // other is resolved but this is not: resolve this with a copy of its array
+            addChild(otherArray.copy())
+        } else if(!arrayGene!!.unsafeCopyValueFrom(otherArray)){
             return false
         }
 
-        return this.arrayGene?.unsafeCopyValueFrom(other.arrayGene!!)
-            ?: true
+        taintedValue = other.taintedValue
+        isActive = other.isActive
+        return true
     }
 
     override fun getPossiblyTaintedValue(): String {

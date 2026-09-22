@@ -12,11 +12,11 @@ class TaintedArrayGeneTest {
 
     private val randomness = Randomness()
 
-    private fun resolved(): TaintedArrayGene =
-        TaintedArrayGene("resolved", TaintInputName.getTaintName(1), true, ArrayGene("array", IntegerGene("element")))
+    private fun resolved(taintId: Int = 1): TaintedArrayGene =
+        TaintedArrayGene("resolved", TaintInputName.getTaintName(taintId), true, ArrayGene("array", IntegerGene("element")))
 
-    private fun unresolved(): TaintedArrayGene =
-        TaintedArrayGene("unresolved", TaintInputName.getTaintName(2))
+    private fun unresolved(taintId: Int = 2): TaintedArrayGene =
+        TaintedArrayGene("unresolved", TaintInputName.getTaintName(taintId))
 
     @Test
     fun testCopyBetweenResolvedGenes() {
@@ -29,38 +29,50 @@ class TaintedArrayGeneTest {
     }
 
     /**
+     * This used to report a successful copy, even if the tainted value of the source was not copied.
+     */
+    @Test
+    fun testCopyBetweenUnresolvedGenes() {
+        val target = unresolved(2).apply { doInitialize(randomness) }
+        val source = unresolved(3).apply { doInitialize(randomness) }
+
+        assertTrue(target.copyValueFrom(source))
+        assertEquals(source.taintedValue, target.taintedValue)
+        assertTrue(target.containsSameValueAs(source))
+    }
+
+    /**
      * This used to throw a NullPointerException, as the missing array of the source was dereferenced.
      */
     @Test
-    fun testCopyFromUnresolvedIntoResolvedFails() {
+    fun testCopyFromUnresolvedIntoResolved() {
         val target = resolved().apply { doInitialize(randomness) }
         val source = unresolved().apply { doInitialize(randomness) }
-        val before = target.copy()
 
-        assertFalse(target.copyValueFrom(source))
-        assertTrue(target.isResolved())
-        assertTrue(target.containsSameValueAs(before))
+        assertTrue(target.copyValueFrom(source))
+        assertFalse(target.isResolved())
+        assertTrue(target.containsSameValueAs(source))
     }
 
     /**
      * This used to report a successful copy, even if the target was left without the array of the source.
      */
     @Test
-    fun testCopyFromResolvedIntoUnresolvedFails() {
+    fun testCopyFromResolvedIntoUnresolved() {
         val target = unresolved().apply { doInitialize(randomness) }
         val source = resolved().apply { doInitialize(randomness) }
 
-        assertFalse(target.copyValueFrom(source))
-        assertFalse(target.isResolved())
-        assertFalse(target.containsSameValueAs(source))
+        assertTrue(target.copyValueFrom(source))
+        assertTrue(target.isResolved())
+        assertTrue(target.containsSameValueAs(source))
     }
 
     /**
-     * A choice has to copy into the alternative in the same state as the source, and not into the
-     * first alternative of the same class. This used to throw a NullPointerException.
+     * A choice copies into its first alternative of the same class as the source, which here is in a
+     * different state than the source. This used to throw a NullPointerException.
      */
     @Test
-    fun testChoiceCopiesIntoTheAlternativeInTheSameState() {
+    fun testChoiceCopiesIntoAnAlternativeInADifferentState() {
         val choice = ChoiceGene<Gene>("choice", listOf(resolved(), unresolved()))
         choice.doInitialize(randomness)
 
@@ -70,7 +82,6 @@ class TaintedArrayGeneTest {
         source.selectActiveGene(1)
 
         assertTrue(target.copyValueFrom(source))
-        assertEquals(1, target.activeGeneIndex)
         assertTrue(target.containsSameValueAs(source))
     }
 }
