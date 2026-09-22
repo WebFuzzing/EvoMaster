@@ -1,29 +1,32 @@
 package org.evomaster.client.java.controller.mongo;
 
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometry;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometryIntersection;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
+import org.evomaster.client.java.controller.mongo.operations.RegexOptions;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
 import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.OptionalLong;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.documentKeys;
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isBsonDocument;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getDistanceBetweenPoints;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getIntegralLongValue;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
+import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.*;
+import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO;
+import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO;
 
 public class MongoHeuristicsCalculatorHelper {
 
@@ -55,7 +58,7 @@ public class MongoHeuristicsCalculatorHelper {
      * Optionally, a {@link TaintHandler} can be used to handle tainting information
      * related to the regular expression processing.
      *
-     * @param inputValue   the input string to be matched against the regular expression
+     * @param actualValue  the input string to be matched against the regular expression
      * @param pattern      the compiled {@link Pattern} representing the regular expression to match
      * @param taintHandler an optional implementation of {@link TaintHandler} to handle taint-related processing;
      *                     may be null if taint handling is not required
@@ -63,25 +66,25 @@ public class MongoHeuristicsCalculatorHelper {
      * where one component (true or false) is 1 to reflect the match status, and the other
      * captures the approximation in cases of non-exact matches
      */
-    static Truthness evaluateRegularExpression(String inputValue, Pattern pattern, TaintHandler taintHandler) {
+    static Truthness evaluateRegularExpression(String actualValue, Pattern pattern, TaintHandler taintHandler) {
         final String patternString = pattern.pattern();
 
         if (taintHandler != null) {
             final int patternFlags = pattern.flags();
             // TODO: tainting should take into account the pattern flags, which can change the matching behavior
             // TODO: regex could be a partial word match (MongoDB $regex) instead of a whole word match (Matcher.matches())
-            taintHandler.handleTaintForRegex(inputValue, patternString);
+            taintHandler.handleTaintForRegex(actualValue, patternString);
         }
 
 
-        Matcher matcher = pattern.matcher(inputValue);
+        Matcher matcher = pattern.matcher(actualValue);
         boolean matches = matcher.find();
 
         if (matches) {
             return TRUE_C;
         } else {
             // TODO this does not take into account pattern flags, which can change the matching behavior
-            final int distance = RegexDistanceUtils.getStandardDistance(inputValue, patternString);
+            final int distance = RegexDistanceUtils.getStandardDistance(actualValue, patternString);
             // The distance approximation can be zero even when Java's matcher rejects the input
             // (for example, when flags affect line terminators). Keep non-matches strictly false.
             double ofTrue = 1d / (1.1d + distance);
@@ -99,18 +102,19 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(truthness.getOfTrue());
     }
 
-    Truthness compareNonNullLists(List<?> leftList, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, List<?> rightList) {
-        Objects.requireNonNull(leftList);
-        Objects.requireNonNull(rightList);
+    Truthness compareNonNullLists(List<?> actualValueAsList, ComparisonOperatorType op, List<?> expectedValueAsList) {
 
-        final Truthness truthness = evaluateListEquality(leftList, rightList);
-        switch (comparisonOperatorType) {
+        Objects.requireNonNull(expectedValueAsList);
+        Objects.requireNonNull(actualValueAsList);
+
+        final Truthness truthness = evaluateListEquality(expectedValueAsList, actualValueAsList);
+        switch (op) {
             case EQUALS_TO:
                 return truthness;
             case NOT_EQUALS_TO:
                 return truthness.invert();
             default:
-                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
+                throw new IllegalArgumentException("Unsupported binary operator: " + op);
         }
     }
 
@@ -126,88 +130,186 @@ public class MongoHeuristicsCalculatorHelper {
 
         Truthness[] arrayOfTruthnesses = new Truthness[actualList.size()];
         for (int i = 0; i < actualList.size(); i++) {
-            arrayOfTruthnesses[i] = compareNullableValues(
-                    actualList.get(i),
-                    SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, expectedList.get(i)
-            );
+            arrayOfTruthnesses[i] = compareNullableValues(actualList.get(i), EQUALS_TO, expectedList.get(i));
         }
         Truthness unscaledTruthness = buildAndAggregationTruthness(arrayOfTruthnesses);
         final Truthness truthness = buildSafeScaledTruthness(unscaledTruthness);
         return truthness;
     }
 
-    Truthness compareNonNullValues(Object leftValue,
-                                   SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType,
-                                   Object rightValue) {
-        Objects.requireNonNull(leftValue);
-        Objects.requireNonNull(rightValue);
+    List<Truthness> compareDocuments(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+
+        Objects.requireNonNull(actualValue);
+        Objects.requireNonNull(op);
+        Objects.requireNonNull(expectedValue);
+        if (!isBsonDocument(expectedValue) || !isBsonDocument(actualValue)) {
+            throw new IllegalArgumentException("Both expected and actual values must be BSON documents.");
+        }
+
+        List<Truthness> truthnesses = new ArrayList<>();
+        Set<String> expectedFieldNames = documentKeys(expectedValue);
+        Set<String> actualFieldNames = documentKeys(actualValue);
+        /**
+         * org.bson.Document preserves insertion order. This means that the order of field names
+         * in the expected and actual documents may differ even if they contain the same fields.
+         */
+        Iterator<String> expectedFieldNamesIterator = expectedFieldNames.iterator();
+        Iterator<String> actualFieldNamesIterator = actualFieldNames.iterator();
+        while (expectedFieldNamesIterator.hasNext() && actualFieldNamesIterator.hasNext()) {
+            String expectedFieldName = expectedFieldNamesIterator.next();
+            String actualFieldName = actualFieldNamesIterator.next();
+            Truthness fieldNameComparisonTruthness = compareNonNullValues(actualFieldName, op, expectedFieldName);
+            truthnesses.add(fieldNameComparisonTruthness);
+            if (!expectedFieldName.equals(actualFieldName)) {
+                return truthnesses;
+            }
+            Object expectedFieldValue = BsonHelper.getValue(expectedValue, expectedFieldName);
+            Object actualFieldValue = BsonHelper.getValue(actualValue, expectedFieldName);
+            Truthness fieldValueComparisonTruthness = compareNullableValues(actualFieldValue, op, expectedFieldValue);
+            truthnesses.add(fieldValueComparisonTruthness);
+            if (!Objects.equals(expectedFieldValue, actualFieldValue)) {
+                return truthnesses;
+            }
+        }
+        Truthness fieldTruthness = compareNonNullValues(actualFieldNamesIterator.hasNext(), op, expectedFieldNamesIterator.hasNext());
+        truthnesses.add(fieldTruthness);
+        return truthnesses;
+    }
+
+
+    Truthness compareNonNullValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+        Objects.requireNonNull(actualValue);
+        Objects.requireNonNull(expectedValue);
 
         final Truthness truthnessOfComparison;
-        if (leftValue instanceof Number && rightValue instanceof Number) {
-            final Number actualNumber = (Number) leftValue;
-            final Number expectedNumber = (Number) rightValue;
-            truthnessOfComparison = compareNumberValues(actualNumber, comparisonOperatorType, expectedNumber);
+        if (actualValue instanceof Number && expectedValue instanceof Number) {
+            final Number expectedValueAsNumber = (Number) expectedValue;
+            final Number actualNumberAsValue = (Number) actualValue;
+            truthnessOfComparison = compareNumberValues(actualNumberAsValue, op, expectedValueAsNumber);
 
-        } else if (leftValue instanceof String && rightValue instanceof String) {
-            String actualString = (String) leftValue;
-            String expectedString = (String) rightValue;
-            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
+        } else if (actualValue instanceof String && expectedValue instanceof String) {
+            String expectedValueAsString = (String) expectedValue;
+            String actualValueAsString = (String) actualValue;
+            if (taintHandler != null && op == EQUALS_TO) {
+                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
             }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+            truthnessOfComparison = calculateTruthnessForStringComparison(
+                    actualValueAsString, expectedValueAsString, op);
 
-        } else if (leftValue instanceof Boolean && rightValue instanceof Boolean) {
-            int actualIntValue = toIntValue((Boolean) leftValue);
-            int expectedIntValue = toIntValue((Boolean) rightValue);
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(
-                    actualIntValue, expectedIntValue, comparisonOperatorType);
+        } else if (actualValue instanceof Boolean && expectedValue instanceof Boolean) {
+            int expectedValueAsInt = toIntValue((Boolean) expectedValue);
+            int actualValueAsInt = toIntValue((Boolean) actualValue);
+            truthnessOfComparison = calculateTruthnessForNumberComparison(
+                    actualValueAsInt, expectedValueAsInt, op);
 
-        } else if (leftValue instanceof List<?> && rightValue instanceof List<?>) {
-            truthnessOfComparison = compareNonNullLists((List<?>) leftValue, comparisonOperatorType, (List<?>) rightValue);
+        } else if (actualValue instanceof List<?> && expectedValue instanceof List<?>) {
+            final List<?> expectedValueAsList = (List<?>) expectedValue;
+            final List<?> actualValueAsList = (List<?>) actualValue;
+            truthnessOfComparison = compareNonNullLists(actualValueAsList, op, expectedValueAsList);
 
-        } else if (leftValue instanceof Date && rightValue instanceof Date) {
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForInstantComparison(convertToInstant(leftValue), convertToInstant(rightValue), comparisonOperatorType);
+        } else if (actualValue instanceof Date && expectedValue instanceof Date) {
+            final Instant expectedValueAsInstant = convertToInstant(expectedValue);
+            final Instant actualValueAsInstant = convertToInstant(actualValue);
+            truthnessOfComparison = calculateTruthnessForInstantComparison(
+                    actualValueAsInstant, expectedValueAsInstant, op);
 
+        } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
+            long expectedValueAsTimestampValue = BsonHelper.getBsonTimestampValue(expectedValue);
+            long actualValueAsTimestampValue = BsonHelper.getBsonTimestampValue(actualValue);
+            truthnessOfComparison = calculateTruthnessForNumberComparison(actualValueAsTimestampValue, expectedValueAsTimestampValue, op);
 
-        } else if (BsonHelper.isBsonTimestamp(leftValue) && BsonHelper.isBsonTimestamp(rightValue)) {
-            long actualTimestamp = BsonHelper.getBsonTimestampValue(leftValue);
-            long expectedTimestamp = BsonHelper.getBsonTimestampValue(rightValue);
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(actualTimestamp, expectedTimestamp, comparisonOperatorType);
+        } else if (BsonHelper.isBsonRegularExpression(actualValue) && BsonHelper.isBsonRegularExpression(expectedValue)) {
+            String expectedValuePatternAsString = BsonHelper.bsonRegexGetPattern(expectedValue);
+            String actualValuePatternAsString = BsonHelper.bsonRegexGetPattern(actualValue);
+            truthnessOfComparison = calculateTruthnessForStringComparison(actualValuePatternAsString, expectedValuePatternAsString, op);
 
-        } else if (BsonHelper.isObjectId(leftValue) || BsonHelper.isObjectId(rightValue)) {
-            String actualString = leftValue.toString();
-            String expectedString = rightValue.toString();
-            if (taintHandler != null && comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO) {
-                taintHandler.handleTaintForStringEquals(actualString, expectedString, false);
-            }
-            truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForStringComparison(actualString, expectedString, comparisonOperatorType);
+        } else if (BsonHelper.isObjectId(actualValue) && BsonHelper.isObjectId(expectedValue)) {
 
+            byte[] actualValueAsByteArray = BsonHelper.toByteArray(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.toByteArray(expectedValue);
+            truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
+
+        } else if (BsonHelper.isBsonBinary(actualValue) && BsonHelper.isBsonBinary(expectedValue)) {
+
+            byte[] actualValueAsByteArray = BsonHelper.getBinaryData(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.getBinaryData(expectedValue);
+            truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
+
+        } else if (BsonHelper.isBsonDocument(expectedValue) && BsonHelper.isBsonDocument(actualValue)) {
+            truthnessOfComparison = compareDocumentValues(actualValue, op, expectedValue);
         } else {
             // If both types are supported, but no actual comparison logic is defined,
             // we considered them to be incompatible, therefore the comparison returns true
             // only if the comparison operator is NOT_EQUALS_TO. Otherwise returns false.
-            truthnessOfComparison = comparisonOperatorType == SqlExpressionEvaluator.ComparisonOperatorType.NOT_EQUALS_TO ? TRUE_C : C_FALSE;
+            truthnessOfComparison = op == NOT_EQUALS_TO ? TRUE_C : C_FALSE;
+        }
+
+        /**
+         * Taint Analysis
+         */
+        if (BsonHelper.isObjectId(actualValue) || BsonHelper.isObjectId(expectedValue)) {
+            String expectedValueAsString = expectedValue.toString();
+            String actualValueAsString = actualValue.toString();
+            if (taintHandler != null && op == EQUALS_TO) {
+                taintHandler.handleTaintForStringEquals(expectedValueAsString, actualValueAsString, false);
+            }
         }
         return truthnessOfComparison;
     }
 
-    static Truthness compareNumberValues(Number leftNumber, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Number rightNumber) {
-        Objects.requireNonNull(leftNumber);
-        Objects.requireNonNull(rightNumber);
-        Objects.requireNonNull(comparisonOperatorType);
+    private Truthness compareDocumentValues(Object actualValue,
+                                            ComparisonOperatorType op,
+                                            Object expectedValue) {
 
-        double leftValueAsDouble = leftNumber.doubleValue();
-        double rightValueAsDouble = rightNumber.doubleValue();
+        Objects.requireNonNull(expectedValue);
+        Objects.requireNonNull(op);
+        Objects.requireNonNull(actualValue);
+        if (!isBsonDocument(expectedValue) || !isBsonDocument(actualValue)) {
+            throw new IllegalArgumentException("Both expected and actual values must be BSON documents.");
+        }
 
-        if (Double.isNaN(leftValueAsDouble) || Double.isNaN(rightValueAsDouble)) {
+        List<Truthness> truthnesses = compareDocuments(actualValue, op, expectedValue);
+        return buildAndAggregationTruthness(truthnesses.toArray(new Truthness[0]));
+    }
+
+    private Truthness compareBinaryData(byte[] actualValueAsByteArray,
+                                        ComparisonOperatorType op,
+                                        byte[] expectedValueAsByteArray) {
+
+        final Truthness equalityTruthness = getEqualityTruthness(actualValueAsByteArray, expectedValueAsByteArray);
+        switch (op) {
+            case EQUALS_TO:
+                return equalityTruthness;
+            case NOT_EQUALS_TO:
+                return equalityTruthness.invert();
+            case GREATER_THAN:
+            case GREATER_THAN_EQUALS:
+            case MINOR_THAN:
+            case MINOR_THAN_EQUALS:
+                // TODO: Must implement comparison operator type for byte[] values. Currently only EQUALS_TO and NOT_EQUALS_TO are supported.
+                throw new IllegalArgumentException("Must implement comparison operator type: " + op);
+            default:
+                throw new IllegalArgumentException("Unknown operator type: " + op);
+        }
+    }
+
+    static Truthness compareNumberValues(Number actualValueAsNumber, ComparisonOperatorType op, Number expectedValueAsNumber) {
+        Objects.requireNonNull(expectedValueAsNumber);
+        Objects.requireNonNull(op);
+        Objects.requireNonNull(actualValueAsNumber);
+
+        double expectedValueAsDouble = expectedValueAsNumber.doubleValue();
+        double actualValueAsDouble = actualValueAsNumber.doubleValue();
+
+        if (Double.isNaN(expectedValueAsDouble) || Double.isNaN(actualValueAsDouble)) {
             // handle case when NaN is involved in the comparison
-            switch (comparisonOperatorType) {
+            switch (op) {
                 case EQUALS_TO: {
-                    return (Double.isNaN(leftValueAsDouble) && Double.isNaN(rightValueAsDouble)) ?
+                    return (Double.isNaN(expectedValueAsDouble) && Double.isNaN(actualValueAsDouble)) ?
                             TRUE_C : C_FALSE;
                 }
                 case NOT_EQUALS_TO: {
-                    return (!Double.isNaN(leftValueAsDouble) || !Double.isNaN(rightValueAsDouble)) ?
+                    return (!Double.isNaN(expectedValueAsDouble) || !Double.isNaN(actualValueAsDouble)) ?
                             TRUE_C : C_FALSE;
                 }
                 case GREATER_THAN:
@@ -217,33 +319,32 @@ public class MongoHeuristicsCalculatorHelper {
                     return C_FALSE;
                 }
                 default:
-                    throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
+                    throw new IllegalArgumentException("Unsupported comparison operator type: " + op);
             }
         } else {
             // if both values are not NaN, we can use the standard comparison logic
-            final Truthness truthnessOfComparison = SqlExpressionEvaluator.calculateTruthnessForNumberComparison(leftNumber, rightNumber, comparisonOperatorType);
+            final Truthness truthnessOfComparison = calculateTruthnessForNumberComparison(actualValueAsNumber, expectedValueAsNumber, op);
             return truthnessOfComparison;
         }
     }
 
-    Truthness compareNullableValues(Object leftValue, SqlExpressionEvaluator.ComparisonOperatorType comparisonOperatorType, Object rightValue) {
-        if (leftValue == null || rightValue == null) {
-            switch (comparisonOperatorType) {
-                case EQUALS_TO:
-                    return (leftValue == null && rightValue == null) ? TRUE_C : C_FALSE;
-                case NOT_EQUALS_TO:
-                    return (leftValue == null && rightValue == null) ? C_FALSE : TRUE_C;
-                case GREATER_THAN:
-                case GREATER_THAN_EQUALS:
-                case MINOR_THAN:
+    Truthness compareNullableValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+        if (expectedValue == null || actualValue == null) {
+            switch (op) {
                 case MINOR_THAN_EQUALS:
+                case GREATER_THAN_EQUALS:
+                case EQUALS_TO:
+                    return (expectedValue == null && actualValue == null) ? TRUE_C : C_FALSE;
+                case NOT_EQUALS_TO:
+                    return (expectedValue == null && actualValue == null) ? C_FALSE : TRUE_C;
+                case GREATER_THAN:
+                case MINOR_THAN:
                     return C_FALSE;
                 default:
-                    throw new IllegalArgumentException("Unsupported comparison operator type: " + comparisonOperatorType);
+                    throw new IllegalArgumentException("Unsupported comparison operator type: " + op);
             }
         } else {
-            Truthness valTruthness = compareNonNullValues(rightValue,
-                    comparisonOperatorType, leftValue
+            Truthness valTruthness = compareNonNullValues(actualValue, op, expectedValue
             );
             return buildSafeScaledTruthness(valTruthness);
         }
@@ -265,10 +366,18 @@ public class MongoHeuristicsCalculatorHelper {
             return C_FALSE;
         } else {
             Truthness res = buildOrAggregationTruthness(list.stream()
-                    .map(expectedValue -> compareNullableValues(expectedValue,
-                            SqlExpressionEvaluator.ComparisonOperatorType.EQUALS_TO, element
-                    ))
+                    .map(expectedValue -> {
+                        if (BsonHelper.isBsonRegularExpression(expectedValue)) {
+                            String expectedPattern = BsonHelper.bsonRegexGetPattern(expectedValue);
+                            String expectedOptions = BsonHelper.bsonRegexGetOptions(expectedValue);
+                            Pattern pattern = Pattern.compile(expectedPattern);
+                            return evaluateRegularExpression(element.toString(), pattern, taintHandler);
+                        } else {
+                            return compareNullableValues(element, EQUALS_TO, expectedValue);
+                        }
+                    })
                     .toArray(Truthness[]::new));
+
             return buildSafeScaledTruthness(res);
         }
     }
@@ -310,7 +419,7 @@ public class MongoHeuristicsCalculatorHelper {
         return res;
     }
 
-    Truthness evaluateMod(long divisor, long expectedRemainder, Object actualValue) {
+    Truthness evaluateMod(Object actualValue, long divisor, long expectedRemainder) {
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
@@ -321,12 +430,11 @@ public class MongoHeuristicsCalculatorHelper {
     }
 
 
-    Truthness evaluateBitsAllClearOperation(long bitmask,
-                                            Object value) {
-        if (!(value instanceof Number)) {
+    Truthness evaluateBitsAllClearOperation(Object actualValue, long bitmask) {
+        if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
-        final Number number = (Number) value;
+        final Number number = (Number) actualValue;
         final OptionalLong integralValue = getIntegralLongValue(number);
 
         if (!integralValue.isPresent()) {
@@ -339,13 +447,12 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(equalityTruthness);
     }
 
-    Truthness evaluateBitsAllSetOperation(long bitmask,
-                                          Object value) {
+    Truthness evaluateBitsAllSetOperation(Object actualValue, long bitmask) {
 
-        if (!(value instanceof Number)) {
+        if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
-        final Number number = (Number) value;
+        final Number number = (Number) actualValue;
         final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
@@ -359,13 +466,12 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(equalityTruthness);
     }
 
-    Truthness evaluateBitsAnyClearOperation(long bitmask,
-                                            Object value) {
+    Truthness evaluateBitsAnyClearOperation(Object actualValue, long bitmask) {
 
-        if (!(value instanceof Number)) {
+        if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
-        final Number number = (Number) value;
+        final Number number = (Number) actualValue;
         final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
@@ -379,14 +485,13 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(lessThanTruthness);
     }
 
-    Truthness evaluateBitsAnySetOperation(long bitmask,
-                                          Object value) {
+    Truthness evaluateBitsAnySetOperation(Object actualValue, long bitmask) {
 
-        if (!(value instanceof Number)) {
+        if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
 
-        Number number = (Number) value;
+        Number number = (Number) actualValue;
         final OptionalLong integralValue = getIntegralLongValue(number);
         if (!integralValue.isPresent()) {
             return C_FALSE;
@@ -398,11 +503,10 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(lessThanTruthness);
     }
 
-    static Truthness evaluateDistanceBetweenPoints(double minDistance,
+    static Truthness evaluateDistanceBetweenPoints(Object actualValue, double minDistance,
                                                    double maxDistance,
                                                    double longitude,
                                                    double latitude,
-                                                   Object actualValue,
                                                    MongoUtils.GeoSpatialModel geoSpatialModel) {
 
         double x1 = geoSpatialModel == SPHERICAL ? Math.toRadians(longitude) : longitude;
@@ -439,63 +543,45 @@ public class MongoHeuristicsCalculatorHelper {
                 : getEqualityTruthness(distanceBetweenPoints, minDistance);
     }
 
-    /**
-     * Computes the heuristic score for a {@code $geoIntersects} query. The document's actual
-     * value must itself be a supported GeoJSON geometry document; otherwise the condition is
-     * considered not satisfied. When it is, the heuristic is based on the approximate planar
-     * distance between the two geometries (see {@link GeoJsonGeometryIntersection}): 0 (true)
-     * when they share at least one point, and a scaled falseness proportional to how far apart
-     * they are otherwise.
-     */
-    static Truthness evaluateGeoIntersects(GeoJsonGeometry queryGeometry, Object actualValue) {
-        Objects.requireNonNull(queryGeometry);
-
-        if (!isBsonDocument(actualValue)) {
-            return C_FALSE;
+    Truthness evaluateEquality(Object actualValue, Object expectedValue) {
+        Truthness topLevelTruthness = this.compareNullableValues(actualValue, EQUALS_TO, expectedValue);
+        if (topLevelTruthness.isTrue()) {
+            return topLevelTruthness;
+        } else {
+            return evaluateWithArrayUnwrapping(actualValue,
+                    value -> this.compareNullableValues(
+                            value, EQUALS_TO, expectedValue
+                    ));
         }
-
-        final GeoJsonGeometry actualGeometry;
-        try {
-            actualGeometry = GeoJsonUtils.toGeoJsonGeometry(actualValue);
-        } catch (IllegalArgumentException e) {
-            return C_FALSE;
-        }
-
-        double distance = GeoJsonGeometryIntersection.distance(queryGeometry, actualGeometry);
-        if (distance <= 0.0) {
-            return TRUE_C;
-        }
-        return getEqualityTruthness(distance, 0.0);
     }
 
     /**
-     * Computes the heuristic score for a {@code $geoWithin} query. The document's actual value
-     * must itself be a supported GeoJSON geometry document; otherwise the condition is considered
-     * not satisfied. When it is, the heuristic is based on the approximate planar distance of the
-     * farthest-outside point of the document's geometry from the area(s) enclosed by
-     * {@code areaGeometry} (see {@link GeoJsonGeometryIntersection#distanceToContainment}): 0 (true)
-     * when the document's geometry lies entirely within (or on the boundary of) that area, and a
-     * scaled falseness proportional to how far outside it otherwise.
+     * Evaluates a nested structure or a single actualValue using a provided heuristic function.
+     * For nested structures that are lists, it aggregates the results of applying the heuristic
+     * function to each element in the list. For single values, it directly applies the heuristic.
+     *
+     * @param actualValue      the actualValue to evaluate, which can either be a single actualValue or a list of values
+     * @param elementHeuristic a function to compute the heuristic for each element or the single actualValue
+     * @return a Truthness object representing the heuristic of the evaluated input
      */
-    static Truthness evaluateGeoWithin(GeoJsonGeometry areaGeometry, Object actualValue) {
-        Objects.requireNonNull(areaGeometry);
+    Truthness evaluateWithArrayUnwrapping(Object actualValue,
+                                          Function<Object, Truthness> elementHeuristic) {
+        Objects.requireNonNull(elementHeuristic);
 
-        if (!isBsonDocument(actualValue)) {
-            return C_FALSE;
+        if (!(actualValue instanceof List<?>)) {
+            // actualValue is not an array. Inspect only this actualValue.
+            return elementHeuristic.apply(actualValue);
+        } else {
+            // actualValue is an array. Inspect all elements.
+            List<?> actualValueList = (List<?>) actualValue;
+            if (actualValueList.isEmpty()) {
+                return C_FALSE;
+            }
+            Truthness orAggregation = buildOrAggregationTruthness(actualValueList.stream()
+                    .map(elementHeuristic)
+                    .toArray(Truthness[]::new));
+            return buildSafeScaledTruthness(orAggregation);
         }
-
-        final GeoJsonGeometry actualGeometry;
-        try {
-            actualGeometry = GeoJsonUtils.toGeoJsonGeometry(actualValue);
-        } catch (IllegalArgumentException e) {
-            return C_FALSE;
-        }
-
-        double distance = GeoJsonGeometryIntersection.distanceToContainment(actualGeometry, areaGeometry);
-        if (distance <= 0.0) {
-            return TRUE_C;
-        }
-        return getEqualityTruthness(distance, 0.0);
     }
 
 }

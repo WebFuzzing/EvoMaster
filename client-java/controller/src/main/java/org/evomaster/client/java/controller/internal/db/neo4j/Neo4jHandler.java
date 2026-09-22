@@ -11,7 +11,9 @@ import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Acts upon Cypher queries executed by the SUT (captured as {@link Neo4JRunCommand}s): for each
@@ -127,9 +129,18 @@ public class Neo4jHandler {
                 continue;
             }
 
+            Map<String, Object> parameters;
+            try {
+                parameters = ReflectionBasedNeo4jClient.parametersAsMap(op.getParameters());
+            } catch (Exception e) {
+                SimpleLogger.uniqueWarn("Failed to read the parameters of a Cypher query for Neo4j heuristics: "
+                        + e.getMessage());
+                parameters = Collections.emptyMap();
+            }
+
             Neo4jDistanceWithMetrics metrics;
             try {
-                double distance = calculator.computeDistance(parsedQuery, graph);
+                double distance = calculator.computeDistance(parsedQuery, graph, parameters);
                 metrics = new Neo4jDistanceWithMetrics(distance, graph.nodeCount(), false);
             } catch (Exception e) {
                 SimpleLogger.uniqueWarn("Failed to compute Neo4j heuristic for query: " + query

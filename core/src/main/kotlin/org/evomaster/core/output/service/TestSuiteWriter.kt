@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -25,6 +26,8 @@ import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.utils.TimeUtils
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -105,6 +108,8 @@ class TestSuiteWriter {
     @Inject
     private lateinit var llmService: LlmService
 
+    @Inject
+    private lateinit var statistics: Statistics
 
     fun writeTests(testSuiteCode: TestSuiteCode){
         saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
@@ -162,7 +167,10 @@ class TestSuiteWriter {
 
         beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
-        val tests = testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)
+        val tests = TimeUtils.measureTimeMillis(
+            {ms, _ -> statistics.reportTimeSpentInChoosingTestNames(ms)},
+            {testSuiteOrganizer.createSortedTestCases(solution, testCaseWriter)}
+        )
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
 
@@ -508,6 +516,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.redis.dsl.RedisDsl.redis", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionResultsDto", lines)
                 addImport(RedisInsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if (solution.hasAnyDynamoDbAction()) {
+                addImport("org.evomaster.client.java.controller.dynamodb.dsl.DynamoDbDsl.dynamoDb", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto", lines)
+                addImport(DynamoDbInsertionDto::class.qualifiedName!!, lines)
             }
 
             if (useRestAssured()) {

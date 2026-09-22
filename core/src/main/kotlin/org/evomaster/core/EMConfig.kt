@@ -1020,6 +1020,15 @@ class EMConfig {
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
 
+    /**
+     * Whether an EvoMaster Driver takes part in this run.
+     *
+     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * exception: there is no universal wire to speak to a message-driven service, so the driver
+     * holds the connection to the broker even when the SUT itself is treated as a black box.
+     */
+    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+
     fun activatedExperimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1378,21 +1387,6 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
-    @Experimental
-    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
-            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
-    var enableJsonPatchSupport = false
-
-    @Experimental
-    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
-            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
-            " names fall back to the pre-feature behavior (schema ref name or 'body').")
-    var enableXmlWithAttributesSupport = false
-
-    @Experimental
-    @Cfg("Enable multipart/form-data support when building REST actions.")
-    var enableMultipartFormDataSupport = false
-
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1459,6 +1453,22 @@ class EMConfig {
 
     //-------- other options -------------
 
+    @Experimental
+    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
+            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
+    var enableJsonPatchSupport = false
+
+    @Experimental
+    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
+            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
+            " names fall back to the pre-feature behavior (schema ref name or 'body').")
+    var enableXmlWithAttributesSupport = false
+
+    @Experimental
+    @Cfg("Enable multipart/form-data support when building REST actions.")
+    var enableMultipartFormDataSupport = false
+
+
     @Cfg("Inform EvoMaster process that it is running inside Docker." +
             " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
     var runningInDocker = false
@@ -1506,7 +1516,8 @@ class EMConfig {
         GRAPHQL(experimental = false),
         RPC(experimental = true),
         WEBFRONTEND(experimental = true),
-        MCP(experimental = true);
+        MCP(experimental = true),
+        ASYNCAPI(experimental = true);
 
         override fun isExperimental() = experimental
     }
@@ -1616,6 +1627,22 @@ class EMConfig {
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
     @FilePath(false,true)
     var statisticsFile = "statistics.csv"
+
+    @Cfg("Whether to write per-endpoint AI model statistics to CSV.")
+    var writeAIEndpointStatistics = false
+
+    @Cfg("Whether to write per-endpoint AI model snapshot statistics to CSV.")
+    var writeAIEndpointSnapshotStatistics = false
+
+    @Cfg("Where per-endpoint AI model metrics are written in CSV format when " +
+            "writeAIEndpointStatistics and AI response classification are enabled.")
+    @FilePath(false,true)
+    var aiEndpointStatisticsFile = "ai-endpoint-statistics.csv"
+
+    @Cfg("Where per-endpoint AI metric snapshots are written in CSV format when " +
+            "writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive.")
+    @FilePath(false,true)
+    var aiEndpointSnapshotStatisticsFile = "ai-endpoint-snapshots.csv"
 
 
     enum class AIResponseClassifierModel {
@@ -1799,7 +1826,7 @@ class EMConfig {
     @Experimental
     @Cfg("Strategy used to select the best-performing model when a combination of AI models " +
             "are used as an ensemble model for response classification.")
-    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE
+    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -2223,6 +2250,12 @@ class EMConfig {
             " on the JVM.")
     @Experimental
     var instrumentMR_NET = false
+
+    @Cfg("Execute instrumentation for method replace with category NEO4J." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NEO4J = false
 
     @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
@@ -3468,6 +3501,7 @@ class EMConfig {
         if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_NEO4J) categories.add(ReplacementCategory.NEO4J.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }

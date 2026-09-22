@@ -1,25 +1,20 @@
 package org.evomaster.client.java.controller.mongo;
 
 import com.mongodb.client.model.Filters;
+import org.bson.BsonBinary;
 import org.bson.Document;
 import org.bson.BsonRegularExpression;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.bson.types.Binary;
 import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometryCollection;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonLineString;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiLineString;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPoint;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonMultiPolygon;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
-import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPolygon;
+import org.evomaster.client.java.controller.mongo.selectors.TypeSelector;
+import org.evomaster.client.java.controller.mongo.utils.BitmaskUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,6 +22,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueryParserTest {
 
     private final QueryParser parser = new QueryParser();
+
+    @Test
+    void testParseElemMatchWithinAll() {
+        // { "a": { "$all": [ { "$elemMatch": { "$gt": 2 } } ] } }
+        Document query = new Document().append("a", new Document().append("$all",
+                Collections.singletonList(new Document().append("$elemMatch",
+                        new Document().append("$gt", 2)))));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof AllOperation);
+        AllOperation<?> allOperation = (AllOperation<?>) operation;
+        assertEquals("a", allOperation.getFieldName());
+        assertEquals(1, allOperation.getValues().size());
+        Object elemMatchValue = allOperation.getValues().get(0);
+        assertTrue(elemMatchValue instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatchOperation = (ElemMatchOperation) elemMatchValue;
+        assertEquals("a", elemMatchOperation.getFieldName());
+        assertTrue(elemMatchOperation.getCondition() instanceof GreaterThanOperation);
+        assertEquals(2, ((GreaterThanOperation) elemMatchOperation.getCondition()).getValue());
+    }
 
     @Test
     void testParseEquals() {
@@ -363,14 +378,27 @@ class QueryParserTest {
     void testParseType() {
         Document query = new Document(
                 "name",
-                new Document("$type", "STRING")
+                new Document("$type", "string")
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
         assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertNotNull(type.getBsonTypes());
+        List<Object> expectedBsonTypes = TypeSelector.parseToBsonTypes("string");
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
     }
+
+    @Test
+    void testParseInvalidType() {
+        Document query = new Document(
+                "name",
+                new Document("$type", "STRING")
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
 
     @Test
     void testParseTypeWithNumber() {
@@ -382,7 +410,7 @@ class QueryParserTest {
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
         assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertNotNull(type.getBsonTypes());
     }
 
     @Test
@@ -436,6 +464,26 @@ class QueryParserTest {
         assertEquals("hospital$", regex.getPattern().pattern());
         assertTrue(regex.getOptions().isCaseInsensitive());
         assertFalse(regex.getOptions().isMultiline());
+    }
+
+    @Test
+    void testParseNotRegexBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$not", new BsonRegularExpression("x")));
+
+        NotOperation notOperation = assertInstanceOf(NotOperation.class, parser.parse(query));
+        assertEquals("name", notOperation.getFieldName());
+        assertTrue(notOperation.getCondition() instanceof RegexOperation);
+        RegexOperation regex = (RegexOperation) notOperation.getCondition();
+        assertEquals("x", regex.getPattern().pattern());
+    }
+
+    @Test
+    void testParseEqBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$eq", new BsonRegularExpression("x")));
+
+        assertNotNull(parser.parse(query));
     }
 
     @Test
@@ -562,6 +610,16 @@ class QueryParserTest {
     }
 
     @Test
+    void testModRejectZeroDivisor() {
+        Document query = new Document(
+                "age",
+                new Document("$mod", Arrays.asList(0L, 0L))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
     void testParseBitsAllClearLong() {
         Document query = new Document(
                 "flags",
@@ -624,6 +682,16 @@ class QueryParserTest {
         BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
         assertEquals("flags", bitsAllSet.getFieldName());
         assertEquals(5L, bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testParseInvalidFractionalBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 3.5d)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
     }
 
     @Test
@@ -708,639 +776,6 @@ class QueryParserTest {
         // Radians to meters: 6371000 * distance
         assertEquals(6371000 * 10.0, ns.getMaxDistance());
         assertEquals(6371000 * 1.0, ns.getMinDistance());
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonLineString() {
-        Document geometry = new Document("type", "LineString")
-                .append("coordinates", Arrays.asList(
-                        Arrays.asList(10, 20L), Arrays.asList(30.5, 40), Arrays.asList(50, 60.5)));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, operation.getGeometry());
-        assertEquals("LineString", line.getType());
-        assertEquals(3, line.getPoints().size());
-        assertEquals(10.0, line.getPoints().get(0).getLongitude());
-        assertEquals(20.0, line.getPoints().get(0).getLatitude());
-        assertEquals(30.5, line.getPoints().get(1).getLongitude());
-        assertEquals(40.0, line.getPoints().get(1).getLatitude());
-        assertEquals(50.0, line.getPoints().get(2).getLongitude());
-        assertEquals(60.5, line.getPoints().get(2).getLatitude());
-    }
-
-    @Test
-    void testParseGeoIntersectsLineStringRemovesConsecutiveDuplicates() {
-        Document geometry = new Document("type", "LineString")
-                .append("coordinates", Arrays.asList(
-                        Arrays.asList(10, 20), Arrays.asList(10.0, 20.0),
-                        Arrays.asList(30, 40), Arrays.asList(10, 20)));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, operation.getGeometry());
-        assertEquals(3, line.getPoints().size());
-        assertEquals(10.0, line.getPoints().get(0).getLongitude());
-        assertEquals(30.0, line.getPoints().get(1).getLongitude());
-        assertEquals(10.0, line.getPoints().get(2).getLongitude());
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidLineStrings() {
-        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Arrays.asList(10, 20)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0)),
-                Arrays.asList(Arrays.asList(10, 20), null),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40, 50)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList("30", 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(Double.NaN, 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, Double.POSITIVE_INFINITY)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(181, 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, -91)))) {
-            Document geometry = new Document("type", "LineString").append("coordinates", coordinates);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))));
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonPolygon() {
-        Document geometry = new Document("type", "Polygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
-                        Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        assertEquals("Polygon", polygon.getType());
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonPolygonWithHole() {
-        Document geometry = new Document("type", "Polygon")
-                .append("coordinates", Arrays.asList(
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
-                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
-                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
-        Document query = new Document("area",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("area", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        assertEquals("Polygon", polygon.getType());
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidPolygons() {
-        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Collections.emptyList()),
-                // Polygon coordinates must contain rings, not positions directly.
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 0)),
-                // An exterior ring must be closed and have at least three distinct points.
-                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 10))),
-                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(0, 0))))) {
-            Document geometry = new Document("type", "Polygon").append("coordinates", coordinates);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
-                    "Expected rejection of polygon coordinates: " + coordinates);
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonMultiPolygon() {
-        Document geometry = new Document("type", "MultiPolygon")
-                .append("coordinates", Arrays.asList(
-                        Collections.singletonList(Arrays.asList(
-                                Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
-                                Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))),
-                        Collections.singletonList(Arrays.asList(
-                                Arrays.asList(20, 20), Arrays.asList(30, 20),
-                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
-        assertEquals("MultiPolygon", multiPolygon.getType());
-        assertEquals(2, multiPolygon.getPolygons().size());
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonMultiPolygonWithHole() {
-        Document geometry = new Document("type", "MultiPolygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
-                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
-                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2)))));
-        Document query = new Document("area",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("area", operation.getFieldName());
-        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
-        assertEquals("MultiPolygon", multiPolygon.getType());
-        assertEquals(1, multiPolygon.getPolygons().size());
-        assertEquals(1, multiPolygon.getPolygons().get(0).getInteriorRings().size());
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidMultiPolygons() {
-        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Collections.emptyList()),
-                // MultiPolygon coordinates must contain polygon coordinate arrays, not a ring directly.
-                Collections.singletonList(Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
-                // A polygon's exterior ring must be closed and have at least three distinct points.
-                Collections.singletonList(Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 10)))),
-                // A single invalid polygon among otherwise valid ones invalidates the whole MultiPolygon.
-                Arrays.asList(
-                        Collections.singletonList(Arrays.asList(
-                                Arrays.asList(0, 0), Arrays.asList(10, 0),
-                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
-                        Collections.singletonList(Collections.emptyList())))) {
-            Document geometry = new Document("type", "MultiPolygon").append("coordinates", coordinates);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
-                    "Expected rejection of multipolygon coordinates: " + coordinates);
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonMultiPoint() {
-        Document geometry = new Document("type", "MultiPoint")
-                .append("coordinates", Arrays.asList(
-                        Arrays.asList(10, 20L), Arrays.asList(30.5, 40), Arrays.asList(50, 60.5)));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonMultiPoint multiPoint = assertInstanceOf(GeoJsonMultiPoint.class, operation.getGeometry());
-        assertEquals("MultiPoint", multiPoint.getType());
-        assertEquals(3, multiPoint.getPoints().size());
-        assertEquals(10.0, multiPoint.getPoints().get(0).getLongitude());
-        assertEquals(20.0, multiPoint.getPoints().get(0).getLatitude());
-        assertEquals(30.5, multiPoint.getPoints().get(1).getLongitude());
-        assertEquals(40.0, multiPoint.getPoints().get(1).getLatitude());
-        assertEquals(50.0, multiPoint.getPoints().get(2).getLongitude());
-        assertEquals(60.5, multiPoint.getPoints().get(2).getLatitude());
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonMultiPointKeepsDuplicatesAndSinglePoints() {
-        // Unlike LineString, MultiPoint has no minimum size and does not dedupe repeated positions.
-        Document geometry = new Document("type", "MultiPoint")
-                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0)));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        GeoJsonMultiPoint multiPoint = assertInstanceOf(GeoJsonMultiPoint.class, operation.getGeometry());
-        assertEquals(2, multiPoint.getPoints().size());
-
-        Document singlePointGeometry = new Document("type", "MultiPoint")
-                .append("coordinates", Collections.singletonList(Arrays.asList(10, 20)));
-        GeoIntersectsOperation singlePointOperation = assertInstanceOf(GeoIntersectsOperation.class,
-                parser.parse(new Document("location",
-                        new Document("$geoIntersects", new Document("$geometry", singlePointGeometry)))));
-        GeoJsonMultiPoint singlePointMultiPoint = assertInstanceOf(GeoJsonMultiPoint.class,
-                singlePointOperation.getGeometry());
-        assertEquals(1, singlePointMultiPoint.getPoints().size());
-
-        Document emptyGeometry = new Document("type", "MultiPoint").append("coordinates", Collections.emptyList());
-        GeoIntersectsOperation emptyOperation = assertInstanceOf(GeoIntersectsOperation.class,
-                parser.parse(new Document("location",
-                        new Document("$geoIntersects", new Document("$geometry", emptyGeometry)))));
-        GeoJsonMultiPoint emptyMultiPoint = assertInstanceOf(GeoJsonMultiPoint.class, emptyOperation.getGeometry());
-        assertEquals(0, emptyMultiPoint.getPoints().size());
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidMultiPoints() {
-        for (Object coordinates : Arrays.asList(null, "invalid",
-                // MultiPoint coordinates must be a list of positions, not a single position directly.
-                Arrays.asList(10, 20),
-                Arrays.asList(Arrays.asList(10, 20), null),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40, 50)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList("30", 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(Double.NaN, 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, Double.POSITIVE_INFINITY)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(181, 40)),
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, -91)))) {
-            Document geometry = new Document("type", "MultiPoint").append("coordinates", coordinates);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
-                    "Expected rejection of multipoint coordinates: " + coordinates);
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonMultiLineString() {
-        Document geometry = new Document("type", "MultiLineString")
-                .append("coordinates", Arrays.asList(
-                        Arrays.asList(Arrays.asList(10, 20L), Arrays.asList(30.5, 40)),
-                        Arrays.asList(Arrays.asList(50, 60), Arrays.asList(70, 80), Arrays.asList(90, 60.5))));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonMultiLineString multiLineString = assertInstanceOf(GeoJsonMultiLineString.class, operation.getGeometry());
-        assertEquals("MultiLineString", multiLineString.getType());
-        assertEquals(2, multiLineString.getLineStrings().size());
-        assertEquals(2, multiLineString.getLineStrings().get(0).getPoints().size());
-        assertEquals(3, multiLineString.getLineStrings().get(1).getPoints().size());
-        assertEquals(10.0, multiLineString.getLineStrings().get(0).getPoints().get(0).getLongitude());
-        assertEquals(20.0, multiLineString.getLineStrings().get(0).getPoints().get(0).getLatitude());
-        assertEquals(90.0, multiLineString.getLineStrings().get(1).getPoints().get(2).getLongitude());
-        assertEquals(60.5, multiLineString.getLineStrings().get(1).getPoints().get(2).getLatitude());
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidMultiLineStrings() {
-        for (Object coordinates : Arrays.asList(null, "invalid", Collections.emptyList(),
-                // Each line's coordinates must have at least two distinct points.
-                Collections.singletonList(Collections.singletonList(Arrays.asList(10, 20))),
-                Collections.singletonList(Arrays.asList(Arrays.asList(10, 20), Arrays.asList(10.0, 20.0))),
-                // MultiLineString coordinates must contain line coordinate arrays, not positions directly.
-                Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)),
-                // A single invalid line among otherwise valid ones invalidates the whole MultiLineString.
-                Arrays.asList(
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)),
-                        Collections.singletonList(Arrays.asList(30, -91))))) {
-            Document geometry = new Document("type", "MultiLineString").append("coordinates", coordinates);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
-                    "Expected rejection of multilinestring coordinates: " + coordinates);
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonGeometryCollection() {
-        Document pointGeometry = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
-        Document lineGeometry = new Document("type", "LineString")
-                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
-        Document geometry = new Document("type", "GeometryCollection")
-                .append("geometries", Arrays.asList(pointGeometry, lineGeometry));
-        Document query = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
-        assertEquals("GeometryCollection", collection.getType());
-        assertEquals(2, collection.getGeometries().size());
-        GeoJsonPoint point = assertInstanceOf(GeoJsonPoint.class, collection.getGeometries().get(0));
-        assertEquals(10.0, point.getLongitude());
-        assertEquals(20.0, point.getLatitude());
-        GeoJsonLineString line = assertInstanceOf(GeoJsonLineString.class, collection.getGeometries().get(1));
-        assertEquals(2, line.getPoints().size());
-    }
-
-    @Test
-    void testParseGeoIntersectsGeoJsonGeometryCollectionWithNestedCollection() {
-        Document innerPoint = new Document("type", "Point").append("coordinates", Arrays.asList(1, 1));
-        Document nestedCollection = new Document("type", "GeometryCollection")
-                .append("geometries", Collections.singletonList(innerPoint));
-        Document geometry = new Document("type", "GeometryCollection")
-                .append("geometries", Collections.singletonList(nestedCollection));
-        Document query = new Document("area",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        GeoIntersectsOperation operation = assertInstanceOf(GeoIntersectsOperation.class, parser.parse(query));
-        assertEquals("area", operation.getFieldName());
-        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
-        assertEquals(1, collection.getGeometries().size());
-        GeoJsonGeometryCollection nested = assertInstanceOf(GeoJsonGeometryCollection.class, collection.getGeometries().get(0));
-        assertEquals(1, nested.getGeometries().size());
-        assertInstanceOf(GeoJsonPoint.class, nested.getGeometries().get(0));
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsInvalidGeometryCollections() {
-        Document validPoint = new Document("type", "Point").append("coordinates", Arrays.asList(0, 0));
-        Document invalidPolygon = new Document("type", "Polygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 10), Arrays.asList(0, 10))));
-        for (Object geometries : Arrays.asList(null, "invalid", Collections.emptyList(),
-                // An element that is not even a BSON document.
-                Collections.singletonList("invalid"),
-                // An element with an unsupported/unknown geometry type.
-                Collections.singletonList(new Document("type", "NotAGeometry").append("coordinates", Arrays.asList(0, 0))),
-                // A single invalid geometry among otherwise valid ones invalidates the whole collection.
-                Arrays.asList(validPoint, invalidPolygon))) {
-            Document geometry = new Document("type", "GeometryCollection").append("geometries", geometries);
-            assertNull(parser.parse(new Document("location",
-                    new Document("$geoIntersects", new Document("$geometry", geometry)))),
-                    "Expected rejection of geometry collection geometries: " + geometries);
-        }
-    }
-
-    @Test
-    void testParseGeoIntersectsRejectsMissingOrUnsupportedGeometry() {
-        for (Object value : Arrays.asList(null, 42, new Document(),
-                new Document("$geometry", null), new Document("$geometry", "invalid"),
-                new Document("$geometry", new Document("type", "Unknown")),
-                new Document("type", "LineString").append("coordinates", Arrays.asList(
-                        Arrays.asList(10, 20), Arrays.asList(30, 40))))) {
-            assertNull(parser.parse(new Document("location", new Document("$geoIntersects", value))));
-        }
-    }
-
-    @Test
-    void testParseGeoWithinGeoJsonPolygon() {
-        Document geometry = new Document("type", "Polygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0L), Arrays.asList(10.5, 0),
-                        Arrays.asList(10.5, 10L), Arrays.asList(0, 10), Arrays.asList(0.0, 0.0))));
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$geometry", geometry)));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        assertEquals("Polygon", polygon.getType());
-    }
-
-    @Test
-    void testParseGeoWithinGeoJsonMultiPolygon() {
-        Document geometry = new Document("type", "MultiPolygon")
-                .append("coordinates", Arrays.asList(
-                        Collections.singletonList(Arrays.asList(
-                                Arrays.asList(0, 0), Arrays.asList(10, 0),
-                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
-                        Collections.singletonList(Arrays.asList(
-                                Arrays.asList(20, 20), Arrays.asList(30, 20),
-                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
-        Document query = new Document("area",
-                new Document("$geoWithin", new Document("$geometry", geometry)));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("area", operation.getFieldName());
-        GeoJsonMultiPolygon multiPolygon = assertInstanceOf(GeoJsonMultiPolygon.class, operation.getGeometry());
-        assertEquals("MultiPolygon", multiPolygon.getType());
-        assertEquals(2, multiPolygon.getPolygons().size());
-    }
-
-    @Test
-    void testParseGeoWithinRejectsGeometryWithoutArea() {
-        // $geoWithin requires a geometry that encloses an area: Point, LineString, MultiPoint,
-        // MultiLineString (and a GeometryCollection made up only of those) must all be rejected.
-        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
-        Document lineString = new Document("type", "LineString")
-                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
-        Document multiPoint = new Document("type", "MultiPoint")
-                .append("coordinates", Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40)));
-        Document multiLineString = new Document("type", "MultiLineString")
-                .append("coordinates", Collections.singletonList(
-                        Arrays.asList(Arrays.asList(10, 20), Arrays.asList(30, 40))));
-        Document collectionWithoutArea = new Document("type", "GeometryCollection")
-                .append("geometries", Arrays.asList(point, lineString));
-
-        for (Document geometry : Arrays.asList(point, lineString, multiPoint, multiLineString, collectionWithoutArea)) {
-            Document query = new Document("location",
-                    new Document("$geoWithin", new Document("$geometry", geometry)));
-            assertNull(parser.parse(query), "Expected rejection of area-less geometry: " + geometry.toJson());
-        }
-    }
-
-    @Test
-    void testParseGeoWithinAcceptsGeometryCollectionWithAnAreaMember() {
-        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(10, 20));
-        Document square = new Document("type", "Polygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
-        Document geometry = new Document("type", "GeometryCollection")
-                .append("geometries", Arrays.asList(point, square));
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$geometry", geometry)));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonGeometryCollection collection = assertInstanceOf(GeoJsonGeometryCollection.class, operation.getGeometry());
-        assertTrue(collection.hasArea());
-    }
-
-    @Test
-    void testParseGeoWithinRejectsInvalidGeometry() {
-        for (Object geometry : Arrays.asList(
-                new Document("type", "Polygon").append("coordinates", "invalid"),
-                new Document("type", "Polygon").append("coordinates", Collections.emptyList()),
-                new Document("type", "Unknown").append("coordinates", Arrays.asList(0, 0)),
-                new Document("coordinates", Arrays.asList(0, 0)))) {
-            Document query = new Document("location",
-                    new Document("$geoWithin", new Document("$geometry", geometry)));
-            assertNull(parser.parse(query), "Expected rejection of geometry: " + geometry);
-        }
-    }
-
-    @Test
-    void testParseGeoWithinRejectsMissingOrUnsupportedGeometry() {
-        for (Object value : Arrays.asList(null, 42, new Document(),
-                new Document("$geometry", null), new Document("$geometry", "invalid"),
-                new Document("$geometry", new Document("type", "Unknown")),
-                new Document("type", "Polygon").append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 10),
-                        Arrays.asList(0, 10), Arrays.asList(0, 0)))))) {
-            assertNull(parser.parse(new Document("location", new Document("$geoWithin", value))));
-        }
-    }
-
-    @Test
-    void testParseGeoWithinIsDistinctFromGeoIntersects() {
-        Document geometry = new Document("type", "Polygon")
-                .append("coordinates", Collections.singletonList(Arrays.asList(
-                        Arrays.asList(0, 0), Arrays.asList(10, 0),
-                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
-
-        Document geoWithinQuery = new Document("location",
-                new Document("$geoWithin", new Document("$geometry", geometry)));
-        Document geoIntersectsQuery = new Document("location",
-                new Document("$geoIntersects", new Document("$geometry", geometry)));
-
-        QueryOperation geoWithinOperation = parser.parse(geoWithinQuery);
-        QueryOperation geoIntersectsOperation = parser.parse(geoIntersectsQuery);
-
-        assertInstanceOf(GeoWithinOperation.class, geoWithinOperation);
-        assertInstanceOf(GeoIntersectsOperation.class, geoIntersectsOperation);
-    }
-
-    /*
-        ================================================================================
-        Cases about $geoWithin's legacy shapes ($box, $polygon, $center, $centerSphere).
-        Each is converted into an equivalent GeoJsonPolygon (see GeoWithinSelector); a shape
-        whose legacy coordinates fall outside valid GeoJSON longitude/latitude ranges cannot
-        be represented that way and must be rejected (returning null), not thrown.
-        ================================================================================
-     */
-
-    @Test
-    void testParseGeoWithinBox() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$box",
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)))));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        // 4 distinct corners plus the closing point that repeats the first.
-        assertEquals(5, polygon.getExteriorRing().getPoints().size());
-        assertTrue(polygon.getInteriorRings().isEmpty());
-    }
-
-    @Test
-    void testParseGeoWithinBoxRejectsInvalidShape() {
-        for (Object box : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Arrays.asList(0, 0)),
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10), Arrays.asList(20, 20)),
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList("10", 10)),
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, Double.NaN)))) {
-            Document query = new Document("location", new Document("$geoWithin", new Document("$box", box)));
-            assertNull(parser.parse(query), "Expected rejection of box: " + box);
-        }
-    }
-
-    @Test
-    void testParseGeoWithinBoxRejectsOutOfRangeCoordinates() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$box",
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(200, 10)))));
-        assertNull(parser.parse(query));
-    }
-
-    @Test
-    void testParseGeoWithinLegacyPolygon() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$polygon",
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
-                                Arrays.asList(10, 10), Arrays.asList(0, 10)))));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        // MongoDB implicitly closes the legacy $polygon ring: 4 distinct vertices plus the
-        // closing point that repeats the first.
-        assertEquals(5, polygon.getExteriorRing().getPoints().size());
-    }
-
-    @Test
-    void testParseGeoWithinLegacyPolygonRejectsInvalidShape() {
-        for (Object polygon : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)),
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList("10", 10)))) {
-            Document query = new Document("location", new Document("$geoWithin", new Document("$polygon", polygon)));
-            assertNull(parser.parse(query), "Expected rejection of legacy polygon: " + polygon);
-        }
-    }
-
-    @Test
-    void testParseGeoWithinLegacyPolygonRejectsOutOfRangeCoordinates() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$polygon",
-                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0), Arrays.asList(10, 100)))));
-        assertNull(parser.parse(query));
-    }
-
-    @Test
-    void testParseGeoWithinCenter() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$center",
-                        Arrays.asList(Arrays.asList(5, 5), 3))));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        // The circle is approximated as a many-sided regular polygon.
-        assertTrue(polygon.getExteriorRing().getPoints().size() > 8);
-    }
-
-    @Test
-    void testParseGeoWithinCenterRejectsInvalidShape() {
-        for (Object center : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Arrays.asList(5, 5)),
-                Arrays.asList(Arrays.asList(5, 5), 0),
-                Arrays.asList(Arrays.asList(5, 5), -1),
-                Arrays.asList(Arrays.asList(5, "5"), 3))) {
-            Document query = new Document("location", new Document("$geoWithin", new Document("$center", center)));
-            assertNull(parser.parse(query), "Expected rejection of center: " + center);
-        }
-    }
-
-    @Test
-    void testParseGeoWithinCenterRejectsOutOfRangeCoordinates() {
-        // A circle around a point near the pole, wide enough that it crosses latitude 90.
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$center",
-                        Arrays.asList(Arrays.asList(0, 89), 5))));
-        assertNull(parser.parse(query));
-    }
-
-    @Test
-    void testParseGeoWithinCenterSphere() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$centerSphere",
-                        Arrays.asList(Arrays.asList(5, 5), 0.001))));
-
-        GeoWithinOperation operation = assertInstanceOf(GeoWithinOperation.class, parser.parse(query));
-        assertEquals("location", operation.getFieldName());
-        GeoJsonPolygon polygon = assertInstanceOf(GeoJsonPolygon.class, operation.getGeometry());
-        assertTrue(polygon.getExteriorRing().getPoints().size() > 8);
-    }
-
-    @Test
-    void testParseGeoWithinCenterSphereRejectsInvalidShape() {
-        for (Object centerSphere : Arrays.asList(null, "invalid", Collections.emptyList(),
-                Collections.singletonList(Arrays.asList(5, 5)),
-                Arrays.asList(Arrays.asList(5, 5), 0),
-                Arrays.asList(Arrays.asList(5, 5), -0.1))) {
-            Document query = new Document("location",
-                    new Document("$geoWithin", new Document("$centerSphere", centerSphere)));
-            assertNull(parser.parse(query), "Expected rejection of centerSphere: " + centerSphere);
-        }
-    }
-
-    @Test
-    void testParseGeoWithinCenterSphereRejectsOutOfRangeCoordinates() {
-        // A radius of 1.5 radians (~85.9 degrees) around a point near the pole pushes the
-        // approximated circle well past latitude 90.
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$centerSphere",
-                        Arrays.asList(Arrays.asList(0, 89), 1.5))));
-        assertNull(parser.parse(query));
-    }
-
-    @Test
-    void testParseGeoWithinRejectsUnrecognizedShapeOperator() {
-        Document query = new Document("location",
-                new Document("$geoWithin", new Document("$unknownShape", Arrays.asList(0, 0))));
-        assertNull(parser.parse(query));
-    }
-
-    @Test
-    void testParseGeoWithinRejectsMultipleShapeKeys() {
-        Document value = new Document("$box",
-                Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 10)))
-                .append("$center", Arrays.asList(Arrays.asList(5, 5), 3));
-        Document query = new Document("location", new Document("$geoWithin", value));
-        assertNull(parser.parse(query));
     }
 
     @Test
@@ -1887,59 +1322,6 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseInvalidComparisonOperatorWithMissingValue() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-
-        QueryOperation operation = parser.parse(query);
-
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseInvalidLessThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseInvalidLessEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseGreaterThenEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseGreaterThenThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-
-    @Test
     void testParseInvalidMultipleOperatorsIncludingUnknownOperator() {
         Document query = new Document(
                 "age",
@@ -1959,7 +1341,11 @@ class QueryParserTest {
                 new Document("$exists", null)
         );
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertNotNull(operation);
+        assertTrue(operation instanceof ExistsOperation);
+        ExistsOperation exists = (ExistsOperation) operation;
+        assertEquals("age", exists.getFieldName());
+        assertFalse(exists.getBoolean());
     }
 
     @Test
@@ -2083,11 +1469,29 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseTopLevelDollar() {
+        Document query = new Document("$foo", "bar");
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
     void testParseOnlyComments() {
         Document query = new Document("$comments", "a comment");
         QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
 
-        assertTrue(operation instanceof EmptyOperation);
+    @Test
+    void testParseQueryWithComment() {
+        Document query = new Document().append("a", 1).append("$comment", "note");
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("a", eq.getFieldName());
+        assertEquals(1, eq.getValue());
     }
 
     @Test
@@ -2096,6 +1500,18 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
 
         assertTrue(operation instanceof EmptyOperation);
+    }
+
+    @Test
+    void testCommentAsField() {
+        Document query =  new Document("foo" ,new Document("$comment", "bar"));
+        QueryOperation operation = parser.parse(query);
+
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("foo", eq.getFieldName());
+        assertEquals(new Document("$comment", "bar"), eq.getValue());
     }
 
     @Test
@@ -2290,6 +1706,64 @@ class QueryParserTest {
                 (LessThanEqualsOperation<?>) elemMatch.getCondition();
         assertEquals("$", lessThanEquals.getFieldName());
         assertEquals("b", lessThanEquals.getValue());
+    }
+
+    @Test
+    void testParseTypeWithListOfTypes() {
+        // mongo: matches, the field holds one of the listed types
+        Document query = new Document().append("a",
+                new Document().append("$type", Arrays.asList("string", "double")));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("string"));
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("double"));
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
+    }
+
+    @Test
+    void testParseAllTypes() {
+        // mongo: matches, the field holds one of the listed types
+        final List<String> aliases = Arrays.asList(
+                "double",
+                "string",
+                "object",
+                "array",
+                "binData",
+                "undefined",
+                "objectId",
+                "bool",
+                "date",
+                "null",
+                "regex",
+                "dbPointer",
+                "javascript",
+                "symbol",
+                "javascriptWithScope",
+                "int",
+                "timestamp",
+                "long",
+                "decimal",
+                "minKey",
+                "maxKey",
+                "number"
+        );
+        Document query = new Document().append("a",
+                new Document().append("$type",
+                        aliases));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        for (String alias : aliases) {
+            expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes(alias));
+        }
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
     }
 
     @Test
@@ -2557,6 +2031,115 @@ class QueryParserTest {
                 Arrays.asList(new Document("age", 30), "invalid")
         ));
     }
+
+    @Test
+    void testBinaryBitmask() {
+        Binary mask = new Binary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testNegativeBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", -1)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testNegativeArrayBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", Arrays.asList(-1))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testBsonBinaryBitmask() {
+        BsonBinary mask = new BsonBinary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testParseGreaterThanOrEqualsNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanEqualsOperation);
+        GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) operation;
+        assertEquals("age", gte.getFieldName());
+        assertEquals(null, gte.getValue());
+    }
+
+    @Test
+    void testParseGreaterThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("age", gt.getFieldName());
+        assertEquals(null, gt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanOperation);
+        LessThanOperation<?> lt = (LessThanOperation<?>) operation;
+        assertEquals("age", lt.getFieldName());
+        assertEquals(null, lt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanOrEqualNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanEqualsOperation);
+        LessThanEqualsOperation<?> lte = (LessThanEqualsOperation<?>) operation;
+        assertEquals("age", lte.getFieldName());
+        assertEquals(null, lte.getValue());
+    }
+
 
     private ElemMatchOperation parseElemMatchCondition(
             Document condition,
