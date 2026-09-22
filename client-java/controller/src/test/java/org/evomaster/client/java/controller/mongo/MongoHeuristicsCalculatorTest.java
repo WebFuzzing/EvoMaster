@@ -2442,7 +2442,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("$all holding an $elemMatch is compared as a value instead of applied as a condition")
     public void testAllHoldingAnElemMatch() {
         /*
             mongo: matches both. $all accepts $elemMatch among its elements, and then every

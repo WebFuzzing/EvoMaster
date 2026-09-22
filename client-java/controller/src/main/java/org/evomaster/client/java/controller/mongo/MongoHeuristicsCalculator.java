@@ -384,8 +384,9 @@ public class MongoHeuristicsCalculator {
 
         Truthness truthness = buildAndAggregationTruthness(
                 expectedValues.stream()
-                        .map(expectedElementValue ->
-                                helper.evaluateEquality(actualValue, expectedElementValue))
+                        .map(expectedElementValue -> expectedElementValue instanceof ElemMatchOperation
+                                ? evaluate((ElemMatchOperation) expectedElementValue, actualValue)
+                                : helper.evaluateEquality(actualValue, expectedElementValue))
                         .toArray(Truthness[]::new));
 
         return truthness;
