@@ -20,6 +20,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
         //nothing to do? at least for now...
@@ -32,6 +33,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
         testCaseName: String,
         testSuitePath: Path?
     ) {
