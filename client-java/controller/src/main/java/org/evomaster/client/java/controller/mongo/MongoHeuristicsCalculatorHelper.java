@@ -42,7 +42,7 @@ public class MongoHeuristicsCalculatorHelper {
         this.taintHandler = taintHandler;
     }
 
-    static Truthness buildSafeScaledTruthness(double maxOfTrue) {
+    public static Truthness buildSafeScaledTruthness(double maxOfTrue) {
         if (maxOfTrue == 1.0) {
             return TRUE_C;
         } else {
@@ -66,7 +66,7 @@ public class MongoHeuristicsCalculatorHelper {
      * where one component (true or false) is 1 to reflect the match status, and the other
      * captures the approximation in cases of non-exact matches
      */
-    static Truthness evaluateRegularExpression(String actualValue, Pattern pattern, TaintHandler taintHandler) {
+    public static Truthness evaluateRegularExpression(String actualValue, Pattern pattern, TaintHandler taintHandler) {
         final String patternString = pattern.pattern();
 
         if (taintHandler != null) {
@@ -92,17 +92,17 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    static int toIntValue(Boolean actualValue) {
+    private static int toIntValue(Boolean actualValue) {
         return actualValue ? 1 : 0;
     }
 
-    static Truthness buildSafeScaledTruthness(Truthness truthness) {
+    public static Truthness buildSafeScaledTruthness(Truthness truthness) {
         Objects.requireNonNull(truthness);
 
         return buildSafeScaledTruthness(truthness.getOfTrue());
     }
 
-    Truthness compareNonNullLists(List<?> actualValueAsList, ComparisonOperatorType op, List<?> expectedValueAsList) {
+    private Truthness compareNonNullLists(List<?> actualValueAsList, ComparisonOperatorType op, List<?> expectedValueAsList) {
 
         Objects.requireNonNull(expectedValueAsList);
         Objects.requireNonNull(actualValueAsList);
@@ -118,7 +118,7 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    Truthness evaluateListEquality(List<?> actualList, List<?> expectedList) {
+    private Truthness evaluateListEquality(List<?> actualList, List<?> expectedList) {
 
         if (actualList.size() != expectedList.size()) {
             return C_FALSE;
@@ -137,7 +137,7 @@ public class MongoHeuristicsCalculatorHelper {
         return truthness;
     }
 
-    List<Truthness> compareDocuments(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+    private List<Truthness> compareDocuments(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
 
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(op);
@@ -177,7 +177,15 @@ public class MongoHeuristicsCalculatorHelper {
     }
 
 
-    Truthness compareNonNullValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+    /**
+     * Compares two non-null values using the specified comparison operator.
+     *
+     * @param actualValue the actual value to compare, which must not be null
+     * @param op the comparison operator to use
+     * @param expectedValue the expected value to compare against, which must not be null
+     * @return a Truthness object representing the result of the comparison
+     */
+    public Truthness compareNonNullValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(expectedValue);
 
@@ -293,7 +301,7 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    static Truthness compareNumberValues(Number actualValueAsNumber, ComparisonOperatorType op, Number expectedValueAsNumber) {
+    private static Truthness compareNumberValues(Number actualValueAsNumber, ComparisonOperatorType op, Number expectedValueAsNumber) {
         Objects.requireNonNull(expectedValueAsNumber);
         Objects.requireNonNull(op);
         Objects.requireNonNull(actualValueAsNumber);
@@ -328,7 +336,15 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    Truthness compareNullableValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
+    /**
+     * Compares two nullable values using the specified comparison operator.
+     *
+     * @param actualValue the actual value to compare, which can be null
+     * @param op the comparison operator to use
+     * @param expectedValue the expected value to compare against, which can be null
+     * @return a Truthness object representing the result of the comparison
+     */
+    public Truthness compareNullableValues(Object actualValue, ComparisonOperatorType op, Object expectedValue) {
         if (expectedValue == null || actualValue == null) {
             switch (op) {
                 case MINOR_THAN_EQUALS:
@@ -359,7 +375,7 @@ public class MongoHeuristicsCalculatorHelper {
      * @param list    the list of objects to search; must not be null.
      * @return a Truthness object representing the heuristic score of the element's presence in the list.
      */
-    Truthness computeHeuristicContainsElement(Object element, List<?> list) {
+    public Truthness computeHeuristicContainsElement(Object element, List<?> list) {
         Objects.requireNonNull(list);
 
         if (list.isEmpty()) {
@@ -382,7 +398,16 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
-    Truthness computeHeuristicInOperation(Object actualValue, List<?> expectedValueList) {
+    /**
+     * Computes a heuristic truthness score for the "$in" operation, evaluating whether the actual value
+     * is contained within the expected value list. If the actual value is a list, each element is compared
+     * against the expected value list, and the results are aggregated.
+     *
+     * @param actualValue the actual value to compare, which can be a single value or a list of values
+     * @param expectedValueList the list of expected values to compare against
+     * @return a Truthness object representing the result of the "in" operation evaluation
+     */
+    public Truthness computeHeuristicInOperation(Object actualValue, List<?> expectedValueList) {
         final Truthness res;
         if (actualValue instanceof List<?>) {
             List<?> actualValueList = (List<?>) actualValue;
@@ -419,18 +444,38 @@ public class MongoHeuristicsCalculatorHelper {
         return res;
     }
 
-    Truthness evaluateMod(Object actualValue, long divisor, long expectedRemainder) {
+    /**
+     * Evaluates the modulus operation on the actual value and compares it to the expected remainder.
+     * The method checks if the actual value is a number, computes the remainder of the division
+     * by the specified expectedDivisor, and then compares it to the expected remainder. The result is
+     * returned as a Truthness object, which captures both the definitive match result and the closeness to a potential match.
+     *
+     * @param actualValue the actual value to evaluate, which must be a Number
+     * @param expectedDivisor the divisor to use for the modulus operation
+     * @param expectedRemainder the expected remainder to compare against
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public Truthness evaluateMod(Object actualValue, long expectedDivisor, long expectedRemainder) {
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
 
-        long actualRemainder = ((Number) actualValue).longValue() % divisor;
+        final long actualValueAsLong = ((Number) actualValue).longValue();
+        final long actualRemainder = actualValueAsLong % expectedDivisor;
         Truthness res = getEqualityTruthness(actualRemainder, expectedRemainder);
         return buildSafeScaledTruthness(res);
     }
 
 
-    Truthness evaluateBitsAllClearOperation(Object actualValue, long bitmask) {
+    /**
+     * Evaluates the "$bitsAllClear" operation, checking if all bits specified by the bitmask are clear
+     * in the actual value.
+     *
+     * @param actualValue the actual value to evaluate, which must be a Number
+     * @param bitmask the bitmask specifying which bits to check
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public Truthness evaluateBitsAllClearOperation(Object actualValue, long bitmask) {
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
         }
@@ -447,7 +492,14 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(equalityTruthness);
     }
 
-    Truthness evaluateBitsAllSetOperation(Object actualValue, long bitmask) {
+    /**
+     * Evaluates the "$bitsAllSet" operation, checking if all bits specified by the bitmask are set in the actual value.
+     *
+     * @param actualValue the actual value to evaluate, which must be a Number
+     * @param bitmask the bitmask specifying which bits to check
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public Truthness evaluateBitsAllSetOperation(Object actualValue, long bitmask) {
 
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
@@ -466,7 +518,14 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(equalityTruthness);
     }
 
-    Truthness evaluateBitsAnyClearOperation(Object actualValue, long bitmask) {
+    /**
+     * Evaluates the "$bitsAnyClear" operation, checking if any bits specified by the bitmask are clear in the actual value.
+     *
+     * @param actualValue the actual value to evaluate, which must be a Number
+     * @param bitmask the bitmask specifying which bits to check
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public Truthness evaluateBitsAnyClearOperation(Object actualValue, long bitmask) {
 
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
@@ -485,7 +544,14 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(lessThanTruthness);
     }
 
-    Truthness evaluateBitsAnySetOperation(Object actualValue, long bitmask) {
+    /**
+     * Evaluates the "$bitsAnySet" operation, checking if any bits specified by the bitmask are set in the actual value.
+     *
+     * @param actualValue the actual value to evaluate, which must be a Number
+     * @param bitmask the bitmask specifying which bits to check
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public Truthness evaluateBitsAnySetOperation(Object actualValue, long bitmask) {
 
         if (!(actualValue instanceof Number)) {
             return C_FALSE;
@@ -503,7 +569,23 @@ public class MongoHeuristicsCalculatorHelper {
         return buildSafeScaledTruthness(lessThanTruthness);
     }
 
-    static Truthness evaluateDistanceBetweenPoints(Object actualValue, double minDistance,
+    /**
+     * Evaluates the distance between two geographical points and checks if it falls within a specified range.
+     * The method calculates the distance between the point represented by the given longitude and latitude
+     * and the point represented by the actualValue, which is expected to be a GeoJSON Point.
+     * The distance is then compared against the provided minimum and maximum distance thresholds.
+     * The result is returned as a Truthness object, which captures both the definitive match result and
+     * the closeness to a potential match.
+     *
+     * @param actualValue the actual value to evaluate, which must be a GeoJSON Point to represent a geographical location
+     * @param minDistance the minimum distance threshold
+     * @param maxDistance the maximum distance threshold
+     * @param longitude the longitude of the reference point
+     * @param latitude the latitude of the reference point
+     * @param geoSpatialModel the model to use for calculating the distance
+     * @return a Truthness object representing the result of the evaluation
+     */
+    public static Truthness evaluateDistanceBetweenPoints(Object actualValue, double minDistance,
                                                    double maxDistance,
                                                    double longitude,
                                                    double latitude,
@@ -543,7 +625,17 @@ public class MongoHeuristicsCalculatorHelper {
                 : getEqualityTruthness(distanceBetweenPoints, minDistance);
     }
 
-    Truthness evaluateEquality(Object actualValue, Object expectedValue) {
+    /**
+     * Evaluates the equality of two values, considering the possibility that either value may be a list.
+     * If the top-level comparison indicates equality, it returns that result. Otherwise, it attempts
+     * to unwrap the actual value if it is a list and compare each element against the expected
+     * value, aggregating the results to determine if any element matches.
+     *
+     * @param actualValue the actual value to compare, which can be a single value or a list of values
+     * @param expectedValue the expected value to compare against
+     * @return a Truthness object representing the result of the equality evaluation
+     */
+    public Truthness evaluateEquality(Object actualValue, Object expectedValue) {
         Truthness topLevelTruthness = this.compareNullableValues(actualValue, EQUALS_TO, expectedValue);
         if (topLevelTruthness.isTrue()) {
             return topLevelTruthness;
@@ -564,7 +656,7 @@ public class MongoHeuristicsCalculatorHelper {
      * @param elementHeuristic a function to compute the heuristic for each element or the single actualValue
      * @return a Truthness object representing the heuristic of the evaluated input
      */
-    Truthness evaluateWithArrayUnwrapping(Object actualValue,
+    public Truthness evaluateWithArrayUnwrapping(Object actualValue,
                                           Function<Object, Truthness> elementHeuristic) {
         Objects.requireNonNull(elementHeuristic);
 
