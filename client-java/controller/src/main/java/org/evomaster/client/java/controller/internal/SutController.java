@@ -930,7 +930,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean hasTableNameDirtyHack(String name, Collection<String> tableIds){
         //FIXME when refactoring datastructures in this class, remove
-        return tableIds.stream().anyMatch(i-> i.toLowerCase().endsWith(name.toLowerCase()));
+        // The same table can be named in different formats here, eg "public.roles" vs "ROLES",
+        // and endsWith() only matched one of the two directions. isSameTable() normalizes both.
+        return tableIds.stream().anyMatch(i-> isSameTable(i, name));
     }
 
     private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
