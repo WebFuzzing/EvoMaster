@@ -29,6 +29,7 @@ import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
 import org.evomaster.client.java.controller.internal.db.cassandra.CassandraHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
+import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
@@ -330,6 +331,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("No connection to DynamoDB");
         }
         return DynamoDbCommandExecutor.executeInsert(connection, insertions);
+    }
+
+    @Override
+    public CassandraInsertionResultsDto execInsertionsIntoCassandraDatabase(List<CassandraInsertionDto> insertions) {
+        Object connection = getCassandraConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to Cassandra");
+        }
+        return CassandraScriptRunner.executeInsert(connection, insertions);
     }
 
     public int getActionIndex(){
@@ -1791,6 +1801,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitRedis(boolean executingInitRedis);
 
     public abstract void setExecutingInitDynamoDb(boolean executingInitDynamoDb);
+
+    public abstract void setExecutingInitCassandra(boolean executingInitCassandra);
 
     public abstract void setExecutingAction(boolean executingAction);
 
