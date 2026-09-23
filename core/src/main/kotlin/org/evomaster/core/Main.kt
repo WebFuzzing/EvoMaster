@@ -19,6 +19,7 @@ import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -364,7 +365,7 @@ class Main {
             solution: Solution<*>,
             idMapper: IdMapper
         ) {
-            if (!config.blackBox || config.bbExperiments) {
+            if (config.usesDriver()) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 val unitsInfo = rc.getSutInfo()?.unitsInfoDto
                 val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
@@ -539,7 +540,7 @@ class Main {
                 /*
                     Note that, in case ob BB-testing, this would had been already modified
                  */
-                assert(!config.blackBox || config.bbExperiments)
+                assert(config.usesDriver())
 
                 val rc = RemoteControllerImplementation(base.getEMConfig())
 
@@ -568,6 +569,8 @@ class Main {
                     config.problemType = EMConfig.ProblemType.RPC
                 } else if (info.webProblem != null) {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
+                } else if (info.asyncApiProblem != null) {
+                    config.problemType = EMConfig.ProblemType.ASYNCAPI
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -621,6 +624,11 @@ class Main {
                         throw IllegalStateException("MCP only supports black-box mode")
                     }
                     McpBlackBoxModule(false)
+                }
+
+                EMConfig.ProblemType.ASYNCAPI -> {
+                    //the sampler, fitness and module for it are being added one at a time
+                    throw IllegalStateException("AsyncAPI is not wired into the search yet")
                 }
 
                 //this should never happen, unless we add new type and forget to add it here
@@ -830,6 +838,58 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyAsyncApi(config: EMConfig): Key<out SearchAlgorithm<AsyncApiIndividual>> {
+
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<LIPSAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<MuLambdaEvolutionaryAlgorithm<AsyncApiIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<AsyncApiIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+        }
+
         private fun getAlgorithmKeyMcp(config: EMConfig): Key<out SearchAlgorithm<McpIndividual>> {
 
             return when (config.algorithm) {
@@ -913,7 +973,7 @@ class Main {
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
             epc.markStartingSearch()
 
-            if (!config.blackBox || config.bbExperiments) {
+            if (config.usesDriver()) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 rc.startANewSearch()
             }
@@ -924,6 +984,7 @@ class Main {
                 EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
                 EMConfig.ProblemType.WEBFRONTEND -> getAlgorithmKeyWeb(config)
                 EMConfig.ProblemType.MCP -> getAlgorithmKeyMcp(config)
+                EMConfig.ProblemType.ASYNCAPI -> getAlgorithmKeyAsyncApi(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 
@@ -977,7 +1038,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (config.blackBox && !config.bbExperiments) {
+            if (!config.usesDriver()) {
                 return null
             }
 

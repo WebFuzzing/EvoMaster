@@ -97,6 +97,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
@@ -107,6 +108,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             sqlInsertionVars,
             mongoInsertionVars,
             redisInsertionVars,
+            dynamoDbInsertionVars,
             testName)
     }
 

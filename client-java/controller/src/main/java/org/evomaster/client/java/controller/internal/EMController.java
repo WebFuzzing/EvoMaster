@@ -4,17 +4,15 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
-import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
-import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.WebProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
-import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
@@ -241,6 +239,13 @@ public class EMController {
                 SimpleLogger.error(msg, e);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
+        } else if (info instanceof AsyncApiProblem) {
+            AsyncApiProblem p = (AsyncApiProblem) info;
+            dto.asyncApiProblem = new AsyncApiProblemDto();
+            dto.asyncApiProblem.schemaLocation = p.getSchemaLocation();
+            dto.asyncApiProblem.schemaText = p.getSchemaText();
+            dto.asyncApiProblem.servicesToNotMock = servicesToNotMock;
+
         } else if(info instanceof WebProblem){
             WebProblem p = (WebProblem) info;
             dto.webProblem = new WebProblemDto();
@@ -836,6 +841,28 @@ public class EMController {
                     return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
                 }
 
+            }
+
+            if (dto.asyncApiCall != null) {
+
+                AsyncApiReplyDto replyDto = new AsyncApiReplyDto();
+                replyDto.index = index;
+
+                try {
+                    sutController.executeAsyncApiAction(dto.asyncApiCall, replyDto);
+                    return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
+                } catch (Exception e) {
+                    /*
+                        Failing to publish is not a finding about the service, it is a broken
+                        setup, so it is reported as such rather than as silence in answer to a
+                        promised reply.
+                     */
+                    String msg = "Thrown exception when publishing a message: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    replyDto.published = false;
+                    replyDto.errorMessage = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(replyDto)).build();
+                }
             }
         }
 
