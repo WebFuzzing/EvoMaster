@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 
@@ -39,6 +40,12 @@ public class ActionDto {
      * note that this is only used when handling RPC problem
      */
     public RPCActionDto rpcCall;
+
+    /**
+     * info to publish a message.
+     * note that this is only used when handling an AsyncAPI problem
+     */
+    public AsyncApiActionDto asyncApiCall;
     
 
     /**
