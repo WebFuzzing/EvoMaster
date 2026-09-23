@@ -61,6 +61,12 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.NN)
     }
 
+    @Disabled
+    @Test
+    fun testRunDNN(){
+        testRunEM(AIResponseClassifierModel.DNN)
+    }
+
     @Test
     fun testRunEnsemble(){
         testRunEM(
@@ -68,7 +74,8 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
             AIResponseClassifierModel.GLM,
             AIResponseClassifierModel.KDE,
             AIResponseClassifierModel.KNN,
-            AIResponseClassifierModel.NN
+            AIResponseClassifierModel.NN,
+            AIResponseClassifierModel.DNN
         )
     }
 
