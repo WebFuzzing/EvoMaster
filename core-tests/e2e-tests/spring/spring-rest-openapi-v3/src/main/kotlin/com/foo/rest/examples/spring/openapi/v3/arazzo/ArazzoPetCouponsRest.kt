@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 open class ArazzoPetCouponsRest {
 
+    /**
+     * Flags track which workflow steps have been executed, simulating Arazzo-style step dependencies.
+     * [resetState] resets them before each test individual so evaluations do not share state.
+     */
     companion object {
         private var executeFindPetsByTags: Boolean = false
         private var executeFindPetsByStatus: Boolean = false
