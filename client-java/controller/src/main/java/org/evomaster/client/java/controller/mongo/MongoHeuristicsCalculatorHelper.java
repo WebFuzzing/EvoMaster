@@ -2,13 +2,10 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
-import org.evomaster.client.java.controller.mongo.operations.RegexOptions;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 import org.evomaster.client.java.controller.mongo.utils.MongoUtils;
 import org.evomaster.client.java.distance.heuristics.Truthness;
-import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
-import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.time.Instant;
@@ -30,24 +27,10 @@ import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.Com
 
 public class MongoHeuristicsCalculatorHelper {
 
-    // TODO these constants should be replaced by DistanceHelper constants
-    public static final double C = 0.1;
-    public static final Truthness C_FALSE = new Truthness(C, 1.0);
-    // TODO These constants should be refactored by TruthnessUtils constants
-    public static final Truthness TRUE_C = new Truthness(1.0, C);
-
     private final TaintHandler taintHandler;
 
     public MongoHeuristicsCalculatorHelper(TaintHandler taintHandler) {
         this.taintHandler = taintHandler;
-    }
-
-    public static Truthness buildSafeScaledTruthness(double maxOfTrue) {
-        if (maxOfTrue == 1.0) {
-            return TRUE_C;
-        } else {
-            return buildScaledTruthness(C, maxOfTrue);
-        }
     }
 
 
@@ -94,12 +77,6 @@ public class MongoHeuristicsCalculatorHelper {
 
     private static int toIntValue(Boolean actualValue) {
         return actualValue ? 1 : 0;
-    }
-
-    public static Truthness buildSafeScaledTruthness(Truthness truthness) {
-        Objects.requireNonNull(truthness);
-
-        return buildSafeScaledTruthness(truthness.getOfTrue());
     }
 
     private Truthness compareNonNullLists(List<?> actualValueAsList, ComparisonOperatorType op, List<?> expectedValueAsList) {
