@@ -15,7 +15,6 @@ import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.Com
 
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.StreamSupport;
 
 /**
  * The MongoHeuristicsCalculator class provides methods to compute heuristic scores for MongoDB-like
