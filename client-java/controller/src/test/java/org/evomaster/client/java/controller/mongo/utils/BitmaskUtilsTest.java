@@ -16,6 +16,7 @@ class BitmaskUtilsTest {
     void testToBitMaskValueWithNumber() {
         assertAll(
                 () -> assertEquals(OptionalLong.of(5L), BitmaskUtils.toBitMaskValue(5)),
+                () -> assertEquals(OptionalLong.empty(), BitmaskUtils.toBitMaskValue(7.9d)),
                 () -> assertEquals(OptionalLong.of(9L), BitmaskUtils.toBitMaskValue(9L)),
                 () -> assertEquals(OptionalLong.of(11L), BitmaskUtils.toBitMaskValue(new Decimal128(new BigDecimal("11"))))
         );
