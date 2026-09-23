@@ -379,7 +379,7 @@ public class RedisHeuristicsCalculator {
      *   ELSE orAggregation({ getStringEquals(doc[field], v) | v in values })
      */
     private Truthness hTagFilter(RedisSearchTagFilter filter, RedisValueData doc) {
-        String value = fieldValue(doc, filter.getField());
+        String value = fieldValue(doc, filter.getFieldName());
         if (value == null) {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
@@ -402,7 +402,7 @@ public class RedisHeuristicsCalculator {
      *   ELSE H_in_range(toDouble(doc[field]), min, max)
      */
     private Truthness hNumericFilter(RedisSearchNumericFilter filter, RedisValueData doc) {
-        String value = fieldValue(doc, filter.getField());
+        String value = fieldValue(doc, filter.getFieldName());
         if (value == null) {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
@@ -446,7 +446,7 @@ public class RedisHeuristicsCalculator {
     private Truthness hTextFilter(RedisSearchTextFilter filter, RedisValueData doc) {
         String word = textTermWord(filter.getTerm());
 
-        if (filter.getField() == null) {
+        if (filter.getFieldName() == null) {
             if (doc == null || doc.getFields() == null || doc.getFields().isEmpty()) {
                 return TruthnessUtils.FALSE_TRUTHNESS;
             }
@@ -457,7 +457,7 @@ public class RedisHeuristicsCalculator {
             return TruthnessUtils.buildOrAggregationTruthness(matches.toArray(new Truthness[0]));
         }
 
-        String value = fieldValue(doc, filter.getField());
+        String value = fieldValue(doc, filter.getFieldName());
         if (value == null) {
             return TruthnessUtils.FALSE_TRUTHNESS;
         }
