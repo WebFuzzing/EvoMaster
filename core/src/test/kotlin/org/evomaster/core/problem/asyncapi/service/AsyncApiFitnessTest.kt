@@ -201,7 +201,7 @@ class AsyncApiFitnessTest {
         assertTrue(payload.isObject, "payload is not a JSON object: ${dto.payload}")
         assertEquals(setOf("n", "x"), payload.fieldNames().asSequence().toSet())
 
-        assertEquals(AsyncApiActionDto.CORRELATION_IN_HEADER, dto.correlationLocation)
+        assertEquals(AsyncApiActionDto.CorrelationLocation.HEADER, dto.correlationLocation)
         assertEquals("/correlationId", dto.correlationPointer)
         assertFalse(dto.correlationId.isNullOrBlank())
         assertTrue(dto.headers.isEmpty())
@@ -325,7 +325,7 @@ class AsyncApiFitnessTest {
 
         //the declared headers are the search's to vary; the correlation id is the driver's to stamp
         assertEquals(setOf("tenant", "meta"), dto.headers.keys)
-        assertEquals(AsyncApiActionDto.CORRELATION_IN_HEADER, dto.correlationLocation)
+        assertEquals(AsyncApiActionDto.CorrelationLocation.HEADER, dto.correlationLocation)
         assertEquals("/correlationId", dto.correlationPointer)
 
         //a header that is itself structured travels as its JSON
@@ -345,7 +345,7 @@ class AsyncApiFitnessTest {
         val dto = driver.published.single()
 
         //MQTT 3.1.1 and raw WebSocket have no metadata, so such documents carry the id inside the message
-        assertEquals(AsyncApiActionDto.CORRELATION_IN_PAYLOAD, dto.correlationLocation)
+        assertEquals(AsyncApiActionDto.CorrelationLocation.PAYLOAD, dto.correlationLocation)
         assertEquals("/request_id", dto.correlationPointer)
         assertEquals("/v1/vsi", dto.address)
         assertEquals("/v1/vsi", dto.replyAddress)

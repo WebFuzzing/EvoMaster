@@ -360,9 +360,9 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         dto.correlationId = runId + CORRELATION_SEPARATOR + published++
         message?.correlationId?.let {
             dto.correlationLocation = if (it.source == AsyncApiCorrelationId.Source.HEADER) {
-                AsyncApiActionDto.CORRELATION_IN_HEADER
+                AsyncApiActionDto.CorrelationLocation.HEADER
             } else {
-                AsyncApiActionDto.CORRELATION_IN_PAYLOAD
+                AsyncApiActionDto.CorrelationLocation.PAYLOAD
             }
             dto.correlationPointer = it.pointer
         }
