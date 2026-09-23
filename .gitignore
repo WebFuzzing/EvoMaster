@@ -111,6 +111,7 @@ Migrations/
 /core-tests/e2e-tests/spring/spring-rest-mongo/target/
 /core-tests/e2e-tests/spring/spring-rest-opensearch/target/
 /core-tests/e2e-tests/spring/spring-rest-redis/target/
+/core-tests/e2e-tests/spring/spring-rest-neo4j/target/
 /core-tests/client-java/target/
 /core-tests/client-java/dependencies/target/
 /core-tests/client-java/sql-dto/target/
