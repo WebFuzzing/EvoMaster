@@ -12,8 +12,23 @@ public class RedisIndexInfo {
 
     public static final String HASH_KEY_TYPE = "HASH";
 
+    /**
+     * The type of key this index covers, e.g. "HASH" or "JSON". Data generation only supports
+     * HASH-backed indexes.
+     */
     private final String keyType;
+
+    /**
+     * The key prefixes declared for the index. A document is a candidate for the index if its
+     * key starts with any of these.
+     */
     private final List<String> prefixes;
+
+    /**
+     * The index schema.
+     * Key -> the name of an indexed hash field, e.g. "age" or "street".
+     * Value -> that field's RediSearch type: "TAG", "NUMERIC" or "TEXT".
+     */
     private final Map<String, String> attributes;
 
     public RedisIndexInfo(String keyType, List<String> prefixes, Map<String, String> attributes) {
@@ -22,10 +37,6 @@ public class RedisIndexInfo {
         this.attributes = Collections.unmodifiableMap(attributes);
     }
 
-    /**
-     * The type of key this index covers, e.g. "HASH" or "JSON". Data generation only supports
-     * HASH-backed indexes.
-     */
     public String getKeyType() {
         return keyType;
     }
@@ -34,18 +45,10 @@ public class RedisIndexInfo {
         return HASH_KEY_TYPE.equalsIgnoreCase(keyType);
     }
 
-    /**
-     * The key prefixes declared for the index. A document is a candidate for the index if its
-     * key starts with any of these.
-     */
     public List<String> getPrefixes() {
         return prefixes;
     }
 
-    /**
-     * The index schema, mapping each indexed hash field to its RediSearch type
-     * ("TAG", "NUMERIC" or "TEXT").
-     */
     public Map<String, String> getAttributes() {
         return attributes;
     }
