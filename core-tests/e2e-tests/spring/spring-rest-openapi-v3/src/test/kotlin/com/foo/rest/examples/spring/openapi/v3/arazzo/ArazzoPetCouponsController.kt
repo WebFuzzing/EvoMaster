@@ -12,4 +12,8 @@ class ArazzoPetCouponsController : SpringController(ArazzoPetCouponsApplication:
             null,
         )
     }
+
+    override fun resetStateOfSUT() {
+        ArazzoPetCouponsRest.resetState()
+    }
 }
