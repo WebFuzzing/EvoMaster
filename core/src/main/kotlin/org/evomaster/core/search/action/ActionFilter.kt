@@ -40,6 +40,11 @@ enum class ActionFilter {
     ONLY_DYNAMODB,
 
     /**
+     * actions which are CASSANDRA-related actions
+     */
+    ONLY_CASSANDRA,
+
+    /**
      * actions which are not SQL-related actions
      */
     NO_SQL,
