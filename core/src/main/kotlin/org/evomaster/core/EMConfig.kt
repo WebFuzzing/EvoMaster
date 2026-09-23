@@ -1677,6 +1677,9 @@ class EMConfig {
          */
         NN,
 
+        /** Deep neural network with Adam optimization and bounded experience replay. */
+        DNN,
+
         /**
          * Generalized Linear Model (GLM).
          * Extends linear regression to handle non-normal response distributions.
@@ -1707,7 +1710,7 @@ class EMConfig {
 
     @Experimental
     @Cfg(
-        "Maximum number of stored samples for classifiers such as KNN and KDE models that rely " +
+        "Maximum number of stored samples for classifiers such as KNN, KDE and DNN models that rely " +
                 "on retaining encoded inputs. " +
                 "This value specifies the maximum number of samples stored for each endpoint. " +
                 "A higher value can improve classification accuracy by leveraging more historical data, " +

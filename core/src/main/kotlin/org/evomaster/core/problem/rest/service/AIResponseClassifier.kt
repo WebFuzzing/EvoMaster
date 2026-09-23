@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classi
 import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.dnn.DNN400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.gene.ObjectGene
@@ -191,6 +192,14 @@ class AIResponseClassifier : AIModel {
                         metricType =config.aIClassificationMetrics,
                         randomness = randomness,
                         learningRate = config.aiResponseClassifierLearningRate)
+                EMConfig.AIResponseClassifierModel.DNN ->
+                    DNN400Classifier(
+                        warmup = config.aiResponseClassifierWarmup,
+                        encoderType = config.aiEncoderType,
+                        metricType = config.aIClassificationMetrics,
+                        randomness = randomness,
+                        learningRate = config.aiResponseClassifierLearningRate,
+                        maxStoredSamples = config.aiResponseClassifierMaxStoredSamples)
                 EMConfig.AIResponseClassifierModel.KNN ->
                     KNN400Classifier(
                         warmup = config.aiResponseClassifierWarmup,
