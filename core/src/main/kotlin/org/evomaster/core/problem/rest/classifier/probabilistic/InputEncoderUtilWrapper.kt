@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.IntegralNumberGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
@@ -50,7 +51,8 @@ class InputEncoderUtilWrapper(
         ArrayGene::class,
         DateGene::class,
         TimeGene::class,
-        DateTimeGene::class
+        DateTimeGene::class,
+        RegexGene::class
     )
 
     /**
@@ -211,12 +213,18 @@ class InputEncoderUtilWrapper(
                     rawEncodedFeatures.add((leaf as NumberGene<*>).value.toDouble())
                 }
                 /**
-                 * Encode a StringGene as a binary presence indicator:
+                 * Encode StringGene and RegexGene as a binary presence indicator:
                  * - 1.0 if the string is non-blank
                  * - sentinel if the string is blank (treated as missing)
                  */
-                is StringGene -> {
-                    rawEncodedFeatures.add(if (leaf.value.isBlank()) sentinel else 1.0)
+                is StringGene, is RegexGene -> {
+                    val value = when (leaf) {
+                        is StringGene -> leaf.value
+                        is RegexGene -> leaf.getValueAsRawString()
+                        else -> error("Unexpected gene type")
+                    }
+
+                    rawEncodedFeatures.add(if (value.isBlank()) sentinel else 1.0)
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)
