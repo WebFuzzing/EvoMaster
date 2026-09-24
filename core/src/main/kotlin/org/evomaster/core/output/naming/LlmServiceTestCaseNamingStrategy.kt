@@ -1,5 +1,7 @@
 package org.evomaster.core.output.naming
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.llm.Prompts.RE_ITERATE_TEST_CASE_NAME
 import org.evomaster.core.llm.Prompts.getPromptForTestCaseName
 import org.evomaster.core.llm.service.LlmService
@@ -11,6 +13,7 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -33,21 +36,33 @@ class LlmServiceTestCaseNamingStrategy(
         nameTokens: MutableList<String>,
         ambiguitySolvers: List<AmbiguitySolver>
     ): String {
+        //for debugging time issues
+//        val newName = TimeUtils.measureTimeMillis(
+//            { ms, _ -> println("LLM took: ${ms}ms") },
+//            {generateLlmName(TestCase(individual, "test"))}
+//        )
+
         val newName = generateLlmName(TestCase(individual, "test"))
+
         return if (newName.isNotEmpty()) "_$newName" else ""
     }
 
     private fun generateLlmName(test: TestCase): String {
-        var newName = sanitizeName(getNewName(test))
-        if (!isValidSuffix(newName)) {
-            newName = sanitizeName(promptReIterateName())
-            if (!isValidSuffix(newName)) {
-                // If prompting the LLM to re-iterate the naming returned an invalid name again,
-                // then we fall back to a default name. Since this is a special case that should not happen,
-                // this name is not added to the list of names the LLM is provided to avoid repetition
-                return fallbackLlmTestCaseName
-            }
+        var newName = try {
+            getNewName(test)
+        }catch (e:Exception){
+            return fallbackLlmTestCaseName
         }
+
+        if(newName == null){
+            newName = promptReIterateName()
+                ?:
+                return fallbackLlmTestCaseName
+        }
+
+        newName = sanitizeName(newName)
+        org.evomaster.core.Lazy.assert { isValidSuffix(newName) }
+
         generatedNames.add(newName)
         return newName
     }
@@ -55,26 +70,50 @@ class LlmServiceTestCaseNamingStrategy(
     // LLM is sometimes returning names as "\n\ntheNewName_" so we need to fix that and return "theNewName".
     private fun sanitizeName(testName: String): String {
 
-        val name = testName.trim().replace("\n", "")
+        val name = testName.trim()
+            .replace("\n", "")
+            .replace("\r", "")
+            .replace("\t", "")
+            .replace(" ", "")
+            .replace("'", "")
+            .replace("\"","")
         if(name.isBlank()){
-            return "invalidLLMGeneratedName"
+            return fallbackLlmTestCaseName
         }
 
-        //we cannot replace chars with empty "", because, if LLM decides to answer in a language that
-        //is not English, then we would end up with an empty string
-        return TestWriterUtils.safeVariableName(name, "x")
+        return TestWriterUtils.safeVariableName(name, "_")
     }
 
-    private fun getNewName(test: TestCase): String {
+    private fun getNewName(test: TestCase): String? {
         val testLines = getTestSourceCode(test)
         val targetLanguage = getTargetLanguage()
         val prompt = getPromptForTestCaseName(targetLanguage, remainingNameChars, generatedNames, testLines.toString())
-        return llmService.chat(prompt.first, prompt.second)
+        val data = llmService.chat(prompt.first, prompt.second)
+        return extractResponse(data)
+    }
+
+    private fun extractResponse(data: String): String? {
+        val mapper = ObjectMapper()
+        val json = try {
+            mapper.readTree(data)
+        } catch (e: JsonProcessingException) {
+            return null
+        }
+        if (json.isTextual) {
+            return data
+        } else if (json.isObject) {
+            val fields = json.fields().asSequence().toList()
+            if (fields.size == 1) {
+                return fields[0].value.textValue()
+            }
+        }
+        return null
     }
 
     // Just in case the LLM did not follow the directive of just giving the new name as output.
-    private fun promptReIterateName(): String {
-        return llmService.chat(RE_ITERATE_TEST_CASE_NAME)
+    private fun promptReIterateName(): String? {
+        val data = llmService.chat(RE_ITERATE_TEST_CASE_NAME)
+        return extractResponse(data)
     }
 
     // With this regex, we check that the output by the LLM is only the test case name. We validate:
