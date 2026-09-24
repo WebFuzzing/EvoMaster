@@ -3,6 +3,7 @@ package org.evomaster.core.database.cassandra
 import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto
 import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto
 import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -123,6 +124,22 @@ class CassandraInsertBuilderTest {
 
         assertTrue(builder.canBuildInsertionFor(
             schema("ks", "users", partitionKey("id", "uuid"), column("name", "text"))))
+    }
+
+    /**
+     * Cassandra only allows a frozen collection in a primary key, and a frozen type is reported as
+     * a plain one, so a collection in that position is handled as any other supported column.
+     */
+    @Test
+    fun testTableWithACollectionAsPartitionKeyIsAccepted() {
+        val schema = schema("ks", "images", partitionKey("tags", "set<text>"), column("v", "int"))
+
+        assertTrue(builder.canBuildInsertionFor(schema))
+
+        val action = builder.createCassandraInsertionAction(schema)
+
+        assertEquals(listOf("tags", "v"), action.seeTopGenes().map { it.name })
+        assertTrue(action.seeTopGenes()[0] is ArrayGene<*>)
     }
 
     @Test
