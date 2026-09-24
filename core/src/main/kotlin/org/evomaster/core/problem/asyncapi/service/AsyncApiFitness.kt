@@ -6,7 +6,6 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
-import java.util.UUID
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.database.sql.SqlAction
@@ -88,13 +87,16 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     private lateinit var asyncApiSampler: AsyncApiSampler
 
     /**
-     * Tells this run's correlation ids from those of an earlier run against the same broker, so
-     * that a reply left over from a previous run is not read as an answer to this one.
+     * Tells apart the correlation ids of the messages this run publishes.
      *
-     * Deliberately not drawn from [randomness]: a run repeated under the same seed would reuse
-     * the ids it used before, which is the one case this exists to tell apart.
+     * Drawn from [randomness], so that a run repeated under the same seed publishes the same
+     * ids. Lazily, since the generator is injected after this object is built.
+     *
+     * Keeping a reply from an earlier run from being read as an answer to this one is not this
+     * value's job but the driver's, which is the only side that can do it: see
+     * `SutController.executeAsyncApiAction`.
      */
-    private val runId: String = UUID.randomUUID().toString().take(8)
+    private val runId: String by lazy { Integer.toHexString(randomness.nextInt()) }
 
     /**
      * How many messages this run has published, which is what makes each correlation id unique.

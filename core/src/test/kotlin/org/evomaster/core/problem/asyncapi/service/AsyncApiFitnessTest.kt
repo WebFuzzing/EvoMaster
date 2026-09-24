@@ -208,6 +208,26 @@ class AsyncApiFitnessTest {
     }
 
     @Test
+    fun testTheSameSeedPublishesTheSameCorrelationIds() {
+
+        /*
+            The ids come from the seeded generator, so a run repeated under the same seed sends
+            exactly what it sent before. Keeping a reply from an earlier run from being taken for
+            this one's is the driver's job, not theirs.
+         */
+        startNcs { replied(DOUBLE_RESULT) }
+        evaluate("bessj", "expint")
+        val first = driver.published.map { it.correlationId }
+
+        startNcs { replied(DOUBLE_RESULT) }
+        evaluate("bessj", "expint")
+        val second = driver.published.map { it.correlationId }
+
+        assertEquals(first, second)
+        assertTrue(first.isNotEmpty())
+    }
+
+    @Test
     fun testEachPublishedMessageGetsItsOwnCorrelationId() {
 
         startNcs { replied(DOUBLE_RESULT) }
