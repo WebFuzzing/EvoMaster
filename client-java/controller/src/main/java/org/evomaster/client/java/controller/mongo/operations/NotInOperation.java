@@ -8,7 +8,7 @@ import java.util.List;
  * - the field value is not in the specified array
  * - the field does not exist.
  */
-public class NotInOperation<V> extends QueryOperationWithField {
+public class NotInOperation<V> extends QueryOperationWithFieldPath {
     private final List<V> values;
 
     public NotInOperation(String fieldName, List<V> values) {

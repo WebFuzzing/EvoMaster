@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
-import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithField;
+import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithFieldPath;
 import org.evomaster.client.java.controller.mongo.selectors.*;
 
 import java.util.ArrayList;
@@ -133,10 +133,10 @@ public class QueryParser {
     }
 
     private boolean usesOperatorAsFieldName(QueryOperation operation) {
-        if (!(operation instanceof QueryOperationWithField)) {
+        if (!(operation instanceof QueryOperationWithFieldPath)) {
             return false;
         }
-        String fieldName = ((QueryOperationWithField) operation).getFieldName();
+        String fieldName = ((QueryOperationWithFieldPath) operation).getFieldPath();
         return fieldName.startsWith(SYNTHETIC_FIELD_NAME)
                 && !fieldName.equals(SYNTHETIC_FIELD_NAME);
     }

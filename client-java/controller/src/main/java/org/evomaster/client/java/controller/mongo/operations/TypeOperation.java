@@ -10,7 +10,7 @@ import java.util.Objects;
  * Represent $type operation.
  * Selects documents where the value of the field is an instance of the specified BSON type(s).
  */
-public class TypeOperation extends QueryOperationWithField {
+public class TypeOperation extends QueryOperationWithFieldPath {
     private final List<Object> bsonTypes;
 
     public TypeOperation(String fieldName, List<Object> bsonTypes) {
