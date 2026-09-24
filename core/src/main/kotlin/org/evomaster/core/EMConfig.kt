@@ -780,6 +780,16 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateCassandraData() && !heuristicsForCassandra) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "collecting heuristics with 'heuristicsForCassandra'")
+        }
+
+        if (shouldGenerateCassandraData() && !extractCassandraExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "extracting Cassandra execution info with 'extractCassandraExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1015,6 +1025,8 @@ class EMConfig {
     fun shouldGenerateMongoData() = generateMongoData
 
     fun shouldGenerateRedisData() = generateRedisData
+
+    fun shouldGenerateCassandraData() = generateCassandraData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -2024,6 +2036,11 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForNeo4j = false
 
+    @Experimental
+    @Cfg("Tracking of Cassandra commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForCassandra = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2036,6 +2053,11 @@ class EMConfig {
     @Cfg("Enable extracting Redis execution info")
     @DependsOnFalseFor("blackBox")
     var extractRedisExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Cassandra execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractCassandraExecutionInfo = false
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
@@ -2096,6 +2118,11 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateRedisData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
