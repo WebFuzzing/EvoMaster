@@ -147,11 +147,12 @@ abstract class TestCaseWriter {
             val mongoInsertionVars = mutableListOf<Pair<String, String>>()
             val redisInsertionVars = mutableListOf<Pair<String, String>>()
             val dynamoDbInsertionVars = mutableListOf<Pair<String, String>>()
+            val neo4jInsertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleTestInitialization(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, test.name)
-            handleActionCalls(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, testCaseName = test.name, testSuitePath)
-            handleCleanUpActions(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, test.name,testSuitePath)
+            handleTestInitialization(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, neo4jInsertionVars, test.name)
+            handleActionCalls(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, neo4jInsertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, sqlInsertionVars, mongoInsertionVars, redisInsertionVars, dynamoDbInsertionVars, neo4jInsertionVars, test.name,testSuitePath)
         }
 
 
@@ -225,6 +226,7 @@ abstract class TestCaseWriter {
      * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
      * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      * @param dynamoDbInsertionVars contains variable names of DynamoDB insertions (Pair.first) with their results (Pair.second).
+     * @param neo4jInsertionVars contains variable names of Neo4j insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleTestInitialization(
         lines: Lines,
@@ -234,6 +236,7 @@ abstract class TestCaseWriter {
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
         dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     )
 
@@ -246,6 +249,7 @@ abstract class TestCaseWriter {
      * @param mongoInsertionVars contains variable names of mongo insertions (Pair.first) with their results (Pair.second).
      * @param redisInsertionVars contains variable names of redis insertions (Pair.first) with their results (Pair.second).
      * @param dynamoDbInsertionVars contains variable names of DynamoDB insertions (Pair.first) with their results (Pair.second).
+     * @param neo4jInsertionVars contains variable names of Neo4j insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleActionCalls(
             lines: Lines,
@@ -255,6 +259,7 @@ abstract class TestCaseWriter {
             mongoInsertionVars: MutableList<Pair<String, String>>,
             redisInsertionVars: MutableList<Pair<String, String>>,
             dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+            neo4jInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     )
@@ -267,6 +272,7 @@ abstract class TestCaseWriter {
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
         dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testCaseName: String,
         testSuitePath: Path?
     ){

@@ -1163,7 +1163,7 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
 
         try {
-            sutController.setExecutingInitCassandra(true);
+             sutController.setExecutingInitCassandra(true);
 
             Object connection = noKillSwitch(sutController::getCassandraConnection);
 

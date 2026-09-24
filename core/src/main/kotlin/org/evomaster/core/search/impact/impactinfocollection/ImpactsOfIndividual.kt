@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.sql.SqlAction
@@ -87,6 +88,8 @@ open class ImpactsOfIndividual(
         val REDISDB_ACTION_KEY = RedisDbAction::class.java.name
 
         val CASSANDRADB_ACTION_KEY = CassandraDbAction::class.java.name
+
+        val NEO4JDB_ACTION_KEY = Neo4jDbAction::class.java.name
 
         val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
     }

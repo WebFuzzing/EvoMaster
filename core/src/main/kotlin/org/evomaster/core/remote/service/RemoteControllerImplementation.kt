@@ -536,6 +536,19 @@ class RemoteControllerImplementation() : RemoteController{
         return executeCassandraDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<CassandraInsertionResultsDto>>() {})
     }
 
+    override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.NEO4J_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        return getDtoFromResponse(
+            response,
+            object : GenericType<WrappedResponseDto<Neo4jInsertionResultsDto>>() {}
+        )?.data
+    }
+
     override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
         val response = makeHttpCall {
             getWebTarget()

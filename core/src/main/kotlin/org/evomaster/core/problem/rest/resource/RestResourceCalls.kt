@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
@@ -49,6 +50,7 @@ class RestResourceCalls(
             RedisDbAction::class.java.isAssignableFrom(k) ||
             DynamoDbAction::class.java.isAssignableFrom(k) ||
             CassandraDbAction::class.java.isAssignableFrom(k) ||
+            Neo4jDbAction::class.java.isAssignableFrom(k) ||
             EnterpriseActionGroup::class.java.isAssignableFrom(k) }
 ) {
 
@@ -108,6 +110,11 @@ class RestResourceCalls(
     private val cassandraDbActions: List<CassandraDbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<CassandraDbAction>()
+        }
+
+    private val neo4jDbActions: List<Neo4jDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<Neo4jDbAction>()
         }
 
     private val dnsActions: List<HostnameResolutionAction>
@@ -214,7 +221,7 @@ class RestResourceCalls(
     fun seeActions(filter: ActionFilter): List<Action> {
         return when (filter) {
             ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
-            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions).plus(dnsActions)
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions).plus(neo4jDbActions).plus(dnsActions)
             ActionFilter.ONLY_SQL -> sqlActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL, ActionFilter.NO_DB -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
@@ -224,8 +231,9 @@ class RestResourceCalls(
             ActionFilter.ONLY_REDIS -> redisDbActions
             ActionFilter.ONLY_DYNAMODB -> dynamoDbActions
             ActionFilter.ONLY_CASSANDRA -> cassandraDbActions
+            ActionFilter.ONLY_NEO4J -> neo4jDbActions
             ActionFilter.ONLY_DNS -> dnsActions
-            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions)
+            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions).plus(neo4jDbActions)
             ActionFilter.ONLY_SCHEDULE_TASK -> throw IllegalStateException("schedule task is not support in resource-based solution for REST Problem")
         }
     }
