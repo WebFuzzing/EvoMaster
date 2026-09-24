@@ -15,20 +15,18 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
-import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.internal.db.cassandra.CassandraHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
@@ -39,6 +37,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
+import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
 import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jHandler;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
@@ -52,10 +51,14 @@ import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.sql.*;
+import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -101,6 +104,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final RedisHandler redisHandler = new RedisHandler();
 
     private final DynamoDbHandler dynamoDbHandler = new DynamoDbHandler();
+
+    private final CassandraHandler cassandraHandler = new CassandraHandler();
 
     private Server controllerServer;
 
@@ -397,6 +402,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
+     * Initialises Cassandra heuristic access after the SUT has started.
+     */
+    public final void initCassandraHandler() {
+        cassandraHandler.setCqlSession(getCassandraConnection());
+    }
+
+    /**
      * TODO further handle multiple connections
      * @return sql connection if there exists
      */
@@ -420,6 +432,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         neo4jHandler.reset();
         redisHandler.reset();
         dynamoDbHandler.reset();
+        cassandraHandler.reset();
     }
 
     /**
@@ -443,7 +456,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()
                 || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()
-                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()) {
+                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()
+                || isCassandraHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -463,6 +477,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
             if (isDynamoDbHeuristicsComputationAllowed()) {
                 computeDynamoDbHeuristics(dto, additionalInfoList);
+            }
+            if (isCassandraHeuristicsComputationAllowed()) {
+                computeCqlHeuristics(dto, additionalInfoList, queryFromDatabase);
             }
         }
         return dto;
@@ -490,6 +507,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isDynamoDbHeuristicsComputationAllowed() {
         return dynamoDbHandler.isCalculateHeuristics() || dynamoDbHandler.isExtractDynamoDbExecution();
+    }
+
+    private boolean isCassandraHeuristicsComputationAllowed() {
+        return cassandraHandler.isCalculateHeuristics() || cassandraHandler.isExtractCqlExecution();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -660,6 +681,44 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (redisHandler.isExtractRedisExecution()) {
             dto.redisExecutionsDto = redisHandler.getExecutionDto();
+        }
+    }
+
+    /**
+     * Computes the heuristics of the CQL commands executed by the SUT during the latest action.
+     *
+     * @param dto destination extra-heuristics DTO
+     * @param additionalInfoList instrumentation data for the current action
+     * @param queryFromDatabase whether the rows of the queried tables can be read to compute the
+     *                          distances, as each evaluated command reads the whole content of the
+     *                          table it targets
+     */
+    public final void computeCqlHeuristics(ExtraHeuristicsDto dto,
+                                           List<AdditionalInfo> additionalInfoList,
+                                           boolean queryFromDatabase) {
+
+        if (!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getCassandraTableMetadataData().forEach(cassandraHandler::handle);
+            last.getCqlInfoData().forEach(cassandraHandler::handle);
+        }
+
+        if (cassandraHandler.isCalculateHeuristics() && queryFromDatabase) {
+            cassandraHandler.getEvaluatedCqlCommands().stream()
+                    .map(p ->
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.CASSANDRA,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.getCqlCommand(),
+                                    p.getCqlDistanceWithMetrics().getCqlDistance(),
+                                    p.getCqlDistanceWithMetrics().getNumberOfEvaluatedRows(),
+                                    false
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
+        }
+
+        if (cassandraHandler.isExtractCqlExecution()) {
+            dto.cassandraExecutionsDto = cassandraHandler.getExecutionDto();
         }
     }
 
