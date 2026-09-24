@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamCh
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
+import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
@@ -1140,6 +1141,68 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitDynamoDb(false);
+        }
+    }
+
+    /**
+     * Executes Cassandra initialisation insertions.
+     *
+     * @param dto insertion commands
+     * @param httpServletRequest request metadata
+     * @return insertion results, stating for each insertion whether it executed successfully
+     */
+    @Path(ControllerConstants.CASSANDRA_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeCassandraInsertion(
+            CassandraDatabaseCommandDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+            sutController.setExecutingInitCassandra(true);
+
+            Object connection = noKillSwitch(sutController::getCassandraConnection);
+
+            if (connection == null) {
+                String msg = "No active Cassandra connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto == null || dto.insertions == null || dto.insertions.isEmpty()) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            CassandraInsertionResultsDto results;
+            try {
+                results = CassandraScriptRunner.executeInsert(connection, dto.insertions);
+            } catch (Exception e) {
+                String msg = "Failed to execute Cassandra insertions: " + e.getMessage();
+                SimpleLogger.warn(msg, e);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            /*
+                A failed insertion is reported as such in the results, and does not invalidate the
+                insertions that follow it, as Cassandra has no references between rows. As such, and
+                like for SQL, a partially failed batch is still a 200, with one result per insertion.
+             */
+            return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500)
+                    .entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitCassandra(false);
         }
     }
 }

@@ -99,6 +99,14 @@ public interface SutHandler {
     DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions);
 
     /**
+     * Executes Cassandra initialisation insertions.
+     *
+     * @param insertions rows to insert
+     * @return insertion results, stating for each insertion whether it executed successfully
+     */
+    CassandraInsertionResultsDto execInsertionsIntoCassandraDatabase(List<CassandraInsertionDto> insertions);
+
+    /**
      * <p>
      * return an instance of a client of an RPC service.
      * </p>

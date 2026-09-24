@@ -7,10 +7,6 @@ import org.evomaster.core.search.action.EvaluatedCassandraDbAction
 /**
  * Class used to generate the code in the test dealing with insertion of
  * data into CASSANDRA databases.
- *
- * Note that the generated code calls a method to execute the insertions on the SUT controller, which
- * does not exist yet, as the wiring of Cassandra into the controller is handled separately. Until
- * that is in place, the tests generated for an individual with Cassandra actions do not compile.
  */
 object CassandraWriter {
 
