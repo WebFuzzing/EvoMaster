@@ -1,11 +1,12 @@
 package org.evomaster.core.problem.rest.data
 
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
@@ -13,15 +14,17 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbAction
-import org.evomaster.core.search.*
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
-import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -45,8 +48,9 @@ class RestIndividual(
     scheduleSize : Int = 0,
     cleanupSize: Int = 0,
     dynamoDbSize: Int = 0,
+    cassandraSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> =
-        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize, dynamoDbSize),
+        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize, dynamoDbSize, cassandraSize),
 ): ApiWsIndividual(
     sampleType,
     trackOperator,
@@ -114,6 +118,7 @@ class RestIndividual(
                 dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS),
                 cleanupSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.CLEANUP),
                 dynamoDbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DYNAMODB),
+                cassandraSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA),
         )
     }
 
@@ -148,6 +153,8 @@ class RestIndividual(
 
         val dynamoDbActions = resources.flatMap { it.seeActions(ONLY_DYNAMODB) } as List<DynamoDbAction>
 
+        val cassandraDbActions = resources.flatMap { it.seeActions(ONLY_CASSANDRA) } as List<CassandraDbAction>
+
         val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
 
         removeResourceCall(resources)
@@ -157,6 +164,7 @@ class RestIndividual(
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(redisDbActions, GroupsOfChildren.INITIALIZATION_REDIS)
         addChildrenToGroup(dynamoDbActions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
+        addChildrenToGroup(cassandraDbActions, GroupsOfChildren.INITIALIZATION_CASSANDRA)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
 
 
@@ -175,7 +183,7 @@ class RestIndividual(
         /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
          */
-        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty() || dynamoDbActions.isNotEmpty()
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty() || dynamoDbActions.isNotEmpty() || cassandraDbActions.isNotEmpty()
 
         // re-generate local id
 //        resetLocalIdRecursively()

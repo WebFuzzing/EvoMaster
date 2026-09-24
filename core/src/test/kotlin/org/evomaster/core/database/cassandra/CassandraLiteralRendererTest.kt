@@ -4,6 +4,10 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -91,6 +95,89 @@ class CassandraLiteralRendererTest {
 
         gene.isNegative.value = true
         assertEquals("-1mo2d3ns", CassandraLiteralRenderer.toCqlLiteral(gene))
+    }
+
+    /**
+     * An IP address is written as a quoted literal in CQL, ie an unquoted one is a syntax error.
+     */
+    @Test
+    fun testInetIsQuoted() {
+        val gene = InetGene("ip")
+
+        assertEquals("'${gene.getValueAsRawString()}'", CassandraLiteralRenderer.toCqlLiteral(gene))
+    }
+
+    private fun arrayGeneOf(vararg values: Int) = arrayGeneOf(false, *values)
+
+    private fun setGeneOf(vararg values: Int) = arrayGeneOf(true, *values)
+
+    private fun arrayGeneOf(uniqueElements: Boolean, vararg values: Int): ArrayGene<IntegerGene> {
+
+        val gene = ArrayGene("elements", template = IntegerGene("element"), uniqueElements = uniqueElements)
+        values.forEach { gene.addElement(IntegerGene("element", it)) }
+
+        return gene
+    }
+
+    @Test
+    fun testListIsWrittenBetweenSquareBrackets() {
+        val gene = arrayGeneOf(1, 2)
+
+        assertEquals("[1, 2]", CassandraLiteralRenderer.toCqlLiteral(gene))
+    }
+
+    @Test
+    fun testSetIsWrittenBetweenBraces() {
+        val gene = setGeneOf(1, 2)
+
+        assertEquals("{1, 2}", CassandraLiteralRenderer.toCqlLiteral(gene))
+    }
+
+    @Test
+    fun testMapIsWrittenAsKeysAndValues() {
+        val content = FixedMapGene("entries", key = StringGene("element"), value = IntegerGene("element"))
+        content.addElement(PairGene("entry", StringGene("element", "a"), IntegerGene("element", 1)))
+
+        assertEquals("{'a': 1}", CassandraLiteralRenderer.toCqlLiteral(content))
+    }
+
+    /**
+     * The elements have to be written the way a CQL literal of their own type is, which is what
+     * would be lost by asking the collection gene to print itself instead of recursing.
+     */
+    @Test
+    fun testTextElementsAreQuotedAndEscaped() {
+        val content = ArrayGene("elements", template = StringGene("element"), uniqueElements = true)
+        content.addElement(StringGene("element", "a"))
+        content.addElement(StringGene("element", "l'Alice"))
+
+        assertEquals("{'a', 'l''Alice'}", CassandraLiteralRenderer.toCqlLiteral(content))
+    }
+
+    @Test
+    fun testEmptyCollectionsAreWrittenWithTheirDelimitersOnly() {
+        assertEquals("[]", CassandraLiteralRenderer.toCqlLiteral(arrayGeneOf()))
+
+        assertEquals("{}", CassandraLiteralRenderer.toCqlLiteral(setGeneOf()))
+
+        assertEquals("{}", CassandraLiteralRenderer.toCqlLiteral(
+            FixedMapGene("entries", key = StringGene("element"), value = IntegerGene("element"))))
+    }
+
+    @Test
+    fun testNestedCollectionIsRenderedByRecursing() {
+        val content = FixedMapGene(
+            "entries",
+            key = StringGene("element"),
+            value = arrayGeneOf()
+        )
+        content.addElement(PairGene(
+            "entry",
+            StringGene("element", "a"),
+            arrayGeneOf(1, 2)
+        ))
+
+        assertEquals("{'a': [1, 2]}", CassandraLiteralRenderer.toCqlLiteral(content))
     }
 
     @Test

@@ -6,7 +6,9 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.DatabaseExecutor
+import org.evomaster.core.database.sql.SqlActionUtils.isMatchingTableName
 import org.evomaster.core.database.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.resource.dependency.BodyParamRelatedToTable
 import org.evomaster.core.search.action.Action
@@ -14,8 +16,6 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.database.sql.SqlActionUtils.isMatchingTableName
-import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -279,6 +279,10 @@ class ResourceNodeWithDbTest {
         }
 
         override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
+            return null
+        }
+
+        override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
             return null
         }
 

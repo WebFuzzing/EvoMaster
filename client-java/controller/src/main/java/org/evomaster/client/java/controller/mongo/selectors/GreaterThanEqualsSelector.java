@@ -15,11 +15,7 @@ public class GreaterThanEqualsSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         Objects.requireNonNull(fieldName);
-        if (value==null) {
-            return null;
-        } else {
-            return new GreaterThanEqualsOperation<>(fieldName, value);
-        }
+        return new GreaterThanEqualsOperation<>(fieldName, value);
     }
 
     @Override

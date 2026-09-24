@@ -32,6 +32,10 @@ class FakeController : SutHandler {
         return null
     }
 
+    override fun execInsertionsIntoCassandraDatabase(insertions: MutableList<CassandraInsertionDto>?): CassandraInsertionResultsDto? {
+        return null
+    }
+
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }

@@ -4,7 +4,9 @@ import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithField;
 import org.evomaster.client.java.controller.mongo.selectors.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,6 +21,10 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 public class QueryParser {
 
     private static final String SYNTHETIC_FIELD_NAME = "$";
+    private static final String COMMENT_OPERATOR = "$comment";
+    // "$comments" is not a real MongoDB operator: it is treated as noise/metadata to be
+    // stripped wherever it appears, unlike "$comment" which is the real comment operator.
+    private static final Set<String> COMMENTS_OPERATORS = new HashSet<>(Arrays.asList("$comments"));
 
     List<QuerySelector> selectors = Arrays.asList(
             new EqualsSelector(),
@@ -54,16 +60,74 @@ public class QueryParser {
             return null;
         }
 
-        QueryOperation operation = parseWithSelectors(bsonDocument);
+        // A document made up entirely of "$comments" noise, with nothing else to query on,
+        // does not represent any real condition.
+        if (isOnlyNoiseComments(bsonDocument)) {
+            return null;
+        }
+
+        // "$comments" is noise and gets stripped wherever it appears, however deeply nested,
+        // since it never carries query semantics. "$comment" is the real MongoDB operator: it
+        // only has meaning as a predicate-level key (this document's own keys), so it is
+        // stripped shallowly here and left untouched inside field values/literals (e.g. under
+        // an explicit $eq, or as the entire value of a field), where it must be compared as-is.
+        Object normalizedWithoutComments = removeTopLevelCommentOperator(removeCommentsOperators(bsonDocument));
+
+        QueryOperation operation = parseWithSelectors(normalizedWithoutComments);
         if (operation != null && !usesOperatorAsFieldName(operation)) {
             return operation;
         }
 
-        Object normalizedDocument = normalizeTopLevelValueOperatorQuery(bsonDocument);
-        if (normalizedDocument == bsonDocument) {
+        Object normalizedDocument = normalizeTopLevelValueOperatorQuery(normalizedWithoutComments);
+        if (normalizedDocument == normalizedWithoutComments) {
             return operation;
         }
         return parseWithSelectors(normalizedDocument);
+    }
+
+    private boolean isOnlyNoiseComments(Object bsonDocument) {
+        if (!isBsonDocument(bsonDocument)) {
+            return false;
+        }
+        Set<String> keys = documentKeys(bsonDocument);
+        return keys != null && !keys.isEmpty() && keys.stream().allMatch(COMMENTS_OPERATORS::contains);
+    }
+
+    private Object removeTopLevelCommentOperator(Object bsonValue) {
+        if (!isBsonDocument(bsonValue)) {
+            return bsonValue;
+        }
+        Object normalized = newDocument(bsonValue);
+        for (String key : documentKeys(bsonValue)) {
+            if (key.equals(COMMENT_OPERATOR)) {
+                continue;
+            }
+            appendToDocument(normalized, key, getValue(bsonValue, key));
+        }
+        return normalized;
+    }
+
+    private Object removeCommentsOperators(Object bsonValue) {
+        if (isBsonDocument(bsonValue)) {
+            Object normalized = newDocument(bsonValue);
+            for (String key : documentKeys(bsonValue)) {
+                if (COMMENTS_OPERATORS.contains(key)) {
+                    continue;
+                }
+                appendToDocument(normalized, key, removeCommentsOperators(getValue(bsonValue, key)));
+            }
+            return normalized;
+        }
+
+        if (bsonValue instanceof List<?>) {
+            List<Object> normalized = new ArrayList<>();
+            for (Object item : (List<?>) bsonValue) {
+                normalized.add(removeCommentsOperators(item));
+            }
+            return normalized;
+        }
+
+        return bsonValue;
     }
 
     private boolean usesOperatorAsFieldName(QueryOperation operation) {

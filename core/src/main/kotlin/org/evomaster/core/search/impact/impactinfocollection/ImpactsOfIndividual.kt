@@ -1,15 +1,16 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
-import org.evomaster.core.search.action.EnvironmentAction
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.EnvironmentAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -87,6 +88,8 @@ open class ImpactsOfIndividual(
         val REDISDB_ACTION_KEY = RedisDbAction::class.java.name
 
         val DYNAMODB_ACTION_KEY = DynamoDbAction::class.java.name
+
+        val CASSANDRADB_ACTION_KEY = CassandraDbAction::class.java.name
 
         val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
     }

@@ -1,15 +1,16 @@
 package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbAction
 
 
 class Solution<T>(
@@ -90,6 +91,10 @@ where T : Individual {
 
     fun hasAnyDynamoDbAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a -> a is DynamoDbAction } }
+    }
+
+    fun hasAnyCassandraAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is CassandraDbAction}}
     }
 
     /**

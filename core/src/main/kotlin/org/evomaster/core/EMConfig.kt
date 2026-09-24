@@ -3259,7 +3259,7 @@ class EMConfig {
     @Min(0.0) @Max(2.0)
     @DependsOnTrueFor("llm")
     @Cfg("Temperature parameter for LLM")
-    var llmTemperature = 0.3
+    var llmTemperature = 0.6
 
     @Experimental
     @DependsOnTrueFor("llm")
