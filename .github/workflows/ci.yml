@@ -454,7 +454,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests ]
+        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests, MiscDB ]
     steps:
       - uses: actions/checkout@v6
       - name: Setup JDK ${{env.build-jdk}}
