@@ -34,6 +34,8 @@ public class ControllerConstants {
 
     public static final String DYNAMODB_INSERTION = "/dynamoDbInsertion";
 
+    public static final String CASSANDRA_INSERTION = "/cassandraInsertion";
+
     public static final String NEO4J_INSERTION = "/neo4jInsertion";
 
     public static final String POST_SEARCH_ACTION = "/postSearchAction";

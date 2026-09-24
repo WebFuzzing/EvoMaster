@@ -32,6 +32,12 @@ on:
 #    branches:
 #      - "**"
 
+concurrency:
+  # One run per branch. Pushing again cancels the run still going for that branch, so
+  # only the newest commit is built. master is exempt: its runs are left to finish.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 env:
   evomaster-version: 6.2.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
@@ -454,7 +460,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests ]
+        profile: [ BaseTests, CoreTests, CoreITTests, OAV3Tests, OAV2Tests, GraphQLTests, MongoTests, H2V1Tests, MiscDB ]
     steps:
       - uses: actions/checkout@v6
       - name: Setup JDK ${{env.build-jdk}}

@@ -125,6 +125,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitCassandra(boolean executingInitCassandra) {
+        ExecutionTracer.setExecutingInitCassandra(executingInitCassandra);
+    }
+
+    @Override
     public final void setExecutingInitNeo4j(boolean executingInitNeo4j) {
         ExecutionTracer.setExecutingInitNeo4J(executingInitNeo4j);
     }

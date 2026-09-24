@@ -80,4 +80,20 @@ class TruthnessUtilsTest {
         assertThrows(NullPointerException.class,
                 () -> TruthnessUtils.getEqualityTruthness(messiPhoto, null));
     }
+
+    @Test
+    public void testBuildSafeScaledTruthnessOfDouble() {
+        Truthness t = TruthnessUtils.buildSafeScaledTruthness(1.0d);
+        assertEquals(TruthnessUtils.TRUE_C, t);
+    }
+
+    @Test
+    public void testBuildSafeScaledTruthnessOfTruthness() {
+        Truthness arg = new Truthness(0.5d, 1.0d);
+        Truthness rv = TruthnessUtils.buildSafeScaledTruthness(arg);
+        Truthness expected = TruthnessUtils.buildScaledTruthness(TruthnessUtils.C, 0.5d);
+        assertEquals(expected.getOfTrue(), rv.getOfTrue());
+        assertEquals(expected.getOfFalse(), rv.getOfFalse());
+    }
+
 }

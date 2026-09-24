@@ -100,6 +100,14 @@ public interface SutHandler {
     DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions);
 
     /**
+     * Executes Cassandra initialisation insertions.
+     *
+     * @param insertions rows to insert
+     * @return insertion results, stating for each insertion whether it executed successfully
+     */
+    CassandraInsertionResultsDto execInsertionsIntoCassandraDatabase(List<CassandraInsertionDto> insertions);
+
+    /**
      * Execute the given node and relationship insertions into the Neo4j database
      *
      * @param commands the nodes and relationships to insert
@@ -208,6 +216,14 @@ public interface SutHandler {
     default Object getOpenSearchConnection() {return null;}
 
     default ReflectionBasedRedisClient getRedisConnection() {return null;}
+
+    /**
+     * Returns the Cassandra session used by the SUT, when available.
+     *
+     * @return a {@code com.datastax.oss.driver.api.core.CqlSession},
+     * or {@code null} if the SUT does not use any Cassandra database
+     */
+    default Object getCassandraConnection() {return null;}
 
     /**
      * Returns the AWS SDK v2 DynamoDB client used by the SUT, when available.

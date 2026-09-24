@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
@@ -18,6 +19,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.Locale
 import javax.annotation.PostConstruct
 
 
@@ -41,6 +44,8 @@ class Statistics : SearchListener {
         const val COVERED_LINES = "coveredLines"
         const val COVERED_BRANCHES = "coveredBranches"
         const val ELAPSED_SECONDS = "elapsedSeconds"
+
+        private const val AI_ENDPOINT_HEADERS = "id,randomSeed,httpMethod,path,ai_model_type,ai_accuracy,ai_precision,ai_sensitivity,ai_specificity,ai_npv,ai_f1Score400,ai_mcc400"
     }
 
     @Inject
@@ -164,6 +169,16 @@ class Statistics : SearchListener {
      */
     private val snapshots: MutableMap<Double, List<Pair>> = mutableMapOf()
 
+    /**
+     * Values captured at each interval rather than recomputed from the final classifier state.
+     * Endpoint-level AI statistics are captured at each snapshot interval.
+     *
+     * Key: snapshot interval/progress value (as 0.0,5.0, 10.0,...,100).
+     * Value: one CSV row per REST endpoint, where each inner List<String>
+     * contains the endpoint metadata and AI metrics returned by [getAIEndpointRows].
+     */
+    private val aiEndpointSnapshots: MutableMap<Double, List<List<String>>> = mutableMapOf()
+
     private var snapshotThreshold = -1.0
 
     @PostConstruct
@@ -196,7 +211,71 @@ class Statistics : SearchListener {
         }
 
         path.toFile().appendText("$elements\n")
+
+        writeAIEndpointStatistics()
     }
+
+    /**
+     * Report every available REST endpoint, including those with no evaluation data (zero metrics).
+     * Ensembles use the best model's metrics for each endpoint, as selected by the classifier.
+     */
+    internal fun writeAIEndpointStatistics() {
+        if (!canReportAIEndpointStatistics()) {
+            return
+        }
+
+        writeAIEndpointCsv(config.aiEndpointStatisticsFile, AI_ENDPOINT_HEADERS, getAIEndpointRows().asSequence())
+    }
+
+    private fun canReportAIEndpointStatistics(): Boolean =
+        config.writeAIEndpointStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
+
+    private fun canReportAIEndpointSnapshotStatistics(): Boolean =
+        config.writeAIEndpointSnapshotStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
+
+    private fun getAIEndpointRows(): List<List<String>> {
+        val endpoints = sampler?.seeAvailableActions().orEmpty()
+            .filterIsInstance<RestCallAction>()
+            .map { it.endpoint }
+            .distinct()
+            .sortedWith(compareBy<Endpoint> { it.path.toString() }.thenBy { it.verb.name })
+        val modelType = config.aiModelForResponseClassification.joinToString(",") { it.name }
+        return endpoints.map { endpoint ->
+            val metrics = aiResponseClassifier.estimateMetrics(endpoint)
+            listOf(
+                config.statisticsColumnId, config.seed.toString(), endpoint.verb.name,
+                endpoint.path.toString(), modelType
+            ) + listOf(
+                metrics.accuracy, metrics.precision400, metrics.sensitivity400,
+                metrics.specificity, metrics.npv, metrics.f1Score400, metrics.mcc
+            ).map { String.format(Locale.ROOT, "%.4f", it) }
+        }
+    }
+
+    private fun writeAIEndpointCsv(file: String, headers: String, rows: Sequence<List<String>>) {
+        val path = Paths.get(file).toAbsolutePath()
+        Files.createDirectories(path.parent)
+        val append = config.appendToStatisticsFile && Files.exists(path) && Files.size(path) > 0
+
+        val mode = if (append) StandardOpenOption.APPEND else StandardOpenOption.TRUNCATE_EXISTING
+        Files.newBufferedWriter(path, Charsets.UTF_8, StandardOpenOption.CREATE, mode).use { writer ->
+            if (!append) {
+                writer.appendLine(headers)
+            }
+            rows.forEach { values ->
+                writer.appendLine(values.joinToString(",") { csvField(it) })
+            }
+        }
+    }
+
+    private fun csvField(value: String): String =
+        if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+            "\"${value.replace("\"", "\"\"")}\""
+        } else value
 
     fun writeSnapshot() {
         if (snapshotThreshold <= 100) {
@@ -226,6 +305,13 @@ class Statistics : SearchListener {
                 val elements = pairs.joinToString(",") { it.element }
                 path.toFile().appendText("$key,$elements\n")
             }
+
+        if (config.snapshotInterval > 0 && canReportAIEndpointSnapshotStatistics()) {
+            val rows = aiEndpointSnapshots.toSortedMap().asSequence().flatMap { (interval, endpoints) ->
+                endpoints.asSequence().map { listOf(interval.toString()) + it }
+            }
+            writeAIEndpointCsv(config.aiEndpointSnapshotStatisticsFile, "interval,$AI_ENDPOINT_HEADERS", rows)
+        }
     }
 
 
@@ -473,13 +559,17 @@ class Statistics : SearchListener {
 
         snapshots[key] = snap
 
+        if (config.writeStatistics && canReportAIEndpointSnapshotStatistics()) {
+            aiEndpointSnapshots[key] = getAIEndpointRows()
+        }
+
         //next step
         snapshotThreshold += config.snapshotInterval
     }
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val sutInfo : SutInfoDto? = if(!config.blackBox || config.bbExperiments) {
+        val sutInfo : SutInfoDto? = if(config.usesDriver()) {
             remoteController?.getSutInfo()
         } else {
             null
@@ -864,7 +954,7 @@ class Statistics : SearchListener {
 
 
         // append boot-time targets
-        if(!config.blackBox || config.bbExperiments) {
+        if(config.usesDriver()) {
             remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
                 if (isNotEmpty()){
                     content.add(System.lineSeparator())

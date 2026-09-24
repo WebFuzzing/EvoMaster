@@ -219,6 +219,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_DYNAMODB, executingInitDynamoDb);
     }
 
+    public boolean setExecutingInitCassandra(boolean executingInitCassandra) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_CASSANDRA, executingInitCassandra);
+    }
+
     public boolean setExecutingAction(boolean executingAction){
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }

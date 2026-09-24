@@ -74,6 +74,8 @@ There are 3 types of options:
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
 |`addTestComments`| __Boolean__. Add summary comments on each test. *Default value*: `true`.|
 |`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
+|`aiEndpointSnapshotStatisticsFile`| __String__. Where per-endpoint AI metric snapshots are written in CSV format when writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive. *Default value*: `ai-endpoint-snapshots.csv`.|
+|`aiEndpointStatisticsFile`| __String__. Where per-endpoint AI model metrics are written in CSV format when writeAIEndpointStatistics and AI response classification are enabled. *Default value*: `ai-endpoint-statistics.csv`.|
 |`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS, CRO`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
@@ -200,7 +202,7 @@ There are 3 types of options:
 |`probRestDefault`| __Double__. In REST, specify probability of using 'default' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.05`.|
 |`probRestExamples`| __Double__. In REST, specify probability of using 'example(s)' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`probUseRestLinks`| __Double__. In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any. When sampling a test case, if the last call has links, given this probability new calls are added for the link. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
-|`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. If left to DEFAULT, the type will be inferred from the EM Driver. However, in case of ambiguities (e.g., the driver specifies more than one type), then this field must be set with a specific type. This is also the case for Black-Box testing where there is no EM Driver. In this latter case, the system defaults to handle REST APIs. *Valid values*: `DEFAULT, REST, GRAPHQL`. *Experimental values*: `RPC, WEBFRONTEND, MCP`. *Default value*: `DEFAULT`.|
+|`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. If left to DEFAULT, the type will be inferred from the EM Driver. However, in case of ambiguities (e.g., the driver specifies more than one type), then this field must be set with a specific type. This is also the case for Black-Box testing where there is no EM Driver. In this latter case, the system defaults to handle REST APIs. *Valid values*: `DEFAULT, REST, GRAPHQL`. *Experimental values*: `RPC, WEBFRONTEND, MCP, ASYNCAPI`. *Default value*: `DEFAULT`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *DEBUG option*. *Default value*: `process_data`.|
 |`processFormat`| __Enum__. Specify a format to save the process data. *DEBUG option*. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND, TARGET_HEURISTIC`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *DEBUG option*. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
@@ -255,6 +257,8 @@ There are 3 types of options:
 |`useTimeInFeedbackSampling`| __Boolean__. Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones). *Default value*: `true`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `true`.|
+|`writeAIEndpointSnapshotStatistics`| __Boolean__. Whether to write per-endpoint AI model snapshot statistics to CSV. *Default value*: `false`.|
+|`writeAIEndpointStatistics`| __Boolean__. Whether to write per-endpoint AI model statistics to CSV. *Default value*: `false`.|
 |`writeExtraHeuristicsFile`| __Boolean__. Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
 |`writeStatistics`| __Boolean__. Whether or not writing statistics of the search process. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
 |`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Depends on*: `createTests=true`. *Default value*: `true`.|
@@ -267,7 +271,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `FULL_HISTORY`.|
-|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_HARMONIC_MEAN, MAX_OF_MIN`. *Default value*: `MAX_OF_AVERAGE`.|
+|`aIEnsembleBestModelSelectionStrategy`| __Enum__. Strategy used to select the best-performing model when a combination of AI models are used as an ensemble model for response classification. *Valid values*: `MAX_OF_AVERAGE, MAX_OF_HARMONIC_MEAN, MAX_OF_MIN`. *Default value*: `MAX_OF_MIN`.|
 |`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.8`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
@@ -328,7 +332,7 @@ There are 3 types of options:
 |`llmApiKey`| __String__. API KEY needed to authenticated toward the chosen LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`llmName`| __String__. LLM name. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Depends on*: `llm=true`. *Valid values*: `OPENAI, DEEPSEEK, OLLAMA, AZURE_OPENAI, MOCK`. *Default value*: `OLLAMA`.|
-|`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.3`.|
+|`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.6`.|
 |`llmThreads`| __Int__. The number of threads to use when making calls towards an LLM, in configured. If connecting to Ollama, this value is ignored, and only 1 thread is used. *Depends on*: `llm=true`. *Default value*: `4`.|
 |`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Depends on*: `llm=true`. *Default value*: `60`.|
 |`llmURL`| __String__. LLM external service URL. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|

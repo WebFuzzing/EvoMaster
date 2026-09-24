@@ -31,12 +31,11 @@ class CassandraWriterTest {
     private fun write(
         actions: List<EvaluatedCassandraDbAction>,
         format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5,
-        insertionVars: MutableList<Pair<String, String>> = mutableListOf(),
         skipFailure: Boolean = false,
         groupIndex: String = ""
     ): String {
         val lines = Lines(format)
-        CassandraWriter.handleCassandraDbInitialization(format, actions, lines, groupIndex, insertionVars, skipFailure)
+        CassandraWriter.handleCassandraDbInitialization(format, actions, lines, groupIndex, skipFailure)
         return lines.toString()
     }
 
@@ -121,21 +120,22 @@ class CassandraWriterTest {
         assertFalse(java.contains("\\$"))
     }
 
+    /**
+     * The DSL is always started with a bare cassandra(), even for a group written after other
+     * insertions in the same test: those variables belong to the other databases, and their types
+     * cannot be passed to the Cassandra DSL, so referencing them would make the generated test not
+     * compile.
+     */
     @Test
-    fun testInsertionVarIsRegisteredForFollowingGroups() {
-        val insertionVars = mutableListOf<Pair<String, String>>()
+    fun testDslIsStartedWithNoPreviousInsertions() {
+        val kotlin = write(listOf(makeEvaluated()), groupIndex = "1")
 
-        write(listOf(makeEvaluated()), insertionVars = insertionVars)
+        assertTrue(kotlin.contains("val insertions_cassandra1 = cassandra()"))
+        assertFalse(kotlin.contains("cassandra(insertions"))
 
-        assertTrue(insertionVars.contains("insertions_cassandra" to "insertions_cassandra_result"))
-    }
+        val java = write(listOf(makeEvaluated()), format = OutputFormat.JAVA_JUNIT_5, groupIndex = "1")
 
-    @Test
-    fun testPreviousInsertionVarsArePassedOn() {
-        val insertionVars = mutableListOf("insertions" to "insertionsresult")
-
-        val output = write(listOf(makeEvaluated()), insertionVars = insertionVars, groupIndex = "1")
-
-        assertTrue(output.contains("val insertions_cassandra1 = cassandra(insertions)"))
+        assertTrue(java.contains("List<CassandraInsertionDto> insertions_cassandra1 = cassandra()"))
+        assertFalse(java.contains("cassandra(insertions"))
     }
 }
