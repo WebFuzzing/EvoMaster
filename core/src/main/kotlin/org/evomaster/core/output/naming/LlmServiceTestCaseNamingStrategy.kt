@@ -93,10 +93,21 @@ class LlmServiceTestCaseNamingStrategy(
     }
 
     private fun extractResponse(data: String): String? {
+        if(data.isBlank()){
+            return null
+        }
         val mapper = ObjectMapper()
         val json = try {
             mapper.readTree(data)
         } catch (e: JsonProcessingException) {
+            /*
+                Not a JSON response, not even a JSON string.
+                but what if it is an unquoted word? we could use it then
+             */
+            val trimmed = data.trim()
+            if(trimmed.isNotEmpty() && !trimmed.contains(' ')){
+                return trimmed
+            }
             return null
         }
         if (json.isTextual) {
