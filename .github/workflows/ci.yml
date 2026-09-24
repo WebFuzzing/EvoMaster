@@ -32,6 +32,12 @@ on:
 #    branches:
 #      - "**"
 
+concurrency:
+  # One run per branch. Pushing again cancels the run still going for that branch, so
+  # only the newest commit is built. master is exempt: its runs are left to finish.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 env:
   evomaster-version: 6.2.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
