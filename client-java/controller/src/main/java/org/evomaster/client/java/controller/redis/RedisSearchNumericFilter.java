@@ -7,18 +7,24 @@ package org.evomaster.client.java.controller.redis;
  */
 public class RedisSearchNumericFilter implements RedisSearchFilter {
 
-    private final String field;
+    private final String fieldName;
     private final double min;
     private final double max;
 
-    public RedisSearchNumericFilter(String field, double min, double max) {
-        this.field = field;
+    public RedisSearchNumericFilter(String fieldName, double min, double max) {
+        if (fieldName == null) {
+            throw new IllegalArgumentException("fieldName must not be null");
+        }
+        if (min > max) {
+            throw new IllegalArgumentException("min (" + min + ") must not be greater than max (" + max + ")");
+        }
+        this.fieldName = fieldName;
         this.min = min;
         this.max = max;
     }
 
-    public String getField() {
-        return field;
+    public String getFieldName() {
+        return fieldName;
     }
 
     public double getMin() {

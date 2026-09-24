@@ -131,6 +131,13 @@ public class ReflectionBasedRedisClient {
             Map<?, ?> info = (Map<?, ?>) ftInfo.invoke(jedisClient, indexName);
             return parseIndexInfo(info);
         } catch (Exception e) {
+            // FT.INFO failing here is an expected runtime outcome: the index may not exist yet,
+            // the RediSearch module may not be loaded, or the reflective call itself may not
+            // resolve on this Jedis version. In every case the caller (RedisHandler) already
+            // treats a null RedisIndexInfo as "no candidate documents for this index", which
+            // degrades the heuristic gracefully instead of failing the whole command evaluation.
+            // Throwing here would just push that same try/catch onto every caller for no extra
+            // information.
             return null;
         }
     }

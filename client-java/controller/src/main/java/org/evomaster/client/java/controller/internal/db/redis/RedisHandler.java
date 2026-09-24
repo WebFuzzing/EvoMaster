@@ -238,13 +238,13 @@ public class RedisHandler {
         for (RedisSearchFilter filter : filters) {
             if (filter instanceof RedisSearchTagFilter) {
                 RedisSearchTagFilter tagFilter = (RedisSearchTagFilter) filter;
-                dtos.add(RedisSearchFilterDto.tag(tagFilter.getField(), tagFilter.getValues()));
+                dtos.add(RedisSearchFilterDto.tag(tagFilter.getFieldName(), tagFilter.getValues()));
             } else if (filter instanceof RedisSearchNumericFilter) {
                 RedisSearchNumericFilter numericFilter = (RedisSearchNumericFilter) filter;
-                dtos.add(RedisSearchFilterDto.numeric(numericFilter.getField(), numericFilter.getMin(), numericFilter.getMax()));
+                dtos.add(RedisSearchFilterDto.numeric(numericFilter.getFieldName(), numericFilter.getMin(), numericFilter.getMax()));
             } else if (filter instanceof RedisSearchTextFilter) {
                 RedisSearchTextFilter textFilter = (RedisSearchTextFilter) filter;
-                dtos.add(RedisSearchFilterDto.text(textFilter.getField(), textFilter.getTerm()));
+                dtos.add(RedisSearchFilterDto.text(textFilter.getFieldName(), textFilter.getTerm()));
             }
         }
         return dtos;

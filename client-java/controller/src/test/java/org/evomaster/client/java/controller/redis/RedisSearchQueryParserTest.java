@@ -25,7 +25,7 @@ class RedisSearchQueryParserTest {
 
         assertEquals(1, filters.size());
         RedisSearchTagFilter filter = (RedisSearchTagFilter) filters.get(0);
-        assertEquals("street", filter.getField());
+        assertEquals("street", filter.getFieldName());
         assertEquals(Arrays.asList("main"), filter.getValues());
     }
 
@@ -43,7 +43,7 @@ class RedisSearchQueryParserTest {
 
         assertEquals(1, filters.size());
         RedisSearchNumericFilter filter = (RedisSearchNumericFilter) filters.get(0);
-        assertEquals("age", filter.getField());
+        assertEquals("age", filter.getFieldName());
         assertEquals(18.0, filter.getMin());
         assertEquals(65.0, filter.getMax());
     }
@@ -69,7 +69,7 @@ class RedisSearchQueryParserTest {
         List<RedisSearchFilter> filters = RedisSearchQueryParser.parse("@name:alice");
 
         RedisSearchTextFilter filter = (RedisSearchTextFilter) filters.get(0);
-        assertEquals("name", filter.getField());
+        assertEquals("name", filter.getFieldName());
         assertEquals("alice", filter.getTerm());
     }
 
@@ -78,7 +78,7 @@ class RedisSearchQueryParserTest {
         RedisSearchTextFilter filter = (RedisSearchTextFilter)
                 RedisSearchQueryParser.parse("@name:ali*").get(0);
 
-        assertEquals("name", filter.getField());
+        assertEquals("name", filter.getFieldName());
         assertEquals("ali*", filter.getTerm(), "the trailing '*' is kept for the caller to interpret");
     }
 
@@ -87,7 +87,7 @@ class RedisSearchQueryParserTest {
         RedisSearchTextFilter filter = (RedisSearchTextFilter)
                 RedisSearchQueryParser.parse("redis").get(0);
 
-        assertNull(filter.getField());
+        assertNull(filter.getFieldName());
         assertEquals("redis", filter.getTerm());
     }
 
@@ -97,7 +97,7 @@ class RedisSearchQueryParserTest {
         RedisSearchTextFilter filter = (RedisSearchTextFilter)
                 RedisSearchQueryParser.parse("@name").get(0);
 
-        assertNull(filter.getField());
+        assertNull(filter.getFieldName());
         assertEquals("@name", filter.getTerm());
     }
 

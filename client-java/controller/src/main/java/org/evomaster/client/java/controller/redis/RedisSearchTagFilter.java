@@ -9,16 +9,25 @@ import java.util.List;
  */
 public class RedisSearchTagFilter implements RedisSearchFilter {
 
-    private final String field;
+    private final String fieldName;
     private final List<String> values;
 
-    public RedisSearchTagFilter(String field, List<String> values) {
-        this.field = field;
+    public RedisSearchTagFilter(String fieldName, List<String> values) {
+        if (fieldName == null) {
+            throw new IllegalArgumentException("fieldName must not be null");
+        }
+        if (values == null) {
+            throw new IllegalArgumentException("values must not be null");
+        }
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException("values must not be empty");
+        }
+        this.fieldName = fieldName;
         this.values = Collections.unmodifiableList(values);
     }
 
-    public String getField() {
-        return field;
+    public String getFieldName() {
+        return fieldName;
     }
 
     public List<String> getValues() {
