@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
@@ -12,6 +13,7 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.cassandra.CassandraExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.schema.TableId
@@ -83,6 +85,8 @@ class FitnessValue(
 
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
+    val cassandraExecutions: MutableMap<Int, CassandraExecution> = mutableMapOf()
+
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular, the tables and columns in them involved
@@ -106,6 +110,12 @@ class FitnessValue(
      * the type of commands that failed.
      */
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
+
+    /**
+     * When SUT executes CQL commands with a WHERE, keep track of when those match no row, in
+     * particular, the table involved and the shape of its rows
+     */
+    private val aggregatedFailedCassandraQueries: MutableList<CassandraFailedQuery> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -139,9 +149,11 @@ class FitnessValue(
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
+        copy.cassandraExecutions.putAll(this.cassandraExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
+        copy.aggregateCassandraDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -189,6 +201,11 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
+    fun aggregateCassandraDatabaseData(){
+        aggregatedFailedCassandraQueries.clear()
+        cassandraExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedCassandraQueries.addAll(it1) } }
+    }
+
     fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
         if (extraToMinimize[actionIndex] == null) {
             extraToMinimize[actionIndex] = list.sorted()
@@ -210,6 +227,10 @@ class FitnessValue(
         redisExecutions[actionIndex] = redisExecution
     }
 
+    fun setCassandraExecution(actionIndex: Int, cassandraExecution: CassandraExecution){
+        cassandraExecutions[actionIndex] = cassandraExecution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -223,6 +244,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
+
+    fun getViewOfAggregatedFailedCassandraQueries() = aggregatedFailedCassandraQueries
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.score == MAX_VALUE
