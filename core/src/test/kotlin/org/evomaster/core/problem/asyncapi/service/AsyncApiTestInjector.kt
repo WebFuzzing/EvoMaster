@@ -34,7 +34,14 @@ object AsyncApiTestInjector {
 
     fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
 
-        val args = arrayOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false") + options
+        /*
+            Most suites here search without writing tests, but one is about what gets written,
+            and the option cannot be given twice.
+         */
+        val defaults = listOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false")
+            .filterNot { d -> options.any { it.substringBefore('=') == d.substringBefore('=') } }
+
+        val args = (defaults + options).toTypedArray()
 
         val fake = object : AbstractModule() {
             override fun configure() {

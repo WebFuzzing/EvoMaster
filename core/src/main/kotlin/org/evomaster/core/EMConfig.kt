@@ -673,7 +673,12 @@ class EMConfig {
                         " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
-            if (outputFormat == OutputFormat.DEFAULT) {
+            /*
+                AsyncAPI is the exception: it has a driver even in black-box, since there is no
+                universal client for a broker, so the format comes from the driver as it does in
+                white-box rather than from the black-box default.
+             */
+            if (outputFormat == OutputFormat.DEFAULT && problemType != ProblemType.ASYNCAPI) {
                 LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
                         " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
                 outputFormat = defaultOutputFormatForBlackBox
@@ -806,9 +811,11 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (problemType == ProblemType.ASYNCAPI && createTests) {
-            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
-                    " For the time being, run with '--createTests false' to only search for faults.")
+        if (problemType == ProblemType.ASYNCAPI
+                && createTests
+                && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJavaOrKotlin()) {
+            throw ConfigProblemException("Tests for an AsyncAPI service are written against the driver's own" +
+                    " transport client, which is Java, so outputFormat only supports Java or Kotlin now")
         }
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {

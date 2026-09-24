@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.asyncapi;
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -96,4 +98,21 @@ public class AsyncApiActionDto {
      * Null when no reply is expected, as there is then nothing to wait for.
      */
     public Long replyTimeoutMs;
+
+    /**
+     * The language to render {@link AsyncApiReplyDto#testScript} in, or null when the core is
+     * not generating tests and the driver should not spend time rendering anything.
+     *
+     * A generated test talks to the broker with an ordinary client of the transport rather than
+     * through the driver, so the lines that publish and await have to come from the one side
+     * that knows the transport. Only Java and Kotlin are asked for.
+     */
+    public SutInfoDto.OutputFormat outputFormat;
+
+    /**
+     * The name the rendered lines must leave the reply payload in, as text, when a reply is
+     * expected. Named by the core so that two actions in one test cannot collide. Null when no
+     * script was asked for.
+     */
+    public String replyVariable;
 }

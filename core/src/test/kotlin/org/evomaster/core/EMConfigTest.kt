@@ -786,18 +786,28 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testAsyncApiCannotWriteTestsYet(){
+    fun testAsyncApiWritesTestsOnlyInJavaOrKotlin(){
 
-        val parser = EMConfig.getOptionParser()
+        //a parser remembers what it last parsed, so each case gets its own
+        fun parse(vararg args: String) =
+            EMConfig().updateProperties(EMConfig.getOptionParser().parse(*args))
 
-        //createTests is on by default, and there is no test writer for AsyncAPI yet
+        /*
+            The lines that publish are rendered by the driver, which is Java, so there is no
+            other language they could be pasted into.
+         */
         val e = assertThrows<ConfigProblemException> {
-            EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI"))
+            parse("--problemType", "ASYNCAPI", "--outputFormat", "PYTHON_UNITTEST")
         }
-        assertTrue(e.message!!.contains("createTests"), e.message)
+        assertTrue(e.message!!.contains("outputFormat"), e.message)
 
-        //so a run has to say it only wants the search
-        EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
+        //the default, and the two it can write
+        parse("--problemType", "ASYNCAPI")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "JAVA_JUNIT_5")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "KOTLIN_JUNIT_5")
+
+        //and a run that only wants the search is still allowed
+        parse("--problemType", "ASYNCAPI", "--createTests", "false")
     }
 
     @Test

@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.asyncapi;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,4 +87,20 @@ public class AsyncApiReplyDto {
      * Why publishing failed, when it did.
      */
     public String errorMessage;
+
+    /**
+     * The publish and await this action just did, rendered as source lines for a generated test,
+     * in the language {@link AsyncApiActionDto#outputFormat} asked for. Null when none was asked
+     * for, or when the driver does not render them.
+     *
+     * A generated test talks to the broker directly rather than through the driver, so these
+     * lines stand up a client of the transport, publish the same message and read the reply.
+     * Only the driver can write them: it is the one side that knows the transport, and the core
+     * pastes them without reading them.
+     *
+     * Where a reply is expected, the lines must leave it in the variable the core named in
+     * {@link AsyncApiActionDto#replyVariable}, which is what the assertions the core appends are
+     * written against.
+     */
+    public List<String> testScript;
 }

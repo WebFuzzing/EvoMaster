@@ -14,6 +14,14 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val REPLY_MESSAGE = "REPLY_MESSAGE"
         const val CORRELATION_MATCHED = "CORRELATION_MATCHED"
         const val WAITED_MS = "WAITED_MS"
+        const val TEST_SCRIPT = "TEST_SCRIPT"
+        const val REPLY_VARIABLE = "REPLY_VARIABLE"
+
+        /**
+         * What the script's lines are joined with when stored, and split on when read back.
+         * A result holds strings, and a line of source never contains this.
+         */
+        private const val SCRIPT_SEPARATOR = "\n"
     }
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
@@ -60,4 +68,20 @@ class AsyncApiCallResult : EnterpriseActionResult {
     }
 
     fun getWaitedMs(): Long? = getResultValue(WAITED_MS)?.toLong()
+
+    /**
+     * The lines the driver rendered for a generated test, or empty when it rendered none.
+     */
+    fun setTestScript(lines: List<String>) {
+        addResultValue(TEST_SCRIPT, lines.joinToString(SCRIPT_SEPARATOR))
+    }
+
+    fun getTestScript(): List<String> =
+        getResultValue(TEST_SCRIPT)?.split(SCRIPT_SEPARATOR) ?: listOf()
+
+    fun setReplyVariableName(name: String) {
+        addResultValue(REPLY_VARIABLE, name)
+    }
+
+    fun getReplyVariableName(): String? = getResultValue(REPLY_VARIABLE)
 }
