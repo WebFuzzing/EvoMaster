@@ -14,6 +14,7 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.bson.types.Symbol;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -122,14 +123,19 @@ class BsonHelperTest {
 
     @Test
     void testGetTypeFromAlias() {
-        Object bsonType = BsonHelper.getTypeFromAlias("STRING");
-
+        // aliases are case-insensitive
+        Object bsonType = BsonHelper.bsonTypeValueOf("STRING");
         assertEquals(BsonType.STRING, bsonType);
     }
 
     @Test
     void testGetTypeFromAliasReturnsNullWhenNotFound() {
-        assertNull(BsonHelper.getTypeFromAlias("UNKNOWN"));
+        try {
+            BsonHelper.bsonTypeValueOf("UNKNOWN");
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
     }
 
     @Test
@@ -205,5 +211,42 @@ class BsonHelperTest {
         assertThrows(NullPointerException.class, () -> BsonHelper.bsonRegexGetOptions(null));
         assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetPattern("hospital"));
         assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetOptions("hospital"));
+    }
+
+    @Test
+    void testIsBsonBinary() {
+        assertTrue(BsonHelper.isBsonBinary(new Binary((byte) 0x01, new byte[]{0x01, 0x02})));
+        assertFalse(BsonHelper.isBsonBinary(new byte[]{0x01, 0x02}));
+        assertFalse(BsonHelper.isBsonBinary("not a Binary"));
+        assertFalse(BsonHelper.isBsonBinary(null));
+    }
+
+    @Test
+    void testGetBinaryData() {
+        byte[] data = new byte[]{0x01, 0x02, 0x03};
+        Binary binary = new Binary((byte) 0x01, data);
+
+        assertArrayEquals(data, BsonHelper.getBinaryData(binary));
+    }
+
+    @Test
+    void testIsBsonType() {
+        assertTrue(BsonHelper.isBsonType(BsonType.INT32));
+        assertFalse(BsonHelper.isBsonType("not a BsonType"));
+        assertFalse(BsonHelper.isBsonType(null));
+    }
+
+    @Test
+    void testIsDecimal128() {
+        assertTrue(BsonHelper.isDecimal128(new Decimal128(1234567890123456789L)));
+        assertFalse(BsonHelper.isDecimal128(123.45));
+        assertFalse(BsonHelper.isDecimal128(null));
+    }
+
+    @Test
+    void testGetBigDecimalValue() {
+        Decimal128 decimal128 = new Decimal128(1234567890123456789L);
+        final BigDecimal expectedBigDecimalValue = decimal128.bigDecimalValue();
+        assertEquals(expectedBigDecimalValue, BsonHelper.getBigDecimalValue(decimal128));
     }
 }
