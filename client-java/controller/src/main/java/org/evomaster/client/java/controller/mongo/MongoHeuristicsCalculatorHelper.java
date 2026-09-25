@@ -678,9 +678,6 @@ public class MongoHeuristicsCalculatorHelper {
         }
 
         double distance = GeoJsonGeometryIntersection.distance(queryGeometry, actualGeometry);
-        if (distance <= 0.0) {
-            return TRUE_C;
-        }
         return getEqualityTruthness(distance, 0.0);
     }
 
@@ -708,9 +705,6 @@ public class MongoHeuristicsCalculatorHelper {
         }
 
         double distance = GeoJsonGeometryIntersection.distanceToContainment(actualGeometry, areaGeometry);
-        if (distance <= 0.0) {
-            return TRUE_C;
-        }
         return getEqualityTruthness(distance, 0.0);
     }
 }
