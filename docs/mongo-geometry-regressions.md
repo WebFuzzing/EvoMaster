@@ -1,14 +1,14 @@
-# MongoDB geometry regression tests
+# MongoDB query regression tests
 
 This test-only branch starts at PR #1785's `mongo_geometry` head,
 `b22ec953ca00823e8bf33174c4d07e89551d58a5`. Production code is unchanged, so the
 regression suite is deliberately expected to fail until the defects are fixed.
 
-`MongoGeometryRegressionCases` supplies the same queries, documents, and expected
-matches to two independent suites:
+`MongoGeometryRegressionCases` and `MongoQueryRegressionCases` supply the same
+queries, documents, and expected matches to two independent suites:
 
-- `MongoGeometryOracleIT` verifies every expectation against a live MongoDB.
-- `MongoGeometryRegressionTest` checks EvoMaster's public collection-distance
+- `MongoQueryOracleIT` verifies every expectation against a live MongoDB.
+- `MongoQueryRegressionTest` checks EvoMaster's public collection-distance
   calculation, including exceptions and the validity of the resulting score.
 
 The oracle uses a unique temporary database and removes it afterwards. It starts
@@ -23,7 +23,7 @@ From the repository root, with Docker running:
 
 ```sh
 mvn -pl client-java/controller -am \
-  -Dit.test=MongoGeometryOracleIT \
+  -Dit.test=MongoQueryOracleIT \
   -Dfailsafe.failIfNoSpecifiedTests=false \
   test-compile failsafe:integration-test failsafe:verify
 ```
@@ -35,7 +35,7 @@ For an existing MongoDB server, add, for example,
 
 ```sh
 mvn -pl client-java/controller -am \
-  -Dtest=MongoGeometryRegressionTest,GeoJsonGeometryPerformanceTest \
+  -Dtest=MongoQueryRegressionTest,GeoJsonGeometryPerformanceTest \
   -Dsurefire.failIfNoSpecifiedTests=false \
   test-compile surefire:test
 ```
@@ -44,7 +44,7 @@ The reactor (`-am`) is needed to avoid accidentally compiling against stale
 installed snapshots. The parent POM retries failing tests; this can also repeat
 the performance case.
 
-## Covered defects
+## Geometry defects
 
 | Case | Expected behavior, verified on MongoDB 7.0.41 |
 | --- | --- |
@@ -73,7 +73,7 @@ array can match `$geoWithin`, whereas a MultiPoint or GeometryCollection with th
 same contents does not. MongoDB 7 also accepts a GeoJSON point in the tested
 legacy `$box` query, so that behavior is a positive control rather than a defect.
 
-## Validation on the unchanged PR implementation
+## Initial geometry validation on the unchanged PR implementation
 
 On 2026-09-25, using MongoDB 7.0.41 and the repository's Maven reactor:
 
@@ -87,3 +87,45 @@ On 2026-09-25, using MongoDB 7.0.41 and the repository's Maven reactor:
 The combined unit run reported 345 tests, 40 failures, no errors, and three skips.
 These failures are intentional evidence of the unfixed defects, not a passing
 implementation. Full-project tests outside the selected modules were not run.
+
+
+## Other MongoDB findings
+
+These issues are present in the reviewed repository but were not introduced by
+PR #1785. `MongoQueryRegressionCases` adds their reproductions and passing
+controls. The same live oracle validates them. It now uses `find` rather than
+`countDocuments`, because the aggregation underlying `countDocuments` disallows
+`$near`. Proximity fixtures create the required `2d` index; each case drops its
+isolated collection first so index requirements cannot leak between cases.
+
+| Area | Confirmed discrepancy |
+| --- | --- |
+| Logical composition | A leading `$or` can discard sibling field predicates; putting a sibling first can instead cause a null-operation exception. |
+| `$elemMatch` operator dispatch | Scalar `$type` and `$exists` conditions throw instead of evaluating. |
+| `$elemMatch` nested arrays | Scalar comparisons unwrap a nested array that should remain one element; document-style matching rejects valid array elements and numeric indices. |
+| `$ne` with array operand | A matching nested array is not excluded, unlike the corresponding `$eq`. |
+| `$type` over arrays | Element types are ignored, so an array of integers does not match `$type:"int"`. |
+| Binary bitwise values | `$bitsAllSet` rejects supported BSON Binary values. |
+| Numeric conversions | NaN becomes zero for `$mod`; double `2^63` is accepted as a signed-long bitwise operand and saturated. |
+| Numeric precision | Distinct Int64 values above `2^53`, and distinct timestamp increments, can compare equal after conversion to double. |
+| Timestamp ordering | Unsigned timestamp seconds are compared as part of a signed packed long. |
+| Embedded documents | Strict ordering and inequality incorrectly require corresponding field names to satisfy the same comparison; Java equality can stop comparison before later differing fields or extra fields. |
+| BSON binary equality | Identical bytes with different subtypes incorrectly compare equal. |
+| Regex operators | Mixed arrays are rejected wholesale; `$in` ignores flags, stringifies numbers, and throws on null; `$all` treats regexes as equality operands. |
+| Regex semantics and stored regex values | Java newline/extended-mode behavior differs from MongoDB; stored regex flags can be ignored or a matching stored regex rejected. |
+| String ordering | Java UTF-16 order differs from MongoDB's default UTF-8 order for supplementary characters. |
+| Legacy proximity | `$near` accepts a legacy query but rejects the legacy stored coordinate pair, even at zero distance. |
+
+### Expanded validation
+
+The expanded suite added 47 cases. All 105 live MongoDB 7.0.41 checks passed:
+104 semantic fixtures and the detailed-line check. EvoMaster failed 36 of the
+new cases, bringing the semantic regression total to 75 failures and 29 passing
+controls. All 284 existing active calculator and geometry tests still passed;
+three existing tests remained skipped. The selected unit run reported 391 tests,
+75 failures, no errors, and three skips.
+
+The unchanged performance test was not repeated in this pass; its earlier
+failure remains documented above. Production code remains unchanged. The general
+suite names are now `MongoQueryRegressionTest` and `MongoQueryOracleIT`, covering
+both fixture providers.

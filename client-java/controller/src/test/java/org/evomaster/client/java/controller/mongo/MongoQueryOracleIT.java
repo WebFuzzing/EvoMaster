@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.GenericContainer;
 
 import java.util.UUID;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Checks the expectations independently of EvoMaster. Uses an isolated database, including when
  * evomaster.mongo.uri points to an already running server. Without that property, starts MongoDB 7.
  */
-class MongoGeometryOracleIT {
+class MongoQueryOracleIT {
     private static GenericContainer<?> container;
     private static MongoClient client;
     private static MongoDatabase database;
@@ -40,7 +41,7 @@ class MongoGeometryOracleIT {
     @BeforeEach
     void clearCollection() {
         collection = database.getCollection("locations");
-        collection.deleteMany(new Document());
+        collection.drop();
     }
 
     @AfterAll
@@ -63,10 +64,15 @@ class MongoGeometryOracleIT {
     }
 
     @ParameterizedTest(name = "MongoDB: {0}")
-    @MethodSource("org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios")
-    void shouldConfirmExpectedMatchOnLiveMongo(MongoGeometryRegressionCases.Scenario scenario) {
+    @MethodSource({"org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios",
+            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios"})
+    void shouldConfirmExpectedMatchOnLiveMongo(MongoQueryCase scenario) {
+        if (scenario.index() != null) {
+            collection.createIndex(scenario.index());
+        }
         collection.insertOne(scenario.document());
-        assertEquals(scenario.matches ? 1L : 0L, collection.countDocuments(scenario.query()));
+        // Use find rather than countDocuments: the latter runs an aggregation that disallows $near.
+        assertEquals(scenario.matches ? 1 : 0, collection.find(scenario.query()).into(new ArrayList<>()).size());
     }
 
     @Test

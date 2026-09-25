@@ -7,41 +7,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-/** Shared fixtures: every expected match is checked against a live server by MongoGeometryOracleIT. */
+/** Shared fixtures: every expected match is checked against a live server by MongoQueryOracleIT. */
 public final class MongoGeometryRegressionCases {
 
     private MongoGeometryRegressionCases() {
     }
 
-    public static final class Scenario {
-        private final String name;
-        private final String query;
-        private final String document;
-        final boolean matches;
-
-        private Scenario(String name, Document query, Document document, boolean matches) {
-            this.name = name;
-            this.query = query.toJson();
-            this.document = document.toJson();
-            this.matches = matches;
-        }
-
-        Document query() {
-            return Document.parse(query);
-        }
-
-        Document document() {
-            return Document.parse(document);
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    static Stream<Scenario> scenarios() {
-        List<Scenario> cases = new ArrayList<>();
+    static Stream<MongoQueryCase> scenarios() {
+        List<MongoQueryCase> cases = new ArrayList<>();
         Document square = geometry("Polygon", "[[[0,0],[10,0],[10,10],[0,10],[0,0]]]");
         Document donut = geometry("Polygon",
                 "[[[0,0],[10,0],[10,10],[0,10],[0,0]],[[4,4],[4,6],[6,6],[6,4],[4,4]]]");
@@ -148,8 +121,8 @@ public final class MongoGeometryRegressionCases {
         return cases.stream();
     }
 
-    private static void add(List<Scenario> cases, String name, Document query, Object location, boolean matches) {
-        cases.add(new Scenario(name, query, new Document("loc", location), matches));
+    private static void add(List<MongoQueryCase> cases, String name, Document query, Object location, boolean matches) {
+        cases.add(new MongoQueryCase(name, query, new Document("loc", location), matches));
     }
 
     private static Document geometry(String type, String coordinates) {

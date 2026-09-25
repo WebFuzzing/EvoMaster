@@ -8,11 +8,12 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MongoGeometryRegressionTest {
+class MongoQueryRegressionTest {
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios")
-    void shouldAgreeWithVerifiedMongoMatch(MongoGeometryRegressionCases.Scenario scenario) {
+    @MethodSource({"org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios",
+            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios"})
+    void shouldAgreeWithVerifiedMongoMatch(MongoQueryCase scenario) {
         MongoDistanceWithMetrics result = assertDoesNotThrow(() -> new MongoHeuristicsCalculator()
                 .computeDistanceDocuments(scenario.query(), Collections.singletonList(scenario.document())));
 
