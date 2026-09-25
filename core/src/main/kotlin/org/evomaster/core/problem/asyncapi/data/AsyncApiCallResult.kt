@@ -15,6 +15,19 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val CORRELATION_MATCHED = "CORRELATION_MATCHED"
         const val WAITED_MS = "WAITED_MS"
         const val TEST_SCRIPT = "TEST_SCRIPT"
+
+        /*
+            What was published, kept so that a generated test can publish the same thing without
+            resolving the document a second time. Only recorded when tests are being written.
+         */
+        const val BROKER = "BROKER"
+        const val PROTOCOL = "PROTOCOL"
+        const val ADDRESS = "ADDRESS"
+        const val REPLY_ADDRESS = "REPLY_ADDRESS"
+        const val PAYLOAD = "PAYLOAD"
+        const val HEADERS = "HEADERS"
+        const val CORRELATION_HEADER = "CORRELATION_HEADER"
+        const val REPLY_TIMEOUT_MS = "REPLY_TIMEOUT_MS"
         const val REPLY_VARIABLE = "REPLY_VARIABLE"
 
         /**
@@ -84,4 +97,44 @@ class AsyncApiCallResult : EnterpriseActionResult {
     }
 
     fun getReplyVariableName(): String? = getResultValue(REPLY_VARIABLE)
+
+    /**
+     * Everything a generated test needs to publish this message again, as the search resolved it
+     * from the document. Headers are a JSON object, so that one string holds them all.
+     */
+    fun setPublished(
+        broker: String?,
+        protocol: String?,
+        address: String?,
+        replyAddress: String?,
+        payload: String?,
+        headersAsJson: String,
+        correlationHeader: String?,
+        replyTimeoutMs: Long?
+    ) {
+        broker?.let { addResultValue(BROKER, it) }
+        protocol?.let { addResultValue(PROTOCOL, it) }
+        address?.let { addResultValue(ADDRESS, it) }
+        replyAddress?.let { addResultValue(REPLY_ADDRESS, it) }
+        payload?.let { addResultValue(PAYLOAD, it) }
+        addResultValue(HEADERS, headersAsJson)
+        correlationHeader?.let { addResultValue(CORRELATION_HEADER, it) }
+        replyTimeoutMs?.let { addResultValue(REPLY_TIMEOUT_MS, it.toString()) }
+    }
+
+    fun getBroker(): String? = getResultValue(BROKER)
+
+    fun getProtocol(): String? = getResultValue(PROTOCOL)
+
+    fun getAddress(): String? = getResultValue(ADDRESS)
+
+    fun getReplyAddress(): String? = getResultValue(REPLY_ADDRESS)
+
+    fun getPayload(): String? = getResultValue(PAYLOAD)
+
+    fun getHeadersAsJson(): String? = getResultValue(HEADERS)
+
+    fun getCorrelationHeader(): String? = getResultValue(CORRELATION_HEADER)
+
+    fun getReplyTimeoutMs(): Long? = getResultValue(REPLY_TIMEOUT_MS)?.toLong()
 }
