@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator;
 import org.evomaster.client.java.controller.neo4j.operations.MatchOperation;
@@ -31,11 +32,8 @@ public class Neo4jHandler {
     /** Whether to compute heuristics based on execution or not. */
     private volatile boolean calculateHeuristics;
 
-    /**
-     * The SUT's {@code org.neo4j.driver.Driver}, kept as an {@code Object} and used by reflection so
-     * we do not hard-depend on a specific driver version. {@code null} when the SUT does not use Neo4j.
-     */
-    private Object neo4jConnection = null;
+    /** Client over the SUT's Neo4j driver. {@code null} when the SUT does not use Neo4j. */
+    private ReflectionBasedNeo4jClient neo4jConnection = null;
 
     private final CypherParser parser = CypherParserFactory.buildParser();
 
@@ -77,11 +75,11 @@ public class Neo4jHandler {
     }
 
     /**
-     * Sets the driver used to read the live graph.
+     * Sets the client used to read the live graph.
      *
-     * @param neo4jConnection the SUT's {@code org.neo4j.driver.Driver}, or {@code null} if it has none
+     * @param neo4jConnection client over the SUT's Neo4j driver, or {@code null} if it has none
      */
-    public void setNeo4jConnection(Object neo4jConnection) {
+    public void setNeo4jConnection(ReflectionBasedNeo4jClient neo4jConnection) {
         this.neo4jConnection = neo4jConnection;
     }
 

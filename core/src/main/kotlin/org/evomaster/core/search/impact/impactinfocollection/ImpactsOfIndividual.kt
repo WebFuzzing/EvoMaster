@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.FitnessValue
@@ -85,6 +86,8 @@ open class ImpactsOfIndividual(
         val MONGODB_ACTION_KEY = MongoDbAction::class.java.name
 
         val REDISDB_ACTION_KEY = RedisDbAction::class.java.name
+
+        val DYNAMODB_ACTION_KEY = DynamoDbAction::class.java.name
 
         val CASSANDRADB_ACTION_KEY = CassandraDbAction::class.java.name
 

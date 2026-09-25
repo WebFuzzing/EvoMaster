@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
@@ -86,6 +87,8 @@ class ResourceRestFitness : AbstractRestFitness() {
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults)
+
+        doDynamoDbCalls(individual.seeInitializingActions().filterIsInstance<DynamoDbAction>(), actionResults)
 
         doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults)
 
