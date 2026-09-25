@@ -1,39 +1,44 @@
 package org.evomaster.core.problem.rest.service.resource
 
 import com.google.inject.Module
-import com.netflix.governator.lifecycle.LifecycleManager
 import com.netflix.governator.guice.LifecycleInjector
+import com.netflix.governator.lifecycle.LifecycleManager
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.database.sql.DatabaseExecutor
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.sql.extract.h2.ExtractTestBaseH2
-import org.evomaster.core.problem.rest.data.RestCallAction
-import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.Endpoint
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
+import org.evomaster.core.problem.rest.service.ResourceManageService
+import org.evomaster.core.problem.rest.service.ResourceSampleMethodController
+import org.evomaster.core.problem.rest.service.ResourceSamplingMethod
 import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.*
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.evomaster.core.sql.extract.h2.ExtractTestBaseH2
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 
 abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
@@ -94,9 +99,14 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             return null
         }
 
+        override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
+            return null
+        }
+
         override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
             return null
         }
+
         override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
             return SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }

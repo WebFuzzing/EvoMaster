@@ -22,8 +22,8 @@ class AIModelsCheckWFDEM : RestTestBase() {
     val baseUrlOfSut = "http://localhost:8080"
 //    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
-//    val swaggerUrl ="../dataset/openapi-swagger/youtube-mock.yaml"
-    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
+//    val swaggerUrl ="../dataset/openapi/youtube-mock.yaml"
+    val swaggerUrl ="../dataset/openapi/catwatch.json"
 
 
     fun runTest() {

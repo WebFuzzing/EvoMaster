@@ -539,6 +539,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitCassandra(boolean executingInitCassandra) {
+        checkInstrumentation();
+        serverController.setExecutingInitCassandra(executingInitCassandra);
+        // sync executingInitCassandra on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitCassandra(executingInitCassandra);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

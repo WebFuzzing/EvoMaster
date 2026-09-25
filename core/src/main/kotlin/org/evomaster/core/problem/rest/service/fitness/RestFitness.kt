@@ -1,15 +1,16 @@
 package org.evomaster.core.problem.rest.service.fitness
 
-import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -46,6 +47,7 @@ open class RestFitness : AbstractRestFitness() {
         doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults = actionResults)
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults = actionResults)
+        doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults = actionResults)
 
 
         val fv = FitnessValue(individual.size().toDouble())

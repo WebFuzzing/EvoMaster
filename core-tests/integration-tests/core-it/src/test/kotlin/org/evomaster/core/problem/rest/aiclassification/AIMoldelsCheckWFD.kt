@@ -59,12 +59,13 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 //    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
 
-//    val swaggerUrl ="../dataset/openapi-swagger/youtube-mock.yaml"
-    val swaggerUrl ="../dataset/openapi-swagger/catwatch.json"
-//    val swaggerUrl ="../dataset/openapi-swagger/blogapi.json"
-//    val swaggerUrl ="../dataset/openapi-swagger/languagetool.json"
-//    val swaggerUrl = "../dataset/openapi-swagger/rest-ncs.json"
-//    val swaggerUrl = "../dataset/openapi-swagger/cwa-verification.json"
+//    val swaggerUrl ="../dataset/openapi/youtube-mock.yaml"
+//    val swaggerUrl ="../dataset/openapi/catwatch.json"
+//    val swaggerUrl ="../dataset/openapi/blogapi.json"
+//    val swaggerUrl ="../dataset/openapi/languagetool.json"
+//    val swaggerUrl = "../dataset/openapi/rest-ncs.json"
+//    val swaggerUrl = "../dataset/openapi/cwa-verification.json"
+    val swaggerUrl = "../dataset/openapi/bibliothek.json"
 
     @Inject
     lateinit var randomness: Randomness

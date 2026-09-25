@@ -15,11 +15,7 @@ public class LessThanSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         Objects.requireNonNull(fieldName);
-        if (value==null) {
-            return null;
-        } else {
-            return new LessThanOperation<>(fieldName, value);
-        }
+        return new LessThanOperation<>(fieldName, value);
     }
 
     @Override

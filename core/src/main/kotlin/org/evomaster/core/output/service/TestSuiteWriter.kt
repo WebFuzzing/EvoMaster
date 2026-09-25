@@ -1,21 +1,19 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.RedisInsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
-import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -24,9 +22,8 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.service.Sampler
-import org.evomaster.core.search.service.time.SearchTimeController
-import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.search.service.time.SearchTimeController
 import org.evomaster.core.utils.TimeUtils
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
@@ -522,6 +519,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.dynamodb.dsl.DynamoDbDsl.dynamoDb", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto", lines)
                 addImport(DynamoDbInsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if (solution.hasAnyCassandraAction()) {
+                addImport("org.evomaster.client.java.controller.cassandra.dsl.CassandraDsl.cassandra", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.CassandraInsertionResultsDto", lines)
+                addImport(CassandraInsertionDto::class.qualifiedName!!, lines)
             }
 
             if (useRestAssured()) {

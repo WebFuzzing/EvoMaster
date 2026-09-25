@@ -46,7 +46,8 @@ public class CassandraScriptRunnerTest {
         connection.execute("CREATE KEYSPACE IF NOT EXISTS " + KEYSPACE +
                 " WITH replication = {'class':'SimpleStrategy','replication_factor':1}");
         connection.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + TABLE +
-                " (id int PRIMARY KEY, name text, elapsed duration)");
+                " (id int PRIMARY KEY, name text, elapsed duration, ip inet," +
+                " tags set<text>, scores list<int>, favs map<text, int>)");
     }
 
     @AfterAll
@@ -95,6 +96,49 @@ public class CassandraScriptRunnerTest {
         assertTrue(resultsDto.executionResults.get(0));
         assertTrue(resultsDto.executionResults.get(1));
         assertEquals(2, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
+    }
+
+    /**
+     * An IP address is written as a quoted literal, whereas a collection is written as a delimited
+     * sequence of the literals of what it holds, with a list between square brackets and a set and
+     * a map between braces. This is what CassandraLiteralRenderer in the core module relies on when
+     * rendering a CqlCollectionGene and an InetGene, so it is checked here against a real Cassandra.
+     */
+    @Test
+    public void testInsertInetAndCollections() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, TABLE)
+                .d("id", "1")
+                .d("ip", "'127.0.0.1'")
+                .d("tags", "{'pet', 'cute'}")
+                .d("scores", "[17, 4, 2]")
+                .d("favs", "{'fruit': 3}")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertEquals(1, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
+    }
+
+    /**
+     * A collection gene can be randomized into an empty one, so the literal it renders has to be
+     * accepted as well. Note that Cassandra stores an empty collection as null.
+     */
+    @Test
+    public void testInsertEmptyCollections() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, TABLE)
+                .d("id", "1")
+                .d("tags", "{}")
+                .d("scores", "[]")
+                .d("favs", "{}")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertEquals(1, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
     }
 
     @Test
