@@ -7,10 +7,6 @@ import org.evomaster.core.search.action.EvaluatedCassandraDbAction
 /**
  * Class used to generate the code in the test dealing with insertion of
  * data into CASSANDRA databases.
- *
- * Note that the generated code calls a method to execute the insertions on the SUT controller, which
- * does not exist yet, as the wiring of Cassandra into the controller is handled separately. Until
- * that is in place, the tests generated for an individual with Cassandra actions do not compile.
  */
 object CassandraWriter {
 
@@ -20,15 +16,17 @@ object CassandraWriter {
      * @param cassandraDbInitialization contains the db actions to be generated
      * @param lines is used to save generated textual lines with respects to [cassandraDbInitialization]
      * @param groupIndex specifies an index of a group of this [cassandraDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failure tests
+     *
+     * Unlike [SqlWriter], [MongoWriter] and [RedisWriter], no list of the insertion variables written
+     * so far is taken: see below, none of them can be passed on to the Cassandra DSL, and the variable
+     * generated here is not referenced by anything written afterwards either.
      */
     fun handleCassandraDbInitialization(
         format: OutputFormat,
         cassandraDbInitialization: List<EvaluatedCassandraDbAction>,
         lines: Lines,
         groupIndex: String = "",
-        insertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
 
@@ -39,16 +37,21 @@ object CassandraWriter {
 
         val insertionVar = "insertions_cassandra${groupIndex}"
         val insertionVarResult = "${insertionVar}_result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
 
+        /*
+            The DSL is always started with a bare cassandra(), never with the variables of the
+            insertions written before in the same test. Unlike the SQL one, which checks the ids
+            referenced by a foreign key against the previous insertions, the Cassandra DSL has no use
+            for them, as there is no reference between rows in Cassandra.
+         */
         cassandraDbInitialization
             .filter { !skipFailure || it.cassandraResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedCassandraDbAction ->
 
                 lines.add(
                     when {
-                        index == 0 && format.isJava() -> "List<CassandraInsertionDto> $insertionVar = cassandra($previousVar)"
-                        index == 0 && format.isKotlin() -> "val $insertionVar = cassandra($previousVar)"
+                        index == 0 && format.isJava() -> "List<CassandraInsertionDto> $insertionVar = cassandra()"
+                        index == 0 && format.isKotlin() -> "val $insertionVar = cassandra()"
                         else -> ".and()"
                     } + ".insertInto(\"${evaluatedCassandraDbAction.cassandraAction.keyspace}\"" + ", " +
                             "\"${evaluatedCassandraDbAction.cassandraAction.table}\")"
@@ -81,8 +84,6 @@ object CassandraWriter {
             } + "$insertionVarResult = controller.execInsertionsIntoCassandraDatabase($insertionVar)"
         )
         lines.appendSemicolon()
-
-        insertionVars.add(insertionVar to insertionVarResult)
     }
 
     /**

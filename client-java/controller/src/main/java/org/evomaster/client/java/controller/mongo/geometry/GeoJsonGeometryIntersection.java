@@ -17,6 +17,44 @@ import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpa
  */
 public abstract class GeoJsonGeometryIntersection {
 
+    /**
+     * The kind of shape: POINT, LINE, or POLYGON.
+     */
+    private enum Kind {POINT, LINE, POLYGON}
+
+    /** A single Point, an open polyline (LineString), or a Polygon (exterior ring plus holes). */
+    private static final class Shape {
+        final Kind kind;
+        final GeoJsonPoint point;
+        final List<GeoJsonPoint> line;
+        final List<GeoJsonPoint> exteriorRing;
+        final List<List<GeoJsonPoint>> interiorRings;
+
+        private Shape(GeoJsonPoint point) {
+            this.kind = Kind.POINT;
+            this.point = point;
+            this.line = null;
+            this.exteriorRing = null;
+            this.interiorRings = null;
+        }
+
+        private Shape(List<GeoJsonPoint> line) {
+            this.kind = Kind.LINE;
+            this.point = null;
+            this.line = line;
+            this.exteriorRing = null;
+            this.interiorRings = null;
+        }
+
+        private Shape(List<GeoJsonPoint> exteriorRing, List<List<GeoJsonPoint>> interiorRings) {
+            this.kind = Kind.POLYGON;
+            this.point = null;
+            this.line = null;
+            this.exteriorRing = exteriorRing;
+            this.interiorRings = interiorRings;
+        }
+    }
+
     public static double distance(GeoJsonGeometry a, GeoJsonGeometry b) {
         List<Shape> shapesA = flatten(a);
         List<Shape> shapesB = flatten(b);
@@ -30,9 +68,6 @@ public abstract class GeoJsonGeometryIntersection {
                 double d = distance(shapeA, shapeB);
                 if (d < min) {
                     min = d;
-                }
-                if (min <= 0.0) {
-                    return 0.0;
                 }
             }
         }
@@ -128,41 +163,6 @@ public abstract class GeoJsonGeometryIntersection {
             holes.add(hole.getPoints());
         }
         return holes;
-    }
-
-    private enum Kind {POINT, LINE, POLYGON}
-
-    /** A single Point, an open polyline (LineString), or a Polygon (exterior ring plus holes). */
-    private static final class Shape {
-        final Kind kind;
-        final GeoJsonPoint point;
-        final List<GeoJsonPoint> line;
-        final List<GeoJsonPoint> exteriorRing;
-        final List<List<GeoJsonPoint>> interiorRings;
-
-        private Shape(GeoJsonPoint point) {
-            this.kind = Kind.POINT;
-            this.point = point;
-            this.line = null;
-            this.exteriorRing = null;
-            this.interiorRings = null;
-        }
-
-        private Shape(List<GeoJsonPoint> line) {
-            this.kind = Kind.LINE;
-            this.point = null;
-            this.line = line;
-            this.exteriorRing = null;
-            this.interiorRings = null;
-        }
-
-        private Shape(List<GeoJsonPoint> exteriorRing, List<List<GeoJsonPoint>> interiorRings) {
-            this.kind = Kind.POLYGON;
-            this.point = null;
-            this.line = null;
-            this.exteriorRing = exteriorRing;
-            this.interiorRings = interiorRings;
-        }
     }
 
     private static List<Shape> flatten(GeoJsonGeometry geometry) {
@@ -285,11 +285,9 @@ public abstract class GeoJsonGeometryIntersection {
     private static double distancePointPolygon(GeoJsonPoint point, List<GeoJsonPoint> exteriorRing,
                                                 List<List<GeoJsonPoint>> interiorRings) {
         double boundaryDistance = distancePointPolyline(point, exteriorRing);
+
         for (List<GeoJsonPoint> hole : interiorRings) {
             boundaryDistance = Math.min(boundaryDistance, distancePointPolyline(point, hole));
-        }
-        if (boundaryDistance <= 0.0) {
-            return 0.0;
         }
 
         if (!rayCast(point, exteriorRing)) {
@@ -328,9 +326,6 @@ public abstract class GeoJsonGeometryIntersection {
                 double d = distanceSegmentSegment(a.get(i), a.get(i + 1), b.get(j), b.get(j + 1));
                 if (d < min) {
                     min = d;
-                }
-                if (min <= 0.0) {
-                    return 0.0;
                 }
             }
         }
@@ -390,9 +385,6 @@ public abstract class GeoJsonGeometryIntersection {
             if (d < min) {
                 min = d;
             }
-            if (min <= 0.0) {
-                return 0.0;
-            }
         }
         double d = distancePolylinePolyline(line, exteriorRing);
         if (d < min) {
@@ -406,9 +398,6 @@ public abstract class GeoJsonGeometryIntersection {
             if (d < min) {
                 min = d;
             }
-            if (min <= 0.0) {
-                return 0.0;
-            }
         }
         return min;
     }
@@ -420,42 +409,28 @@ public abstract class GeoJsonGeometryIntersection {
             if (d < min) {
                 min = d;
             }
-            if (min <= 0.0) {
-                return 0.0;
-            }
         }
         for (GeoJsonPoint vertex : b.exteriorRing) {
             double d = distancePointPolygon(vertex, a.exteriorRing, a.interiorRings);
             if (d < min) {
                 min = d;
             }
-            if (min <= 0.0) {
-                return 0.0;
-            }
         }
         double d = distancePolylinePolyline(a.exteriorRing, b.exteriorRing);
         if (d < min) {
             min = d;
         }
-        if (min <= 0.0) {
-            return 0.0;
-        }
+
         for (List<GeoJsonPoint> hole : a.interiorRings) {
             d = distancePolylinePolyline(hole, b.exteriorRing);
             if (d < min) {
                 min = d;
-            }
-            if (min <= 0.0) {
-                return 0.0;
             }
         }
         for (List<GeoJsonPoint> hole : b.interiorRings) {
             d = distancePolylinePolyline(a.exteriorRing, hole);
             if (d < min) {
                 min = d;
-            }
-            if (min <= 0.0) {
-                return 0.0;
             }
         }
         return min;

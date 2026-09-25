@@ -23,14 +23,15 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
 import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 import kotlin.io.path.Path
-import kotlin.sequences.filter
-import kotlin.text.contains
 
 class SamplerVerifierTest {
 
@@ -526,6 +527,10 @@ class SamplerVerifierTest {
         }
 
         override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto? {
+            return null
+        }
+
+        override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
             return null
         }
 

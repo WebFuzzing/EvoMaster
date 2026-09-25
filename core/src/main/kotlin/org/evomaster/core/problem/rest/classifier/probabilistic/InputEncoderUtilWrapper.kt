@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.IntegralNumberGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
@@ -50,7 +51,8 @@ class InputEncoderUtilWrapper(
         ArrayGene::class,
         DateGene::class,
         TimeGene::class,
-        DateTimeGene::class
+        DateTimeGene::class,
+        RegexGene::class
     )
 
     /**
@@ -164,6 +166,50 @@ class InputEncoderUtilWrapper(
     }
 
     /**
+     * Encodes a string into a single numeric value using a bitmask-style representation.
+     *
+     * Each string property contributes a unique value:
+     * - 1: the string is non-blank
+     * - 2: the string contains at least one digit
+     * - 4: the string contains at least one letter
+     * - 8: the string contains at least one non-alphanumeric character
+     *
+     * The final encoded value is the sum of the active properties, giving a unique
+     * representation for each possible combination.
+     *
+     * Examples:
+     * - "abc"     -> 1 + 4 = 5
+     * - "123"     -> 1 + 2 = 3
+     * - "abc123"  -> 1 + 2 + 4 = 7
+     * - "abc-123" -> 1 + 2 + 4 + 8 = 15
+     *
+     * If the input string is blank, [sentinel] (e.g., -1e6) is returned.
+     */
+    private fun encodeString(value: String, sentinel: Double): Double {
+
+        if (value.isBlank()) {
+            return sentinel
+        }
+
+        var encoded = 1 // non-blank
+
+        if (value.any { it.isDigit() }) {
+            encoded += 2
+        }
+
+        if (value.any { it.isLetter() }) {
+            encoded += 4
+        }
+
+        if (value.any { !it.isLetterOrDigit() }) {
+            encoded += 8
+        }
+
+        return encoded.toDouble()
+    }
+
+
+    /**
      * Encodes the current endpoint's gene values into a numeric feature vector suitable for
      * machine-learning or classification tasks.
      *
@@ -172,7 +218,8 @@ class InputEncoderUtilWrapper(
      *
      * Each gene is converted to a Double according to its type:
      *  - Numeric genes (e.g., IntegerGene, DoubleGene, FloatGene, LongGene) → their numeric value as Double
-     *  - StringGene → sentinel if blank, otherwise 1.0 (presence indicator)
+     *  - StringGene → encoded using character-type bitmask (non-blank, digits, letters, non-alphanumeric)
+     *  - RegexGene → encoded from its generated string value using the same character-type bitmask
      *  - BooleanGene → 1.0 for true, 0.0 for false
      *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"), or sentinel if not found
      *  - ArrayGene → number of non-null and non-empty elements in the array
@@ -210,13 +257,17 @@ class InputEncoderUtilWrapper(
                 is FloatingPointNumberGene<*>, is NumberGene<*> -> {
                     rawEncodedFeatures.add((leaf as NumberGene<*>).value.toDouble())
                 }
-                /**
-                 * Encode a StringGene as a binary presence indicator:
-                 * - 1.0 if the string is non-blank
-                 * - sentinel if the string is blank (treated as missing)
-                 */
+                /** Encode based on [encodeString] function*/
                 is StringGene -> {
-                    rawEncodedFeatures.add(if (leaf.value.isBlank()) sentinel else 1.0)
+                    rawEncodedFeatures.add(
+                        encodeString(leaf.value, sentinel)
+                    )
+                }
+                /** Encode based on [encodeString] function*/
+                is RegexGene -> {
+                    rawEncodedFeatures.add(
+                        encodeString(leaf.getValueAsRawString(), sentinel)
+                    )
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)

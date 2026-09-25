@@ -40,4 +40,10 @@ interface DatabaseExecutor {
      * Return the result of whether it success
      */
     fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT CASSANDRA command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto?
 }

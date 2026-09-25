@@ -112,7 +112,7 @@ object Prompts {
      */
     fun getPromptForTestCaseName(targetLanguage: String, remainingNameChars: Int, generatedNames: MutableSet<String>, testLines: String): Pair<String,String>{
         val userMessage = """Your input is
-            [targetLanguage]:$targetLanguage"
+            [targetLanguage]:$targetLanguage
             [remainingNameChars]: $remainingNameChars
             [generatedNames]: $generatedNames
             [testLines]: $testLines"""

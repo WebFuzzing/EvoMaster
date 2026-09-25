@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationResultDto;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.DbSpecification;
@@ -99,6 +100,22 @@ public interface SutHandler {
     DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions);
 
     /**
+     * Executes Cassandra initialisation insertions.
+     *
+     * @param insertions rows to insert
+     * @return insertion results, stating for each insertion whether it executed successfully
+     */
+    CassandraInsertionResultsDto execInsertionsIntoCassandraDatabase(List<CassandraInsertionDto> insertions);
+
+    /**
+     * Execute the given node and relationship insertions into the Neo4j database
+     *
+     * @param commands the nodes and relationships to insert
+     * @return insertion execution results
+     */
+    Neo4jInsertionResultsDto execInsertionsIntoNeo4jDatabase(Neo4jDatabaseCommandsDto commands);
+
+    /**
      * <p>
      * return an instance of a client of an RPC service.
      * </p>
@@ -188,16 +205,25 @@ public interface SutHandler {
     default Object getMongoConnection() {return null;}
 
     /**
-     * @return the Neo4j {@code org.neo4j.driver.Driver} of the SUT, or {@code null} if the SUT does
-     * not use Neo4j. Returned as {@code Object} and accessed by reflection, so the driver does not
-     * hard-depend on a specific {@code neo4j-java-driver} version. Used both to read the live graph
-     * when computing Cypher heuristics and (later) to insert test data.
+     * @return a client over the Neo4j {@code org.neo4j.driver.Driver} of the SUT, built with
+     * {@code new ReflectionBasedNeo4jClient(driver)}, or {@code null} if the SUT does not use Neo4j.
+     * The client reaches the driver by reflection, so there is no hard dependency on a specific
+     * {@code neo4j-java-driver} version. Used both to read the live graph when computing Cypher
+     * heuristics and to insert test data.
      */
-    default Object getNeo4jConnection() {return null;}
+    default ReflectionBasedNeo4jClient getNeo4jConnection() {return null;}
 
     default Object getOpenSearchConnection() {return null;}
 
     default ReflectionBasedRedisClient getRedisConnection() {return null;}
+
+    /**
+     * Returns the Cassandra session used by the SUT, when available.
+     *
+     * @return a {@code com.datastax.oss.driver.api.core.CqlSession},
+     * or {@code null} if the SUT does not use any Cassandra database
+     */
+    default Object getCassandraConnection() {return null;}
 
     /**
      * Returns the AWS SDK v2 DynamoDB client used by the SUT, when available.
