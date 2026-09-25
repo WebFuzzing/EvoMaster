@@ -60,7 +60,7 @@ class JsonSchemaValidatorTest {
         )
         assertTrue(nullable.validate(mapper.readTree("null")).isEmpty())
         val typeViolations = nullable.validate(mapper.readTree("42"))
-        assertTrue(typeViolations.any { it.keyword == "unionType" }, typeViolations.toString())
+        assertTrue(typeViolations.any { it.keyword == "type" }, typeViolations.toString())
 
         val falseSchema = compiled(validator.compile(mapper.readTree("false")))
         assertTrue(falseSchema.validate(mapper.readTree("{}")).isNotEmpty())

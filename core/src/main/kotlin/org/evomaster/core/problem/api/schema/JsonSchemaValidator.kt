@@ -1,22 +1,32 @@
 package org.evomaster.core.problem.api.schema
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.networknt.schema.JsonSchema
-import com.networknt.schema.JsonSchemaFactory
-import com.networknt.schema.PathType
-import com.networknt.schema.SchemaValidatorsConfig
-import com.networknt.schema.SpecVersion
-import com.networknt.schema.resource.DisallowSchemaLoader
+import com.networknt.schema.Schema
+import com.networknt.schema.SchemaRegistry
+import com.networknt.schema.SchemaRegistryConfig
+import com.networknt.schema.SpecificationVersion
+import com.networknt.schema.path.PathType
 
 /**
  * Compiles and validates JSON Schema draft 2020-12 documents.
  */
 class JsonSchemaValidator(allowExternalReferences: Boolean = false) {
 
-    private val factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012) { builder ->
-        if (!allowExternalReferences) {
-            // prevent schema compilation from fetching schema refs via network request
-            builder.schemaLoaders { it.add(DisallowSchemaLoader.getInstance()) }
+    private val registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12) { builder ->
+        builder.schemaRegistryConfig(
+            SchemaRegistryConfig.builder()
+                .failFast(false)
+                .typeLoose(false)
+                .formatAssertionsEnabled(false)
+                .pathType(PathType.JSON_POINTER)
+                .preloadSchema(true)
+                .build()
+        )
+        if (allowExternalReferences) {
+            builder.schemaLoader { it.fetchRemoteResources() }
+        } else {
+            // Block all resource loading; in-document references do not use the loader.
+            builder.schemaLoader { it.block { true } }
         }
     }
 
@@ -28,14 +38,7 @@ class JsonSchemaValidator(allowExternalReferences: Boolean = false) {
         }
 
         return try {
-            val config = SchemaValidatorsConfig.builder()
-                .failFast(false)
-                .typeLoose(false)
-                .javaSemantics(false)
-                .formatAssertionsEnabled(false)
-                .pathType(PathType.JSON_POINTER)
-                .build()
-            val compiledSchema = factory.getSchema(schema, config)
+            val compiledSchema = registry.getSchema(schema)
             compiledSchema.initializeValidators()
             CompilationResult.Success(CompiledSchema(compiledSchema))
         } catch (e: Exception) {
@@ -46,7 +49,7 @@ class JsonSchemaValidator(allowExternalReferences: Boolean = false) {
     }
 
     class CompiledSchema internal constructor(
-        private val schema: JsonSchema
+        private val schema: Schema
     ) {
         fun validate(instance: JsonNode): List<Violation> = schema.validate(instance)
             .take(100)
