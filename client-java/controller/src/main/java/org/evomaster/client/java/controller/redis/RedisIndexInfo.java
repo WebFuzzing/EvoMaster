@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.redis;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +27,13 @@ public class RedisIndexInfo {
     private final List<String> prefixes;
 
     /**
-     * The index schema.
+     * The index schema, in the order its fields were declared.
      * Key -> the name of an indexed hash field, e.g. "age" or "street".
-     * Value -> that field's RediSearch type: "TAG", "NUMERIC" or "TEXT".
+     * Value -> that field's RediSearch type.
      */
-    private final Map<String, String> attributes;
+    private final Map<String, RedisSearchFieldType> attributes;
 
-    public RedisIndexInfo(String keyType, List<String> prefixes, Map<String, String> attributes) {
+    public RedisIndexInfo(String keyType, List<String> prefixes, Map<String, RedisSearchFieldType> attributes) {
         this.keyType = keyType;
         this.prefixes = Collections.unmodifiableList(prefixes);
         this.attributes = Collections.unmodifiableMap(attributes);
@@ -49,7 +51,7 @@ public class RedisIndexInfo {
         return prefixes;
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, RedisSearchFieldType> getAttributes() {
         return attributes;
     }
 }

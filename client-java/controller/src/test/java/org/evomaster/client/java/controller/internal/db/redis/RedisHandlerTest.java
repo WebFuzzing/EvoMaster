@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType;
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.controller.redis.RedisIndexInfo;
@@ -85,7 +86,7 @@ class RedisHandlerTest {
         return clientWith(indexPrefixes, Collections.emptyMap(), hashes);
     }
 
-    private ReflectionBasedRedisClient clientWith(List<String> indexPrefixes, Map<String, String> indexAttributes,
+    private ReflectionBasedRedisClient clientWith(List<String> indexPrefixes, Map<String, RedisSearchFieldType> indexAttributes,
                                                    Map<String, Map<String, String>> hashes) {
         ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
         RedisIndexInfo info = new RedisIndexInfo("HASH", indexPrefixes, indexAttributes);
@@ -239,8 +240,8 @@ class RedisHandlerTest {
 
     @Test
     void testFtSearchRegistersFailedCommandWithIndexPrefixesAttributesAndFilters() {
-        Map<String, String> attributes = new LinkedHashMap<>();
-        attributes.put("title", "TEXT");
+        Map<String, RedisSearchFieldType> attributes = new LinkedHashMap<>();
+        attributes.put("title", RedisSearchFieldType.TEXT);
         clientWith(Collections.singletonList("product:"), attributes, hashes("product:1", "mongodb handbook"));
 
         evaluateSingle(ftSearch("@title:redis"));
@@ -257,7 +258,7 @@ class RedisHandlerTest {
 
         assertEquals(1, failed.filters.size());
         RedisSearchFilterDto filter = failed.filters.get(0);
-        assertEquals(RedisSearchFilterDto.TEXT, filter.type);
+        assertEquals(RedisSearchFieldType.TEXT, filter.type);
         assertEquals("title", filter.field);
         assertEquals("redis", filter.term);
     }

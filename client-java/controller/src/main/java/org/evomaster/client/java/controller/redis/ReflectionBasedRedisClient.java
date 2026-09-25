@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.redis;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType;
+
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -156,7 +158,8 @@ public class ReflectionBasedRedisClient {
         String keyType = definition.get(KEY_TYPE_KEY) != null ? String.valueOf(definition.get(KEY_TYPE_KEY)) : null;
         List<String> prefixes = toStringList(definition.get(PREFIXES_KEY));
 
-        Map<String, String> attributes = new HashMap<>();
+        // FT.INFO lists the attributes in declaration order, which is kept on purpose
+        Map<String, RedisSearchFieldType> attributes = new LinkedHashMap<>();
         Object attributesObj = info.get(ATTRIBUTES_KEY);
         if (attributesObj instanceof Collection) {
             for (Object attributeEntry : (Collection<?>) attributesObj) {
@@ -164,7 +167,7 @@ public class ReflectionBasedRedisClient {
                 Object field = attributeMap.get(ATTRIBUTE_KEY);
                 Object type = attributeMap.get(TYPE_KEY);
                 if (field != null && type != null) {
-                    attributes.put(String.valueOf(field), String.valueOf(type));
+                    attributes.put(String.valueOf(field), RedisSearchFieldType.fromRediSearch(String.valueOf(type)));
                 }
             }
         }

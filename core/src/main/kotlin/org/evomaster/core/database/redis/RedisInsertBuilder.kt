@@ -1,6 +1,7 @@
 package org.evomaster.core.database.redis
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
@@ -173,23 +174,23 @@ object RedisInsertBuilder {
      * @return null when the filter cannot be turned into a concrete field (e.g. a field-less text
      * term with no TEXT attribute anywhere in the index schema to place it into).
      */
-    private fun buildFieldForFilter(filter: RedisSearchFilterDto, attributes: Map<String, String>): RedisQueryField? {
+    private fun buildFieldForFilter(filter: RedisSearchFilterDto, attributes: Map<String, RedisSearchFieldType>): RedisQueryField? {
         return when (filter.type) {
-            RedisSearchFilterDto.TAG -> {
+            RedisSearchFieldType.TAG -> {
                 val field = filter.field ?: return null
                 val values = filter.values
                 if (values.isNullOrEmpty()) return null
                 RedisQueryField(field, valueGene = EnumGene(field, values))
             }
-            RedisSearchFilterDto.NUMERIC -> {
+            RedisSearchFieldType.NUMERIC -> {
                 val field = filter.field ?: return null
                 val min = filter.min ?: return null
                 val max = filter.max ?: return null
                 RedisQueryField(field, valueGene = DoubleGene(field, value = (min + max) / 2.0, min = min, max = max))
             }
-            RedisSearchFilterDto.TEXT -> {
+            RedisSearchFieldType.TEXT -> {
                 val term = filter.term ?: return null
-                val field = filter.field ?: attributes.entries.firstOrNull { it.value == RedisSearchFilterDto.TEXT }?.key
+                val field = filter.field ?: attributes.entries.firstOrNull { it.value == RedisSearchFieldType.TEXT }?.key
                 ?: return null
                 if (term.endsWith("*")) {
                     val word = term.removeSuffix("*")
@@ -199,12 +200,12 @@ object RedisInsertBuilder {
                     RedisQueryField(field, constantValue = term)
                 }
             }
-            else -> null
+            RedisSearchFieldType.OTHER, null -> null
         }
     }
 
-    private fun buildFreeField(field: String, attributeType: String?): RedisQueryField {
-        val gene: Gene = if (attributeType == RedisSearchFilterDto.NUMERIC) DoubleGene(field) else StringGene(field)
+    private fun buildFreeField(field: String, attributeType: RedisSearchFieldType?): RedisQueryField {
+        val gene: Gene = if (attributeType == RedisSearchFieldType.NUMERIC) DoubleGene(field) else StringGene(field)
         return RedisQueryField(field, valueGene = gene)
     }
 

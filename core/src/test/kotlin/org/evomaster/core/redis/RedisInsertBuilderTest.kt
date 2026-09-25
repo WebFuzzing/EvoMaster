@@ -1,6 +1,7 @@
 package org.evomaster.core.redis
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto
 import org.evomaster.core.database.redis.RedisHsetAction
 import org.evomaster.core.database.redis.RedisInsertBuilder
@@ -12,6 +13,7 @@ import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -202,7 +204,7 @@ class RedisInsertBuilderTest {
         command: String = "FT_SEARCH",
         indexName: String = "idx:products",
         prefixes: List<String> = listOf("product:"),
-        attributes: Map<String, String> = emptyMap(),
+        attributes: Map<String, RedisSearchFieldType> = emptyMap(),
         filters: List<RedisSearchFilterDto> = emptyList(),
         groupByFields: List<String> = emptyList()
     ) = RedisFailedCommand(command, indexName, prefixes, attributes, filters, groupByFields)
@@ -250,7 +252,7 @@ class RedisInsertBuilderTest {
     @Test
     fun testFtSearchFieldLessTextFilterUsesFirstTextAttribute() {
         val cmd = ftCommand(
-            attributes = mapOf("category" to "TAG", "title" to "TEXT"),
+            attributes = mapOf("category" to RedisSearchFieldType.TAG, "title" to RedisSearchFieldType.TEXT),
             filters = listOf(RedisSearchFilterDto.text(null, "redis"))
         )
         val actions = RedisInsertBuilder.buildInsertActions(listOf(cmd), emptySet())
@@ -261,7 +263,7 @@ class RedisInsertBuilderTest {
     @Test
     fun testFtSearchFieldLessTextFilterWithoutAnyTextAttributeIsSkipped() {
         val cmd = ftCommand(
-            attributes = mapOf("category" to "TAG"),
+            attributes = mapOf("category" to RedisSearchFieldType.TAG),
             filters = listOf(RedisSearchFilterDto.text(null, "redis"))
         )
 
@@ -343,11 +345,38 @@ class RedisInsertBuilderTest {
     fun testFtAggregateNumericGroupByFieldUsesDoubleGene() {
         val cmd = ftCommand(
             command = "FT_AGGREGATE",
-            attributes = mapOf("price" to "NUMERIC"),
+            attributes = mapOf("price" to RedisSearchFieldType.NUMERIC),
             groupByFields = listOf("price")
         )
         val actions = RedisInsertBuilder.buildInsertActions(listOf(cmd), emptySet())
 
         assertInstanceOf(DoubleGene::class.java, (actions[0] as RedisQueryAction).fields[0].valueGene)
+    }
+
+    @Test
+    fun testFtAggregateGroupByFieldOfUnhandledTypeGetsAStringGene() {
+        val cmd = ftCommand(
+            command = "FT_AGGREGATE",
+            attributes = mapOf("location" to RedisSearchFieldType.OTHER),
+            groupByFields = listOf("location")
+        )
+        val actions = RedisInsertBuilder.buildInsertActions(listOf(cmd), emptySet())
+
+        assertInstanceOf(StringGene::class.java, (actions[0] as RedisQueryAction).fields[0].valueGene)
+    }
+
+    @Test
+    fun testFtSearchFieldLessTextFilterPicksTheFirstTextAttributeInDeclarationOrder() {
+        val cmd = ftCommand(
+            attributes = mapOf(
+                "location" to RedisSearchFieldType.OTHER,
+                "title" to RedisSearchFieldType.TEXT,
+                "description" to RedisSearchFieldType.TEXT
+            ),
+            filters = listOf(RedisSearchFilterDto.text(null, "redis"))
+        )
+        val actions = RedisInsertBuilder.buildInsertActions(listOf(cmd), emptySet())
+
+        assertEquals("title", (actions[0] as RedisQueryAction).fields[0].name)
     }
 }

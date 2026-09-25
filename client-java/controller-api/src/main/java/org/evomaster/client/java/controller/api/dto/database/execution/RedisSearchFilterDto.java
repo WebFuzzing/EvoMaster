@@ -9,14 +9,11 @@ import java.util.List;
  */
 public class RedisSearchFilterDto {
 
-    public static final String TAG = "TAG";
-    public static final String NUMERIC = "NUMERIC";
-    public static final String TEXT = "TEXT";
-
     /**
-     * One of {@link #TAG}, {@link #NUMERIC} or {@link #TEXT}.
+     * The kind of filter: {@link RedisSearchFieldType#TAG}, {@link RedisSearchFieldType#NUMERIC}
+     * or {@link RedisSearchFieldType#TEXT}. It determines which of the fields below are set.
      */
-    public String type;
+    public RedisSearchFieldType type;
 
     /**
      * The hash field this filter applies to. Null for a TEXT filter with no field (matches any
@@ -48,7 +45,7 @@ public class RedisSearchFilterDto {
 
     public static RedisSearchFilterDto tag(String field, List<String> values) {
         RedisSearchFilterDto dto = new RedisSearchFilterDto();
-        dto.type = TAG;
+        dto.type = RedisSearchFieldType.TAG;
         dto.field = field;
         dto.values = new ArrayList<>(values);
         return dto;
@@ -56,7 +53,7 @@ public class RedisSearchFilterDto {
 
     public static RedisSearchFilterDto numeric(String field, double min, double max) {
         RedisSearchFilterDto dto = new RedisSearchFilterDto();
-        dto.type = NUMERIC;
+        dto.type = RedisSearchFieldType.NUMERIC;
         dto.field = field;
         dto.min = min;
         dto.max = max;
@@ -65,7 +62,7 @@ public class RedisSearchFilterDto {
 
     public static RedisSearchFilterDto text(String field, String term) {
         RedisSearchFilterDto dto = new RedisSearchFilterDto();
-        dto.type = TEXT;
+        dto.type = RedisSearchFieldType.TEXT;
         dto.field = field;
         dto.term = term;
         return dto;

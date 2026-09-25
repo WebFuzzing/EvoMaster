@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
-import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.controller.redis.RedisIndexInfo;
@@ -11,11 +11,13 @@ import org.testcontainers.utility.DockerImageName;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.search.FTCreateParams;
+import redis.clients.jedis.search.schemafields.GeoField;
 import redis.clients.jedis.search.schemafields.NumericField;
 import redis.clients.jedis.search.schemafields.SchemaField;
 import redis.clients.jedis.search.schemafields.TagField;
 import redis.clients.jedis.search.schemafields.TextField;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +33,7 @@ class RedisHandlerIntegrationTest {
     private static final String PEOPLE_INDEX = "idx:people";
     private static final String MULTI_PREFIX_INDEX = "idx:multi";
     private static final String NO_PREFIX_INDEX = "idx:all";
+    private static final String GEO_INDEX = "idx:geo";
 
     private GenericContainer<?> redisContainer;
     private ReflectionBasedRedisClient client;
@@ -65,6 +68,9 @@ class RedisHandlerIntegrationTest {
         jedis.ftCreate(NO_PREFIX_INDEX,
                 FTCreateParams.createParams(),
                 Collections.<SchemaField>singletonList(TextField.of("title")));
+        jedis.ftCreate(GEO_INDEX,
+                FTCreateParams.createParams().prefix("place:"),
+                Arrays.<SchemaField>asList(TextField.of("name"), GeoField.of("location"), NumericField.of("rating")));
     }
 
     @BeforeEach
@@ -155,9 +161,9 @@ class RedisHandlerIntegrationTest {
         assertNotNull(info);
         assertTrue(info.isHashIndex());
         assertEquals(Collections.singletonList("person:"), info.getPrefixes());
-        assertEquals("TEXT", info.getAttributes().get("name"));
-        assertEquals("NUMERIC", info.getAttributes().get("age"));
-        assertEquals("TAG", info.getAttributes().get("street"));
+        assertEquals(RedisSearchFieldType.TEXT, info.getAttributes().get("name"));
+        assertEquals(RedisSearchFieldType.NUMERIC, info.getAttributes().get("age"));
+        assertEquals(RedisSearchFieldType.TAG, info.getAttributes().get("street"));
     }
 
     @Test
@@ -174,6 +180,23 @@ class RedisHandlerIntegrationTest {
 
         assertNotNull(info);
         assertEquals(Collections.singletonList(""), info.getPrefixes());
+    }
+
+    @Test
+    void testGetIndexInfoKeepsTheOrderInWhichAttributesWereDeclared() {
+        RedisIndexInfo info = client.getIndexInfo(PEOPLE_INDEX);
+
+        assertEquals(Arrays.asList("name", "age", "street"), new ArrayList<>(info.getAttributes().keySet()));
+    }
+
+    @Test
+    void testGetIndexInfoMapsTypesNotHandledByDataGenerationToOther() {
+        RedisIndexInfo info = client.getIndexInfo(GEO_INDEX);
+
+        assertEquals(RedisSearchFieldType.OTHER, info.getAttributes().get("location"),
+                "GEO is a valid RediSearch type, but not one data generation handles");
+        assertEquals(RedisSearchFieldType.TEXT, info.getAttributes().get("name"));
+        assertEquals(RedisSearchFieldType.NUMERIC, info.getAttributes().get("rating"));
     }
 
     @Test
@@ -347,12 +370,12 @@ class RedisHandlerIntegrationTest {
         assertEquals("FT_SEARCH", failed.command);
         assertEquals(PEOPLE_INDEX, failed.indexName);
         assertEquals(Collections.singletonList("person:"), failed.indexPrefixes);
-        assertEquals("TEXT", failed.indexAttributes.get("name"));
-        assertEquals("NUMERIC", failed.indexAttributes.get("age"));
-        assertEquals("TAG", failed.indexAttributes.get("street"));
+        assertEquals(RedisSearchFieldType.TEXT, failed.indexAttributes.get("name"));
+        assertEquals(RedisSearchFieldType.NUMERIC, failed.indexAttributes.get("age"));
+        assertEquals(RedisSearchFieldType.TAG, failed.indexAttributes.get("street"));
 
         assertEquals(1, failed.filters.size());
-        assertEquals(RedisSearchFilterDto.TEXT, failed.filters.get(0).type);
+        assertEquals(RedisSearchFieldType.TEXT, failed.filters.get(0).type);
         assertEquals("name", failed.filters.get(0).field);
         assertEquals("zzzz", failed.filters.get(0).term);
     }
