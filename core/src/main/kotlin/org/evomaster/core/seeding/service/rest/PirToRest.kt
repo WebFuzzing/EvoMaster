@@ -5,6 +5,7 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -47,7 +48,8 @@ class PirToRest: PirToIndividual(){
         verb: String,
         path: String,
         queryParams : Map<String,String> = mapOf(),
-        jsonBodyPayload: String? = null
+        jsonBodyPayload: String? = null,
+        headerParams: Map<String,String> = mapOf(),
     ) : RestCallAction?{
 
         val v = try{
@@ -112,6 +114,27 @@ class PirToRest: PirToIndividual(){
                             // this means it is required, but not present in the seed
                             // as such, just leave it as randomized
                             log.warn("Required query parameter $name is not in the input seed." +
+                                    " This could happen if schema has changed since the seed was created.")
+                            //nothing to do further
+                        }
+                    }
+                }
+                is HeaderParam -> {
+                    // this behaves similarly to QueryParam
+                    val name = p.name
+                    val gene = p.getGeneForHeader()
+                    if(headerParams.containsKey(name)){
+                        gene.setFromStringValue(headerParams[name]!!)
+                    } else {
+                        //TODO also check nullable genes
+                        val optional = gene.getWrappedGene(OptionalGene::class.java)
+                        if(optional != null){
+                            //simply deactivate it
+                            optional.isActive = false
+                        } else {
+                            // this means it is required, but not present in the seed
+                            // as such, just leave it as randomized
+                            log.warn("Required header parameter $name is not in the input seed." +
                                     " This could happen if schema has changed since the seed was created.")
                             //nothing to do further
                         }
