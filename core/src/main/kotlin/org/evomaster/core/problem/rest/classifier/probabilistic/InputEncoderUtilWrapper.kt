@@ -226,7 +226,7 @@ class InputEncoderUtilWrapper(
      *  - RegexGene → encoded from its generated string using the same bitmask
      *  - BooleanGene → 1.0 for true, 0.0 for false
      *  - EnumGene → index of the chosen enum value, excluding "EVOMASTER"
-     * - ArrayGene → weighted sum of non-empty elements based on their gene type:
+     *  - ArrayGene → number of non-null and non-empty elements in the array
      *  - DateGene → epoch days divided by 100,000
      *  - TimeGene → fraction of a day in [0, 1)
      *  - DateTimeGene → epoch days plus fractional day, divided by 100,000
