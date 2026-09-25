@@ -154,7 +154,7 @@ class DictionaryService {
         val result = searchForNames(fields.map { it.name })
 
         result.data.entries.forEach { entry ->
-            entry.value.forEach { exm ->  dataPool.addValue(entry.key, exm) }
+            entry.value.forEach { exm ->  dataPool.addValueFromDictionary(entry.key, exm) }
         }
 
         if(config.llm && result.missing.isNotEmpty()) {
@@ -164,7 +164,7 @@ class DictionaryService {
             val toInfer = fields.filter{ result.missing.contains(it.name)}
 
             llmService.askForNewExamples(toInfer){ name, examples ->
-                examples.forEach { ex -> dataPool.addValue(name, ex) }
+                examples.forEach { ex -> dataPool.addValueFromDictionary(name, ex) }
             }
         }
     }

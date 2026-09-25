@@ -11,6 +11,8 @@ class HeaderParam(name: String, gene: Gene) : Param(name, gene){
         return HeaderParam(name, gene.copy())
     }
 
+    fun getGeneForHeader() = genes[0]
+
     fun isInUse() = gene !is OptionalGene || gene.isActive
 
     fun getRawValue() : String{

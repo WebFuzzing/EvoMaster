@@ -3357,6 +3357,10 @@ class EMConfig {
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
 
+    @Experimental
+    @Cfg("Specify if inputs from successful calls should be re-used in the data pool.")
+    var useSuccessDataPool = false
+
     @Cfg("Feed the individual entries of object examples to the data pool.")
     var useObjectExampleDataPool = true
 

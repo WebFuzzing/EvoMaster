@@ -885,6 +885,9 @@ abstract class Gene(
      * FIXME do we really need to throw an exception???
      * issue is that even if [other] is of right type, it's internal genes might not match,
      * eg, look at ChoiceGene
+     *
+     * FIXME if not of same type, should have check of phenotype representation?
+     *       or should rather split functionality in 2 distinct functions, one with type-check and one without?
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 

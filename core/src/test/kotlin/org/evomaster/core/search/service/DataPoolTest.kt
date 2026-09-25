@@ -35,9 +35,9 @@ class DataPoolTest{
 
         val key = "foo"
         val data = "123"
-        pool.addValue("bar", "hello")
-        pool.addValue(key, data)
-        pool.addValue("x", "there")
+        pool.addValueFromResponses("bar", "hello")
+        pool.addValueFromResponses(key, data)
+        pool.addValueFromResponses("x", "there")
 
         val res = pool.extractValue(key)
         assertEquals(data, res)
@@ -48,9 +48,9 @@ class DataPoolTest{
 
         val key = "petId"
         val data = "123"
-        pool.addValue("bar", "hello")
-        pool.addValue(key, data)
-        pool.addValue("x", "there")
+        pool.addValueFromResponses("bar", "hello")
+        pool.addValueFromResponses(key, data)
+        pool.addValueFromResponses("x", "there")
 
         val res = pool.extractValue("id", "pets")
         assertEquals(data, res)
@@ -62,7 +62,7 @@ class DataPoolTest{
 
         val key = "id"
         val data = "123"
-        pool.addValue(key, data)
+        pool.addValueFromResponses(key, data)
 
         val res = pool.extractValue("id")
         assertEquals(data, res)
@@ -85,7 +85,7 @@ class DataPoolTest{
 
         val key = "id"
         val data = "123"
-        pool.addValue(key, data)
+        pool.addValueFromResponses(key, data)
 
         val res = pool.extractValue("petId")
         assertEquals(data, res)

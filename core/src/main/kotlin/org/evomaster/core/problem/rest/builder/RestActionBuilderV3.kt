@@ -2405,7 +2405,7 @@ object RestActionBuilderV3 {
          */
         val cycleDepth = 1
 
-        if (history.count { it == reference } >= cycleDepth) {
+        if (history.count { it == reference } > cycleDepth) {
             return CycleObjectGene("Cycle for: $reference")
         }
 

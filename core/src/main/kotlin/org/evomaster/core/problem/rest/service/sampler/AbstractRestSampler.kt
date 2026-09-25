@@ -513,7 +513,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             .filter{!it.treatAsNotString && it.valueNames==null && it.values.size == 1}
             .filter{g -> RestGeneSpecialNames.entries.none { e -> e.name == g.name } }
             .forEach {
-                dataPool.addValue(it.name, it.getValueAsRawString())
+                dataPool.addValueFromExamples(it.name, it.getValueAsRawString())
             }
     }
 
