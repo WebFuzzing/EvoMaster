@@ -21,6 +21,8 @@ open class AsyncApiActionTestCaseNamingStrategy(
     maxTestCaseNameLength: Int,
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength) {
 
+    private val publish = "publish"
+
     override fun expandName(
         individual: EvaluatedIndividual<*>,
         nameTokens: MutableList<String>,
@@ -30,9 +32,13 @@ open class AsyncApiActionTestCaseNamingStrategy(
         val action = evaluatedAction.action as AsyncApiAction
         var remainingNameChars = maxTestCaseNameLength - namePrefixChars()
 
+        /*
+            Shaped like REST's, which reads verb then target then result. What a tester does to
+            an operation is publish to it, whichever direction the document declares.
+         */
         remainingNameChars = addNameTokensIfAllowed(
             nameTokens,
-            listOf(on, safeVariableName(action.operationId)),
+            listOf(publish, on, safeVariableName(action.operationId)),
             remainingNameChars
         )
         addResult(individual, nameTokens, remainingNameChars)
@@ -60,8 +66,9 @@ open class AsyncApiActionTestCaseNamingStrategy(
                     mutableListOf(returns, success)
                 }
             }
-            AsyncApiOutcome.PUBLISHED -> mutableListOf("published")
-            AsyncApiOutcome.NO_REPLY -> mutableListOf("getsNoReply")
+            //nothing is declared to come back, so reaching the broker is the whole outcome
+            AsyncApiOutcome.PUBLISHED -> mutableListOf(returns, "nothing")
+            AsyncApiOutcome.NO_REPLY -> mutableListOf("gets", "no", "reply")
             AsyncApiOutcome.PUBLISH_FAILED, null -> mutableListOf(error)
         }
 

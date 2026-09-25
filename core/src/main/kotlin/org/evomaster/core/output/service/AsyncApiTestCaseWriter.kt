@@ -111,7 +111,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                 else has to.
              */
             variable != null && KafkaTestClientEmitter.canEmit(res) ->
-                KafkaTestClientEmitter.emit(lines, res, variable, index, format)
+                KafkaTestClientEmitter.emit(lines, res, variable, format)
 
             else -> {
                 /*

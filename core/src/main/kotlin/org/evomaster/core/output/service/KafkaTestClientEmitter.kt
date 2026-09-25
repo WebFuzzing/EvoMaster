@@ -43,19 +43,24 @@ object KafkaTestClientEmitter {
     /**
      * Publish the message again and, when one is expected, wait for the reply that answers it.
      *
-     * @param variable what the reply payload is left in, named by the core
-     * @param index of the action, so that two in one test do not collide
+     * @param variable what the reply payload is left in, named by the core, and what the
+     *                 other names here are keyed off so two actions cannot collide
      */
-    fun emit(lines: Lines, result: AsyncApiCallResult, variable: String, index: Int, format: OutputFormat) {
+    fun emit(lines: Lines, result: AsyncApiCallResult, variable: String, format: OutputFormat) {
 
-        val suffix = "_$index"
-        val props = "asyncApiProps$suffix"
-        val producer = "asyncApiProducer$suffix"
-        val consumer = "asyncApiConsumer$suffix"
-        val record = "asyncApiRecord$suffix"
-        val parts = "asyncApiPartitions$suffix"
-        val cid = "asyncApiCid$suffix"
-        val deadline = "asyncApiDeadline$suffix"
+        /*
+            Taken from the variable the core named rather than from the index, so the locals of
+            one action always agree with the reply it leaves behind, whatever numbered it.
+         */
+        val suffix = "_" + variable.substringAfterLast('_')
+
+        val props = "kafka$suffix"
+        val producer = "producer$suffix"
+        val consumer = "consumer$suffix"
+        val record = "record$suffix"
+        val parts = "partitions$suffix"
+        val cid = "correlationId$suffix"
+        val deadline = "deadline$suffix"
 
         val broker = quoted(result.getBroker()!!, format)
         val topic = quoted(result.getAddress()!!, format)

@@ -71,7 +71,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
          * What the variable holding a reply is called in a generated test, before the action's
          * index. Named by the core so that two actions in one test cannot collide.
          */
-        private const val REPLY_VARIABLE_PREFIX = "asyncApiReply_"
+        private const val REPLY_VARIABLE_PREFIX = "reply_"
 
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
