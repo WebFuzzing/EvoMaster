@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.cassandra;
 
 import com.cassandra.findbyage.CassandraFindByAgeApp;
+import com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
 import com.cassandra.findbydayrange.CassandraFindByDayRangeApp;
 import com.cassandra.findbytag.CassandraFindByTagApp;
 import com.cassandra.findbyuuid.CassandraFindByUuidApp;
@@ -67,6 +68,7 @@ public class CassandraControllerTest {
     @ParameterizedTest
     @CsvSource({
             "com.cassandra.findbyage.CassandraFindByAgeApp, person_by_age",
+            "com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp, person_by_age_read_only",
             "com.cassandra.findbyuuid.CassandraFindByUuidApp, record_by_id",
             "com.cassandra.findbydayrange.CassandraFindByDayRangeApp, measurement_by_day",
             "com.cassandra.findbytag.CassandraFindByTagApp, session_by_id"
@@ -99,6 +101,7 @@ public class CassandraControllerTest {
     @SuppressWarnings("unused")
     private static final Class<?>[] APPS = {
             CassandraFindByAgeApp.class,
+            CassandraFindByAgeReadOnlyApp.class,
             CassandraFindByUuidApp.class,
             CassandraFindByDayRangeApp.class,
             CassandraFindByTagApp.class
