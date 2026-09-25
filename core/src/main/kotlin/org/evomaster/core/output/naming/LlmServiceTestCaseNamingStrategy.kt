@@ -13,7 +13,6 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
