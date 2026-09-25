@@ -104,6 +104,39 @@ final class MongoQueryRegressionCases {
         cases.add(new MongoQueryCase("legacy near excludes distant point control",
                 Document.parse("{loc:{$near:[0,0],$maxDistance:1}}"), Document.parse("{loc:[2,2]}"), false,
                 new Document("loc", "2d")));
+
+        add(cases, "implicit empty document equality", "{a:{}}", "{a:{}}", true);
+        add(cases, "explicit empty document equality control", "{a:{$eq:{}}}", "{a:{}}", true);
+        add(cases, "literal plural comments field must be preserved",
+                "{a:{$eq:{$comments:'x',v:1}}}", "{a:{$comments:'x',v:1}}", true);
+        add(cases, "removing literal plural comments changes equality",
+                "{a:{$eq:{$comments:'x',v:1}}}", "{a:{v:1}}", false);
+
+        add(cases, "numeric high bits are sign extended for negative values",
+                "{a:{$bitsAllSet:[64]}}", "{a:-1}", true);
+        add(cases, "numeric high bits are clear for positive values",
+                "{a:{$bitsAllClear:[64]}}", "{a:1}", true);
+        add(cases, "positive numeric high bit is not set", "{a:{$bitsAllSet:[64]}}", "{a:1}", false);
+        add(cases, "negative numeric high bit is not clear", "{a:{$bitsAllClear:[64]}}", "{a:-1}", false);
+        add(cases, "MinKey equality", "{a:{$minKey:1}}", "{a:{$minKey:1}}", true);
+        add(cases, "MaxKey sorts above an ordinary number", "{a:{$lt:{$maxKey:1}}}", "{a:1}", true);
+        add(cases, "MinKey and MaxKey remain distinct", "{a:{$eq:{$minKey:1}}}", "{a:{$maxKey:1}}", false);
+        add(cases, "bitwise decimal integrality must not be rounded through double",
+                "{a:{$bitsAllSet:1}}", "{a:{$numberDecimal:'1.0000000000000000000000001'}}", false);
+        add(cases, "integral decimal bitwise control", "{a:{$bitsAllSet:1}}", "{a:{$numberDecimal:'1'}}", true);
+
+        add(cases, "size accepts an integral double", "{a:{$size:2.0}}", "{a:[1,2]}", true);
+        add(cases, "size accepts an integral Int64", "{a:{$size:{$numberLong:'2'}}}", "{a:[1,2]}", true);
+        add(cases, "size accepts an integral decimal", "{a:{$size:{$numberDecimal:'2'}}}", "{a:[1,2]}", true);
+        add(cases, "size Int32 control", "{a:{$size:2}}", "{a:[1,2]}", true);
+        add(cases, "fixture preserves the type of a small Int64", "{a:{$type:'long'}}",
+                "{a:{$numberLong:'2'}}", true);
+
+        add(cases, "array greater than uses array ordering", "{a:{$gt:[1]}}", "{a:[2]}", true);
+        add(cases, "array less than uses array ordering", "{a:{$lt:[2]}}", "{a:[1]}", true);
+        add(cases, "nested array ordering does not throw", "{a:{$gt:[1]}}", "{a:[[2]]}", true);
+        add(cases, "empty array satisfies inclusive array comparison", "{a:{$lte:[]}}", "{a:[]}", true);
+        add(cases, "array greater than negative control", "{a:{$gt:[2]}}", "{a:[1]}", false);
         return cases.stream();
     }
 

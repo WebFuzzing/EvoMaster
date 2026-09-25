@@ -129,3 +129,52 @@ The unchanged performance test was not repeated in this pass; its earlier
 failure remains documented above. Production code remains unchanged. The general
 suite names are now `MongoQueryRegressionTest` and `MongoQueryOracleIT`, covering
 both fixture providers.
+
+### Further query and handler validation
+
+Another 23 semantic fixtures cover these additional discrepancies:
+
+| Area | Confirmed discrepancy |
+| --- | --- |
+| Empty document equality | Implicit `{a:{}}` throws; explicit `$eq` works. |
+| Literal document fields | Recursive removal of `$comments` changes literal equality, producing both false positives and false negatives. |
+| High bit positions | Numeric position 64 is rejected instead of using sign extension. |
+| BSON extrema | MinKey equality and comparison of an ordinary number with MaxKey fail. |
+| Decimal bitwise values | A nonintegral Decimal128 rounded to an integer through double incorrectly matches. |
+| `$size` operand types | Valid integral Double, Int64, and Decimal128 operands throw. |
+| Array ordering | Ordered array comparisons reject matching arrays or throw for nested arrays; inclusive empty-array comparison also fails. |
+
+All 128 live MongoDB 7.0.41 oracle checks passed: 127 semantic fixtures plus
+the detailed-line check. EvoMaster failed 17 of the 23 new fixtures, bringing
+the semantic total to 92 failures and 35 passing controls. The selected unit
+run reported 414 tests, 92 failures, no errors, and three skips; all 284 existing
+active tests still passed. The unchanged performance test was not repeated.
+
+Fixture snapshots now use canonical Extended JSON to preserve small Int64
+values. The oracle uses an insert command so the server can validate stored
+dollar-prefixed keys, which the bundled older Java driver's `insertOne` rejects
+locally. It checks the insert result before testing the query.
+
+`MongoHandlerRegressionIT` adds two separately verified live regressions:
+
+- Evaluating a 250-document collection leaves an idle server cursor. A fully
+  consumed ordinary find is the passing control. The test checks only its unique
+  collection namespace and closes leaked cursors during cleanup.
+- An unfiltered `find()` recorded with a null query is ignored, whereas
+  `find({})` is evaluated and reports the empty collection for data generation.
+
+Both handler tests fail as intended on the unchanged implementation, with no
+test errors. These are pre-existing issues, not additions in PR #1785. Run them
+separately from the passing oracle:
+
+```sh
+mvn -pl client-java/controller -am \
+  -Dit.test=MongoHandlerRegressionIT \
+  -Dfailsafe.failIfNoSpecifiedTests=false \
+  -Devomaster.mongo.uri=mongodb://127.0.0.1:27885 \
+  test-compile failsafe:integration-test failsafe:verify
+```
+
+Omit the URI to start a test container. An external server must permit the
+`$currentOp` inspection used by the cursor test. Tests create and clean up their
+own unique database and collection names. Production code remains unchanged.

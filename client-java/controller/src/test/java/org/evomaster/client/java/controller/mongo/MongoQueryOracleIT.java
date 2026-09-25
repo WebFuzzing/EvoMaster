@@ -12,8 +12,10 @@ import org.testcontainers.containers.GenericContainer;
 
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Checks the expectations independently of EvoMaster. Uses an isolated database, including when
@@ -70,7 +72,12 @@ class MongoQueryOracleIT {
         if (scenario.index() != null) {
             collection.createIndex(scenario.index());
         }
-        collection.insertOne(scenario.document());
+        // The bundled 4.2 driver predates MongoDB 5's support for dollar-prefixed stored keys.
+        // Let the live server validate the fixture through its ordinary insert command.
+        Document inserted = database.runCommand(new Document("insert", collection.getNamespace().getCollectionName())
+                .append("documents", Collections.singletonList(scenario.document())));
+        assertFalse(inserted.containsKey("writeErrors"), inserted.toJson());
+        assertEquals(1, inserted.getInteger("n").intValue());
         // Use find rather than countDocuments: the latter runs an aggregation that disallows $near.
         assertEquals(scenario.matches ? 1 : 0, collection.find(scenario.query()).into(new ArrayList<>()).size());
     }
