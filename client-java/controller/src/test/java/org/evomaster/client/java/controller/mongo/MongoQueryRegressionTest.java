@@ -12,7 +12,8 @@ class MongoQueryRegressionTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource({"org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios",
-            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios"})
+            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios",
+            "org.evomaster.client.java.controller.mongo.MongoBsonRegressionCases#scenarios"})
     void shouldAgreeWithVerifiedMongoMatch(MongoQueryCase scenario) {
         MongoDistanceWithMetrics result = assertDoesNotThrow(() -> new MongoHeuristicsCalculator()
                 .computeDistanceDocuments(scenario.query(), Collections.singletonList(scenario.document())));

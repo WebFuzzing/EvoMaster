@@ -11,7 +11,9 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoCommandWithDistance;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
+import org.evomaster.client.java.instrumentation.MongoCollectionSchema;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,7 +22,9 @@ import org.testcontainers.containers.GenericContainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -137,6 +141,64 @@ class MongoHandlerRegressionIT {
         handler.handle(new MongoFindCommand(database.getName(), collection.getNamespace().getCollectionName(),
                 "{}", query, true, 0));
         return handler;
+    }
+
+    @Test
+    void shouldKeepSchemasSeparateForCollectionsInDifferentDatabases() {
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        MongoDatabase customers = client.getDatabase("handler_customers_" + suffix);
+        MongoDatabase invoices = client.getDatabase("handler_invoices_" + suffix);
+        String collectionName = "items_" + suffix;
+        String customerSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(
+                CustomerDocument.class, true, Collections.emptyList());
+        String invoiceSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(
+                InvoiceDocument.class, true, Collections.emptyList());
+
+        try {
+            Document customerQuery = new Document("customerEmail", "customer@example.com");
+            Document invoiceQuery = new Document("invoiceTotal", 10);
+            assertNull(customers.getCollection(collectionName).find(customerQuery).first());
+            assertNull(invoices.getCollection(collectionName).find(invoiceQuery).first());
+            assertNotEquals(customerSchema, invoiceSchema);
+
+            MongoHandler handler = new MongoHandler();
+            handler.setMongoClient(client);
+            handler.handle(new MongoFindCommand(customers.getName(), collectionName,
+                    customerSchema, customerQuery, true, 0));
+            handler.handle(new MongoFindCommand(invoices.getName(), collectionName,
+                    invoiceSchema, invoiceQuery, true, 0));
+            assertEquals(2, handler.getEvaluatedMongoCommands().size());
+
+            Map<String, String> fallbackSchemas = handler.getExecutionDto().failedQueries.stream()
+                    .collect(Collectors.toMap(query -> query.getDatabase(), query -> query.getDocumentsType()));
+            assertEquals(customerSchema, fallbackSchemas.get(customers.getName()));
+            assertEquals(invoiceSchema, fallbackSchemas.get(invoices.getName()));
+
+            // Framework registrations currently identify collections without their database.
+            handler.handle(new MongoCollectionSchema(collectionName, customerSchema));
+            handler.handle(new MongoCollectionSchema(collectionName, invoiceSchema));
+            Map<String, String> registeredSchemas = handler.getExecutionDto().failedQueries.stream()
+                    .collect(Collectors.toMap(query -> query.getDatabase(), query -> query.getDocumentsType()));
+            assertAll(
+                    () -> assertEquals(customerSchema, registeredSchemas.get(customers.getName()),
+                            "The other database's collection registration must not replace the customer schema"),
+                    () -> assertEquals(invoiceSchema, registeredSchemas.get(invoices.getName()))
+            );
+        } finally {
+            try {
+                customers.drop();
+            } finally {
+                invoices.drop();
+            }
+        }
+    }
+
+    public static class CustomerDocument {
+        public String customerEmail;
+    }
+
+    public static class InvoiceDocument {
+        public int invoiceTotal;
     }
 
     @ParameterizedTest(name = "{0}")

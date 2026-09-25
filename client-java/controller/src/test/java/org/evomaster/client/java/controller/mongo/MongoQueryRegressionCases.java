@@ -105,6 +105,31 @@ final class MongoQueryRegressionCases {
                 Document.parse("{loc:{$near:[0,0],$maxDistance:1}}"), Document.parse("{loc:[2,2]}"), false,
                 new Document("loc", "2d")));
 
+        String[] nearbyGeometryTypes = {"Point", "LineString", "MultiPoint", "Polygon"};
+        String[] nearbyGeometryCoordinates = {"[0,0]", "[[0,0],[1,1]]", "[[0,0],[1,1]]",
+                "[[[0,0],[1,0],[0,1],[0,0]]]"};
+        for (String operator : new String[]{"$near", "$nearSphere"}) {
+            Document proximityQuery = Document.parse("{loc:{" + operator
+                    + ":{$geometry:{type:'Point',coordinates:[0,0]},$maxDistance:1}}}");
+            for (int i = 0; i < nearbyGeometryTypes.length; i++) {
+                cases.add(new MongoQueryCase(operator + " matches nearby stored " + nearbyGeometryTypes[i],
+                        proximityQuery, Document.parse("{loc:{type:'" + nearbyGeometryTypes[i]
+                                + "',coordinates:" + nearbyGeometryCoordinates[i] + "}}"),
+                        true, new Document("loc", "2dsphere")));
+            }
+            cases.add(new MongoQueryCase(operator + " rejects distant LineString control", proximityQuery,
+                    Document.parse("{loc:{type:'LineString',coordinates:[[1,1],[2,2]]}}"),
+                    false, new Document("loc", "2dsphere")));
+            for (int maxDistance : new int[]{20000000, 21000000}) {
+                cases.add(new MongoQueryCase(operator + " antipodal point with maximum distance " + maxDistance,
+                        Document.parse("{loc:{" + operator
+                                + ":{$geometry:{type:'Point',coordinates:[0,8]},$maxDistance:"
+                                + maxDistance + "}}}"),
+                        Document.parse("{loc:{type:'Point',coordinates:[180,-8]}}"),
+                        maxDistance == 21000000, new Document("loc", "2dsphere")));
+            }
+        }
+
         add(cases, "implicit empty document equality", "{a:{}}", "{a:{}}", true);
         add(cases, "explicit empty document equality control", "{a:{$eq:{}}}", "{a:{}}", true);
         add(cases, "literal plural comments field must be preserved",

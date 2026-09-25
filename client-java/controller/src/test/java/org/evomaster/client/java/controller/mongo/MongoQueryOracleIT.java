@@ -67,7 +67,8 @@ class MongoQueryOracleIT {
 
     @ParameterizedTest(name = "MongoDB: {0}")
     @MethodSource({"org.evomaster.client.java.controller.mongo.MongoGeometryRegressionCases#scenarios",
-            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios"})
+            "org.evomaster.client.java.controller.mongo.MongoQueryRegressionCases#scenarios",
+            "org.evomaster.client.java.controller.mongo.MongoBsonRegressionCases#scenarios"})
     void shouldConfirmExpectedMatchOnLiveMongo(MongoQueryCase scenario) {
         if (scenario.index() != null) {
             collection.createIndex(scenario.index());

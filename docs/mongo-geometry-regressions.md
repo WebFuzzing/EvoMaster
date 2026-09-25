@@ -219,3 +219,58 @@ The semantic suite now has 109 intentional failures and 45 passing controls:
 17 of the 27 new cases fail. All 284 existing active calculator and geometry
 tests still pass. The selected unit run reported 441 tests, 109 failures, no
 errors, and three skips. The unchanged performance test was not repeated.
+
+### BSON, proximity, and instrumentation review
+
+A further parallel pass added 30 semantic fixtures. All 185 live MongoDB 7.0.41
+oracle checks passed (184 semantic fixtures plus the detailed-line check).
+Seventeen of the new semantic cases fail on EvoMaster: the semantic total is
+126 intentional failures and 58 passing controls. All 284 existing active
+calculator and geometry tests pass. The selected unit run reports 471 tests,
+126 failures, no errors, and three skips. The performance test was not repeated.
+
+| Finding | Reproduction and cause |
+| --- | --- |
+| ObjectId and Binary range queries throw | `$gt`, `$lt`, and inclusive ObjectId fixtures and Binary ordering fixtures are accepted by MongoDB. `MongoHeuristicsCalculatorHelper.compareBinaryData` throws for all ordering operators. This affects ordinary ObjectId ranges, including `_id` pagination. |
+| BSON value equality is missing | A stored BSON Symbol fails equality with the corresponding string; stored JavaScript Code and CodeWithScope fail equality with themselves. The helper falls through to incompatible-type handling. These are stored-value comparisons; no JavaScript is executed. |
+| Proximity rejects non-point GeoJSON | Both `$near` and `$nearSphere` reject stored LineString, MultiPoint, and Polygon values that match a one-meter query at `[0,0]` in MongoDB. The fixtures use `2dsphere` indexes. `evaluateDistanceBetweenPoints` only accepts stored Points. Point and distant-line controls pass. |
+| Antipodal proximity loses valid matches | Query point `[0,8]`, stored point `[180,-8]`, and maximum distance 21,000,000 meters match in MongoDB for both proximity operators but fail in EvoMaster. `MongoUtils.java:67–73` permits the Haversine intermediate to round above one, producing NaN. A 20,000,000-meter cutoff correctly excludes the point and provides the negative controls. |
+| Explicit result class records the wrong schema | `find({}, Person.class)` works in MongoDB but instrumentation records the collection's generic `Document` schema. A collection typed as Person correctly records its fields. `MongoOperationClassReplacement.java:19` derives the schema from the collection and ignores the result-class argument. |
+| Projection causes a false execution failure | A POJO has integer `age`, and the stored document has string `age`. Excluding `age` with a projection makes the actual query succeed. However, `MongoCollectionClassReplacement.java:64` eagerly opens the cursor before the projection is applied, catches the preliminary decode failure, and records the successful query as failed. |
+
+These findings predate PR #1785. The Symbol/JavaScript BSON types are
+less common than the ObjectId and instrumentation paths. BSON date values at
+the signed 64-bit extremes were also checked and behave correctly.
+
+`MongoInstrumentationRegressionIT` invokes the actual method replacements and
+verifies successful live-driver controls before checking the recorded schema
+and execution flag. Both tests fail only their intended assertions, with no
+test errors. Each test resets tracer state and cleans its isolated collections.
+
+```sh
+mvn -pl client-java/controller -am \
+  -Dit.test=MongoInstrumentationRegressionIT \
+  -Dfailsafe.failIfNoSpecifiedTests=false \
+  -Devomaster.mongo.uri=mongodb://127.0.0.1:27885 \
+  test-compile failsafe:integration-test failsafe:verify
+```
+
+The query oracle and semantic regression tests now also consume
+`MongoBsonRegressionCases`. Production code remains unchanged.
+
+The same pass confirmed a cross-database schema collision. Two different
+databases have a collection with the same name: one stores customers with
+`customerEmail`, the other invoices with `invoiceTotal`. Their empty live
+queries and per-command fallback schemas are correct. After registering both
+collection schemas, the handler reports the invoice schema for both databases.
+`MongoHandler.java:102` keys registrations by collection name alone, and
+`MongoCollectionSchema` carries no database identifier. This can cause document
+generation to insert the wrong fields into the customer database. The fix needs
+schema provenance, not just a different lookup expression.
+
+`MongoHandlerRegressionIT` includes this new reproduction, with unique database
+names, passing fallback controls, and cleanup. Its five regressions fail as
+intended with no test errors, including the four previously reported failures.
+Together with the two new instrumentation tests, this pass adds three live
+integration regressions beyond its 30 semantic fixtures. All new findings in
+this pass are pre-existing issues rather than changes introduced by PR #1785.
