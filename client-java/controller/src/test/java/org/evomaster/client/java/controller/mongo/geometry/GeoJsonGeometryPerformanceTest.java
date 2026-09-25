@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 class GeoJsonGeometryPerformanceTest {
 
     @Test
-    void testDistanceBetweenDetailedDisjointLinesFinishesWithinSearchBudget() {
+    void testDistanceBetweenDetailedDisjointLinesFinishesWithinReviewThreshold() {
         // Initialize the distance calculation before measuring the larger fixture.
         assertEquals(1.0, GeoJsonGeometryIntersection.distance(line(16, 0), line(16, 1)));
 
@@ -21,7 +21,8 @@ class GeoJsonGeometryPerformanceTest {
         // MongoDB accepts these fixtures: the parallel lines do not intersect, while
         // each line intersects itself. The shared live-Mongo oracle checks that too.
         // An array-backed traversal takes tens of milliseconds locally; two seconds
-        // leaves substantial headroom. Indexed LinkedList traversal adds a cubic
+        // leaves substantial headroom. This is a review threshold, not a product SLA.
+        // Indexed LinkedList traversal adds a cubic
         // cost and takes several seconds for this otherwise modest geometry.
         // Use a synchronous timeout so a failure never leaves a worker running.
         double distance = assertTimeout(Duration.ofSeconds(2),

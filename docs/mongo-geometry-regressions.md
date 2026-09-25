@@ -4,7 +4,12 @@ This test-only branch starts at PR #1785's `mongo_geometry` head,
 `b22ec953ca00823e8bf33174c4d07e89551d58a5`. Production code is unchanged, so the
 regression suite is deliberately expected to fail until the defects are fixed.
 
-`MongoGeometryRegressionCases` and `MongoQueryRegressionCases` supply the same
+See [the claim audit](mongo-claims-audit.md) for the latest independent re-check,
+PR attribution, and limits of the evidence. Failure counts count test cases,
+not distinct root causes.
+
+`MongoGeometryRegressionCases`, `MongoQueryRegressionCases`, and
+`MongoBsonRegressionCases` supply the same
 queries, documents, and expected matches to two independent suites:
 
 - `MongoQueryOracleIT` verifies every expectation against a live MongoDB.
@@ -50,7 +55,7 @@ the performance case.
 | --- | --- |
 | Containment across holes or disconnected polygons | A line or filled polygon must be wholly contained, including its edges/interior. Disconnected points may occupy separate polygons. |
 | Legacy stored coordinates | Matching coordinate arrays are accepted by `$box`, `$polygon`, `$center`, and `$centerSphere`. |
-| Optional altitude | Supported GeoJSON queries and stored geometries can contain a third coordinate. |
+| Optional altitude | The tested LineString query and Polygon query/stored geometry accept a third coordinate. These added non-Point parsers belong to the PR; the existing Point parser's two-coordinate restriction predates it. |
 | Exact line endpoint | A point equal to the line's endpoint matches without throwing during distance calculation. |
 | Arrays of GeoJSON objects | Either predicate matches if any immediate array element matches; `$not` inverts that result. Nested arrays are not recursively flattened. |
 | Explicit default CRS | `CRS84` and `EPSG:4326` declarations are accepted. |
@@ -63,8 +68,9 @@ the performance case.
 LinkedList traversal issue. It compares two disjoint 2,000-position lines after
 a small warmup, with a synchronous two-second budget (no background worker is
 left running on failure). The live oracle checks the same disjoint fixture and
-an identical-line positive control. The time budget is an EvoMaster performance
-requirement, not a MongoDB semantic assertion. An array-backed version of the
+an identical-line positive control. The two-second budget is a review threshold
+chosen to expose the traversal cost, not an established EvoMaster performance
+requirement or a MongoDB semantic assertion. An array-backed version of the
 same traversal measured about 58 ms locally; the PR implementation took about
 20 seconds. This timing test remains sensitive to machine load.
 
@@ -95,7 +101,8 @@ These issues are present in the reviewed repository but were not introduced by
 PR #1785. `MongoQueryRegressionCases` adds their reproductions and passing
 controls. The same live oracle validates them. It now uses `find` rather than
 `countDocuments`, because the aggregation underlying `countDocuments` disallows
-`$near`. Proximity fixtures create the required `2d` index; each case drops its
+`$near`. Legacy proximity fixtures use `2d`; GeoJSON proximity fixtures use
+`2dsphere`. Each case drops its
 isolated collection first so index requirements cannot leak between cases.
 
 | Area | Confirmed discrepancy |
@@ -109,7 +116,7 @@ isolated collection first so index requirements cannot leak between cases.
 | Numeric conversions | NaN becomes zero for `$mod`; double `2^63` is accepted as a signed-long bitwise operand and saturated. |
 | Numeric precision | Distinct Int64 values above `2^53`, and distinct timestamp increments, can compare equal after conversion to double. |
 | Timestamp ordering | Unsigned timestamp seconds are compared as part of a signed packed long. |
-| Embedded documents | Strict ordering and inequality incorrectly require corresponding field names to satisfy the same comparison; Java equality can stop comparison before later differing fields or extra fields. |
+| Embedded documents | Strict ordering and inequality incorrectly require corresponding field names to satisfy the same comparison; using Java equality instead of BSON equality can stop comparison before later differing fields or extra fields. |
 | BSON binary equality | Identical bytes with different subtypes incorrectly compare equal. |
 | Regex operators | Mixed arrays are rejected wholesale; `$in` ignores flags, stringifies numbers, and throws on null; `$all` treats regexes as equality operands. |
 | Regex semantics and stored regex values | Java newline/extended-mode behavior differs from MongoDB; stored regex flags can be ignored or a matching stored regex rejected. |
@@ -235,7 +242,7 @@ calculator and geometry tests pass. The selected unit run reports 471 tests,
 | BSON value equality is missing | A stored BSON Symbol fails equality with the corresponding string; stored JavaScript Code and CodeWithScope fail equality with themselves. The helper falls through to incompatible-type handling. These are stored-value comparisons; no JavaScript is executed. |
 | Proximity rejects non-point GeoJSON | Both `$near` and `$nearSphere` reject stored LineString, MultiPoint, and Polygon values that match a one-meter query at `[0,0]` in MongoDB. The fixtures use `2dsphere` indexes. `evaluateDistanceBetweenPoints` only accepts stored Points. Point and distant-line controls pass. |
 | Antipodal proximity loses valid matches | Query point `[0,8]`, stored point `[180,-8]`, and maximum distance 21,000,000 meters match in MongoDB for both proximity operators but fail in EvoMaster. `MongoUtils.java:67–73` permits the Haversine intermediate to round above one, producing NaN. A 20,000,000-meter cutoff correctly excludes the point and provides the negative controls. |
-| Explicit result class records the wrong schema | `find({}, Person.class)` works in MongoDB but instrumentation records the collection's generic `Document` schema. A collection typed as Person correctly records its fields. `MongoOperationClassReplacement.java:19` derives the schema from the collection and ignores the result-class argument. |
+| Explicit result class loses useful schema information | For a generic `Document` collection, `find({}, Person.class)` works in MongoDB but instrumentation records only the generic schema. A collection typed as Person correctly records its fields. `MongoOperationClassReplacement.java:19` ignores the result-class argument. This does not establish that a projection result class should always override a concrete storage schema. |
 | Projection causes a false execution failure | A POJO has integer `age`, and the stored document has string `age`. Excluding `age` with a projection makes the actual query succeed. However, `MongoCollectionClassReplacement.java:64` eagerly opens the cursor before the projection is applied, catches the preliminary decode failure, and records the successful query as failed. |
 
 These findings predate PR #1785. The Symbol/JavaScript BSON types are
@@ -263,10 +270,16 @@ databases have a collection with the same name: one stores customers with
 `customerEmail`, the other invoices with `invoiceTotal`. Their empty live
 queries and per-command fallback schemas are correct. After registering both
 collection schemas, the handler reports the invoice schema for both databases.
+That winner follows the test's registration order; it is not always the invoice
+schema in other executions. The test synthesizes schema registrations after real
+live queries, rather than running two Spring templates end to end. Source review
+confirmed that the Spring replacements emit the same unqualified registrations.
 `MongoHandler.java:102` keys registrations by collection name alone, and
 `MongoCollectionSchema` carries no database identifier. This can cause document
 generation to insert the wrong fields into the customer database. The fix needs
 schema provenance, not just a different lookup expression.
+This downstream effect is a source-supported inference: the test directly
+checks the reported schema, not generated insertions or a resulting SUT failure.
 
 `MongoHandlerRegressionIT` includes this new reproduction, with unique database
 names, passing fallback controls, and cleanup. Its five regressions fail as
