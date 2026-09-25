@@ -110,7 +110,7 @@ class StringVariablesDataPoolTest : IntegrationTestRestBase(){
         assertEquals(200, res.getStatusCode())
 
         val dataPool = getDataPool()
-        assertEquals(6, dataPool.keySize())
+        assertEquals(4, dataPool.keySize())
         assertTrue(dataPool.hasExactKey("x"))
         assertTrue(dataPool.hasExactKey("y"))
         assertTrue(dataPool.hasExactKey("bar"))
@@ -126,8 +126,8 @@ class StringVariablesDataPoolTest : IntegrationTestRestBase(){
 
         val bar = dataPool.extractAllWithExactKey("bar")
         assertEquals(2, bar.size)
-        assertTrue(foo.contains("hi"))
-        assertTrue(foo.contains("K"))
+        assertTrue(bar.contains("hi"))
+        assertTrue(bar.contains("K"))
     }
 
 }

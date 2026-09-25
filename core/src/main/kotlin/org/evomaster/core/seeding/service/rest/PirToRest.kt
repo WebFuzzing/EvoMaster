@@ -149,6 +149,7 @@ class PirToRest: PirToIndividual(){
                     } else {
                         if(jsonBodyPayload == null){
                             log.warn("Provided body payload is null, but it is supposed to be required.")
+                            gene.setFromStringValue("{}")
                         }
                     }
                     if(jsonBodyPayload != null) {
