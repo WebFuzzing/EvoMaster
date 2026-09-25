@@ -85,6 +85,11 @@ class FitnessValue(
 
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
+    /**
+     * Key -> the index of a main action of the test, ie of the HTTP call that made the queries
+     * 
+     * Value -> the CQL queries executed by the SUT while serving that call which matched no row
+     */
     val cassandraExecutions: MutableMap<Int, CassandraExecution> = mutableMapOf()
 
     /**
