@@ -20,6 +20,7 @@ import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
+import org.evomaster.core.problem.asyncapi.service.AsyncApiModule
 import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -571,6 +572,22 @@ class Main {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
                 } else if (info.asyncApiProblem != null) {
                     config.problemType = EMConfig.ProblemType.ASYNCAPI
+                    if (config.createTests) {
+                        /*
+                            There is no test writer for AsyncAPI yet, and the constraints checked
+                            below refuse the combination. As the problem type was inferred rather
+                            than asked for, turning test generation off is better than failing.
+
+                            TODO remove this block once there is a test writer for AsyncAPI: the
+                            combination will be valid then, and silently switching test generation
+                            off would hide it.
+                         */
+                        LoggingUtil.uniqueUserWarn(
+                            "The driver describes an AsyncAPI service, for which test generation is not" +
+                                    " available yet. Continuing with 'createTests' off."
+                        )
+                        config.createTests = false
+                    }
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -627,8 +644,8 @@ class Main {
                 }
 
                 EMConfig.ProblemType.ASYNCAPI -> {
-                    //the sampler, fitness and module for it are being added one at a time
-                    throw IllegalStateException("AsyncAPI is not wired into the search yet")
+                    //one module for both modes: the driver is needed either way, see EMConfig.usesDriver
+                    AsyncApiModule()
                 }
 
                 //this should never happen, unless we add new type and forget to add it here

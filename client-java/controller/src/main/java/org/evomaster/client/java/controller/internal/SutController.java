@@ -2048,6 +2048,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * metadata:
      *
      * <pre>
+     * seekToEndOf(dto.replyAddress);   // a reply older than this publish is not an answer to it
      * publish(dto.address, dto.payload, dto.headers + {correlationId: dto.correlationId});
      * reply.published = true;
      * if (dto.replyAddress != null) {
@@ -2055,6 +2056,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *     awaitOn(dto.replyAddress, matching dto.correlationId, within dto.replyTimeoutMs);
      * }
      * </pre>
+     *
+     * A reply published before the action was is never an answer to it, and the driver is what
+     * has to ensure that, because only it can: on Kafka by seeking to the end of the reply
+     * topic before publishing, elsewhere by a fresh subscription or by draining the
+     * destination. The core does not vary its correlation ids between runs to compensate, as a
+     * run repeated under the same seed has to behave the same way.
      *
      * Note what is not asked of the driver: it does not judge the reply, only reports it.
      * Deciding what an outcome means is the core's job, so that it means the same thing
