@@ -9,6 +9,8 @@ import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,6 +54,42 @@ public class DynamoDbOperationsEMTest extends DynamoDbTestBase {
                     }
                 },
                 10);
+    }
+
+    /**
+     * Verifies that DynamoDB distance guides a conditional PutItem to the required FIFA ID.
+     *
+     * @throws Throwable when EvoMaster execution fails
+     */
+    @Test
+    public void testConditionalPutItemNeedsDynamoDbHeuristics() throws Throwable {
+        String endpoint = "/operations/sync/put-item-heuristic/{fifaId}";
+        String successMarker = "SYNC PUT_ITEM SUCCESS";
+
+        runTestHandlingFlaky(
+                "DynamoDbConditionalPutItemEM",
+                "org.foo.spring.rest.dynamodb.DynamoDbConditionalPutItemEM",
+                500,
+                false,
+                args -> {
+                    List<String> withoutHeuristics = new ArrayList<>(args);
+                    configureDynamoDbHeuristics(withoutHeuristics, false);
+                    setOption(withoutHeuristics, "endpointFocus", endpoint);
+                    setOption(withoutHeuristics, "maxTestSize", "1");
+                    Solution<RestIndividual> baseline = initAndRun(withoutHeuristics);
+
+                    assertHasAtLeastOne(baseline, HttpVerb.POST, 409, endpoint, "SYNC PUT_ITEM FAILURE");
+                    assertNone(baseline, HttpVerb.POST, 201, endpoint, successMarker);
+
+                    List<String> withHeuristics = new ArrayList<>(args);
+                    configureDynamoDbHeuristics(withHeuristics, true);
+                    setOption(withHeuristics, "endpointFocus", endpoint);
+                    setOption(withHeuristics, "maxTestSize", "1");
+                    Solution<RestIndividual> guided = initAndRun(withHeuristics);
+
+                    assertHasAtLeastOne(guided, HttpVerb.POST, 201, endpoint, successMarker);
+                },
+                5);
     }
 
     /**

@@ -159,16 +159,14 @@ public class DynamoDbHandler {
     }
 
     /**
-     * Evaluates one successfully executed command and reuses table scans within the current batch.
+     * Evaluates one command and reuses table scans within the current batch.
+     * Failed conditional writes are evaluated because their predicates provide the
+     * distance needed to guide subsequent candidates toward a successful write.
      *
      * @param command command to evaluate
      * @param itemsByTable cached table contents
      */
     private void evaluateCommand(DynamoDbCommand command, Map<String, List<Map<String, Object>>> itemsByTable) {
-        if (!command.isSuccessfullyExecuted()) {
-            return;
-        }
-
         Map<String, ParsedDynamoDbRequest> parsedByTable;
         try {
             parsedByTable = requestParser.parseByTable(command.getDdbRequest(), command.getOperationName());
@@ -180,6 +178,9 @@ public class DynamoDbHandler {
         for (Map.Entry<String, ParsedDynamoDbRequest> entry : parsedByTable.entrySet()) {
             ParsedDynamoDbRequest parsed = entry.getValue();
             if (parsed == null || (parsed.getKeyCondition() == null && parsed.getFilterExpression() == null)) {
+                continue;
+            }
+            if (!command.isSuccessfullyExecuted() && parsed.getFilterExpression() == null) {
                 continue;
             }
 
