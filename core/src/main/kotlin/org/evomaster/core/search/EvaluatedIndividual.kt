@@ -1,29 +1,33 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactinfocollection.*
-import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.tracer.Traceable
-import org.evomaster.core.search.tracer.TraceableElementCopyFilter
-import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
-import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.evomaster.core.search.tracer.Traceable
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
+import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -1007,7 +1011,7 @@ class EvaluatedIndividual<T>(
     }
 
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, ScheduleTaskAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, DynamoDbAction::class, CassandraDbAction::class, ScheduleTaskAction::class)
     }
 
     fun hasAnyPotentialFault() = this.fitness.hasAnyPotentialFault(this.individual.searchGlobalState!!.idMapper)

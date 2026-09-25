@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db.neo4j;
+package org.evomaster.client.java.controller.neo4j;
 
 import java.lang.reflect.Method;
 import java.util.Collections;

@@ -311,7 +311,9 @@ There are 3 types of options:
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
+|`extractDynamoDbExecutionInfo`| __Boolean__. Enable extracting DynamoDB execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`extractRedisExecutionInfo`| __Boolean__. Enable extracting Redis execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`generateDynamoDbData`| __Boolean__. Enable EvoMaster to generate DynamoDB data with direct database access. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateRedisData`| __Boolean__. Enable EvoMaster to generate Redis data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateSqlDataWithZ3`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|
@@ -332,7 +334,7 @@ There are 3 types of options:
 |`llmApiKey`| __String__. API KEY needed to authenticated toward the chosen LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`llmName`| __String__. LLM name. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
 |`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Depends on*: `llm=true`. *Valid values*: `OPENAI, DEEPSEEK, OLLAMA, AZURE_OPENAI, MOCK`. *Default value*: `OLLAMA`.|
-|`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.3`.|
+|`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.6`.|
 |`llmThreads`| __Int__. The number of threads to use when making calls towards an LLM, in configured. If connecting to Ollama, this value is ignored, and only 1 thread is used. *Depends on*: `llm=true`. *Default value*: `4`.|
 |`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Depends on*: `llm=true`. *Default value*: `60`.|
 |`llmURL`| __String__. LLM external service URL. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|

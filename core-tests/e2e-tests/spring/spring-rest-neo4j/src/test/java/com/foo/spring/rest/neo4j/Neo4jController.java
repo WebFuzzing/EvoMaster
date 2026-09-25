@@ -4,6 +4,7 @@ import com.foo.neo4j.AbstractNeo4jRest;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.sql.DbSpecification;
@@ -32,6 +33,8 @@ public abstract class Neo4jController extends EmbeddedSutController {
 
     private Driver driver;
 
+    private ReflectionBasedNeo4jClient neo4jClient;
+
     protected Neo4jController(Class<?> neo4jAppClass) {
         this.neo4jAppClass = neo4jAppClass;
         super.setControllerPort(0);
@@ -46,6 +49,7 @@ public abstract class Neo4jController extends EmbeddedSutController {
 
         driver = GraphDatabase.driver(uri, AuthTokens.none());
         driver.verifyConnectivity();
+        neo4jClient = new ReflectionBasedNeo4jClient(driver);
 
         SpringApplicationBuilder app = new SpringApplicationBuilder(neo4jAppClass);
         app.properties("--server.port=0");
@@ -105,7 +109,7 @@ public abstract class Neo4jController extends EmbeddedSutController {
     }
 
     @Override
-    public Object getNeo4jConnection() {
-        return driver;
+    public ReflectionBasedNeo4jClient getNeo4jConnection() {
+        return neo4jClient;
     }
 }

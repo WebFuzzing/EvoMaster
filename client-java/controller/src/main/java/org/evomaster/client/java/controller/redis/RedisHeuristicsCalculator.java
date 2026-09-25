@@ -75,6 +75,19 @@ public class RedisHeuristicsCalculator {
                     return toMetrics(t, redisData.getData().size());
                 }
 
+                case FT_SEARCH: {
+                    String query = redisCommand.extractArgs().get(1);
+                    t = hFtSearch(query, redisData.getData());
+                    return toMetrics(t, redisData.getData().size());
+                }
+
+                case FT_AGGREGATE: {
+                    String query = redisCommand.extractArgs().get(1);
+                    List<String> groupByFields = extractGroupByFields(redisCommand.extractArgs());
+                    t = hFtAggregate(query, groupByFields, redisData.getData());
+                    return toMetrics(t, redisData.getData().size());
+                }
+
                 default:
                     SimpleLogger.error("Unsupported command type: " + type);
                     throw new IllegalArgumentException("Unsupported command type in Redis heuristic calculation.");
@@ -268,5 +281,334 @@ public class RedisHeuristicsCalculator {
         } else {
             return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, orOfTrue);
         }
+    }
+
+    /**
+     * H_FT_SEARCH(index, query, db) =
+     *   andAggregation(
+     *     H_index_has_candidates(index, db),
+     *     H_ft_condition(query, index, db))
+     *
+     * The index name itself is not needed here: RedisHandler already pre-filters db down to the
+     * candidate documents of that index (HASH keys matching one of its declared prefixes) before
+     * reaching the calculator.
+     */
+    private Truthness hFtSearch(String query, Map<String, RedisValueData> candidates) {
+        return TruthnessUtils.buildAndAggregationTruthness(
+                hIndexHasCandidates(candidates),
+                hFtCondition(query, candidates)
+        );
+    }
+
+    /**
+     * H_index_has_candidates(index, db) = getTruthnessToEmpty(#candidateDocuments(index, db)).invert()
+     */
+    private Truthness hIndexHasCandidates(Map<String, RedisValueData> candidates) {
+        return TruthnessUtils.getTruthnessToEmpty(candidates.size()).invert();
+    }
+
+    /**
+     * H_ft_condition(query, index, db) =
+     *   LET candidates = candidateDocuments(index, db)
+     *   IN  IF candidates is empty
+     *       THEN C_FALSE
+     *       ELSE
+     *           LET filters = parseFtQuery(query)
+     *           LET maxOfTrue = max{ H_ft_query(filters, doc).ofTrue | doc in candidates }
+     *           IN  IF maxOfTrue == 1
+     *               THEN TRUE_C
+     *               ELSE scaleTrue(C, maxOfTrue)
+     */
+    private Truthness hFtCondition(String query, Map<String, RedisValueData> candidates) {
+        if (candidates.isEmpty()) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        List<RedisSearchFilter> filters;
+        try {
+            filters = RedisSearchQueryParser.parse(query);
+        } catch (IllegalArgumentException e) {
+            SimpleLogger.uniqueWarn("Invalid or unsupported Redis search query: " + query);
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        double maxOfTrue = H_MIN_VALUE;
+        for (RedisValueData doc : candidates.values()) {
+            double ofTrue = hFtQuery(filters, doc).getOfTrue();
+            maxOfTrue = Math.max(maxOfTrue, ofTrue);
+            if (maxOfTrue == H_MAX_VALUE) return TruthnessUtils.TRUE_TRUTHNESS;
+        }
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, maxOfTrue);
+    }
+
+    /**
+     * H_ft_query(filters, doc) =
+     *   IF filters is empty                 // query was "*"
+     *   THEN TRUE_C
+     *   ELSE andAggregation({ H_ft_filter(f, doc) | f in filters })
+     */
+    private Truthness hFtQuery(List<RedisSearchFilter> filters, RedisValueData doc) {
+        if (filters.isEmpty()) {
+            return TruthnessUtils.TRUE_TRUTHNESS;
+        }
+
+        List<Truthness> components = new ArrayList<>();
+        for (RedisSearchFilter filter : filters) {
+            components.add(hFtFilter(filter, doc));
+        }
+        return TruthnessUtils.buildAndAggregationTruthness(components.toArray(new Truthness[0]));
+    }
+
+    private Truthness hFtFilter(RedisSearchFilter filter, RedisValueData doc) {
+        if (filter instanceof RedisSearchTagFilter) {
+            return hTagFilter((RedisSearchTagFilter) filter, doc);
+        }
+        if (filter instanceof RedisSearchNumericFilter) {
+            return hNumericFilter((RedisSearchNumericFilter) filter, doc);
+        }
+        if (filter instanceof RedisSearchTextFilter) {
+            return hTextFilter((RedisSearchTextFilter) filter, doc);
+        }
+        throw new IllegalArgumentException("Unsupported Redis search filter type: " + filter.getClass());
+    }
+
+    /**
+     * H_ft_filter(TagFilter(field, values), doc) =
+     *   IF doc = nil OR field not in fields(doc)
+     *   THEN C_FALSE
+     *   ELSE orAggregation({ getStringEquals(doc[field], v) | v in values })
+     */
+    private Truthness hTagFilter(RedisSearchTagFilter filter, RedisValueData doc) {
+        String value = fieldValue(doc, filter.getFieldName());
+        if (value == null) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        List<Truthness> equalities = new ArrayList<>();
+        for (String candidate : filter.getValues()) {
+            Truthness eq = TruthnessUtils.getStringEqualityTruthness(value, candidate);
+            if (taintHandler != null) {
+                taintHandler.handleTaintForStringEquals(value, candidate, false);
+            }
+            equalities.add(eq);
+        }
+        return TruthnessUtils.buildOrAggregationTruthness(equalities.toArray(new Truthness[0]));
+    }
+
+    /**
+     * H_ft_filter(NumericFilter(field, min, max), doc) =
+     *   IF doc = nil OR field not in fields(doc) OR doc[field] is not numeric
+     *   THEN C_FALSE
+     *   ELSE H_in_range(toDouble(doc[field]), min, max)
+     */
+    private Truthness hNumericFilter(RedisSearchNumericFilter filter, RedisValueData doc) {
+        String value = fieldValue(doc, filter.getFieldName());
+        if (value == null) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        double numericValue;
+        try {
+            numericValue = Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        return hInRange(numericValue, filter.getMin(), filter.getMax());
+    }
+
+    /**
+     * H_in_range(value, min, max) =
+     *   andAggregation(
+     *       getLessThanTruthness(value, min).invert(),     // min <= value
+     *       getLessThanTruthness(max, value).invert())     // value <= max
+     *
+     * RediSearch's "[min max]" is inclusive on both ends, so a strict less-than would report a
+     * non-zero distance for a value sitting exactly on a bound even though the query matches it.
+     */
+    private Truthness hInRange(double value, double min, double max) {
+        return TruthnessUtils.buildAndAggregationTruthness(
+                TruthnessUtils.getLessThanTruthness(value, min).invert(),
+                TruthnessUtils.getLessThanTruthness(max, value).invert()
+        );
+    }
+
+    /**
+     * H_ft_filter(TextFilter(field, term), doc) =
+     *   LET regex = textTermToRegex(term)
+     *   IN  IF field = ANY
+     *       THEN orAggregation({ H_text_match(regex, doc[f]) | f in fields(doc) })
+     *       ELSE
+     *           IF doc = nil OR field not in fields(doc)
+     *           THEN C_FALSE
+     *           ELSE H_text_match(regex, doc[field])
+     */
+    private Truthness hTextFilter(RedisSearchTextFilter filter, RedisValueData doc) {
+        String word = textTermWord(filter.getTerm());
+
+        if (filter.getFieldName() == null) {
+            if (doc == null || doc.getFields() == null || doc.getFields().isEmpty()) {
+                return TruthnessUtils.FALSE_TRUTHNESS;
+            }
+            List<Truthness> matches = new ArrayList<>();
+            for (String value : doc.getFields().values()) {
+                matches.add(hTextMatch(word, value));
+            }
+            return TruthnessUtils.buildOrAggregationTruthness(matches.toArray(new Truthness[0]));
+        }
+
+        String value = fieldValue(doc, filter.getFieldName());
+        if (value == null) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+        return hTextMatch(word, value);
+    }
+
+    /**
+     * H_text_match(word, value) =
+     *   IF value is not textual
+     *   THEN C_FALSE
+     *   ELSE
+     *       LET regex = textTermToRegex(word)
+     *       LET similarity = 1 - normalizeValue(regexDistance(value, regex))
+     *       IN  IF similarity == 1
+     *           THEN TRUE_C
+     *           ELSE scaleTrue(C, similarity)
+     *
+     * Besides the regex, the bare word is also reported to the taint handler: the regex wraps it
+     * in ".*", so on its own it would no longer be recognized as an input value of the request.
+     */
+    private Truthness hTextMatch(String word, String value) {
+        if (value == null) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        String regex = textTermToRegex(word);
+        double similarity = H_MAX_VALUE - TruthnessUtils.normalizeValue(
+                RegexDistanceUtils.getStandardDistance(value, regex));
+        if (taintHandler != null) {
+            taintHandler.handleTaintForRegex(value, regex);
+            taintHandler.handleTaintForStringEquals(word, value, true);
+        }
+
+        if (similarity == H_MAX_VALUE) {
+            return TruthnessUtils.TRUE_TRUTHNESS;
+        }
+        return TruthnessUtils.buildScaledTruthness(DistanceHelper.H_NOT_NULL, similarity);
+    }
+
+    /**
+     * word(term) = term ends with "*" ? term without trailing "*" : term
+     */
+    private String textTermWord(String term) {
+        return term.endsWith("*") ? term.substring(0, term.length() - 1) : term;
+    }
+
+    /**
+     * textTermToRegex(word) = ".*" + escape(word) + ".*"
+     *
+     * The word is user input, so its regex metacharacters must be taken literally.
+     */
+    private String textTermToRegex(String word) {
+        StringBuilder regex = new StringBuilder(".*");
+        for (char c : word.toCharArray()) {
+            if (".+*?()[]{}|^$\\".indexOf(c) >= 0) {
+                regex.append('\\');
+            }
+            regex.append(c);
+        }
+        return regex.append(".*").toString();
+    }
+
+    private String fieldValue(RedisValueData doc, String field) {
+        if (doc == null || doc.getFields() == null) {
+            return null;
+        }
+        return doc.getFields().get(field);
+    }
+
+    /**
+     * H_FT_AGGREGATE(index, query, groupByFields, db) =
+     *   andAggregation(
+     *       H_FT_SEARCH(index, query, db),
+     *       andAggregation({ H_field_exists_anywhere(f, candidateDocuments(index, db))
+     *                         | f in groupByFields }))
+     *
+     * When there is no GROUPBY stage, groupByFields is empty and this collapses to H_FT_SEARCH,
+     * since andAggregation is undefined over an empty set of Truthness values.
+     */
+    private Truthness hFtAggregate(String query, List<String> groupByFields, Map<String, RedisValueData> candidates) {
+        Truthness searchTruthness = hFtSearch(query, candidates);
+        if (groupByFields.isEmpty()) {
+            return searchTruthness;
+        }
+
+        List<Truthness> fieldExistence = new ArrayList<>();
+        for (String field : groupByFields) {
+            fieldExistence.add(hFieldExistsAnywhere(field, candidates));
+        }
+        Truthness groupByTruthness = TruthnessUtils.buildAndAggregationTruthness(fieldExistence.toArray(new Truthness[0]));
+
+        return TruthnessUtils.buildAndAggregationTruthness(searchTruthness, groupByTruthness);
+    }
+
+    /**
+     * H_field_exists_anywhere(field, candidates) =
+     *   IF candidates is empty
+     *   THEN C_FALSE
+     *   ELSE orAggregation({ H_field_exists(field, doc) | doc in candidates })
+     */
+    private Truthness hFieldExistsAnywhere(String field, Map<String, RedisValueData> candidates) {
+        if (candidates.isEmpty()) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+
+        List<Truthness> existence = new ArrayList<>();
+        for (RedisValueData doc : candidates.values()) {
+            existence.add(hFieldExists(field, doc));
+        }
+        return TruthnessUtils.buildOrAggregationTruthness(existence.toArray(new Truthness[0]));
+    }
+
+    /**
+     * H_field_exists(field, doc) =
+     *   IF doc = nil OR field not in fields(doc)
+     *   THEN C_FALSE
+     *   ELSE TRUE_C
+     */
+    private Truthness hFieldExists(String field, RedisValueData doc) {
+        if (doc == null || doc.getFields() == null || !doc.getFields().containsKey(field)) {
+            return TruthnessUtils.FALSE_TRUTHNESS;
+        }
+        return TruthnessUtils.TRUE_TRUTHNESS;
+    }
+
+    /**
+     * FT.AGGREGATE's GROUPBY stage is encoded on the wire as "GROUPBY" nargs field..., with each
+     * field prefixed by "@" (e.g. "@category"); the prefix is stripped to match hash field names.
+     */
+    private List<String> extractGroupByFields(List<String> args) {
+        List<String> fields = new ArrayList<>();
+        int groupByIndex = args.indexOf("GROUPBY");
+        if (groupByIndex < 0 || groupByIndex + 1 >= args.size()) {
+            return fields;
+        }
+
+        int count;
+        try {
+            count = Integer.parseInt(args.get(groupByIndex + 1));
+        } catch (NumberFormatException e) {
+            return fields;
+        }
+
+        for (int i = 0; i < count; i++) {
+            int argIndex = groupByIndex + 2 + i;
+            if (argIndex >= args.size()) {
+                break;
+            }
+            String field = args.get(argIndex);
+            fields.add(field.startsWith("@") ? field.substring(1) : field);
+        }
+        return fields;
     }
 }
