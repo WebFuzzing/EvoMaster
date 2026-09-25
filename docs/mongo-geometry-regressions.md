@@ -178,3 +178,44 @@ mvn -pl client-java/controller -am \
 Omit the URI to start a test container. An external server must permit the
 `$currentOp` inspection used by the cursor test. Tests create and clean up their
 own unique database and collection names. Production code remains unchanged.
+
+### Additional geometry, numeric, and driver-filter findings
+
+The next pass added 27 semantic fixtures and two handler cases, all checked
+against live MongoDB 7.0.41.
+
+| Finding | Concrete reproduction and impact |
+| --- | --- |
+| Flat regions accept unsupported stored geometry kinds | `$geoWithin:{$box:[[0,0],[10,10]]}` incorrectly matches a stored GeoJSON LineString `[[4,4],[6,6]]`. The same issue affects `$polygon` and `$center`, with LineString, Polygon, and MultiPoint fixtures. MongoDB rejects all nine matches; Point and `$centerSphere` controls match. |
+| Stored regexes are executed by `$ne` | For `{a:[/foo/]}`, `$ne:'foobar'` incorrectly returns false and `$ne:null` throws. The stored regex is a value, not a query predicate. `$eq` and `$nin` controls behave correctly. |
+| Infinity equality throws | Both positive and negative infinity fail equality against themselves with an invalid Truthness exception. MongoDB matches them. |
+| Inclusive NaN comparison fails | Both `$lte:NaN` and `$gte:NaN` must match a stored NaN; EvoMaster returns false. Equality and strict-comparison controls pass. |
+| Tiny finite differences throw | Comparing stored `1e-17` with `$eq:0` throws instead of returning false because the truthness rounds to one on both sides. This extends the earlier geometric residual issue to ordinary numeric queries. |
+| Tiny segment intersection underflows | A line `[[0,0],[1e-170,0]]` intersects its midpoint `[5e-171,0]` in MongoDB but not EvoMaster. Squaring the segment length underflows to zero and the projection becomes NaN. This is an extreme-scale, lower-priority case. |
+| Standard driver filters crash the handler | `Filters.eq("value",1)` and an equivalent `BsonDocument` both match through the Java driver, but their recorded commands throw NPE and IllegalArgumentException respectively. The equivalent `Document` filter succeeds. |
+
+Relevant source locations in the reviewed PR:
+
+- `GeoWithinSelector.java:80` discards the original shape kind when constructing
+  the operation; the new evaluator consequently applies polygon containment to
+  flat shapes without the stored-geometry restriction.
+- `MongoHeuristicsCalculator.java:298` treats the stored array as query candidates
+  during `$ne`, allowing stored regexes to execute.
+- `MongoHeuristicsCalculatorHelper.java:291` handles NaN comparisons but rejects
+  inclusive ordering; the adjacent numeric conversion/distance path also
+  exposes the infinity and near-zero failures.
+- `GeoJsonGeometryIntersection.java:260` divides by the squared segment length
+  without handling underflow.
+- `MongoCollectionClassReplacement` records the original `Bson` filter, while
+  `BsonHelper.java:108` only recognizes `org.bson.Document`.
+
+The flat-region and tiny-segment findings concern PR #1785's new geometry
+evaluation. The regex, numeric, and driver-filter problems predate this PR.
+
+All 155 oracle checks passed (154 semantic fixtures plus the detailed-line
+check). All four handler regressions failed as expected, with no test errors;
+the two new cases first assert successful live queries and Document controls.
+The semantic suite now has 109 intentional failures and 45 passing controls:
+17 of the 27 new cases fail. All 284 existing active calculator and geometry
+tests still pass. The selected unit run reported 441 tests, 109 failures, no
+errors, and three skips. The unchanged performance test was not repeated.

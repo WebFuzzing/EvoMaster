@@ -118,6 +118,35 @@ public final class MongoGeometryRegressionCases {
                     inside, true);
             add(cases, operators[i] + " accepts ordered document shape", legacy(operators[i], objectShapes[i]), inside, true);
         }
+
+        // Flat legacy regions only match points. Converting every region to the same
+        // polygon representation must not lose this restriction; spherical regions
+        // can contain these non-point geometries.
+        Document[] nonPointGeometries = {
+                geometry("LineString", "[[4,4],[6,6]]"),
+                geometry("Polygon", "[[[4,4],[6,4],[5,6],[4,4]]]"),
+                geometry("MultiPoint", "[[4,4],[6,6]]")
+        };
+        String[] flatOperators = {"$box", "$polygon", "$center"};
+        String[] flatShapes = {"[[0,0],[10,10]]", "[[0,0],[10,0],[10,10],[0,10]]", "[[5,5],4]"};
+        for (int i = 0; i < flatOperators.length; i++) {
+            for (Document nonPointGeometry : nonPointGeometries) {
+                add(cases, flatOperators[i] + " excludes stored " + nonPointGeometry.getString("type"),
+                        legacy(flatOperators[i], flatShapes[i]), nonPointGeometry, false);
+            }
+        }
+        for (Document nonPointGeometry : nonPointGeometries) {
+            add(cases, "centerSphere contains stored " + nonPointGeometry.getString("type") + " control",
+                    legacy("$centerSphere", "[[5,5],0.1]"), nonPointGeometry, true);
+        }
+        // The matching GeoJSON Point control for $box is already covered above.
+        for (int i = 1; i < flatOperators.length; i++) {
+            add(cases, flatOperators[i] + " matches stored Point control",
+                    legacy(flatOperators[i], flatShapes[i]), geometry("Point", "[5,5]"), true);
+        }
+        add(cases, "tiny segment midpoint remains an intersection",
+                geo("$geoIntersects", geometry("LineString", "[[0,0],[1e-170,0]]")),
+                geometry("Point", "[5e-171,0]"), true);
         return cases.stream();
     }
 

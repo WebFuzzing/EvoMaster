@@ -4,10 +4,18 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.evomaster.client.java.controller.internal.db.mongo.MongoCommandWithDistance;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.GenericContainer;
 
 import java.util.ArrayList;
@@ -15,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -128,6 +137,30 @@ class MongoHandlerRegressionIT {
         handler.handle(new MongoFindCommand(database.getName(), collection.getNamespace().getCollectionName(),
                 "{}", query, true, 0));
         return handler;
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("supportedDriverFilters")
+    void shouldEvaluateSupportedJavaDriverFilters(String name, Bson filter) {
+        collection.insertOne(new Document("value", 1));
+        assertEquals(1, collection.find(filter).into(new ArrayList<>()).size(),
+                "The actual Java-driver query must match before testing its recorded command");
+
+        List<MongoCommandWithDistance> control = handlerFor(new Document("value", 1)).getEvaluatedMongoCommands();
+        assertEquals(1, control.size());
+        assertEquals(0.0, control.get(0).mongoDistanceWithMetrics.mongoDistance);
+
+        // Instrumentation records the original Bson filter, without converting it to Document.
+        List<MongoCommandWithDistance> evaluated = assertDoesNotThrow(() -> handlerFor(filter).getEvaluatedMongoCommands());
+        assertEquals(1, evaluated.size());
+        assertEquals(0.0, evaluated.get(0).mongoDistanceWithMetrics.mongoDistance);
+    }
+
+    private static Stream<Arguments> supportedDriverFilters() {
+        return Stream.of(
+                Arguments.of("Filters.eq builder", Filters.eq("value", 1)),
+                Arguments.of("BsonDocument filter", new BsonDocument("value", new BsonInt32(1)))
+        );
     }
 
     private List<Document> idleCursors() {

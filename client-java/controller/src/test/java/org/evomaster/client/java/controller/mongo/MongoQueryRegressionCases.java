@@ -137,6 +137,29 @@ final class MongoQueryRegressionCases {
         add(cases, "nested array ordering does not throw", "{a:{$gt:[1]}}", "{a:[[2]]}", true);
         add(cases, "empty array satisfies inclusive array comparison", "{a:{$lte:[]}}", "{a:[]}", true);
         add(cases, "array greater than negative control", "{a:{$gt:[2]}}", "{a:[1]}", false);
+        add(cases, "ne does not execute stored array regex as a predicate", "{a:{$ne:'foobar'}}",
+                "{a:[{$regularExpression:{'pattern':'foo','options':''}}]}", true);
+        add(cases, "ne null safely compares a stored array regex", "{a:{$ne:null}}",
+                "{a:[{$regularExpression:{'pattern':'foo','options':''}}]}", true);
+        add(cases, "eq stored array regex and string control", "{a:{$eq:'foobar'}}",
+                "{a:[{$regularExpression:{'pattern':'foo','options':''}}]}", false);
+        add(cases, "nin stored array regex and string control", "{a:{$nin:['foobar']}}",
+                "{a:[{$regularExpression:{'pattern':'foo','options':''}}]}", true);
+
+        add(cases, "positive infinity equals itself", "{v:{$eq:{$numberDouble:'Infinity'}}}",
+                "{v:{$numberDouble:'Infinity'}}", true);
+        add(cases, "negative infinity equals itself", "{v:{$eq:{$numberDouble:'-Infinity'}}}",
+                "{v:{$numberDouble:'-Infinity'}}", true);
+        add(cases, "NaN satisfies inclusive less than itself", "{v:{$lte:{$numberDouble:'NaN'}}}",
+                "{v:{$numberDouble:'NaN'}}", true);
+        add(cases, "NaN satisfies inclusive greater than itself", "{v:{$gte:{$numberDouble:'NaN'}}}",
+                "{v:{$numberDouble:'NaN'}}", true);
+        add(cases, "NaN equality control", "{v:{$eq:{$numberDouble:'NaN'}}}",
+                "{v:{$numberDouble:'NaN'}}", true);
+        add(cases, "NaN strict comparison control", "{v:{$lt:{$numberDouble:'NaN'}}}",
+                "{v:{$numberDouble:'NaN'}}", false);
+        add(cases, "near zero distinct double comparison must not throw", "{v:{$eq:0}}", "{v:1e-17}", false);
+        add(cases, "zero double equality control", "{v:{$eq:0}}", "{v:0.0}", true);
         return cases.stream();
     }
 
