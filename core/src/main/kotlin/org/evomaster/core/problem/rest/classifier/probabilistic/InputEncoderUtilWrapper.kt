@@ -212,15 +212,14 @@ class InputEncoderUtilWrapper(
     }
 
     /**
-     * Encodes an [ArrayGene] into a single numeric value based on the types of
-     * its non-empty elements.
+     * Encodes an [ArrayGene] into a single numeric value based on the types of its non-empty elements.
      *
-     * Empty or blank elements are ignored. Each meaningful element contributes:
-     * - StringGene  -> +1
+     * Empty or blank elements are ignored when applying type-specific weights.
+     * The encoded value starts with the array size, ensuring that the collection
+     * structure contributes to the final representation.
+     * - StringGene  -> +10
      * - NumericGene -> +100
      * - EnumGene    -> +1000
-     *
-     * Other gene types do not contribute to the encoded value.
      *
      * If the array contains no meaningful elements, [sentinel] is returned.
      */
