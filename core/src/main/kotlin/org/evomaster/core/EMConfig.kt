@@ -1742,7 +1742,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.NORMAL
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental

@@ -211,49 +211,6 @@ class InputEncoderUtilWrapper(
         return encoded.toDouble()
     }
 
-    /**
-     * Encodes an [ArrayGene] into a single numeric value based on the types of its non-empty elements.
-     *
-     * Empty or blank elements are ignored when applying type-specific weights.
-     * The encoded value starts with the array size, ensuring that the collection
-     * structure contributes to the final representation.
-     * - StringGene  -> +10
-     * - NumericGene -> +100
-     * - EnumGene    -> +1000
-     *
-     * If the array contains no meaningful elements, [sentinel] is returned.
-     */
-    private fun encodeArray(array: ArrayGene<*>, sentinel: Double): Double {
-
-        val elements = array.getViewOfElements()
-            .filter { it.getValueAsPrintableString().isNotBlank() }
-
-        if (elements.isEmpty()) {
-            return sentinel
-        }
-
-        var encoded = elements.size
-
-        elements.forEach { element ->
-            when (element.getLeafGene()) {
-
-                is StringGene ->
-                    encoded += 10
-
-                is IntegerGene, is DoubleGene, is FloatGene, is LongGene,
-                is BigDecimalGene, is BigIntegerGene,
-                is IntegralNumberGene<*>,
-                is FloatingPointNumberGene<*>,
-                is NumberGene<*> ->
-                    encoded += 100
-
-                is EnumGene<*> ->
-                    encoded += 1000
-            }
-        }
-
-        return encoded.toDouble()
-    }
 
     /**
      * Encodes the current endpoint's gene values into a numeric feature vector suitable for
@@ -343,11 +300,21 @@ class InputEncoderUtilWrapper(
                     val idx = values.indexOf(raw)
                     rawEncodedFeatures.add(if (idx >= 0) idx.toDouble() else sentinel)
                 }
-                /** Encode based on [encodeArray] function*/
+                /**
+                 * Encode an ArrayGene by counting how many of its elements
+                 * are non-null / non-empty (i.e., contain meaningful data).
+                 * This reduces the array to a single numeric feature representing
+                 * its effective size.
+                 */
                 is ArrayGene<*> -> {
-                    rawEncodedFeatures.add(
-                        encodeArray(leaf, sentinel)
-                    )
+                    val elements = leaf.getViewOfElements()
+                    // If the array is empty, encode as sentinel
+                    val count = if (elements.isEmpty()) {
+                        sentinel
+                    } else {
+                        elements.count { e -> e.getValueAsPrintableString().isNotBlank()}
+                    }
+                    rawEncodedFeatures.add(count.toDouble())
                 }
                 /**
                  * Date gene encoded as scaled epoch days.
