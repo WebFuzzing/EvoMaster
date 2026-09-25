@@ -3,13 +3,17 @@ package org.evomaster.client.java.controller.mongo.geometry;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract class GeoJsonUtils {
 
     private static final String POINT = "Point";
     private static final String COORDINATES = "coordinates";
     private static final String TYPE = "type";
+    private static final String GEOMETRIES = "geometries";
 
     /**
      * Checks whether the given object represents a GeoJSON Point.
@@ -81,5 +85,212 @@ public abstract class GeoJsonUtils {
         return new GeoJsonPoint(longitude, latitude);
     }
 
+
+    /**
+     * Converts a GeoJSON LineString document into typed points.
+     * Coordinates must be finite longitude/latitude pairs. Malformed documents,
+     * unsupported CRS declarations, and lines with fewer than two distinct
+     * consecutive positions cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonLineString toGeoJsonLineString(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonLineString.LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON LineString.");
+        }
+        return toLineString(BsonHelper.getValue(document, COORDINATES));
+    }
+
+    /**
+     * Converts a GeoJSON MultiLineString document into a typed {@link GeoJsonMultiLineString}.
+     * The coordinates must be a non-empty list of LineString coordinate arrays, each one
+     * validated the same way as a standalone LineString's coordinates.
+     */
+    public static GeoJsonMultiLineString toGeoJsonMultiLineString(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiLineString.MULTI_LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiLineString.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("MultiLineString coordinates must be a non-empty list of line coordinates.");
+        }
+        List<GeoJsonLineString> lineStrings = new ArrayList<>();
+        for (Object lineCoordinates : (List<?>) coordinates) {
+            lineStrings.add(toLineString(lineCoordinates));
+        }
+        return new GeoJsonMultiLineString(lineStrings);
+    }
+
+    private static GeoJsonLineString toLineString(Object coordinates) {
+        if (!(coordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("LineString coordinates must be a list of positions.");
+        }
+        return new GeoJsonLineString(toPoints((List<?>) coordinates));
+    }
+
+    /**
+     * Converts a GeoJSON MultiPoint document into a typed {@link GeoJsonMultiPoint}.
+     * Coordinates must be finite longitude/latitude pairs. Malformed documents and
+     * unsupported CRS declarations cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonMultiPoint toGeoJsonMultiPoint(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiPoint.MULTI_POINT_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPoint.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("MultiPoint coordinates must be a list of positions.");
+        }
+        return new GeoJsonMultiPoint(toPoints((List<?>) coordinates));
+    }
+
+    /**
+     * Converts a GeoJSON Polygon document into a typed {@link GeoJsonPolygon}.
+     * The first ring in the coordinates is the exterior ring, and any subsequent
+     * rings are holes. Each ring must be a closed linear ring, as validated by
+     * {@link GeoJsonLineRing}. Malformed documents, unsupported CRS declarations,
+     * and polygons without an exterior ring cause an {@link IllegalArgumentException}.
+     */
+    public static GeoJsonPolygon toGeoJsonPolygon(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonPolygon.POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON Polygon.");
+        }
+        return toPolygon(BsonHelper.getValue(document, COORDINATES));
+    }
+
+    /**
+     * Converts a GeoJSON MultiPolygon document into a typed {@link GeoJsonMultiPolygon}.
+     * The coordinates must be a non-empty list of Polygon coordinate arrays, each one
+     * validated the same way as a standalone Polygon's coordinates.
+     */
+    public static GeoJsonMultiPolygon toGeoJsonMultiPolygon(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonMultiPolygon.MULTI_POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPolygon.");
+        }
+        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("MultiPolygon coordinates must be a non-empty list of polygon coordinates.");
+        }
+        List<GeoJsonPolygon> polygons = new ArrayList<>();
+        for (Object polygonCoordinates : (List<?>) coordinates) {
+            polygons.add(toPolygon(polygonCoordinates));
+        }
+        return new GeoJsonMultiPolygon(polygons);
+    }
+
+    /**
+     * Converts a GeoJSON GeometryCollection document into a typed {@link GeoJsonGeometryCollection}.
+     * The document must have a non-empty "geometries" list, where each element is itself a
+     * supported GeoJSON geometry document (Point, LineString, Polygon, MultiPoint,
+     * MultiLineString, MultiPolygon, or a nested GeometryCollection).
+     */
+    public static GeoJsonGeometryCollection toGeoJsonGeometryCollection(Object document) {
+        if (document == null || !BsonHelper.isBsonDocument(document)
+                || !GeoJsonGeometryCollection.GEOMETRY_COLLECTION_TYPE.equals(BsonHelper.getValue(document, TYPE))
+                || BsonHelper.documentContainsField(document, "crs")) {
+            throw new IllegalArgumentException("The provided document is not a supported GeoJSON GeometryCollection.");
+        }
+        Object geometriesValue = BsonHelper.getValue(document, GEOMETRIES);
+        if (!(geometriesValue instanceof List<?>) || ((List<?>) geometriesValue).isEmpty()) {
+            throw new IllegalArgumentException("GeometryCollection must contain a non-empty list of geometries.");
+        }
+        List<GeoJsonGeometry> geometries = new ArrayList<>();
+        for (Object geometryDocument : (List<?>) geometriesValue) {
+            geometries.add(toGeoJsonGeometry(geometryDocument));
+        }
+        return new GeoJsonGeometryCollection(geometries);
+    }
+
+    /**
+     * Converts a document into whichever supported GeoJSON geometry type it represents
+     * (Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, or
+     * GeometryCollection), trying each type in turn.
+     *
+     * @throws IllegalArgumentException if the document is null or does not match any supported geometry type.
+     */
+    public static GeoJsonGeometry toGeoJsonGeometry(Object document) {
+        if (document == null) {
+            throw new IllegalArgumentException("A geometry document must not be null.");
+        }
+        try {
+            return toGeoJsonPoint(document);
+        } catch (IllegalArgumentException e) {
+            // not a Point, try another geometry type
+        }
+        try {
+            return toGeoJsonLineString(document);
+        } catch (IllegalArgumentException e) {
+            // not a LineString
+        }
+        try {
+            return toGeoJsonPolygon(document);
+        } catch (IllegalArgumentException e) {
+            // not a Polygon
+        }
+        try {
+            return toGeoJsonMultiPoint(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiPoint
+        }
+        try {
+            return toGeoJsonMultiLineString(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiLineString
+        }
+        try {
+            return toGeoJsonMultiPolygon(document);
+        } catch (IllegalArgumentException e) {
+            // not a MultiPolygon
+        }
+        return toGeoJsonGeometryCollection(document);
+    }
+
+    private static GeoJsonPolygon toPolygon(Object coordinates) {
+        if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
+            throw new IllegalArgumentException("Polygon coordinates must be a non-empty list of linear rings.");
+        }
+        List<?> rings = (List<?>) coordinates;
+        GeoJsonLineRing exteriorRing = toGeoJsonLineRing(rings.get(0));
+        Set<GeoJsonLineRing> interiorRings = new LinkedHashSet<>();
+        for (int i = 1; i < rings.size(); i++) {
+            interiorRings.add(toGeoJsonLineRing(rings.get(i)));
+        }
+        return new GeoJsonPolygon(exteriorRing, interiorRings);
+    }
+
+    private static GeoJsonLineRing toGeoJsonLineRing(Object ringCoordinates) {
+        if (!(ringCoordinates instanceof List<?>)) {
+            throw new IllegalArgumentException("A linear ring must be a list of positions.");
+        }
+        return new GeoJsonLineRing(toPoints((List<?>) ringCoordinates));
+    }
+
+    private static List<GeoJsonPoint> toPoints(List<?> positions) {
+        List<GeoJsonPoint> points = new ArrayList<>();
+        for (Object position : positions) {
+            if (!(position instanceof List<?>) || ((List<?>) position).size() != 2) {
+                throw new IllegalArgumentException("A position must contain longitude and latitude.");
+            }
+            List<?> pair = (List<?>) position;
+            if (!(pair.get(0) instanceof Number) || !(pair.get(1) instanceof Number)) {
+                throw new IllegalArgumentException("Coordinates must be numbers.");
+            }
+            double longitude = ((Number) pair.get(0)).doubleValue();
+            double latitude = ((Number) pair.get(1)).doubleValue();
+            if (!Double.isFinite(longitude) || !Double.isFinite(latitude)) {
+                throw new IllegalArgumentException("Coordinates must be finite.");
+            }
+            points.add(new GeoJsonPoint(longitude, latitude));
+        }
+        return points;
+    }
 
 }
