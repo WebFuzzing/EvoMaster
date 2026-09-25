@@ -3,9 +3,11 @@ package org.evomaster.core.search
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.database.mongo.MongoExecution
@@ -86,8 +88,15 @@ class FitnessValue(
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
     /**
+     * Key -> index of the action in the evaluated individual.
+     *
+     * Value -> information about failed DynamoDB reads observed while executing that action.
+     */
+    val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
+
+    /**
      * Key -> the index of a main action of the test, ie of the HTTP call that made the queries
-     * 
+     *
      * Value -> the CQL queries executed by the SUT while serving that call which matched no row
      */
     val cassandraExecutions: MutableMap<Int, CassandraExecution> = mutableMapOf()
@@ -115,6 +124,8 @@ class FitnessValue(
      * the type of commands that failed.
      */
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
+
+    private val aggregatedFailedDynamoDbQueries: MutableList<DynamoDbFailedQuery> = mutableListOf()
 
     /**
      * When SUT executes CQL commands with a WHERE, keep track of when those match no row, in
@@ -154,10 +165,12 @@ class FitnessValue(
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
+        copy.dynamoDbExecutions.putAll(this.dynamoDbExecutions)
         copy.cassandraExecutions.putAll(this.cassandraExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
+        copy.aggregateDynamoDbData()
         copy.aggregateCassandraDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
@@ -206,6 +219,11 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
+    fun aggregateDynamoDbData() {
+        aggregatedFailedDynamoDbQueries.clear()
+        dynamoDbExecutions.values.forEach { aggregatedFailedDynamoDbQueries.addAll(it.failedQueries) }
+    }
+
     fun aggregateCassandraDatabaseData(){
         aggregatedFailedCassandraQueries.clear()
         cassandraExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedCassandraQueries.addAll(it1) } }
@@ -232,6 +250,10 @@ class FitnessValue(
         redisExecutions[actionIndex] = redisExecution
     }
 
+    fun setDynamoDbExecution(actionIndex: Int, execution: DynamoDbExecution) {
+        dynamoDbExecutions[actionIndex] = execution
+    }
+
     fun setCassandraExecution(actionIndex: Int, cassandraExecution: CassandraExecution){
         cassandraExecutions[actionIndex] = cassandraExecution
     }
@@ -249,6 +271,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
+
+    fun getViewOfAggregatedFailedDynamoDbQueries() = aggregatedFailedDynamoDbQueries
 
     fun getViewOfAggregatedFailedCassandraQueries() = aggregatedFailedCassandraQueries
 

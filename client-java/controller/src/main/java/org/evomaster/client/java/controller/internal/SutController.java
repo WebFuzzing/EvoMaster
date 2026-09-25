@@ -31,6 +31,8 @@ import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
 import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -322,6 +324,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("No connection to Redis");
         }
         return RedisCommandExecutor.executeInsert(connection, insertions);
+    }
+
+    @Override
+    public Neo4jInsertionResultsDto execInsertionsIntoNeo4jDatabase(Neo4jDatabaseCommandsDto commands) {
+
+        ReflectionBasedNeo4jClient connection = getNeo4jConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to Neo4j");
+        }
+        return Neo4jScriptRunner.executeInsert(connection, commands);
     }
 
     @Override
@@ -1799,6 +1811,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
     public abstract void setExecutingInitRedis(boolean executingInitRedis);
+
+    public abstract void setExecutingInitNeo4j(boolean executingInitNeo4j);
 
     public abstract void setExecutingInitDynamoDb(boolean executingInitDynamoDb);
 

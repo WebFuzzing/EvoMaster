@@ -18,6 +18,10 @@ import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.database.sql.*
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.service.RemoteController
@@ -315,6 +319,20 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return true
     }
 
+    fun doDynamoDbCalls(
+        allDynamoDbActions: List<DynamoDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allDynamoDbActions.isEmpty()) return true
+        val results = allDynamoDbActions.map { DynamoDbActionResult(it.getLocalId()) }
+        actionResults.addAll(results)
+        val execution = rc.executeDynamoDbInsertions(DynamoDbActionTransformer.transform(allDynamoDbActions))
+        execution?.executionResults?.forEachIndexed { index, success ->
+            results.getOrNull(index)?.setInsertExecutionResult(success)
+        }
+        return execution?.executionResults?.all { it } ?: false
+    }
+
     protected fun registerNewAction(action: Action, index: Int){
         rc.registerNewAction(getActionDto(action, index))
     }
@@ -459,6 +477,13 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
             }
             fv.aggregateRedisDatabaseData()
+        }
+
+        if (configuration.extractDynamoDbExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                fv.setDynamoDbExecution(i, DynamoDbExecution.fromDto(dto.extraHeuristics[i].dynamoDbExecutionsDto))
+            }
+            fv.aggregateDynamoDbData()
         }
 
         if (configuration.heuristicsForCassandra) {

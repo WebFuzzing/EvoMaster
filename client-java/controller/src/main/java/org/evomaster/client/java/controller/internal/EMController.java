@@ -16,6 +16,8 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
+import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -1203,6 +1205,60 @@ public class EMController {
                     .entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitCassandra(false);
+        }
+    }
+
+    @Path(ControllerConstants.NEO4J_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeNeo4jInsertion(
+            Neo4jDatabaseCommandsDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+            sutController.setExecutingInitNeo4j(true);
+
+            ReflectionBasedNeo4jClient connection =
+                    noKillSwitch(sutController::getNeo4jConnection);
+
+            if (connection == null) {
+                String msg = "No active Neo4j connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            boolean noNodes = dto.nodes == null || dto.nodes.isEmpty();
+            boolean noEdges = dto.edges == null || dto.edges.isEmpty();
+            if (noNodes && noEdges) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            Neo4jInsertionResultsDto neo4jResultsDto;
+            try {
+                neo4jResultsDto = Neo4jScriptRunner.executeInsert(connection, dto);
+            } catch (Exception e) {
+                String msg = "Failed to execute Neo4j insertion: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            return Response.status(200)
+                    .entity(WrappedResponseDto.withData(neo4jResultsDto)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500)
+                    .entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitNeo4j(false);
         }
     }
 }

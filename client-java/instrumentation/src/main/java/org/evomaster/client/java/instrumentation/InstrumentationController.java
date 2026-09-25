@@ -64,6 +64,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitRedis(executingInitRedis);
     }
 
+    public static void setExecutingInitNeo4j(boolean executingInitNeo4j){
+        ExecutionTracer.setExecutingInitNeo4J(executingInitNeo4j);
+    }
+
     public static void setExecutingInitDynamoDb(boolean executingInitDynamoDb){
         ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
     }

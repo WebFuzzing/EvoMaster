@@ -130,6 +130,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitNeo4j(boolean executingInitNeo4j) {
+        ExecutionTracer.setExecutingInitNeo4J(executingInitNeo4j);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }

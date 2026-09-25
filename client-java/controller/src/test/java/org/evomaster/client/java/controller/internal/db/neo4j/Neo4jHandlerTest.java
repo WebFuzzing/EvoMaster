@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class Neo4jHandlerTest {
     @Test
     void testScoresMatchQueryAgainstLiveGraph() {
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
         List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
@@ -59,7 +60,7 @@ class Neo4jHandlerTest {
     @Test
     void testNonMatchQueryIsSkipped() {
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand("CREATE (n:Person {name: 'Zoe'})", null, true, 1));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
@@ -79,7 +80,7 @@ class Neo4jHandlerTest {
     @Test
     void testHeuristicsAreNotComputedWhenDisabled() {
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
         handler.setCalculateHeuristics(false);
 
@@ -97,7 +98,7 @@ class Neo4jHandlerTest {
         List<FakeRecord> rels = Arrays.asList(
                 relRecord("e1", "KNOWS", "ghost", "n1"));
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(new FakeDriver(nodes, rels));
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(new FakeDriver(nodes, rels)));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
         List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();
@@ -112,7 +113,7 @@ class Neo4jHandlerTest {
     @Test
     void testAnUnreadableGraphYieldsNoHeuristicsInsteadOfFailing() {
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(new BrokenDriver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(new BrokenDriver()));
         handler.handle(new Neo4JRunCommand(MATCH_QUERY, null, true, 1));
 
         // The SUT must keep running even if its driver cannot be queried.
@@ -133,7 +134,7 @@ class Neo4jHandlerTest {
         Map<String, Object> hit = new LinkedHashMap<>();
         hit.put("name", "Ana");
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, hit, true, 1));
         assertEquals(0.0, distanceOf(handler), 0.0);
 
@@ -149,7 +150,7 @@ class Neo4jHandlerTest {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("name", new FakeValue("Ana"));
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, parameters, true, 1));
         assertEquals(0.0, distanceOf(handler), 0.0);
     }
@@ -157,7 +158,7 @@ class Neo4jHandlerTest {
     @Test
     void testParametersCapturedAsADriverMapValueAreRead() {
         Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(example1Driver());
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
         handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Ana")), true, 1));
         assertEquals(0.0, distanceOf(handler), 0.0);
     }
