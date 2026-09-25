@@ -21,11 +21,8 @@ public class RedisJedisSearchRest extends AbstractRedisJedisRest {
     private static final String INDEX = "idx:people";
     private static final String PREFIX = "person:";
 
-    /**
-     * Index definitions do not survive a flush of the database, so they are made sure to exist
-     * before any operation relies on them.
-     */
-    private void ensureIndexes() {
+    @Override
+    protected void ensureIndexes() {
         try {
             jedis.ftCreate(INDEX,
                     FTCreateParams.createParams().prefix(PREFIX),
@@ -39,7 +36,6 @@ public class RedisJedisSearchRest extends AbstractRedisJedisRest {
 
     @PostMapping("/person/{name}/{age}/{street}")
     public ResponseEntity<Void> savePerson(@PathVariable String name, @PathVariable int age, @PathVariable String street) {
-        ensureIndexes();
         Map<String, String> fields = new HashMap<>();
         fields.put("name", name);
         fields.put("age", String.valueOf(age));
@@ -64,7 +60,6 @@ public class RedisJedisSearchRest extends AbstractRedisJedisRest {
     }
 
     private ResponseEntity<Void> search(String query) {
-        ensureIndexes();
         try {
             long total = jedis.ftSearch(INDEX, query).getTotalResults();
             return total > 0 ? ResponseEntity.status(200).build() : ResponseEntity.status(404).build();

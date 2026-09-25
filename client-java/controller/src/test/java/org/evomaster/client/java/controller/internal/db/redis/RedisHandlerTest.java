@@ -1,6 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
+import org.evomaster.client.java.controller.redis.RedisIndexInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,8 +83,23 @@ class RedisHandlerTest {
     private static final String INDEX = "idx:products";
 
     private ReflectionBasedRedisClient clientWith(List<String> indexPrefixes, Map<String, Map<String, String>> hashes) {
+        return clientWith(indexPrefixes, Collections.emptyMap(), hashes);
+    }
+
+    private ReflectionBasedRedisClient clientWith(List<String> indexPrefixes, Map<String, RedisSearchFieldType> indexAttributes,
+                                                   Map<String, Map<String, String>> hashes) {
         ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
-        when(client.getIndexPrefixes(INDEX)).thenReturn(indexPrefixes);
+        RedisIndexInfo info = new RedisIndexInfo("HASH", indexPrefixes, indexAttributes);
+        when(client.getIndexInfo(INDEX)).thenReturn(info);
+        when(client.getKeysByType("hash")).thenReturn(new HashSet<>(hashes.keySet()));
+        hashes.forEach((key, fields) -> when(client.getHashFields(key)).thenReturn(fields));
+        handler.setRedisClient(client);
+        return client;
+    }
+
+    private ReflectionBasedRedisClient clientWithUnknownIndex(Map<String, Map<String, String>> hashes) {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getIndexInfo(INDEX)).thenReturn(null);
         when(client.getKeysByType("hash")).thenReturn(new HashSet<>(hashes.keySet()));
         hashes.forEach((key, fields) -> when(client.getHashFields(key)).thenReturn(fields));
         handler.setRedisClient(client);
@@ -152,7 +171,7 @@ class RedisHandlerTest {
 
     @Test
     void testFtSearchOnUnknownIndexHasNoCandidates() {
-        clientWith(Collections.emptyList(), hashes("product:1", "redis"));
+        clientWithUnknownIndex(hashes("product:1", "redis"));
 
         RedisDistanceWithMetrics metrics = evaluateSingle(ftSearch("*")).getRedisDistanceWithMetrics();
 
@@ -166,7 +185,7 @@ class RedisHandlerTest {
 
         evaluateSingle(ftSearch("*"));
 
-        verify(client).getIndexPrefixes(INDEX);
+        verify(client).getIndexInfo(INDEX);
         verify(client).getKeysByType("hash");
         verify(client, never()).getKeysByType("set");
         verify(client, never()).getKeysByType("string");
@@ -199,7 +218,7 @@ class RedisHandlerTest {
     @Test
     void testFtSearchWhenTheClientFailsReturnsMaxDistance() {
         ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
-        when(client.getIndexPrefixes(anyString())).thenThrow(new RuntimeException("connection lost"));
+        when(client.getIndexInfo(anyString())).thenThrow(new RuntimeException("connection lost"));
         handler.setRedisClient(client);
 
         RedisDistanceWithMetrics metrics = evaluateSingle(ftSearch("*")).getRedisDistanceWithMetrics();
@@ -213,5 +232,75 @@ class RedisHandlerTest {
         RedisDistanceWithMetrics metrics = evaluateSingle(ftSearch("*")).getRedisDistanceWithMetrics();
 
         assertEquals(H_MAX_VALUE, metrics.getDistance(), 1e-6);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // FT.SEARCH / FT.AGGREGATE: data generation - what gets registered as a failed command
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void testFtSearchRegistersFailedCommandWithIndexPrefixesAttributesAndFilters() {
+        Map<String, RedisSearchFieldType> attributes = new LinkedHashMap<>();
+        attributes.put("title", RedisSearchFieldType.TEXT);
+        clientWith(Collections.singletonList("product:"), attributes, hashes("product:1", "mongodb handbook"));
+
+        evaluateSingle(ftSearch("@title:redis"));
+
+        List<RedisFailedCommand> failedCommands = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failedCommands.size());
+
+        RedisFailedCommand failed = failedCommands.get(0);
+        assertEquals("FT_SEARCH", failed.command);
+        assertEquals(INDEX, failed.indexName);
+        assertEquals(Collections.singletonList("product:"), failed.indexPrefixes);
+        assertEquals(attributes, failed.indexAttributes);
+        assertTrue(failed.groupByFields.isEmpty());
+
+        assertEquals(1, failed.filters.size());
+        RedisSearchFilterDto filter = failed.filters.get(0);
+        assertEquals(RedisSearchFieldType.TEXT, filter.type);
+        assertEquals("title", filter.field);
+        assertEquals("redis", filter.term);
+    }
+
+    @Test
+    void testFtSearchDoesNotRegisterFailedCommandWhenIndexIsUnknown() {
+        clientWithUnknownIndex(hashes("product:1", "redis handbook"));
+
+        evaluateSingle(ftSearch("@title:redis"));
+
+        assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
+    }
+
+    @Test
+    void testFtSearchDoesNotRegisterFailedCommandForUnsupportedQueryGrammar() {
+        clientWith(Collections.singletonList("product:"), hashes("product:1", "redis handbook"));
+
+        evaluateSingle(ftSearch("@age:[25")); // malformed numeric range
+
+        assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
+    }
+
+    @Test
+    void testFtAggregateFailedCommandCarriesGroupByFields() {
+        clientWith(Collections.singletonList("product:"), hashes("product:1", "redis handbook"));
+
+        RedisCommand aggregate = new RedisCommand(RedisCommand.RedisCommandType.FT_AGGREGATE,
+                new String[]{INDEX, "*", "GROUPBY", "1", "@category"}, true, 1);
+        evaluateSingle(aggregate);
+
+        List<RedisFailedCommand> failedCommands = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failedCommands.size());
+        assertEquals("FT_AGGREGATE", failedCommands.get(0).command);
+        assertEquals(Collections.singletonList("category"), failedCommands.get(0).groupByFields);
+    }
+
+    @Test
+    void testFtSearchDoesNotRegisterFailedCommandWhenTheQueryAlreadyMatches() {
+        clientWith(Collections.singletonList("product:"), hashes("product:1", "redis handbook"));
+
+        evaluateSingle(ftSearch("@title:redis"));
+
+        assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
     }
 }
