@@ -577,6 +577,10 @@ class Main {
                             There is no test writer for AsyncAPI yet, and the constraints checked
                             below refuse the combination. As the problem type was inferred rather
                             than asked for, turning test generation off is better than failing.
+
+                            TODO remove this block once there is a test writer for AsyncAPI: the
+                            combination will be valid then, and silently switching test generation
+                            off would hide it.
                          */
                         LoggingUtil.uniqueUserWarn(
                             "The driver describes an AsyncAPI service, for which test generation is not" +

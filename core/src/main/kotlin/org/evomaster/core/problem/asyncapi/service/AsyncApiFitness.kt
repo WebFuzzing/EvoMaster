@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiRep
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
+import org.evomaster.core.problem.asyncapi.classifier.AsyncApiReplyClassifier
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual

@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.asyncapi.service
+package org.evomaster.core.problem.asyncapi.classifier
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode

@@ -1,10 +1,11 @@
-package org.evomaster.core.problem.asyncapi.service
+package org.evomaster.core.problem.asyncapi.classifier
 
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import com.webfuzzing.asyncapi.models.AsyncApiDocument
 import com.webfuzzing.asyncapi.models.AsyncApiMessage
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+
 
 class AsyncApiReplyClassifierTest {
 
