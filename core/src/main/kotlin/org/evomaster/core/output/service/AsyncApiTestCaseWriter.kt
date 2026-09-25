@@ -7,6 +7,7 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import java.nio.file.Path
@@ -157,6 +158,23 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      * so there is no exception for a generated test to expect.
      */
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
+
+    /**
+     * The helper the Kafka tests call, written once and only when something in the suite calls
+     * it: a suite that publishes over another transport must not be made to carry a Kafka
+     * dependency it never uses.
+     */
+    override fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {
+
+        val needsKafka = solution.individuals
+            .flatMap { it.evaluatedMainActions() }
+            .mapNotNull { it.result as? AsyncApiCallResult }
+            .any { it.getTestScript().isEmpty() && KafkaTestClientEmitter.canEmit(it) }
+
+        if (needsKafka) {
+            KafkaTestClientEmitter.emitHelper(lines, format)
+        }
+    }
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
         //the per-action comments carry the outcome, which is what there is to say
