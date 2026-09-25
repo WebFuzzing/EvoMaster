@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
-public abstract class ComparisonOperation<V> extends QueryOperationWithField {
+public abstract class ComparisonOperation<V> extends QueryOperationWithFieldPath {
     private final V value;
 
     ComparisonOperation(String fieldName, V value) {

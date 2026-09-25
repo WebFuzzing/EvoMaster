@@ -2199,7 +2199,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a dotted field path is never resolved into the sub-document it names")
     public void testDottedFieldPath() {
         // mongo: matches both, "a.x" names the field "x" of the sub-document held by "a"
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
@@ -2209,6 +2208,227 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.x", 1)),
                 new Document().append("a", new ArrayList<>(Arrays.asList(
                         new Document().append("x", 1), new Document().append("x", 2))))).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathDeeplyNested() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", new Document("c", 5)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b.c", 5)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b.c", 6)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("a.b.c", 4)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.lt("a.b.c", 4)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathGradient() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document query = convertToDocument(Filters.eq("a.b", 10));
+
+        Truthness far = calculator.computeHeuristicDocument(query, new Document("a", new Document("b", 100)));
+        Truthness close = calculator.computeHeuristicDocument(query, new Document("a", new Document("b", 11)));
+        assertTrue(far.isFalse());
+        assertTrue(close.isFalse());
+        assertTrue(close.getOfTrue() > far.getOfTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathMissingIntermediateField() {
+        // mongo: {"a.b": 1} does not match, {"a.b": null} matches when "a" is missing
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("x", 1);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", null)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathThroughScalar() {
+        // mongo: "a.b" does not reach any value when "a" holds a scalar
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", 5);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", null)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathWithArrayIndex() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(10, 20, 30));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.1", 20)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.0", 20)), doc).isFalse());
+        // index out of bounds
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.5", 20)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathWithArrayIndexAndSubField() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("items", Arrays.asList(
+                new Document("price", 5),
+                new Document("price", 15)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.1.price", 10)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.0.price", 10)), doc).isFalse());
+        // without an index, any element may satisfy the condition
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.price", 10)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.price", 20)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathThroughArrayOfArrays() {
+        // mongo: nested arrays are not implicitly traversed
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(Arrays.asList(new Document("b", 1))));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.0.0.b", 1)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathReachingAnArray() {
+        // mongo: {"a.b": 2} matches {a: [{b: [1, 2]}, {b: 3}]}
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", Arrays.asList(1, 2)),
+                new Document("b", 3)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 2)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 3)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 4)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.size("a.b", 2)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathNotEqualsOverArray() {
+        // mongo: $ne holds only when no value reached by the path is equal
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.ne("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.ne("a.b", 3)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathInAndNotIn() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.in("a.b", 2, 5)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.in("a.b", 4, 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.nin("a.b", 2, 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.nin("a.b", 4, 5)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathExists() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", new Document("c", 1)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.c")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.d")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.x.c")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.d", false)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.c", false)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathExistsThroughArray() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("x", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.1")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.1.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.0.b")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.5")), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathExistsGradient() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document query = convertToDocument(Filters.exists("a.bbbb"));
+
+        Truthness far = calculator.computeHeuristicDocument(query, new Document("a", new Document("zzzz", 1)));
+        Truthness close = calculator.computeHeuristicDocument(query, new Document("a", new Document("bbba", 1)));
+        assertTrue(far.isFalse());
+        assertTrue(close.isFalse());
+        assertTrue(close.getOfTrue() > far.getOfTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathType() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", "hello"));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.STRING)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.INT32)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.c", BsonType.STRING)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathTypeThroughArray() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", "hello")));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.STRING)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.BOOLEAN)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathNot() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", 5));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.not(Filters.gt("a.b", 10))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.not(Filters.gt("a.b", 1))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathInsideElemMatch() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("items", Arrays.asList(
+                new Document("product", new Document("sku", "A1")),
+                new Document("product", new Document("sku", "B2"))));
+
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.elemMatch("items", Filters.eq("product.sku", "B2"))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.elemMatch("items", Filters.eq("product.sku", "C3"))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathConjunction() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("address", new Document("city", "Paris").append("zip", 75001));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.and(
+                Filters.eq("address.city", "Paris"),
+                Filters.lte("address.zip", 75020))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.and(
+                Filters.eq("address.city", "Paris"),
+                Filters.gt("address.zip", 75020))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathIsNotALiteralKey() {
+        // mongo: a query path "a.b" does not address a top-level field literally named "a.b"
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a.b", 1);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
     }
 
     @Test
