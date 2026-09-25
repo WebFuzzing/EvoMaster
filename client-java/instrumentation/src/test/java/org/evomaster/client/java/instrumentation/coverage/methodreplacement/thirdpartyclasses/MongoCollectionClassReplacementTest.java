@@ -8,7 +8,6 @@ import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
 import org.bson.BsonWriter;
 import org.bson.Document;
-import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -21,15 +20,17 @@ import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConvert
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
@@ -39,13 +40,16 @@ public class MongoCollectionClassReplacementTest {
 
     private static MongoClient mongoClient;
     private static final int MONGODB_PORT = 27017;
-    private static final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
-            .withExposedPorts(MONGODB_PORT);
+    private static GenericContainer<?> mongodb;
 
     @BeforeAll
     public static void initMongoClient() {
-        mongodb.start();
-        int port = mongodb.getMappedPort(MONGODB_PORT);
+        String uri = System.getProperty("evomaster.mongo.uri");
+        if (uri == null || uri.isEmpty()) {
+            mongodb = new GenericContainer<>("mongo:7.0").withExposedPorts(MONGODB_PORT);
+            mongodb.start();
+            uri = "mongodb://" + mongodb.getHost() + ":" + mongodb.getMappedPort(MONGODB_PORT);
+        }
 
         CodecRegistry codecRegistry = fromRegistries(
                 MongoClientSettings.getDefaultCodecRegistry(),
@@ -55,7 +59,7 @@ public class MongoCollectionClassReplacementTest {
 
         MongoClientSettings.Builder builder = MongoClientSettings.builder();
         builder.codecRegistry(codecRegistry);
-        builder.applyConnectionString(new ConnectionString("mongodb://localhost:" + port + "/" + "aDatabase"));
+        builder.applyConnectionString(new ConnectionString(uri));
         MongoClientSettings settings = builder
                 .build();
 
@@ -67,9 +71,24 @@ public class MongoCollectionClassReplacementTest {
     @AfterAll
     public static void resetExecutionTracer() {
         ExecutionTracer.reset();
+        try {
+            if (mongoClient != null) {
+                mongoClient.getDatabase(DATABASE_NAME).drop();
+            }
+        } finally {
+            try {
+                if (mongoClient != null) {
+                    mongoClient.close();
+                }
+            } finally {
+                if (mongodb != null) {
+                    mongodb.stop();
+                }
+            }
+        }
     }
 
-    private final static String DATABASE_NAME = "myDatabase";
+    private final static String DATABASE_NAME = "mongo_replacement_" + UUID.randomUUID().toString().replace("-", "");
     private final static String COLLECTION_NAME = "myCollection";
 
     @BeforeEach
@@ -81,8 +100,14 @@ public class MongoCollectionClassReplacementTest {
         collection.deleteMany(new Document());
 
         ExecutionTracer.reset();
+        ExecutionTracer.setExecutingInitMongo(false);
     }
 
+    @AfterEach
+    public void clearRecordedCommands() {
+        ExecutionTracer.reset();
+        getMongoCollection().drop();
+    }
 
     @Test
     public void testFindOnly() {
@@ -200,7 +225,7 @@ public class MongoCollectionClassReplacementTest {
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
-        String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(Document.class, true, converters);
+        String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(MongoCollectionTestDto.class, true, converters);
         assertEquals(bsonDocumentSchema, documentType);
     }
 
@@ -237,7 +262,7 @@ public class MongoCollectionClassReplacementTest {
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
-        String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(Document.class, true, converters);
+        String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(MongoCollectionTestDto.class, true, converters);
         assertEquals(bsonDocumentSchema, documentType);
     }
 
@@ -306,7 +331,7 @@ public class MongoCollectionClassReplacementTest {
 
             String documentType = mongoFindCommand.getDocumentsType();
             List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
-            String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(Document.class, true, converters);
+            String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(MongoCollectionTestDto.class, true, converters);
             assertEquals(bsonDocumentSchema, documentType);
 
         }
@@ -350,4 +375,82 @@ public class MongoCollectionClassReplacementTest {
     }
 
 
+    @Test
+    public void shouldRecordTheExplicitFindResultClassForDataGeneration() {
+        MongoCollection<Document> documents = getMongoCollection();
+        documents.insertOne(new Document("username", "alice"));
+        assertEquals("alice", documents.find(new Document(), Person.class).first().getUsername(),
+                "The actual driver must support the requested result class");
+        documents.deleteMany(new Document());
+
+        // A typed collection is the passing control for capturing the Person schema.
+        MongoCollection<Person> people = mongoClient.getDatabase(DATABASE_NAME).getCollection(COLLECTION_NAME, Person.class);
+        FindIterable<?> control = (FindIterable<?>) MongoCollectionClassReplacement.find(people, new Document());
+        assertNull(control.first());
+        MongoFindCommand controlCommand = onlyRecordedCommand();
+        assertTrue(controlCommand.isSuccessfullyExecuted());
+        String expectedSchema = controlCommand.getDocumentsType();
+        assertTrue(expectedSchema.contains("username"), "The control must capture the POJO property");
+        ExecutionTracer.reset();
+
+        // On an empty collection this schema is the fallback used to generate matching documents.
+        // An explicit {} query keeps this separate from the null-query find() regression.
+        FindIterable<?> actual = (FindIterable<?>) MongoCollectionClassReplacement.find(
+                documents, new Document(), Person.class);
+        assertNull(actual.first());
+        MongoFindCommand actualCommand = onlyRecordedCommand();
+        assertTrue(actualCommand.isSuccessfullyExecuted());
+        assertEquals(expectedSchema, actualCommand.getDocumentsType(),
+                "find({}, Person.class) must capture the Person schema just like a Person collection");
+    }
+
+    @Test
+    public void shouldRecordSuccessfulExecutionAfterProjectionIsConfigured() {
+        MongoCollection<Document> documents = getMongoCollection();
+        documents.insertOne(new Document("username", "alice").append("age", "not an integer"));
+        MongoCollection<Person> people = mongoClient.getDatabase(DATABASE_NAME).getCollection(COLLECTION_NAME, Person.class);
+        Document projection = new Document("age", 0);
+        assertEquals("alice", people.find(new Document()).projection(projection).first().getUsername(),
+                "Excluding the incompatible field must produce a valid POJO result");
+
+        FindIterable<?> result = (FindIterable<?>) MongoCollectionClassReplacement.find(people, new Document());
+        Person actual = (Person) result.projection(projection).first();
+        assertNotNull(actual);
+        assertEquals("alice", actual.getUsername(), "The instrumented query also completed successfully");
+
+        assertTrue(onlyRecordedCommand().isSuccessfullyExecuted(),
+                "The preliminary unprojected decode must not mark the successful projected query as failed");
+    }
+
+    private MongoFindCommand onlyRecordedCommand() {
+        List<MongoFindCommand> commands = ExecutionTracer.exposeAdditionalInfoList().stream()
+                .flatMap(info -> info.getMongoInfoData().stream())
+                .collect(Collectors.toList());
+        assertEquals(1, commands.size());
+        return commands.get(0);
+    }
+
+    public static class Person {
+        private String username;
+        private int age;
+
+        public Person() {
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+    }
 }

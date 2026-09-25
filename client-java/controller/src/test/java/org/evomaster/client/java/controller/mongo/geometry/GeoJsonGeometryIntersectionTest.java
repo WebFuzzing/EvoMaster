@@ -1,7 +1,9 @@
 package org.evomaster.client.java.controller.mongo.geometry;
 
+import org.evomaster.client.java.controller.mongo.MongoQueryTestCases;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -468,5 +470,31 @@ class GeoJsonGeometryIntersectionTest {
     void testContainmentOfEmptyGeometry() {
         GeoJsonGeometryCollection empty = new GeoJsonGeometryCollection(Collections.emptyList());
         assertEquals(Double.MAX_VALUE, GeoJsonGeometryIntersection.distanceToContainment(empty, square(0, 0, 4, 4)));
+    }
+
+    @Test
+    void testDistanceBetweenDetailedDisjointLinesFinishesWithinReviewThreshold() {
+        // Initialize the distance calculation before measuring the larger fixture.
+        assertEquals(1.0, GeoJsonGeometryIntersection.distance(detailedLine(16, 0), detailedLine(16, 1)));
+
+        GeoJsonLineString first = detailedLine(2000, 0);
+        GeoJsonLineString second = detailedLine(2000, 1);
+
+        // MongoDB accepts these fixtures: the parallel lines do not intersect, while
+        // each line intersects itself. The shared live-Mongo oracle checks that too.
+        // An array-backed traversal takes tens of milliseconds locally; two seconds
+        // leaves substantial headroom. This is a review threshold, not a product SLA.
+        // Indexed LinkedList traversal adds a cubic
+        // cost and takes several seconds for this otherwise modest geometry.
+        // Use a synchronous timeout so a failure never leaves a worker running.
+        double distance = assertTimeout(Duration.ofSeconds(2),
+                () -> GeoJsonGeometryIntersection.distance(first, second));
+
+        assertEquals(1.0, distance);
+    }
+
+    private static GeoJsonLineString detailedLine(int size, double latitude) {
+        return GeoJsonUtils.toGeoJsonLineString(
+                MongoQueryTestCases.detailedLine(size, latitude));
     }
 }

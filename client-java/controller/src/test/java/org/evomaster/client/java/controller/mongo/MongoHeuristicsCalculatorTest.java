@@ -19,6 +19,8 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -2855,5 +2857,20 @@ public class MongoHeuristicsCalculatorTest {
             consumed = true;
             return delegate.iterator();
         }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("org.evomaster.client.java.controller.mongo.MongoQueryTestCases#scenarios")
+    void shouldAgreeWithVerifiedMongoMatch(MongoQueryTestCases.Case scenario) {
+        MongoDistanceWithMetrics result = assertDoesNotThrow(() -> new MongoHeuristicsCalculator()
+                .computeDistanceDocuments(scenario.query(), Collections.singletonList(scenario.document())));
+
+        assertAll(
+                () -> assertEquals(scenario.matches, result.mongoDistance == 0.0,
+                        "Zero distance must mean that MongoDB matches the document"),
+                () -> assertTrue(Double.isFinite(result.mongoDistance)
+                        && result.mongoDistance >= 0.0 && result.mongoDistance <= 1.0),
+                () -> assertEquals(1, result.numberOfEvaluatedDocuments)
+        );
     }
 }
