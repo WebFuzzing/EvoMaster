@@ -59,13 +59,44 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 //    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
 
-//    val swaggerUrl ="../dataset/openapi/youtube-mock.yaml"
-//    val swaggerUrl ="../dataset/openapi/catwatch.json"
-//    val swaggerUrl ="../dataset/openapi/blogapi.json"
-//    val swaggerUrl ="../dataset/openapi/languagetool.json"
-//    val swaggerUrl = "../dataset/openapi/rest-ncs.json"
+
+//    val swaggerUrl = "../dataset/openapi/bibliothek.json"
+//    val swaggerUrl = "../dataset/openapi/blogapi.json"
+//    val swaggerUrl = "../dataset/openapi/catwatch.json"
 //    val swaggerUrl = "../dataset/openapi/cwa-verification.json"
-    val swaggerUrl = "../dataset/openapi/bibliothek.json"
+//    val swaggerUrl = "../dataset/openapi/erc20-rest-service.json"
+//    val swaggerUrl = "../dataset/openapi/familie-ba-sak.json"
+//    val swaggerUrl = "../dataset/openapi/features-service.json"
+//    val swaggerUrl = "../dataset/openapi/genome-nexus.json"
+//    val swaggerUrl = "../dataset/openapi/gestaohospital.json"
+//    val swaggerUrl = "../dataset/openapi/http-patch-spring.json"
+//    val swaggerUrl = "../dataset/openapi/languagetool.json"
+//    val swaggerUrl = "../dataset/openapi/market.json"
+//    val swaggerUrl = "../dataset/openapi/microcks.json"
+//    val swaggerUrl = "../dataset/openapi/ocvn.json"
+//    val swaggerUrl = "../dataset/openapi/ohsome-api.json"
+//    val swaggerUrl = "../dataset/openapi/pay-publicapi.json"
+//    val swaggerUrl = "../dataset/openapi/person-controller.json"
+//    val swaggerUrl = "../dataset/openapi/proxyprint.json"
+//    val swaggerUrl = "../dataset/openapi/quartz-manager.json"
+//    val swaggerUrl = "../dataset/openapi/reservations-api.json"
+//    val swaggerUrl = "../dataset/openapi/rest-ncs.json"
+//    val swaggerUrl = "../dataset/openapi/rest-news.json"
+//    val swaggerUrl = "../dataset/openapi/rest-scs.json"
+//    val swaggerUrl = "../dataset/openapi/restcountries.yaml"
+//    val swaggerUrl = "../dataset/openapi/scout-api.json"
+    val swaggerUrl = "../dataset/openapi/session-service.json"
+//    val swaggerUrl = "../dataset/openapi/spring-actuator-demo.json"
+//    val swaggerUrl = "../dataset/openapi/spring-batch-rest.json"
+//    val swaggerUrl = "../dataset/openapi/spring-ecommerce.json"
+//    val swaggerUrl = "../dataset/openapi/spring-rest-example.json"
+//    val swaggerUrl = "../dataset/openapi/swagger-petstore.json"
+//    val swaggerUrl = "../dataset/openapi/tiltaksgjennomforing.json"
+//    val swaggerUrl = "../dataset/openapi/tracking-system.json"
+//    val swaggerUrl = "../dataset/openapi/user-management.json"
+//    val swaggerUrl = "../dataset/openapi/webgoat.json"
+//    val swaggerUrl = "../dataset/openapi/youtube-mock.yaml"
+
 
     @Inject
     lateinit var randomness: Randomness
@@ -201,9 +232,20 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
 
-                println("Updating the classifier!")
-                if(result.getStatusCode()!=null && result.getStatusCode()!=500) {
+                val status = result.getStatusCode()
+
+                if (
+                    status != null &&
+                    (
+                            status in 200..299 ||
+                                    status == 400 ||
+                                    !config.skipAIModelUpdateWhenResponseIsNot2xxOr400
+                            )
+                ) {
+                    println("Updating the classifier!")
                     aiGlobalClassifier.updateModel(action, result)
+                } else {
+                    println("Skipping classifier update for status $status")
                 }
 
             }else{
