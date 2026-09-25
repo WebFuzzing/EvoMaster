@@ -30,6 +30,15 @@ object KafkaTestClientEmitter {
 
     private const val DEFAULT_POLL_MS = 200L
 
+    /**
+     * What the helper the tests call is named.
+     */
+    const val HELPER_NAME = "publishAndAwaitReply"
+
+    private const val STRING_SERDE = "org.apache.kafka.common.serialization"
+
+    private const val UTF_8 = "java.nio.charset.StandardCharsets.UTF_8"
+
     private val mapper = ObjectMapper()
 
     /**
@@ -41,173 +50,176 @@ object KafkaTestClientEmitter {
                 && !result.getAddress().isNullOrBlank()
 
     /**
-     * Publish the message again and, when one is expected, wait for the reply that answers it.
-     *
-     * @param variable what the reply payload is left in, named by the core, and what the
-     *                 other names here are keyed off so two actions cannot collide
+     * The call one action becomes, once [emitHelper] has written what it calls.
      */
     fun emit(lines: Lines, result: AsyncApiCallResult, variable: String, format: OutputFormat) {
 
-        /*
-            Taken from the variable the core named rather than from the index, so the locals of
-            one action always agree with the reply it leaves behind, whatever numbered it.
-         */
-        val suffix = "_" + variable.substringAfterLast('_')
-
-        val props = "kafka$suffix"
-        val producer = "producer$suffix"
-        val consumer = "consumer$suffix"
-        val record = "record$suffix"
-        val parts = "partitions$suffix"
-        val cid = "correlationId$suffix"
-        val deadline = "deadline$suffix"
-
-        val broker = quoted(result.getBroker()!!, format)
-        val topic = quoted(result.getAddress()!!, format)
-        val replyTopic = result.getReplyAddress()
-        val timeout = result.getReplyTimeoutMs() ?: 0L
-
-        declareProperties(lines, props, broker, format)
-
-        //a fresh id per run: a reply to an earlier run's message is not an answer to this one
-        assign(lines, cid, "java.util.UUID.randomUUID().toString()", "String", format)
-
-        val serializer = "org.apache.kafka.common.serialization.String"
-        newInstance(
-            lines, producer,
-            "org.apache.kafka.clients.producer.KafkaProducer<String,String>",
-            "org.apache.kafka.clients.producer.KafkaProducer<>($props, new ${serializer}Serializer(), new ${serializer}Serializer())",
-            "org.apache.kafka.clients.producer.KafkaProducer($props, ${serializer}Serializer(), ${serializer}Serializer())",
-            format
+        val args = mutableListOf(
+            quoted(result.getBroker()!!, format),
+            quoted(result.getAddress()!!, format),
+            result.getReplyAddress()?.let { quoted(it, format) } ?: "null",
+            result.getPayload()?.let { quoted(it, format) } ?: "null",
+            result.getCorrelationHeader()?.let { quoted(it, format) } ?: "null",
+            (result.getReplyTimeoutMs() ?: 0L).toString() + if (format.isJava()) "L" else "L"
         )
 
-        if (replyTopic != null) {
-            newInstance(
-                lines, consumer,
-                "org.apache.kafka.clients.consumer.KafkaConsumer<String,String>",
-                "org.apache.kafka.clients.consumer.KafkaConsumer<>($props, new ${serializer}Deserializer(), new ${serializer}Deserializer())",
-                "org.apache.kafka.clients.consumer.KafkaConsumer($props, ${serializer}Deserializer(), ${serializer}Deserializer())",
-                format
-            )
-            seekToEnd(lines, consumer, parts, quoted(replyTopic, format), format)
-        }
-
-        buildRecord(lines, record, topic, result, format)
-        stampCorrelation(lines, record, cid, result, format)
-
-        statement(lines, "$producer.send($record).get()", format)
-
-        if (replyTopic == null) {
-            close(lines, producer, format)
-            //nothing is expected back, so the variable the core named stays unset
-            declareReply(lines, variable, format)
-            return
-        }
-
-        declareReply(lines, variable, format)
-        awaitReply(lines, consumer, variable, cid, deadline, timeout, result, format)
-        close(lines, producer, format)
-        close(lines, consumer, format)
-    }
-
-    private fun declareProperties(lines: Lines, name: String, broker: String, format: OutputFormat) {
-        newInstance(lines, name, "java.util.Properties", "java.util.Properties()", "java.util.Properties()", format)
-        statement(lines, "$name.put(\"bootstrap.servers\", $broker)", format)
-        //read only what is published from here on, never what was already on the topic
-        statement(lines, "$name.put(\"auto.offset.reset\", \"latest\")", format)
-        statement(lines, "$name.put(\"enable.auto.commit\", \"false\")", format)
-    }
-
-    private fun seekToEnd(lines: Lines, consumer: String, parts: String, topic: String, format: OutputFormat) {
-
-        val expr = "$consumer.partitionsFor($topic).stream()" +
-                ".map(p -> new org.apache.kafka.common.TopicPartition(p.topic(), p.partition()))" +
-                ".collect(java.util.stream.Collectors.toList())"
-        val kotlinExpr = "$consumer.partitionsFor($topic)" +
-                ".map { org.apache.kafka.common.TopicPartition(it.topic(), it.partition()) }"
-
-        when {
-            format.isJava() -> lines.add("java.util.List<org.apache.kafka.common.TopicPartition> $parts = $expr;")
-            format.isKotlin() -> lines.add("val $parts = $kotlinExpr")
-        }
-
-        statement(lines, "$consumer.assign($parts)", format)
-        statement(lines, "$consumer.seekToEnd($parts)", format)
-        //seekToEnd is lazy, so make it take effect before anything is published
-        statement(lines, "$consumer.poll(java.time.Duration.ZERO)", format)
-    }
-
-    private fun buildRecord(lines: Lines, name: String, topic: String, result: AsyncApiCallResult, format: OutputFormat) {
-
-        val payload = result.getPayload()?.let { quoted(it, format) } ?: nullLiteral(format)
-
-        newInstance(
-            lines, name,
-            "org.apache.kafka.clients.producer.ProducerRecord<String,String>",
-            "org.apache.kafka.clients.producer.ProducerRecord<>($topic, $payload)",
-            "org.apache.kafka.clients.producer.ProducerRecord($topic, $payload)",
-            format
-        )
-
+        //the message's own headers, flattened so that one call still fits on one line
         headersOf(result).forEach { (key, value) ->
-            statement(lines, "$name.headers().add(${quoted(key, format)}, ${bytesOf(quoted(value, format), format)})", format)
+            args.add(quoted(key, format))
+            args.add(quoted(value, format))
         }
-    }
 
-    private fun stampCorrelation(lines: Lines, record: String, cid: String, result: AsyncApiCallResult, format: OutputFormat) {
-        val header = result.getCorrelationHeader() ?: return
-        statement(lines, "$record.headers().add(${quoted(header, format)}, ${bytesOf(cid, format)})", format)
-    }
-
-    private fun awaitReply(
-        lines: Lines,
-        consumer: String,
-        variable: String,
-        cid: String,
-        deadline: String,
-        timeout: Long,
-        result: AsyncApiCallResult,
-        format: OutputFormat
-    ) {
-        val header = result.getCorrelationHeader()
+        val call = "$HELPER_NAME(${args.joinToString(", ")})"
 
         when {
-            format.isJava() -> lines.add("long $deadline = System.currentTimeMillis() + $timeout;")
-            format.isKotlin() -> lines.add("val $deadline = System.currentTimeMillis() + $timeout")
+            format.isJava() -> lines.add("String $variable = $call;")
+            format.isKotlin() -> lines.add("val $variable = $call")
         }
-
-        lines.add("while ($variable == null && System.currentTimeMillis() < $deadline) {")
-        lines.indented {
-            val loop = if (format.isJava()) {
-                "for (org.apache.kafka.clients.consumer.ConsumerRecord<String,String> r : " +
-                        "$consumer.poll(java.time.Duration.ofMillis($DEFAULT_POLL_MS))) {"
-            } else {
-                "for (r in $consumer.poll(java.time.Duration.ofMillis($DEFAULT_POLL_MS))) {"
-            }
-            lines.add(loop)
-            lines.indented {
-                if (header == null) {
-                    //no correlation declared, so the first thing on the reply topic is taken
-                    statement(lines, "$variable = r.value()", format)
-                } else {
-                    val readHeader = "r.headers().lastHeader(${quoted(header, format)})"
-                    when {
-                        format.isJava() -> lines.add("org.apache.kafka.common.header.Header h = $readHeader;")
-                        format.isKotlin() -> lines.add("val h = $readHeader")
-                    }
-                    lines.add("if (h != null && $cid.equals(new String(h.value(), java.nio.charset.StandardCharsets.UTF_8))) {"
-                        .let { if (format.isKotlin()) "if (h != null && $cid == String(h.value(), java.nio.charset.StandardCharsets.UTF_8)) {" else it })
-                    lines.indented { statement(lines, "$variable = r.value()", format) }
-                    lines.add("}")
-                }
-            }
-            lines.add("}")
-        }
-        lines.add("}")
     }
 
+    /**
+     * Write the helper the tests call, once for the suite.
+     *
+     * It is a method rather than lines repeated in every test because the scaffolding a broker
+     * needs is long and identical each time, and a test that reads in one line is worth more
+     * than one that spells out a producer.
+     */
+    fun emitHelper(lines: Lines, format: OutputFormat) {
+        val body = if (format.isJava()) javaHelper() else kotlinHelper()
+        lines.addEmpty()
+        body.forEach { lines.add(it) }
+        lines.addEmpty()
+    }
+
+    private fun javaHelper(): List<String> = listOf(
+        "/**",
+        " * Publish one message and, when a reply is declared, wait for the one that answers it.",
+        " *",
+        " * The consumer seeks to the end of the reply topic before anything is published, so a",
+        " * reply left over from an earlier run is never taken for an answer to this one, and a",
+        " * fresh correlation id is minted per call for the same reason.",
+        " */",
+        "private static String $HELPER_NAME(String broker, String topic, String replyTopic, String payload,",
+        "        String correlationHeader, long timeoutMs, String... headerPairs) throws Exception {",
+        "    java.util.Properties props = new java.util.Properties();",
+        "    props.put(\"bootstrap.servers\", broker);",
+        "    props.put(\"auto.offset.reset\", \"latest\");",
+        "    props.put(\"enable.auto.commit\", \"false\");",
+        "    String correlationId = java.util.UUID.randomUUID().toString();",
+        "    org.apache.kafka.clients.consumer.KafkaConsumer<String,String> consumer = null;",
+        "    if (replyTopic != null) {",
+        "        consumer = new org.apache.kafka.clients.consumer.KafkaConsumer<>(props,",
+        "                new $STRING_SERDE.StringDeserializer(), new $STRING_SERDE.StringDeserializer());",
+        "        java.util.List<org.apache.kafka.common.TopicPartition> parts = new java.util.ArrayList<>();",
+        "        for (org.apache.kafka.common.PartitionInfo p : consumer.partitionsFor(replyTopic)) {",
+        "            parts.add(new org.apache.kafka.common.TopicPartition(p.topic(), p.partition()));",
+        "        }",
+        "        consumer.assign(parts);",
+        "        consumer.seekToEnd(parts);",
+        "        consumer.poll(java.time.Duration.ZERO);",
+        "    }",
+        "    org.apache.kafka.clients.producer.KafkaProducer<String,String> producer =",
+        "            new org.apache.kafka.clients.producer.KafkaProducer<>(props,",
+        "                    new $STRING_SERDE.StringSerializer(), new $STRING_SERDE.StringSerializer());",
+        "    org.apache.kafka.clients.producer.ProducerRecord<String,String> record =",
+        "            new org.apache.kafka.clients.producer.ProducerRecord<>(topic, payload);",
+        "    for (int i = 0; i + 1 < headerPairs.length; i += 2) {",
+        "        record.headers().add(headerPairs[i], headerPairs[i + 1].getBytes($UTF_8));",
+        "    }",
+        "    if (correlationHeader != null) {",
+        "        record.headers().add(correlationHeader, correlationId.getBytes($UTF_8));",
+        "    }",
+        "    producer.send(record).get();",
+        "    producer.close();",
+        "    if (consumer == null) {",
+        "        return null;",
+        "    }",
+        "    String reply = null;",
+        "    long deadline = System.currentTimeMillis() + timeoutMs;",
+        "    while (reply == null && System.currentTimeMillis() < deadline) {",
+        "        for (org.apache.kafka.clients.consumer.ConsumerRecord<String,String> r :",
+        "                consumer.poll(java.time.Duration.ofMillis($DEFAULT_POLL_MS))) {",
+        "            if (correlationHeader == null) {",
+        "                reply = r.value();",
+        "                continue;",
+        "            }",
+        "            org.apache.kafka.common.header.Header h = r.headers().lastHeader(correlationHeader);",
+        "            if (h != null && correlationId.equals(new String(h.value(), $UTF_8))) {",
+        "                reply = r.value();",
+        "            }",
+        "        }",
+        "    }",
+        "    consumer.close();",
+        "    return reply;",
+        "}"
+    )
+
+    private fun kotlinHelper(): List<String> = listOf(
+        "/**",
+        " * Publish one message and, when a reply is declared, wait for the one that answers it.",
+        " *",
+        " * The consumer seeks to the end of the reply topic before anything is published, so a",
+        " * reply left over from an earlier run is never taken for an answer to this one, and a",
+        " * fresh correlation id is minted per call for the same reason.",
+        " */",
+        "private fun $HELPER_NAME(broker: String, topic: String, replyTopic: String?, payload: String?,",
+        "        correlationHeader: String?, timeoutMs: Long, vararg headerPairs: String): String? {",
+        "    val props = java.util.Properties()",
+        "    props.put(\"bootstrap.servers\", broker)",
+        "    props.put(\"auto.offset.reset\", \"latest\")",
+        "    props.put(\"enable.auto.commit\", \"false\")",
+        "    val correlationId = java.util.UUID.randomUUID().toString()",
+        "    var consumer: org.apache.kafka.clients.consumer.KafkaConsumer<String, String>? = null",
+        "    if (replyTopic != null) {",
+        "        consumer = org.apache.kafka.clients.consumer.KafkaConsumer(props,",
+        "                $STRING_SERDE.StringDeserializer(), $STRING_SERDE.StringDeserializer())",
+        "        val parts = consumer.partitionsFor(replyTopic)",
+        "                .map { org.apache.kafka.common.TopicPartition(it.topic(), it.partition()) }",
+        "        consumer.assign(parts)",
+        "        consumer.seekToEnd(parts)",
+        "        consumer.poll(java.time.Duration.ZERO)",
+        "    }",
+        "    val producer = org.apache.kafka.clients.producer.KafkaProducer(props,",
+        "            $STRING_SERDE.StringSerializer(), $STRING_SERDE.StringSerializer())",
+        "    val record = org.apache.kafka.clients.producer.ProducerRecord(topic, payload)",
+        "    var i = 0",
+        "    while (i + 1 < headerPairs.size) {",
+        "        record.headers().add(headerPairs[i], headerPairs[i + 1].toByteArray($UTF_8))",
+        "        i += 2",
+        "    }",
+        "    if (correlationHeader != null) {",
+        "        record.headers().add(correlationHeader, correlationId.toByteArray($UTF_8))",
+        "    }",
+        "    producer.send(record).get()",
+        "    producer.close()",
+        "    if (consumer == null) {",
+        "        return null",
+        "    }",
+        "    var reply: String? = null",
+        "    val deadline = System.currentTimeMillis() + timeoutMs",
+        "    while (reply == null && System.currentTimeMillis() < deadline) {",
+        "        for (r in consumer.poll(java.time.Duration.ofMillis($DEFAULT_POLL_MS))) {",
+        "            if (correlationHeader == null) {",
+        "                reply = r.value()",
+        "                continue",
+        "            }",
+        "            val h = r.headers().lastHeader(correlationHeader)",
+        "            if (h != null && correlationId == String(h.value(), $UTF_8)) {",
+        "                reply = r.value()",
+        "            }",
+        "        }",
+        "    }",
+        "    consumer.close()",
+        "    return reply",
+        "}"
+    )
+    /**
+     * The message's own headers, as the search sent them.
+     */
     private fun headersOf(result: AsyncApiCallResult): Map<String, String> {
+
         val json = result.getHeadersAsJson() ?: return mapOf()
+
         return try {
             val node = mapper.readTree(json)
             node.fieldNames().asSequence().associateWith { node.get(it).asText() }
@@ -216,54 +228,11 @@ object KafkaTestClientEmitter {
         }
     }
 
-    private fun declareReply(lines: Lines, variable: String, format: OutputFormat) {
-        when {
-            format.isJava() -> lines.add("String $variable = null;")
-            format.isKotlin() -> lines.add("var $variable: String? = null")
-        }
-    }
-
-    private fun newInstance(
-        lines: Lines,
-        name: String,
-        javaType: String,
-        javaCtor: String,
-        kotlinCtor: String,
-        format: OutputFormat
-    ) {
-        when {
-            format.isJava() -> lines.add("$javaType $name = new $javaCtor;")
-            format.isKotlin() -> lines.add("val $name = $kotlinCtor")
-        }
-    }
-
-    private fun assign(lines: Lines, name: String, expr: String, javaType: String, format: OutputFormat) {
-        when {
-            format.isJava() -> lines.add("$javaType $name = $expr;")
-            format.isKotlin() -> lines.add("val $name = $expr")
-        }
-    }
-
-    private fun statement(lines: Lines, code: String, format: OutputFormat) {
-        lines.add(code)
-        if (format.isJava()) {
-            lines.append(";")
-        }
-    }
-
-    private fun close(lines: Lines, name: String, format: OutputFormat) =
-        statement(lines, "$name.close()", format)
-
-    private fun bytesOf(expr: String, format: OutputFormat) =
-        "$expr.toByteArray(java.nio.charset.StandardCharsets.UTF_8)"
-            .let { if (format.isJava()) "$expr.getBytes(java.nio.charset.StandardCharsets.UTF_8)" else it }
-
-    private fun nullLiteral(format: OutputFormat) = "null"
-
     /**
      * A string as a literal of the target language, with what would end it escaped.
      */
     private fun quoted(value: String, format: OutputFormat): String {
+
         val escaped = value
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
@@ -271,6 +240,7 @@ object KafkaTestClientEmitter {
             .replace("\r", "\\r")
             .replace("\t", "\\t")
             .let { if (format.isKotlin()) it.replace("$", "\\$") else it }
+
         return "\"$escaped\""
     }
 }

@@ -8,6 +8,11 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.Termination
+import org.evomaster.core.output.service.KafkaTestClientEmitter
+import org.evomaster.core.search.Solution
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -85,6 +90,17 @@ class AsyncApiTestCaseWriterTest {
     }
 
     /**
+     * The members the writer adds to the test class for a solution holding this one test.
+     */
+    private fun membersOf(evaluated: EvaluatedIndividual<AsyncApiIndividual>): String {
+        val writer = injector.getInstance(TestCaseWriter::class.java)
+        val solution = Solution(mutableListOf(evaluated), "Prefix", "Suffix", Termination.NONE, listOf(), listOf())
+        val lines = Lines(OutputFormat.KOTLIN_JUNIT_5)
+        writer.addExtraClassMembers(lines, solution)
+        return lines.toString()
+    }
+
+    /**
      * The generated body for one test, as the suite writer would ask for it.
      */
     private fun bodyOf(evaluated: EvaluatedIndividual<AsyncApiIndividual>): String {
@@ -142,22 +158,35 @@ class AsyncApiTestCaseWriterTest {
          */
         start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
 
-        val body = bodyOf(evaluate("bessj"))
+        val evaluated = evaluate("bessj")
+        val body = bodyOf(evaluated)
 
-        //a real producer and consumer, against the broker the document names
-        assertTrue(body.contains("KafkaProducer"), body)
-        assertTrue(body.contains("KafkaConsumer"), body)
-        assertTrue(body.contains("\"bootstrap.servers\", \"localhost:9092\""), body)
-        assertTrue(body.contains("ProducerRecord(\"ncs.bessj.request\""), body)
-
-        //a reply older than this publish is not an answer to it
-        assertTrue(body.contains("seekToEnd"), body)
-
-        //a fresh id each run, stamped where the document says and matched on the way back
-        assertTrue(body.contains("UUID.randomUUID()"), body)
-        assertTrue(body.contains("lastHeader(\"correlationId\")"), body)
-
+        //one line per action: everything it needs came off the contract
+        assertTrue(body.contains("${KafkaTestClientEmitter.HELPER_NAME}("), body)
+        assertTrue(body.contains("\"localhost:9092\""), body)
+        assertTrue(body.contains("\"ncs.bessj.request\""), body)
+        assertTrue(body.contains("\"ncs.bessj.reply\""), body)
+        assertTrue(body.contains("\"correlationId\""), body)
         assertTrue(body.contains("assertNotNull(reply_0)"), body)
+
+        //and what it calls is written once for the suite
+        val members = membersOf(evaluated)
+        assertTrue(members.contains("KafkaProducer"), members)
+        assertTrue(members.contains("KafkaConsumer"), members)
+        //a reply older than the test is not an answer to it, and each run stamps its own id
+        assertTrue(members.contains("seekToEnd"), members)
+        assertTrue(members.contains("UUID.randomUUID()"), members)
+    }
+
+    @Test
+    fun testTheKafkaHelperIsLeftOutWhenNothingCallsIt() {
+
+        //a suite that never publishes over Kafka must not be made to carry the dependency
+        start { FakeAsyncApiDriver.replied(DOUBLE_RESULT).apply { testScript = listOf("publishSomehow()") } }
+
+        val members = membersOf(evaluate("bessj"))
+
+        assertFalse(members.contains("KafkaProducer"), members)
     }
 
     @Test
