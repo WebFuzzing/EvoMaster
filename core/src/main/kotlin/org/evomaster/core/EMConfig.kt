@@ -3232,6 +3232,9 @@ class EMConfig {
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
 
+    @Cfg("Allow JSON Schema references to load external resources. Disabled by default to prevent JSON schemas compilation from performing network requests.")
+    var allowExternalSchemaReferences = false
+
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
