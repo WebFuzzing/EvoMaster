@@ -104,7 +104,7 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(body.contains("pollUntilCorrelated"), body)
 
         //and what only the core knows about the reply
-        assertTrue(body.contains("assertNotNull(asyncApiReply_0)"), body)
+        assertTrue(body.contains("assertNotNull(reply_0)"), body)
         assertTrue(body.contains("bessj"), body)
     }
 
@@ -116,10 +116,10 @@ class AsyncApiTestCaseWriterTest {
         val body = bodyOf(evaluate("bessj", "expint"))
 
         //the core names the variables, so two actions in one test cannot collide
-        assertTrue(body.contains("assertNotNull(asyncApiReply_0)"), body)
-        assertTrue(body.contains("assertNotNull(asyncApiReply_1)"), body)
-        assertTrue(body.contains("producer_asyncApiReply_0"), body)
-        assertTrue(body.contains("producer_asyncApiReply_1"), body)
+        assertTrue(body.contains("assertNotNull(reply_0)"), body)
+        assertTrue(body.contains("assertNotNull(reply_1)"), body)
+        assertTrue(body.contains("producer_reply_0"), body)
+        assertTrue(body.contains("producer_reply_1"), body)
     }
 
     @Test
@@ -130,7 +130,7 @@ class AsyncApiTestCaseWriterTest {
 
         val asked = driver.published.single()
         assertEquals(SutInfoDto.OutputFormat.KOTLIN_JUNIT_5, asked.outputFormat)
-        assertEquals("asyncApiReply_0", asked.replyVariable)
+        assertEquals("reply_0", asked.replyVariable)
     }
 
     @Test
@@ -157,7 +157,7 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(body.contains("UUID.randomUUID()"), body)
         assertTrue(body.contains("lastHeader(\"correlationId\")"), body)
 
-        assertTrue(body.contains("assertNotNull(asyncApiReply_0)"), body)
+        assertTrue(body.contains("assertNotNull(reply_0)"), body)
     }
 
     @Test
