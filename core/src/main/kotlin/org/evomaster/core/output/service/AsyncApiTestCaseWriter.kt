@@ -94,23 +94,41 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         lines.addSingleCommentLine("${call.operationId}: ${res.getOutcome() ?: "not executed"}")
 
         val script = res.getTestScript()
+        val variable = res.getReplyVariableName()
 
-        if (script.isEmpty()) {
+        when {
             /*
-                Nothing can be written that would reach the service: publishing needs a client of
-                the transport, and only the driver has one. Said plainly rather than left to a
-                reader wondering why a test does nothing.
+                The driver rendered the lines itself, which is how a transport the contract does
+                not describe well enough gets written: one whose correlation id rides inside the
+                service's own message layout, or one nothing here knows at all.
              */
-            lines.addSingleCommentLine(
-                "The driver rendered no lines for this message, so there is nothing to publish here."
-            )
-            lines.addSingleCommentLine(
-                "See SutController.executeAsyncApiAction for what a driver fills in."
-            )
-            return
-        }
+            script.isNotEmpty() -> script.forEach { lines.add(it) }
 
-        script.forEach { lines.add(it) }
+            /*
+                Kafka is written from the contract, as REST writes its RestAssured calls: the
+                document named the broker, the topics and the header the id rides in, so nothing
+                else has to.
+             */
+            variable != null && KafkaTestClientEmitter.canEmit(res) ->
+                KafkaTestClientEmitter.emit(lines, res, variable, index, format)
+
+            else -> {
+                /*
+                    Nothing can be written that would reach the service. Said plainly rather than
+                    left to a reader wondering why a test does nothing.
+                 */
+                lines.addSingleCommentLine(
+                    "No lines could be written to publish this message: the transport is not one"
+                )
+                lines.addSingleCommentLine(
+                    "written from the contract, and the driver rendered none. See"
+                )
+                lines.addSingleCommentLine(
+                    "SutController.executeAsyncApiAction for what a driver can fill in."
+                )
+                return
+            }
+        }
 
         addReplyAssertions(lines, res)
     }

@@ -134,16 +134,83 @@ class AsyncApiTestCaseWriterTest {
     }
 
     @Test
-    fun testADriverThatRendersNothingSaysSoRatherThanWritingAnEmptyTest() {
+    fun testKafkaIsWrittenFromTheContractWhenTheDriverRendersNothing() {
 
-        //a driver that publishes but renders no lines: there is nothing the core could write
+        /*
+            The document names the broker, the topics and the header the correlation id rides in,
+            so the test can publish with an ordinary client and no driver has to render anything.
+         */
         start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
 
         val body = bodyOf(evaluate("bessj"))
 
-        assertTrue(body.contains("rendered no lines"), body)
+        //a real producer and consumer, against the broker the document names
+        assertTrue(body.contains("KafkaProducer"), body)
+        assertTrue(body.contains("KafkaConsumer"), body)
+        assertTrue(body.contains("\"bootstrap.servers\", \"localhost:9092\""), body)
+        assertTrue(body.contains("ProducerRecord(\"ncs.bessj.request\""), body)
+
+        //a reply older than this publish is not an answer to it
+        assertTrue(body.contains("seekToEnd"), body)
+
+        //a fresh id each run, stamped where the document says and matched on the way back
+        assertTrue(body.contains("UUID.randomUUID()"), body)
+        assertTrue(body.contains("lastHeader(\"correlationId\")"), body)
+
+        assertTrue(body.contains("assertNotNull(asyncApiReply_0)"), body)
+    }
+
+    @Test
+    fun testATransportTheContractDoesNotDescribeSaysSoRatherThanWritingAnEmptyTest() {
+
+        /*
+            A socket carries its correlation id inside the service's own message layout, which the
+            contract does not describe, so nothing here can write the client code. Only a driver
+            can, and this one renders nothing.
+         */
+        val socket = """
+            asyncapi: 3.0.0
+            info:
+              title: Socket
+              version: 1.0.0
+            servers:
+              live:
+                host: localhost:8080
+                protocol: ws
+            channels:
+              requests:
+                address: /requests
+                servers:
+                  - ${'$'}ref: '#/servers/live'
+                messages:
+                  request:
+                    payload:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+            operations:
+              ask:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/requests'
+        """.trimIndent()
+
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(socket)) { FakeAsyncApiDriver.fireAndForget() }
+        injector = AsyncApiTestInjector.create(
+            driver,
+            "--blackBox=false",
+            "--createTests=true",
+            "--outputFormat=KOTLIN_JUNIT_5"
+        )
+        sampler = injector.getInstance(AsyncApiSampler::class.java)
+        fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
+
+        val body = bodyOf(evaluate("ask"))
+
+        assertTrue(body.contains("not one"), body)
         assertTrue(body.contains("executeAsyncApiAction"), body)
-        assertFalse(body.contains("assertNotNull"), body)
+        assertFalse(body.contains("KafkaProducer"), body)
     }
 
     @Test
