@@ -58,6 +58,16 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val CORRELATION_SEPARATOR = "-"
 
         /**
+         * Separator inside a JSON Pointer, whose last segment names the field.
+         */
+        private const val PATH_SEPARATOR = "/"
+
+        /**
+         * What a correlation id's header is called when the document declares no field for it.
+         */
+        private const val DEFAULT_CORRELATION_HEADER = "correlationId"
+
+        /**
          * What the variable holding a reply is called in a generated test, before the action's
          * index. Named by the core so that two actions in one test cannot collide.
          */
@@ -192,6 +202,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         val outcome = record(reply, result)
         if (dto.asyncApiCall.replyVariable != null) {
             result.setReplyVariableName(dto.asyncApiCall.replyVariable)
+            recordWhatWasPublished(action, dto.asyncApiCall, result)
         }
         handleTargets(fv, action, result, outcome, index)
 
@@ -411,6 +422,45 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * headers are on. A header whose value prints as JSON null is left out rather than sent as
      * the text "null".
      */
+    /**
+     * Keep on the result what a generated test needs to publish this message again, so that the
+     * writer does not resolve the document a second time. Only when a test will be written.
+     */
+    private fun recordWhatWasPublished(
+        action: AsyncApiAction,
+        call: AsyncApiActionDto,
+        result: AsyncApiCallResult
+    ) {
+        val document = asyncApiSampler.document
+        val channel = document.channels[action.channelName]
+        val server = channel?.let { document.serversOf(it).firstOrNull() }
+
+        result.setPublished(
+            broker = server?.host,
+            protocol = server?.protocol,
+            address = call.address,
+            replyAddress = call.replyAddress,
+            payload = call.payload,
+            headersAsJson = mapper.writeValueAsString(call.headers ?: emptyMap<String, String>()),
+            correlationHeader = correlationHeaderOf(call),
+            replyTimeoutMs = call.replyTimeoutMs
+        )
+    }
+
+    /**
+     * The header a correlation id rides in, when it rides in one. The document names the field
+     * with a pointer, and its last segment is the header's name.
+     */
+    private fun correlationHeaderOf(call: AsyncApiActionDto): String? {
+
+        if (call.correlationLocation != AsyncApiActionDto.CorrelationLocation.HEADER) {
+            return null
+        }
+
+        return call.correlationPointer?.substringAfterLast(PATH_SEPARATOR)?.takeIf { it.isNotBlank() }
+            ?: DEFAULT_CORRELATION_HEADER
+    }
+
     private fun buildHeaders(action: AsyncApiAction): Map<String, String> {
 
         val headers = LinkedHashMap<String, String>()
