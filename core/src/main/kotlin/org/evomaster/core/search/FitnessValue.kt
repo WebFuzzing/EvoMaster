@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
@@ -14,6 +15,7 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.cassandra.CassandraExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.schema.TableId
@@ -93,6 +95,13 @@ class FitnessValue(
     val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
 
     /**
+     * Key -> the index of a main action of the test, ie of the HTTP call that made the queries
+     *
+     * Value -> the CQL queries executed by the SUT while serving that call which matched no row
+     */
+    val cassandraExecutions: MutableMap<Int, CassandraExecution> = mutableMapOf()
+
+    /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular, the tables and columns in them involved
      */
@@ -117,6 +126,12 @@ class FitnessValue(
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
 
     private val aggregatedFailedDynamoDbQueries: MutableList<DynamoDbFailedQuery> = mutableListOf()
+
+    /**
+     * When SUT executes CQL commands with a WHERE, keep track of when those match no row, in
+     * particular, the table involved and the shape of its rows
+     */
+    private val aggregatedFailedCassandraQueries: MutableList<CassandraFailedQuery> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -151,10 +166,12 @@ class FitnessValue(
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
         copy.dynamoDbExecutions.putAll(this.dynamoDbExecutions)
+        copy.cassandraExecutions.putAll(this.cassandraExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
         copy.aggregateDynamoDbData()
+        copy.aggregateCassandraDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -207,6 +224,11 @@ class FitnessValue(
         dynamoDbExecutions.values.forEach { aggregatedFailedDynamoDbQueries.addAll(it.failedQueries) }
     }
 
+    fun aggregateCassandraDatabaseData(){
+        aggregatedFailedCassandraQueries.clear()
+        cassandraExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedCassandraQueries.addAll(it1) } }
+    }
+
     fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
         if (extraToMinimize[actionIndex] == null) {
             extraToMinimize[actionIndex] = list.sorted()
@@ -232,6 +254,10 @@ class FitnessValue(
         dynamoDbExecutions[actionIndex] = execution
     }
 
+    fun setCassandraExecution(actionIndex: Int, cassandraExecution: CassandraExecution){
+        cassandraExecutions[actionIndex] = cassandraExecution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -247,6 +273,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
 
     fun getViewOfAggregatedFailedDynamoDbQueries() = aggregatedFailedDynamoDbQueries
+
+    fun getViewOfAggregatedFailedCassandraQueries() = aggregatedFailedCassandraQueries
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.score == MAX_VALUE

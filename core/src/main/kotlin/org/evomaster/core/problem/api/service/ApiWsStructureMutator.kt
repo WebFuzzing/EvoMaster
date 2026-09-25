@@ -1,12 +1,15 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraInsertBuilder
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
@@ -199,6 +202,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
         addInitializingRedisDbActions(individual, mutatedGenes, sampler)
         addInitializingDynamoDbActions(individual, mutatedGenes, sampler)
+        addInitializingCassandraDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
         // TODO if we handle schedule actions with structure mutator
     }
@@ -302,6 +306,41 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 oldDynamoDbActions,
                 addedDynamoDbInsertions,
                 ImpactsOfIndividual.DYNAMODB_ACTION_KEY,
+                config
+            )
+        }
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingCassandraDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateCassandraData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val failedQueries = individual.fitness.getViewOfAggregatedFailedCassandraQueries()
+
+        if (failedQueries.isEmpty()) {
+            return
+        }
+
+        val oldCassandraDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+
+        val addedCassandraDbInsertions = handleFailedCql(ind, failedQueries, mutatedGenes, sampler)
+
+        ind.repairInitializationActions(randomness)
+        // update impact based on added genes
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldCassandraDbActions,
+                addedCassandraDbInsertions,
+                ImpactsOfIndividual.CASSANDRADB_ACTION_KEY,
                 config
             )
         }
@@ -598,6 +637,28 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         return addedActions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedCql(
+        ind: T,
+        failedQueries: List<CassandraFailedQuery>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ): MutableList<List<CassandraDbAction>>? {
+
+        val builder = CassandraInsertBuilder()
+        val addedCassandraDbInsertions = if (mutatedGenes != null) mutableListOf<List<CassandraDbAction>>() else null
+
+        failedQueries
+            .mapNotNull { it.tableSchema }
+            .filter { builder.canBuildInsertionFor(it) }
+            .forEach {
+                val insertion = listOf(sampler.sampleCassandraInsertion(it))
+                ind.addInitializingCassandraDbActions(actions = insertion)
+                addedCassandraDbInsertions?.add(insertion)
+            }
+
+        return addedCassandraDbInsertions
     }
 
     private fun findMissing(

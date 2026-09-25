@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
+import org.evomaster.core.database.cassandra.CassandraExecution
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.database.sql.SqlExecutionInfo
@@ -229,6 +231,36 @@ class FitnessValueTest {
         val queries = fv.getViewOfAggregatedFailedWhereQueries()
         assertEquals(1, queries.size)
         assertTrue(queries.contains("SELECT * FROM foo WHERE id = 1"))
+    }
+
+    private fun cassandraExecutionWith(vararg tables: String) = CassandraExecution(
+        tables.map { CassandraFailedQuery("ks", it, null) }.toMutableList()
+    )
+
+    @Test
+    fun testAggregatedFailedCassandraQueries() {
+        val fv = FitnessValue(1.0)
+
+        fv.setCassandraExecution(0, cassandraExecutionWith("person"))
+        fv.setCassandraExecution(1, cassandraExecutionWith("event", "log"))
+        fv.aggregateCassandraDatabaseData()
+
+        val queries = fv.getViewOfAggregatedFailedCassandraQueries()
+        assertEquals(3, queries.size)
+        assertEquals(setOf("person", "event", "log"), queries.map { it.tableName }.toSet())
+    }
+
+    @Test
+    fun testCopyKeepsCassandraExecutions() {
+        val fv = FitnessValue(1.0)
+        fv.setCassandraExecution(0, cassandraExecutionWith("person"))
+        fv.aggregateCassandraDatabaseData()
+
+        val copy = fv.copy()
+
+        assertEquals(1, copy.cassandraExecutions.size)
+        assertEquals(1, copy.getViewOfAggregatedFailedCassandraQueries().size)
+        assertEquals("person", copy.getViewOfAggregatedFailedCassandraQueries()[0].tableName)
     }
 
     @Test

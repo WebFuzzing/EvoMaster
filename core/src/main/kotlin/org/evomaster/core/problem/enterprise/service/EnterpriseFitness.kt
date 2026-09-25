@@ -8,6 +8,7 @@ import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.cassandra.CassandraDbActionResult
 import org.evomaster.core.database.cassandra.CassandraDbActionTransformer
+import org.evomaster.core.database.cassandra.CassandraExecution
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.mongo.MongoDbActionTransformer
@@ -484,6 +485,18 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             }
             fv.aggregateDynamoDbData()
         }
+
+        if (configuration.heuristicsForCassandra) {
+            handleCassandraHeuristics(dto, fv)
+        }
+
+        if (configuration.extractCassandraExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setCassandraExecution(i, CassandraExecution.fromDto(extra.cassandraExecutionsDto))
+            }
+            fv.aggregateCassandraDatabaseData()
+        }
     }
 
     private fun handleSqlHeuristics(
@@ -587,6 +600,40 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportRedisHeuristicEvaluationFailure()
                         } else {
                             statistics.reportRedisHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Applies CQL WHERE distances and records their evaluation metrics. */
+    private fun handleCassandraHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.CASSANDRA
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.CASSANDRA) {
+                        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportCassandraHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportCassandraHeuristicEvaluationSuccess()
                         }
                     }
                 }
