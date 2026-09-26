@@ -83,8 +83,18 @@ class FitnessValue(
 
     val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
 
+    /**
+     * Key -> action Id
+     *
+     * Value -> info on how the Redis database was accessed
+     */
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
+    /**
+     * Key -> action Id
+     *
+     * Value -> the Cypher queries of that action which the Neo4j graph did not satisfy
+     */
     val neo4jExecutions: MutableMap<Int, Neo4jExecution> = mutableMapOf()
 
     /**
