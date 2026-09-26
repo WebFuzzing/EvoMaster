@@ -790,6 +790,11 @@ class EMConfig {
                     "'extractDynamoDbExecutionInfo'")
         }
 
+        if (shouldGenerateNeo4jData() && !extractNeo4jExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Neo4j data without enabling " +
+                    "'extractNeo4jExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
