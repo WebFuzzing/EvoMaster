@@ -527,6 +527,12 @@ class TestSuiteWriter {
                 addImport(CassandraInsertionDto::class.qualifiedName!!, lines)
             }
 
+            if (solution.hasAnyNeo4jAction()) {
+                addImport("org.evomaster.client.java.controller.neo4j.dsl.Neo4jDsl.neo4j", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionResultsDto", lines)
+                addImport(Neo4jDatabaseCommandsDto::class.qualifiedName!!, lines)
+            }
+
             if (useRestAssured()) {
                 addImport("io.restassured.config.JsonConfig", lines)
                 addImport("io.restassured.path.json.config.JsonPathConfig", lines)

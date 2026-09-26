@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service.fitness
 
 import com.google.inject.Inject
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
@@ -91,6 +92,8 @@ class ResourceRestFitness : AbstractRestFitness() {
         doDynamoDbCalls(individual.seeInitializingActions().filterIsInstance<DynamoDbAction>(), actionResults)
 
         doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults)
+
+        doNeo4jDbCalls(individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>(), actionResults)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()

@@ -21,6 +21,10 @@ import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
 import org.evomaster.core.database.dynamodb.DynamoDbExecution
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbActionTransformer
+import org.evomaster.core.database.neo4j.Neo4jExecution
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.service.RemoteController
@@ -332,6 +336,47 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return execution?.executionResults?.all { it } ?: false
     }
 
+    /**
+     * Transforms and executes the Neo4j actions as one batch of node and relationship insertions
+     * against the SUT's database via the controller. An action succeeds when every node and
+     * relationship it holds was inserted.
+     *
+     * @param allNeo4jActions Neo4j actions to insert
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Neo4j action is appended, in the same order as [allNeo4jActions]
+     * @return whether [allNeo4jActions] execute successfully
+     */
+    fun doNeo4jDbCalls(
+        allNeo4jActions: List<Neo4jDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allNeo4jActions.isEmpty()) return true
+
+        val neo4jResults = allNeo4jActions.map { Neo4jDbActionResult(it.getLocalId()) }
+        actionResults.addAll(neo4jResults)
+
+        val dto = Neo4jDbActionTransformer.transform(allNeo4jActions)
+
+        val results = rc.executeNeo4jInsertions(dto)
+        if (results != null) {
+            var nodeIndex = 0
+            var edgeIndex = 0
+            allNeo4jActions.forEachIndexed { actionIndex, action ->
+                val nodesOk = (nodeIndex until nodeIndex + action.nodes.size).all { results.nodeExecutionResults[it] }
+                val edgesOk = (edgeIndex until edgeIndex + action.edges.size).all { results.edgeExecutionResults[it] }
+                nodeIndex += action.nodes.size
+                edgeIndex += action.edges.size
+                val success = nodesOk && edgesOk
+                if (!success) {
+                    log.warn("FAILED insertion $actionIndex: ${action.getName()}")
+                }
+                neo4jResults[actionIndex].setInsertExecutionResult(success)
+            }
+        }
+
+        return true
+    }
+
     protected fun registerNewAction(action: Action, index: Int){
         rc.registerNewAction(getActionDto(action, index))
     }
@@ -483,6 +528,14 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 fv.setDynamoDbExecution(i, DynamoDbExecution.fromDto(dto.extraHeuristics[i].dynamoDbExecutionsDto))
             }
             fv.aggregateDynamoDbData()
+        }
+
+        if (configuration.extractNeo4jExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setNeo4jExecution(i, Neo4jExecution.fromDto(extra.neo4jExecutionsDto))
+            }
+            fv.aggregateNeo4jDatabaseData()
         }
     }
 

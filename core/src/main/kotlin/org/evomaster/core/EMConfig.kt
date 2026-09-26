@@ -790,6 +790,11 @@ class EMConfig {
                     "'extractDynamoDbExecutionInfo'")
         }
 
+        if (shouldGenerateNeo4jData() && !extractNeo4jExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Neo4j data without enabling " +
+                    "'extractNeo4jExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1027,6 +1032,7 @@ class EMConfig {
     fun shouldGenerateRedisData() = generateRedisData
 
     fun shouldGenerateDynamoDbData() = generateDynamoDbData
+    fun shouldGenerateNeo4jData() = generateNeo4jData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -2054,6 +2060,10 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var extractDynamoDbExecutionInfo = false
 
+    @Cfg("Enable extracting Neo4j execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractNeo4jExecutionInfo = false
+
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
     @DependsOnFalseFor("blackBox")
@@ -2118,6 +2128,10 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
     @DependsOnFalseFor("blackBox")
     var generateDynamoDbData = false
+
+    @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    var generateNeo4jData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)

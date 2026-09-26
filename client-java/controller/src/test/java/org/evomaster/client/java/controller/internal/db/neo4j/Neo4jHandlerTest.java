@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
@@ -121,6 +122,70 @@ class Neo4jHandlerTest {
     }
 
     private static final String PARAMETERISED_QUERY = "MATCH (a:Person {name: $name}) RETURN a";
+
+    private Neo4jHandler handlerOverExample1() {
+        Neo4jHandler handler = new Neo4jHandler();
+        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
+        return handler;
+    }
+
+    @Test
+    void testAQueryTheGraphDoesNotSatisfyIsRegisteredAsTheInsertionThatWould() {
+        Neo4jHandler handler = handlerOverExample1();
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.getEvaluatedNeo4jCommands();
+
+        List<Neo4jFailedQuery> failed = handler.getExecutionDto().failedQueries;
+        assertEquals(1, failed.size());
+        assertEquals(PARAMETERISED_QUERY, failed.get(0).query);
+        assertEquals(1, failed.get(0).nodes.size());
+        assertEquals(Arrays.asList("Person"), failed.get(0).nodes.get(0).labels);
+        assertEquals("name", failed.get(0).nodes.get(0).properties.get(0).propertyKey);
+        assertEquals("Zoe", failed.get(0).nodes.get(0).properties.get(0).value);
+        assertTrue(failed.get(0).edges.isEmpty());
+    }
+
+    @Test
+    void testASatisfiedQueryIsNotRegistered() {
+        Neo4jHandler handler = handlerOverExample1();
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Ana")), true, 1));
+
+        assertEquals(0.0, distanceOf(handler), 0.0);
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
+    @Test
+    void testTheSameInsertionIsRegisteredOncePerAction() {
+        Neo4jHandler handler = handlerOverExample1();
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Max")), true, 1));
+        handler.getEvaluatedNeo4jCommands();
+
+        assertEquals(2, handler.getExecutionDto().failedQueries.size());
+
+        handler.reset();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
+    @Test
+    void testExtractionCanBeSwitchedOff() {
+        Neo4jHandler handler = handlerOverExample1();
+        handler.setExtractNeo4jExecution(false);
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.getEvaluatedNeo4jCommands();
+
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
+    @Test
+    void testAQueryWhosePatternCannotBeCreatedIsSkipped() {
+        Neo4jHandler handler = handlerOverExample1();
+        handler.handle(new Neo4JRunCommand("MATCH (a:Person)-[r]->(b:Robot) RETURN a", null, true, 1));
+        handler.getEvaluatedNeo4jCommands();
+
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
 
     private static double distanceOf(Neo4jHandler handler) {
         List<Neo4jCommandWithDistance> evaluated = handler.getEvaluatedNeo4jCommands();

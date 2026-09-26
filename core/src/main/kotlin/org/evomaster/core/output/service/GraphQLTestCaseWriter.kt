@@ -33,6 +33,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                                    mongoInsertionVars: MutableList<Pair<String, String>>,
                                    redisInsertionVars: MutableList<Pair<String, String>>,
                                    dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+                                   neo4jInsertionVars: MutableList<Pair<String, String>>,
                                    testCaseName: String, testSuitePath: Path?){
 
         if (ind.individual is GraphQLIndividual) {
