@@ -200,6 +200,13 @@ public class RedisHandler {
                     return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
+                case FT_SEARCH:
+                case FT_AGGREGATE: {
+                    String index = redisCommand.extractArgs().get(0);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForFtIndex(index, redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
+                }
+
                 default:
                     return new RedisDistanceWithMetrics(H_MAX_VALUE, 0);
             }
@@ -251,6 +258,32 @@ public class RedisHandler {
         keys.forEach(
                 key -> redisData.put(key, new RedisValueData(redisClient.getHashFields(key))));
         return new RedisKeyValueStore(redisData);
+    }
+
+    /**
+     * Builds the candidate document set for a FT.SEARCH/FT.AGGREGATE index: every HASH key whose
+     * name matches at least one of the prefixes declared for that index. Prefixes are fetched live
+     * via FT.INFO, since the FT.CREATE call that declared them may have happened before this handler
+     * ever observed it, or not have been observed at all.
+     */
+    private RedisKeyValueStore createRedisInfoForFtIndex(String index, ReflectionBasedRedisClient redisClient) {
+        List<String> prefixes = redisClient.getIndexPrefixes(index);
+        Set<String> hashKeys = redisClient.getKeysByType(REDIS_HASH_TYPE);
+
+        Map<String, RedisValueData> redisData = new HashMap<>();
+        hashKeys.stream()
+                .filter(key -> matchesAnyPrefix(key, prefixes))
+                .forEach(key -> redisData.put(key, new RedisValueData(redisClient.getHashFields(key))));
+        return new RedisKeyValueStore(redisData);
+    }
+
+    private boolean matchesAnyPrefix(String key, List<String> prefixes) {
+        for (String prefix : prefixes) {
+            if (key.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setRedisClient(ReflectionBasedRedisClient redisClient) {

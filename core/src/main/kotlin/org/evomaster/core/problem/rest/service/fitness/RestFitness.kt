@@ -4,6 +4,7 @@ import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -48,6 +49,7 @@ open class RestFitness : AbstractRestFitness() {
         doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults = actionResults)
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults = actionResults)
+        doDynamoDbCalls(individual.seeInitializingActions().filterIsInstance<DynamoDbAction>(), actionResults = actionResults)
         doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults = actionResults)
         doNeo4jDbCalls(individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>(), actionResults = actionResults)
 

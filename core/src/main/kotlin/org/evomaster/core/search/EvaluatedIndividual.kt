@@ -6,6 +6,7 @@ import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
@@ -1011,7 +1012,7 @@ class EvaluatedIndividual<T>(
     }
 
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, CassandraDbAction::class, Neo4jDbAction::class, ScheduleTaskAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, DynamoDbAction::class, CassandraDbAction::class, Neo4jDbAction::class, ScheduleTaskAction::class)
     }
 
     fun hasAnyPotentialFault() = this.fitness.hasAnyPotentialFault(this.individual.searchGlobalState!!.idMapper)

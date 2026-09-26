@@ -16,11 +16,15 @@ import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.sql.*
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbActionResult
 import org.evomaster.core.database.neo4j.Neo4jDbActionTransformer
 import org.evomaster.core.database.neo4j.Neo4jExecution
-import org.evomaster.core.database.sql.*
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.service.RemoteController
@@ -318,6 +322,20 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return true
     }
 
+    fun doDynamoDbCalls(
+        allDynamoDbActions: List<DynamoDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allDynamoDbActions.isEmpty()) return true
+        val results = allDynamoDbActions.map { DynamoDbActionResult(it.getLocalId()) }
+        actionResults.addAll(results)
+        val execution = rc.executeDynamoDbInsertions(DynamoDbActionTransformer.transform(allDynamoDbActions))
+        execution?.executionResults?.forEachIndexed { index, success ->
+            results.getOrNull(index)?.setInsertExecutionResult(success)
+        }
+        return execution?.executionResults?.all { it } ?: false
+    }
+
     /**
      * Transforms and executes the Neo4j actions as one batch of node and relationship insertions
      * against the SUT's database via the controller. An action succeeds when every node and
@@ -503,6 +521,13 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
             }
             fv.aggregateRedisDatabaseData()
+        }
+
+        if (configuration.extractDynamoDbExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                fv.setDynamoDbExecution(i, DynamoDbExecution.fromDto(dto.extraHeuristics[i].dynamoDbExecutionsDto))
+            }
+            fv.aggregateDynamoDbData()
         }
 
         if (configuration.extractNeo4jExecutionInfo) {

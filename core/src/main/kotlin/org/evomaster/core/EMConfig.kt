@@ -780,6 +780,16 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateDynamoDbData() && !heuristicsForDynamoDb) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'heuristicsForDynamoDb'")
+        }
+
+        if (shouldGenerateDynamoDbData() && !extractDynamoDbExecutionInfo) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'extractDynamoDbExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1016,6 +1026,7 @@ class EMConfig {
 
     fun shouldGenerateRedisData() = generateRedisData
 
+    fun shouldGenerateDynamoDbData() = generateDynamoDbData
     fun shouldGenerateNeo4jData() = generateNeo4jData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
@@ -2040,6 +2051,10 @@ class EMConfig {
     var extractRedisExecutionInfo = false
 
     @Experimental
+    @Cfg("Enable extracting DynamoDB execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractDynamoDbExecutionInfo = false
+
     @Cfg("Enable extracting Neo4j execution info")
     @DependsOnFalseFor("blackBox")
     var extractNeo4jExecutionInfo = false
@@ -2105,6 +2120,10 @@ class EMConfig {
     var generateRedisData = false
 
     @Experimental
+    @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
+    @DependsOnFalseFor("blackBox")
+    var generateDynamoDbData = false
+
     @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateNeo4jData = false
