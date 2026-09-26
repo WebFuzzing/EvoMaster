@@ -1,6 +1,10 @@
 package org.evomaster.client.java.controller.mongo.geometry;
 
-public class GeoJsonPoint {
+import java.util.Objects;
+
+public class GeoJsonPoint extends GeoJsonGeometry {
+
+    public static final String POINT_TYPE = "Point";
 
     private final double longitude;
     private final double latitude;
@@ -14,6 +18,8 @@ public class GeoJsonPoint {
      * @throws IllegalArgumentException if the latitude is outside the range -90 to 90
      */
     public GeoJsonPoint(double longitude, double latitude) {
+        super(POINT_TYPE);
+
         // Validate the longitude and latitude values
         if (longitude < -180 || longitude > 180) {
             throw new IllegalArgumentException("Longitude must be between -180 and 180. But is is " + longitude);
@@ -31,5 +37,33 @@ public class GeoJsonPoint {
 
     public double getLatitude() {
         return latitude;
+    }
+
+    @Override
+    public boolean hasArea() {
+        return false;
+    }
+
+    public String toString() {
+        return "GeoJsonPoint{" +
+                "longitude=" + longitude +
+                ", latitude=" + latitude +
+                '}';
+    }
+
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        GeoJsonPoint that = (GeoJsonPoint) obj;
+        return Double.compare(that.longitude, longitude) == 0 &&
+                Double.compare(that.latitude, latitude) == 0;
+    }
+
+    public int hashCode() {
+        return Objects.hash(longitude, latitude);
     }
 }
