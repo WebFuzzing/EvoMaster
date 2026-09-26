@@ -147,19 +147,32 @@ public class DynamoDbClassReplacement {
         try {
             Method method = getOriginal(Sync.singleton, id, client);
             Object result = method.invoke(client, ddbRequest);
-
-                long end = System.currentTimeMillis();
-                List<String> tableNames = extractTableNames(ddbRequest);
-                long executionTime = end - start;
-                DynamoDbCommand info = new DynamoDbCommand(tableNames, operationName, ddbRequest, true, executionTime);
-                ExecutionTracer.addDynamoDbInfo(info);
-                return result;
+            recordDynamoDbTraceInfo(ddbRequest, start, operationName, true);
+            return result;
             }
         catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
+            recordDynamoDbTraceInfo(ddbRequest, start, operationName, false);
             throw new RuntimeException(e.getCause());
         }
+    }
+
+     /**
+      * Records trace information for a DynamoDB operation, including execution time, operation details,
+      * and whether the operation was successfully executed.
+      *
+      * @param ddbRequest the DynamoDB request object containing operation-specific information
+      * @param start the start time of the operation in milliseconds, used to calculate execution duration
+      * @param operationName the name of the DynamoDB operation being performed (e.g., "GetItem", "PutItem")
+      * @param successfullyExecuted a boolean indicating if the operation was executed successfully
+      */
+     private static void recordDynamoDbTraceInfo(Object ddbRequest, long start, DynamoDbOperationNames operationName, boolean successfullyExecuted) {
+        long end = System.currentTimeMillis();
+        List<String> tableNames = extractTableNames(ddbRequest);
+        long executionTime = end - start;
+        DynamoDbCommand info = new DynamoDbCommand(tableNames, operationName, ddbRequest, successfullyExecuted, executionTime);
+        ExecutionTracer.addDynamoDbInfo(info);
     }
 
     /**
@@ -180,12 +193,7 @@ public class DynamoDbClassReplacement {
 
             CompletableFuture<?> future = (CompletableFuture<?>) result;
             return future.handle((res, ex) -> {
-                long end = System.currentTimeMillis();
-                List<String> tableNames = extractTableNames(ddbRequest);
-                boolean successful = ex == null;
-                long executionTime = end - start;
-                DynamoDbCommand info = new DynamoDbCommand(tableNames, operationName, ddbRequest, successful, executionTime);
-                ExecutionTracer.addDynamoDbInfo(info);
+                recordDynamoDbTraceInfo(ddbRequest, start, operationName, ex == null);
                 if (ex != null) {
                     if (ex instanceof RuntimeException) throw (RuntimeException) ex;
                     throw new RuntimeException(ex);
@@ -195,6 +203,7 @@ public class DynamoDbClassReplacement {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
+            recordDynamoDbTraceInfo(ddbRequest, start, operationName, false);
             throw new RuntimeException(e.getCause());
         }
     }
