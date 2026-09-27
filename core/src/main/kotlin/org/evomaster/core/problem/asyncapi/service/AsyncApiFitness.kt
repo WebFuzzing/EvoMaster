@@ -70,6 +70,11 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         /**
          * What the variable holding a reply is called in a generated test, before the action's
          * index. Named by the core so that two actions in one test cannot collide.
+         *
+         * Not minted the way the writer mints `res_0` and `body_0`, from a counter it resets per
+         * test: the name has to be settled here, while the search runs, because it is part of
+         * what a driver is asked to render against. The action's index is the only number in
+         * hand at that point, and it is unique within the test being executed.
          */
         private const val REPLY_VARIABLE_PREFIX = "reply_"
 
