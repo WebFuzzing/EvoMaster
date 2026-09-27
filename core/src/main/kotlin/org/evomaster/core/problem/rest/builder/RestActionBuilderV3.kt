@@ -123,6 +123,8 @@ object RestActionBuilderV3 {
         val enableXmlWithAttributesSupport: Boolean = true,
 
         val enableMultipartFormDataSupport: Boolean = false,
+
+        val cycleDepth: Int = 1
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
@@ -2403,7 +2405,7 @@ object RestActionBuilderV3 {
             TODO Maybe this should be config to experiment with.
             Anyway, it is a problem in scout-api
          */
-        val cycleDepth = 1
+        val cycleDepth = options.cycleDepth
 
         if (history.count { it == reference } > cycleDepth) {
             return CycleObjectGene("Cycle for: $reference")
