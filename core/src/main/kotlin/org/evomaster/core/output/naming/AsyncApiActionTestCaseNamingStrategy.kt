@@ -68,6 +68,11 @@ open class AsyncApiActionTestCaseNamingStrategy(
             }
             //nothing is declared to come back, so reaching the broker is the whole outcome
             AsyncApiOutcome.PUBLISHED -> mutableListOf(returns, "nothing")
+            /*
+                Worded to match the fault's own label, since a detected fault names the test
+                instead of this. With the experimental oracles off there is no fault and this is
+                what names it, and a name must not change with a flag that is about reporting.
+             */
             AsyncApiOutcome.NO_REPLY -> mutableListOf("gets", "no", "reply")
             AsyncApiOutcome.PUBLISH_FAILED, null -> mutableListOf(error)
         }

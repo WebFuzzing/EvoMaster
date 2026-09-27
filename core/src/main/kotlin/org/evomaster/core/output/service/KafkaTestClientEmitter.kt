@@ -17,9 +17,11 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
  * service's own message layout cannot be emitted from the contract alone, because the contract
  * does not describe that layout; there, the driver renders the lines instead.
  *
- * The emitted code is deliberately self-contained per action rather than calling a shared
- * helper: a test that can be read top to bottom is worth more than a short one, and it keeps a
- * suite that never publishes to Kafka from carrying the dependency.
+ * Everything emitted here names its types in full rather than adding imports to the suite, which
+ * is how the REST writer reaches the one method RestAssured does not expose. The suite's imports
+ * are decided before it is known whether anything will publish over Kafka, and adding them
+ * unconditionally would make every AsyncAPI suite need the dependency, including one that only
+ * ever talks to a socket through a driver.
  */
 object KafkaTestClientEmitter {
 
