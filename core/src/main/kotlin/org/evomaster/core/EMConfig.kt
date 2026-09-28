@@ -2060,6 +2060,7 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var extractDynamoDbExecutionInfo = false
 
+    @Experimental
     @Cfg("Enable extracting Neo4j execution info")
     @DependsOnFalseFor("blackBox")
     var extractNeo4jExecutionInfo = false
@@ -2129,6 +2130,7 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var generateDynamoDbData = false
 
+    @Experimental
     @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateNeo4jData = false
