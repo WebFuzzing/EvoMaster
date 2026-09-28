@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -224,6 +225,42 @@ public class RedisCommand implements Serializable {
 
     public List<String> extractArgs(){
         return Arrays.asList(args);
+    }
+
+    /**
+     * FT.AGGREGATE's GROUPBY stage is encoded on the wire as "GROUPBY" nargs field..., with each
+     * field prefixed by "@" (e.g. "@category"); the prefix is stripped here to match hash field
+     * names as they appear in the database.
+     */
+    public List<String> extractGroupByFields() {
+        List<String> fields = new ArrayList<>();
+        int groupByIndex = -1;
+        for (int i = 0; i < args.length; i++) {
+            if ("GROUPBY".equals(args[i])) {
+                groupByIndex = i;
+                break;
+            }
+        }
+        if (groupByIndex < 0 || groupByIndex + 1 >= args.length) {
+            return fields;
+        }
+
+        int count;
+        try {
+            count = Integer.parseInt(args[groupByIndex + 1]);
+        } catch (NumberFormatException e) {
+            return fields;
+        }
+
+        for (int i = 0; i < count; i++) {
+            int argIndex = groupByIndex + 2 + i;
+            if (argIndex >= args.length) {
+                break;
+            }
+            String field = args[argIndex];
+            fields.add(field.startsWith("@") ? field.substring(1) : field);
+        }
+        return fields;
     }
 
     public boolean getSuccessfullyExecuted() {

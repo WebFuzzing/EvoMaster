@@ -1,12 +1,16 @@
 package org.evomaster.core.redis
 
 import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisQueryAction
+import org.evomaster.core.database.redis.RedisQueryField
 import org.evomaster.core.database.redis.RedisSaddAction
 import org.evomaster.core.database.redis.RedisSaddFromSinterAction
 import org.evomaster.core.database.redis.RedisSetAction
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -143,5 +147,90 @@ class RedisDbActionTest {
         assertThrows<IllegalArgumentException> {
             RedisSaddFromSinterAction(keys = emptyList(), memberGene = StringGene("member"))
         }
+    }
+
+    // --- RedisQueryField ---
+
+    @Test
+    fun testQueryFieldRequiresExactlyOneOfConstantOrGene() {
+        assertThrows<IllegalArgumentException> { RedisQueryField("f") }
+        assertThrows<IllegalArgumentException> {
+            RedisQueryField("f", constantValue = "v", valueGene = StringGene("f", "v"))
+        }
+    }
+
+    @Test
+    fun testQueryFieldRawValueFromConstant() {
+        val field = RedisQueryField("name", constantValue = "alice")
+        assertEquals("alice", field.rawValue())
+    }
+
+    @Test
+    fun testQueryFieldRawValueFromGene() {
+        val field = RedisQueryField("name", valueGene = StringGene("name", "bob"))
+        assertEquals("bob", field.rawValue())
+    }
+
+    @Test
+    fun testQueryFieldCopyIsIndependent() {
+        val original = RedisQueryField("name", valueGene = StringGene("name", "bob"))
+        val copy = original.copy()
+        (copy.valueGene as StringGene).value = "alice"
+
+        assertEquals("bob", original.rawValue())
+        assertEquals("alice", copy.rawValue())
+    }
+
+    // --- RedisQueryAction ---
+
+    @Test
+    fun testQueryActionGetName() {
+        val action = RedisQueryAction("product:1", listOf(RedisQueryField("title", constantValue = "redis")))
+        assertEquals("Redis_QUERY_product:1", action.getName())
+    }
+
+    @Test
+    fun testQueryActionGetTargetKey() {
+        val action = RedisQueryAction("product:1", listOf(RedisQueryField("title", constantValue = "redis")))
+        assertEquals("product:1", action.getTargetKey())
+    }
+
+    @Test
+    fun testQueryActionInsertionsCountMatchesNumberOfFields() {
+        val action = RedisQueryAction(
+            "product:1", listOf(
+                RedisQueryField("title", constantValue = "redis"),
+                RedisQueryField("price", valueGene = DoubleGene("price", 10.0))
+            )
+        )
+        assertEquals(2, action.insertionsCount())
+    }
+
+    @Test
+    fun testQueryActionSeeTopGenesOnlyReturnsGeneBackedFields() {
+        val action = RedisQueryAction(
+            "product:1", listOf(
+                RedisQueryField("title", constantValue = "redis"),
+                RedisQueryField("price", valueGene = DoubleGene("price", 10.0))
+            )
+        )
+        assertEquals(1, action.seeTopGenes().size)
+        assertInstanceOf(DoubleGene::class.java, action.seeTopGenes()[0])
+    }
+
+    @Test
+    fun testQueryActionCopyIsIndependent() {
+        val original =
+            RedisQueryAction("product:1", listOf(RedisQueryField("price", valueGene = DoubleGene("price", 10.0))))
+        val copy = original.copy() as RedisQueryAction
+        (copy.fields[0].valueGene as DoubleGene).value = 20.0
+
+        assertEquals(10.0, (original.fields[0].valueGene as DoubleGene).value)
+        assertEquals(20.0, (copy.fields[0].valueGene as DoubleGene).value)
+    }
+
+    @Test
+    fun testQueryActionRequiresAtLeastOneField() {
+        assertThrows<IllegalArgumentException> { RedisQueryAction("product:1", emptyList()) }
     }
 }

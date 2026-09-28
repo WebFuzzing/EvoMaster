@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.redis.*;
 import org.evomaster.client.java.instrumentation.RedisCommand;
@@ -112,13 +113,22 @@ public class RedisHandler {
             type.equals(HGETALL) ||
             type.equals(KEYS) ||
             type.equals(SINTER) ||
-            type.equals(SMEMBERS))
+            type.equals(SMEMBERS) ||
+            type.equals(FT_SEARCH) ||
+            type.equals(FT_AGGREGATE))
         ) {
             // Further commands will be registered in future iterations.
-            failedCommands.add(createFailedCommand(redisCommand));
+            RedisFailedCommand failedCommand = createFailedCommand(redisCommand);
+            if (failedCommand != null) {
+                failedCommands.add(failedCommand);
+            }
         }
     }
 
+    /**
+     * @return the failed command, or null if it is not (yet) actionable for data generation
+     * (e.g. an FT.SEARCH/FT.AGGREGATE whose index does not exist).
+     */
     private RedisFailedCommand createFailedCommand(RedisCommand redisCommand) {
         RedisCommand.RedisCommandType type = redisCommand.getType();
         List<String> args = redisCommand.extractArgs();
@@ -158,10 +168,86 @@ public class RedisHandler {
                         null,
                         args.get(1));
             }
+
+            case FT_SEARCH:
+            case FT_AGGREGATE:
+                return createFtFailedCommand(redisCommand);
+
             default:
                 throw new RuntimeException(
                         "Invalid command registering failed redis commands. Type encountered: " + type);
         }
+    }
+
+    /**
+     * Note: an FT.SEARCH/FT.AGGREGATE against an index that does not
+     * exist currently fails outright (Redis raises "No such index"), so ConnectionClassReplacement
+     * never records it as a successfully-executed command, and it never reaches this handler at
+     * all. Making that case actionable would need capturing failed executions too, plus a
+     * FT.CREATE-based action to generate the missing index before any documents.
+     */
+    private RedisFailedCommand createFtFailedCommand(RedisCommand redisCommand) {
+        RedisCommand.RedisCommandType type = redisCommand.getType();
+        List<String> args = redisCommand.extractArgs();
+        if (args.size() < 2) {
+            throw new IllegalArgumentException("Command " + type.getLabel() + " has invalid arguments.");
+        }
+
+        String index = args.get(0);
+        String query = args.get(1);
+
+        if (redisClient == null) {
+            return null;
+        }
+
+        RedisIndexInfo info;
+        try {
+            info = redisClient.getIndexInfo(index);
+        } catch (Exception e) {
+            SimpleLogger.warn("Could not fetch index info for " + index + ": " + e.getMessage());
+            return null;
+        }
+        if (info == null || !info.isHashIndex()) {
+            // Unknown indexes or one over a non-HASH key type are out of scope.
+            return null;
+        }
+
+        List<RedisSearchFilter> filters;
+        try {
+            filters = RedisSearchQueryParser.parse(query);
+        } catch (IllegalArgumentException e) {
+            // Malformed, or using grammar not supported by RedisSearchQueryParser: not actionable.
+            return null;
+        }
+
+        List<String> groupByFields = type.equals(FT_AGGREGATE)
+                ? redisCommand.extractGroupByFields()
+                : Collections.emptyList();
+
+        return new RedisFailedCommand(
+                type.name(),
+                index,
+                info.getPrefixes(),
+                info.getAttributes(),
+                toFilterDtos(filters),
+                groupByFields);
+    }
+
+    private static List<RedisSearchFilterDto> toFilterDtos(List<RedisSearchFilter> filters) {
+        List<RedisSearchFilterDto> dtos = new ArrayList<>();
+        for (RedisSearchFilter filter : filters) {
+            if (filter instanceof RedisSearchTagFilter) {
+                RedisSearchTagFilter tagFilter = (RedisSearchTagFilter) filter;
+                dtos.add(RedisSearchFilterDto.tag(tagFilter.getFieldName(), tagFilter.getValues()));
+            } else if (filter instanceof RedisSearchNumericFilter) {
+                RedisSearchNumericFilter numericFilter = (RedisSearchNumericFilter) filter;
+                dtos.add(RedisSearchFilterDto.numeric(numericFilter.getFieldName(), numericFilter.getMin(), numericFilter.getMax()));
+            } else if (filter instanceof RedisSearchTextFilter) {
+                RedisSearchTextFilter textFilter = (RedisSearchTextFilter) filter;
+                dtos.add(RedisSearchFilterDto.text(textFilter.getFieldName(), textFilter.getTerm()));
+            }
+        }
+        return dtos;
     }
 
     private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, ReflectionBasedRedisClient redisClient) {
@@ -262,12 +348,13 @@ public class RedisHandler {
 
     /**
      * Builds the candidate document set for a FT.SEARCH/FT.AGGREGATE index: every HASH key whose
-     * name matches at least one of the prefixes declared for that index. Prefixes are fetched live
-     * via FT.INFO, since the FT.CREATE call that declared them may have happened before this handler
-     * ever observed it, or not have been observed at all.
+     * name matches at least one of the prefixes declared for that index. The index definition is
+     * fetched live via FT.INFO, since the FT.CREATE call that declared it may have happened before
+     * this handler ever observed it, or not have been observed at all.
      */
     private RedisKeyValueStore createRedisInfoForFtIndex(String index, ReflectionBasedRedisClient redisClient) {
-        List<String> prefixes = redisClient.getIndexPrefixes(index);
+        RedisIndexInfo info = redisClient.getIndexInfo(index);
+        List<String> prefixes = (info != null && info.isHashIndex()) ? info.getPrefixes() : Collections.emptyList();
         Set<String> hashKeys = redisClient.getKeysByType(REDIS_HASH_TYPE);
 
         Map<String, RedisValueData> redisData = new HashMap<>();

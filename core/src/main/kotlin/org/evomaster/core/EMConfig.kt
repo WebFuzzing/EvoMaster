@@ -821,6 +821,15 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
+        if (problemType == ProblemType.ASYNCAPI && createTests) {
+            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
+                    " For the time being, run with '--createTests false' to only search for faults.")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
+        }
+
         if (problemType == ProblemType.RPC
                 && createTests
                 && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance)
@@ -1760,7 +1769,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.NORMAL
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -2896,6 +2905,12 @@ class EMConfig {
     @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
     var enableRPCExtraResponseTargets = true
 
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
+            " treating it as unanswered, in milliseconds.")
+    @Min(1.0)
+    var asyncApiReplyTimeoutMs = 5000
+
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
@@ -3372,6 +3387,10 @@ class EMConfig {
     @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
+
+    @Experimental
+    @Cfg("Specify if inputs from successful calls should be re-used in the data pool.")
+    var useSuccessDataPool = false
 
     @Cfg("Feed the individual entries of object examples to the data pool.")
     var useObjectExampleDataPool = true
