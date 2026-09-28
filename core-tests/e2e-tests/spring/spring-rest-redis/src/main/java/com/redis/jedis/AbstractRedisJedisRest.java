@@ -16,7 +16,16 @@ public abstract class AbstractRedisJedisRest {
         String redisHost = System.getProperty("spring.redis.host", "localhost");
         int redisPort = Integer.parseInt(System.getProperty("spring.redis.port", "6379"));
         jedis = new UnifiedJedis(new HostAndPort(redisHost, redisPort));
+        ensureIndexes();
     }
+
+    /**
+     * Creates whatever RediSearch index(es) this REST controller relies on. Called once at
+     * startup: unlike a plain FLUSHDB, resetting the state between EM evaluations only deletes
+     * keys (see RedisController#resetStateOfSUT), so the index survives for the lifetime of the
+     * container and does not need to be (re-)created on every request.
+     */
+    protected abstract void ensureIndexes();
 
     @PreDestroy
     public void shutdown() {
