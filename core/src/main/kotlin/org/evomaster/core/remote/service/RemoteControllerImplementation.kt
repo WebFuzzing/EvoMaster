@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
@@ -35,6 +36,12 @@ import javax.ws.rs.core.Response
 class RemoteControllerImplementation() : RemoteController{
 
     companion object {
+
+        /**
+         * Query parameter telling the driver whether SQL heuristics are computed from what it
+         * reads back, rather than from what was inserted.
+         */
+        private const val QUERY_FROM_DATABASE = "queryFromDatabase"
         val log: Logger = LoggerFactory.getLogger(RemoteControllerImplementation::class.java)
     }
 
@@ -342,7 +349,7 @@ class RemoteControllerImplementation() : RemoteController{
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .queryParam("fullyCovered", fullyCovered)
                     .queryParam("descriptiveIds", descriptiveIds)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .post(Entity.entity(ids, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -397,7 +404,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -405,6 +412,40 @@ class RemoteControllerImplementation() : RemoteController{
         val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
 
         if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
+    }
+
+    override fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto): AsyncApiReplyDto? {
+        return executeNewAction(
+            actionDto,
+            object : GenericType<WrappedResponseDto<AsyncApiReplyDto>>() {},
+            "Failed to publish an AsyncAPI message")
+    }
+
+    /**
+     * Hand one action to the driver to execute, and read back what it reports. Null when the
+     * driver could not be reached, or answered with an error.
+     */
+    private fun <T> executeNewAction(
+        actionDto: ActionDto,
+        type: GenericType<WrappedResponseDto<T>>,
+        errorMessage: String
+    ): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        if (!checkResponse(response, dto, errorMessage)) {
             return null
         }
 
@@ -471,7 +512,7 @@ class RemoteControllerImplementation() : RemoteController{
             getWebTarget()
                 .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
                 // shall we set `killSwitch` as true?
-                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                 .request()
                 .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
         }
