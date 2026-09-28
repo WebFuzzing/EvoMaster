@@ -122,6 +122,7 @@ object HttpSemanticsOracle {
 
         // GET followed by DELETE, both 2xx, so working fine
         val checkingDelete = StatusGroup.G_2xx.allInGroup(res0.getStatusCode(), res1.getStatusCode())
+                && res1.getStatusCode() != 202
         // all fine, but repeated GET after DELETE wrongly returns 2xx with data, meaning DELETE didn't delete
         val nonWorking: Boolean = checkingDelete && StatusGroup.G_2xx.allInGroup(res2.getStatusCode())
                 && !res2.getBody().isNullOrEmpty()
@@ -308,7 +309,7 @@ object HttpSemanticsOracle {
 
         val (put, get, resPut, resGet) = findPutGetPair(individual, actionResults) ?: return null
 
-        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return null
+        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode()) || resPut.getStatusCode() == 202) return null
         // if put returned 2xx but entity does not exist afterwards
         if (resGet.getStatusCode() == 404) return "follow-up GETs return 404"
         if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return null
@@ -709,9 +710,9 @@ object HttpSemanticsOracle {
             ?: return false
 
         // all four must be 2xx for the oracle to apply
-        if (!StatusGroup.G_2xx.isInGroup(resPut1.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPut1.getStatusCode()) || resPut1.getStatusCode() == 202) return false
         if (!StatusGroup.G_2xx.isInGroup(resGet1.getStatusCode())) return false
-        if (!StatusGroup.G_2xx.isInGroup(resPut2.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPut2.getStatusCode()) || resPut2.getStatusCode() == 202) return false
         if (!StatusGroup.G_2xx.isInGroup(resGet2.getStatusCode())) return false
 
         val body1 = resGet1.getBody() ?: return false
@@ -835,7 +836,7 @@ object HttpSemanticsOracle {
         val resAfter  = actionResults.find { it.sourceLocalId == after.getLocalId() } as RestCallResult? ?: return false
 
         if (!StatusGroup.G_2xx.isInGroup(resBefore.getStatusCode())) return false
-        if (!StatusGroup.G_2xx.isInGroup(resPatch.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resPatch.getStatusCode()) || resPatch.getStatusCode() == 202) return false
         if (!StatusGroup.G_2xx.isInGroup(resAfter.getStatusCode())) return false
 
         // If there are flaky fields, eg, timestamps, there could be a different value between the 2 GETs,

@@ -44,11 +44,12 @@ class RestIndividualBuilder {
             statusGroup: StatusGroup? = null,
             statusCodes: List<Int>? = null,
             authenticated: Boolean? = null,
-            authenticatedWith: String? = null
+            authenticatedWith: String? = null,
+            excludedStatusCodes: Collection<Int>? = null
         ) : RestIndividual {
 
             val index = RestIndividualSelectorUtils.findIndexOfAction(
-                evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+                evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith,excludedStatusCodes)
 
             return sliceAllCallsInIndividualAfterAction(evaluatedIndividual.individual, index)
         }

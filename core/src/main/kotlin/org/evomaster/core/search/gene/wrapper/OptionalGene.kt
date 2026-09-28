@@ -93,7 +93,8 @@ class OptionalGene(name: String,
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is OptionalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false //TODO this needs refactoring
+            //throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isActive == other.isActive
                 && this.gene.containsSameValueAs(other.gene)
