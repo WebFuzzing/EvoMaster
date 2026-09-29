@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometry;
 import java.util.Objects;
 
 /** A {@code $geoIntersects} query with a typed GeoJSON geometry. */
-public class GeoIntersectsOperation extends QueryOperationWithField {
+public class GeoIntersectsOperation extends QueryOperationWithFieldPath {
 
     private final GeoJsonGeometry geometry;
 

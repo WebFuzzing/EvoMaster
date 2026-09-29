@@ -110,14 +110,14 @@ public class MongoHeuristicsCalculator {
             return computeHeuristic((NorOperation) operation, value);
         } else if (operation instanceof EmptyOperation) {
             return computeHeuristic((EmptyOperation) operation, value);
-        } else if (operation instanceof QueryOperationWithField) {
-            return computeHeuristic((QueryOperationWithField) operation, value);
+        } else if (operation instanceof QueryOperationWithFieldPath) {
+            return computeHeuristic((QueryOperationWithFieldPath) operation, value);
         } else {
             throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
         }
     }
 
-    private Truthness computeHeuristic(QueryOperationWithField operation, Object document) {
+    private Truthness computeHeuristic(QueryOperationWithFieldPath operation, Object document) {
         Objects.requireNonNull(operation);
 
         if (operation instanceof ExistsOperation) {
@@ -127,19 +127,33 @@ public class MongoHeuristicsCalculator {
         } else if (operation instanceof NotOperation) {
             return computeHeuristicQueryOperation(((NotOperation) operation).getCondition(), document).invert();
         } else {
-            final String fieldName = operation.getFieldName();
-            final Object actualValue;
-            if (!fieldName.equalsIgnoreCase("$")) {
-                if (!isBsonDocument(document)) {
-                    return C_FALSE; // cannot extract the field from a non-document value
-                } else {
-                    actualValue = documentContainsField(document, fieldName) ? getValue(document, fieldName) : null;
-                }
-            } else {
-                actualValue = document;
+            final String fieldPath = operation.getFieldPath();
+            if (fieldPath.equalsIgnoreCase("$")) {
+                return evaluate(operation, document);
             }
-            return evaluate(operation, actualValue);
+            if (!isBsonDocument(document)) {
+                return C_FALSE; // cannot extract the field from a non-document value
+            }
+            final List<Object> actualValues = FieldPathResolver.getActualValues(document, fieldPath);
+            if (actualValues.size() == 1) {
+                final Object actualValue = actualValues.get(0);
+                return evaluate(operation, actualValue);
+            }
+            Truthness[] truthnesses = actualValues.stream()
+                    .map(actualValue -> evaluate(operation, actualValue))
+                    .toArray(Truthness[]::new);
+            if (isNegatedOperation(operation)) {
+                // a negated operation ($ne, $nin) holds only if it holds for every value the path reaches
+                return buildAndAggregationTruthness(truthnesses);
+            } else {
+                // any other operation holds if it holds for at least one value the path reaches
+                return buildSafeScaledTruthness(buildOrAggregationTruthness(truthnesses));
+            }
         }
+    }
+
+    private static boolean isNegatedOperation(QueryOperation operation) {
+        return operation instanceof NotEqualsOperation<?> || operation instanceof NotInOperation<?>;
     }
 
     private Truthness evaluate(QueryOperation operation, Object actualValue) {
@@ -438,8 +452,8 @@ public class MongoHeuristicsCalculator {
             return buildOrAggregationTruthness(((OrOperation) condition).getConditions().stream()
                     .map(child -> evaluateOnArrayElement(child, element))
                     .toArray(Truthness[]::new));
-        } else if (condition instanceof QueryOperationWithField
-                && "$".equals(((QueryOperationWithField) condition).getFieldName())) {
+        } else if (condition instanceof QueryOperationWithFieldPath
+                && "$".equals(((QueryOperationWithFieldPath) condition).getFieldPath())) {
             // The parser uses a synthetic field for operators applied to the element itself.
             return evaluate(condition, element);
         }
@@ -459,18 +473,7 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         }
 
-        String expectedFieldName = operation.getFieldName();
-        Set<String> actualFieldNames = documentKeys(input);
-        final Truthness res;
-        if (actualFieldNames.isEmpty()) {
-            res = C_FALSE;
-        } else {
-            Truthness orTruthness = buildOrAggregationTruthness(actualFieldNames.stream()
-                    .map(actualFieldName ->
-                            helper.compareNonNullValues(actualFieldName, EQUALS_TO, expectedFieldName))
-                    .toArray(Truthness[]::new));
-            res = buildSafeScaledTruthness(orTruthness);
-        }
+        final Truthness res = helper.evaluateExists(input, FieldPathResolver.splitFieldPath(operation.getFieldPath()), 0);
 
         if (operation.getBoolean() == true) {
             // "true" case of exists operation
@@ -548,8 +551,7 @@ public class MongoHeuristicsCalculator {
             return C_FALSE;
         }
 
-        String fieldName = operation.getFieldName();
-        if (!documentContainsField(document, fieldName)) {
+        if (!FieldPathResolver.isFieldPathPresent(document, operation.getFieldPath())) {
             /**
              * If the document does not contain the specified field, the $type operation cannot be satisfied.
              * Even if the expected BSON type is "null", the absence of the field does not satisfy the condition,
@@ -558,30 +560,40 @@ public class MongoHeuristicsCalculator {
              */
             return C_FALSE;
         } else {
-            final Object actualValue = getValue(document, fieldName);
-            final String actualTypeAsString;
-            if (actualValue != null && actualValue instanceof List<?>) {
-                /**
-                 * If the actual value is a List, we consider its type as "java.util.List" for the purpose of type comparison.
-                 */
-                actualTypeAsString = JAVA_UTIL_LIST;
+            final List<Object> actualValues = new ArrayList<>(FieldPathResolver.getActualValues(document, operation.getFieldPath()));
+            if (actualValues.size() == 1) {
+                return evaluateType(operation, actualValues.get(0));
             } else {
-                actualTypeAsString  = actualValue == null ? NULL : actualValue.getClass().getTypeName();
+                return buildSafeScaledTruthness(buildOrAggregationTruthness(actualValues.stream()
+                        .map(actualValue -> evaluateType(operation, actualValue))
+                        .toArray(Truthness[]::new)));
             }
-
-            final List<Object> expectedBsonTypes = operation.getBsonTypes();
-            final List<Truthness> truthnesses = new LinkedList<>();
-            for (Object expectedBsonType : expectedBsonTypes) {
-                String expectedTypeAsString = getType(expectedBsonType);
-                final Truthness equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness(
-                        actualTypeAsString,
-                        expectedTypeAsString);
-                truthnesses.add(equalityTruthness);
-            }
-
-            Truthness equalityTruthness = buildOrAggregationTruthness(truthnesses.toArray(new Truthness[0]));
-            return buildSafeScaledTruthness(equalityTruthness);
         }
+    }
+
+    private Truthness evaluateType(TypeOperation operation, Object actualValue) {
+        final String actualTypeAsString;
+        if (actualValue != null && actualValue instanceof List<?>) {
+            /**
+             * If the actual value is a List, we consider its type as "java.util.List" for the purpose of type comparison.
+             */
+            actualTypeAsString = JAVA_UTIL_LIST;
+        } else {
+            actualTypeAsString  = actualValue == null ? NULL : actualValue.getClass().getTypeName();
+        }
+
+        final List<Object> expectedBsonTypes = operation.getBsonTypes();
+        final List<Truthness> truthnesses = new LinkedList<>();
+        for (Object expectedBsonType : expectedBsonTypes) {
+            String expectedTypeAsString = getType(expectedBsonType);
+            final Truthness equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness(
+                    actualTypeAsString,
+                    expectedTypeAsString);
+            truthnesses.add(equalityTruthness);
+        }
+
+        Truthness equalityTruthness = buildOrAggregationTruthness(truthnesses.toArray(new Truthness[0]));
+        return buildSafeScaledTruthness(equalityTruthness);
     }
 
     private Truthness evaluate(NearSphereOperation operation, Object actualValue) {
