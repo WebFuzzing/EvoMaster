@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.mongo;
 
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometry;
+import org.evomaster.client.java.controller.mongo.geometry.GeoJsonGeometryIntersection;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonPoint;
 import org.evomaster.client.java.controller.mongo.geometry.GeoJsonUtils;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
@@ -14,8 +16,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.documentKeys;
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isBsonDocument;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getValue;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getDistanceBetweenPoints;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getIntegralLongValue;
@@ -94,6 +96,85 @@ public class MongoHeuristicsCalculatorHelper {
                 throw new IllegalArgumentException("Unsupported binary operator: " + op);
         }
     }
+
+
+    /**
+     * Computes how close a (possibly dotted) field path is to exist in the given value.
+     * The path is followed as long as its fieldPathSegments exist; the first segment that is not
+     * found is compared against the field names available at that level.
+     */
+    public Truthness evaluateExists(Object currentValue, String[] fieldPathSegments, int index) {
+        final String currentSegment = fieldPathSegments[index];
+        if (isBsonDocument(currentValue)) {
+            if (index == fieldPathSegments.length - 1 || !documentContainsField(currentValue, currentSegment)) {
+                return evaluateExistsFieldName(currentValue, currentSegment);
+            }
+            return evaluateExists(getValue(currentValue, currentSegment), fieldPathSegments, index + 1);
+        } else if (currentValue instanceof List<?>) {
+            // When a segment is applied to an array, MongoDB's dot notation is ambiguous: a numeric
+            // segment such as "0" in "a.0" may denote either the element at that position of the
+            // array, or a field literally named "0" of the sub-documents held by the array.
+            // The path exists if any of these interpretations reaches a value, so a Truthness is
+            // collected for each of them and they are OR-aggregated. For example:
+            //   {a: [10, 20]}      "a.1"   exists as an array index only
+            //   {a: [{"1": "x"}]}  "a.1"   exists as a field name only (index 1 is out of bounds)
+            //   {a: [{b: 1}]}      "a.0.b" exists as an array index, the field name "0" is missing
+            // A failed interpretation only contributes a false Truthness, which cannot turn the
+            // OR-aggregation into true, although it may still provide some gradient.
+            final List<?> list = (List<?>) currentValue;
+            final List<Truthness> truthnesses = new ArrayList<>();
+
+            final OptionalInt arrayIndexOpt = FieldPathResolver.parseAsArrayIndex(currentSegment);
+            if (arrayIndexOpt.isPresent()) {
+                final int arrayIndex = arrayIndexOpt.getAsInt();
+                if (arrayIndex >= 0 && arrayIndex < list.size()) {
+                    // Array index interpretation: the segment is consumed by indexing into the array
+                    truthnesses.add(index == fieldPathSegments.length - 1
+                            ? TRUE_C
+                            : evaluateExists(list.get(arrayIndex), fieldPathSegments, index + 1));
+                }
+            }
+            for (Object element : list) {
+                // Field name interpretation: the array is traversed implicitly, without consuming
+                // the segment, which is then looked up in each sub-document of the array.
+                // Nested arrays are not traversed implicitly.
+                if (isBsonDocument(element)) {
+                    truthnesses.add(evaluateExists(element, fieldPathSegments, index));
+                }
+            }
+            if (truthnesses.isEmpty()) {
+                return C_FALSE;
+            }
+            return buildSafeScaledTruthness(buildOrAggregationTruthness(truthnesses.toArray(new Truthness[0])));
+        } else {
+            return C_FALSE;
+        }
+    }
+
+
+    /**
+     * Evaluates whether the specified field name exists in the given document.
+     *
+     * @param document
+     * @param expectedFieldName
+     * @return
+     */
+    private Truthness evaluateExistsFieldName(Object document, String expectedFieldName) {
+        Objects.requireNonNull(expectedFieldName);
+        if (expectedFieldName.contains(FieldPathResolver.FIELD_PATH_SEPARATOR)) {
+            throw new IllegalArgumentException("Field path must not contain the separator: " + FieldPathResolver.FIELD_PATH_SEPARATOR);
+        }
+        Set<String> actualFieldNames = documentKeys(document);
+        if (actualFieldNames.isEmpty()) {
+            return C_FALSE;
+        }
+        Truthness orTruthness = buildOrAggregationTruthness(actualFieldNames.stream()
+                .map(actualFieldName ->
+                        compareNonNullValues(actualFieldName, EQUALS_TO, expectedFieldName))
+                .toArray(Truthness[]::new));
+        return buildSafeScaledTruthness(orTruthness);
+    }
+
 
     private Truthness evaluateListEquality(List<?> actualList, List<?> expectedList) {
 
@@ -653,4 +734,56 @@ public class MongoHeuristicsCalculatorHelper {
         }
     }
 
+    /**
+     * Computes the heuristic score for a {@code $geoIntersects} query. The document's actual
+     * value must itself be a supported GeoJSON geometry document; otherwise the condition is
+     * considered not satisfied. When it is, the heuristic is based on the approximate planar
+     * distance between the two geometries (see {@link GeoJsonGeometryIntersection}): 0 (true)
+     * when they share at least one point, and a scaled falseness proportional to how far apart
+     * they are otherwise.
+     */
+    static Truthness evaluateGeoIntersects(GeoJsonGeometry queryGeometry, Object actualValue) {
+        Objects.requireNonNull(queryGeometry);
+
+        if (!isBsonDocument(actualValue)) {
+            return C_FALSE;
+        }
+
+        final GeoJsonGeometry actualGeometry;
+        try {
+            actualGeometry = GeoJsonUtils.toGeoJsonGeometry(actualValue);
+        } catch (IllegalArgumentException e) {
+            return C_FALSE;
+        }
+
+        double distance = GeoJsonGeometryIntersection.distance(queryGeometry, actualGeometry);
+        return getEqualityTruthness(distance, 0.0);
+    }
+
+    /**
+     * Computes the heuristic score for a {@code $geoWithin} query. The document's actual value
+     * must itself be a supported GeoJSON geometry document; otherwise the condition is considered
+     * not satisfied. When it is, the heuristic is based on the approximate planar distance of the
+     * farthest-outside point of the document's geometry from the area(s) enclosed by
+     * {@code areaGeometry} (see {@link GeoJsonGeometryIntersection#distanceToContainment}): 0 (true)
+     * when the document's geometry lies entirely within (or on the boundary of) that area, and a
+     * scaled falseness proportional to how far outside it otherwise.
+     */
+    static Truthness evaluateGeoWithin(GeoJsonGeometry areaGeometry, Object actualValue) {
+        Objects.requireNonNull(areaGeometry);
+
+        if (!isBsonDocument(actualValue)) {
+            return C_FALSE;
+        }
+
+        final GeoJsonGeometry actualGeometry;
+        try {
+            actualGeometry = GeoJsonUtils.toGeoJsonGeometry(actualValue);
+        } catch (IllegalArgumentException e) {
+            return C_FALSE;
+        }
+
+        double distance = GeoJsonGeometryIntersection.distanceToContainment(actualGeometry, areaGeometry);
+        return getEqualityTruthness(distance, 0.0);
+    }
 }

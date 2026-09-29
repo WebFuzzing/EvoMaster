@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.mongo.operations;
 /**
  * Base class for bitwise query operations.
  */
-public abstract class BitsOperation extends QueryOperationWithField {
+public abstract class BitsOperation extends QueryOperationWithFieldPath {
 
     private final long bitmask;
 

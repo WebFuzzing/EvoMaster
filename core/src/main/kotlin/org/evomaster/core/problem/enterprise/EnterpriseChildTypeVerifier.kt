@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
@@ -27,6 +28,7 @@ class  EnterpriseChildTypeVerifier(
                  || RedisDbAction::class.java.isAssignableFrom(t)
                  || DynamoDbAction::class.java.isAssignableFrom(t)
                  || CassandraDbAction::class.java.isAssignableFrom(t)
+                 || Neo4jDbAction::class.java.isAssignableFrom(t)
                  || HostnameResolutionAction::class.java.isAssignableFrom(t)
                  || ScheduleTaskAction::class.java.isAssignableFrom(t)
      }

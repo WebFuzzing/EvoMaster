@@ -14,6 +14,7 @@ import redis.clients.jedis.Jedis;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class RedisController extends EmbeddedSutController {
 
@@ -86,7 +87,12 @@ public abstract class RedisController extends EmbeddedSutController {
 
     @Override
     public void resetStateOfSUT() {
-        redisClient.flushDB();
+        // Unlike FLUSHDB, deleting keys one by one does not drop RediSearch index definitions,
+        // which SUTs using FT.SEARCH/FT.AGGREGATE only create once (e.g. on @PostConstruct).
+        Set<String> keys = redisClient.keys("*");
+        if (!keys.isEmpty()) {
+            redisClient.del(keys.toArray(new String[0]));
+        }
     }
 
     @Override

@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * Represent $regex operation.
  * Provides regular expression capabilities for pattern matching strings in queries.
  */
-public class RegexOperation extends QueryOperationWithField {
+public class RegexOperation extends QueryOperationWithFieldPath {
     private final Pattern pattern;
     private final RegexOptions options;
 

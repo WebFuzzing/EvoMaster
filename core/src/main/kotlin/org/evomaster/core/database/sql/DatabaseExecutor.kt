@@ -46,4 +46,10 @@ interface DatabaseExecutor {
      * Return the result of whether it success
      */
     fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT Neo4j command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto?
 }

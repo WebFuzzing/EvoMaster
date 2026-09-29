@@ -2,23 +2,21 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
-import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
+import org.evomaster.client.java.controller.api.dto.database.execution.*
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.dynamodb.DynamoDbExecution
-import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
-import org.evomaster.core.database.mongo.MongoExecution
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
-import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.database.cassandra.CassandraExecution
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
+import org.evomaster.core.database.mongo.MongoExecution
+import org.evomaster.core.database.neo4j.Neo4jExecution
+import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.sql.DatabaseExecution
+import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -85,6 +83,11 @@ class FitnessValue(
 
     val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
 
+    /**
+     * Key -> action Id
+     *
+     * Value -> info on how the Redis database was accessed
+     */
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
 
     /**
@@ -93,6 +96,13 @@ class FitnessValue(
      * Value -> information about failed DynamoDB reads observed while executing that action.
      */
     val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
+
+    /**
+     * Key -> action Id
+     *
+     * Value -> the Cypher queries of that action which the Neo4j graph did not satisfy
+     */
+    val neo4jExecutions: MutableMap<Int, Neo4jExecution> = mutableMapOf()
 
     /**
      * Key -> the index of a main action of the test, ie of the HTTP call that made the queries
@@ -126,6 +136,12 @@ class FitnessValue(
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
 
     private val aggregatedFailedDynamoDbQueries: MutableList<DynamoDbFailedQuery> = mutableListOf()
+
+    /**
+     * When SUT runs Cypher MATCH queries, keep track of when those find nothing, each digested into
+     * the insertion that would make it match.
+     */
+    private val aggregatedFailedNeo4jQueries: MutableList<Neo4jFailedQueryDto> = mutableListOf()
 
     /**
      * When SUT executes CQL commands with a WHERE, keep track of when those match no row, in
@@ -166,11 +182,13 @@ class FitnessValue(
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
         copy.dynamoDbExecutions.putAll(this.dynamoDbExecutions)
+        copy.neo4jExecutions.putAll(this.neo4jExecutions)
         copy.cassandraExecutions.putAll(this.cassandraExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
         copy.aggregateDynamoDbData()
+        copy.aggregateNeo4jDatabaseData()
         copy.aggregateCassandraDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
@@ -224,6 +242,11 @@ class FitnessValue(
         dynamoDbExecutions.values.forEach { aggregatedFailedDynamoDbQueries.addAll(it.failedQueries) }
     }
 
+    fun aggregateNeo4jDatabaseData(){
+        aggregatedFailedNeo4jQueries.clear()
+        neo4jExecutions.values.forEach { aggregatedFailedNeo4jQueries.addAll(it.failedQueries) }
+    }
+
     fun aggregateCassandraDatabaseData(){
         aggregatedFailedCassandraQueries.clear()
         cassandraExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedCassandraQueries.addAll(it1) } }
@@ -254,6 +277,10 @@ class FitnessValue(
         dynamoDbExecutions[actionIndex] = execution
     }
 
+    fun setNeo4jExecution(actionIndex: Int, neo4jExecution: Neo4jExecution){
+        neo4jExecutions[actionIndex] = neo4jExecution
+    }
+
     fun setCassandraExecution(actionIndex: Int, cassandraExecution: CassandraExecution){
         cassandraExecutions[actionIndex] = cassandraExecution
     }
@@ -273,6 +300,8 @@ class FitnessValue(
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
 
     fun getViewOfAggregatedFailedDynamoDbQueries() = aggregatedFailedDynamoDbQueries
+
+    fun getViewOfAggregatedFailedNeo4jQueries() = aggregatedFailedNeo4jQueries
 
     fun getViewOfAggregatedFailedCassandraQueries() = aggregatedFailedCassandraQueries
 

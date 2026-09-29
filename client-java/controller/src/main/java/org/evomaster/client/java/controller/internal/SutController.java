@@ -516,7 +516,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private boolean isNeo4jHeuristicsComputationAllowed() {
-        return neo4jHandler.isCalculateHeuristics();
+        return neo4jHandler.isCalculateHeuristics() || neo4jHandler.isExtractNeo4jExecution();
     }
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
@@ -618,30 +618,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeNeo4jHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
-        if(neo4jHandler.isCalculateHeuristics()){
-            if(!additionalInfoList.isEmpty()) {
-                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
-                last.getNeo4JInfoData().forEach(it -> {
-                    try {
-                        neo4jHandler.handle(it);
-                    } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
-                        assert false;
-                    }
-                });
-            }
+        if(!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getNeo4JInfoData().forEach(it -> {
+                try {
+                    neo4jHandler.handle(it);
+                } catch (Exception e){
+                    SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
+                    assert false;
+                }
+            });
+        }
 
-            neo4jHandler.getEvaluatedNeo4jCommands().stream()
-                    .map(p ->
-                            new ExtraHeuristicEntryDto(
-                                    ExtraHeuristicEntryDto.Type.NEO4J,
-                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.getCommand(),
-                                    p.getDistanceWithMetrics().getDistance(),
-                                    p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
-                                    p.getDistanceWithMetrics().isEvaluationFailure()
-                            ))
-                    .forEach(h -> dto.heuristics.add(h));
+        neo4jHandler.getEvaluatedNeo4jCommands().stream()
+                .map(p ->
+                        new ExtraHeuristicEntryDto(
+                                ExtraHeuristicEntryDto.Type.NEO4J,
+                                ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                p.getCommand(),
+                                p.getDistanceWithMetrics().getDistance(),
+                                p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                p.getDistanceWithMetrics().isEvaluationFailure()
+                        ))
+                .forEach(h -> dto.heuristics.add(h));
+
+        if (neo4jHandler.isExtractNeo4jExecution()) {
+            dto.neo4jExecutionsDto = neo4jHandler.getExecutionDto();
         }
     }
 
@@ -2048,6 +2050,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * metadata:
      *
      * <pre>
+     * seekToEndOf(dto.replyAddress);   // a reply older than this publish is not an answer to it
      * publish(dto.address, dto.payload, dto.headers + {correlationId: dto.correlationId});
      * reply.published = true;
      * if (dto.replyAddress != null) {
@@ -2055,6 +2058,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *     awaitOn(dto.replyAddress, matching dto.correlationId, within dto.replyTimeoutMs);
      * }
      * </pre>
+     *
+     * A reply published before the action was is never an answer to it, and the driver is what
+     * has to ensure that, because only it can: on Kafka by seeking to the end of the reply
+     * topic before publishing, elsewhere by a fresh subscription or by draining the
+     * destination. The core does not vary its correlation ids between runs to compensate, as a
+     * run repeated under the same seed has to behave the same way.
      *
      * Note what is not asked of the driver: it does not judge the reply, only reports it.
      * Deciding what an outcome means is the core's job, so that it means the same thing

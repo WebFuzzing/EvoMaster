@@ -1314,6 +1314,290 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(distanceNotMatch.isFalse());
     }
 
+    /*
+        ================================================================================
+        Cases about $geoIntersects with GeoJSON geometries (Point, LineString, Polygon,
+        and combinations of them). The distance heuristic is an approximate planar
+        distance between the query geometry and the document's geometry (see
+        GeoJsonGeometryIntersection); 0 iff they would satisfy $geoIntersects.
+        ================================================================================
+     */
+
+    private static Document geoIntersectsQuery(String fieldName, Document geometry) {
+        return new Document(fieldName,
+                new Document("$geoIntersects", new Document("$geometry", geometry)));
+    }
+
+    @Test
+    public void testGeoIntersectsPointInsidePolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOnBoundary = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(0, 5)));
+        Document pointOutside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(20, 20)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOnBoundary).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutside).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsHeuristicIsGradedByDistanceToPolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document closer = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(11, 5)));
+        Document fartherAway = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(100, 5)));
+
+        Truthness closerTruthness = calculator.computeHeuristicDocument(query, closer);
+        Truthness fartherTruthness = calculator.computeHeuristicDocument(query, fartherAway);
+
+        assertTrue(closerTruthness.isFalse());
+        assertTrue(fartherTruthness.isFalse());
+        assertTrue(closerTruthness.getOfTrue() > fartherTruthness.getOfTrue());
+    }
+
+    @Test
+    public void testGeoIntersectsPolygonWithHoleExcludesHoleInterior() {
+        Document squareWithHole = new Document("type", "Polygon")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
+        Document query = geoIntersectsQuery("area", squareWithHole);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInHole = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(3, 3)));
+        Document pointInFilledArea = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(8, 8)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInHole).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, pointInFilledArea).isTrue());
+    }
+
+    @Test
+    public void testGeoIntersectsLineStringCrossingPolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("path", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document crossingLine = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(-5, 5), Arrays.asList(15, 5))));
+        Document disjointLine = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(20, 20), Arrays.asList(30, 30))));
+
+        assertTrue(calculator.computeHeuristicDocument(query, crossingLine).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, disjointLine).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsGeometryCollectionMatchesIfAnyMemberIntersects() {
+        Document point = new Document("type", "Point").append("coordinates", Arrays.asList(100, 80));
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document collection = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(point, square));
+        Document query = geoIntersectsQuery("area", collection);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointFarFromBoth = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(-100, -80)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInsideSquare).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointFarFromBoth).isFalse());
+    }
+
+    @Test
+    public void testGeoIntersectsWithNonGeometryActualValueIsFalse() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoIntersectsQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("area", 42)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("area", new Document("type", "NotAGeometry"))).isFalse());
+    }
+
+    /*
+        ================================================================================
+        Cases about $geoWithin with GeoJSON geometries. Unlike $geoIntersects (any overlap),
+        $geoWithin requires the document's geometry to lie entirely within the query area; the
+        distance heuristic is based on the farthest-outside point of the document's geometry
+        (see GeoJsonGeometryIntersection#distanceToContainment).
+        ================================================================================
+     */
+
+    private static Document geoWithinQuery(String fieldName, Document geometry) {
+        return new Document(fieldName,
+                new Document("$geoWithin", new Document("$geometry", geometry)));
+    }
+
+    @Test
+    public void testGeoWithinPointInsidePolygon() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOnBoundary = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(0, 5)));
+        Document pointOutside = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(20, 20)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOnBoundary).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutside).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinHeuristicIsGradedByDistanceOutsideArea() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document closer = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(11, 5)));
+        Document fartherAway = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(100, 5)));
+
+        Truthness closerTruthness = calculator.computeHeuristicDocument(query, closer);
+        Truthness fartherTruthness = calculator.computeHeuristicDocument(query, fartherAway);
+
+        assertTrue(closerTruthness.isFalse());
+        assertTrue(fartherTruthness.isFalse());
+        assertTrue(closerTruthness.getOfTrue() > fartherTruthness.getOfTrue());
+    }
+
+    @Test
+    public void testGeoWithinExcludesPointInHole() {
+        Document squareWithHole = new Document("type", "Polygon")
+                .append("coordinates", Arrays.asList(
+                        Arrays.asList(Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0)),
+                        Arrays.asList(Arrays.asList(2, 2), Arrays.asList(2, 4),
+                                Arrays.asList(4, 4), Arrays.asList(4, 2), Arrays.asList(2, 2))));
+        Document query = geoWithinQuery("area", squareWithHole);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInHole = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(3, 3)));
+        Document pointInFilledArea = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(8, 8)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInHole).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, pointInFilledArea).isTrue());
+    }
+
+    @Test
+    public void testGeoWithinRequiresTheWholeLineStringToBeContained() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("path", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document lineFullyInside = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(2, 2), Arrays.asList(8, 8))));
+        Document lineCrossingBoundary = new Document("path", new Document("type", "LineString")
+                .append("coordinates", Arrays.asList(Arrays.asList(2, 2), Arrays.asList(15, 15))));
+
+        assertTrue(calculator.computeHeuristicDocument(query, lineFullyInside).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, lineCrossingBoundary).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinMultiPolygonAreaMember() {
+        Document multiPolygon = new Document("type", "MultiPolygon")
+                .append("coordinates", Arrays.asList(
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(0, 0), Arrays.asList(10, 0),
+                                Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))),
+                        Collections.singletonList(Arrays.asList(
+                                Arrays.asList(20, 20), Arrays.asList(30, 20),
+                                Arrays.asList(30, 30), Arrays.asList(20, 30), Arrays.asList(20, 20)))));
+        Document query = geoWithinQuery("area", multiPolygon);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInSecondPolygon = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(25, 25)));
+        Document pointOutsideBoth = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(50, 50)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInSecondPolygon).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutsideBoth).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinGeometryCollectionOnlyConsidersAreaMembers() {
+        Document farAwayPoint = new Document("type", "Point").append("coordinates", Arrays.asList(80, 80));
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document collection = new Document("type", "GeometryCollection")
+                .append("geometries", Arrays.asList(farAwayPoint, square));
+        Document query = geoWithinQuery("area", collection);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        Document pointInsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(5, 5)));
+        Document pointOutsideSquare = new Document("area",
+                new Document("type", "Point").append("coordinates", Arrays.asList(50, 50)));
+
+        assertTrue(calculator.computeHeuristicDocument(query, pointInsideSquare).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(query, pointOutsideSquare).isFalse());
+    }
+
+    @Test
+    public void testGeoWithinWithNonGeometryActualValueIsFalse() {
+        Document square = new Document("type", "Polygon")
+                .append("coordinates", Collections.singletonList(Arrays.asList(
+                        Arrays.asList(0, 0), Arrays.asList(10, 0),
+                        Arrays.asList(10, 10), Arrays.asList(0, 10), Arrays.asList(0, 0))));
+        Document query = geoWithinQuery("area", square);
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+
+        assertTrue(calculator.computeHeuristicDocument(query, new Document()).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query, new Document("area", 42)).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(query,
+                new Document("area", new Document("type", "NotAGeometry"))).isFalse());
+    }
+
     @Test
     public void testComparisonNull() {
         Document docNull = new Document().append("age", null);
@@ -1915,7 +2199,6 @@ public class MongoHeuristicsCalculatorTest {
     }
 
     @Test
-    @Disabled("a dotted field path is never resolved into the sub-document it names")
     public void testDottedFieldPath() {
         // mongo: matches both, "a.x" names the field "x" of the sub-document held by "a"
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
@@ -1925,6 +2208,227 @@ public class MongoHeuristicsCalculatorTest {
         assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.x", 1)),
                 new Document().append("a", new ArrayList<>(Arrays.asList(
                         new Document().append("x", 1), new Document().append("x", 2))))).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathDeeplyNested() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", new Document("c", 5)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b.c", 5)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b.c", 6)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("a.b.c", 4)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.lt("a.b.c", 4)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathGradient() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document query = convertToDocument(Filters.eq("a.b", 10));
+
+        Truthness far = calculator.computeHeuristicDocument(query, new Document("a", new Document("b", 100)));
+        Truthness close = calculator.computeHeuristicDocument(query, new Document("a", new Document("b", 11)));
+        assertTrue(far.isFalse());
+        assertTrue(close.isFalse());
+        assertTrue(close.getOfTrue() > far.getOfTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathMissingIntermediateField() {
+        // mongo: {"a.b": 1} does not match, {"a.b": null} matches when "a" is missing
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("x", 1);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", null)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathThroughScalar() {
+        // mongo: "a.b" does not reach any value when "a" holds a scalar
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", 5);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", null)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathWithArrayIndex() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(10, 20, 30));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.1", 20)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.0", 20)), doc).isFalse());
+        // index out of bounds
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.5", 20)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathWithArrayIndexAndSubField() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("items", Arrays.asList(
+                new Document("price", 5),
+                new Document("price", 15)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.1.price", 10)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.0.price", 10)), doc).isFalse());
+        // without an index, any element may satisfy the condition
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.price", 10)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.gt("items.price", 20)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathThroughArrayOfArrays() {
+        // mongo: nested arrays are not implicitly traversed
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(Arrays.asList(new Document("b", 1))));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.0.0.b", 1)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathReachingAnArray() {
+        // mongo: {"a.b": 2} matches {a: [{b: [1, 2]}, {b: 3}]}
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", Arrays.asList(1, 2)),
+                new Document("b", 3)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 2)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 3)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 4)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.size("a.b", 2)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathNotEqualsOverArray() {
+        // mongo: $ne holds only when no value reached by the path is equal
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.ne("a.b", 1)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.ne("a.b", 3)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathInAndNotIn() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.in("a.b", 2, 5)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.in("a.b", 4, 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.nin("a.b", 2, 5)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.nin("a.b", 4, 5)), doc).isTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathExists() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", new Document("c", 1)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.c")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.d")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.x.c")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.d", false)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b.c", false)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathExistsThroughArray() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("x", 1),
+                new Document("b", 2)));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.1")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.1.b")), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.0.b")), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.exists("a.5")), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathExistsGradient() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document query = convertToDocument(Filters.exists("a.bbbb"));
+
+        Truthness far = calculator.computeHeuristicDocument(query, new Document("a", new Document("zzzz", 1)));
+        Truthness close = calculator.computeHeuristicDocument(query, new Document("a", new Document("bbba", 1)));
+        assertTrue(far.isFalse());
+        assertTrue(close.isFalse());
+        assertTrue(close.getOfTrue() > far.getOfTrue());
+    }
+
+    @Test
+    public void testDottedFieldPathType() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", "hello"));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.STRING)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.INT32)), doc).isFalse());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.c", BsonType.STRING)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathTypeThroughArray() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", Arrays.asList(
+                new Document("b", 1),
+                new Document("b", "hello")));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.STRING)), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.type("a.b", BsonType.BOOLEAN)), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathNot() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a", new Document("b", 5));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.not(Filters.gt("a.b", 10))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.not(Filters.gt("a.b", 1))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathInsideElemMatch() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("items", Arrays.asList(
+                new Document("product", new Document("sku", "A1")),
+                new Document("product", new Document("sku", "B2"))));
+
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.elemMatch("items", Filters.eq("product.sku", "B2"))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(
+                convertToDocument(Filters.elemMatch("items", Filters.eq("product.sku", "C3"))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathConjunction() {
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("address", new Document("city", "Paris").append("zip", 75001));
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.and(
+                Filters.eq("address.city", "Paris"),
+                Filters.lte("address.zip", 75020))), doc).isTrue());
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.and(
+                Filters.eq("address.city", "Paris"),
+                Filters.gt("address.zip", 75020))), doc).isFalse());
+    }
+
+    @Test
+    public void testDottedFieldPathIsNotALiteralKey() {
+        // mongo: a query path "a.b" does not address a top-level field literally named "a.b"
+        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
+        Document doc = new Document("a.b", 1);
+
+        assertTrue(calculator.computeHeuristicDocument(convertToDocument(Filters.eq("a.b", 1)), doc).isFalse());
     }
 
     @Test
@@ -2040,14 +2544,7 @@ public class MongoHeuristicsCalculatorTest {
                 new Document().append("$jsonSchema",
                         new Document().append("required", Arrays.asList("a"))),
                 new Document().append("$where", "function(){ return true; }"),
-                new Document().append("$text", new Document().append("$search", "x")),
-                new Document().append("a", new Document().append("$geoWithin",
-                        new Document().append("$centerSphere",
-                                Arrays.asList(Arrays.asList(1.0, 2.0), 0.1)))),
-                new Document().append("a", new Document().append("$geoIntersects",
-                        new Document().append("$geometry",
-                                new Document().append("type", "Point")
-                                        .append("coordinates", Arrays.asList(1.0, 2.0)))))
+                new Document().append("$text", new Document().append("$search", "x"))
         );
 
         for (Document query : queries) {

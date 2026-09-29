@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.data
 
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
@@ -49,8 +50,9 @@ class RestIndividual(
     cleanupSize: Int = 0,
     dynamoDbSize: Int = 0,
     cassandraSize: Int = 0,
+    neo4jSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> =
-        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize, dynamoDbSize, cassandraSize),
+        getEnterpriseTopGroups(allActions, mainSize, sqlSize, mongoSize, redisSize, dnsSize, scheduleSize, cleanupSize, dynamoDbSize, cassandraSize, neo4jSize),
 ): ApiWsIndividual(
     sampleType,
     trackOperator,
@@ -119,6 +121,7 @@ class RestIndividual(
                 cleanupSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.CLEANUP),
                 dynamoDbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DYNAMODB),
                 cassandraSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA),
+                neo4jSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_NEO4J),
         )
     }
 
@@ -155,6 +158,8 @@ class RestIndividual(
 
         val cassandraDbActions = resources.flatMap { it.seeActions(ONLY_CASSANDRA) } as List<CassandraDbAction>
 
+        val neo4jDbActions = resources.flatMap { it.seeActions(ONLY_NEO4J) } as List<Neo4jDbAction>
+
         val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
 
         removeResourceCall(resources)
@@ -165,6 +170,7 @@ class RestIndividual(
         addChildrenToGroup(redisDbActions, GroupsOfChildren.INITIALIZATION_REDIS)
         addChildrenToGroup(dynamoDbActions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
         addChildrenToGroup(cassandraDbActions, GroupsOfChildren.INITIALIZATION_CASSANDRA)
+        addChildrenToGroup(neo4jDbActions, GroupsOfChildren.INITIALIZATION_NEO4J)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
 
 
@@ -183,7 +189,7 @@ class RestIndividual(
         /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
          */
-        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty() || dynamoDbActions.isNotEmpty() || cassandraDbActions.isNotEmpty()
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty() || redisDbActions.isNotEmpty() || dynamoDbActions.isNotEmpty() || cassandraDbActions.isNotEmpty() || neo4jDbActions.isNotEmpty()
 
         // re-generate local id
 //        resetLocalIdRecursively()

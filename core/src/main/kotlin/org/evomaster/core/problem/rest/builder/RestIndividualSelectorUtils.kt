@@ -26,7 +26,8 @@ object RestIndividualSelectorUtils {
                                                  statusGroup: StatusGroup? = null,
                                                  statusCodes: Collection<Int>? = null,
                                                  authenticated : Boolean? = null,
-                                                 authenticatedWith: String? = null
+                                                 authenticatedWith: String? = null,
+                                                 excludedStatusCodes: Collection<Int>? = null
                                          ) : Boolean {
 
         // get actions and results first
@@ -55,6 +56,10 @@ object RestIndividualSelectorUtils {
         }
 
         if(!statusCodes.isNullOrEmpty() && !statusCodes.contains(resultOfAction.getStatusCode())) {
+            return false
+        }
+
+        if(!excludedStatusCodes.isNullOrEmpty() && excludedStatusCodes.contains(resultOfAction.getStatusCode())){
             return false
         }
 
@@ -142,7 +147,7 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean? = null
+        authenticated: Boolean? = null,
     ): List<EvaluatedAction> {
 
         if(status != null && statusGroup!= null){
@@ -169,7 +174,8 @@ object RestIndividualSelectorUtils {
         statusGroup: StatusGroup? = null,
         statusCodes: Collection<Int>? = null,
         authenticated: Boolean? = null,
-        authenticatedWith: String? = null
+        authenticatedWith: String? = null,
+        excludedStatusCodes: Collection<Int>? = null
     ): List<EvaluatedIndividual<RestIndividual>> {
 
         if(status != null && statusGroup!= null){
@@ -181,7 +187,7 @@ object RestIndividualSelectorUtils {
 
         return individualsInSolution.filter {ind ->
             ind.evaluatedMainActions().any { a ->
-                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith, excludedStatusCodes)
             }
         }
     }
@@ -198,13 +204,14 @@ object RestIndividualSelectorUtils {
         statusGroup: StatusGroup? = null,
         statusCodes: Collection<Int>? = null,
         authenticated: Boolean? = null,
-        authenticatedWith: String? = null
+        authenticatedWith: String? = null,
+        excludedStatusCodes: Collection<Int>? = null
     ) : List<RestIndividual>{
 
-        val individuals = findIndividuals(individualsInSolution, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+        val individuals = findIndividuals(individualsInSolution, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith,excludedStatusCodes)
 
         return individuals.map { ind ->
-            val index = findIndexOfAction(ind, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+            val index = findIndexOfAction(ind, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith, excludedStatusCodes)
             RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, index)
         }
     }
@@ -302,7 +309,8 @@ object RestIndividualSelectorUtils {
         statusGroup: StatusGroup? = null,
         statusCodes: Collection<Int>? = null,
         authenticated: Boolean? = null,
-        authenticatedWith: String? = null
+        authenticatedWith: String? = null,
+        excludedStatusCodes: Collection<Int>? = null
     ): Int {
 
         if(status != null && statusGroup!= null){
@@ -310,7 +318,7 @@ object RestIndividualSelectorUtils {
         }
 
         individual.evaluatedMainActions().forEachIndexed { index, a ->
-                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)){
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith, excludedStatusCodes)){
                     return index
                 }
         }

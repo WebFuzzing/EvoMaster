@@ -2,11 +2,14 @@ package org.evomaster.core.redis
 
 import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisQueryAction
+import org.evomaster.core.database.redis.RedisQueryField
 import org.evomaster.core.database.redis.RedisSaddAction
 import org.evomaster.core.database.redis.RedisSaddFromSinterAction
 import org.evomaster.core.database.redis.RedisSetAction
 import org.evomaster.core.database.redis.RedisSetFromPatternAction
 import org.evomaster.core.parser.RegexHandler
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -96,5 +99,26 @@ class RedisDbActionTransformerTest {
     @Test
     fun testTransformEmptyList() {
         assertEquals(0, RedisDbActionTransformer.transform(emptyList()).insertions.size)
+    }
+
+    @Test
+    fun testTransformQueryActionExpandsToOneHsetPerField() {
+        val action = RedisQueryAction(
+            "product:1", listOf(
+                RedisQueryField("title", constantValue = "redis"),
+                RedisQueryField("price", valueGene = DoubleGene("price", 19.99))
+            )
+        )
+        val dto = RedisDbActionTransformer.transform(listOf(action))
+
+        assertEquals(2, dto.insertions.size)
+        dto.insertions.forEach {
+            assertEquals("HSET", it.command)
+            assertEquals("product:1", it.key)
+        }
+        assertEquals("title", dto.insertions[0].field)
+        assertEquals("redis", dto.insertions[0].value)
+        assertEquals("price", dto.insertions[1].field)
+        assertEquals("19.99", dto.insertions[1].value)
     }
 }
