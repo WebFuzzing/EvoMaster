@@ -1,6 +1,7 @@
-package org.evomaster.e2etests.spring.openapi.v3.httporaclefp.deletefp
+package org.evomaster.e2etests.spring.openapi.v3.httporaclefp.failmodification
 
 import com.foo.rest.examples.spring.openapi.v3.httporaclefp.deletefp.HttpOracleDeleteFPController
+import com.foo.rest.examples.spring.openapi.v3.httporaclefp.failmodificationfp.HttpOracleFailModificationFPController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -10,13 +11,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HttpOracleDeleteFPEMTest : SpringTestBase(){
+class HttpOracleFailModificationFPEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(HttpOracleDeleteFPController())
+            initClass(HttpOracleFailModificationFPController())
         }
     }
 
@@ -25,7 +26,7 @@ class HttpOracleDeleteFPEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "HttpOracleDeleteFPEM",
+                "HttpOracleFailModificationFPEM",
                 200
         ) { args: MutableList<String> ->
 
@@ -35,16 +36,11 @@ class HttpOracleDeleteFPEMTest : SpringTestBase(){
 
             assertTrue(solution.individuals.size >= 1)
 
-            assertHasAtLeastOne(solution, HttpVerb.PUT, 200, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 404, "/api/resources/{id}", null)
-
-            //202 does not mean it is completed... so should not say found fault
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 202, "/api/resources/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.PUT, 400, "/api/resources", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources", null)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertFalse( DefinedFaultCategory.HTTP_NONWORKING_DELETE in faults )
+            assertFalse( DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION in faults )
         }
     }
 }
