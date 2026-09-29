@@ -516,7 +516,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private boolean isNeo4jHeuristicsComputationAllowed() {
-        return neo4jHandler.isCalculateHeuristics();
+        return neo4jHandler.isCalculateHeuristics() || neo4jHandler.isExtractNeo4jExecution();
     }
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
@@ -618,30 +618,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeNeo4jHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
-        if(neo4jHandler.isCalculateHeuristics()){
-            if(!additionalInfoList.isEmpty()) {
-                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
-                last.getNeo4JInfoData().forEach(it -> {
-                    try {
-                        neo4jHandler.handle(it);
-                    } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
-                        assert false;
-                    }
-                });
-            }
+        if(!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getNeo4JInfoData().forEach(it -> {
+                try {
+                    neo4jHandler.handle(it);
+                } catch (Exception e){
+                    SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
+                    assert false;
+                }
+            });
+        }
 
-            neo4jHandler.getEvaluatedNeo4jCommands().stream()
-                    .map(p ->
-                            new ExtraHeuristicEntryDto(
-                                    ExtraHeuristicEntryDto.Type.NEO4J,
-                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.getCommand(),
-                                    p.getDistanceWithMetrics().getDistance(),
-                                    p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
-                                    p.getDistanceWithMetrics().isEvaluationFailure()
-                            ))
-                    .forEach(h -> dto.heuristics.add(h));
+        neo4jHandler.getEvaluatedNeo4jCommands().stream()
+                .map(p ->
+                        new ExtraHeuristicEntryDto(
+                                ExtraHeuristicEntryDto.Type.NEO4J,
+                                ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                p.getCommand(),
+                                p.getDistanceWithMetrics().getDistance(),
+                                p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                p.getDistanceWithMetrics().isEvaluationFailure()
+                        ))
+                .forEach(h -> dto.heuristics.add(h));
+
+        if (neo4jHandler.isExtractNeo4jExecution()) {
+            dto.neo4jExecutionsDto = neo4jHandler.getExecutionDto();
         }
     }
 

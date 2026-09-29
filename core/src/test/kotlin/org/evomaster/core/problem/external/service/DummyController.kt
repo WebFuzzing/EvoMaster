@@ -95,6 +95,10 @@ class DummyController: RemoteController {
         TODO("Not yet implemented")
     }
 
+    override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
     override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
         TODO("Not yet implemented")
     }

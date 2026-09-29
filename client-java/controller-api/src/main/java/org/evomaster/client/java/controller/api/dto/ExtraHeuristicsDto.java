@@ -26,4 +26,6 @@ public class ExtraHeuristicsDto {
     public DynamoDbExecutionsDto dynamoDbExecutionsDto;
 
     public CassandraExecutionsDto cassandraExecutionsDto;
+
+    public Neo4jExecutionsDto neo4jExecutionsDto;
 }

@@ -39,6 +39,9 @@ enum class ActionFilter {
     /** actions which are DynamoDB-related actions */
     ONLY_DYNAMODB,
 
+    /** actions which are Neo4j-related actions */
+    ONLY_NEO4J,
+
     /**
      * actions which are CASSANDRA-related actions
      */
