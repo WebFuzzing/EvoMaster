@@ -1,26 +1,19 @@
-package com.cassandra.findbydayrange;
+package com.foo.cassandra.findbydayrange;
 
-import com.cassandra.SwaggerConfiguration;
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.net.InetSocketAddress;
 
-@EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class CassandraFindByDayRangeApp extends SwaggerConfiguration {
+public class CassandraFindByDayRangeApp {
 
     public static final String KEYSPACE = "evomaster_e2e";
     public static final String TABLE = "measurement_by_day";
-
-    public CassandraFindByDayRangeApp() {
-        super("cassandrafindbydayrange");
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(CassandraFindByDayRangeApp.class, args);

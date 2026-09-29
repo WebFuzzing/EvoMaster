@@ -1,4 +1,4 @@
-package com.cassandra.findbydayrange;
+package com.foo.cassandra.findbydayrange;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
