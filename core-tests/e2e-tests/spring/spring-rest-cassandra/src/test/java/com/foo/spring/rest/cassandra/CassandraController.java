@@ -92,7 +92,7 @@ public abstract class CassandraController extends EmbeddedSutController {
     @Override
     public ProblemInfo getProblemInfo() {
         return new RestProblem(
-                "http://localhost:" + getSutPort() + "/v2/api-docs",
+                "http://localhost:" + getSutPort() + "/v3/api-docs",
                 null
         );
     }
@@ -100,6 +100,11 @@ public abstract class CassandraController extends EmbeddedSutController {
     @Override
     public SutInfoDto.OutputFormat getPreferredOutputFormat() {
         return null;
+    }
+
+    @Override
+    public String getPackagePrefixesToCover() {
+        return "com.foo.cassandra.";
     }
 
     protected int getSutPort() {

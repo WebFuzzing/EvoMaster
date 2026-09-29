@@ -1,4 +1,4 @@
-package com.cassandra.findbytag;
+package com.foo.cassandra.findbytag;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Autowired;

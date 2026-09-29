@@ -1,4 +1,4 @@
-package com.cassandra.findbyage;
+package com.foo.cassandra.findbyage;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;

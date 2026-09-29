@@ -1,4 +1,4 @@
-package com.cassandra.findbyuuid;
+package com.foo.cassandra.findbyuuid;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
