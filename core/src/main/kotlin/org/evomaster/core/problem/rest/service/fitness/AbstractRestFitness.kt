@@ -826,7 +826,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
-        rcr.setAllow(response.allowedMethods.joinToString(","))
+        if(response.getHeaderString("allow") != null) {
+            rcr.setAllow(response.allowedMethods.joinToString(","))
+        }
         rcr.setAppliedLink(appliedLink)
         rcr.setHeaders(response.stringHeaders)
 
