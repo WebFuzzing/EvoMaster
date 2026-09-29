@@ -316,7 +316,7 @@ There are 3 types of options:
 |`extractNeo4jExecutionInfo`| __Boolean__. Enable extracting Neo4j execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`extractRedisExecutionInfo`| __Boolean__. Enable extracting Redis execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateDynamoDbData`| __Boolean__. Enable EvoMaster to generate DynamoDB data with direct database access. *Depends on*: `blackBox=false`. *Default value*: `false`.|
-|`generateNeo4jData`| __Boolean__. Enable EvoMaster to generate Neo4j data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`generateNeo4jData`| __Boolean__. Enable EvoMaster to generate Neo4j data with direct accesses to the database. *Depends on*: `extractNeo4jExecutionInfo=true,blackBox=false`. *Default value*: `false`.|
 |`generateRedisData`| __Boolean__. Enable EvoMaster to generate Redis data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`generateSqlDataWithZ3`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|

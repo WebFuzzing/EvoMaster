@@ -87,8 +87,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
         val initializingNeo4jActions = ind.individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>()
         val initializingNeo4jResults = ind.seeResults(initializingNeo4jActions)
-        if (initializingNeo4jResults.any { it !is Neo4jDbActionResult })
-            throw IllegalStateException("the type of results are expected as Neo4jDbActionResults")
+        initializingNeo4jResults.firstOrNull { it !is Neo4jDbActionResult }?.let {
+            throw IllegalStateException("the type of results are expected as Neo4jDbActionResults, but got ${it::class.java.name}")
+        }
 
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()

@@ -790,11 +790,6 @@ class EMConfig {
                     "'extractDynamoDbExecutionInfo'")
         }
 
-        if (shouldGenerateNeo4jData() && !extractNeo4jExecutionInfo) {
-            throw ConfigProblemException("Cannot generate Neo4j data without enabling " +
-                    "'extractNeo4jExecutionInfo'")
-        }
-
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -2142,6 +2137,7 @@ class EMConfig {
     @Experimental
     @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractNeo4jExecutionInfo")
     var generateNeo4jData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
