@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller.neo4j;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery;
+import org.evomaster.client.java.controller.api.Neo4jInsertionKeyBuilder;
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionKeyBuilder;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto;
 import org.evomaster.client.java.controller.neo4j.parser.CypherParser;
@@ -22,11 +22,11 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     private static final CypherParser PARSER = CypherParserFactory.buildParser();
 
-    private static Neo4jFailedQuery build(String cypher) {
+    private static Neo4jFailedQueryDto build(String cypher) {
         return build(cypher, Collections.emptyMap());
     }
 
-    private static Neo4jFailedQuery build(String cypher, Map<String, Object> parameters) {
+    private static Neo4jFailedQueryDto build(String cypher, Map<String, Object> parameters) {
         try {
             return Neo4jInsertionTemplateBuilder.build(PARSER.parse(cypher), parameters, cypher);
         } catch (CypherParserException e) {
@@ -48,7 +48,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testNodeWithLabelsAndPropertyFromLiteral() {
-        Neo4jFailedQuery failed = build("MATCH (p:Person:Employee {name: 'Ana'}) RETURN p");
+        Neo4jFailedQueryDto failed = build("MATCH (p:Person:Employee {name: 'Ana'}) RETURN p");
 
         assertEquals(1, failed.nodes.size());
         assertTrue(failed.edges.isEmpty());
@@ -64,7 +64,7 @@ public class Neo4jInsertionTemplateBuilderTest {
     public void testRelationshipBetweenPatternNodes() {
         String cypher = "MATCH (p:Player)-[:HAS_USER]->(u:User {username: $username}) RETURN p";
 
-        Neo4jFailedQuery failed = build(cypher, params("username", "ana"));
+        Neo4jFailedQueryDto failed = build(cypher, params("username", "ana"));
 
         assertEquals(2, failed.nodes.size());
         assertEquals(Arrays.asList("Player"), failed.nodes.get(0).labels);
@@ -81,7 +81,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testComparisonsInWhereSeedThePropertyWithTheValueComparedAgainst() {
-        Neo4jFailedQuery failed = build(
+        Neo4jFailedQueryDto failed = build(
                 "MATCH (n:Person) WHERE n.age > 30 AND n.name STARTS WITH 'A' AND 1.5 <= n.score AND n.active = true RETURN n");
 
         Neo4jNodeInsertionDto person = failed.nodes.get(0);
@@ -94,7 +94,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testConditionsThatPinNoValueContributeNothing() {
-        Neo4jFailedQuery failed = build(
+        Neo4jFailedQueryDto failed = build(
                 "MATCH (a:A)-[r:R]->(b:B) WHERE (a.x = 1 OR a.x = 2) AND NOT b.y = 3 AND a.z <> 4"
                         + " AND a.w IS NOT NULL AND a.v IN [1, 2] AND a.u = b.u RETURN a");
 
@@ -105,7 +105,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testUnresolvedParameterGivesNoProperty() {
-        Neo4jFailedQuery failed = build("MATCH (n:Person {name: $name}) RETURN n");
+        Neo4jFailedQueryDto failed = build("MATCH (n:Person {name: $name}) RETURN n");
 
         assertTrue(failed.nodes.get(0).properties.isEmpty());
 
@@ -116,7 +116,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testFirstValueOfAPropertyWins() {
-        Neo4jFailedQuery failed = build("MATCH (n:Person {age: 20}) WHERE n.age > 30 RETURN n");
+        Neo4jFailedQueryDto failed = build("MATCH (n:Person {age: 20}) WHERE n.age > 30 RETURN n");
 
         assertEquals(1, failed.nodes.get(0).properties.size());
         assertProperty(failed.nodes.get(0).properties.get(0), "age", Neo4jPropertyTypeDto.INTEGER, "20");
@@ -124,7 +124,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testRelationshipPropertiesAndUndirectedEdge() {
-        Neo4jFailedQuery failed = build("MATCH (a:A)-[r:R {since: 2020}]-(b:B) WHERE r.weight = 0.5 RETURN a");
+        Neo4jFailedQueryDto failed = build("MATCH (a:A)-[r:R {since: 2020}]-(b:B) WHERE r.weight = 0.5 RETURN a");
 
         Neo4jEdgeInsertionDto edge = failed.edges.get(0);
         assertEquals("R", edge.type);
@@ -137,7 +137,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testVariableLengthEdgeIsUnrolled() {
-        Neo4jFailedQuery failed = build("MATCH (a:A)-[:R*2]->(b:B) RETURN a");
+        Neo4jFailedQueryDto failed = build("MATCH (a:A)-[:R*2]->(b:B) RETURN a");
 
         // the expander unrolls *2 into two hops through a fresh node, which inherits the labels of both ends
         assertEquals(3, failed.nodes.size());
@@ -156,7 +156,7 @@ public class Neo4jInsertionTemplateBuilderTest {
 
     @Test
     public void testAnonymousNodesAreCreatedToo() {
-        Neo4jFailedQuery failed = build("MATCH (:A)-[:R]->() RETURN 1");
+        Neo4jFailedQueryDto failed = build("MATCH (:A)-[:R]->() RETURN 1");
 
         assertEquals(2, failed.nodes.size());
         assertEquals(Arrays.asList("A"), failed.nodes.get(0).labels);
@@ -172,10 +172,10 @@ public class Neo4jInsertionTemplateBuilderTest {
     @Test
     public void testKeyTellsInsertionsApartByValueAndStructure() {
         String query = "MATCH (n:Person {name: $name}) RETURN n";
-        Neo4jFailedQuery ana = build(query, params("name", "Ana"));
-        Neo4jFailedQuery anaAgain = build(query, params("name", "Ana"));
-        Neo4jFailedQuery luis = build(query, params("name", "Luis"));
-        Neo4jFailedQuery related = build("MATCH (n:Person {name: 'Ana'})-[:KNOWS]->(:Person) RETURN n");
+        Neo4jFailedQueryDto ana = build(query, params("name", "Ana"));
+        Neo4jFailedQueryDto anaAgain = build(query, params("name", "Ana"));
+        Neo4jFailedQueryDto luis = build(query, params("name", "Luis"));
+        Neo4jFailedQueryDto related = build("MATCH (n:Person {name: 'Ana'})-[:KNOWS]->(:Person) RETURN n");
 
         String anaKey = Neo4jInsertionKeyBuilder.fromCommands(ana.nodes, ana.edges);
         assertEquals(anaKey, Neo4jInsertionKeyBuilder.fromCommands(anaAgain.nodes, anaAgain.edges));

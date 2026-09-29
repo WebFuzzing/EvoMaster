@@ -11,7 +11,7 @@ import java.util.List;
  * one node per node of the pattern, one relationship per edge, and a property for each condition
  * that compares a property against a known value.
  */
-public class Neo4jFailedQuery {
+public class Neo4jFailedQueryDto {
 
     /** The Cypher text of the query, kept for reporting. */
     public String query;
@@ -22,7 +22,7 @@ public class Neo4jFailedQuery {
     /** The relationships to create between those nodes, with their types and properties. */
     public List<Neo4jEdgeInsertionDto> edges = new ArrayList<>();
 
-    public Neo4jFailedQuery() {
+    public Neo4jFailedQueryDto() {
     }
 
     /**
@@ -30,7 +30,7 @@ public class Neo4jFailedQuery {
      * @param nodes the nodes to create
      * @param edges the relationships to create
      */
-    public Neo4jFailedQuery(String query, List<Neo4jNodeInsertionDto> nodes, List<Neo4jEdgeInsertionDto> edges) {
+    public Neo4jFailedQueryDto(String query, List<Neo4jNodeInsertionDto> nodes, List<Neo4jEdgeInsertionDto> edges) {
         this.query = query;
         this.nodes = new ArrayList<>(nodes);
         this.edges = new ArrayList<>(edges);

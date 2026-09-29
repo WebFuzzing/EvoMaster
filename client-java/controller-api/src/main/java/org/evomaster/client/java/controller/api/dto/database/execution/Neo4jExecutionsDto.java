@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class Neo4jExecutionsDto {
 
-    public List<Neo4jFailedQuery> failedQueries = new ArrayList<>();
+    public List<Neo4jFailedQueryDto> failedQueries = new ArrayList<>();
 
     public Neo4jExecutionsDto() {
     }

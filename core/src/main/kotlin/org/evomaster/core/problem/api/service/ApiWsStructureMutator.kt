@@ -21,7 +21,7 @@ import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -640,7 +640,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     private fun <T : ApiWsIndividual> handleFailedNeo4jQueries(
         ind: T,
-        failedQueries: List<Neo4jFailedQuery>
+        failedQueries: List<Neo4jFailedQueryDto>
     ): List<EnvironmentAction> {
 
         val existingKeys = ind.seeInitializingActions()

@@ -1,4 +1,8 @@
-package org.evomaster.client.java.controller.api.dto.database.operations;
+package org.evomaster.client.java.controller.api;
+
+import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto;
 
 import java.util.List;
 

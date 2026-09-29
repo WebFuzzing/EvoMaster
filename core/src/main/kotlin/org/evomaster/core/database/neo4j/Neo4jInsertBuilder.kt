@@ -1,6 +1,6 @@
 package org.evomaster.core.database.neo4j
 
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto
@@ -28,7 +28,7 @@ object Neo4jInsertBuilder {
      * @return one action per failed query not already represented by [existingInsertionKeys]
      */
     fun buildInsertActions(
-        failedQueries: List<Neo4jFailedQuery>,
+        failedQueries: List<Neo4jFailedQueryDto>,
         existingInsertionKeys: Set<String>
     ): List<Neo4jDbAction> = failedQueries
         .mapNotNull(::toActionOrNull)
@@ -36,7 +36,7 @@ object Neo4jInsertBuilder {
         .distinctBy { it.insertionKey() }
 
     /** Converts one failed query into an action, or returns null when it cannot be inserted as reported. */
-    private fun toActionOrNull(query: Neo4jFailedQuery): Neo4jDbAction? {
+    private fun toActionOrNull(query: Neo4jFailedQueryDto): Neo4jDbAction? {
         val nodes = query.nodes ?: emptyList()
         if (nodes.isEmpty()) return null
 

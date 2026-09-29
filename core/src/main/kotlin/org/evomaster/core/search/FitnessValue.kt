@@ -15,7 +15,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.database.redis.RedisExecution
 import org.evomaster.core.database.neo4j.Neo4jExecution
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.schema.TableId
@@ -136,7 +136,7 @@ class FitnessValue(
      * When SUT runs Cypher MATCH queries, keep track of when those find nothing, each digested into
      * the insertion that would make it match.
      */
-    private val aggregatedFailedNeo4jQueries: MutableList<Neo4jFailedQuery> = mutableListOf()
+    private val aggregatedFailedNeo4jQueries: MutableList<Neo4jFailedQueryDto> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again

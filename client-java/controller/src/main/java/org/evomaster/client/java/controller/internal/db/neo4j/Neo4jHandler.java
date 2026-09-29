@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jExecutionsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery;
-import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionKeyBuilder;
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto;
+import org.evomaster.client.java.controller.api.Neo4jInsertionKeyBuilder;
 import org.evomaster.client.java.controller.neo4j.Neo4jInsertionTemplateBuilder;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
@@ -44,7 +44,7 @@ public class Neo4jHandler {
     private volatile boolean extractNeo4jExecution;
 
     /** The queries of the current action that the graph did not satisfy, each digested into an insertion. */
-    private final List<Neo4jFailedQuery> failedQueries = new ArrayList<>();
+    private final List<Neo4jFailedQueryDto> failedQueries = new ArrayList<>();
 
     /** The keys of the insertions in {@link #failedQueries}, so that one is registered only once per action. */
     private final Set<String> insertionKeys = new LinkedHashSet<>();
@@ -206,7 +206,7 @@ public class Neo4jHandler {
      * Keeps the insertion that would satisfy a query the graph did not, once per distinct insertion.
      */
     private void registerFailedQuery(MatchOperation parsedQuery, Map<String, Object> parameters, String query) {
-        Neo4jFailedQuery failed = Neo4jInsertionTemplateBuilder.build(parsedQuery, parameters, query);
+        Neo4jFailedQueryDto failed = Neo4jInsertionTemplateBuilder.build(parsedQuery, parameters, query);
         if (failed == null) {
             SimpleLogger.uniqueWarn("Cannot derive the data to insert from Cypher query: " + query);
             return;

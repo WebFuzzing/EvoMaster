@@ -2,7 +2,7 @@ package org.evomaster.core.database.neo4j
 
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
-import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionKeyBuilder
+import org.evomaster.client.java.controller.api.Neo4jInsertionKeyBuilder
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
 import org.evomaster.core.search.action.Action

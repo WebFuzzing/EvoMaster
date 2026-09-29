@@ -1,6 +1,6 @@
 package org.evomaster.core.database.neo4j
 
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto
@@ -33,7 +33,7 @@ class Neo4jInsertBuilderTest {
         fun entry(key: String, type: Neo4jPropertyTypeDto, value: String) = Neo4jInsertionEntryDto(key, type, value)
 
         /** MATCH (p:Player)-[:HAS_USER]->(u:User {username: 'ana'}) that found nothing. */
-        fun playerWithUser(): Neo4jFailedQuery = Neo4jFailedQuery(
+        fun playerWithUser(): Neo4jFailedQueryDto = Neo4jFailedQueryDto(
             "MATCH (p:Player)-[:HAS_USER]->(u:User {username: \$username}) RETURN p",
             listOf(node(0, "Player"), node(1, "User", properties = listOf(entry("username", Neo4jPropertyTypeDto.STRING, "ana")))),
             listOf(edge("HAS_USER", 0, 1, listOf(entry("since", Neo4jPropertyTypeDto.INTEGER, "2020"))))
@@ -63,7 +63,7 @@ class Neo4jInsertBuilderTest {
 
     @Test
     fun mapsEveryPropertyTypeToItsGene() {
-        val query = Neo4jFailedQuery("q", listOf(node(0, "N", properties = listOf(
+        val query = Neo4jFailedQueryDto("q", listOf(node(0, "N", properties = listOf(
             entry("s", Neo4jPropertyTypeDto.STRING, "text"),
             entry("i", Neo4jPropertyTypeDto.INTEGER, "-7"),
             entry("f", Neo4jPropertyTypeDto.FLOAT, "1.5"),
@@ -79,10 +79,10 @@ class Neo4jInsertBuilderTest {
 
     @Test
     fun skipsQueriesThatCannotBeInsertedAndDuplicates() {
-        val noNodes = Neo4jFailedQuery("q", emptyList(), emptyList())
-        val badNumber = Neo4jFailedQuery("q", listOf(node(0, "N", properties = listOf(entry("i", Neo4jPropertyTypeDto.INTEGER, "ten")))), emptyList())
-        val untypedEdge = Neo4jFailedQuery("q", listOf(node(0, "A"), node(1, "B")), listOf(edge(null, 0, 1)))
-        val danglingEdge = Neo4jFailedQuery("q", listOf(node(0, "A")), listOf(edge("R", 0, 9)))
+        val noNodes = Neo4jFailedQueryDto("q", emptyList(), emptyList())
+        val badNumber = Neo4jFailedQueryDto("q", listOf(node(0, "N", properties = listOf(entry("i", Neo4jPropertyTypeDto.INTEGER, "ten")))), emptyList())
+        val untypedEdge = Neo4jFailedQueryDto("q", listOf(node(0, "A"), node(1, "B")), listOf(edge(null, 0, 1)))
+        val danglingEdge = Neo4jFailedQueryDto("q", listOf(node(0, "A")), listOf(edge("R", 0, 9)))
 
         val actions = Neo4jInsertBuilder.buildInsertActions(
             listOf(noNodes, badNumber, untypedEdge, danglingEdge, playerWithUser(), playerWithUser()), emptySet())

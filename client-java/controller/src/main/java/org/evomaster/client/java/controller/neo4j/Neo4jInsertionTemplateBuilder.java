@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.neo4j;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery;
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto;
@@ -50,7 +50,7 @@ public class Neo4jInsertionTemplateBuilder {
      * @return the insertion that would satisfy the query, or {@code null} if the pattern cannot be
      *         created as it is
      */
-    public static Neo4jFailedQuery build(MatchOperation query, Map<String, Object> parameters, String cypher) {
+    public static Neo4jFailedQueryDto build(MatchOperation query, Map<String, Object> parameters, String cypher) {
         Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(query);
 
         Map<String, Neo4jNodeInsertionDto> nodesByVariable = new LinkedHashMap<>();
@@ -88,7 +88,7 @@ public class Neo4jInsertionTemplateBuilder {
             }
         }
 
-        return new Neo4jFailedQuery(cypher, new ArrayList<>(nodesByVariable.values()), edges);
+        return new Neo4jFailedQueryDto(cypher, new ArrayList<>(nodesByVariable.values()), edges);
     }
 
     /**

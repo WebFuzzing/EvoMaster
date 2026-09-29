@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQuery;
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.neo4j.heuristics.Neo4jHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
@@ -135,7 +135,7 @@ class Neo4jHandlerTest {
         handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
         handler.getEvaluatedNeo4jCommands();
 
-        List<Neo4jFailedQuery> failed = handler.getExecutionDto().failedQueries;
+        List<Neo4jFailedQueryDto> failed = handler.getExecutionDto().failedQueries;
         assertEquals(1, failed.size());
         assertEquals(PARAMETERISED_QUERY, failed.get(0).query);
         assertEquals(1, failed.get(0).nodes.size());
