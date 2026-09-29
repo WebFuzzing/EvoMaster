@@ -332,8 +332,9 @@ class InputEncoderUtilWrapper(
                         rawEncodedFeatures.add(sentinel)
                     }
                 }
+
                 /**
-                 * Time gene encoded as fraction of a day in [0, 1).
+                 * Time gene encoded as a fraction of a day in [0, 1).
                  */
                 is TimeGene -> {
                     try {
@@ -347,8 +348,9 @@ class InputEncoderUtilWrapper(
                         rawEncodedFeatures.add(sentinel)
                     }
                 }
+
                 /**
-                 * DateTime gene encoded as scaled epoch days plus a scaled fractional-day component.
+                 * DateTime gene encoded as scaled epoch days plus the fractional-day component.
                  */
                 is DateTimeGene -> {
                     try {
@@ -364,7 +366,7 @@ class InputEncoderUtilWrapper(
                                     (leaf.time.second.value.coerceIn(0, 59) / (24.0 * 3600.0))
 
                         rawEncodedFeatures.add(
-                            (epochDays + fractionOfDay) / 100_000.0
+                            epochDays / 100_000.0 + fractionOfDay
                         )
                     } catch (ex: Exception) {
                         rawEncodedFeatures.add(sentinel)
