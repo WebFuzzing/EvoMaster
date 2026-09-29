@@ -30,6 +30,7 @@ class HttpOracleInvalidMergePatchFPEMTest : SpringTestBase(){
         ) { args: MutableList<String> ->
 
             setOption(args, "httpOracles", "true")
+            setOption(args, "dtoForRequestPayload", "true")
 
             val solution = initAndRun(args)
 

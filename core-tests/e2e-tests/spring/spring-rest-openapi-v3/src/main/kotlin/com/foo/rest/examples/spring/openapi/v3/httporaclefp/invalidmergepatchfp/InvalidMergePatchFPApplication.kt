@@ -28,26 +28,26 @@ open class InvalidMergePatchFPApplication {
             SpringApplication.run(InvalidMergePatchFPApplication::class.java, *args)
         }
 
-        private val data = mutableMapOf<Int, MergePatchResource>()
+        private val data = mutableMapOf<Int, MergePatchResourceFP>()
 
         fun reset() {
             data.clear()
         }
     }
 
-    data class MergePatchResource(
+    data class MergePatchResourceFP(
         var name: String? = null,
         var value: Int? = null
     )
 
-    class MergeRequest(
+    class MergeRequestFP(
         var name: String? = null,
         var value: Int? = null
     )
 
 
     @PostMapping
-    open fun create(@RequestBody body: MergePatchResource): ResponseEntity<MergePatchResource> {
+    open fun create(@RequestBody body: MergePatchResourceFP): ResponseEntity<MergePatchResourceFP> {
         val id = data.size + 1
         val stored = body.copy()
         data[id] = stored
@@ -55,7 +55,7 @@ open class InvalidMergePatchFPApplication {
     }
 
     @GetMapping("/{id}")
-    open fun get(@PathVariable("id") id: Int): ResponseEntity<MergePatchResource> {
+    open fun get(@PathVariable("id") id: Int): ResponseEntity<MergePatchResourceFP> {
         val resource = data[id] ?: return ResponseEntity.status(404).build()
         return ResponseEntity.status(200).body(resource)
     }
@@ -63,8 +63,8 @@ open class InvalidMergePatchFPApplication {
     @PatchMapping("/{id}", consumes = [MERGE_PATCH])
     open fun patch(
         @PathVariable("id") id: Int,
-        @RequestBody body: MergeRequest
-    ): ResponseEntity<MergePatchResource> {
+        @RequestBody body: MergeRequestFP
+    ): ResponseEntity<MergePatchResourceFP> {
 
         val resource = data[id] ?: return ResponseEntity.status(404).build()
 
