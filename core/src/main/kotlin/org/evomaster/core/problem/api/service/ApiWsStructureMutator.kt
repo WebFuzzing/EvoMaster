@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -16,6 +17,11 @@ import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHt
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisInsertBuilder
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -195,6 +201,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         addInitializingSqlActions(individual, mutatedGenes, sampler)
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
         addInitializingRedisDbActions(individual, mutatedGenes, sampler)
+        addInitializingDynamoDbActions(individual, mutatedGenes, sampler)
+        addInitializingNeo4jDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
         // TODO if we handle schedule actions with structure mutator
     }
@@ -264,6 +272,74 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 oldRedisDbActions,
                 addedRedisDbInsertions,
                 ImpactsOfIndividual.REDISDB_ACTION_KEY,
+                config
+            )
+        }
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingDynamoDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateDynamoDbData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val failedQueries = individual.fitness.getViewOfAggregatedFailedDynamoDbQueries()
+
+        if (failedQueries.isEmpty()) {
+            return
+        }
+
+        val oldDynamoDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+
+        val addedDynamoDbInsertions = handleFailedDynamoDbQueries(ind, failedQueries)
+            .let { if (it.isEmpty()) emptyList() else listOf(it) }
+
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldDynamoDbActions,
+                addedDynamoDbInsertions,
+                ImpactsOfIndividual.DYNAMODB_ACTION_KEY,
+                config
+            )
+        }
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingNeo4jDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateNeo4jData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val failedQueries = individual.fitness.getViewOfAggregatedFailedNeo4jQueries()
+
+        if (failedQueries.isEmpty()) {
+            return
+        }
+
+        val oldNeo4jDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+
+        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries)
+            .let { if (it.isEmpty()) emptyList() else listOf(it) }
+
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldNeo4jDbActions,
+                addedNeo4jDbInsertions,
+                ImpactsOfIndividual.NEO4JDB_ACTION_KEY,
                 config
             )
         }
@@ -526,6 +602,53 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             failedCommands,
             existingKeys
         )
+
+        if (addedActions.isNotEmpty()) {
+            ind.addInitializingActions(actions = addedActions)
+            addedActions.forEach { action ->
+                action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
+            }
+        }
+
+        return addedActions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedDynamoDbQueries(
+        ind: T,
+        failedQueries: List<DynamoDbFailedQuery>
+    ): List<EnvironmentAction> {
+
+        val existingKeys = ind.seeInitializingActions()
+            .filterIsInstance<DynamoDbAction>()
+            .map { it.insertionKey() }
+            .toSet()
+
+        val addedActions = DynamoDbInsertBuilder.buildInsertActions(
+            failedQueries,
+            existingKeys
+        )
+
+        if (addedActions.isNotEmpty()) {
+            ind.addInitializingActions(actions = addedActions)
+            addedActions.forEach { action ->
+                action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
+            }
+        }
+
+        return addedActions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedNeo4jQueries(
+        ind: T,
+        failedQueries: List<Neo4jFailedQueryDto>
+    ): List<EnvironmentAction> {
+
+        val existingKeys = ind.seeInitializingActions()
+            .filterIsInstance<Neo4jDbAction>()
+            .map { it.insertionKey() }
+            .toSet()
+
+        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys)
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)

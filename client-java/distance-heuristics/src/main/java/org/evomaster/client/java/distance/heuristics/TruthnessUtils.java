@@ -23,6 +23,21 @@ public class TruthnessUtils {
     public static final Truthness FALSE_TRUTHNESS_BETTER = new Truthness(DistanceHelper.H_NOT_NULL_BETTER, 1);
 
     /**
+     * A constant value used for scaling truthness values.
+     */
+    public static final double C = 0.1;
+
+    /**
+     * A {@link Truthness} representing a condition that is fully satisfied with a scaling factor C.
+     */
+    public static final Truthness TRUE_C = new Truthness(1.0, C);
+
+    /**
+     * A {@link Truthness} representing a condition that is not satisfied with a scaling factor C.
+     */
+    public static final Truthness C_FALSE = new Truthness(C, 1.0);
+
+    /**
      * Scales to a positive double value to the [0,1] range
      *
      * @param v a non-negative double value
@@ -393,4 +408,17 @@ public class TruthnessUtils {
         return new Truthness(ofTrue, 1d);
     }
 
+    public static Truthness buildSafeScaledTruthness(double maxOfTrue) {
+        if (maxOfTrue == 1.0) {
+            return TRUE_C;
+        } else {
+            return buildScaledTruthness(C, maxOfTrue);
+        }
+    }
+
+    public static Truthness buildSafeScaledTruthness(Truthness truthness) {
+        Objects.requireNonNull(truthness);
+
+        return buildSafeScaledTruthness(truthness.getOfTrue());
+    }
 }

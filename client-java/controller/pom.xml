@@ -226,8 +226,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.20.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Some third-party library we use in our test scaffolding might need SLF4j (i.e., Docker) -->

@@ -85,6 +85,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -99,6 +100,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -113,6 +115,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -127,6 +130,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -141,6 +145,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -155,6 +160,7 @@
                 <skipGraphQL>false</skipGraphQL> <!-- false -->
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -169,6 +175,7 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>false</skipMongo> <!-- false -->
                 <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
             </properties>
         </profile>
         <profile>
@@ -183,6 +190,22 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>false</skipH2V1> <!-- false -->
+                <skipMiscDB>true</skipMiscDB>
+            </properties>
+        </profile>
+        <profile>
+            <id>MiscDB</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+                <skipMiscDB>false</skipMiscDB> <!-- false -->
             </properties>
         </profile>
     </profiles>
@@ -290,6 +313,7 @@
         <skipGraphQL>false</skipGraphQL>
         <skipMongo>false</skipMongo>
         <skipH2V1>false</skipH2V1>
+        <skipMiscDB>false</skipMiscDB>
     </properties>
 
 

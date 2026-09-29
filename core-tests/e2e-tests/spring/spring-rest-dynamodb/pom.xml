@@ -12,6 +12,10 @@
     <artifactId>evomaster-e2e-tests-spring-rest-dynamodb</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipMiscDB}</skipTests>
+    </properties>
+
     <dependencies>
         <!--
             Issue with Jersey (coming from client-java) using old version

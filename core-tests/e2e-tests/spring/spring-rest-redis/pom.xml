@@ -12,6 +12,10 @@
     <artifactId>evomaster-e2e-tests-spring-rest-redis</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipMiscDB}</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>

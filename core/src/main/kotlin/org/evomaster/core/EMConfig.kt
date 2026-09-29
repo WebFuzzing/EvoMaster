@@ -780,6 +780,16 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateDynamoDbData() && !heuristicsForDynamoDb) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'heuristicsForDynamoDb'")
+        }
+
+        if (shouldGenerateDynamoDbData() && !extractDynamoDbExecutionInfo) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'extractDynamoDbExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -804,6 +814,15 @@ class EMConfig {
 
         if (seedTestCases && seedTestCasesPath.isBlank()) {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && createTests) {
+            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
+                    " For the time being, run with '--createTests false' to only search for faults.")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
         }
 
         if (problemType == ProblemType.RPC
@@ -1016,9 +1035,21 @@ class EMConfig {
 
     fun shouldGenerateRedisData() = generateRedisData
 
+    fun shouldGenerateDynamoDbData() = generateDynamoDbData
+    fun shouldGenerateNeo4jData() = generateNeo4jData
+
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
+
+    /**
+     * Whether an EvoMaster Driver takes part in this run.
+     *
+     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * exception: there is no universal wire to speak to a message-driven service, so the driver
+     * holds the connection to the broker even when the SUT itself is treated as a black box.
+     */
+    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1507,7 +1538,8 @@ class EMConfig {
         GRAPHQL(experimental = false),
         RPC(experimental = true),
         WEBFRONTEND(experimental = true),
-        MCP(experimental = true);
+        MCP(experimental = true),
+        ASYNCAPI(experimental = true);
 
         override fun isExperimental() = experimental
     }
@@ -1618,6 +1650,22 @@ class EMConfig {
     @FilePath(false,true)
     var statisticsFile = "statistics.csv"
 
+    @Cfg("Whether to write per-endpoint AI model statistics to CSV.")
+    var writeAIEndpointStatistics = false
+
+    @Cfg("Whether to write per-endpoint AI model snapshot statistics to CSV.")
+    var writeAIEndpointSnapshotStatistics = false
+
+    @Cfg("Where per-endpoint AI model metrics are written in CSV format when " +
+            "writeAIEndpointStatistics and AI response classification are enabled.")
+    @FilePath(false,true)
+    var aiEndpointStatisticsFile = "ai-endpoint-statistics.csv"
+
+    @Cfg("Where per-endpoint AI metric snapshots are written in CSV format when " +
+            "writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive.")
+    @FilePath(false,true)
+    var aiEndpointSnapshotStatisticsFile = "ai-endpoint-snapshots.csv"
+
 
     enum class AIResponseClassifierModel {
         /**
@@ -1716,7 +1764,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.NORMAL
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -1800,7 +1848,7 @@ class EMConfig {
     @Experimental
     @Cfg("Strategy used to select the best-performing model when a combination of AI models " +
             "are used as an ensemble model for response classification.")
-    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_AVERAGE
+    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -2012,6 +2060,16 @@ class EMConfig {
     var extractRedisExecutionInfo = false
 
     @Experimental
+    @Cfg("Enable extracting DynamoDB execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractDynamoDbExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Neo4j execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractNeo4jExecutionInfo = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithZ3 = false
@@ -2070,6 +2128,17 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateRedisData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
+    @DependsOnFalseFor("blackBox")
+    var generateDynamoDbData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractNeo4jExecutionInfo")
+    var generateNeo4jData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -2224,6 +2293,12 @@ class EMConfig {
             " on the JVM.")
     @Experimental
     var instrumentMR_NET = false
+
+    @Cfg("Execute instrumentation for method replace with category NEO4J." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NEO4J = false
 
     @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
@@ -2826,6 +2901,12 @@ class EMConfig {
     @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
     var enableRPCExtraResponseTargets = true
 
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
+            " treating it as unanswered, in milliseconds.")
+    @Min(1.0)
+    var asyncApiReplyTimeoutMs = 5000
+
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
@@ -3205,7 +3286,7 @@ class EMConfig {
     @Min(0.0) @Max(2.0)
     @DependsOnTrueFor("llm")
     @Cfg("Temperature parameter for LLM")
-    var llmTemperature = 0.3
+    var llmTemperature = 0.6
 
     @Experimental
     @DependsOnTrueFor("llm")
@@ -3302,6 +3383,10 @@ class EMConfig {
     @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
+
+    @Experimental
+    @Cfg("Specify if inputs from successful calls should be re-used in the data pool.")
+    var useSuccessDataPool = false
 
     @Cfg("Feed the individual entries of object examples to the data pool.")
     var useObjectExampleDataPool = true
@@ -3469,6 +3554,7 @@ class EMConfig {
         if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_NEO4J) categories.add(ReplacementCategory.NEO4J.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }

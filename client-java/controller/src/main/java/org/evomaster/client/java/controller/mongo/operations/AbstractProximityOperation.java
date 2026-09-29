@@ -4,7 +4,7 @@ package org.evomaster.client.java.controller.mongo.operations;
  * Represent an abstract proximitiy operation.
  * It could be a $near or $nearSphere operation.
  */
-public abstract class AbstractProximityOperation extends QueryOperationWithField {
+public abstract class AbstractProximityOperation extends QueryOperationWithFieldPath {
     private final double longitude;
     private final double latitude;
     private final Double maxDistance;

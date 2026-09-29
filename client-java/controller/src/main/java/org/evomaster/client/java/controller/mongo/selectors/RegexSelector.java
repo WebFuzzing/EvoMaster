@@ -102,6 +102,10 @@ public class RegexSelector extends QuerySelector {
             return null;
         }
 
+        return buildRegexOperation(fieldName, pattern, options);
+    }
+
+    public static RegexOperation buildRegexOperation(String fieldName, String pattern, String options) {
         RegexOptions parsedOptions = parseOptions(options);
         if (parsedOptions == null) {
             return null;
@@ -109,7 +113,7 @@ public class RegexSelector extends QuerySelector {
 
         final Pattern compile;
         try {
-            final int flags = javaRegexFlagsFromOptions(parsedOptions);
+            final int flags = parsedOptions.toJavaRegexFlags();
             compile = Pattern.compile(pattern, flags);
         } catch (PatternSyntaxException e) {
             return null;
@@ -117,7 +121,7 @@ public class RegexSelector extends QuerySelector {
         return new RegexOperation(fieldName, compile, parsedOptions);
     }
 
-    private RegexOptions parseOptions(String options) {
+    private static RegexOptions parseOptions(String options) {
 
         for (char option : options.toCharArray()) {
             if (!REGEX_OPTIONS.contains(option)) {
@@ -130,30 +134,6 @@ public class RegexSelector extends QuerySelector {
                 options.indexOf(MONGO_REGEX_OPTION_DOT_ALL) >= 0,
                 options.indexOf(MONGO_REGEX_OPTION_COMMENTS) >= 0,
                 options.indexOf(MONGO_REGEX_OPTION_UNICODE) >= 0);
-    }
-
-    private int javaRegexFlagsFromOptions(RegexOptions options) {
-        int flags = 0;
-        if (options.isCaseInsensitive()) {
-            flags |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
-        }
-        if (options.isMultiline()) {
-            flags |= Pattern.MULTILINE;
-        }
-        if (options.isDotAll()) {
-            flags |= Pattern.DOTALL;
-        }
-        if (options.isExtended()) {
-            flags |= Pattern.COMMENTS;
-        }
-        if (options.isUnicode()) {
-            /**
-             * MongoDB's 'u' option is intentionally mapped to no Java regex flag.
-             * For MongoDB $regex, UTF mode is enabled by default, making 'u' redundant.
-             * Java regex operates on Unicode strings, so no equivalent Pattern flag is required.
-             */
-        }
-        return flags;
     }
 
     private String optionsFromFlags(int flags) {

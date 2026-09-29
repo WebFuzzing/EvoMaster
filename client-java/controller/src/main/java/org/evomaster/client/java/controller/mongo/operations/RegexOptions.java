@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Options supported by MongoDB's {@code $regex} operator.
@@ -87,4 +88,30 @@ public final class RegexOptions {
     public int hashCode() {
         return Objects.hash(caseInsensitive, multiline, dotAll, extended, unicode);
     }
+
+    public int toJavaRegexFlags() {
+        int flags = 0;
+        if (isCaseInsensitive()) {
+            flags |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+        }
+        if (isMultiline()) {
+            flags |= Pattern.MULTILINE;
+        }
+        if (isDotAll()) {
+            flags |= Pattern.DOTALL;
+        }
+        if (isExtended()) {
+            flags |= Pattern.COMMENTS;
+        }
+        if (isUnicode()) {
+            /**
+             * MongoDB's 'u' option is intentionally mapped to no Java regex flag.
+             * For MongoDB $regex, UTF mode is enabled by default, making 'u' redundant.
+             * Java regex operates on Unicode strings, so no equivalent Pattern flag is required.
+             */
+        }
+        return flags;
+    }
+
+
 }

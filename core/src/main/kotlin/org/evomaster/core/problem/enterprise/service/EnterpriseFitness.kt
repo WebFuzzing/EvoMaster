@@ -5,7 +5,9 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.cassandra.CassandraDbActionTransformer
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.mongo.MongoDbActionTransformer
@@ -14,17 +16,22 @@ import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisExecution
-import org.evomaster.core.database.sql.DatabaseExecution
-import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.database.sql.SqlActionResult
-import org.evomaster.core.database.sql.SqlActionTransformer
-import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.database.sql.*
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbActionTransformer
+import org.evomaster.core.database.neo4j.Neo4jExecution
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -269,6 +276,107 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         return true
     }
 
+    /**
+     * Transforms and executes a list of [CassandraDbAction] as insertion commands against the
+     * remote Cassandra database via the SUT controller.
+     *
+     * @param allCassandraActions Cassandra actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each Cassandra
+     *                      action will be appended, preserving the same order as [allCassandraActions].
+     * @return always true, as a failed insertion does not stop the evaluation of the individual: the
+     * outcome of each insertion is instead recorded in the [CassandraDbActionResult] of its action
+     * @throws IllegalStateException if the controller answers with a number of results different from
+     * the number of insertions sent
+     */
+    fun doCassandraDbCalls(
+        allCassandraActions: List<CassandraDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+
+        if (allCassandraActions.isEmpty()) {
+            return true
+        }
+
+        val cassandraResults = allCassandraActions.map { CassandraDbActionResult(it.getLocalId()) }
+        actionResults.addAll(cassandraResults)
+
+        val dto = CassandraDbActionTransformer.transform(allCassandraActions)
+
+        // null when the controller could not be reached or rejected the command, leaving all the insertions as failed
+        val executedResults = rc.executeCassandraDatabaseInsertions(dto)?.executionResults ?: return true
+
+        /*
+            The controller records one result per insertion, even for a failed one, and the transformer
+            builds exactly one insertion per action, so any other number of results is a bug rather than
+            a degraded answer.
+         */
+        if (executedResults.size != allCassandraActions.size) {
+            throw IllegalStateException("Received ${executedResults.size} insertion results for" +
+                    " ${allCassandraActions.size} Cassandra insertions")
+        }
+
+        executedResults.forEachIndexed { index, success ->
+            cassandraResults[index].setInsertExecutionResult(success)
+        }
+
+        return true
+    }
+
+    fun doDynamoDbCalls(
+        allDynamoDbActions: List<DynamoDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allDynamoDbActions.isEmpty()) return true
+        val results = allDynamoDbActions.map { DynamoDbActionResult(it.getLocalId()) }
+        actionResults.addAll(results)
+        val execution = rc.executeDynamoDbInsertions(DynamoDbActionTransformer.transform(allDynamoDbActions))
+        execution?.executionResults?.forEachIndexed { index, success ->
+            results.getOrNull(index)?.setInsertExecutionResult(success)
+        }
+        return execution?.executionResults?.all { it } ?: false
+    }
+
+    /**
+     * Transforms and executes the Neo4j actions as one batch of node and relationship insertions
+     * against the SUT's database via the controller. An action succeeds when every node and
+     * relationship it holds was inserted.
+     *
+     * @param allNeo4jActions Neo4j actions to insert
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Neo4j action is appended, in the same order as [allNeo4jActions]
+     * @return whether [allNeo4jActions] execute successfully
+     */
+    fun doNeo4jDbCalls(
+        allNeo4jActions: List<Neo4jDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allNeo4jActions.isEmpty()) return true
+
+        val neo4jResults = allNeo4jActions.map { Neo4jDbActionResult(it.getLocalId()) }
+        actionResults.addAll(neo4jResults)
+
+        val dto = Neo4jDbActionTransformer.transform(allNeo4jActions)
+
+        val results = rc.executeNeo4jInsertions(dto)
+        if (results != null) {
+            var nodeIndex = 0
+            var edgeIndex = 0
+            allNeo4jActions.forEachIndexed { actionIndex, action ->
+                val nodesOk = (nodeIndex until nodeIndex + action.nodes.size).all { results.nodeExecutionResults[it] }
+                val edgesOk = (edgeIndex until edgeIndex + action.edges.size).all { results.edgeExecutionResults[it] }
+                nodeIndex += action.nodes.size
+                edgeIndex += action.edges.size
+                val success = nodesOk && edgesOk
+                if (!success) {
+                    log.warn("FAILED insertion $actionIndex: ${action.getName()}")
+                }
+                neo4jResults[actionIndex].setInsertExecutionResult(success)
+            }
+        }
+
+        return true
+    }
+
     protected fun registerNewAction(action: Action, index: Int){
         rc.registerNewAction(getActionDto(action, index))
     }
@@ -413,6 +521,21 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
             }
             fv.aggregateRedisDatabaseData()
+        }
+
+        if (configuration.extractDynamoDbExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                fv.setDynamoDbExecution(i, DynamoDbExecution.fromDto(dto.extraHeuristics[i].dynamoDbExecutionsDto))
+            }
+            fv.aggregateDynamoDbData()
+        }
+
+        if (configuration.extractNeo4jExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setNeo4jExecution(i, Neo4jExecution.fromDto(extra.neo4jExecutionsDto))
+            }
+            fv.aggregateNeo4jDatabaseData()
         }
     }
 

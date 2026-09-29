@@ -1,15 +1,33 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.search.gene.regex.AssertionRxGene
 import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
+import org.evomaster.core.search.gene.regex.CharacterRangeRxGene
 import org.evomaster.core.search.gene.regex.PatternCharacterBlockGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.utils.CharacterRange
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
     override fun createGene(regex: String): RegexGene {
         return RegexHandler.createGeneForEcma262(regex)
+    }
+
+    /**
+     * Builds the regex gene tree for the [pattern] then attempts to extract its valid ranges for verification.
+     * Intended for use with regex character class expressions like `^[a-zJ\dP-\u00ff]$`, etc.
+     */
+    protected fun rangesOf(pattern: String): List<CharacterRange> {
+        assert(pattern.startsWith("^["))
+        assert(pattern.endsWith("]$"))
+        val gene = createGene(pattern)
+        val charClassGene = gene.disjunctions.disjunctions.single().terms
+                                                    .single{it !is AssertionRxGene} as CharacterRangeRxGene
+        return charClassGene.validRanges.ranges
     }
 
     @Test
@@ -378,6 +396,8 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
     @Test
     open fun testJSExclusiveEscapes(){
+        checkSameAsJava("^c$")
+        checkSameAsJava("^cA$")
         checkCanSample("""\a""", "a", 100)
         checkCanSample("""[\c0]""", "\u0010", 100)
         checkCanSample("""[\cP][\c0]""", "\u0010\u0010", 100)
@@ -390,5 +410,29 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkCanSample("""\001\007""", "\u0001\u0007", 100)
         checkCanSample("""\123\377""", "\u0053\u00ff", 100)
         checkCanSample("""a[\bc]d""", "a\bd", 100)
+
+        assertEquals(listOf(CharacterRange(0x01.toChar(), 0x1A.toChar())), rangesOf("""^[\cA-\cZ]$"""))
+        assertEquals(listOf(CharacterRange(0x08.toChar(), 0x09.toChar())), rangesOf("""^[\b-\t]$"""))
+        assertThrows<IllegalArgumentException> { createGene("""[\d-z]""") }
+        assertThrows<IllegalArgumentException> { createGene("""[a-\d]""") }
+        assertThrows<IllegalArgumentException> { createGene("""[\w-\s]""") }
+        assertThrows<IllegalArgumentException> { createGene("""[0\d-z]""") }
+        assertThrows<IllegalArgumentException> { createGene("""[z-\x41]""") } // z.code > 0x41
+    }
+
+    @Test
+    fun testCharClassRangeEndpoints(){
+        assertEquals(listOf(CharacterRange('\u0005', '\u00FF')), rangesOf("""^[\u0005-\u00ff]$"""))
+        assertEquals(listOf(CharacterRange('A', '\u00FF')), rangesOf("""^[A-\xff]$"""))
+        assertEquals(listOf(CharacterRange('a', '\uFFFF')), rangesOf("""^[a-\uffff]$"""))
+        assertEquals(listOf(CharacterRange('.', '[')), rangesOf("""^[\.-\[]$"""))
+        assertEquals(
+            listOf(CharacterRange('0'), CharacterRange('A', '\u00FF')),
+            rangesOf("""^[0A-\xff]$""")
+        )
+        assertEquals(
+            listOf(CharacterRange('0'), CharacterRange('\u0041', '\u007a')),
+            rangesOf("""^[0\x41-\x7a]$""")
+        )
     }
 }

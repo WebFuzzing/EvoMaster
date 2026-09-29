@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -14,9 +15,16 @@ import java.util.List;
 public final class DynamoDbDsl implements DynamoDbSequenceDsl, DynamoDbStatementDsl {
 
     private List<DynamoDbInsertionDto> insertions = new ArrayList<>();
+    private final List<DynamoDbInsertionDto> previousInsertionDtos = new ArrayList<>();
     private DynamoDbInsertionDto current;
 
     private DynamoDbDsl() {
+    }
+
+    private DynamoDbDsl(List<DynamoDbInsertionDto>... previous) {
+        if (previous != null && previous.length > 0) {
+            Arrays.stream(previous).forEach(previousInsertionDtos::addAll);
+        }
     }
 
     /**
@@ -24,6 +32,15 @@ public final class DynamoDbDsl implements DynamoDbSequenceDsl, DynamoDbStatement
      */
     public static DynamoDbSequenceDsl dynamoDb() {
         return new DynamoDbDsl();
+    }
+
+    /**
+     * @param previous insertion sequences executed before this one
+     * @return a new DynamoDB insertion sequence
+     */
+    @SafeVarargs
+    public static DynamoDbSequenceDsl dynamoDb(List<DynamoDbInsertionDto>... previous) {
+        return new DynamoDbDsl(previous);
     }
 
     @Override

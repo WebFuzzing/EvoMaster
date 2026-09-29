@@ -528,4 +528,252 @@ class RedisHeuristicsCalculatorTest {
         assertTrue(result.getDistance() > H_MIN_VALUE,
                 "There can be no real intersection with an empty set");
     }
+
+    // ---------------------------------------------------------------------------------------
+    // FT.SEARCH / FT.AGGREGATE
+    //
+    // RedisHandler pre-filters the store down to the candidate documents of the index, so every
+    // entry below plays the role of a HASH document covered by the index being queried.
+    // ---------------------------------------------------------------------------------------
+
+    private static RedisCommand ftSearch(String query) {
+        return new RedisCommand(RedisCommand.RedisCommandType.FT_SEARCH,
+                new String[]{"idx:people", query}, true, 1);
+    }
+
+    private static RedisCommand ftAggregate(String query, String... pipeline) {
+        List<String> args = new ArrayList<>(Arrays.asList("idx:people", query));
+        args.addAll(Arrays.asList(pipeline));
+        return new RedisCommand(RedisCommand.RedisCommandType.FT_AGGREGATE,
+                args.toArray(new String[0]), true, 1);
+    }
+
+    private static Map<String, String> person(String name, String age, String street) {
+        Map<String, String> fields = new HashMap<>();
+        fields.put("name", name);
+        fields.put("age", age);
+        fields.put("street", street);
+        return fields;
+    }
+
+    private static RedisKeyValueStore peopleStore() {
+        Map<String, RedisValueData> data = new HashMap<>();
+        data.put("person:1", new RedisValueData(person("alice", "30", "main")));
+        data.put("person:2", new RedisValueData(person("bob", "45", "second")));
+        return new RedisKeyValueStore(data);
+    }
+
+    private double distance(RedisCommand cmd) {
+        return calculator.computeDistance(cmd, peopleStore()).getDistance();
+    }
+
+    @Test
+    void testFtSearchMatchAllQueryOverExistingCandidates() {
+        RedisDistanceWithMetrics result = calculator.computeDistance(ftSearch("*"), peopleStore());
+
+        assertEquals(H_MIN_VALUE, result.getDistance(), 1e-6, "'*' matches every candidate document");
+        assertEquals(2, result.getNumberOfEvaluatedKeys());
+    }
+
+    @Test
+    void testFtSearchWithNoCandidatesYieldsPositiveDistance() {
+        RedisKeyValueStore emptyStore = new RedisKeyValueStore(new HashMap<>());
+
+        RedisDistanceWithMetrics result = calculator.computeDistance(ftSearch("*"), emptyStore);
+
+        assertTrue(result.getDistance() > H_MIN_VALUE, "An index without candidates can never match");
+        assertEquals(0, result.getNumberOfEvaluatedKeys());
+    }
+
+    @Test
+    void testFtSearchTagFilterMatch() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@street:{main}")), 1e-6);
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@street:{other|second}")), 1e-6,
+                "Any value of the tag list matching is enough");
+    }
+
+    @Test
+    void testFtSearchTagFilterCloserValueHasSmallerDistance() {
+        double close = distance(ftSearch("@street:{mains}"));
+        double far = distance(ftSearch("@street:{zzzzzzzzzzzz}"));
+
+        assertTrue(close > H_MIN_VALUE);
+        assertTrue(close < far, "A tag value closer to an existing one should be nearer");
+    }
+
+    @Test
+    void testFtSearchTagFilterOnMissingFieldIsWorseThanExistingField() {
+        double missingField = distance(ftSearch("@country:{main}"));
+        double wrongValue = distance(ftSearch("@street:{mains}"));
+
+        assertTrue(missingField > H_MIN_VALUE);
+        assertTrue(wrongValue < missingField, "A field that does not exist anywhere is the farthest option");
+    }
+
+    @Test
+    void testFtSearchNumericFilterInRange() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@age:[25 35]")), 1e-6);
+    }
+
+    @Test
+    void testFtSearchNumericFilterBoundsAreInclusive() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@age:[30 40]")), 1e-6, "Lower bound is inclusive");
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@age:[20 30]")), 1e-6, "Upper bound is inclusive");
+    }
+
+    @Test
+    void testFtSearchNumericFilterCloserRangeHasSmallerDistance() {
+        double close = distance(ftSearch("@age:[31 40]")); // nearest ages are 30 and 45 -> 1 away
+        double far = distance(ftSearch("@age:[100 200]"));
+
+        assertTrue(close > H_MIN_VALUE);
+        assertTrue(close < far, "A range closer to an existing value should be nearer");
+    }
+
+    @Test
+    void testFtSearchNumericFilterOnNonNumericFieldNeverMatches() {
+        assertTrue(distance(ftSearch("@name:[1 10]")) > H_MIN_VALUE);
+    }
+
+    @Test
+    void testFtSearchTextFilterOnField() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@name:alice")), 1e-6);
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@name:ali*")), 1e-6, "Prefix term matches");
+    }
+
+    @Test
+    void testFtSearchTextTermRegexMetacharactersAreTakenLiterally() {
+        assertTrue(distance(ftSearch("@name:a.ice")) > H_MIN_VALUE,
+                "'.' in the term is not a wildcard, so 'a.ice' does not match 'alice'");
+        assertTrue(distance(ftSearch("@name:al*ce")) > H_MIN_VALUE,
+                "Only a trailing '*' is a prefix marker");
+
+        double unbalanced = distance(ftSearch("@name:(alice"));
+        assertTrue(unbalanced > H_MIN_VALUE);
+        assertTrue(unbalanced < H_MAX_VALUE,
+                "A term with regex metacharacters must still be compared, not fail with an invalid regex");
+    }
+
+    @Test
+    void testFtSearchTextFilterWithoutFieldSearchesAllFields() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("second")), 1e-6,
+                "A bare term may match any field of a document");
+        assertTrue(distance(ftSearch("nonexistentterm")) > H_MIN_VALUE);
+    }
+
+    @Test
+    void testFtSearchTextFilterOnMissingFieldIsWorseThanExistingField() {
+        double missingField = distance(ftSearch("@country:alice"));
+        double wrongTerm = distance(ftSearch("@name:zzzz"));
+
+        assertTrue(missingField > H_MIN_VALUE);
+        assertTrue(wrongTerm < missingField);
+    }
+
+    @Test
+    void testFtSearchAllFiltersMustHoldOnTheSameDocument() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("@name:alice @age:[25 35] @street:{main}")), 1e-6);
+
+        // alice is 30 and lives in "main", bob is 45 and lives in "second": no document has both
+        double crossed = distance(ftSearch("@age:[25 35] @street:{second}"));
+        assertTrue(crossed > H_MIN_VALUE, "Filters satisfied by different documents must not add up to a match");
+    }
+
+    @Test
+    void testFtSearchMoreSatisfiedFiltersMeansSmallerDistance() {
+        double oneWrong = distance(ftSearch("@name:alice @age:[100 200]"));
+        double twoWrong = distance(ftSearch("@name:zzzz @age:[100 200]"));
+
+        assertTrue(oneWrong > H_MIN_VALUE);
+        assertTrue(oneWrong < twoWrong);
+    }
+
+    @Test
+    void testFtSearchNumericFilterKeepsRangeSpaceInsideBrackets() {
+        assertEquals(H_MIN_VALUE, distance(ftSearch("  @name:alice    @age:[ 25   35 ]  ")), 1e-6,
+                "Extra whitespace around and inside the filters must be tolerated");
+    }
+
+    @Test
+    void testFtSearchMalformedQueryDoesNotThrowAndNeverMatches() {
+        for (String malformed : new String[]{"@age:[25 35", "@street:{main", "@age:[25]", "@age:[a b]"}) {
+            RedisDistanceWithMetrics result = assertDoesNotThrow(
+                    () -> calculator.computeDistance(ftSearch(malformed), peopleStore()),
+                    "Malformed query must not propagate an exception: " + malformed);
+            assertTrue(result.getDistance() > H_MIN_VALUE, "Malformed query can't be a perfect match: " + malformed);
+        }
+    }
+
+    @Test
+    void testFtSearchWithMissingQueryArgumentReturnsMaxDistance() {
+        RedisCommand malformed = new RedisCommand(RedisCommand.RedisCommandType.FT_SEARCH,
+                new String[]{"idx:people"}, true, 1);
+
+        RedisDistanceWithMetrics result = calculator.computeDistance(malformed, peopleStore());
+
+        assertEquals(H_MAX_VALUE, result.getDistance(), 1e-6);
+        assertEquals(0, result.getNumberOfEvaluatedKeys());
+    }
+
+    @Test
+    void testFtAggregateGroupByExistingField() {
+        RedisDistanceWithMetrics result = calculator.computeDistance(
+                ftAggregate("*", "GROUPBY", "1", "@street"), peopleStore());
+
+        assertEquals(H_MIN_VALUE, result.getDistance(), 1e-6);
+        assertEquals(2, result.getNumberOfEvaluatedKeys());
+    }
+
+    @Test
+    void testFtAggregateGroupByMissingFieldIsWorseThanExistingField() {
+        double existing = distance(ftAggregate("*", "GROUPBY", "1", "@street"));
+        double missing = distance(ftAggregate("*", "GROUPBY", "1", "@country"));
+
+        assertTrue(missing > existing);
+    }
+
+    @Test
+    void testFtAggregateAllGroupByFieldsMustExist() {
+        double allExist = distance(ftAggregate("*", "GROUPBY", "2", "@street", "@name"));
+        double oneMissing = distance(ftAggregate("*", "GROUPBY", "2", "@street", "@country"));
+
+        assertEquals(H_MIN_VALUE, allExist, 1e-6);
+        assertTrue(oneMissing > allExist);
+    }
+
+    @Test
+    void testFtAggregateWithoutGroupByBehavesAsSearch() {
+        assertEquals(distance(ftSearch("@name:alice")),
+                distance(ftAggregate("@name:alice", "SORTBY", "2", "@age", "ASC")), 1e-9,
+                "Stages other than GROUPBY are heuristically transparent");
+        assertEquals(distance(ftSearch("@name:zzzz")),
+                distance(ftAggregate("@name:zzzz")), 1e-9);
+    }
+
+    @Test
+    void testFtAggregateIgnoresStagesAfterGroupByFields() {
+        double withReduce = distance(ftAggregate("*", "GROUPBY", "1", "@street",
+                "REDUCE", "COUNT", "0", "AS", "n"));
+
+        assertEquals(H_MIN_VALUE, withReduce, 1e-6, "REDUCE args must not be mistaken for GROUPBY fields");
+    }
+
+    @Test
+    void testFtAggregateBaseQueryStillMatters() {
+        double matchingQuery = distance(ftAggregate("@name:alice", "GROUPBY", "1", "@street"));
+        double nonMatchingQuery = distance(ftAggregate("@name:zzzz", "GROUPBY", "1", "@street"));
+
+        assertEquals(H_MIN_VALUE, matchingQuery, 1e-6);
+        assertTrue(nonMatchingQuery > matchingQuery);
+    }
+
+    @Test
+    void testFtAggregateWithNoCandidatesYieldsPositiveDistance() {
+        RedisDistanceWithMetrics result = calculator.computeDistance(
+                ftAggregate("*", "GROUPBY", "1", "@street"),
+                new RedisKeyValueStore(new HashMap<>()));
+
+        assertTrue(result.getDistance() > H_MIN_VALUE);
+        assertEquals(0, result.getNumberOfEvaluatedKeys());
+    }
 }
