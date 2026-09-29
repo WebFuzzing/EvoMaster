@@ -64,21 +64,21 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
-    public static Object execute(Object cqlSession, String query, Object... values) {
-        String tracked = CqlBindMarkerInterpolator.forPositionalValues(cqlSession, query, values);
-        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, cqlSession, tracked, query, values);
+    public static Object execute(Object cqlSession, String parameterisedQuery, Object... values) {
+        String interpolatedQuery = CqlBindMarkerInterpolator.forPositionalValues(cqlSession, parameterisedQuery, values);
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, cqlSession, interpolatedQuery, parameterisedQuery, values);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
-    public static Object execute(Object cqlSession, String query, Map<String, Object> values) {
-        String tracked = CqlBindMarkerInterpolator.forNamedValues(cqlSession, query, values);
-        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, cqlSession, tracked, query, values);
+    public static Object execute(Object cqlSession, String parameterisedQuery, Map<String, Object> values) {
+        String interpolatedQuery = CqlBindMarkerInterpolator.forNamedValues(cqlSession, parameterisedQuery, values);
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, cqlSession, interpolatedQuery, parameterisedQuery, values);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STATEMENT_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
     public static Object execute(Object cqlSession, @ThirdPartyCast(actualType = STATEMENT_CLASS) Object statement) {
-        String tracked = CqlBindMarkerInterpolator.forStatement(cqlSession, statement, extractQueryText(statement));
-        return handleCqlExecute(CASSANDRA_EXECUTE_STATEMENT_SYNC, cqlSession, tracked, statement);
+        String interpolatedQuery = CqlBindMarkerInterpolator.forStatement(cqlSession, statement, extractQueryText(statement));
+        return handleCqlExecute(CASSANDRA_EXECUTE_STATEMENT_SYNC, cqlSession, interpolatedQuery, statement);
     }
 
     private static Object handleCqlExecute(String id, Object cqlSession, String queryForTracking, Object... invokeArgs) {

@@ -122,28 +122,28 @@ public class CqlBindMarkerInterpolator {
      * Interpolates the positional values of {@code CqlSession.execute(String, Object...)}.
      *
      * @param cqlSession a live {@code com.datastax.oss.driver.api.core.CqlSession}
-     * @param cql        the parameterised CQL, with one {@code ?} per value
-     * @param values     the values bound to it, in order
-     * @return the CQL with its markers replaced by literals, or {@code cql} unchanged on any problem
+     * @param parameterisedQuery        the parameterised CQL, with one {@code ?} per value
+     * @param parameterValues     the values bound to it, in order
+     * @return the CQL with its markers replaced by literals, or {@code parameterisedQuery} unchanged on any problem
      */
-    public static String forPositionalValues(Object cqlSession, String cql, Object[] values) {
+    public static String forPositionalValues(Object cqlSession, String parameterisedQuery, Object[] parameterValues) {
         Objects.requireNonNull(cqlSession);
-        Objects.requireNonNull(cql);
+        Objects.requireNonNull(parameterisedQuery);
 
-        if (values == null || values.length == 0) {
-            return cql;
+        if (parameterValues == null || parameterValues.length == 0) {
+            return parameterisedQuery;
         }
 
         try {
             Object codecRegistry = codecRegistryOf(cqlSession);
-            List<String> literals = new ArrayList<>(values.length);
-            for (Object value : values) {
+            List<String> literals = new ArrayList<>(parameterValues.length);
+            for (Object value : parameterValues) {
                 literals.add(formatValue(codecRegistry, value));
             }
-            return interpolatePositional(cql, literals, cql);
+            return interpolatePositional(parameterisedQuery, literals, parameterisedQuery);
         } catch (Exception e) {
-            warnFallback(cql, e);
-            return cql;
+            warnFallback(parameterisedQuery, e);
+            return parameterisedQuery;
         }
     }
 
@@ -151,28 +151,28 @@ public class CqlBindMarkerInterpolator {
      * Interpolates the named values of {@code CqlSession.execute(String, Map)}.
      *
      * @param cqlSession a live {@code com.datastax.oss.driver.api.core.CqlSession}
-     * @param cql        the parameterised CQL, with a {@code :name} marker per entry
-     * @param values     the values bound to it, by marker name
-     * @return the CQL with its markers replaced by literals, or {@code cql} unchanged on any problem
+     * @param parameterisedQuery        the parameterised CQL, with a {@code :name} marker per entry
+     * @param parameterValues     the values bound to it, by marker name
+     * @return the CQL with its markers replaced by literals, or {@code parameterisedQuery} unchanged on any problem
      */
-    public static String forNamedValues(Object cqlSession, String cql, Map<String, Object> values) {
+    public static String forNamedValues(Object cqlSession, String parameterisedQuery, Map<String, Object> parameterValues) {
         Objects.requireNonNull(cqlSession);
-        Objects.requireNonNull(cql);
+        Objects.requireNonNull(parameterisedQuery);
 
-        if (values == null || values.isEmpty()) {
-            return cql;
+        if (parameterValues == null || parameterValues.isEmpty()) {
+            return parameterisedQuery;
         }
 
         try {
             Object codecRegistry = codecRegistryOf(cqlSession);
             Map<String, String> literals = new HashMap<>();
-            for (Map.Entry<String, Object> e : values.entrySet()) {
+            for (Map.Entry<String, Object> e : parameterValues.entrySet()) {
                 literals.put(e.getKey(), formatValue(codecRegistry, e.getValue()));
             }
-            return interpolateNamed(cql, literals, cql);
+            return interpolateNamed(parameterisedQuery, literals, parameterisedQuery);
         } catch (Exception e) {
-            warnFallback(cql, e);
-            return cql;
+            warnFallback(parameterisedQuery, e);
+            return parameterisedQuery;
         }
     }
 
@@ -240,13 +240,13 @@ public class CqlBindMarkerInterpolator {
     }
 
     /**
-     * Substitutes each {@code ?} of {@code cql}, in order, with the corresponding entry of
+     * Substitutes each {@code ?} of {@code parameterisedQuery}, in order, with the corresponding entry of
      * {@code literals}. Falls back when the two counts differ, since the statement is then not the
      * one we think it is and a partial substitution would report a query that was never executed.
      */
-    private static String interpolatePositional(String cql, List<String> literals, String fallbackCql) {
+    private static String interpolatePositional(String parameterisedQuery, List<String> literals, String fallbackCql) {
         int[] consumed = new int[1];
-        String interpolated = substitute(cql, (name, positionalIndex) -> {
+        String interpolated = substitute(parameterisedQuery, (name, positionalIndex) -> {
             if (name != null || positionalIndex >= literals.size()) {
                 return null;
             }
@@ -261,19 +261,19 @@ public class CqlBindMarkerInterpolator {
     }
 
     /**
-     * Substitutes each {@code :name} of {@code cql} with the matching entry of {@code literals}.
+     * Substitutes each {@code :name} of {@code parameterisedQuery} with the matching entry of {@code literals}.
      * Entries of {@code literals} that no marker refers to are tolerated; a marker with no entry
      * falls back.
      */
-    private static String interpolateNamed(String cql, Map<String, String> literals, String fallbackCql) {
-        String interpolated = substitute(cql, (name, positionalIndex) ->
+    private static String interpolateNamed(String parameterisedQuery, Map<String, String> literals, String fallbackCql) {
+        String interpolated = substitute(parameterisedQuery, (name, positionalIndex) ->
                 name != null ? literals.get(name) : null);
 
         return interpolated != null ? interpolated : fallbackCql;
     }
 
     /**
-     * Walks {@code cql} once and replaces every bind marker found in code position with the literal
+     * Walks {@code parameterisedQuery} once and replaces every bind marker found in code position with the literal
      * {@code resolver} gives for it.
      * <p>
      * A {@code ?} or {@code :name} inside a string literal, a quoted identifier, a dollar-quoted
@@ -283,23 +283,23 @@ public class CqlBindMarkerInterpolator {
      *
      * @return the interpolated CQL, or {@code null} if any marker could not be resolved
      */
-    private static String substitute(String cql, MarkerResolver resolver) {
-        StringBuilder out = new StringBuilder(cql.length() + 32);
-        int n = cql.length();
+    private static String substitute(String parameterisedQuery, MarkerResolver resolver) {
+        StringBuilder out = new StringBuilder(parameterisedQuery.length() + 32);
+        int n = parameterisedQuery.length();
         int i = 0;
         int positionalIndex = 0;
 
         while (i < n) {
-            char c = cql.charAt(i);
+            char c = parameterisedQuery.charAt(i);
 
             if (c == '\'' || c == '"') {
-                i = appendQuoted(cql, i, c, out);
-            } else if (c == '$' && next(cql, i) == '$') {
-                i = appendUntil(cql, i, DOLLAR_QUOTE, out);
-            } else if ((c == '-' && next(cql, i) == '-') || (c == '/' && next(cql, i) == '/')) {
-                i = appendLineComment(cql, i, out);
-            } else if (c == '/' && next(cql, i) == '*') {
-                i = appendUntil(cql, i, BLOCK_COMMENT_END, out);
+                i = appendQuoted(parameterisedQuery, i, c, out);
+            } else if (c == '$' && next(parameterisedQuery, i) == '$') {
+                i = appendUntil(parameterisedQuery, i, DOLLAR_QUOTE, out);
+            } else if ((c == '-' && next(parameterisedQuery, i) == '-') || (c == '/' && next(parameterisedQuery, i) == '/')) {
+                i = appendLineComment(parameterisedQuery, i, out);
+            } else if (c == '/' && next(parameterisedQuery, i) == '*') {
+                i = appendUntil(parameterisedQuery, i, BLOCK_COMMENT_END, out);
             } else if (c == '?') {
                 String literal = resolver.literalFor(null, positionalIndex++);
                 if (literal == null) {
@@ -307,12 +307,12 @@ public class CqlBindMarkerInterpolator {
                 }
                 out.append(literal);
                 i++;
-            } else if (c == ':' && isMarkerNameStart(next(cql, i))) {
+            } else if (c == ':' && isMarkerNameStart(next(parameterisedQuery, i))) {
                 int end = i + 1;
-                while (end < n && isMarkerNamePart(cql.charAt(end))) {
+                while (end < n && isMarkerNamePart(parameterisedQuery.charAt(end))) {
                     end++;
                 }
-                String literal = resolver.literalFor(cql.substring(i + 1, end), -1);
+                String literal = resolver.literalFor(parameterisedQuery.substring(i + 1, end), -1);
                 if (literal == null) {
                     return null;
                 }
