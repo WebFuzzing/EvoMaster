@@ -2062,6 +2062,7 @@ class EMConfig {
     @Experimental
     @Cfg("Tracking of Cassandra commands to improve test generation")
     @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
     var heuristicsForCassandra = false
 
     @Cfg("Enable extracting SQL execution info")
@@ -2166,6 +2167,7 @@ class EMConfig {
     @Experimental
     @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
     var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
