@@ -1,26 +1,19 @@
-package com.cassandra.findbytag;
+package com.foo.cassandra.findbytag;
 
-import com.cassandra.SwaggerConfiguration;
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.net.InetSocketAddress;
 
-@EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class CassandraFindByTagApp extends SwaggerConfiguration {
+public class CassandraFindByTagApp {
 
     public static final String KEYSPACE = "evomaster_e2e";
     public static final String TABLE = "session_by_id";
-
-    public CassandraFindByTagApp() {
-        super("cassandrafindbytag");
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(CassandraFindByTagApp.class, args);

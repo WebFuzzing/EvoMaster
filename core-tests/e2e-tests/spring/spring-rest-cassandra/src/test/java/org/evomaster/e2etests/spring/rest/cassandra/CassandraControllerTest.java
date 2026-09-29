@@ -1,12 +1,12 @@
 package org.evomaster.e2etests.spring.rest.cassandra;
 
-import com.cassandra.findbyage.CassandraFindByAgeApp;
 import com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
-import com.cassandra.findbydayrange.CassandraFindByDayRangeApp;
-import com.cassandra.findbytag.CassandraFindByTagApp;
-import com.cassandra.findbyuuid.CassandraFindByUuidApp;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.foo.cassandra.findbyage.CassandraFindByAgeApp;
+import com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp;
+import com.foo.cassandra.findbytag.CassandraFindByTagApp;
+import com.foo.cassandra.findbyuuid.CassandraFindByUuidApp;
 import com.foo.spring.rest.cassandra.CassandraController;
 import com.foo.spring.rest.cassandra.findbyage.CassandraFindByAgeController;
 import org.junit.jupiter.api.AfterAll;
@@ -67,11 +67,11 @@ public class CassandraControllerTest {
      */
     @ParameterizedTest
     @CsvSource({
-            "com.cassandra.findbyage.CassandraFindByAgeApp, person_by_age",
+            "com.foo.cassandra.findbyage.CassandraFindByAgeApp, person_by_age",
             "com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp, person_by_age_read_only",
-            "com.cassandra.findbyuuid.CassandraFindByUuidApp, record_by_id",
-            "com.cassandra.findbydayrange.CassandraFindByDayRangeApp, measurement_by_day",
-            "com.cassandra.findbytag.CassandraFindByTagApp, session_by_id"
+            "com.foo.cassandra.findbyuuid.CassandraFindByUuidApp, record_by_id",
+            "com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp, measurement_by_day",
+            "com.foo.cassandra.findbytag.CassandraFindByTagApp, session_by_id"
     })
     public void testAppCreatesItsTable(String appClassName, String tableName) throws Exception {
 
