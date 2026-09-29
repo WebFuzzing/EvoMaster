@@ -1,4 +1,4 @@
-package com.cassandra.findbyagereadonly;
+package com.foo.cassandra.findbyagereadonly;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,27 +1,20 @@
-package com.cassandra.findbyagereadonly;
+package com.foo.cassandra.findbyagereadonly;
 
-import com.cassandra.SwaggerConfiguration;
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.net.InetSocketAddress;
 
-@EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class CassandraFindByAgeReadOnlyApp extends SwaggerConfiguration {
+public class CassandraFindByAgeReadOnlyApp {
 
     public static final String KEYSPACE = "evomaster_e2e";
     
     public static final String TABLE = "person_by_age_read_only";
-
-    public CassandraFindByAgeReadOnlyApp() {
-        super("cassandrafindbyagereadonly");
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(CassandraFindByAgeReadOnlyApp.class, args);

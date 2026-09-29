@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.rest.cassandra;
 
-import com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
+import com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.foo.cassandra.findbyage.CassandraFindByAgeApp;
@@ -68,7 +68,7 @@ public class CassandraControllerTest {
     @ParameterizedTest
     @CsvSource({
             "com.foo.cassandra.findbyage.CassandraFindByAgeApp, person_by_age",
-            "com.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp, person_by_age_read_only",
+            "com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp, person_by_age_read_only",
             "com.foo.cassandra.findbyuuid.CassandraFindByUuidApp, record_by_id",
             "com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp, measurement_by_day",
             "com.foo.cassandra.findbytag.CassandraFindByTagApp, session_by_id"
