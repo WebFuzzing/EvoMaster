@@ -257,6 +257,15 @@ public class NcsKafkaController extends EmbeddedSutController {
         return null;
     }
 
+    /**
+     * The container picks a port when it starts, so the address in the document is never where
+     * this broker actually is. A generated test asks for this instead of trusting the document.
+     */
+    @Override
+    public String getAsyncApiServerAddress(String serverName) {
+        return kafka == null ? null : kafka.getBootstrapServers();
+    }
+
     @Override
     public ProblemInfo getProblemInfo() {
         return AsyncApiProblem.fromSchemaText(readDocument());
@@ -288,7 +297,7 @@ public class NcsKafkaController extends EmbeddedSutController {
 
         ProducerRecord<String, String> record = new ProducerRecord<>(dto.address, dto.correlationId, stamped(dto));
         dto.headers.forEach((name, value) -> record.headers().add(name, bytes(value)));
-        if (AsyncApiActionDto.CORRELATION_IN_HEADER.equals(dto.correlationLocation) || dto.correlationLocation == null) {
+        if (dto.correlationLocation == AsyncApiActionDto.CorrelationLocation.HEADER || dto.correlationLocation == null) {
             record.headers().add(correlationHeaderName(dto), bytes(dto.correlationId));
         }
 
@@ -346,7 +355,7 @@ public class NcsKafkaController extends EmbeddedSutController {
      */
     private String stamped(AsyncApiActionDto dto) {
 
-        if (!AsyncApiActionDto.CORRELATION_IN_PAYLOAD.equals(dto.correlationLocation)
+        if (dto.correlationLocation != AsyncApiActionDto.CorrelationLocation.PAYLOAD
                 || dto.payload == null || dto.correlationPointer == null) {
             return dto.payload;
         }
@@ -375,7 +384,7 @@ public class NcsKafkaController extends EmbeddedSutController {
      */
     private String correlationOf(ConsumerRecord<String, String> record, AsyncApiActionDto dto) {
 
-        if (AsyncApiActionDto.CORRELATION_IN_PAYLOAD.equals(dto.correlationLocation)) {
+        if (dto.correlationLocation == AsyncApiActionDto.CorrelationLocation.PAYLOAD) {
             try {
                 JsonNode node = record.value() == null ? null : mapper.readTree(record.value());
                 for (String segment : segmentsOf(dto.correlationPointer)) {

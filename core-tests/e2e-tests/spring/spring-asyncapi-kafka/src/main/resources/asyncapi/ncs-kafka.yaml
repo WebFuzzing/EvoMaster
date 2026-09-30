@@ -43,6 +43,10 @@ channels:
       bessjRequest:
         $ref: '#/components/messages/bessjRequest'
   bessjReply:
+    # The error reply is declared because the service can produce one, but no client
+    # obeying this document can make it: the request's bounds are exactly the range the
+    # service checks. Kept so the contract describes the service, not only what a
+    # conforming client can reach.
     address: ncs.bessj.reply
     messages:
       result:
@@ -95,6 +99,10 @@ channels:
       remainderRequest:
         $ref: '#/components/messages/remainderRequest'
   remainderReply:
+    # The error reply is declared because the service can produce one, but no client
+    # obeying this document can make it: the request's bounds are exactly the range the
+    # service checks. Kept so the contract describes the service, not only what a
+    # conforming client can reach.
     address: ncs.remainder.reply
     messages:
       result:
