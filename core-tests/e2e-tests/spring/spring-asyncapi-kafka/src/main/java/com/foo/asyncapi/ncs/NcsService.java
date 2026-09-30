@@ -101,8 +101,24 @@ public class NcsService {
 
         switch (requestTopic) {
 
-            case TRIANGLE_REQUEST:
-                return intResult(TriangleClassification.classify(integer(request, "a"), integer(request, "b"), integer(request, "c")));
+            case TRIANGLE_REQUEST: {
+                int a = integer(request, "a");
+                int b = integer(request, "b");
+                int c = integer(request, "c");
+                /*
+                    DELIBERATE DEFECT, not a faithful port of the NCS routine: the original
+                    classifies a non-positive edge as 0 and answers with the declared result.
+
+                    This answers it with a shape the document never declares for this reply, so
+                    that the E2E has a service which commits the one fault only a reply
+                    classifier can find: the message arrives, it correlates, and a client written
+                    against the contract still cannot read it. Nothing else in the run notices.
+                 */
+                if (a <= 0 || b <= 0 || c <= 0) {
+                    return undeclared("not a triangle");
+                }
+                return intResult(TriangleClassification.classify(a, b, c));
+            }
 
             case BESSJ_REQUEST: {
                 int n = integer(request, "n");
@@ -195,6 +211,13 @@ public class NcsService {
             throw new Rejected("the result is not a finite number");
         }
         return mapper.createObjectNode().put(RESULT_AS_DOUBLE, value).toString();
+    }
+
+    /**
+     * A payload matching none of the messages the document declares for the reply.
+     */
+    private String undeclared(String reason) {
+        return mapper.createObjectNode().put("classification", reason).toString();
     }
 
     private String error(String message) {
