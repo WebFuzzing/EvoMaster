@@ -1,9 +1,11 @@
 package org.evomaster.e2etests.utils;
 
+import com.webfuzzing.commons.faults.FaultCategory;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
+import org.evomaster.core.problem.enterprise.DetectedFault;
 import org.evomaster.core.search.Solution;
 
 import java.util.List;
@@ -41,6 +43,19 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
         return resultsOf(solution, operation).stream()
                 .map(AsyncApiCallResult::getReplyMessage)
                 .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * The fault categories reported across the whole solution. Read off the action results,
+     * which is where the reports count faults from, rather than off the covered targets.
+     */
+    protected Set<FaultCategory> faultsOf(Solution<AsyncApiIndividual> solution) {
+        return solution.getIndividuals().stream()
+                .flatMap(ind -> ind.evaluatedMainActions().stream())
+                .map(e -> (AsyncApiCallResult) e.getResult())
+                .flatMap(r -> r.getFaults().stream())
+                .map(DetectedFault::getCategory)
                 .collect(Collectors.toSet());
     }
 
