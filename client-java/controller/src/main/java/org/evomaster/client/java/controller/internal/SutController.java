@@ -75,6 +75,13 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityRelationshipDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto;
+import org.evomaster.client.java.instrumentation.Neo4jEntity;
+import org.evomaster.client.java.instrumentation.Neo4jEntityProperty;
+import org.evomaster.client.java.instrumentation.Neo4jEntityRelationship;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1975,8 +1982,50 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     jpa.constraints = ec;
                     return jpa;
                 }).collect(Collectors.toList());
+        dto.neo4jEntities = toNeo4jEntityDtos(recorder.getNeo4jEntities());
 
         return dto;
+    }
+
+    /**
+     * Relationships point to a class in the recorder, and to the labels of that class in the DTO, as the
+     * core only ever sees labels.
+     */
+    private static List<Neo4jEntityDto> toNeo4jEntityDtos(List<Neo4jEntity> entities) {
+        Map<String, List<String>> labelsByClass = new HashMap<>();
+        for (Neo4jEntity e : entities) {
+            labelsByClass.put(e.getClassName(), e.getLabels());
+        }
+        List<Neo4jEntityDto> dtos = new ArrayList<>();
+        for (Neo4jEntity e : entities) {
+            Neo4jEntityDto dto = new Neo4jEntityDto();
+            dto.className = e.getClassName();
+            dto.labels = new ArrayList<>(e.getLabels());
+            for (Neo4jEntityProperty p : e.getProperties()) {
+                Neo4jEntityPropertyDto pd = new Neo4jEntityPropertyDto();
+                pd.name = p.getName();
+                pd.type = Neo4jPropertyTypeDto.valueOf(p.getType());
+                pd.isId = p.isId();
+                pd.isGenerated = p.isGenerated();
+                pd.minValue = p.getMinValue();
+                pd.maxValue = p.getMaxValue();
+                pd.enumValues = new ArrayList<>(p.getEnumValues());
+                dto.properties.add(pd);
+            }
+            for (Neo4jEntityRelationship r : e.getRelationships()) {
+                List<String> target = labelsByClass.get(r.getTargetClassName());
+                if (target == null) {
+                    continue;
+                }
+                Neo4jEntityRelationshipDto rd = new Neo4jEntityRelationshipDto();
+                rd.type = r.getType();
+                rd.targetLabels = new ArrayList<>(target);
+                rd.isOutgoing = r.isOutgoing();
+                dto.relationships.add(rd);
+            }
+            dtos.add(dto);
+        }
+        return dtos;
     }
 
     @Override

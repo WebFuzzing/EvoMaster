@@ -162,6 +162,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         initSqlInfo(infoDto)
+        initNeo4jInfo(infoDto)
 
         initHostnameInfo(infoDto)
 
