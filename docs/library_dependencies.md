@@ -78,6 +78,22 @@ For white-box testing, you need as well to import the client controller library:
 as explained in the documentation for writing [white-box drivers](write_driver.md). 
 
 
+When fuzzing an **AsyncAPI** service, the generated tests publish with a client of the transport rather
+than through the _EvoMaster Driver_, so that client library is needed as well. For Kafka that is:
+
+```
+<dependency>
+   <groupId>org.apache.kafka</groupId>
+   <artifactId>kafka-clients</artifactId>
+   <version>USE_LATEST_VERSION</version>
+   <scope>test</scope>
+</dependency>
+```
+
+The assertions those tests make on a reply read it as JSON, so `jackson-databind` is needed too. It is
+already part of `evomaster-client-java-dependencies`, whereas the transport client is not, since which one
+is needed depends on the transport the service speaks.
+
 ## NodeJS (e.g., JavaScript)
 
 Generated tests for block-box testing requires different libraries, such as Jest and SuperAgent.
