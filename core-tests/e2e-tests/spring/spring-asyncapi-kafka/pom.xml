@@ -17,6 +17,10 @@
     <artifactId>evomaster-e2e-tests-spring-asyncapi-kafka</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <skipTests>${skipAsyncApi}</skipTests>
+    </properties>
+
     <dependencies>
         <!--
             Issue with Jersey (coming from client-java) using old version
