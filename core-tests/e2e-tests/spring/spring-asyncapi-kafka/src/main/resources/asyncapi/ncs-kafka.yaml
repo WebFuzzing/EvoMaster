@@ -1,0 +1,288 @@
+# The NCS numerical service, re-expressed as an event-driven API over Kafka.
+# Written for EvoMaster; not taken from a third party.
+asyncapi: 3.0.0
+info:
+  title: NCS over Kafka
+  version: 1.0.0
+  description: |
+    Request/reply model of the **NCS** (Numerical Case Study) SUT from the EvoMaster
+    Dataset (`jdk_8_maven/cs/rest/artificial/ncs`), re-expressed as an event-driven API
+    over **Kafka**.
+
+    NCS is a stateless numerical service: each operation takes a few numbers and returns a
+    computed result. The six original REST endpoints map one-to-one to request/reply
+    operations here — a client publishes a request on the operation's request topic, and the
+    service (the SUT) replies on the operation's reply topic. Error replies mirror the REST
+    4xx responses (e.g. an out-of-range argument).
+
+    Correlation between a request and its reply travels in a **Kafka message header**
+    (`correlationId`).
+defaultContentType: application/json
+
+servers:
+  kafka:
+    host: localhost:9092
+    protocol: kafka
+    description: Kafka broker carrying the NCS request and reply topics.
+
+channels:
+  triangleRequest:
+    address: ncs.triangle.request
+    messages:
+      triangleRequest:
+        $ref: '#/components/messages/triangleRequest'
+  triangleReply:
+    address: ncs.triangle.reply
+    messages:
+      result:
+        $ref: '#/components/messages/intResult'
+
+  bessjRequest:
+    address: ncs.bessj.request
+    messages:
+      bessjRequest:
+        $ref: '#/components/messages/bessjRequest'
+  bessjReply:
+    address: ncs.bessj.reply
+    messages:
+      result:
+        $ref: '#/components/messages/doubleResult'
+      error:
+        $ref: '#/components/messages/error'
+
+  expintRequest:
+    address: ncs.expint.request
+    messages:
+      expintRequest:
+        $ref: '#/components/messages/expintRequest'
+  expintReply:
+    address: ncs.expint.reply
+    messages:
+      result:
+        $ref: '#/components/messages/doubleResult'
+      error:
+        $ref: '#/components/messages/error'
+
+  fisherRequest:
+    address: ncs.fisher.request
+    messages:
+      fisherRequest:
+        $ref: '#/components/messages/fisherRequest'
+  fisherReply:
+    address: ncs.fisher.reply
+    messages:
+      result:
+        $ref: '#/components/messages/doubleResult'
+      error:
+        $ref: '#/components/messages/error'
+
+  gammqRequest:
+    address: ncs.gammq.request
+    messages:
+      gammqRequest:
+        $ref: '#/components/messages/gammqRequest'
+  gammqReply:
+    address: ncs.gammq.reply
+    messages:
+      result:
+        $ref: '#/components/messages/doubleResult'
+      error:
+        $ref: '#/components/messages/error'
+
+  remainderRequest:
+    address: ncs.remainder.request
+    messages:
+      remainderRequest:
+        $ref: '#/components/messages/remainderRequest'
+  remainderReply:
+    address: ncs.remainder.reply
+    messages:
+      result:
+        $ref: '#/components/messages/intResult'
+      error:
+        $ref: '#/components/messages/error'
+
+operations:
+  checkTriangle:
+    action: receive
+    summary: Classify a triangle from three integer edges (REST GET /api/triangle/{a}/{b}/{c}).
+    channel:
+      $ref: '#/channels/triangleRequest'
+    reply:
+      channel:
+        $ref: '#/channels/triangleReply'
+  bessj:
+    action: receive
+    summary: Bessel function J_n(x) (REST GET /api/bessj/{n}/{x}).
+    channel:
+      $ref: '#/channels/bessjRequest'
+    reply:
+      channel:
+        $ref: '#/channels/bessjReply'
+  expint:
+    action: receive
+    summary: Exponential integral E_n(x) (REST GET /api/expint/{n}/{x}).
+    channel:
+      $ref: '#/channels/expintRequest'
+    reply:
+      channel:
+        $ref: '#/channels/expintReply'
+  fisher:
+    action: receive
+    summary: Fisher F-distribution value (REST GET /api/fisher/{m}/{n}/{x}).
+    channel:
+      $ref: '#/channels/fisherRequest'
+    reply:
+      channel:
+        $ref: '#/channels/fisherReply'
+  gammq:
+    action: receive
+    summary: Incomplete gamma function Q(a, x) (REST GET /api/gammq/{a}/{x}).
+    channel:
+      $ref: '#/channels/gammqRequest'
+    reply:
+      channel:
+        $ref: '#/channels/gammqReply'
+  remainder:
+    action: receive
+    summary: Integer remainder of a / b (REST GET /api/remainder/{a}/{b}).
+    channel:
+      $ref: '#/channels/remainderRequest'
+    reply:
+      channel:
+        $ref: '#/channels/remainderReply'
+
+components:
+  messages:
+    triangleRequest:
+      name: TriangleRequest
+      title: Triangle classification request
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/TriangleRequest'
+    bessjRequest:
+      name: BessjRequest
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/BessjRequest'
+    expintRequest:
+      name: ExpintRequest
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/ExpintRequest'
+    fisherRequest:
+      name: FisherRequest
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/FisherRequest'
+    gammqRequest:
+      name: GammqRequest
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/GammqRequest'
+    remainderRequest:
+      name: RemainderRequest
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/RemainderRequest'
+    intResult:
+      name: IntResult
+      title: Integer result reply (Dto.resultAsInt)
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/IntResult'
+    doubleResult:
+      name: DoubleResult
+      title: Floating-point result reply (Dto.resultAsDouble)
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/DoubleResult'
+    error:
+      name: Error
+      title: Error reply (mirrors a REST 4xx response)
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/Error'
+
+  schemas:
+    TriangleRequest:
+      type: object
+      required: [a, b, c]
+      properties:
+        a: { type: integer, format: int32, description: First edge }
+        b: { type: integer, format: int32, description: Second edge }
+        c: { type: integer, format: int32, description: Third edge }
+    BessjRequest:
+      type: object
+      required: [n, x]
+      properties:
+        n:
+          type: integer
+          format: int32
+          minimum: 3
+          maximum: 1000
+          description: Order; the service replies with an error outside 3..1000.
+        x: { type: number, format: double }
+    ExpintRequest:
+      type: object
+      required: [n, x]
+      properties:
+        n: { type: integer, format: int32, minimum: 0 }
+        x: { type: number, format: double, description: x >= 0; the service errors otherwise. }
+    FisherRequest:
+      type: object
+      required: [m, n, x]
+      properties:
+        m: { type: integer, format: int32, minimum: 1, maximum: 1000 }
+        n: { type: integer, format: int32, minimum: 1, maximum: 1000 }
+        x: { type: number, format: double }
+    GammqRequest:
+      type: object
+      required: [a, x]
+      properties:
+        a: { type: number, format: double, description: a > 0; the service errors otherwise. }
+        x: { type: number, format: double, description: x >= 0. }
+    RemainderRequest:
+      type: object
+      required: [a, b]
+      properties:
+        a: { type: integer, format: int32, minimum: -10000, maximum: 10000 }
+        b: { type: integer, format: int32, minimum: -10000, maximum: 10000 }
+    IntResult:
+      type: object
+      required: [resultAsInt]
+      properties:
+        resultAsInt: { type: integer, format: int32 }
+    DoubleResult:
+      type: object
+      required: [resultAsDouble]
+      properties:
+        resultAsDouble: { type: number, format: double }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: integer, description: 'Mirrors the REST status (e.g. 400).' }
+            message: { type: string }

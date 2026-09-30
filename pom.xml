@@ -923,6 +923,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <!-- A Kafka broker in Docker, for the AsyncAPI E2E tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-clients.version}</version>
