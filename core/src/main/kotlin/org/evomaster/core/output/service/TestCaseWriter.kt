@@ -17,6 +17,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Solution
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -80,6 +81,35 @@ abstract class TestCaseWriter {
     }
 
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
+
+    /**
+     * The faults found in a test, as a line of its comment block. Here rather than in one writer
+     * because a fault is a fault whatever the protocol was, and is worth saying the same way.
+     */
+    protected fun addFaultsCommentLine(lines: Lines, test: TestCase) {
+
+        val faults = test.test.evaluatedMainActions()
+            .map { it.result }
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+
+        if (faults.isEmpty()) {
+            return
+        }
+
+        if (faults.size == 1) {
+            lines.addBlockCommentLine("Found 1 potential fault of type-code ${faults.first().category.code}")
+            return
+        }
+
+        val codes = faults.asSequence().map { it.category.code }.toSet().toList().sorted()
+        val codeInfo = if (codes.size == 1) {
+            " of type-code ${codes[0]}"
+        } else {
+            ". Type-codes: ${codes.joinToString(", ")}"
+        }
+        lines.addBlockCommentLine("Found ${faults.size} potential faults$codeInfo")
+    }
 
     /**
      * Compute Playwright fixtures to destructure in the test signature.
@@ -336,6 +366,15 @@ abstract class TestCaseWriter {
      * that could be specific to a problem
      */
     open fun addExtraInitStatement(lines: Lines) {}
+
+    /**
+     * Add members to the test class that a problem type needs, such as a helper the tests call.
+     *
+     * Unlike [addExtraStaticVariables] this is given the whole solution, so that a member is
+     * written only when something in the suite actually uses it, and a suite that does not is
+     * left without the dependency it would carry.
+     */
+    open fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {}
 
     protected fun addActionInTryCatch(
         call: Action,

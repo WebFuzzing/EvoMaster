@@ -595,6 +595,13 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
 
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI) {
+                //what the helper that publishes and awaits a reply uses
+                lines.add("import time")
+                lines.add("import uuid")
+                lines.add("import kafka")
+            }
+
             if(config.sqli){
                 lines.add("import time")
             }
@@ -778,6 +785,8 @@ class TestSuiteWriter {
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
+
+        testCaseWriter.addExtraClassMembers(lines, solution)
 
 //        if (config.expectationsActive) {
 //            if (config.outputFormat.isJavaOrKotlin()) {

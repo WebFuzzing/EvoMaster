@@ -12,7 +12,7 @@ import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.AsyncApiTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
@@ -154,7 +154,7 @@ class AsyncApiModuleTest {
         injector.getInstance(TestSuiteWriter::class.java)
         injector.getInstance(RemoteController::class.java)
 
-        //no test writer for AsyncAPI yet, so the one that writes nothing
-        assertTrue(injector.getInstance(TestCaseWriter::class.java) is NoTestCaseWriter)
+        //the writer that pastes the driver's own publish-and-await lines
+        assertTrue(injector.getInstance(TestCaseWriter::class.java) is AsyncApiTestCaseWriter)
     }
 }

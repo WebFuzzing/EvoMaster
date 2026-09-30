@@ -673,7 +673,12 @@ class EMConfig {
                         " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
-            if (outputFormat == OutputFormat.DEFAULT) {
+            /*
+                AsyncAPI is the exception: it has a driver even in black-box, since there is no
+                universal client for a broker, so the format comes from the driver as it does in
+                white-box rather than from the black-box default.
+             */
+            if (outputFormat == OutputFormat.DEFAULT && problemType != ProblemType.ASYNCAPI) {
                 LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
                         " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
                 outputFormat = defaultOutputFormatForBlackBox
@@ -816,9 +821,13 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (problemType == ProblemType.ASYNCAPI && createTests) {
-            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
-                    " For the time being, run with '--createTests false' to only search for faults.")
+        if (problemType == ProblemType.ASYNCAPI
+                && createTests
+                && outputFormat != OutputFormat.DEFAULT
+                && !outputFormat.isJavaOrKotlin() && !outputFormat.isPython()) {
+            throw ConfigProblemException("Tests for an AsyncAPI service publish with a client of the transport," +
+                    " and one is written only for Java, Kotlin and Python so far, so outputFormat supports" +
+                    " only those")
         }
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
@@ -1343,7 +1352,10 @@ class EMConfig {
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
             " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
-            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python).")
+            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python)." +
+            " AsyncAPI is the exception on both counts: it has a driver in either mode, so the format comes from" +
+            " there, and only Java, Kotlin and Python can be generated, as the tests publish with a client of the" +
+            " transport.")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)

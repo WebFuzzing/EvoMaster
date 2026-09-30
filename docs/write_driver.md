@@ -2,6 +2,8 @@
 
 To generate tests for [white-box testing](whitebox.md), you need an _EvoMaster Driver_ up and running before
 executing `evomaster.jar`.
+One kind of API needs a driver in _black-box_ mode as well: AsyncAPI services, where there is no universal
+client for a message broker to point the fuzzer at. See [AsyncAPI](#asyncapi) below.
 These drivers have to be built manually for each system under test (SUT).
 See the [EMB repository](https://github.com/WebFuzzing/EMB) for a set of existing SUTs with drivers.
 
@@ -358,6 +360,35 @@ To test a GraphQL API, in the the `getProblemInfo()`, you need to return an inst
 `GraphQlProblem` class.
 Here, you need to specify the endpoint of where the GraphQL API can be accessed. Default value is `/graphql`.
 Note: must be able to do an _introspective query_ on such API to fetch its schema. If this is disabled for security reasons, _EvoMaster_ will fail.
+
+## AsyncAPI
+
+To test an AsyncAPI service, in the `getProblemInfo()` you need to return an instance of the
+`AsyncApiProblem` class, built from the AsyncAPI document itself, either its text or where to find it.
+Only AsyncAPI 3.x is supported, as it is the first version able to declare the reply to an operation, and
+that reply is what makes a service observable from outside.
+
+Unlike REST and GraphQL, **a driver is needed in black-box mode too**. There is one HTTP client for every
+REST API, but no one client for every broker: the transport may be Kafka, AMQP, MQTT or a socket, and they
+share nothing. So publishing a message is the driver's job, by overriding `executeAsyncApiAction`. What is
+asked of it is only to put the message on the wire and report what came back, never to judge it: deciding
+what an outcome means is the fuzzer's job, so that it means the same thing whatever the transport.
+
+Two things are worth knowing when writing one:
+
+- **A reply published before the action was is never an answer to it.** Only the driver can ensure that,
+  by seeking to the end of the reply destination before publishing, or by a fresh subscription. The fuzzer
+  does not vary its correlation ids between runs to compensate, because a run repeated under the same seed
+  has to behave the same way.
+- **Where a server actually is may not be what the document says.** The document gives the address of the
+  deployment its author had in mind; a system started for testing is often elsewhere, and a broker in a
+  container binds a port chosen at start-up. Override `getAsyncApiServerAddress(String serverName)` to say
+  where it is now. Generated tests ask for it there, in the same way they take the base URL of a REST
+  system from `startSut()`. Returning `null`, which is the default, means the document's own address is
+  used.
+
+Generated tests publish with a client of the transport rather than through the driver, so the suite needs
+that client library on its classpath: see [library dependencies](library_dependencies.md).
 
 ## RPC APIs
 
