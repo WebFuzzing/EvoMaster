@@ -63,7 +63,13 @@ open class AsyncApiActionTestCaseNamingStrategy(
                 if (message != null) {
                     mutableListOf(returns, safeVariableName(message))
                 } else {
-                    mutableListOf(returns, success)
+                    /*
+                        A reply arrived that matches none of the declared messages. Worded to
+                        match the fault's own label, for the same reason as below: with the
+                        experimental oracles off this names the test, with them on the fault
+                        does, and the two must read alike.
+                     */
+                    mutableListOf("replies", "with", "undeclared", "message")
                 }
             }
             //nothing is declared to come back, so reaching the broker is the whole outcome

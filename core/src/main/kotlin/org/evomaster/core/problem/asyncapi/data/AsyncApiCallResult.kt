@@ -21,6 +21,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
             resolving the document a second time. Only recorded when tests are being written.
          */
         const val BROKER = "BROKER"
+        const val SERVER_NAME = "SERVER_NAME"
         const val PROTOCOL = "PROTOCOL"
         const val ADDRESS = "ADDRESS"
         const val REPLY_ADDRESS = "REPLY_ADDRESS"
@@ -103,6 +104,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
      * from the document. Headers are a JSON object, so that one string holds them all.
      */
     fun setPublished(
+        serverName: String?,
         broker: String?,
         protocol: String?,
         address: String?,
@@ -112,6 +114,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         correlationHeader: String?,
         replyTimeoutMs: Long?
     ) {
+        serverName?.let { addResultValue(SERVER_NAME, it) }
         broker?.let { addResultValue(BROKER, it) }
         protocol?.let { addResultValue(PROTOCOL, it) }
         address?.let { addResultValue(ADDRESS, it) }
@@ -123,6 +126,12 @@ class AsyncApiCallResult : EnterpriseActionResult {
     }
 
     fun getBroker(): String? = getResultValue(BROKER)
+
+    /**
+     * The key of the server in the document, which is what the driver is asked about when a
+     * generated test needs to know where that server is now.
+     */
+    fun getServerName(): String? = getResultValue(SERVER_NAME)
 
     fun getProtocol(): String? = getResultValue(PROTOCOL)
 

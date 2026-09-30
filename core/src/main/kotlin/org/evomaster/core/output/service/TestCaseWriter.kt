@@ -83,6 +83,35 @@ abstract class TestCaseWriter {
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
     /**
+     * The faults found in a test, as a line of its comment block. Here rather than in one writer
+     * because a fault is a fault whatever the protocol was, and is worth saying the same way.
+     */
+    protected fun addFaultsCommentLine(lines: Lines, test: TestCase) {
+
+        val faults = test.test.evaluatedMainActions()
+            .map { it.result }
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+
+        if (faults.isEmpty()) {
+            return
+        }
+
+        if (faults.size == 1) {
+            lines.addBlockCommentLine("Found 1 potential fault of type-code ${faults.first().category.code}")
+            return
+        }
+
+        val codes = faults.asSequence().map { it.category.code }.toSet().toList().sorted()
+        val codeInfo = if (codes.size == 1) {
+            " of type-code ${codes[0]}"
+        } else {
+            ". Type-codes: ${codes.joinToString(", ")}"
+        }
+        lines.addBlockCommentLine("Found ${faults.size} potential faults$codeInfo")
+    }
+
+    /**
      * Compute Playwright fixtures to destructure in the test signature.
      * For REST-only generation we currently need only the `request` fixture.
      * This helper can be extended later (e.g., include `page`) by refactoring it to a List<String>.

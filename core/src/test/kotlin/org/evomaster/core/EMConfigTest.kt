@@ -786,25 +786,27 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testAsyncApiWritesTestsOnlyInJavaOrKotlin(){
+    fun testAsyncApiWritesTestsOnlyInTheLanguagesItCanPublishFrom(){
 
         //a parser remembers what it last parsed, so each case gets its own
         fun parse(vararg args: String) =
             EMConfig().updateProperties(EMConfig.getOptionParser().parse(*args))
 
         /*
-            The lines that publish are rendered by the driver, which is Java, so there is no
-            other language they could be pasted into.
+            A test publishes with a client of the transport, and one is written only for these
+            languages so far. Anything else has nothing to publish with.
          */
         val e = assertThrows<ConfigProblemException> {
-            parse("--problemType", "ASYNCAPI", "--outputFormat", "PYTHON_UNITTEST")
+            parse("--problemType", "ASYNCAPI", "--outputFormat", "JS_JEST")
         }
         assertTrue(e.message!!.contains("outputFormat"), e.message)
 
-        //the default, and the two it can write
+        //the default, and the three it can write
         parse("--problemType", "ASYNCAPI")
         parse("--problemType", "ASYNCAPI", "--outputFormat", "JAVA_JUNIT_5")
         parse("--problemType", "ASYNCAPI", "--outputFormat", "KOTLIN_JUNIT_5")
+        //Python output is black-box only, which EvoMaster checks separately
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "PYTHON_UNITTEST", "--blackBox", "true")
 
         //and a run that only wants the search is still allowed
         parse("--problemType", "ASYNCAPI", "--createTests", "false")
