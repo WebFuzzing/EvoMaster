@@ -36,6 +36,7 @@
         <module>spring-rpc-grpc</module>
         <module>spring-rpc-thrift</module>
         <module>spring-mcp-bb</module>
+        <module>spring-asyncapi-kafka</module>
     </modules>
 
     <dependencyManagement>
