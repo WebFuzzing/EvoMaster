@@ -72,6 +72,17 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
         assertTrue(ok, "With seed " + defaultSeed + ": no reply to '" + operation + "' was ever received");
     }
 
+    /**
+     * That some reply to [operation] arrived and matched none of the messages the contract
+     * declares for it, which is the one fault only a reply classifier can find.
+     */
+    protected void assertRepliedWithUndeclaredMessage(Solution<AsyncApiIndividual> solution, String operation) {
+        boolean found = resultsOf(solution, operation).stream()
+                .anyMatch(r -> r.getOutcome() == AsyncApiOutcome.REPLIED && r.getReplyMessage() == null);
+        assertTrue(found, "With seed " + defaultSeed + ": every reply to '" + operation
+                + "' matched a declared message, so the undeclared-reply path was never reached");
+    }
+
     protected void assertReplyReached(Solution<AsyncApiIndividual> solution, String operation, String messageId) {
         Set<String> replies = repliesOf(solution, operation);
         assertTrue(replies.contains(messageId),

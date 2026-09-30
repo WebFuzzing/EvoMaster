@@ -32,11 +32,17 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        //no test writer for AsyncAPI yet, so the search alone
-        runTestHandlingFlaky(
+        /*
+            The generated suite is compiled and run, so this covers the writer as well as the
+            search: the tests publish with a Kafka client of their own, written from the
+            contract, and never go through the driver.
+         */
+        runTestHandlingFlakyAndCompilation(
                 "NcsKafkaEM",
                 "org.foo.asyncapi.NcsKafkaEM",
+                null,
                 300,
+                true,
                 false,
                 (args) -> {
 
@@ -71,21 +77,68 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                     assertReplyReached(solution, "remainder", "intResult");
 
                     /*
-                        Of the rejections NCS makes, only these two lie within what the schema
-                        allows: expint rejects a negative x, gammq a non-positive a or a negative
-                        x. bessj's order and remainder's operands are bounded by the schema, so
-                        their error replies cannot be reached without publishing invalid data.
+                        An error reply is reachable exactly where the schema leaves the input the
+                        service rejects within what it allows. These three describe their
+                        constraint in prose rather than as a bound -- expint's x, gammq's a, and
+                        fisher's x, which its degrees of freedom do not cover -- so the search is
+                        free to produce it.
+
+                        bessj and remainder declare an error reply that nothing obeying the
+                        contract can provoke: their bounds are exactly the range the service
+                        checks. That is a property of the document, not a gap in the search.
                      */
                     assertReplyReached(solution, "expint", "doubleResult");
                     assertReplyReached(solution, "expint", "error");
                     assertReplyReached(solution, "gammq", "doubleResult");
                     assertReplyReached(solution, "gammq", "error");
+                    assertReplyReached(solution, "fisher", "doubleResult");
+                    assertReplyReached(solution, "fisher", "error");
+
+                    /*
+                        checkTriangle answers an edge that is not positive with a shape the
+                        contract does not declare. Only the classifier can tell: the message
+                        arrived, was correlated, and still means nothing to a client written
+                        against the document.
+                     */
+                    assertRepliedWithUndeclaredMessage(solution, "checkTriangle");
 
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
 
                     //the oracles are off here, so a well-behaved service must report nothing
                     assertTrue(faultsOf(solution).isEmpty(), "faults were reported: " + faultsOf(solution));
+                },
+                5);
+    }
+
+    @Test
+    public void testRunEMInJava() throws Throwable {
+
+        /*
+            The lines that publish are written in the language the suite is generated in, and
+            only one of the two is exercised by the test above. Compiling and running the other
+            is what catches a Java half that was never compiled: the Kotlin one did not compile
+            first time either.
+
+            A short budget: what is under test here is the emitted Java, not the search.
+         */
+        runTestHandlingFlakyAndCompilation(
+                "NcsKafkaJavaEM",
+                "org.foo.asyncapi.NcsKafkaJavaEM",
+                null,
+                40,
+                true,
+                false,
+                (args) -> {
+
+                    setOption(args, "outputFormat", "JAVA_JUNIT_5");
+                    setOption(args, "asyncApiReplyTimeoutMs", "1000");
+                    setOption(args, "killSwitch", "false");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
                 },
                 5);
     }
