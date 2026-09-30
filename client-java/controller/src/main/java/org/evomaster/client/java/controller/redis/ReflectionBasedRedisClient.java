@@ -55,12 +55,24 @@ public class ReflectionBasedRedisClient {
      * @param keyspace Logical database index. Default is 0.
      */
     public ReflectionBasedRedisClient(String host, int port, int keyspace) {
+        this(host, port, keyspace, null);
+    }
+
+    /**
+     * Creates the Redis connection.
+     * @param host Redis database host.
+     * @param port Redis database port.
+     * @param keyspace Logical database index. Default is 0.
+     * @param password password to authenticate with, as set by {@code requirepass}. Null or empty
+     *                  if the server does not require authentication.
+     */
+    public ReflectionBasedRedisClient(String host, int port, int keyspace, String password) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
             Class<?> redisURIClass = Class.forName("io.lettuce.core.RedisURI");
 
             Method createUri = redisURIClass.getMethod(CREATE_METHOD, String.class);
-            Object uri = createUri.invoke(null, "redis://" + host + ":" + port + "/" + keyspace);
+            Object uri = createUri.invoke(null, buildRedisUrl(host, port, keyspace, password));
 
             Method createClient = redisClientClass.getMethod(CREATE_METHOD, redisURIClass);
             this.lettuceClient = createClient.invoke(null, uri);
@@ -76,7 +88,16 @@ public class ReflectionBasedRedisClient {
             throw new RuntimeException("Failed to initialize Lettuce Redis client via reflection", e);
         }
 
-        this.jedisClient = createJedisClient(host, port);
+        this.jedisClient = createJedisClient(host, port, password);
+    }
+
+    /**
+     * Builds a standard {@code redis://[:password@]host:port/keyspace} URL, understood by both
+     * Lettuce's {@code RedisURI.create} and Jedis's {@code UnifiedJedis(String)} constructor.
+     */
+    private static String buildRedisUrl(String host, int port, int keyspace, String password) {
+        String auth = (password != null && !password.isEmpty()) ? ":" + password + "@" : "";
+        return "redis://" + auth + host + ":" + port + "/" + keyspace;
     }
 
     /**
@@ -84,13 +105,11 @@ public class ReflectionBasedRedisClient {
      * Unlike the Lettuce connection above, its absence does not prevent the rest of this client
      * from working, since plain Redis heuristics have no need for it.
      */
-    private static Object createJedisClient(String host, int port) {
+    private static Object createJedisClient(String host, int port, String password) {
         try {
-            Class<?> hostAndPortClass = Class.forName("redis.clients.jedis.HostAndPort");
-            Object hostAndPort = hostAndPortClass.getConstructor(String.class, int.class).newInstance(host, port);
-
             Class<?> unifiedJedisClass = Class.forName("redis.clients.jedis.UnifiedJedis");
-            return unifiedJedisClass.getConstructor(hostAndPortClass).newInstance(hostAndPort);
+            return unifiedJedisClass.getConstructor(String.class)
+                    .newInstance(buildRedisUrl(host, port, 0, password));
         } catch (Exception e) {
             return null;
         }
