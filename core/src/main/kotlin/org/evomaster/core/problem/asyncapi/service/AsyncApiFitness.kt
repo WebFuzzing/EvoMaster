@@ -69,14 +69,16 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         /**
          * What the variable holding a reply is called in a generated test, before the action's
-         * index. Named by the core so that two actions in one test cannot collide.
+         * index, which keeps two actions in one test from colliding. The same `res_0` every
+         * other problem type writes, as this is the same thing: what came back.
          *
-         * Not minted the way the writer mints `res_0` and `body_0`, from a counter it resets per
-         * test: the name has to be settled here, while the search runs, because it is part of
-         * what a driver is asked to render against. The action's index is the only number in
-         * hand at that point, and it is unique within the test being executed.
+         * Named here rather than by the writer, which mints its own from a counter it resets per
+         * test, because the name has to be settled while the search runs: it is part of what a
+         * driver is asked to render against. RPC settles it in the same place, for the same
+         * reason. The action's index is the only number in hand there, and it is unique within
+         * the test being executed.
          */
-        private const val REPLY_VARIABLE_PREFIX = "reply_"
+        private const val REPLY_VARIABLE_PREFIX = "res_"
 
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
@@ -395,7 +397,15 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                 has, so it renders those lines while the search runs. Not asked for when no test
                 will be written, so a driver need not spend time on it.
              */
-            dto.outputFormat = SutInfoDto.OutputFormat.valueOf(config.outputFormat.toString())
+            /*
+                Only when the driver could render that language at all. It is Java, so it knows
+                nothing of the formats a JVM driver cannot produce, and asking would fail. The
+                variable is still named here either way: the core owns that name, whoever writes
+                the lines that assign to it.
+             */
+            dto.outputFormat = SutInfoDto.OutputFormat.values()
+                .firstOrNull { it.name == config.outputFormat.name }
+
             dto.replyVariable = REPLY_VARIABLE_PREFIX + index
         }
 
@@ -441,6 +451,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         val server = channel?.let { document.serversOf(it).firstOrNull() }
 
         result.setPublished(
+            serverName = server?.name,
             broker = server?.host,
             protocol = server?.protocol,
             address = call.address,
