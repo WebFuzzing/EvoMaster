@@ -112,7 +112,7 @@ object RestResponseFeeder {
                 } else {
                     id.key
                 }
-                pool.addValue(name, id.value.asText())
+                pool.addValueFromResponses(name, id.value.asText())
             }
             JsonNodeType.ARRAY ->  {
                 //unsure we really need to handle arrays in this case
@@ -127,7 +127,7 @@ object RestResponseFeeder {
                 }
                 stemmer.reset()
                 val key = stemmer.stem(qualifier) + "id"
-                pool.addValue(key, id)
+                pool.addValueFromResponses(key, id)
             }
             else -> {/* do nothing */}
         }
@@ -168,7 +168,7 @@ object RestResponseFeeder {
                 } else {
                     field
                 }
-                pool.addValue(key, node.asText())
+                pool.addValueFromResponses(key, node.asText())
             }
             else -> {/* do nothing */}
         }

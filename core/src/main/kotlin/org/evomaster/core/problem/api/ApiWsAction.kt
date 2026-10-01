@@ -9,9 +9,9 @@ import org.evomaster.core.search.action.MainAction
  */
 abstract class ApiWsAction(
     /**
-     * auth info
+     * TODO likely need to remove here, or refactor
      */
-    open val auth: AuthenticationInfo,
+    auth: AuthenticationInfo,
     isCleanUp : Boolean,
     /**
      * a list of param could be manipulated by evomaster

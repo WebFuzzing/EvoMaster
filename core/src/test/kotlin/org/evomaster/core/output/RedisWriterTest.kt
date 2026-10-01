@@ -2,10 +2,13 @@ package org.evomaster.core.output
 
 import org.evomaster.core.database.redis.RedisDbActionResult
 import org.evomaster.core.database.redis.RedisHsetAction
+import org.evomaster.core.database.redis.RedisQueryAction
+import org.evomaster.core.database.redis.RedisQueryField
 import org.evomaster.core.database.redis.RedisSaddAction
 import org.evomaster.core.database.redis.RedisSaddFromSinterAction
 import org.evomaster.core.database.redis.RedisSetAction
 import org.evomaster.core.search.action.EvaluatedRedisDbAction
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -36,6 +39,17 @@ class RedisWriterTest {
     private fun makeEvaluatedSaddFromSinter(keys: List<String>, member: String, success: Boolean = true): EvaluatedRedisDbAction {
         val action = RedisSaddFromSinterAction(keys = keys, memberGene = StringGene("member", member))
         action.setLocalId("test-redis-sadd-sinter-action")
+        val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
+        return EvaluatedRedisDbAction(action, result)
+    }
+
+    private fun makeEvaluatedQuery(
+        key: String,
+        fields: List<RedisQueryField>,
+        success: Boolean = true
+    ): EvaluatedRedisDbAction {
+        val action = RedisQueryAction(key, fields)
+        action.setLocalId("test-redis-query-action")
         val result = RedisDbActionResult(action.getLocalId()).also { it.setInsertExecutionResult(success) }
         return EvaluatedRedisDbAction(action, result)
     }
@@ -172,5 +186,23 @@ class RedisWriterTest {
         assertEquals(1, insertionVars.size)
         assertEquals("insertions_redis", insertionVars[0].first)
         assertEquals("insertions_redis_result", insertionVars[0].second)
+    }
+
+    @Test
+    fun testKotlinFormatQueryActionWritesOneHsetPerField() {
+        val output = writeKotlin(
+            listOf(
+                makeEvaluatedQuery(
+                    "product:1", listOf(
+                        RedisQueryField("title", constantValue = "redis"),
+                        RedisQueryField("price", valueGene = DoubleGene("price", 19.99))
+                    )
+                )
+            )
+        )
+
+        assertTrue(output.contains(""".hset("product:1", "title", "redis")"""))
+        assertTrue(output.contains(""".hset("product:1", "price", "19.99")"""))
+        assertEquals(1, output.split(".and()").size - 1)
     }
 }

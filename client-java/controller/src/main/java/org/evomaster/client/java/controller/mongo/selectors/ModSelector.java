@@ -26,6 +26,9 @@ public class ModSelector extends SingleConditionQuerySelector {
             }
             Long divisor = ((Number) listOfValues.get(0)).longValue();
             Long remainder = ((Number) listOfValues.get(1)).longValue();
+            if (divisor == 0) {
+                return null; // divisor cannot be zero
+            }
             return new ModOperation(fieldName, divisor, remainder);
         } else {
             return null;

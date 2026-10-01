@@ -25,7 +25,11 @@ are listed here:
 
 * _asyncapi/sut/microcks.yaml_: AsyncAPI description from
   [Microcks](https://github.com/microcks/microcks), used unmodified as a test resource of the
-  `asyncapi-parser` module. Released under Apache-2.0 license.
+  `asyncapi-parser` module and of `core`. Released under Apache-2.0 license.
 
 * _asyncapi/sut/openagents-cache.yaml_: AsyncAPI description of the OpenAgents shared-cache API,
   used unmodified as a test resource of the `asyncapi-parser` module. Released under MIT license.
+
+* _asyncapi/sut/scalar.yaml_: AsyncAPI description from
+  [Scalar](https://github.com/scalar/scalar), used unmodified as a test resource of `core`.
+  Released under MIT license.

@@ -1,17 +1,20 @@
 package org.evomaster.client.java.controller.mongo;
 
 import com.mongodb.client.model.Filters;
+import org.bson.BsonBinary;
 import org.bson.Document;
 import org.bson.BsonRegularExpression;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.bson.types.Binary;
+import org.bson.types.Decimal128;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.controller.mongo.selectors.TypeSelector;
+import org.evomaster.client.java.controller.mongo.utils.BitmaskUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,6 +22,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueryParserTest {
 
     private final QueryParser parser = new QueryParser();
+
+    @Test
+    void testParseElemMatchWithinAll() {
+        // { "a": { "$all": [ { "$elemMatch": { "$gt": 2 } } ] } }
+        Document query = new Document().append("a", new Document().append("$all",
+                Collections.singletonList(new Document().append("$elemMatch",
+                        new Document().append("$gt", 2)))));
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof AllOperation);
+        AllOperation<?> allOperation = (AllOperation<?>) operation;
+        assertEquals("a", allOperation.getFieldPath());
+        assertEquals(1, allOperation.getValues().size());
+        Object elemMatchValue = allOperation.getValues().get(0);
+        assertTrue(elemMatchValue instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatchOperation = (ElemMatchOperation) elemMatchValue;
+        assertEquals("a", elemMatchOperation.getFieldPath());
+        assertTrue(elemMatchOperation.getCondition() instanceof GreaterThanOperation);
+        assertEquals(2, ((GreaterThanOperation) elemMatchOperation.getCondition()).getValue());
+    }
 
     @Test
     void testParseEquals() {
@@ -29,7 +52,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("age", eq.getFieldName());
+        assertEquals("age", eq.getFieldPath());
         assertEquals(30, eq.getValue());
     }
 
@@ -42,7 +65,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("age", eq.getFieldName());
+        assertEquals("age", eq.getFieldPath());
         assertEquals(null, eq.getValue());
     }
 
@@ -55,7 +78,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NotEqualsOperation);
         NotEqualsOperation<?> ne = (NotEqualsOperation<?>) operation;
-        assertEquals("age", ne.getFieldName());
+        assertEquals("age", ne.getFieldPath());
         assertEquals(30, ne.getValue());
     }
 
@@ -68,7 +91,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NotEqualsOperation);
         NotEqualsOperation<?> ne = (NotEqualsOperation<?>) operation;
-        assertEquals("age", ne.getFieldName());
+        assertEquals("age", ne.getFieldPath());
         assertEquals(null, ne.getValue());
     }
 
@@ -108,7 +131,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof InOperation);
         InOperation in = (InOperation) operation;
-        assertEquals("age", in.getFieldName());
+        assertEquals("age", in.getFieldPath());
         assertEquals(Arrays.asList(20, 30, 40), in.getValues());
     }
 
@@ -121,7 +144,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof InOperation);
         InOperation in = (InOperation) operation;
-        assertEquals("age", in.getFieldName());
+        assertEquals("age", in.getFieldPath());
         assertEquals(Arrays.asList(20, 30, null), in.getValues());
     }
 
@@ -135,7 +158,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ExistsOperation);
         ExistsOperation exists = (ExistsOperation) operation;
-        assertEquals("age", exists.getFieldName());
+        assertEquals("age", exists.getFieldPath());
         assertTrue(exists.getBoolean());
     }
 
@@ -148,7 +171,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NotOperation);
         NotOperation not = (NotOperation) operation;
-        assertEquals("age", not.getFieldName());
+        assertEquals("age", not.getFieldPath());
         assertTrue(not.getCondition() instanceof EqualsOperation);
     }
 
@@ -161,7 +184,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof SizeOperation);
         SizeOperation size = (SizeOperation) operation;
-        assertEquals("tags", size.getFieldName());
+        assertEquals("tags", size.getFieldPath());
         assertEquals(3, size.getValue());
     }
 
@@ -174,7 +197,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof AllOperation);
         AllOperation<?> all = (AllOperation<?>) operation;
-        assertEquals("tags", all.getFieldName());
+        assertEquals("tags", all.getFieldPath());
         assertEquals(Arrays.asList("a", "b"), all.getValues());
     }
 
@@ -187,11 +210,11 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("results", elemMatch.getFieldName());
+        assertEquals("results", elemMatch.getFieldPath());
         // Implicit equals inside elemMatch
         assertTrue(elemMatch.getCondition() instanceof EqualsOperation);
         EqualsOperation equals = (EqualsOperation) elemMatch.getCondition();
-        assertEquals("product", equals.getFieldName());
+        assertEquals("product", equals.getFieldPath());
         assertEquals("abc", equals.getValue());
     }
 
@@ -207,18 +230,17 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation outerElemMatch = (ElemMatchOperation) operation;
-        assertEquals("groups", outerElemMatch.getFieldName());
+        assertEquals("groups", outerElemMatch.getFieldPath());
 
         assertTrue(outerElemMatch.getCondition() instanceof ElemMatchOperation);
         ElemMatchOperation innerElemMatch = (ElemMatchOperation) outerElemMatch.getCondition();
-        assertEquals("members", innerElemMatch.getFieldName());
+        assertEquals("members", innerElemMatch.getFieldPath());
 
         assertTrue(innerElemMatch.getCondition() instanceof EqualsOperation);
         EqualsOperation<?> equals = (EqualsOperation<?>) innerElemMatch.getCondition();
-        assertEquals("name", equals.getFieldName());
+        assertEquals("name", equals.getFieldPath());
         assertEquals("Alice", equals.getValue());
     }
-
 
 
     @Test
@@ -231,7 +253,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("results", elemMatch.getFieldName());
+        assertEquals("results", elemMatch.getFieldPath());
         // Implicit and inside elemMatch
         assertTrue(elemMatch.getCondition() instanceof AndOperation);
         AndOperation and = (AndOperation) elemMatch.getCondition();
@@ -250,11 +272,11 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("results", elemMatch.getFieldName());
+        assertEquals("results", elemMatch.getFieldPath());
         // Implicit equals inside elemMatch
         assertTrue(elemMatch.getCondition() instanceof EqualsOperation);
         EqualsOperation equals = (EqualsOperation) elemMatch.getCondition();
-        assertEquals("product", equals.getFieldName());
+        assertEquals("product", equals.getFieldPath());
         assertEquals(null, equals.getValue());
     }
 
@@ -267,10 +289,10 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("tags", elemMatch.getFieldName());
+        assertEquals("tags", elemMatch.getFieldPath());
         assertTrue(elemMatch.getCondition() instanceof EqualsOperation);
         EqualsOperation<?> equals = (EqualsOperation<?>) elemMatch.getCondition();
-        assertEquals("$", equals.getFieldName());
+        assertEquals("$", equals.getFieldPath());
         assertEquals("b", equals.getValue());
     }
 
@@ -284,11 +306,11 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("tags", elemMatch.getFieldName());
+        assertEquals("tags", elemMatch.getFieldPath());
         assertTrue(elemMatch.getCondition() instanceof GreaterThanEqualsOperation);
         GreaterThanEqualsOperation<?> greaterThanEquals =
                 (GreaterThanEqualsOperation<?>) elemMatch.getCondition();
-        assertEquals("$", greaterThanEquals.getFieldName());
+        assertEquals("$", greaterThanEquals.getFieldPath());
         assertEquals("b", greaterThanEquals.getValue());
     }
 
@@ -305,7 +327,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("tags", elemMatch.getFieldName());
+        assertEquals("tags", elemMatch.getFieldPath());
 
         assertTrue(elemMatch.getCondition() instanceof AndOperation);
         AndOperation and = (AndOperation) elemMatch.getCondition();
@@ -313,12 +335,12 @@ class QueryParserTest {
 
         assertTrue(and.getConditions().get(0) instanceof LessThanOperation);
         LessThanOperation<?> lessThan = (LessThanOperation<?>) and.getConditions().get(0);
-        assertEquals("$", lessThan.getFieldName());
+        assertEquals("$", lessThan.getFieldPath());
         assertEquals("c", lessThan.getValue());
 
         assertTrue(and.getConditions().get(1) instanceof GreaterThanOperation);
         GreaterThanOperation<?> greaterThan = (GreaterThanOperation<?>) and.getConditions().get(1);
-        assertEquals("$", greaterThan.getFieldName());
+        assertEquals("$", greaterThan.getFieldPath());
         assertEquals("a", greaterThan.getValue());
     }
 
@@ -335,7 +357,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("tags", elemMatch.getFieldName());
+        assertEquals("tags", elemMatch.getFieldPath());
 
         assertTrue(elemMatch.getCondition() instanceof OrOperation);
         OrOperation or = (OrOperation) elemMatch.getCondition();
@@ -343,12 +365,12 @@ class QueryParserTest {
 
         assertTrue(or.getConditions().get(0) instanceof EqualsOperation);
         EqualsOperation<?> firstEquals = (EqualsOperation<?>) or.getConditions().get(0);
-        assertEquals("$", firstEquals.getFieldName());
+        assertEquals("$", firstEquals.getFieldPath());
         assertEquals("a", firstEquals.getValue());
 
         assertTrue(or.getConditions().get(1) instanceof EqualsOperation);
         EqualsOperation<?> secondEquals = (EqualsOperation<?>) or.getConditions().get(1);
-        assertEquals("$", secondEquals.getFieldName());
+        assertEquals("$", secondEquals.getFieldPath());
         assertEquals("b", secondEquals.getValue());
     }
 
@@ -356,14 +378,27 @@ class QueryParserTest {
     void testParseType() {
         Document query = new Document(
                 "name",
-                new Document("$type", "STRING")
+                new Document("$type", "string")
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
-        assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertEquals("name", type.getFieldPath());
+        assertNotNull(type.getBsonTypes());
+        List<Object> expectedBsonTypes = TypeSelector.parseToBsonTypes("string");
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
     }
+
+    @Test
+    void testParseInvalidType() {
+        Document query = new Document(
+                "name",
+                new Document("$type", "STRING")
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
 
     @Test
     void testParseTypeWithNumber() {
@@ -374,8 +409,8 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof TypeOperation);
         TypeOperation type = (TypeOperation) operation;
-        assertEquals("name", type.getFieldName());
-        assertNotNull(type.getType());
+        assertEquals("name", type.getFieldPath());
+        assertNotNull(type.getBsonTypes());
     }
 
     @Test
@@ -383,7 +418,7 @@ class QueryParserTest {
         Document query = new Document("name", new Document("$regex", "^hospital.*"));
 
         RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
-        assertEquals("name", regex.getFieldName());
+        assertEquals("name", regex.getFieldPath());
         assertEquals("^hospital.*", regex.getPattern().pattern());
         assertTrue(regex.getOptions().isEmpty());
     }
@@ -409,7 +444,7 @@ class QueryParserTest {
                         .append("$options", "imsxu"));
 
         RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
-        assertEquals("name", regex.getFieldName());
+        assertEquals("name", regex.getFieldPath());
         assertEquals("^hospital.*", regex.getPattern().pattern());
         assertTrue(regex.getOptions().isCaseInsensitive());
         assertTrue(regex.getOptions().isMultiline());
@@ -432,11 +467,31 @@ class QueryParserTest {
     }
 
     @Test
+    void testParseNotRegexBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$not", new BsonRegularExpression("x")));
+
+        NotOperation notOperation = assertInstanceOf(NotOperation.class, parser.parse(query));
+        assertEquals("name", notOperation.getFieldPath());
+        assertTrue(notOperation.getCondition() instanceof RegexOperation);
+        RegexOperation regex = (RegexOperation) notOperation.getCondition();
+        assertEquals("x", regex.getPattern().pattern());
+    }
+
+    @Test
+    void testParseEqBsonRegularExpression() {
+        Document query = new Document("name",
+                new Document("$eq", new BsonRegularExpression("x")));
+
+        assertNotNull(parser.parse(query));
+    }
+
+    @Test
     void testParseFiltersRegex() {
         Document query = convertToDocument(Filters.regex("name", "^hospital.*", "i"));
 
         RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
-        assertEquals("name", regex.getFieldName());
+        assertEquals("name", regex.getFieldPath());
         assertEquals("^hospital.*", regex.getPattern().pattern());
         assertTrue(regex.getOptions().isCaseInsensitive());
         assertTrue((regex.getPattern().flags() & Pattern.CASE_INSENSITIVE) != 0);
@@ -448,7 +503,7 @@ class QueryParserTest {
         Document query = convertToDocument(Filters.regex("description", pattern));
 
         RegexOperation regex = assertInstanceOf(RegexOperation.class, parser.parse(query));
-        assertEquals("description", regex.getFieldName());
+        assertEquals("description", regex.getFieldPath());
         assertEquals(pattern.pattern(), regex.getPattern().pattern());
         assertTrue(regex.getOptions().isMultiline());
         assertTrue(regex.getOptions().isDotAll());
@@ -497,7 +552,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof GreaterThanOperation);
         GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
-        assertEquals("age", gt.getFieldName());
+        assertEquals("age", gt.getFieldPath());
         assertEquals(18, gt.getValue());
     }
 
@@ -510,7 +565,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof LessThanEqualsOperation);
         LessThanEqualsOperation<?> lte = (LessThanEqualsOperation<?>) operation;
-        assertEquals("age", lte.getFieldName());
+        assertEquals("age", lte.getFieldPath());
         assertEquals(65, lte.getValue());
     }
 
@@ -536,7 +591,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NotInOperation);
         NotInOperation<?> nin = (NotInOperation<?>) operation;
-        assertEquals("age", nin.getFieldName());
+        assertEquals("age", nin.getFieldPath());
         assertEquals(Arrays.asList(10, 20), nin.getValues());
     }
 
@@ -549,13 +604,23 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof ModOperation);
         ModOperation mod = (ModOperation) operation;
-        assertEquals("age", mod.getFieldName());
+        assertEquals("age", mod.getFieldPath());
         assertEquals(2L, mod.getDivisor());
         assertEquals(0L, mod.getRemainder());
     }
 
     @Test
-    void testParseBitsAllClear() {
+    void testModRejectZeroDivisor() {
+        Document query = new Document(
+                "age",
+                new Document("$mod", Arrays.asList(0L, 0L))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseBitsAllClearLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAllClear", 5L)
@@ -563,25 +628,74 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAllClearOperation);
         BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
-        assertEquals("flags", bitsAllClear.getFieldName());
+        assertEquals("flags", bitsAllClear.getFieldPath());
         assertEquals(5L, bitsAllClear.getBitmask());
     }
 
     @Test
-    void testParseBitsAllSet() {
+    void testParseBitsAllClearInteger() {
         Document query = new Document(
                 "flags",
-                new Document("$bitsAllSet", 5L)
+                new Document("$bitsAllClear", 5)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldPath());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllClearDouble() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", 5.0d)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldPath());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllClearBigDecimal() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllClear", new Decimal128(5))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllClearOperation);
+        BitsAllClearOperation bitsAllClear = (BitsAllClearOperation) operation;
+        assertEquals("flags", bitsAllClear.getFieldPath());
+        assertEquals(5L, bitsAllClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAllSetInteger() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 5)
         );
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAllSetOperation);
         BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
-        assertEquals("flags", bitsAllSet.getFieldName());
+        assertEquals("flags", bitsAllSet.getFieldPath());
         assertEquals(5L, bitsAllSet.getBitmask());
     }
 
     @Test
-    void testParseBitsAnyClear() {
+    void testParseInvalidFractionalBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", 3.5d)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseBitsAnyClearLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAnyClear", 5L)
@@ -589,12 +703,25 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAnyClearOperation);
         BitsAnyClearOperation bitsAnyClear = (BitsAnyClearOperation) operation;
-        assertEquals("flags", bitsAnyClear.getFieldName());
+        assertEquals("flags", bitsAnyClear.getFieldPath());
         assertEquals(5L, bitsAnyClear.getBitmask());
     }
 
     @Test
-    void testParseBitsAnySet() {
+    void testParseBitsAnyClearInteger() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnyClear", 5)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnyClearOperation);
+        BitsAnyClearOperation bitsAnyClear = (BitsAnyClearOperation) operation;
+        assertEquals("flags", bitsAnyClear.getFieldPath());
+        assertEquals(5L, bitsAnyClear.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySetLong() {
         Document query = new Document(
                 "flags",
                 new Document("$bitsAnySet", 5L)
@@ -602,7 +729,20 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof BitsAnySetOperation);
         BitsAnySetOperation bitsAnySet = (BitsAnySetOperation) operation;
-        assertEquals("flags", bitsAnySet.getFieldName());
+        assertEquals("flags", bitsAnySet.getFieldPath());
+        assertEquals(5L, bitsAnySet.getBitmask());
+    }
+
+    @Test
+    void testParseBitsAnySetBigDecimal128() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAnySet", new Decimal128(5))
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAnySetOperation);
+        BitsAnySetOperation bitsAnySet = (BitsAnySetOperation) operation;
+        assertEquals("flags", bitsAnySet.getFieldPath());
         assertEquals(5L, bitsAnySet.getBitmask());
     }
 
@@ -615,7 +755,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof GreaterThanEqualsOperation);
         GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) operation;
-        assertEquals("age", gte.getFieldName());
+        assertEquals("age", gte.getFieldPath());
         assertEquals(18, gte.getValue());
     }
 
@@ -630,7 +770,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NearSphereOperation);
         NearSphereOperation ns = (NearSphereOperation) operation;
-        assertEquals("location", ns.getFieldName());
+        assertEquals("location", ns.getFieldPath());
         assertEquals(40.0, ns.getLongitude());
         assertEquals(70.0, ns.getLatitude());
         // Radians to meters: 6371000 * distance
@@ -651,7 +791,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NearSphereOperation);
         NearSphereOperation ns = (NearSphereOperation) operation;
-        assertEquals("location", ns.getFieldName());
+        assertEquals("location", ns.getFieldPath());
         assertEquals(40.0, ns.getLongitude());
         assertEquals(70.0, ns.getLatitude());
         assertEquals(1000.0, ns.getMaxDistance());
@@ -669,7 +809,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NearOperation);
         NearOperation near = (NearOperation) operation;
-        assertEquals("location", near.getFieldName());
+        assertEquals("location", near.getFieldPath());
         assertEquals(40.0, near.getLongitude());
         assertEquals(70.0, near.getLatitude());
         assertEquals(10.0, near.getMaxDistance());
@@ -689,7 +829,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof NearOperation);
         NearOperation near = (NearOperation) operation;
-        assertEquals("location", near.getFieldName());
+        assertEquals("location", near.getFieldPath());
         assertEquals(40.0, near.getLongitude());
         assertEquals(70.0, near.getLatitude());
         assertEquals(1000.0, near.getMaxDistance());
@@ -864,7 +1004,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("age", eq.getFieldName());
+        assertEquals("age", eq.getFieldPath());
         assertEquals(30, eq.getValue());
     }
 
@@ -874,7 +1014,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("age", eq.getFieldName());
+        assertEquals("age", eq.getFieldPath());
         assertEquals(null, eq.getValue());
     }
 
@@ -888,12 +1028,12 @@ class QueryParserTest {
 
         assertTrue(and.getConditions().get(0) instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) and.getConditions().get(0);
-        assertEquals("age", eq.getFieldName());
+        assertEquals("age", eq.getFieldPath());
         assertEquals(30, eq.getValue());
 
         assertTrue(and.getConditions().get(1) instanceof EqualsOperation);
         EqualsOperation<?> eq2 = (EqualsOperation<?>) and.getConditions().get(1);
-        assertEquals("name", eq2.getFieldName());
+        assertEquals("name", eq2.getFieldPath());
         assertEquals("John", eq2.getValue());
     }
 
@@ -911,12 +1051,12 @@ class QueryParserTest {
 
         assertTrue(and.getConditions().get(0) instanceof GreaterThanEqualsOperation);
         GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) and.getConditions().get(0);
-        assertEquals("age", gte.getFieldName());
+        assertEquals("age", gte.getFieldPath());
         assertEquals(18, gte.getValue());
 
         assertTrue(and.getConditions().get(1) instanceof LessThanOperation);
         LessThanOperation<?> lt = (LessThanOperation<?>) and.getConditions().get(1);
-        assertEquals("age", lt.getFieldName());
+        assertEquals("age", lt.getFieldPath());
         assertEquals(65, lt.getValue());
     }
 
@@ -928,7 +1068,7 @@ class QueryParserTest {
         QueryOperation operation = parser.parse(query);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("metadata", eq.getFieldName());
+        assertEquals("metadata", eq.getFieldPath());
         assertEquals(innerDoc, eq.getValue());
     }
 
@@ -984,7 +1124,7 @@ class QueryParserTest {
     void testParseImplicitEqualsWithEmptyDocument() {
         Document query = new Document();
         QueryOperation operation = parser.parse(query);
-        assertTrue(operation instanceof TrueOperation);
+        assertTrue(operation instanceof EmptyOperation);
     }
 
     @Test
@@ -1182,59 +1322,6 @@ class QueryParserTest {
     }
 
     @Test
-    void testParseInvalidComparisonOperatorWithMissingValue() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-
-        QueryOperation operation = parser.parse(query);
-
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseInvalidLessThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseInvalidLessEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$lte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseGreaterThenEqualsThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gte", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-    @Test
-    void testParseGreaterThenThanNull() {
-        Document query = new Document(
-                "age",
-                new Document("$gt", null)
-        );
-        QueryOperation operation = parser.parse(query);
-        assertNull(operation);
-    }
-
-
-    @Test
     void testParseInvalidMultipleOperatorsIncludingUnknownOperator() {
         Document query = new Document(
                 "age",
@@ -1254,7 +1341,11 @@ class QueryParserTest {
                 new Document("$exists", null)
         );
         QueryOperation operation = parser.parse(query);
-        assertNull(operation);
+        assertNotNull(operation);
+        assertTrue(operation instanceof ExistsOperation);
+        ExistsOperation exists = (ExistsOperation) operation;
+        assertEquals("age", exists.getFieldPath());
+        assertFalse(exists.getBoolean());
     }
 
     @Test
@@ -1298,7 +1389,7 @@ class QueryParserTest {
 
         assertTrue(operation instanceof AllOperation);
         AllOperation<?> all = (AllOperation<?>) operation;
-        assertEquals("results", all.getFieldName());
+        assertEquals("results", all.getFieldPath());
         assertEquals(new ArrayList<>(), all.getValues());
 
     }
@@ -1309,7 +1400,7 @@ class QueryParserTest {
 
         QueryOperation operation = parser.parse(query);
         assertNotNull(operation);
-        assertTrue(operation instanceof TrueOperation);
+        assertTrue(operation instanceof EmptyOperation);
 
     }
 
@@ -1325,7 +1416,7 @@ class QueryParserTest {
         assertTrue(operation instanceof NorOperation);
         NorOperation nor = (NorOperation) operation;
         assertEquals(1, nor.getConditions().size());
-        assertTrue(nor.getConditions().get(0) instanceof TrueOperation);
+        assertTrue(nor.getConditions().get(0) instanceof EmptyOperation);
     }
 
     @Test
@@ -1337,7 +1428,7 @@ class QueryParserTest {
         assertNotNull(operation);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("f", eq.getFieldName());
+        assertEquals("f", eq.getFieldPath());
         assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
     }
 
@@ -1350,7 +1441,7 @@ class QueryParserTest {
         assertNotNull(operation);
         assertTrue(operation instanceof EqualsOperation);
         EqualsOperation<?> eq = (EqualsOperation<?>) operation;
-        assertEquals("f", eq.getFieldName());
+        assertEquals("f", eq.getFieldPath());
         assertEquals(Arrays.asList("Bob", "Alice"), eq.getValue());
     }
 
@@ -1362,8 +1453,142 @@ class QueryParserTest {
 
         assertTrue(operation instanceof LessThanOperation);
         LessThanOperation<?> lessThan = (LessThanOperation<?>) operation;
-        assertEquals("age", lessThan.getFieldName());
+        assertEquals("age", lessThan.getFieldPath());
         assertEquals(65, lessThan.getValue());
+    }
+
+    @Test
+    void testParseAttachedComments() {
+        Document query = new Document("age", 42).append("$comments", "a comment");
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("age", eq.getFieldPath());
+        assertEquals(42, eq.getValue());
+    }
+
+    @Test
+    void testParseTopLevelDollar() {
+        Document query = new Document("$foo", "bar");
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseOnlyComments() {
+        Document query = new Document("$comments", "a comment");
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testParseQueryWithComment() {
+        Document query = new Document().append("a", 1).append("$comment", "note");
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("a", eq.getFieldPath());
+        assertEquals(1, eq.getValue());
+    }
+
+    @Test
+    void testParseOnlyComment() {
+        Document query = new Document("$comment", "a comment");
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof EmptyOperation);
+    }
+
+    @Test
+    void testCommentAsField() {
+        Document query =  new Document("foo" ,new Document("$comment", "bar"));
+        QueryOperation operation = parser.parse(query);
+
+        assertNotNull(operation);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("foo", eq.getFieldPath());
+        assertEquals(new Document("$comment", "bar"), eq.getValue());
+    }
+
+    @Test
+    void testParseAndWithOnlyCommentElement() {
+        Document query = new Document(
+                "$and",
+                Collections.singletonList(new Document("$comment", "a comment"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(1, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseNorWithOnlyCommentElement() {
+        Document query = new Document(
+                "$nor",
+                Collections.singletonList(new Document("$comment", "a comment"))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof NorOperation);
+        NorOperation norOperation = (NorOperation) operation;
+        assertEquals(1, norOperation.getConditions().size());
+        assertTrue(norOperation.getConditions().get(0) instanceof EmptyOperation);
+    }
+
+    @Test
+    void testParseAttachedCommentInsideFieldOperatorDocument() {
+        Document query = new Document(
+                "age",
+                new Document("$gt", 18).append("$comments", "a comment")
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("age", gt.getFieldPath());
+        assertEquals(18, gt.getValue());
+    }
+
+    @Test
+    void testParseCommentsIgnoredRecursivelyInLogicalQuery() {
+        Document query = new Document(
+                "$and",
+                Arrays.asList(
+                        new Document("age", new Document("$gt", 18).append("$comments", "inner comment")),
+                        new Document(
+                                "$or",
+                                Arrays.asList(
+                                        new Document("name", "John").append("$comments", "leaf comment"),
+                                        new Document("name", "Jane")
+                                )
+                        ).append("$comments", "or comment"),
+                        new Document("$comments", "no-op comment")
+                )
+        ).append("$comments", "top-level comment");
+
+        QueryOperation operation = parser.parse(query);
+
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(3, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof OrOperation);
+        assertTrue(and.getConditions().get(2) instanceof EmptyOperation);
+
+        OrOperation or = (OrOperation) and.getConditions().get(1);
+        assertEquals(2, or.getConditions().size());
+        assertTrue(or.getConditions().get(0) instanceof EqualsOperation);
+        assertTrue(or.getConditions().get(1) instanceof EqualsOperation);
     }
 
     @Test
@@ -1384,9 +1609,49 @@ class QueryParserTest {
 
         assertTrue(operation instanceof NotOperation);
         NotOperation not = (NotOperation) operation;
-        assertEquals("age", not.getFieldName());
+        assertEquals("age", not.getFieldPath());
         assertTrue(not.getCondition() instanceof GreaterThanOperation);
         assertEquals(18, ((GreaterThanOperation<?>) not.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseValidNestedNotQuery() {
+        Document query = new Document(
+                "a",
+                new Document("$not", new Document("$not", new Document("$gt", 1)))
+        );
+
+        QueryOperation operation = parser.parse(query);
+
+        assertNotNull(operation);
+        assertTrue(operation instanceof NotOperation);
+        NotOperation outerNot = (NotOperation) operation;
+        assertEquals("a", outerNot.getFieldPath());
+        assertTrue(outerNot.getCondition() instanceof NotOperation);
+
+        NotOperation innerNot = (NotOperation) outerNot.getCondition();
+        assertEquals("a", innerNot.getFieldPath());
+        assertTrue(innerNot.getCondition() instanceof GreaterThanOperation);
+        assertEquals(1, ((GreaterThanOperation<?>) innerNot.getCondition()).getValue());
+    }
+
+    @Test
+    void testParseInvalidNotWithMultipleComparisonOperators() {
+        Document query = new Document(
+                "a",
+                new Document("$not", new Document("$gt", 1).append("$lt", 9))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNotNull(operation);
+        assertTrue(operation instanceof NotOperation);
+        NotOperation not = (NotOperation) operation;
+        assertEquals("a", not.getFieldPath());
+        assertTrue(not.getCondition() instanceof AndOperation);
+        AndOperation and = (AndOperation) not.getCondition();
+        assertEquals(2, and.getConditions().size());
+        assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
+        assertTrue(and.getConditions().get(1) instanceof LessThanOperation);
     }
 
     @Test
@@ -1395,7 +1660,7 @@ class QueryParserTest {
 
         assertTrue(operation instanceof GreaterThanOperation);
         GreaterThanOperation<?> greaterThan = (GreaterThanOperation<?>) operation;
-        assertEquals("$", greaterThan.getFieldName());
+        assertEquals("$", greaterThan.getFieldPath());
         assertEquals(18, greaterThan.getValue());
     }
 
@@ -1416,8 +1681,8 @@ class QueryParserTest {
         assertEquals(2, and.getConditions().size());
         assertTrue(and.getConditions().get(0) instanceof GreaterThanOperation);
         assertTrue(and.getConditions().get(1) instanceof LessThanOperation);
-        assertEquals("$", ((GreaterThanOperation<?>) and.getConditions().get(0)).getFieldName());
-        assertEquals("$", ((LessThanOperation<?>) and.getConditions().get(1)).getFieldName());
+        assertEquals("$", ((GreaterThanOperation<?>) and.getConditions().get(0)).getFieldPath());
+        assertEquals("$", ((LessThanOperation<?>) and.getConditions().get(1)).getFieldPath());
     }
 
     @Test
@@ -1427,7 +1692,7 @@ class QueryParserTest {
                 NotEqualsOperation.class
         );
         NotEqualsOperation<?> notEquals = (NotEqualsOperation<?>) elemMatch.getCondition();
-        assertEquals("$", notEquals.getFieldName());
+        assertEquals("$", notEquals.getFieldPath());
         assertEquals("b", notEquals.getValue());
     }
 
@@ -1439,8 +1704,66 @@ class QueryParserTest {
         );
         LessThanEqualsOperation<?> lessThanEquals =
                 (LessThanEqualsOperation<?>) elemMatch.getCondition();
-        assertEquals("$", lessThanEquals.getFieldName());
+        assertEquals("$", lessThanEquals.getFieldPath());
         assertEquals("b", lessThanEquals.getValue());
+    }
+
+    @Test
+    void testParseTypeWithListOfTypes() {
+        // mongo: matches, the field holds one of the listed types
+        Document query = new Document().append("a",
+                new Document().append("$type", Arrays.asList("string", "double")));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("string"));
+        expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes("double"));
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
+    }
+
+    @Test
+    void testParseAllTypes() {
+        // mongo: matches, the field holds one of the listed types
+        final List<String> aliases = Arrays.asList(
+                "double",
+                "string",
+                "object",
+                "array",
+                "binData",
+                "undefined",
+                "objectId",
+                "bool",
+                "date",
+                "null",
+                "regex",
+                "dbPointer",
+                "javascript",
+                "symbol",
+                "javascriptWithScope",
+                "int",
+                "timestamp",
+                "long",
+                "decimal",
+                "minKey",
+                "maxKey",
+                "number"
+        );
+        Document query = new Document().append("a",
+                new Document().append("$type",
+                        aliases));
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof TypeOperation);
+        TypeOperation type = (TypeOperation) operation;
+
+        final List<Object> expectedBsonTypes = new LinkedList<>();
+        for (String alias : aliases) {
+            expectedBsonTypes.addAll(TypeSelector.parseToBsonTypes(alias));
+        }
+        assertEquals(expectedBsonTypes, type.getBsonTypes());
     }
 
     @Test
@@ -1450,7 +1773,7 @@ class QueryParserTest {
                 InOperation.class
         );
         InOperation<?> in = (InOperation<?>) elemMatch.getCondition();
-        assertEquals("$", in.getFieldName());
+        assertEquals("$", in.getFieldPath());
         assertEquals(Arrays.asList("a", "b"), in.getValues());
     }
 
@@ -1461,7 +1784,7 @@ class QueryParserTest {
                 NotInOperation.class
         );
         NotInOperation<?> notIn = (NotInOperation<?>) elemMatch.getCondition();
-        assertEquals("$", notIn.getFieldName());
+        assertEquals("$", notIn.getFieldPath());
         assertEquals(Arrays.asList("a", "b"), notIn.getValues());
     }
 
@@ -1472,7 +1795,7 @@ class QueryParserTest {
                 NotOperation.class
         );
         NotOperation not = (NotOperation) elemMatch.getCondition();
-        assertEquals("$", not.getFieldName());
+        assertEquals("$", not.getFieldPath());
         assertTrue(not.getCondition() instanceof EqualsOperation);
         assertEquals("b", ((EqualsOperation<?>) not.getCondition()).getValue());
     }
@@ -1540,7 +1863,7 @@ class QueryParserTest {
         );
 
         assertTrue(operation instanceof ElemMatchOperation);
-        assertTrue(((ElemMatchOperation) operation).getCondition() instanceof TrueOperation);
+        assertTrue(((ElemMatchOperation) operation).getCondition() instanceof EmptyOperation);
     }
 
     @Test
@@ -1616,7 +1939,6 @@ class QueryParserTest {
         assertAll(
                 () -> assertInvalidQuery(
                         new Document("flags", new Document("$bitsAllClear", "5"))),
-                () -> assertInvalidQuery(new Document("flags", new Document("$bitsAllSet", 5))),
                 () -> assertInvalidQuery(
                         new Document("flags", new Document("$bitsAnyClear", true))),
                 () -> assertInvalidQuery(
@@ -1710,6 +2032,339 @@ class QueryParserTest {
         ));
     }
 
+    @Test
+    void testBinaryBitmask() {
+        Binary mask = new Binary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testNegativeBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", -1)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testNegativeArrayBitmask() {
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", Arrays.asList(-1))
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertNull(operation);
+    }
+
+    @Test
+    void testBsonBinaryBitmask() {
+        BsonBinary mask = new BsonBinary(new byte[]{0x30}); // 0011 0000: bits 4 and 5
+
+        Document query = new Document(
+                "flags",
+                new Document("$bitsAllSet", mask)
+        );
+
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof BitsAllSetOperation);
+        BitsAllSetOperation bitsAllSet = (BitsAllSetOperation) operation;
+        OptionalLong expectedBitmask = BitmaskUtils.toBitMaskValue(mask);
+        assertTrue(expectedBitmask.isPresent());
+        assertEquals(expectedBitmask.getAsLong(), bitsAllSet.getBitmask());
+    }
+
+    @Test
+    void testParseGreaterThanOrEqualsNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanEqualsOperation);
+        GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) operation;
+        assertEquals("age", gte.getFieldPath());
+        assertEquals(null, gte.getValue());
+    }
+
+    @Test
+    void testParseGreaterThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$gt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("age", gt.getFieldPath());
+        assertEquals(null, gt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lt", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanOperation);
+        LessThanOperation<?> lt = (LessThanOperation<?>) operation;
+        assertEquals("age", lt.getFieldPath());
+        assertEquals(null, lt.getValue());
+    }
+
+    @Test
+    void testParseLesserThanOrEqualNull() {
+        Document query = new Document(
+                "age",
+                new Document("$lte", null)
+        );
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof LessThanEqualsOperation);
+        LessThanEqualsOperation<?> lte = (LessThanEqualsOperation<?>) operation;
+        assertEquals("age", lte.getFieldPath());
+        assertEquals(null, lte.getValue());
+    }
+
+
+    @Test
+    void testParseImplicitEqualsWithDotNotation() {
+        // { "address.city": "Paris" }
+        Document query = new Document("address.city", "Paris");
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("address.city", eq.getFieldPath());
+        assertEquals("Paris", eq.getValue());
+    }
+
+    @Test
+    void testParseExplicitEqualsWithDotNotation() {
+        // { "address.city": { "$eq": "Paris" } }
+        Document query = new Document("address.city", new Document("$eq", "Paris"));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("address.city", eq.getFieldPath());
+        assertEquals("Paris", eq.getValue());
+    }
+
+    @Test
+    void testParseDeeplyNestedDotNotation() {
+        // { "a.b.c.d": { "$ne": 5 } }
+        Document query = new Document("a.b.c.d", new Document("$ne", 5));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof NotEqualsOperation);
+        NotEqualsOperation<?> ne = (NotEqualsOperation<?>) operation;
+        assertEquals("a.b.c.d", ne.getFieldPath());
+        assertEquals(5, ne.getValue());
+    }
+
+    @Test
+    void testParseDotNotationWithArrayIndex() {
+        // { "items.0.price": { "$gt": 10 } }
+        Document query = new Document("items.0.price", new Document("$gt", 10));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) operation;
+        assertEquals("items.0.price", gt.getFieldPath());
+        assertEquals(10, gt.getValue());
+    }
+
+    @Test
+    void testParseDotNotationWithTrailingArrayIndex() {
+        // { "tags.1": "blue" }
+        Document query = new Document("tags.1", "blue");
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("tags.1", eq.getFieldPath());
+        assertEquals("blue", eq.getValue());
+    }
+
+    @Test
+    void testParseDotNotationVersusEmbeddedDocument() {
+        // { "address": { "city": "Paris" } } is an exact match on an embedded document,
+        // whereas { "address.city": "Paris" } matches a single nested field.
+        Document embedded = new Document("address", new Document("city", "Paris"));
+        QueryOperation embeddedOperation = parser.parse(embedded);
+        assertTrue(embeddedOperation instanceof EqualsOperation);
+        EqualsOperation<?> embeddedEq = (EqualsOperation<?>) embeddedOperation;
+        assertEquals("address", embeddedEq.getFieldPath());
+        assertEquals(new Document("city", "Paris"), embeddedEq.getValue());
+
+        Document dotted = new Document("address.city", "Paris");
+        QueryOperation dottedOperation = parser.parse(dotted);
+        assertTrue(dottedOperation instanceof EqualsOperation);
+        EqualsOperation<?> dottedEq = (EqualsOperation<?>) dottedOperation;
+        assertEquals("address.city", dottedEq.getFieldPath());
+        assertEquals("Paris", dottedEq.getValue());
+    }
+
+    @Test
+    void testParseEmbeddedDocumentValueWithDottedKeyIsLiteral() {
+        // { "address": { "geo.lat": 1 } }: dotted key inside a value is kept as a literal document
+        Document query = new Document("address", new Document("geo.lat", 1));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) operation;
+        assertEquals("address", eq.getFieldPath());
+        assertEquals(new Document("geo.lat", 1), eq.getValue());
+    }
+
+    @Test
+    void testParseRangeWithDotNotation() {
+        // { "stats.score": { "$gte": 18, "$lt": 65 } }
+        Document query = new Document("stats.score", new Document("$gte", 18).append("$lt", 65));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(2, and.getConditions().size());
+
+        GreaterThanEqualsOperation<?> gte = (GreaterThanEqualsOperation<?>) and.getConditions().get(0);
+        assertEquals("stats.score", gte.getFieldPath());
+        assertEquals(18, gte.getValue());
+
+        LessThanOperation<?> lt = (LessThanOperation<?>) and.getConditions().get(1);
+        assertEquals("stats.score", lt.getFieldPath());
+        assertEquals(65, lt.getValue());
+    }
+
+    @Test
+    void testParseImplicitAndWithDotNotation() {
+        // { "address.city": "Paris", "address.zip": { "$lte": 75020 } }
+        Document query = new Document("address.city", "Paris")
+                .append("address.zip", new Document("$lte", 75020));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(2, and.getConditions().size());
+
+        EqualsOperation<?> eq = (EqualsOperation<?>) and.getConditions().get(0);
+        assertEquals("address.city", eq.getFieldPath());
+        assertEquals("Paris", eq.getValue());
+
+        LessThanEqualsOperation<?> lte = (LessThanEqualsOperation<?>) and.getConditions().get(1);
+        assertEquals("address.zip", lte.getFieldPath());
+        assertEquals(75020, lte.getValue());
+    }
+
+    @Test
+    void testParseOrWithDotNotation() {
+        // { "$or": [ { "owner.name": "John" }, { "owner.age": { "$lt": 30 } } ] }
+        Document query = new Document("$or", Arrays.asList(
+                new Document("owner.name", "John"),
+                new Document("owner.age", new Document("$lt", 30))));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof OrOperation);
+        OrOperation or = (OrOperation) operation;
+        assertEquals(2, or.getConditions().size());
+        assertEquals("owner.name", ((EqualsOperation<?>) or.getConditions().get(0)).getFieldPath());
+        assertEquals("owner.age", ((LessThanOperation<?>) or.getConditions().get(1)).getFieldPath());
+    }
+
+    @Test
+    void testParseInWithDotNotation() {
+        // { "specs.color": { "$in": [ "red", "blue" ] } }
+        Document query = new Document("specs.color", new Document("$in", Arrays.asList("red", "blue")));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof InOperation);
+        InOperation<?> in = (InOperation<?>) operation;
+        assertEquals("specs.color", in.getFieldPath());
+        assertEquals(Arrays.asList("red", "blue"), in.getValues());
+    }
+
+    @Test
+    void testParseExistsWithDotNotation() {
+        // { "profile.email": { "$exists": true } }
+        Document query = new Document("profile.email", new Document("$exists", true));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ExistsOperation);
+        ExistsOperation exists = (ExistsOperation) operation;
+        assertEquals("profile.email", exists.getFieldPath());
+        assertTrue(exists.getBoolean());
+    }
+
+    @Test
+    void testParseSizeWithDotNotation() {
+        // { "order.items": { "$size": 3 } }
+        Document query = new Document("order.items", new Document("$size", 3));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof SizeOperation);
+        SizeOperation size = (SizeOperation) operation;
+        assertEquals("order.items", size.getFieldPath());
+        assertEquals(3, size.getValue());
+    }
+
+    @Test
+    void testParseNotWithDotNotation() {
+        // { "stats.score": { "$not": { "$gt": 5 } } }
+        Document query = new Document("stats.score", new Document("$not", new Document("$gt", 5)));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof NotOperation);
+        NotOperation not = (NotOperation) operation;
+        assertEquals("stats.score", not.getFieldPath());
+        assertTrue(not.getCondition() instanceof GreaterThanOperation);
+        GreaterThanOperation<?> gt = (GreaterThanOperation<?>) not.getCondition();
+        assertEquals("stats.score", gt.getFieldPath());
+        assertEquals(5, gt.getValue());
+    }
+
+    @Test
+    void testParseElemMatchWithDotNotation() {
+        // { "order.items": { "$elemMatch": { "qty": { "$gt": 2 } } } }
+        Document query = new Document("order.items",
+                new Document("$elemMatch", new Document("qty", new Document("$gt", 2))));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("order.items", elemMatch.getFieldPath());
+        assertTrue(elemMatch.getCondition() instanceof GreaterThanOperation);
+        assertEquals("qty", ((GreaterThanOperation<?>) elemMatch.getCondition()).getFieldPath());
+    }
+
+    @Test
+    void testParseElemMatchWithDotNotationInsideCondition() {
+        // { "items": { "$elemMatch": { "product.sku": "A1" } } }
+        Document query = new Document("items",
+                new Document("$elemMatch", new Document("product.sku", "A1")));
+        QueryOperation operation = parser.parse(query);
+        assertTrue(operation instanceof ElemMatchOperation);
+        ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
+        assertEquals("items", elemMatch.getFieldPath());
+        assertTrue(elemMatch.getCondition() instanceof EqualsOperation);
+        EqualsOperation<?> eq = (EqualsOperation<?>) elemMatch.getCondition();
+        assertEquals("product.sku", eq.getFieldPath());
+        assertEquals("A1", eq.getValue());
+    }
+
+    @Test
+    void testParseDotNotationFromFiltersBuilder() {
+        Bson filter = Filters.and(
+                Filters.eq("address.city", "Paris"),
+                Filters.gt("items.0.price", 10));
+        QueryOperation operation = parser.parse(convertToDocument(filter));
+        assertTrue(operation instanceof AndOperation);
+        AndOperation and = (AndOperation) operation;
+        assertEquals(2, and.getConditions().size());
+        assertEquals("address.city", ((EqualsOperation<?>) and.getConditions().get(0)).getFieldPath());
+        assertEquals("items.0.price", ((GreaterThanOperation<?>) and.getConditions().get(1)).getFieldPath());
+    }
+
     private ElemMatchOperation parseElemMatchCondition(
             Document condition,
             Class<? extends QueryOperation> expectedConditionType) {
@@ -1718,7 +2373,7 @@ class QueryParserTest {
         );
         assertTrue(operation instanceof ElemMatchOperation);
         ElemMatchOperation elemMatch = (ElemMatchOperation) operation;
-        assertEquals("tags", elemMatch.getFieldName());
+        assertEquals("tags", elemMatch.getFieldPath());
         assertTrue(
                 expectedConditionType.isInstance(elemMatch.getCondition()),
                 () -> "Expected " + expectedConditionType.getSimpleName()

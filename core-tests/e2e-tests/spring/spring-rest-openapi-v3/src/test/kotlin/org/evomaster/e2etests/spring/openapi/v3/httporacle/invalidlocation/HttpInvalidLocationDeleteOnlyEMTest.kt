@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidlocation
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidlocation.deleteonly.HttpInvalidLocationDeleteOnlyController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -39,10 +40,10 @@ class HttpInvalidLocationDeleteOnlyEMTest : SpringTestBase() {
             // The Location points to a resource declared only for DELETE (no GET), so a GET
             // would be 405. The oracle must probe with DELETE and flag the 404 it returns.
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue(ExperimentalFaultCategory.HTTP_INVALID_LOCATION in faults)
+            assertTrue(DefinedFaultCategory.HTTP_INVALID_LOCATION in faults)
 
             val locationFaults = DetectedFaultUtils.getDetectedFaults(solution)
-                .filter { it.category == ExperimentalFaultCategory.HTTP_INVALID_LOCATION }
+                .filter { it.category == DefinedFaultCategory.HTTP_INVALID_LOCATION }
             assertTrue(locationFaults.any { it.operationId.contains("/api/products/") })
         }
     }

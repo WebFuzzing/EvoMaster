@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.bb.headerassertions
 
 import com.foo.rest.examples.bb.headerassertions.BBHeaderAssertionsController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -60,24 +61,24 @@ class BBHeaderAssertionsEMTest : SpringTestBase() {
 
             assertTrue(faults.none{
                 it.operationId == "GET:$prefix/ok/401"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
             assertTrue(faults.any{
                 it.operationId == "GET:$prefix/fail/401"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE })
 
             assertTrue(faults.none{
                 it.operationId == "GET:$prefix/ok/405"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW })
             assertTrue(faults.any{
                 it.operationId == "GET:$prefix/fail/405"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW })
 
             assertTrue(faults.none{
                 it.operationId == "GET:$prefix/ok/426"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
             assertTrue(faults.any{
                 it.operationId == "GET:$prefix/fail/426"
-                        && it.category == ExperimentalFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
+                        && it.category == DefinedFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE })
         }
     }
 }

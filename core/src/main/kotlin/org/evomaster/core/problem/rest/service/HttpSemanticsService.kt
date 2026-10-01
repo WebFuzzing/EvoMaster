@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -263,7 +264,8 @@ class HttpSemanticsService : TimeBoxedPhase{
                 individualsInSolution,
                 HttpVerb.DELETE,
                 del.path,
-                statusGroup = StatusGroup.G_2xx
+                statusGroup = StatusGroup.G_2xx,
+                excludedStatusCodes = listOf(202)
             )
             if(successDelete.isEmpty()){
                 return@forEach
@@ -508,15 +510,9 @@ class HttpSemanticsService : TimeBoxedPhase{
             val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
                 ?: return@forEach
 
-            val successPuts = RestIndividualSelectorUtils.findIndividuals(
-                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
-            )
-            if (successPuts.isEmpty()) return@forEach
-
-            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                successPuts.minBy { it.individual.size() },
-                HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
-            )
+            val ind = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
+            ).minByOrNull { it.size() } ?: return@forEach
 
             val last = ind.seeMainExecutableActions().last() // the PUT 2xx
             val getAfter = builder.createBoundActionFor(getDef, last)
@@ -545,7 +541,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 ?: return@forEach
 
             val successPatches = RestIndividualSelectorUtils.findIndividuals(
-                individualsInSolution, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx
+                individualsInSolution, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
             )
             if (successPatches.isEmpty()) return@forEach
 
@@ -554,7 +550,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 if (hasPhaseTimedOut()) return
 
                 val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                    candidate, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx
+                    candidate, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
                 )
 
                 val patch = ind.seeMainExecutableActions().last()
@@ -580,7 +576,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
                 val ei = prepareEvaluateAndSave(ind)
                 if (ei != null && DetectedFaultUtils.getDetectedFaultCategories(ei)
-                        .contains(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+                        .contains(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
                     return@forEach
                 }
             }
@@ -677,7 +673,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             // T: smallest individual ending with PUT 2xx on this path
             val ind = RestIndividualSelectorUtils.findAndSlice(
-                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
             ).minByOrNull { it.size() } ?: return@forEach
 
             val firstPut = ind.seeMainExecutableActions().last() // PUT 2xx (1st)

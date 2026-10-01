@@ -15,19 +15,24 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
-import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.internal.db.cassandra.CassandraHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
+import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
+import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
+import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -35,6 +40,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
+import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
 import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jHandler;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
@@ -48,10 +54,14 @@ import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.sql.*;
+import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -97,6 +107,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final RedisHandler redisHandler = new RedisHandler();
 
     private final DynamoDbHandler dynamoDbHandler = new DynamoDbHandler();
+
+    private final CassandraHandler cassandraHandler = new CassandraHandler();
 
     private Server controllerServer;
 
@@ -314,6 +326,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return RedisCommandExecutor.executeInsert(connection, insertions);
     }
 
+    @Override
+    public Neo4jInsertionResultsDto execInsertionsIntoNeo4jDatabase(Neo4jDatabaseCommandsDto commands) {
+
+        ReflectionBasedNeo4jClient connection = getNeo4jConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to Neo4j");
+        }
+        return Neo4jScriptRunner.executeInsert(connection, commands);
+    }
+
+    @Override
+    public DynamoDbInsertionResultsDto execInsertionsIntoDynamoDb(List<DynamoDbInsertionDto> insertions) {
+        Object connection = getDynamoDbConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to DynamoDB");
+        }
+        return DynamoDbCommandExecutor.executeInsert(connection, insertions);
+    }
+
+    @Override
+    public CassandraInsertionResultsDto execInsertionsIntoCassandraDatabase(List<CassandraInsertionDto> insertions) {
+        Object connection = getCassandraConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to Cassandra");
+        }
+        return CassandraScriptRunner.executeInsert(connection, insertions);
+    }
+
     public int getActionIndex(){
         return actionIndex;
     }
@@ -384,6 +424,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
+     * Initialises Cassandra heuristic access after the SUT has started.
+     */
+    public final void initCassandraHandler() {
+        cassandraHandler.setCqlSession(getCassandraConnection());
+    }
+
+    /**
      * TODO further handle multiple connections
      * @return sql connection if there exists
      */
@@ -407,6 +454,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         neo4jHandler.reset();
         redisHandler.reset();
         dynamoDbHandler.reset();
+        cassandraHandler.reset();
     }
 
     /**
@@ -430,7 +478,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()
                 || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()
-                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()) {
+                || isDynamoDbHeuristicsComputationAllowed() || isNeo4jHeuristicsComputationAllowed()
+                || isCassandraHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -451,6 +500,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (isDynamoDbHeuristicsComputationAllowed()) {
                 computeDynamoDbHeuristics(dto, additionalInfoList);
             }
+            if (isCassandraHeuristicsComputationAllowed()) {
+                computeCqlHeuristics(dto, additionalInfoList, queryFromDatabase);
+            }
         }
         return dto;
     }
@@ -464,7 +516,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private boolean isNeo4jHeuristicsComputationAllowed() {
-        return neo4jHandler.isCalculateHeuristics();
+        return neo4jHandler.isCalculateHeuristics() || neo4jHandler.isExtractNeo4jExecution();
     }
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
@@ -476,7 +528,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private boolean isDynamoDbHeuristicsComputationAllowed() {
-        return dynamoDbHandler.isCalculateHeuristics();
+        return dynamoDbHandler.isCalculateHeuristics() || dynamoDbHandler.isExtractDynamoDbExecution();
+    }
+
+    private boolean isCassandraHeuristicsComputationAllowed() {
+        return cassandraHandler.isCalculateHeuristics() || cassandraHandler.isExtractCqlExecution();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -562,30 +618,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeNeo4jHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
-        if(neo4jHandler.isCalculateHeuristics()){
-            if(!additionalInfoList.isEmpty()) {
-                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
-                last.getNeo4JInfoData().forEach(it -> {
-                    try {
-                        neo4jHandler.handle(it);
-                    } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
-                        assert false;
-                    }
-                });
-            }
+        if(!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getNeo4JInfoData().forEach(it -> {
+                try {
+                    neo4jHandler.handle(it);
+                } catch (Exception e){
+                    SimpleLogger.error("FAILED TO HANDLE NEO4J COMMAND: " + e.getMessage());
+                    assert false;
+                }
+            });
+        }
 
-            neo4jHandler.getEvaluatedNeo4jCommands().stream()
-                    .map(p ->
-                            new ExtraHeuristicEntryDto(
-                                    ExtraHeuristicEntryDto.Type.NEO4J,
-                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.getCommand(),
-                                    p.getDistanceWithMetrics().getDistance(),
-                                    p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
-                                    p.getDistanceWithMetrics().isEvaluationFailure()
-                            ))
-                    .forEach(h -> dto.heuristics.add(h));
+        neo4jHandler.getEvaluatedNeo4jCommands().stream()
+                .map(p ->
+                        new ExtraHeuristicEntryDto(
+                                ExtraHeuristicEntryDto.Type.NEO4J,
+                                ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                p.getCommand(),
+                                p.getDistanceWithMetrics().getDistance(),
+                                p.getDistanceWithMetrics().getNumberOfEvaluatedNodes(),
+                                p.getDistanceWithMetrics().isEvaluationFailure()
+                        ))
+                .forEach(h -> dto.heuristics.add(h));
+
+        if (neo4jHandler.isExtractNeo4jExecution()) {
+            dto.neo4jExecutionsDto = neo4jHandler.getExecutionDto();
         }
     }
 
@@ -651,6 +709,44 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
+     * Computes the heuristics of the CQL commands executed by the SUT during the latest action.
+     *
+     * @param dto destination extra-heuristics DTO
+     * @param additionalInfoList instrumentation data for the current action
+     * @param queryFromDatabase whether the rows of the queried tables can be read to compute the
+     *                          distances, as each evaluated command reads the whole content of the
+     *                          table it targets
+     */
+    public final void computeCqlHeuristics(ExtraHeuristicsDto dto,
+                                           List<AdditionalInfo> additionalInfoList,
+                                           boolean queryFromDatabase) {
+
+        if (!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getCassandraTableMetadataData().forEach(cassandraHandler::handle);
+            last.getCqlInfoData().forEach(cassandraHandler::handle);
+        }
+
+        if (cassandraHandler.isCalculateHeuristics() && queryFromDatabase) {
+            cassandraHandler.getEvaluatedCqlCommands().stream()
+                    .map(p ->
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.CASSANDRA,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.getCqlCommand(),
+                                    p.getCqlDistanceWithMetrics().getCqlDistance(),
+                                    p.getCqlDistanceWithMetrics().getNumberOfEvaluatedRows(),
+                                    false
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
+        }
+
+        if (cassandraHandler.isExtractCqlExecution()) {
+            dto.cassandraExecutionsDto = cassandraHandler.getExecutionDto();
+        }
+    }
+
+    /**
      * Computes DynamoDB heuristics captured for the latest action.
      *
      * @param dto destination extra-heuristics DTO
@@ -658,23 +754,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void computeDynamoDbHeuristics(ExtraHeuristicsDto dto,
                                                  List<AdditionalInfo> additionalInfoList) {
-        if (!dynamoDbHandler.isCalculateHeuristics()) {
-            return;
-        }
         if (!additionalInfoList.isEmpty()) {
             AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
             last.getDynamoDbInfoData().forEach(dynamoDbHandler::handle);
         }
 
-        dynamoDbHandler.getEvaluatedDynamoDbCommands().stream()
-                .map(evaluated -> new ExtraHeuristicEntryDto(
-                        ExtraHeuristicEntryDto.Type.DYNAMODB,
-                        ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                        evaluated.getHeuristicId(),
-                        evaluated.getDistanceWithMetrics().getDistance(),
-                        evaluated.getDistanceWithMetrics().getNumberOfEvaluatedItems(),
-                        evaluated.getDistanceWithMetrics().isEvaluationFailure()))
-                .forEach(dto.heuristics::add);
+        List<DynamoDbCommandWithDistance> evaluated = dynamoDbHandler.getEvaluatedDynamoDbCommands();
+        if (dynamoDbHandler.isCalculateHeuristics()) {
+            evaluated.stream()
+                    .map(command -> new ExtraHeuristicEntryDto(
+                            ExtraHeuristicEntryDto.Type.DYNAMODB,
+                            ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            command.getHeuristicId(),
+                            command.getDistanceWithMetrics().getDistance(),
+                            command.getDistanceWithMetrics().getNumberOfEvaluatedItems(),
+                            command.getDistanceWithMetrics().isEvaluationFailure()))
+                    .forEach(dto.heuristics::add);
+        }
+        if (dynamoDbHandler.isExtractDynamoDbExecution()) {
+            dto.dynamoDbExecutionsDto = dynamoDbHandler.getExecutionDto();
+        }
     }
 
     /**
@@ -914,7 +1013,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean hasTableNameDirtyHack(String name, Collection<String> tableIds){
         //FIXME when refactoring datastructures in this class, remove
-        return tableIds.stream().anyMatch(i-> i.toLowerCase().endsWith(name.toLowerCase()));
+        // The same table can be named in different formats here, eg "public.roles" vs "ROLES",
+        // and endsWith() only matched one of the two directions. isSameTable() normalizes both.
+        return tableIds.stream().anyMatch(i-> isSameTable(i, name));
     }
 
     private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
@@ -1713,6 +1814,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingInitRedis(boolean executingInitRedis);
 
+    public abstract void setExecutingInitNeo4j(boolean executingInitNeo4j);
+
+    public abstract void setExecutingInitDynamoDb(boolean executingInitDynamoDb);
+
+    public abstract void setExecutingInitCassandra(boolean executingInitCassandra);
+
     public abstract void setExecutingAction(boolean executingAction);
 
 
@@ -1927,6 +2034,48 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     @Override
     public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
         return false;
+    }
+
+    /**
+     * Publish one message, and wait for the reply that answers it when one is expected.
+     *
+     * This is where a driver for an AsyncAPI service does its work, and it is the counterpart
+     * of {@link #executeAction(RPCActionDto, ActionResponseDto)} for RPC: the core decides
+     * what to send and reads what comes back, while everything that knows about a broker lives
+     * on this side. Only publish and await are protocol-specific, and they never leave here.
+     *
+     * A driver that does not test an AsyncAPI service has no reason to override this.
+     *
+     * Sketch of what an implementation does, for a transport whose correlation rides in
+     * metadata:
+     *
+     * <pre>
+     * seekToEndOf(dto.replyAddress);   // a reply older than this publish is not an answer to it
+     * publish(dto.address, dto.payload, dto.headers + {correlationId: dto.correlationId});
+     * reply.published = true;
+     * if (dto.replyAddress != null) {
+     *     reply.replyExpected = true;
+     *     awaitOn(dto.replyAddress, matching dto.correlationId, within dto.replyTimeoutMs);
+     * }
+     * </pre>
+     *
+     * A reply published before the action was is never an answer to it, and the driver is what
+     * has to ensure that, because only it can: on Kafka by seeking to the end of the reply
+     * topic before publishing, elsewhere by a fresh subscription or by draining the
+     * destination. The core does not vary its correlation ids between runs to compensate, as a
+     * run repeated under the same seed has to behave the same way.
+     *
+     * Note what is not asked of the driver: it does not judge the reply, only reports it.
+     * Deciding what an outcome means is the core's job, so that it means the same thing
+     * whatever the transport.
+     *
+     * @param dto   what to publish, and where a reply is expected
+     * @param reply to be filled in with what happened
+     */
+    public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
+        throw new IllegalStateException(
+                "Trying to publish a message, but this driver does not implement" +
+                        " executeAsyncApiAction. It must be overridden to test an AsyncAPI service.");
     }
 
     @Override

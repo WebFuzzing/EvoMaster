@@ -1,24 +1,27 @@
 package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionTree
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.database.mongo.MongoDbAction
-import org.evomaster.core.problem.rest.data.RestCallAction
-import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
-import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionTree
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -42,7 +45,13 @@ class RestResourceCalls(
     randomness: Randomness? = null
 ) : ActionTree(
     children,
-    { k -> SqlAction::class.java.isAssignableFrom(k) || MongoDbAction::class.java.isAssignableFrom(k)  || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
+    { k -> SqlAction::class.java.isAssignableFrom(k) ||
+            MongoDbAction::class.java.isAssignableFrom(k) ||
+            RedisDbAction::class.java.isAssignableFrom(k) ||
+            DynamoDbAction::class.java.isAssignableFrom(k) ||
+            CassandraDbAction::class.java.isAssignableFrom(k) ||
+            Neo4jDbAction::class.java.isAssignableFrom(k) ||
+            EnterpriseActionGroup::class.java.isAssignableFrom(k) }
 ) {
 
     constructor(
@@ -91,6 +100,21 @@ class RestResourceCalls(
     private val redisDbActions: List<RedisDbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<RedisDbAction>()
+        }
+
+    private val dynamoDbActions: List<DynamoDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<DynamoDbAction>()
+        }
+
+    private val cassandraDbActions: List<CassandraDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<CassandraDbAction>()
+        }
+
+    private val neo4jDbActions: List<Neo4jDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<Neo4jDbAction>()
         }
 
     private val dnsActions: List<HostnameResolutionAction>
@@ -197,7 +221,7 @@ class RestResourceCalls(
     fun seeActions(filter: ActionFilter): List<Action> {
         return when (filter) {
             ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
-            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dnsActions)
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions).plus(neo4jDbActions).plus(dnsActions)
             ActionFilter.ONLY_SQL -> sqlActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL, ActionFilter.NO_DB -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
@@ -205,8 +229,11 @@ class RestResourceCalls(
             ActionFilter.NO_EXTERNAL_SERVICE -> sqlActions.plus(mainActions)
             ActionFilter.ONLY_MONGO -> mongoDbActions
             ActionFilter.ONLY_REDIS -> redisDbActions
+            ActionFilter.ONLY_DYNAMODB -> dynamoDbActions
+            ActionFilter.ONLY_CASSANDRA -> cassandraDbActions
+            ActionFilter.ONLY_NEO4J -> neo4jDbActions
             ActionFilter.ONLY_DNS -> dnsActions
-            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions).plus(redisDbActions)
+            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions).plus(redisDbActions).plus(dynamoDbActions).plus(cassandraDbActions).plus(neo4jDbActions)
             ActionFilter.ONLY_SCHEDULE_TASK -> throw IllegalStateException("schedule task is not support in resource-based solution for REST Problem")
         }
     }

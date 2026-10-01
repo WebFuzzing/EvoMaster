@@ -28,6 +28,18 @@ class FakeController : SutHandler {
         return null
     }
 
+    override fun execInsertionsIntoDynamoDb(insertions: List<DynamoDbInsertionDto?>?): DynamoDbInsertionResultsDto? {
+        return null
+    }
+
+    override fun execInsertionsIntoCassandraDatabase(insertions: MutableList<CassandraInsertionDto>?): CassandraInsertionResultsDto? {
+        return null
+    }
+
+    override fun execInsertionsIntoNeo4jDatabase(commands: Neo4jDatabaseCommandsDto?): Neo4jInsertionResultsDto? {
+        return null
+    }
+
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }

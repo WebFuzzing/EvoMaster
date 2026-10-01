@@ -208,7 +208,7 @@ open class RestActionNamingStrategyTest {
     fun testResponseNamedWithMultipleFaults() {
         val faults = listOf(
             DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items", null),
-            DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items", null),
+            DetectedFault(DefinedFaultCategory.HTTP_INVALID_LOCATION, "items", null),
             DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null))
         val restAction = getRestCallAction()
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, faults, 500)

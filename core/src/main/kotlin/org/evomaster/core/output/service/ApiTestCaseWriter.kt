@@ -3,19 +3,23 @@ package org.evomaster.core.output.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
-import org.evomaster.core.output.*
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisDbActionResult
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.action.EvaluatedDbAction
-import org.evomaster.core.search.action.EvaluatedMongoDbAction
-import org.evomaster.core.search.action.EvaluatedRedisDbAction
-import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionResult
+import org.evomaster.core.output.*
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.*
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -50,6 +54,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -68,6 +74,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         val initializingRedisResults = (ind.seeResults(initializingRedisActions))
         if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as RedisDbActionResults")
+
+        val initializingDynamoDbActions = ind.individual.seeInitializingActions().filterIsInstance<DynamoDbAction>()
+        val initializingDynamoDbResults = ind.seeResults(initializingDynamoDbActions)
+        if (initializingDynamoDbResults.any { it !is DynamoDbActionResult })
+            throw IllegalStateException("the type of results are expected as DynamoDbActionResults")
+
+        val initializingCassandraActions = ind.individual.seeInitializingActions().filterIsInstance<CassandraDbAction>()
+        val initializingCassandraResults = (ind.seeResults(initializingCassandraActions))
+        if (initializingCassandraResults.any { (it as? CassandraDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as CassandraDbActionResults")
+
+        val initializingNeo4jActions = ind.individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>()
+        val initializingNeo4jResults = ind.seeResults(initializingNeo4jActions)
+        initializingNeo4jResults.firstOrNull { it !is Neo4jDbActionResult }?.let {
+            throw IllegalStateException("the type of results are expected as Neo4jDbActionResults, but got ${it::class.java.name}")
+        }
 
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
@@ -105,6 +127,43 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 redisInsertionVars = redisInsertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingDynamoDbActions.isNotEmpty()) {
+            DynamoDbWriter.handleDynamoDbInitialization(
+                format,
+                initializingDynamoDbActions.indices.map {
+                    EvaluatedDynamoDbAction(initializingDynamoDbActions[it], initializingDynamoDbResults[it] as DynamoDbActionResult)
+                },
+                lines,
+                dynamoDbInsertionVars = dynamoDbInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile
+            )
+        }
+
+        if (initializingCassandraActions.isNotEmpty()) {
+            CassandraWriter.handleCassandraDbInitialization(
+                format,
+                initializingCassandraActions.indices.map {
+                    EvaluatedCassandraDbAction(
+                        initializingCassandraActions[it],
+                        initializingCassandraResults[it] as CassandraDbActionResult
+                    )
+                },
+                lines,
+                skipFailure = config.skipFailureSQLInTestFile)
+            // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingNeo4jActions.isNotEmpty()) {
+            Neo4jWriter.handleNeo4jDbInitialization(
+                format,
+                initializingNeo4jActions.indices.map {
+                    EvaluatedNeo4jDbAction(initializingNeo4jActions[it], initializingNeo4jResults[it] as Neo4jDbActionResult)
+                },
+                lines,
+                neo4jInsertionVars = neo4jInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingHostnameResolutionActions.isNotEmpty()) {
@@ -308,22 +367,23 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
                     var needsDot = true
 
-                    val fieldName = if (format.isJava()) {
-                        "'${it.key}'"
-                    } else if (format.isKotlin()){
-                        "'${handleDollarSign(it.key)}'"
+                    val fieldName = if (format.isJavaOrKotlin()) {
+                        "'${escapeJvmGPathFieldName(it.key)}'"
                     } else if (format.isJavaScript()) {
                         //field name could have any character... need to use [] notation then
                         if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
                             it.key
                         } else {
                             needsDot = false
-                            "[\"${it.key}\"]"
+                            "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                         }
                     } else if (format.isPython()) {
                         needsDot = false
-                        "[\"${it.key}\"]"
-                    //TODO need to deal with '' C#? see EscapeRest
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
+                    // C# is no longer a supported output format, but keep the legacy branch safe.
+                    } else if (format.isCsharp()) {
+                        needsDot = false
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                     } else {
                         it.key
                     }
@@ -344,12 +404,34 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }
                 }
     }
+
     /*
-        a quick fix on handling dollar sign in assertion
-        TODO, might move to other places to systematically handle the assertions with special symbols
+        RestAssured evaluates a field path as Groovy source after Java/Kotlin has evaluated the
+        generated string literal. Escape for both layers so that, for example, a JSON key named
+        \g is emitted as '\\\\g' in the GPath expression inside the generated JVM source.
      */
-    private fun handleDollarSign(text: String): String{
-        return text.replace("\$", "\\\$")
+    private fun escapeJvmGPathFieldName(text: String): String {
+        val escapedForGroovySingleQuotedString = text
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\b", "\\b")
+            .replace("\t", "\\t")
+
+        return GeneUtils.applyEscapes(
+            escapedForGroovySingleQuotedString,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
+    }
+
+    private fun escapeFieldNameForStringLiteral(text: String): String {
+        return GeneUtils.applyEscapes(
+            text,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
     }
     /**
      * Formats a field path according to the active output format.

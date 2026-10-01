@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidlocation
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidlocation.verbselection.HttpInvalidLocationVerbSelectionController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -38,7 +39,7 @@ class HttpInvalidLocationVerbSelectionEMTest : SpringTestBase() {
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
-                .filter { it.category == ExperimentalFaultCategory.HTTP_INVALID_LOCATION }
+                .filter { it.category == DefinedFaultCategory.HTTP_INVALID_LOCATION }
 
             // Family A: Location -> declared GET returning 500. A fault here can only come from
             // the 500 status, proving 500 is part of the invalid-location status set.

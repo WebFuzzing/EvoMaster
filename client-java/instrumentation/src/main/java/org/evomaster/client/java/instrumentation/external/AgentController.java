@@ -102,6 +102,14 @@ public class AgentController {
                         handleExecutingInitRedis();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_NEO4J:
+                        handleExecutingInitNeo4j();
+                        sendCommand(Command.ACK);
+                        break;
+                    case EXECUTING_INIT_DYNAMODB:
+                        handleExecutingInitDynamoDb();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
@@ -205,6 +213,25 @@ public class AgentController {
             InstrumentationController.setExecutingInitRedis(executingInitRedis);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-redis: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitNeo4j() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitNeo4j = (Boolean) msg;
+            InstrumentationController.setExecutingInitNeo4j(executingInitNeo4j);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-neo4j: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitDynamoDb() {
+        try {
+            Object msg = in.readObject();
+            InstrumentationController.setExecutingInitDynamoDb((Boolean) msg);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-dynamodb: " + e.getMessage());
         }
     }
 

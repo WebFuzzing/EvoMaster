@@ -618,6 +618,75 @@ class Neo4jHeuristicsCalculatorTest {
                 > calculator.computeHeuristic(q, near).getOfTrue());
     }
 
+    // Query parameters: `$name` resolves to the value the query was run with.
+
+    private static final String PARAMETERISED_QUERY = "MATCH (p:Person {name: $name}) RETURN p";
+
+    private static Neo4jGraph oneAna() {
+        Neo4jNode n1 = node("n1", labels("Person"), props("name", "Ana", "age", 25));
+        return new Neo4jGraph(Collections.singletonList(n1), Collections.emptyList());
+    }
+
+    private static Map<String, Object> params(String name, Object value) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put(name, value);
+        return m;
+    }
+
+    @Test
+    void testParameterResolvesToTheCapturedValue() throws CypherParserException {
+        MatchOperation q = parser.parse(PARAMETERISED_QUERY);
+        assertEquals(0.0, calculator.computeDistance(q, oneAna(), params("name", "Ana")), DELTA);
+    }
+
+    @Test
+    void testParameterGivesAGradientTowardsTheStoredValue() throws CypherParserException {
+        MatchOperation q = parser.parse(PARAMETERISED_QUERY);
+        Neo4jGraph g = oneAna();
+
+        double unbound = calculator.computeDistance(q, g);
+        double far = calculator.computeDistance(q, g, params("name", "Zoe"));
+        double near = calculator.computeDistance(q, g, params("name", "Anb"));
+
+        assertTrue(far < unbound);
+        assertTrue(near < far);
+        assertTrue(near > 0.0);
+    }
+
+    @Test
+    void testUnboundParameterIsStillUnvaluatable() throws CypherParserException {
+        MatchOperation q = parser.parse(PARAMETERISED_QUERY);
+        Neo4jGraph g = oneAna();
+
+        assertEquals(calculator.computeDistance(q, g),
+                calculator.computeDistance(q, g, Collections.emptyMap()), DELTA);
+        assertEquals(calculator.computeDistance(q, g),
+                calculator.computeDistance(q, g, params("other", "Ana")), DELTA);
+    }
+
+    @Test
+    void testParameterBoundToNullIsCypherNull() throws CypherParserException {
+        MatchOperation q = parser.parse(PARAMETERISED_QUERY);
+        Neo4jGraph g = oneAna();
+
+        double bound = calculator.computeDistance(q, g, params("name", null));
+        double literal = calculator.computeDistance(parser.parse("MATCH (p:Person {name: null}) RETURN p"), g);
+        assertEquals(literal, bound, DELTA);
+        assertTrue(bound > 0.0);
+    }
+
+    @Test
+    void testNumericParameterInWhereClause() throws CypherParserException {
+        MatchOperation q = parser.parse("MATCH (p:Person) WHERE p.age > $min RETURN p");
+        Neo4jGraph g = oneAna();
+
+        assertEquals(0.0, calculator.computeDistance(q, g, params("min", 20L)), DELTA);
+        double missedBy5 = calculator.computeDistance(q, g, params("min", 30L));
+        double missedBy50 = calculator.computeDistance(q, g, params("min", 75L));
+        assertTrue(missedBy5 > 0.0);
+        assertTrue(missedBy5 < missedBy50);
+    }
+
     private static Neo4jNode node(String id, Set<String> labels, Map<String, Object> props) {
         return new Neo4jNode(id, labels, props);
     }

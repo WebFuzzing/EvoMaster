@@ -13,7 +13,9 @@ import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.FALSE_TRUTHNESS;
@@ -55,6 +57,16 @@ public class Neo4jHeuristicsCalculator {
     }
 
     public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph) {
+        return computeHeuristic(query, graph, Collections.emptyMap());
+    }
+
+    /**
+     * {@code H(Q, G)} for a query run with the given parameters, so that a condition on {@code $name}
+     * is scored against the value the SUT actually passed.
+     *
+     * @param parameters the query parameters by name, without the leading {@code $}
+     */
+    public Truthness computeHeuristic(MatchOperation query, Neo4jGraph graph, Map<String, Object> parameters) {
         Neo4jPatternExpander.ExpandedQuery expanded = new Neo4jPatternExpander().expand(query);
         MatchPattern pattern = expanded.pattern;
         List<CypherCondition> conditions = expanded.conditions;
@@ -66,7 +78,7 @@ public class Neo4jHeuristicsCalculator {
         }
 
         Truthness hMatch = computeHeuristicPattern(pattern, graph, mappings);
-        Truthness hWhere = computeHeuristicWhere(conditions, mappings);
+        Truthness hWhere = computeHeuristicWhere(conditions, mappings, parameters);
         return TruthnessUtils.buildAndAggregationTruthness(hMatch, hWhere);
     }
 
@@ -75,7 +87,15 @@ public class Neo4jHeuristicsCalculator {
      * {@code [0,1]} by construction of {@code Truthness}, where 0 means the query is satisfied.
      */
     public double computeDistance(MatchOperation query, Neo4jGraph graph) {
-        Truthness heuristic = computeHeuristic(query, graph);
+        return computeDistance(query, graph, Collections.emptyMap());
+    }
+
+    /**
+     * Same as {@link #computeDistance(MatchOperation, Neo4jGraph)}, for a query run with the given
+     * parameters.
+     */
+    public double computeDistance(MatchOperation query, Neo4jGraph graph, Map<String, Object> parameters) {
+        Truthness heuristic = computeHeuristic(query, graph, parameters);
         return 1.0d - heuristic.getOfTrue();
     }
 
@@ -173,13 +193,14 @@ public class Neo4jHeuristicsCalculator {
      * fully, the best partial score scaled from base {@code C}. No mappings means the structure was
      * absent, so the conditions cannot hold: FALSE.
      */
-    private Truthness computeHeuristicWhere(List<CypherCondition> conditions, List<Neo4jMapping> mappings) {
+    private Truthness computeHeuristicWhere(List<CypherCondition> conditions, List<Neo4jMapping> mappings,
+                                            Map<String, Object> parameters) {
         if (mappings.isEmpty()) {
             return FALSE_TRUTHNESS;
         }
         double maxOfTrue = 0d;
         for (Neo4jMapping mapping : mappings) {
-            Truthness t = matchConditions(conditions, mapping);
+            Truthness t = matchConditions(conditions, mapping, parameters);
             if (t.isTrue()) {
                 return TRUE_TRUTHNESS;
             }
@@ -195,13 +216,14 @@ public class Neo4jHeuristicsCalculator {
      * valuated score {@link Neo4jConditionEvaluator#UNVALUATABLE} and are aggregated like the rest, so
      * they lower the result instead of being dropped. A query with no conditions is vacuously satisfied.
      */
-    private Truthness matchConditions(List<CypherCondition> conditions, Neo4jMapping mapping) {
+    private Truthness matchConditions(List<CypherCondition> conditions, Neo4jMapping mapping,
+                                      Map<String, Object> parameters) {
         if (conditions.isEmpty()) {
             return TRUE_TRUTHNESS;
         }
         List<Truthness> listOfTruthness = new ArrayList<>();
         for (CypherCondition c : conditions) {
-            Truthness t = evaluator.evaluateCondition(c, mapping);
+            Truthness t = evaluator.evaluateCondition(c, mapping, parameters);
             listOfTruthness.add(t);
         }
         return TruthnessUtils.buildAndAggregationTruthness(listOfTruthness.toArray(new Truthness[0]));

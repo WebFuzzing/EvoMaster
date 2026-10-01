@@ -34,4 +34,22 @@ interface DatabaseExecutor {
      * Return the result of whether it success
      */
     fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT DynamoDB command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT CASSANDRA command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT Neo4j command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto?
 }

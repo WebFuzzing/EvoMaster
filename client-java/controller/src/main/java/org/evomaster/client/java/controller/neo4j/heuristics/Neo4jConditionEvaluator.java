@@ -9,7 +9,9 @@ import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -69,9 +71,22 @@ public class Neo4jConditionEvaluator {
      * an unhandled type.
      */
     public Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping) {
+        return evaluateCondition(condition, mapping, Collections.emptyMap());
+    }
+
+    /**
+     * Same as {@link #evaluateCondition(CypherCondition, Neo4jMapping)}, with the values the query was
+     * run with, so that a {@link ParameterOperand} such as {@code $name} resolves to the value bound
+     * to it instead of scoring {@link #UNVALUATABLE}.
+     *
+     * @param parameters the query parameters by name, without the leading {@code $}; a name bound to
+     *                   {@code null} is Cypher's {@code null}, a name that is absent is unresolved
+     */
+    public Truthness evaluateCondition(CypherCondition condition, Neo4jMapping mapping, Map<String, Object> parameters) {
         Objects.requireNonNull(condition, "condition must not be null");
         Objects.requireNonNull(mapping, "mapping must not be null");
-        return condition.accept(new TruthnessVisitor(mapping));
+        Objects.requireNonNull(parameters, "parameters must not be null");
+        return condition.accept(new TruthnessVisitor(mapping, parameters));
     }
 
     /**
@@ -83,8 +98,12 @@ public class Neo4jConditionEvaluator {
 
         private final Neo4jMapping mapping;
 
-        public TruthnessVisitor(Neo4jMapping mapping) {
+        /** The values the query was run with, by parameter name. See {@link ParameterOperand}. */
+        private final Map<String, Object> parameters;
+
+        public TruthnessVisitor(Neo4jMapping mapping, Map<String, Object> parameters) {
             this.mapping = mapping;
+            this.parameters = parameters;
         }
 
         @Override
@@ -114,32 +133,32 @@ public class Neo4jConditionEvaluator {
 
         @Override
         public Truthness visitProperty(PropertyCondition pc) {
-            return evaluateProperty(pc, mapping);
+            return evaluateProperty(pc, mapping, parameters);
         }
 
         @Override
         public Truthness visitComparison(ComparisonCondition cc) {
-            return evaluateComparison(cc, mapping);
+            return evaluateComparison(cc, mapping, parameters);
         }
 
         @Override
         public Truthness visitAnd(AndCondition ac) {
-            return aggregate(ac.getConditions(), mapping, true);
+            return aggregate(ac.getConditions(), mapping, parameters, true);
         }
 
         @Override
         public Truthness visitOr(OrCondition oc) {
-            return aggregate(oc.getConditions(), mapping, false);
+            return aggregate(oc.getConditions(), mapping, parameters, false);
         }
 
         @Override
         public Truthness visitXor(XorCondition xc) {
-            return evaluateXor(xc.getConditions(), mapping);
+            return evaluateXor(xc.getConditions(), mapping, parameters);
         }
 
         @Override
         public Truthness visitNot(NotCondition nc) {
-            Truthness inner = evaluateCondition(nc.getCondition(), mapping);
+            Truthness inner = evaluateCondition(nc.getCondition(), mapping, parameters);
             // Cypher's NOT null is null, not true, so negating "no information" keeps it.
             return isUnvaluatable(inner) ? UNVALUATABLE : inner.invert();
         }
@@ -153,45 +172,45 @@ public class Neo4jConditionEvaluator {
         }
     }
 
-    private Truthness evaluateProperty(PropertyCondition pc, Neo4jMapping mapping) {
+    private Truthness evaluateProperty(PropertyCondition pc, Neo4jMapping mapping, Map<String, Object> parameters) {
         Object actual = resolveProperty(pc.getVariableName(), pc.getPropertyKey(), mapping);
         if (actual == UNRESOLVED) {
             return UNVALUATABLE;
         }
-        Object expected = resolveOperandValue(pc.getValue(), mapping);
+        Object expected = resolveOperandValue(pc.getValue(), mapping, parameters);
         if (expected == UNRESOLVED) {
             return UNVALUATABLE;
         }
         return equalityTruthness(actual, expected);
     }
 
-    private Truthness evaluateComparison(ComparisonCondition cc, Neo4jMapping mapping) {
+    private Truthness evaluateComparison(ComparisonCondition cc, Neo4jMapping mapping, Map<String, Object> parameters) {
         switch (cc.getOperator()) {
             case IS_NULL:
                 return presenceTruthness(cc.getLeft(), mapping, /*wantPresent=*/false);
             case IS_NOT_NULL:
                 return presenceTruthness(cc.getLeft(), mapping, /*wantPresent=*/true);
             case IN:
-                return evaluateIn(cc, mapping);
+                return evaluateIn(cc, mapping, parameters);
             case STARTS_WITH:
             case ENDS_WITH:
             case CONTAINS:
-                return evaluateStringPredicate(cc, mapping);
+                return evaluateStringPredicate(cc, mapping, parameters);
             case EQUALS:
             case NOT_EQUALS:
             case LESS_THAN:
             case GREATER_THAN:
             case LESS_THAN_OR_EQUALS:
             case GREATER_THAN_OR_EQUALS:
-                return evaluateBinaryComparison(cc, mapping);
+                return evaluateBinaryComparison(cc, mapping, parameters);
             default:
                 throw new IllegalArgumentException("Not supported operator: " + cc.getOperator());
         }
     }
 
-    private Truthness evaluateBinaryComparison(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = resolveOperandValue(cc.getLeft(), mapping);
-        Object r = resolveOperandValue(cc.getRight(), mapping);
+    private Truthness evaluateBinaryComparison(ComparisonCondition cc, Neo4jMapping mapping, Map<String, Object> parameters) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping, parameters);
+        Object r = resolveOperandValue(cc.getRight(), mapping, parameters);
         if (l == UNRESOLVED || r == UNRESOLVED || l == null || r == null) {
             return UNVALUATABLE;
         }
@@ -217,15 +236,15 @@ public class Neo4jConditionEvaluator {
         }
     }
 
-    private Truthness evaluateIn(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = resolveOperandValue(cc.getLeft(), mapping);
+    private Truthness evaluateIn(ComparisonCondition cc, Neo4jMapping mapping, Map<String, Object> parameters) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping, parameters);
         if (l == UNRESOLVED || l == null || !(cc.getRight() instanceof ListOperand)) {
             return UNVALUATABLE;
         }
         List<Operand> elements = ((ListOperand) cc.getRight()).getElements();
         List<Truthness> listOfTruthness = new ArrayList<>();
         for (Operand element : elements) {
-            Object ev = resolveOperandValue(element, mapping);
+            Object ev = resolveOperandValue(element, mapping, parameters);
             if (ev == UNRESOLVED || ev == null) {
                 continue;
             }
@@ -237,9 +256,9 @@ public class Neo4jConditionEvaluator {
         return TruthnessUtils.buildOrAggregationTruthness(listOfTruthness.toArray(new Truthness[0]));
     }
 
-    private Truthness evaluateStringPredicate(ComparisonCondition cc, Neo4jMapping mapping) {
-        Object l = resolveOperandValue(cc.getLeft(), mapping);
-        Object r = resolveOperandValue(cc.getRight(), mapping);
+    private Truthness evaluateStringPredicate(ComparisonCondition cc, Neo4jMapping mapping, Map<String, Object> parameters) {
+        Object l = resolveOperandValue(cc.getLeft(), mapping, parameters);
+        Object r = resolveOperandValue(cc.getRight(), mapping, parameters);
         if (!(l instanceof String) || !(r instanceof String)) {
             return UNVALUATABLE;
         }
@@ -256,11 +275,11 @@ public class Neo4jConditionEvaluator {
     }
 
     /** XOR-folds the children, with the same handling of unvaluatable ones as {@link #aggregate}. */
-    private Truthness evaluateXor(List<CypherCondition> conditions, Neo4jMapping mapping) {
+    private Truthness evaluateXor(List<CypherCondition> conditions, Neo4jMapping mapping, Map<String, Object> parameters) {
         Truthness acc = null;
         boolean allUnvaluatable = true;
         for (CypherCondition c : conditions) {
-            Truthness t = evaluateCondition(c, mapping);
+            Truthness t = evaluateCondition(c, mapping, parameters);
             allUnvaluatable &= isUnvaluatable(t);
             acc = (acc == null) ? t : TruthnessUtils.buildXorAggregationTruthness(acc, t);
         }
@@ -275,11 +294,11 @@ public class Neo4jConditionEvaluator {
      * satisfied just because its only valuatable branch holds. When they are all unvaluatable there is
      * nothing to measure, and the result is {@link #UNVALUATABLE} itself so the marker survives.
      */
-    private Truthness aggregate(List<CypherCondition> conditions, Neo4jMapping mapping, boolean and) {
+    private Truthness aggregate(List<CypherCondition> conditions, Neo4jMapping mapping, Map<String, Object> parameters, boolean and) {
         List<Truthness> listOfTruthness = new ArrayList<>();
         boolean allUnvaluatable = true;
         for (CypherCondition c : conditions) {
-            Truthness t = evaluateCondition(c, mapping);
+            Truthness t = evaluateCondition(c, mapping, parameters);
             allUnvaluatable &= isUnvaluatable(t);
             listOfTruthness.add(t);
         }
@@ -292,11 +311,12 @@ public class Neo4jConditionEvaluator {
     }
 
     /**
-     * Resolves an operand's value ({@code v(x)} in {@code Formalizing.md}) under the mapping. Returns
+     * Resolves an operand's value ({@code v(x)} in {@code Formalizing.md}) under the mapping and the
+     * query parameters. Returns
      * {@link #UNRESOLVED} for an absent property, an opaque {@link RawOperand}, a list (handled only
      * inside IN), an unbound variable, or an arithmetic expression over a non-numeric / unresolved side.
      */
-    private Object resolveOperandValue(Operand operand, Neo4jMapping mapping) {
+    private Object resolveOperandValue(Operand operand, Neo4jMapping mapping, Map<String, Object> parameters) {
         if (operand instanceof LiteralOperand) {
             return ((LiteralOperand) operand).getValue();
         }
@@ -305,19 +325,23 @@ public class Neo4jConditionEvaluator {
             return resolveProperty(po.getVariableName(), po.getPropertyKey(), mapping);
         }
         if (operand instanceof ArithmeticOperand) {
-            return resolveArithmeticOperandValue((ArithmeticOperand) operand, mapping);
+            return resolveArithmeticOperandValue((ArithmeticOperand) operand, mapping, parameters);
+        }
+        if (operand instanceof ParameterOperand) {
+            String name = ((ParameterOperand) operand).getName();
+            return parameters.containsKey(name) ? parameters.get(name) : UNRESOLVED;
         }
         return UNRESOLVED;
     }
 
-    private Object resolveArithmeticOperandValue(ArithmeticOperand ao, Neo4jMapping mapping) {
+    private Object resolveArithmeticOperandValue(ArithmeticOperand ao, Neo4jMapping mapping, Map<String, Object> parameters) {
         if (ao.getOperator() == ArithmeticOperator.NEGATE) {
-            Object v = resolveOperandValue(ao.getLeft(), mapping);
+            Object v = resolveOperandValue(ao.getLeft(), mapping, parameters);
             Double d = asDouble(v);
             return d == null ? UNRESOLVED : -d;
         }
-        Double l = asDouble(resolveOperandValue(ao.getLeft(), mapping));
-        Double r = asDouble(resolveOperandValue(ao.getRight(), mapping));
+        Double l = asDouble(resolveOperandValue(ao.getLeft(), mapping, parameters));
+        Double r = asDouble(resolveOperandValue(ao.getRight(), mapping, parameters));
         if (l == null || r == null) {
             return UNRESOLVED;
         }

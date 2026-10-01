@@ -37,7 +37,7 @@ class SSRFBaseDisableEMTest : SpringTestBase() {
 
             setOption(args, "llm", "false")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SSRF.code.toString())
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_SSRF.code.toString())
 
             val solution = initAndRun(args)
 

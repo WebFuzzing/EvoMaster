@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.utils.RestTestBase
@@ -65,6 +66,8 @@ abstract class IntegrationTestRestBase : RestTestBase() {
     fun getExecutionPhaseController() = injector.getInstance(ExecutionPhaseController::class.java)!!
 
     fun getFitnessFunction() = injector.getInstance(AbstractRestFitness::class.java)!!
+
+    fun getDataPool() = injector.getInstance(DataPool::class.java)!!
 
     /**
      * Create and evaluate an individual

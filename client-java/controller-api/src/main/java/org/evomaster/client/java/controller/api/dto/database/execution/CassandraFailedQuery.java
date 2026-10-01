@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto;
+
 import java.util.Objects;
 
 /**
@@ -10,17 +12,24 @@ public class CassandraFailedQuery {
     /**
      * The keyspace the table belongs to.
      */
-    private final String keyspaceName;
+    private String keyspaceName;
     /**
      * The table the query targeted.
      */
-    private final String tableName;
+    private String tableName;
     /**
-     * The schema of the table's rows, if known.
+     * The shape of the table's rows, null when it was never captured, ie when no query referencing
+     * the table was intercepted while the schema of its tables was being tracked.
      */
-    private String tableSchema;
+    private CassandraTableSchemaDto tableSchema;
 
-    public CassandraFailedQuery(String keyspaceName, String tableName, String tableSchema) {
+    /**
+     * Needed to deserialize the DTO, as it is sent over HTTP.
+     */
+    public CassandraFailedQuery() {
+    }
+
+    public CassandraFailedQuery(String keyspaceName, String tableName, CassandraTableSchemaDto tableSchema) {
         this.keyspaceName = Objects.requireNonNull(keyspaceName);
         this.tableName = Objects.requireNonNull(tableName);
         this.tableSchema = tableSchema;
@@ -30,11 +39,23 @@ public class CassandraFailedQuery {
         return keyspaceName;
     }
 
+    public void setKeyspaceName(String keyspaceName) {
+        this.keyspaceName = keyspaceName;
+    }
+
     public String getTableName() {
         return tableName;
     }
 
-    public String getTableSchema() {
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public CassandraTableSchemaDto getTableSchema() {
         return tableSchema;
+    }
+
+    public void setTableSchema(CassandraTableSchemaDto tableSchema) {
+        this.tableSchema = tableSchema;
     }
 }

@@ -18,6 +18,7 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 public class ImplicitSelector extends QuerySelector {
 
     private static final String PREFIX_OPERATOR = "$";
+    private static final String COMMENT_OPERATOR = "$comment";
 
     @Override
     public QueryOperation getOperation(Object query) {
@@ -27,7 +28,7 @@ public class ImplicitSelector extends QuerySelector {
 
         Set<String> keys = documentKeys(query);
         if (keys.isEmpty()) {
-            return new TrueOperation(); // Represents the "{}" MongoDB query, which matches all documents
+            return new EmptyOperation(); // Represents the "{}" MongoDB query, which matches all documents
         }
 
         if (!isUniqueEntry((Map<?, ?>) query)) {
@@ -69,6 +70,12 @@ public class ImplicitSelector extends QuerySelector {
         if (isBsonDocument(value)) {
             if (isEmptyDocument(value)) {
                 return null;
+            }
+            // "$comment" is not a recognized field-level operator: a value that is solely
+            // { $comment: ... } is treated as a literal document to match, not as an operator.
+            Set<String> innerKeys = documentKeys(value);
+            if (innerKeys != null && innerKeys.size() == 1 && innerKeys.contains(COMMENT_OPERATOR)) {
+                return new EqualsOperation<>(fieldName, value);
             }
             QueryOperation multiOperatorOp = handlePotentialMultiOperatorValue(query, fieldName, value);
             if (multiOperatorOp != null || isBsonDocumentWithOperators(value)) {

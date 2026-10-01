@@ -105,9 +105,13 @@ public class MongoHandler {
 
     public List<MongoCommandWithDistance> getEvaluatedMongoCommands() {
 
-        operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
-            MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
-            mongoCommandWithDistances.add(new MongoCommandWithDistance(mongoInfo.getQuery(), distanceWithMetrics));
+        operations.stream()
+                // Filter out operations that have a null query or were not successfully executed
+                .filter(info -> info.getQuery() != null && info.isSuccessfullyExecuted())
+                // Compute the distance for each operation and create a MongoCommandWithDistance object
+                .forEach(mongoInfo -> {
+                    MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
+                    mongoCommandWithDistances.add(new MongoCommandWithDistance(mongoInfo.getQuery(), distanceWithMetrics));
         });
         operations.clear();
 

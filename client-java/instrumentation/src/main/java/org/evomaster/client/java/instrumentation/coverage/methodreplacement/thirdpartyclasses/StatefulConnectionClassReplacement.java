@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * This replacement captures Redis dispatch operations containing Redis Commands.
@@ -49,10 +50,8 @@ public class StatefulConnectionClassReplacement extends ThirdPartyMethodReplacem
 
             Method argsMethod = command.getClass().getMethod("getArgs");
             Object commandArgs = argsMethod.invoke(command);
-            Method toCmdString = commandArgs.getClass().getMethod("toCommandString");
-            String fullCmd = (String) toCmdString.invoke(commandArgs);
 
-            String[] args = fullCmd.trim().split("\\s+");
+            String[] args = parseArgs(commandArgs);
 
             RedisCommand.RedisCommandType cmdType;
             try {
@@ -69,6 +68,34 @@ public class StatefulConnectionClassReplacement extends ThirdPartyMethodReplacem
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Reads CommandArgs's private singularArguments field directly instead of
+     * calling its public toCommandString(), which joins every argument into a
+     * single space-separated string - unrecoverable if any argument value
+     * itself contains a space. Walking the list lets each argument be read on
+     * its own via toString(), which Lettuce's KeyArgument/ValueArgument render
+     * as "key<...>"/"value<...>" (unwrapped below); every other argument type
+     * renders as its plain value.
+     */
+    private static String[] parseArgs(Object commandArgs) {
+        List<?> singularArguments = (List<?>) getField(commandArgs, "singularArguments");
+        String[] args = new String[singularArguments.size()];
+        for (int i = 0; i < singularArguments.size(); i++) {
+            args[i] = unwrapArg(singularArguments.get(i).toString());
+        }
+        return args;
+    }
+
+    private static String unwrapArg(String token) {
+        if (token.startsWith("key<") && token.endsWith(">")) {
+            return token.substring(4, token.length() - 1);
+        }
+        if (token.startsWith("value<") && token.endsWith(">")) {
+            return token.substring(6, token.length() - 1);
+        }
+        return token;
     }
 
     private static void addRedisCommand(RedisCommand.RedisCommandType type, String[] args, long executionTime) {

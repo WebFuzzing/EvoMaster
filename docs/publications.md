@@ -13,6 +13,10 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* A. Decrop, A. Arcuri, M. Papadakis, P. Schobbens, G. Perrouin.
+  *Detecting HTTP Status Code Misuses in REST APIs via Static and Dynamic Analysis*.
+  [[arXiv](https://arxiv.org/abs/2609.12770)]
+
 * O. Sahin, A. Arcuri.
   *Validating HTTP Semantics in REST APIs With Constructed Call Sequence Scenarios*.
   [[arXiv](https://arxiv.org/abs/2608.16239)]
@@ -29,10 +33,6 @@ Also, some of these papers provides full replication packages, which are linked 
   *Fuzzing REST APIs in Industry: Necessary Features and Open Problems*.
   [[arxiv](https://arxiv.org/abs/2604.01759)]
 
-* H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
-  *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
-  [[arxiv](https://arxiv.org/abs/2505.19625)]
-
 * P. Garrett, J. P. Galeotti, A. Arcuri, A. Poth, O. Rrjolli.
   *Generating REST API Tests With Descriptive Names*. 
   [[arxiv](https://arxiv.org/abs/2512.01690)]
@@ -45,6 +45,11 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2026
+
+* H. Sartaj, S. Ali, P. Arcaini, A. Arcuri.
+  *Search-Based Software Engineering and AI Foundation Models: Current Landscape and Future Roadmap*.
+  Journal of Systems and Software (JSS).
+  _(to appear)_
 
 * F. Castagna, M. T. Shalmani, A. Golmohammadi, J. P. Galeotti and A. Arcuri.
   *An Empirical Evaluation of Search-Based Algorithms for White-Box Testing of REST APIs*.

@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidlocation
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidlocation.HttpInvalidLocationController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -38,7 +39,7 @@ class HttpInvalidLocationEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue({ ExperimentalFaultCategory.HTTP_INVALID_LOCATION in faults })
+            assertTrue({ DefinedFaultCategory.HTTP_INVALID_LOCATION in faults })
         }
     }
 }

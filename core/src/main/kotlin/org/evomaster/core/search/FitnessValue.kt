@@ -2,9 +2,11 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.database.mongo.MongoExecution
@@ -12,6 +14,8 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.neo4j.Neo4jExecution
+import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.schema.TableId
@@ -81,7 +85,26 @@ class FitnessValue(
 
     val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
 
+    /**
+     * Key -> action Id
+     *
+     * Value -> info on how the Redis database was accessed
+     */
     val redisExecutions: MutableMap<Int, RedisExecution> = mutableMapOf()
+
+    /**
+     * Key -> index of the action in the evaluated individual.
+     *
+     * Value -> information about failed DynamoDB reads observed while executing that action.
+     */
+    val dynamoDbExecutions: MutableMap<Int, DynamoDbExecution> = mutableMapOf()
+
+    /**
+     * Key -> action Id
+     *
+     * Value -> the Cypher queries of that action which the Neo4j graph did not satisfy
+     */
+    val neo4jExecutions: MutableMap<Int, Neo4jExecution> = mutableMapOf()
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
@@ -106,6 +129,14 @@ class FitnessValue(
      * the type of commands that failed.
      */
     private val aggregatedFailedRedisCommands: MutableList<RedisFailedCommand> = mutableListOf()
+
+    private val aggregatedFailedDynamoDbQueries: MutableList<DynamoDbFailedQuery> = mutableListOf()
+
+    /**
+     * When SUT runs Cypher MATCH queries, keep track of when those find nothing, each digested into
+     * the insertion that would make it match.
+     */
+    private val aggregatedFailedNeo4jQueries: MutableList<Neo4jFailedQueryDto> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -139,9 +170,13 @@ class FitnessValue(
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.redisExecutions.putAll(this.redisExecutions)
+        copy.dynamoDbExecutions.putAll(this.dynamoDbExecutions)
+        copy.neo4jExecutions.putAll(this.neo4jExecutions)
         copy.aggregateDatabaseData()
         copy.aggregateMongoDatabaseData()
         copy.aggregateRedisDatabaseData()
+        copy.aggregateDynamoDbData()
+        copy.aggregateNeo4jDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -189,6 +224,16 @@ class FitnessValue(
         redisExecutions.values.map { it.failedCommands?.let { it1 -> aggregatedFailedRedisCommands.addAll(it1) } }
     }
 
+    fun aggregateDynamoDbData() {
+        aggregatedFailedDynamoDbQueries.clear()
+        dynamoDbExecutions.values.forEach { aggregatedFailedDynamoDbQueries.addAll(it.failedQueries) }
+    }
+
+    fun aggregateNeo4jDatabaseData(){
+        aggregatedFailedNeo4jQueries.clear()
+        neo4jExecutions.values.forEach { aggregatedFailedNeo4jQueries.addAll(it.failedQueries) }
+    }
+
     fun addExtraObjectivesToMinimize(actionIndex: Int, list: List<Double>) {
         if (extraToMinimize[actionIndex] == null) {
             extraToMinimize[actionIndex] = list.sorted()
@@ -210,6 +255,14 @@ class FitnessValue(
         redisExecutions[actionIndex] = redisExecution
     }
 
+    fun setDynamoDbExecution(actionIndex: Int, execution: DynamoDbExecution) {
+        dynamoDbExecutions[actionIndex] = execution
+    }
+
+    fun setNeo4jExecution(actionIndex: Int, neo4jExecution: Neo4jExecution){
+        neo4jExecutions[actionIndex] = neo4jExecution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -223,6 +276,10 @@ class FitnessValue(
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun getViewOfAggregatedFailedRedisCommands() = aggregatedFailedRedisCommands
+
+    fun getViewOfAggregatedFailedDynamoDbQueries() = aggregatedFailedDynamoDbQueries
+
+    fun getViewOfAggregatedFailedNeo4jQueries() = aggregatedFailedNeo4jQueries
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.score == MAX_VALUE

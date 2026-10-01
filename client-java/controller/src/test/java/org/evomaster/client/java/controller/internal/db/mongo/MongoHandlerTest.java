@@ -15,6 +15,7 @@ import static com.mongodb.client.model.Filters.eq;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.mongodb.client.model.Filters.size;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MongoHandlerTest {
@@ -25,7 +26,7 @@ public class MongoHandlerTest {
             .withExposedPorts(MONGODB_PORT);
 
     @BeforeAll
-    public static void initClass()  {
+    public static void initClass() {
         mongodb.start();
         int port = mongodb.getMappedPort(MONGODB_PORT);
 
@@ -70,7 +71,7 @@ public class MongoHandlerTest {
         assertEquals(1, documents.size());
 
         final Bson bsonQuery = eq("age", 18);
-        Document queryDocument = MongoHeuristicsCalculatorTest.convertToDocument( bsonQuery);
+        Document queryDocument = MongoHeuristicsCalculatorTest.convertToDocument(bsonQuery);
 
         try (MongoCursor<Document> cursor = collection.find(queryDocument).iterator()) {
             assertFalse(cursor.hasNext());
@@ -101,4 +102,29 @@ public class MongoHandlerTest {
         assertTrue(mongoCommandWithDistance.mongoDistanceWithMetrics.mongoDistance > 0.0);
         assertEquals(1, mongoCommandWithDistance.mongoDistanceWithMetrics.numberOfEvaluatedDocuments);
     }
+
+    @Test
+    public void testEvaluateCommandsIgnoreInvalidQueries() {
+
+        Document invalidQueryDocument = MongoHeuristicsCalculatorTest.convertToDocument(size("tags", -1));
+        final boolean successfullyExecuted = false;
+        final int executionTime = 1;
+
+        MongoFindCommand mongoFindCommand = new MongoFindCommand(DATABASE_NAME,
+                COLLECTION_NAME,
+                null,
+                invalidQueryDocument,
+                successfullyExecuted,
+                executionTime);
+
+        MongoHandler mongoHandler = new MongoHandler();
+        mongoHandler.setMongoClient(mongoClient);
+        mongoHandler.setCalculateHeuristics(true);
+        mongoHandler.setExtractMongoExecution(true);
+        mongoHandler.handle(mongoFindCommand);
+        List<MongoCommandWithDistance> mongoCommandWithDistances = mongoHandler.getEvaluatedMongoCommands();
+
+        assertTrue(mongoCommandWithDistances.isEmpty());
+    }
+
 }
