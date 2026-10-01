@@ -1031,12 +1031,13 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
-    fun shouldGenerateMongoData() = generateMongoData
+    fun shouldGenerateMongoData() =  isUsingAdvancedTechniques() && generateMongoData
 
-    fun shouldGenerateRedisData() = generateRedisData
+    fun shouldGenerateRedisData() = isUsingAdvancedTechniques() && generateRedisData
 
-    fun shouldGenerateDynamoDbData() = generateDynamoDbData
-    fun shouldGenerateNeo4jData() = generateNeo4jData
+    fun shouldGenerateDynamoDbData() = isUsingAdvancedTechniques() && generateDynamoDbData
+
+    fun shouldGenerateNeo4jData() = isUsingAdvancedTechniques() && generateNeo4jData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
