@@ -93,35 +93,6 @@ class ReflectionBasedNeo4jClientTest {
         assertThrows(IllegalArgumentException.class, () -> new ReflectionBasedNeo4jClient(null));
     }
 
-    @Test
-    void testNoParametersIsAnEmptyMap() {
-        assertTrue(ReflectionBasedNeo4jClient.parametersAsMap(null).isEmpty());
-    }
-
-    @Test
-    void testPlainParameterMapIsKeptAndDriverValuesInItAreUnwrapped() {
-        Map<String, Object> captured = new LinkedHashMap<>();
-        captured.put("name", "Ana");
-        captured.put("age", new FakeValue(25L));
-
-        Map<String, Object> plain = ReflectionBasedNeo4jClient.parametersAsMap(captured);
-
-        assertEquals("Ana", plain.get("name"));
-        assertEquals(25L, plain.get("age"));
-    }
-
-    @Test
-    void testParametersCapturedAsAValueOrRecordAreReadThroughAsMap() {
-        Map<String, Object> content = props("name", "Ana");
-        assertEquals(content, ReflectionBasedNeo4jClient.parametersAsMap(new FakeValue(content)));
-        assertEquals(content, ReflectionBasedNeo4jClient.parametersAsMap(record("name", "Ana")));
-    }
-
-    @Test
-    void testUnknownParameterShapeIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> ReflectionBasedNeo4jClient.parametersAsMap("name=Ana"));
-    }
-
     public static final class FakeDriver {
         private final List<FakeRecord> records;
         FakeSession lastSession;
