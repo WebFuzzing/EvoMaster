@@ -40,6 +40,7 @@ public class RedisLettuceEntityEMTest extends RestTestBase {
 
                     assertFalse(solution.getIndividuals().isEmpty());
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/entity/findById/{id}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 201, "/entity/findById/{id}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/entity/findById/{id}", null);
                 },
                 3);

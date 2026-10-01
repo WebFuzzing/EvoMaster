@@ -20,7 +20,11 @@ public class EntityRest extends AbstractRedisLettuceRest {
     public ResponseEntity<Void> findById(@PathVariable("id") String id) {
         Optional<Entity> optionalEntity = entityRepository.findById(id);
         if (optionalEntity.isPresent()) {
-            return ResponseEntity.status(200).build();
+            Entity entity = optionalEntity.get();
+            if (entity.getAddress()!=null) {
+                return ResponseEntity.status(200).build();
+            }
+            return ResponseEntity.status(201).build();
         } else {
             return ResponseEntity.status(404).build();
         }
