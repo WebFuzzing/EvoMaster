@@ -90,6 +90,51 @@ class SamplerWithArazzoVerifierTest {
         assertEquals(listOf("/store/order"), actions.map { it.path.toString() })
     }
 
+    @Test
+    fun testSamplerWithArazzoWithOnFailureEndWorkflow() {
+        val context = createTestContext()
+
+        //early-exit-tags
+        val workflow = context.arazzoService.arazzoWorkflowsById["early-exit-tags"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow has two steps, but since the `onFailure` is of the `end` type, there must be only one action.
+        assertEquals(listOf("findPetsByTags"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags"), actions.map { it.path.toString() })
+    }
+
+    @Test
+    fun testSamplerWithArazzoWithOnSuccessGotoStepId() {
+        val context = createTestContext()
+
+        //skip-coupons-via-goto
+        val workflow = context.arazzoService.arazzoWorkflowsById["skip-coupons-via-goto"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow has only two steps because it skips `getPerCoupons` due to the `goto` in the `onSuccess` handler.
+        assertEquals(listOf("findPetsByTags", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags", "/store/order"), actions.map { it.path.toString() })
+    }
+
+    @Test
+    fun testSamplerWithArazzoWithOnSuccessGotoOtherWorkkflow() {
+        val context = createTestContext()
+
+        //jump-to-other-workflow
+        val workflow = context.arazzoService.arazzoWorkflowsById["jump-to-other-workflow"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow jumps to "buy-available-pet," so "getPetCoupons" is not executed.
+        assertEquals(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags", "/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
+    }
+
     private fun buildIndividualFromWorkflow(context: TestContext, arazzoWorkflow: ArazzoWorkflow): RestIndividual {
         return context.arazzoService.buildIndividualFromWorkflow(arazzoWorkflow)
     }
