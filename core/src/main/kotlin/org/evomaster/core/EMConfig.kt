@@ -723,9 +723,12 @@ class EMConfig {
                 problemType = ProblemType.REST
             }
             /*
-                AsyncAPI is the exception: it has a driver even in black-box, since there is no
-                universal client for a broker, so the format comes from the driver as it does in
-                white-box rather than from the black-box default.
+                AsyncAPI is the exception: a driver publishes its messages even in black-box, since
+                there is no universal client for a broker, so the format is resolved from the driver
+                as it is in white-box rather than from the black-box default.
+
+                A driver can only name a format SutInfoDto.OutputFormat has, which Python is not, so
+                a Python suite has to be asked for with this option.
              */
             if (outputFormat == OutputFormat.DEFAULT && problemType != ProblemType.ASYNCAPI) {
                 LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
@@ -1416,9 +1419,11 @@ class EMConfig {
     @Cfg("Specify in which format the tests should be outputted." +
             " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
             " On the other hand, for black-box testing it will default to a predefined type (e.g., Python)." +
-            " AsyncAPI is the exception on both counts: it has a driver in either mode, so the format comes from" +
-            " there, and only Java, Kotlin and Python can be generated, as the tests publish with a client of the" +
-            " transport.")
+            " AsyncAPI is the exception on both counts: a driver is what publishes during the search, in either" +
+            " mode, so a `DEFAULT` is resolved from the driver there as well rather than from the black-box" +
+            " default. Only Java, Kotlin and Python can be generated, as a generated test publishes with a client" +
+            " of the transport rather than through the driver, and only those three have one written for them so" +
+            " far. Python has to be asked for here explicitly, as a driver has no way of naming it.")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)
