@@ -11,6 +11,8 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,8 @@ import java.util.Properties;
  */
 @Component
 public class NcsRequestConsumer implements SmartLifecycle {
+
+    private static final Logger log = LoggerFactory.getLogger(NcsRequestConsumer.class);
 
     /**
      * The header a request carries its correlation id in, as the document declares.
@@ -102,7 +106,15 @@ public class NcsRequestConsumer implements SmartLifecycle {
             record.headers().add(CORRELATION_HEADER, correlation.value());
         }
 
-        producer.send(record);
+        /*
+            A send that fails is otherwise indistinguishable from a slow one: the run reports a
+            reply that never came, and nothing says why.
+         */
+        producer.send(record, (metadata, failure) -> {
+            if (failure != null) {
+                log.warn("Could not publish a reply to {}", reply.topic, failure);
+            }
+        });
     }
 
     @Override

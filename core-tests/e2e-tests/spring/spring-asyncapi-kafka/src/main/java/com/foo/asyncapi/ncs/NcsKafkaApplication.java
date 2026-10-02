@@ -10,7 +10,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
  * NCS over Kafka: the six numerical operations of the NCS case study, each consuming a request
  * topic and answering on a reply topic, as described by {@code asyncapi/ncs-kafka.yaml}.
  *
- * The service speaks only Kafka. Its one component is {@link NcsRequestConsumer}.
+ * The service speaks only Kafka. What listens on it is {@link NcsRequestConsumer}, which hands
+ * every request to {@link NcsService}.
  */
 /*
     Bean validation is excluded: this service validates nothing, and the validation API that the

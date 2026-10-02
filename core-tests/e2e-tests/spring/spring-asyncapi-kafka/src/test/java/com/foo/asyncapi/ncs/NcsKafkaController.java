@@ -123,6 +123,21 @@ public class NcsKafkaController extends EmbeddedSutController {
     @Override
     public String startSut() {
 
+        try {
+            return start();
+        } catch (RuntimeException e) {
+            /*
+                Nothing else will: isSutRunning() answers on the Spring context, which is not
+                assigned until the end, so a failure here would leave the broker running for the
+                rest of the fork.
+             */
+            stopSut();
+            throw e;
+        }
+    }
+
+    private String start() {
+
         kafka.start();
         String bootstrap = kafka.getBootstrapServers();
 
@@ -210,8 +225,7 @@ public class NcsKafkaController extends EmbeddedSutController {
             Every close is given a deadline and is allowed to fail: a Kafka client that will not
             shut down must not keep the whole controller from stopping, which the E2E asserts.
          */
-        replyConsumers.values().forEach(c -> quietly(() -> c.close(CLOSE_TIMEOUT)));
-        replyConsumers.clear();
+        closeReplyConsumers();
 
         if (producer != null) {
             quietly(() -> producer.close(CLOSE_TIMEOUT));
@@ -244,7 +258,20 @@ public class NcsKafkaController extends EmbeddedSutController {
 
     @Override
     public void resetStateOfSUT() {
-        //stateless: every request is answered from its own content
+
+        /*
+            The service itself is stateless: every request is answered from its own content.
+            What does carry over is where the reply consumers are positioned, and that matters:
+            a search restarted under the same seed mints the same correlation ids again, so a
+            reply left on a topic by the previous test would answer a request of this one. They
+            are dropped here, and the next one to be needed is created at the end of its topic.
+         */
+        closeReplyConsumers();
+    }
+
+    private void closeReplyConsumers() {
+        replyConsumers.values().forEach(c -> quietly(() -> c.close(CLOSE_TIMEOUT)));
+        replyConsumers.clear();
     }
 
     @Override
@@ -260,10 +287,13 @@ public class NcsKafkaController extends EmbeddedSutController {
     /**
      * The container picks a port when it starts, so the address in the document is never where
      * this broker actually is. A generated test asks for this instead of trusting the document.
+     *
+     * Asking before the container is up is answered with null, as the contract says to, rather
+     * than with the exception testcontainers raises for a port that has not been mapped yet.
      */
     @Override
     public String getAsyncApiServerAddress(String serverName) {
-        return kafka == null ? null : kafka.getBootstrapServers();
+        return kafka.isRunning() ? kafka.getBootstrapServers() : null;
     }
 
     @Override
@@ -421,7 +451,7 @@ public class NcsKafkaController extends EmbeddedSutController {
     }
 
     /**
-     * A consumer positioned at the end of [address], so that it sees only what is published
+     * A consumer positioned at the end of {@code address}, so that it sees only what is published
      * from now on.
      */
     private KafkaConsumer<String, String> consumerAt(String address) {
