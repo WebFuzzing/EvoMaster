@@ -961,7 +961,11 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <!-- Only used by the artificial SUTs and drivers of the AsyncAPI E2E tests. Not shipped. -->
+                <!--
+                    Only used by the artificial SUTs of the AsyncAPI E2E tests, their drivers,
+                    and the suites those tests generate and compile. Not shipped with EvoMaster:
+                    no module under client-java, core or core-extra depends on it.
+                -->
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-clients.version}</version>

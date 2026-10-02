@@ -26,7 +26,7 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     }
 
     /**
-     * The result of every message published to [operation], across the whole solution.
+     * The result of every message published to {@code operation}, across the whole solution.
      */
     protected List<AsyncApiCallResult> resultsOf(Solution<AsyncApiIndividual> solution, String operation) {
         return solution.getIndividuals().stream()
@@ -37,7 +37,7 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     }
 
     /**
-     * The declared messages the replies to [operation] were recognised as.
+     * The declared messages the replies to {@code operation} were recognised as.
      */
     protected Set<String> repliesOf(Solution<AsyncApiIndividual> solution, String operation) {
         return resultsOf(solution, operation).stream()
@@ -73,7 +73,7 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     }
 
     /**
-     * That some reply to [operation] arrived and matched none of the messages the contract
+     * That some reply to {@code operation} arrived and matched none of the messages the contract
      * declares for it, which is the one fault only a reply classifier can find.
      */
     protected void assertRepliedWithUndeclaredMessage(Solution<AsyncApiIndividual> solution, String operation) {

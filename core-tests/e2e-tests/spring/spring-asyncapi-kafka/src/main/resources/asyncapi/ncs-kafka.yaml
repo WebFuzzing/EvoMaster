@@ -32,10 +32,16 @@ channels:
       triangleRequest:
         $ref: '#/components/messages/triangleRequest'
   triangleReply:
+    # The error reply is declared here as on every other channel, because the service answers a
+    # rejected request the same way everywhere. Keeping it out would make the ordinary error a
+    # second undeclared payload on this topic, indistinguishable from the deliberate one the
+    # service publishes for a non-positive edge.
     address: ncs.triangle.reply
     messages:
       result:
         $ref: '#/components/messages/intResult'
+      error:
+        $ref: '#/components/messages/error'
 
   bessjRequest:
     address: ncs.bessj.request
@@ -43,10 +49,10 @@ channels:
       bessjRequest:
         $ref: '#/components/messages/bessjRequest'
   bessjReply:
-    # The error reply is declared because the service can produce one, but no client
-    # obeying this document can make it: the request's bounds are exactly the range the
-    # service checks. Kept so the contract describes the service, not only what a
-    # conforming client can reach.
+    # 'n' is fenced exactly: the 3..1000 the request allows is the range the service checks,
+    # so no conforming client can be rejected for it. 'x' is not fenced, and the routine
+    # returns a value that is not a number for a very small one, which the service answers
+    # with an error. So this reply is reachable, if rarely.
     address: ncs.bessj.reply
     messages:
       result:

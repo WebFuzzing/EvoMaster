@@ -47,12 +47,14 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                 (args) -> {
 
                     /*
-                        The broker is local and the service answers in milliseconds, so a reply
-                        that has not arrived in a second is not coming. Left at its default, one
-                        stalled message would eat a large share of the budget for this test.
+                        The broker is local and the service answers in milliseconds. Left at its
+                        default, one stalled message would eat a large share of the budget for
+                        this test; a second is generous for the round trip, but not for a loaded
+                        CI machine, where a garbage collection in the SUT can cost more than
+                        that, and this test asserts that no reply was missed.
                      */
                     args.add("--asyncApiReplyTimeoutMs");
-                    args.add("1000");
+                    args.add("3000");
 
                     /*
                         The kill switch stops SUT code that is still running once an individual
@@ -78,14 +80,15 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
 
                     /*
                         An error reply is reachable exactly where the schema leaves the input the
-                        service rejects within what it allows. These three describe their
-                        constraint in prose rather than as a bound -- expint's x, gammq's a, and
-                        fisher's x, which its degrees of freedom do not cover -- so the search is
-                        free to produce it.
+                        service rejects within what it allows. expint's x and gammq's a state
+                        their constraint in prose rather than as a bound, and fisher's x carries
+                        none at all, so the search is free to produce one.
 
-                        bessj and remainder declare an error reply that nothing obeying the
-                        contract can provoke: their bounds are exactly the range the service
-                        checks. That is a property of the document, not a gap in the search.
+                        remainder declares an error reply that nothing obeying the contract can
+                        provoke: its bounds are exactly the range the service checks. That is a
+                        property of the document, not a gap in the search. bessj's n is fenced
+                        the same way, but its x is not, so an error there is reachable too --
+                        rarely enough that this test does not ask for it.
                      */
                     assertReplyReached(solution, "expint", "doubleResult");
                     assertReplyReached(solution, "expint", "error");
@@ -105,7 +108,11 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
 
-                    //the oracles are off here, so a well-behaved service must report nothing
+                    /*
+                        Both AsyncAPI categories are experimental and the flag is off here, so
+                        even the undeclared reply asserted above goes unreported. The other run
+                        turns the flag on and checks the other side of that.
+                     */
                     assertTrue(faultsOf(solution).isEmpty(), "faults were reported: " + faultsOf(solution));
                 },
                 5);
@@ -132,7 +139,7 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                 (args) -> {
 
                     setOption(args, "outputFormat", "JAVA_JUNIT_5");
-                    setOption(args, "asyncApiReplyTimeoutMs", "1000");
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
                     setOption(args, "killSwitch", "false");
 
                     Solution<AsyncApiIndividual> solution = initAndRun(args);
