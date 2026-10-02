@@ -1,23 +1,28 @@
 package org.evomaster.client.java.instrumentation;
 
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.Filters;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonRegularExpression;
-import org.bson.Document;
+import org.bson.*;
 import org.bson.conversions.Bson;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MongoFindCommandTest {
 
+    public static final org.bson.codecs.configuration.CodecRegistry DEFAULT_CODEC_REGISTRY = MongoClientSettings.getDefaultCodecRegistry();
+
     /**
      * Serializes and deserializes a MongoFindCommand to test that the query is correctly converted
-     * to a BsonDocument and back.
+     * to JSON and back.
      *
      * @param command the MongoFindCommand to serialize and deserialize
      * @return the deserialized MongoFindCommand
@@ -33,13 +38,17 @@ class MongoFindCommandTest {
         }
     }
 
-    private static MongoFindCommand command(Object query, boolean success) {
+    private static MongoFindCommand createMongoFindCommand(Object query, boolean success) {
         return new MongoFindCommand("db", "coll", "schema", query, success, 42L);
+    }
+
+    private static Object roundTripQuery(Object query) throws Exception {
+        return serializeAndDeserializeCommand(createMongoFindCommand(query, true)).getQuery();
     }
 
     @Test
     void testMetadataIsPreserved() throws Exception {
-        MongoFindCommand copy = serializeAndDeserializeCommand(command(new Document("a", 1), true));
+        MongoFindCommand copy = serializeAndDeserializeCommand(createMongoFindCommand(new BsonDocument("a", new BsonInt32(1)), true));
         assertEquals("db", copy.getDatabaseName());
         assertEquals("coll", copy.getCollectionName());
         assertEquals("schema", copy.getDocumentsType());
@@ -48,154 +57,157 @@ class MongoFindCommandTest {
 
     @Test
     void testUnsuccessfulFlagIsPreserved() throws Exception {
-        assertFalse(serializeAndDeserializeCommand(command(new Document("a", 1), false)).isSuccessfullyExecuted());
+        assertFalse(serializeAndDeserializeCommand(createMongoFindCommand(new BsonDocument("a", new BsonInt32(1)), false)).isSuccessfullyExecuted());
     }
 
     @Test
     void testNullQuery() throws Exception {
-        assertNull(serializeAndDeserializeCommand(command(null, true)).getQuery());
+        assertNull(roundTripQuery(null));
     }
 
     @Test
-    void testDocumentWithRegularExpression() throws Exception {
-        Document doc = new Document("name", new Document("$regex", new BsonRegularExpression("^abc", "i")));
-        // sanity check: the raw deserializedQuery is not serializable by default
+    void testBsonDocumentWithRegularExpression() throws Exception {
+        BsonDocument doc = new BsonDocument("name",
+                new BsonDocument("$regex", new BsonRegularExpression("^abc", "i")));
+        // sanity check: the raw query is not serializable by default
         assertThrows(NotSerializableException.class, () -> new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(new BsonRegularExpression("x")));
 
-        final MongoFindCommand command = command(doc, true);
-        final MongoFindCommand deserializedCommand = serializeAndDeserializeCommand(command);
-        Object deserializedQuery = deserializedCommand.getQuery();
-        assertTrue(deserializedQuery instanceof BsonDocument);
-        BsonDocument expected = doc.toBsonDocument(BsonDocument.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
-        assertEquals(expected, deserializedQuery);
+        Object deserializedQuery = roundTripQuery(doc);
+        assertEquals(BsonDocument.class, deserializedQuery.getClass());
+        assertEquals(doc, deserializedQuery);
     }
 
     @Test
     void testBsonRegularExpressionDirectValue() throws Exception {
-        Document doc = new Document("name", new BsonRegularExpression("foo.*", "im"));
-        BsonDocument query = (BsonDocument) serializeAndDeserializeCommand(command(doc, true)).getQuery();
+        BsonDocument doc = new BsonDocument("name", new BsonRegularExpression("foo.*", "im"));
+        BsonDocument query = (BsonDocument) roundTripQuery(doc);
         BsonRegularExpression regex = query.get("name").asRegularExpression();
         assertEquals("foo.*", regex.getPattern());
         assertEquals("im", regex.getOptions());
     }
 
     @Test
-    void testFiltersBsonIsConverted() throws Exception {
-        Object query = serializeAndDeserializeCommand(command(Filters.and(Filters.eq("a", 1), Filters.regex("b", "^x")), true)).getQuery();
-        assertTrue(query instanceof BsonDocument);
-        BsonDocument bd = (BsonDocument) query;
-        assertTrue(bd.containsKey("$and"));
-        assertEquals(2, bd.getArray("$and").size());
+    void testFiltersConvertedToBsonDocument() throws Exception {
+        final Bson bson = Filters.and(Filters.eq("a", 1), Filters.regex("b", "^x"));
+        BsonDocument expected = bson.toBsonDocument(BsonDocument.class, DEFAULT_CODEC_REGISTRY);
+        Object query = roundTripQuery(expected);
+        assertEquals(BsonDocument.class, query.getClass());
+        assertEquals(expected, query);
+        assertEquals(2, ((BsonDocument) query).getArray("$and").size());
     }
 
     @Test
     void testBsonDocumentPreservesNumericTypes() throws Exception {
-        BsonDocument doc = new BsonDocument("i", new BsonInt32(3)).append("l", new org.bson.BsonInt64(3L));
-        BsonDocument copy = (BsonDocument) serializeAndDeserializeCommand(command(doc, true)).getQuery();
+        BsonDocument doc = new BsonDocument("i", new BsonInt32(3)).append("l", new BsonInt64(3L));
+        BsonDocument copy = (BsonDocument) roundTripQuery(doc);
         assertEquals(doc, copy);
         assertTrue(copy.get("i").isInt32());
         assertTrue(copy.get("l").isInt64());
     }
 
-    private static BsonDocument toBson(Document doc) {
-        return doc.toBsonDocument(BsonDocument.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
-    }
-
     @Test
     void testEmptyDocument() throws Exception {
-        assertEquals(new BsonDocument(), serializeAndDeserializeCommand(command(new Document(), true)).getQuery());
+        assertEquals(new BsonDocument(), roundTripQuery(new BsonDocument()));
     }
 
     @Test
     void testRegexInsideInArray() throws Exception {
-        Document doc = new Document("tag", new Document("$in",
-                java.util.Arrays.asList(new BsonRegularExpression("^a"), new BsonRegularExpression("b$", "i"))));
-        assertEquals(toBson(doc), serializeAndDeserializeCommand(command(doc, true)).getQuery());
+        BsonDocument doc = new BsonDocument("tag", new BsonDocument("$in", new BsonArray(Arrays.asList(
+                new BsonRegularExpression("^a"), new BsonRegularExpression("b$", "i")))));
+        assertEquals(doc, roundTripQuery(doc));
     }
 
     @Test
     void testRegexInsideOr() throws Exception {
         Bson filter = Filters.or(Filters.regex("a", "^x"), Filters.eq("b", "y"), Filters.regex("c", "z", "s"));
-        BsonDocument expected = filter.toBsonDocument(BsonDocument.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
-        assertEquals(expected, serializeAndDeserializeCommand(command(filter, true)).getQuery());
+        BsonDocument expected = filter.toBsonDocument(BsonDocument.class, DEFAULT_CODEC_REGISTRY);
+        assertEquals(expected, roundTripQuery(expected));
     }
 
     @Test
     void testDeeplyNestedDocuments() throws Exception {
-        Document doc = new Document("a", new Document("b", new Document("c", new Document("d", new BsonRegularExpression("deep")))));
-        assertEquals(toBson(doc), serializeAndDeserializeCommand(command(doc, true)).getQuery());
+        BsonDocument doc = new BsonDocument("a", new BsonDocument("b", new BsonDocument("c",
+                new BsonDocument("d", new BsonRegularExpression("deep")))));
+        assertEquals(doc, roundTripQuery(doc));
     }
 
     @Test
     void testObjectIdAndDate() throws Exception {
-        Document doc = new Document("_id", new ObjectId("507f1f77bcf86cd799439011"))
-                .append("created", new java.util.Date(1700000000000L));
-        BsonDocument copy = (BsonDocument) serializeAndDeserializeCommand(command(doc, true)).getQuery();
+        BsonDocument doc = new BsonDocument("_id", new BsonObjectId(new ObjectId("507f1f77bcf86cd799439011")))
+                .append("created", new BsonDateTime(1700000000000L));
+        BsonDocument copy = (BsonDocument) roundTripQuery(doc);
         assertEquals(new ObjectId("507f1f77bcf86cd799439011"), copy.getObjectId("_id").getValue());
         assertEquals(1700000000000L, copy.getDateTime("created").getValue());
     }
 
     @Test
     void testPrimitiveTypes() throws Exception {
-        Document doc = new Document("s", "text")
-                .append("b", true)
-                .append("d", 1.5)
-                .append("n", null)
-                .append("dec", new org.bson.types.Decimal128(new java.math.BigDecimal("12.34")));
-        final Object query = serializeAndDeserializeCommand(command(doc, true)).getQuery();
-        assertEquals(toBson(doc), query);
+        BsonDocument doc = new BsonDocument("s", new BsonString("text"))
+                .append("b", BsonBoolean.TRUE)
+                .append("d", new BsonDouble(1.5))
+                .append("n", BsonNull.VALUE)
+                .append("dec", new BsonDecimal128(new Decimal128(new BigDecimal("12.34"))));
+        assertEquals(doc, roundTripQuery(doc));
     }
 
     @Test
     void testUnicodeStrings() throws Exception {
-        Document doc = new Document("name", "ñandú 日本語 \uD83D\uDE00 \"quoted\"");
-        assertEquals(toBson(doc), serializeAndDeserializeCommand(command(doc, true)).getQuery());
+        BsonDocument doc = new BsonDocument("name", new BsonString("ñandú 日本語 😀 \"quoted\""));
+        assertEquals(doc, roundTripQuery(doc));
     }
 
     @Test
     void testRegexWithSpecialCharacters() throws Exception {
         BsonRegularExpression regex = new BsonRegularExpression("^\\d+\\/[a-z]*\\\\\"$", "ix");
-        BsonDocument copy = (BsonDocument) serializeAndDeserializeCommand(command(new Document("f", regex), true)).getQuery();
+        BsonDocument copy = (BsonDocument) roundTripQuery(new BsonDocument("f", regex));
         assertEquals(regex, copy.getRegularExpression("f"));
     }
 
     @Test
     void testSerializingTwiceIsStable() throws Exception {
-        Document doc = new Document("name", new BsonRegularExpression("^abc", "i"));
-        MongoFindCommand once = serializeAndDeserializeCommand(command(doc, true));
+        BsonDocument doc = new BsonDocument("name", new BsonRegularExpression("^abc", "i"));
+        MongoFindCommand once = serializeAndDeserializeCommand(createMongoFindCommand(doc, true));
         MongoFindCommand twice = serializeAndDeserializeCommand(once);
         assertEquals(once.getQuery(), twice.getQuery());
-        assertEquals(toBson(doc), twice.getQuery());
+        assertEquals(doc, twice.getQuery());
     }
 
     @Test
     void testOriginalCommandIsNotModified() throws Exception {
-        Document doc = new Document("name", new BsonRegularExpression("^abc"));
-        MongoFindCommand original = command(doc, true);
+        BsonDocument doc = new BsonDocument("name", new BsonRegularExpression("^abc"));
+        MongoFindCommand original = createMongoFindCommand(doc, true);
         serializeAndDeserializeCommand(original);
         assertSame(doc, original.getQuery());
     }
 
     @Test
-    void testNonBsonQueryDegradesToNull() throws Exception {
-        // cannot be converted to a BsonDocument, but must not break serialization of the whole command
-        MongoFindCommand copy = serializeAndDeserializeCommand(command(new Object(), true));
-        assertNull(copy.getQuery());
-        assertEquals("coll", copy.getCollectionName());
+    void testNonBsonDocumentQueriesAreRejected() {
+        // the conversion to BsonDocument is responsibility of the caller
+        assertThrows(IllegalArgumentException.class, () -> createMongoFindCommand(new Object(), true));
+        assertThrows(IllegalArgumentException.class, () -> createMongoFindCommand(new Document("a", 1), true));
+        assertThrows(IllegalArgumentException.class, () -> createMongoFindCommand(Filters.eq("a", 1), true));
     }
 
     @Test
     void testCommandsInsideSerializableCollection() throws Exception {
-        java.util.concurrent.CopyOnWriteArraySet<MongoFindCommand> set = new java.util.concurrent.CopyOnWriteArraySet<>();
-        set.add(command(new Document("a", new BsonRegularExpression("x")), true));
-        set.add(command(new Document("b", 2), false));
+        CopyOnWriteArraySet<MongoFindCommand> set = new CopyOnWriteArraySet<>();
+        set.add(createMongoFindCommand(new BsonDocument("a", new BsonRegularExpression("x")), true));
+        set.add(createMongoFindCommand(new BsonDocument("b", new BsonInt32(2)), false));
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
             out.writeObject(set);
         }
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-            java.util.Set<?> copy = (java.util.Set<?>) in.readObject();
+            Set<?> copy = (Set<?>) in.readObject();
             assertEquals(2, copy.size());
         }
+    }
+
+    @Test
+    void testBsonDocumentIsRestoredAsBsonDocument() throws Exception {
+        BsonDocument doc = new BsonDocument("a", new BsonInt32(1));
+        Object query = roundTripQuery(doc);
+        assertEquals(BsonDocument.class, query.getClass());
+        assertEquals(doc, query);
     }
 }

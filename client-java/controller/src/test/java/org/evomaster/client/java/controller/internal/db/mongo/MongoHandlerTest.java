@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculatorTest;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MongoHandlerTest {
 
+    public static final org.bson.codecs.configuration.CodecRegistry DEFAULT_CODEC_REGISTRY = MongoClientSettings.getDefaultCodecRegistry();
     private static MongoClient mongoClient;
     private static final int MONGODB_PORT = 27017;
     private static final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
@@ -71,9 +74,9 @@ public class MongoHandlerTest {
         assertEquals(1, documents.size());
 
         final Bson bsonQuery = eq("age", 18);
-        Document queryDocument = MongoHeuristicsCalculatorTest.convertToDocument(bsonQuery);
+        BsonDocument bsonDocumentQuery = bsonQuery.toBsonDocument(BsonDocument.class, DEFAULT_CODEC_REGISTRY);
 
-        try (MongoCursor<Document> cursor = collection.find(queryDocument).iterator()) {
+        try (MongoCursor<Document> cursor = collection.find(bsonQuery).iterator()) {
             assertFalse(cursor.hasNext());
         }
 
@@ -83,7 +86,7 @@ public class MongoHandlerTest {
         MongoFindCommand mongoFindCommand = new MongoFindCommand(DATABASE_NAME,
                 COLLECTION_NAME,
                 null,
-                queryDocument,
+                bsonDocumentQuery,
                 successfullyExecuted,
                 executionTime);
 
@@ -97,7 +100,7 @@ public class MongoHandlerTest {
         assertEquals(1, mongoCommandWithDistances.size());
 
         MongoCommandWithDistance mongoCommandWithDistance = mongoCommandWithDistances.iterator().next();
-        assertEquals(queryDocument, mongoCommandWithDistance.mongoCommand);
+        assertEquals(bsonDocumentQuery, mongoCommandWithDistance.mongoCommand);
         // Distances have changed due to new truthness-based heuristics
         assertTrue(mongoCommandWithDistance.mongoDistanceWithMetrics.mongoDistance > 0.0);
         assertEquals(1, mongoCommandWithDistance.mongoDistanceWithMetrics.numberOfEvaluatedDocuments);
@@ -107,13 +110,14 @@ public class MongoHandlerTest {
     public void testEvaluateCommandsIgnoreInvalidQueries() {
 
         Document invalidQueryDocument = MongoHeuristicsCalculatorTest.convertToDocument(size("tags", -1));
+        BsonDocument invalidBsonQueryDocument = invalidQueryDocument.toBsonDocument(BsonDocument.class, DEFAULT_CODEC_REGISTRY);
         final boolean successfullyExecuted = false;
         final int executionTime = 1;
 
         MongoFindCommand mongoFindCommand = new MongoFindCommand(DATABASE_NAME,
                 COLLECTION_NAME,
                 null,
-                invalidQueryDocument,
+                invalidBsonQueryDocument,
                 successfullyExecuted,
                 executionTime);
 
