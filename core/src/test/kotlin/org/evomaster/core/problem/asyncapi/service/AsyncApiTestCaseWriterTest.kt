@@ -334,6 +334,48 @@ class AsyncApiTestCaseWriterTest {
     }
 
     @Test
+    fun testTheDriverIsAskedForAnAddressOnlyOnce() {
+
+        /*
+            Java has no elvis, and the obvious ternary would name the call on both sides of it.
+            A driver that works the address out, rather than keeping one, would then do that
+            work twice every time a suite starts.
+         */
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+            FakeAsyncApiDriver.replied(DOUBLE_RESULT)
+        }
+        injector = AsyncApiTestInjector.create(
+            driver,
+            "--blackBox=false",
+            "--createTests=true",
+            "--outputFormat=JAVA_JUNIT_5"
+        )
+        sampler = injector.getInstance(AsyncApiSampler::class.java)
+        fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
+
+        val evaluated = evaluate("bessj")
+        val writer = injector.getInstance(TestCaseWriter::class.java)
+        val solution = Solution(mutableListOf(evaluated), "Prefix", "Suffix", Termination.NONE, listOf(), listOf())
+
+        //declaring the members is what tells the writer which servers there are to ask about
+        writer.addExtraClassMembers(Lines(OutputFormat.JAVA_JUNIT_5), solution)
+
+        val lines = Lines(OutputFormat.JAVA_JUNIT_5)
+        writer.addExtraInitStatement(lines)
+        val init = lines.toString()
+
+        assertEquals(1, init.split("getAsyncApiServerAddress").size - 1, init)
+
+        assertEquals(
+            "asyncApiServer_kafka = controller.getAsyncApiServerAddress(\"kafka\");\n" +
+                    "if (asyncApiServer_kafka == null) {\n" +
+                    "    asyncApiServer_kafka = \"localhost:9092\";\n" +
+                    "}",
+            init.trimEnd()
+        )
+    }
+
+    @Test
     fun testTheKafkaHelperIsLeftOutWhenNothingCallsIt() {
 
         //a suite that never publishes over Kafka must not be made to carry the dependency

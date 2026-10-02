@@ -238,7 +238,18 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             val fallback = KafkaTestClientEmitter.brokerLiteral(declared, format)
 
             when {
-                format.isJava() -> lines.add("$variable = $ask != null ? $ask : $fallback;")
+                /*
+                    Written over two statements rather than a ternary, so that a driver which
+                    computes the address, rather than keeping one, is asked for it only once.
+                 */
+                format.isJava() -> {
+                    lines.add("$variable = $ask;")
+                    lines.add("if ($variable == null) {")
+                    lines.indented {
+                        lines.add("$variable = $fallback;")
+                    }
+                    lines.add("}")
+                }
                 format.isKotlin() -> lines.add("$variable = $ask ?: $fallback")
             }
         }
