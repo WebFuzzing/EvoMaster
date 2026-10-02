@@ -313,6 +313,24 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testBackreferenceGroupCounts(){
+        // non-capturing groups do not get a group number
+        checkSameAsJava("""^(?:abc)([d-j]+)\1$""")
+        checkSameAsJava("""^(?:a)(?:b)(c)\1$""")
+        checkSameAsJava("""^(?:x(a|b))(?:y(c|d))\2\1$""")
+        checkSameAsJava("""^(p)(?:q(r))\2\1$""")
+        checkSameAsJava("""^(?:(?:e)(f))\1$""")
+        checkSameAsJava("""^(?i:x)(?:y)(?<foo>[d-f])\1\k<foo>$""")
+        // flag groups do not get a group number either
+        checkSameAsJava("""^(?i:a)(b)\1$""")
+        checkSameAsJava("""^(?s:(c))\1$""")
+        checkSameAsJava("""^(?i:x)(?<foo>[d-f])\1\k<foo>$""")
+        // only 2 groups exist, so \12 is \1 followed by the digit 2
+        checkSameAsJava("""^(?:a)(b)(?:c)(d)\12$""")
+        checkCanSample("""^(?:a)(b)(?:c)(d)\12$""", "abcdb2", 100)
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }

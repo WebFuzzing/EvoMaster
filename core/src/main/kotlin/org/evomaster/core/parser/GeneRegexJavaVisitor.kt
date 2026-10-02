@@ -473,14 +473,16 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
         if(ctx.disjunction() != null){
 
-            // to correctly handle group nesting order, we must record group index before visiting
-            val groupIndex = captureGroups.size
-            captureGroups.add(null) // add placeholder for the gene
-
-            val disjList = buildDisjunctionList(ctx.disjunction())
-
             val isCapturingGroup = !ctx.text.startsWith("(?:")
             val isNamedCaptureGroup = ctx.NAMED_CAPTURE_GROUP_OPEN() != null
+
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupIndex = captureGroups.size
+            if (isCapturingGroup) {
+                captureGroups.add(null) // add placeholder for the gene
+            }
+
+            val disjList = buildDisjunctionList(ctx.disjunction())
 
             if (isCapturingGroup) {
                 captureGroups[groupIndex] = disjList
