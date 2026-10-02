@@ -90,7 +90,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
-    protected lateinit var responsePool: DataPool
+    protected lateinit var dataPool: DataPool
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
@@ -811,6 +811,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
             }.toLong()
 
+            // release the connection before waiting, as the 429 body is never read
+            response.close()
+
             LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
             val hasWaited = searchTimeController.waitUpToSeconds(delay)
 
@@ -826,7 +829,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
-        rcr.setAllow(response.allowedMethods.joinToString(","))
+        if(response.getHeaderString("allow") != null) {
+            rcr.setAllow(response.allowedMethods.joinToString(","))
+        }
         rcr.setAppliedLink(appliedLink)
         rcr.setHeaders(response.stringHeaders)
 
@@ -878,6 +883,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             } else {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
+        } finally {
+            // a body that decodes to nothing (eg an empty gzip stream) is never read, and would keep its pooled connection
+            response.close()
         }
 
         if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){
@@ -898,7 +906,21 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
+        if(config.useSuccessDataPool && StatusGroup.G_2xx.isInGroup(statusCode)){
+            handleSuccessDataPool(a)
+        }
+
         return handledSavedLocation
+    }
+
+    private fun handleSuccessDataPool(a: RestCallAction) {
+
+        a.seeAllGenes()
+            .filterIsInstance<StringGene>()
+            .filter{it.staticCheckIfImpactPhenotype()}
+            .forEach {
+                dataPool.addValueFromSuccesses(it.getVariableName(), it.value)
+            }
     }
 
     private fun handleSchemaOracles(
@@ -1607,7 +1629,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 assert(false)//only break in tests
                 continue
             }
-            RestResponseFeeder.handleResponse(source, res, responsePool)
+            RestResponseFeeder.handleResponse(source, res, dataPool)
         }
     }
 

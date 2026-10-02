@@ -7,6 +7,7 @@ import redis.clients.jedis.CommandArguments;
 import redis.clients.jedis.CommandObject;
 import redis.clients.jedis.Connection;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.SearchProtocol;
 
 import java.util.List;
@@ -66,6 +67,19 @@ public class ConnectionClassReplacementTest {
 
         assertEquals("FT_AGGREGATE", redisCmd.getType().name());
         assertArrayEquals(new String[]{indexName, query, "GROUPBY", "1", "@category"}, redisCmd.getArgs());
+    }
+
+    @Test
+    public void testExecuteCommandRethrowsTheOriginalJedisException() {
+        CommandArguments args = new CommandArguments(SearchProtocol.SearchCommand.CREATE).add("myIndex");
+        CommandObject<Object> commandObject = new CommandObject<>(args, null);
+        JedisDataException original = new JedisDataException("Index already exists");
+        when(mockConnection.executeCommand(commandObject)).thenThrow(original);
+
+        JedisDataException thrown = assertThrows(JedisDataException.class,
+                () -> ConnectionClassReplacement.executeCommand(mockConnection, commandObject));
+
+        assertSame(original, thrown, "The SUT must be able to catch the exception exactly as Jedis threw it");
     }
 
     @Test

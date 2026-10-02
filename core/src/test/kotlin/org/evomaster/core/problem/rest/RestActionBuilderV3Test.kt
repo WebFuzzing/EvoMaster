@@ -572,7 +572,11 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val objGenes = RestActionBuilderV3.createGenesForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar), RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling))
+        val objGenes = RestActionBuilderV3.createGenesForDTOs(
+            listOf(nameFoo, nameBar),
+            listOf(dtoSchemaFoo, dtoSchemaBar),
+            listOf(nameFoo, nameBar),
+            RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling, cycleDepth = 0))
         assertEquals(2, objGenes.size)
 
         assertEquals(nameFoo, objGenes[0].name)

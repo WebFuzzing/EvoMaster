@@ -49,8 +49,19 @@ public class ConnectionClassReplacement extends ThirdPartyMethodReplacementClass
             }
 
             return result;
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e.getCause());
+        } catch (InvocationTargetException e) {
+            // The SUT must see the very exception Jedis threw (e.g. JedisDataException), otherwise
+            // any handling it does of Redis errors would silently stop working once instrumented.
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new RuntimeException(cause);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 

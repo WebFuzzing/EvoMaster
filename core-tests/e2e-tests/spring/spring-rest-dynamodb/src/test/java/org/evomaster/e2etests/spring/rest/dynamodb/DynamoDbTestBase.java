@@ -13,6 +13,8 @@ public abstract class DynamoDbTestBase extends RestTestBase {
 
     private static final String INSTRUMENT_DYNAMODB_OPTION = "instrumentMR_DYNAMODB";
     private static final String DYNAMODB_HEURISTICS_OPTION = "heuristicsForDynamoDb";
+    private static final String DYNAMODB_EXTRACTION_OPTION = "extractDynamoDbExecutionInfo";
+    private static final String DYNAMODB_GENERATION_OPTION = "generateDynamoDbData";
 
     /**
      * Starts an instrumented DynamoDB SUT for a concrete test class.
@@ -35,5 +37,18 @@ public abstract class DynamoDbTestBase extends RestTestBase {
     protected void configureDynamoDbHeuristics(List<String> args, boolean heuristicsEnabled) {
         setOption(args, INSTRUMENT_DYNAMODB_OPTION, "true");
         setOption(args, DYNAMODB_HEURISTICS_OPTION, Boolean.toString(heuristicsEnabled));
+    }
+
+    /**
+     * Configures DynamoDB failed-read extraction and generated initialization data.
+     *
+     * @param args EvoMaster command-line arguments
+     * @param enabled whether insertion generation should be enabled
+     */
+    protected void configureDynamoDbInsertions(List<String> args, boolean enabled) {
+        setOption(args, INSTRUMENT_DYNAMODB_OPTION, "true");
+        setOption(args, DYNAMODB_HEURISTICS_OPTION, Boolean.toString(enabled));
+        setOption(args, DYNAMODB_EXTRACTION_OPTION, Boolean.toString(enabled));
+        setOption(args, DYNAMODB_GENERATION_OPTION, Boolean.toString(enabled));
     }
 }
