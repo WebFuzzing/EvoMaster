@@ -7,7 +7,7 @@ import java.util.Objects;
  * Selects documents if element in the array field matches all the specified $elemMatch conditions.
  * Here it only has one condition to match implementation in "com.mongodb.client.model.Filters"
  */
-public class ElemMatchOperation extends QueryOperationWithField {
+public class ElemMatchOperation extends QueryOperationWithFieldPath {
     private final QueryOperation condition;
 
     public ElemMatchOperation(String fieldName, QueryOperation condition) {

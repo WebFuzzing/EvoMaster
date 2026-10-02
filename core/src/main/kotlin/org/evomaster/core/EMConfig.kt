@@ -346,8 +346,8 @@ class EMConfig {
 
         val modifiedOptions = modifiedOptions(options, cff)
 
-        checkForExperimentalSettings(modifiedOptions)
-        checkForInternalSettings(modifiedOptions)
+        checkForExperimentalSettings(modifiedOptions.keys)
+        checkForInternalSettings(modifiedOptions.keys)
 
         checkDependsOn(modifiedOptions)
     }
@@ -356,7 +356,16 @@ class EMConfig {
      * Can only be called on BOOLEAN options.
      * Calling on something else would be a bug in EM.
      */
-    private fun isOptionTrue(fieldName: String) : Boolean{
+    private fun isOptionTrue(fieldName: String, modifiedOptions: Map<String,String>) : Boolean{
+
+        if(modifiedOptions.containsKey(fieldName)) {
+            //the option is going to be modified. so ignore current state, and look at modification
+            return try{
+                parseBooleanStrict(modifiedOptions[fieldName])
+            }catch (e: Exception){
+                throw IllegalArgumentException("The modification for property '$fieldName' does not contain a boolean value.", e)
+            }
+        }
 
         val field = getConfigurationProperties().find { it.name == fieldName }
             ?: throw IllegalArgumentException("The property called '$fieldName' does not exist")
@@ -369,7 +378,15 @@ class EMConfig {
         }
     }
 
-    private fun checkDependsOn(modifiedOptions: Set<String>) {
+    private fun checkDependsOn(modifiedOptions: Map<String,String>) {
+
+        /*
+            If we have "A depends -> B", deactivating "B" would not trigger a configuration error.
+            However, explicitly setting A on, while B is off or going to be put off, that would trigger an error.
+
+            The idea is that we can deactivate features like B without having to worry about others that depend on them.
+            However, if we explicitly ask for any of those latter, then B must be on.
+         */
 
         val properties = getConfigurationProperties()
         val allNames = properties.map { it.name }
@@ -381,12 +398,29 @@ class EMConfig {
                     throw IllegalStateException("Invalid @DependsOnTrueFor definition for ${p.name}." +
                             " The target '$target' does not exist.")
                 }
-                //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && !isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                //has this option been modified manually by the user? if not, there is nothing to check.
+                if(modifiedOptions.contains(p.name)){
+                    //however, if boolean, putting it explicitly to false should not trigger any check
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+
+                    if(!isOptionTrue(target, modifiedOptions)){
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
                             " which depends on '$target' being 'true', which is not currently.")
+                    }
                 }
             }
+
             p.annotations.filterIsInstance<DependsOnFalseFor>().forEach { a ->
                 val target = a.otherFieldName
                 if(!allNames.contains(target)){
@@ -394,9 +428,23 @@ class EMConfig {
                             " The target '$target' does not exist.")
                 }
                 //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
-                            " which depends on '$target' being 'false', which is not currently.")
+                if(modifiedOptions.contains(p.name)){
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+                    if( isOptionTrue(target, modifiedOptions)) {
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                                    " which depends on '$target' being 'false', which is not currently.")
+                    }
                 }
             }
         }
@@ -448,18 +496,19 @@ class EMConfig {
         }
     }
 
-    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Set<String>{
+    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Map<String,String>{
 
         val detected  = OptionSet::class.java.getDeclaredField("detectedOptions")
             .apply { setAccessible(true) }
             .get(options) as Map<String,AbstractOptionSpec<*>>
 
-        val names = detected.filter { it.value !is NonOptionArgumentSpec }.keys
+        val modified = detected.filter { it.value !is NonOptionArgumentSpec }
+            .mapValues { (key, value) -> value.value(options).toString()}
 
         return if(cff == null) {
-            names.toSet()
+            modified
         } else {
-            names.toMutableSet().plus(cff.configs.keys)
+            modified.toMutableMap().plus(cff.configs)
         }
     }
 
@@ -780,6 +829,16 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateDynamoDbData() && !heuristicsForDynamoDb) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'heuristicsForDynamoDb'")
+        }
+
+        if (shouldGenerateDynamoDbData() && !extractDynamoDbExecutionInfo) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'extractDynamoDbExecutionInfo'")
+        }
+
         if (shouldGenerateCassandraData() && !heuristicsForCassandra) {
             throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
                     "collecting heuristics with 'heuristicsForCassandra'")
@@ -814,6 +873,15 @@ class EMConfig {
 
         if (seedTestCases && seedTestCasesPath.isBlank()) {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && createTests) {
+            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
+                    " For the time being, run with '--createTests false' to only search for faults.")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
         }
 
         if (problemType == ProblemType.RPC
@@ -1022,11 +1090,15 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
-    fun shouldGenerateMongoData() = generateMongoData
+    fun shouldGenerateMongoData() =  isUsingAdvancedTechniques() && generateMongoData
 
-    fun shouldGenerateRedisData() = generateRedisData
+    fun shouldGenerateRedisData() = isUsingAdvancedTechniques() && generateRedisData
 
-    fun shouldGenerateCassandraData() = generateCassandraData
+    fun shouldGenerateDynamoDbData() = isUsingAdvancedTechniques() && generateDynamoDbData
+
+    fun shouldGenerateNeo4jData() = isUsingAdvancedTechniques() && generateNeo4jData
+
+    fun shouldGenerateCassandraData() = isUsingAdvancedTechniques() && generateCassandraData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -1754,7 +1826,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.NORMAL
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -2039,6 +2111,7 @@ class EMConfig {
     @Experimental
     @Cfg("Tracking of Cassandra commands to improve test generation")
     @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
     var heuristicsForCassandra = false
 
     @Cfg("Enable extracting SQL execution info")
@@ -2053,6 +2126,16 @@ class EMConfig {
     @Cfg("Enable extracting Redis execution info")
     @DependsOnFalseFor("blackBox")
     var extractRedisExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting DynamoDB execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractDynamoDbExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Neo4j execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractNeo4jExecutionInfo = false
 
     @Experimental
     @Cfg("Enable extracting Cassandra execution info")
@@ -2120,8 +2203,20 @@ class EMConfig {
     var generateRedisData = false
 
     @Experimental
+    @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
+    @DependsOnFalseFor("blackBox")
+    var generateDynamoDbData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractNeo4jExecutionInfo")
+    var generateNeo4jData = false
+
+    @Experimental
     @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
     var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
@@ -2885,6 +2980,12 @@ class EMConfig {
     @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
     var enableRPCExtraResponseTargets = true
 
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
+            " treating it as unanswered, in milliseconds.")
+    @Min(1.0)
+    var asyncApiReplyTimeoutMs = 5000
+
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
@@ -3361,6 +3462,10 @@ class EMConfig {
     @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
+
+    @Experimental
+    @Cfg("Specify if inputs from successful calls should be re-used in the data pool.")
+    var useSuccessDataPool = false
 
     @Cfg("Feed the individual entries of object examples to the data pool.")
     var useObjectExampleDataPool = true
