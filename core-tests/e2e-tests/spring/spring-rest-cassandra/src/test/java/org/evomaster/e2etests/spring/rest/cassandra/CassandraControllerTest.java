@@ -1,11 +1,12 @@
 package org.evomaster.e2etests.spring.rest.cassandra;
 
+import com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
+import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.foo.cassandra.findbyage.CassandraFindByAgeApp;
 import com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp;
 import com.foo.cassandra.findbytag.CassandraFindByTagApp;
 import com.foo.cassandra.findbyuuid.CassandraFindByUuidApp;
-import com.datastax.oss.driver.api.core.CqlIdentifier;
-import com.datastax.oss.driver.api.core.CqlSession;
 import com.foo.spring.rest.cassandra.CassandraController;
 import com.foo.spring.rest.cassandra.findbyage.CassandraFindByAgeController;
 import org.junit.jupiter.api.AfterAll;
@@ -67,6 +68,7 @@ public class CassandraControllerTest {
     @ParameterizedTest
     @CsvSource({
             "com.foo.cassandra.findbyage.CassandraFindByAgeApp, person_by_age",
+            "com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp, person_by_age_read_only",
             "com.foo.cassandra.findbyuuid.CassandraFindByUuidApp, record_by_id",
             "com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp, measurement_by_day",
             "com.foo.cassandra.findbytag.CassandraFindByTagApp, session_by_id"
@@ -99,6 +101,7 @@ public class CassandraControllerTest {
     @SuppressWarnings("unused")
     private static final Class<?>[] APPS = {
             CassandraFindByAgeApp.class,
+            CassandraFindByAgeReadOnlyApp.class,
             CassandraFindByUuidApp.class,
             CassandraFindByDayRangeApp.class,
             CassandraFindByTagApp.class
