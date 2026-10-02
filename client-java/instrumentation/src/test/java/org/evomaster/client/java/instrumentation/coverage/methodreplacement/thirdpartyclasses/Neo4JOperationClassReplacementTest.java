@@ -1,5 +1,6 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
+import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -15,23 +16,23 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class Neo4JRunCommandTest {
+class Neo4JOperationClassReplacementTest {
 
     private static final String QUERY = "MATCH (p:Person {name: $name}) RETURN p";
 
     @Test
     void testNoParametersIsAnEmptyMap() {
-        assertTrue(new Neo4JRunCommand(QUERY, null, true, 1).getParameters().isEmpty());
+        assertTrue(Neo4JOperationClassReplacement.toPlainParameters(null).isEmpty());
     }
 
     @Test
     void testDriverValuesInsideAParameterMapAreUnwrapped() {
-        Map<String, Object> captured = new LinkedHashMap<>();
-        captured.put("name", "Ana");
-        captured.put("age", Values.value(25L));
-        captured.put("tags", Values.value(Arrays.asList("a", "b")));
+        Map<String, Object> taken = new LinkedHashMap<>();
+        taken.put("name", "Ana");
+        taken.put("age", Values.value(25L));
+        taken.put("tags", Values.value(Arrays.asList("a", "b")));
 
-        Map<String, Object> parameters = new Neo4JRunCommand(QUERY, captured, true, 1).getParameters();
+        Map<String, Object> parameters = Neo4JOperationClassReplacement.toPlainParameters(taken);
 
         assertEquals("Ana", parameters.get("name"));
         assertEquals(25L, parameters.get("age"));
@@ -40,9 +41,9 @@ class Neo4JRunCommandTest {
 
     @Test
     void testParametersTakenAsADriverValueAreReadAsAMap() {
-        Value captured = Values.parameters("name", "Ana", "address", Collections.singletonMap("city", "Lima"));
+        Value taken = Values.parameters("name", "Ana", "address", Collections.singletonMap("city", "Lima"));
 
-        Map<String, Object> parameters = new Neo4JRunCommand(QUERY, captured, true, 1).getParameters();
+        Map<String, Object> parameters = Neo4JOperationClassReplacement.toPlainParameters(taken);
 
         assertEquals("Ana", parameters.get("name"));
         assertEquals(Collections.singletonMap("city", "Lima"), parameters.get("address"));
@@ -50,7 +51,7 @@ class Neo4JRunCommandTest {
 
     @Test
     void testAnUnknownParameterShapeYieldsNoParameters() {
-        assertTrue(new Neo4JRunCommand(QUERY, "name=Ana", true, 1).getParameters().isEmpty());
+        assertTrue(Neo4JOperationClassReplacement.toPlainParameters("name=Ana").isEmpty());
     }
 
     @Test
@@ -62,18 +63,19 @@ class Neo4JRunCommandTest {
             }
         };
 
-        Map<String, Object> parameters = new Neo4JRunCommand(
-                QUERY, Collections.singletonMap("p", notSerializable), true, 1).getParameters();
+        Map<String, Object> parameters = Neo4JOperationClassReplacement.toPlainParameters(
+                Collections.singletonMap("p", notSerializable));
 
         assertEquals("opaque", parameters.get("p"));
     }
 
     @Test
-    void testIsSerializedWithParametersTakenFromTheDriver() throws Exception {
-        Map<String, Object> captured = new LinkedHashMap<>();
-        captured.put("name", Values.value("Ana"));
-        captured.put("point", Values.point(4326, 1.0, 2.0));
-        Neo4JRunCommand command = new Neo4JRunCommand(QUERY, captured, true, 7);
+    void testACommandWithParametersTakenFromTheDriverIsSerialized() throws Exception {
+        Map<String, Object> taken = new LinkedHashMap<>();
+        taken.put("name", Values.value("Ana"));
+        taken.put("point", Values.point(4326, 1.0, 2.0));
+        Neo4JRunCommand command = new Neo4JRunCommand(
+                QUERY, Neo4JOperationClassReplacement.toPlainParameters(taken), true, 7);
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
