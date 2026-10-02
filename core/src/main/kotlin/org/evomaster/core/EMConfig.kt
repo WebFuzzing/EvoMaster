@@ -839,6 +839,16 @@ class EMConfig {
                     "'extractDynamoDbExecutionInfo'")
         }
 
+        if (shouldGenerateCassandraData() && !heuristicsForCassandra) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "collecting heuristics with 'heuristicsForCassandra'")
+        }
+
+        if (shouldGenerateCassandraData() && !extractCassandraExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "extracting Cassandra execution info with 'extractCassandraExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1087,6 +1097,8 @@ class EMConfig {
     fun shouldGenerateDynamoDbData() = isUsingAdvancedTechniques() && generateDynamoDbData
 
     fun shouldGenerateNeo4jData() = isUsingAdvancedTechniques() && generateNeo4jData
+
+    fun shouldGenerateCassandraData() = isUsingAdvancedTechniques() && generateCassandraData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -2096,6 +2108,12 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForNeo4j = false
 
+    @Experimental
+    @Cfg("Tracking of Cassandra commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var heuristicsForCassandra = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2118,6 +2136,11 @@ class EMConfig {
     @Cfg("Enable extracting Neo4j execution info")
     @DependsOnFalseFor("blackBox")
     var extractNeo4jExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Cassandra execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractCassandraExecutionInfo = false
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
@@ -2189,6 +2212,12 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     @DependsOnTrueFor("extractNeo4jExecutionInfo")
     var generateNeo4jData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
