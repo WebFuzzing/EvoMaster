@@ -25,6 +25,7 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -148,7 +149,7 @@ class AsyncApiTestCaseWriterTest {
     private fun membersOf(evaluated: EvaluatedIndividual<AsyncApiIndividual>): String {
         val writer = injector.getInstance(TestCaseWriter::class.java)
         val solution = Solution(mutableListOf(evaluated), "Prefix", "Suffix", Termination.NONE, listOf(), listOf())
-        val lines = Lines(OutputFormat.KOTLIN_JUNIT_5)
+        val lines = Lines(injector.getInstance(EMConfig::class.java).outputFormat)
         writer.addExtraClassMembers(lines, solution)
         return lines.toString()
     }
@@ -174,7 +175,7 @@ class AsyncApiTestCaseWriterTest {
 
         //and what only the core knows about the reply
         assertTrue(body.contains("assertNotNull(res_0)"), body)
-        assertTrue(body.contains("bessj"), body)
+        assertTrue(body.contains("bessj: REPLIED"), body)
     }
 
     @Test
@@ -212,23 +213,29 @@ class AsyncApiTestCaseWriterTest {
         start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
 
         val evaluated = evaluate("bessj")
-        val body = bodyOf(evaluated)
 
-        //one line per action: everything it needs came off the contract
-        assertTrue(body.contains("${KafkaTestClientEmitter.HELPER_NAME}("), body)
-        assertTrue(body.contains("\"localhost:9092\""), body)
-        assertTrue(body.contains("\"ncs.bessj.request\""), body)
-        assertTrue(body.contains("\"ncs.bessj.reply\""), body)
-        assertTrue(body.contains("\"correlationId\""), body)
-        assertTrue(body.contains("assertNotNull(res_0)"), body)
-
-        //and what it calls is written once for the suite
+        /*
+            The members first, as the suite writer writes them: that is where the servers of a
+            suite are learnt, and a body written before them would not know they exist.
+         */
         val members = membersOf(evaluated)
         assertTrue(members.contains("KafkaProducer"), members)
         assertTrue(members.contains("KafkaConsumer"), members)
         //a reply older than the test is not an answer to it, and each run stamps its own id
         assertTrue(members.contains("seekToEnd"), members)
         assertTrue(members.contains("UUID.randomUUID()"), members)
+        assertTrue(members.contains("asyncApiServer_kafka"), members)
+
+        val body = bodyOf(evaluated)
+
+        //one line per action: everything it needs came off the contract
+        assertTrue(body.contains("${KafkaTestClientEmitter.HELPER_NAME}(asyncApiServer_kafka,"), body)
+        assertTrue(body.contains("\"ncs.bessj.request\""), body)
+        assertTrue(body.contains("\"ncs.bessj.reply\""), body)
+        assertTrue(body.contains("\"correlationId\""), body)
+        assertTrue(body.contains("assertNotNull(res_0)"), body)
+        //the suite has a driver, so the document's address is not what a test publishes to
+        assertFalse(body.contains("\"localhost:9092\""), body)
     }
 
     @Test
@@ -267,20 +274,36 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(members.contains("kafka.KafkaProducer"), members)
         assertTrue(members.contains("seek_to_end"), members)
 
+        //there is no driver in a Python suite, so nothing is declared to ask one
+        assertFalse(members.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), members)
+        assertFalse(body.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), body)
+
+        //and the driver was asked for no script, as its own enum cannot name Python
+        assertNull(driver.published.last().outputFormat)
+
         //what comes out has to be parseable Python, indentation included
         val module = (members.trimEnd().lines() + body.trimEnd().lines())
             .joinToString("\n") { "    " + it }
         val file = java.io.File.createTempFile("asyncapi_suite", ".py")
         file.writeText("import json\nimport time\nimport uuid\nimport kafka\n\n\nclass Suite:\n$module\n")
 
-        val process = ProcessBuilder("python3", "-m", "py_compile", file.absolutePath)
-            .redirectErrorStream(true)
-            .start()
-        val output = process.inputStream.bufferedReader().readText()
-        val code = process.waitFor()
+        try {
+            val process = try {
+                ProcessBuilder("python3", "-m", "py_compile", file.absolutePath)
+                    .redirectErrorStream(true)
+                    .start()
+            } catch (e: java.io.IOException) {
+                //no Python on this machine: the rest of the suite has nothing to do with one
+                Assumptions.assumeTrue(false, "python3 is not on the PATH")
+                return
+            }
+            val output = process.inputStream.bufferedReader().readText()
+            val code = process.waitFor()
 
-        file.delete()
-        assertEquals(0, code, "the generated Python does not parse:\n$output\n\n$module")
+            assertEquals(0, code, "the generated Python does not parse:\n$output\n\n$module")
+        } finally {
+            file.delete()
+        }
     }
 
     @Test
@@ -292,6 +315,7 @@ class AsyncApiTestCaseWriterTest {
             body is ours. Written to disk and read back, rather than asserted on fragments.
          */
         val folder = java.nio.file.Files.createTempDirectory("asyncapi_suite").toFile()
+        folder.deleteOnExit()
 
         start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
 

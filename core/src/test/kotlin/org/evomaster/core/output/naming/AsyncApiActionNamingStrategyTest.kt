@@ -18,7 +18,10 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -71,7 +74,22 @@ class AsyncApiActionNamingStrategyTest {
             would change with a flag that is about reporting.
          */
         val withoutOracles = namesOf({ FakeAsyncApiDriver.silence() }, "bessj")
-        val withOracles = namesOf({ FakeAsyncApiDriver.silence() }, "bessj", "--useExperimentalOracles=true")
+
+        val reported = solutionOf({ FakeAsyncApiDriver.silence() }, "bessj",
+            arrayOf("--useExperimentalOracles=true"))
+        val withOracles = AsyncApiActionTestCaseNamingStrategy(reported, formatter, MAX_NAME_LENGTH)
+            .getTestCases()
+            .map { it.name }
+
+        /*
+            The flag has to have done something, or both halves would be taking the same branch
+            and this would be comparing a name with itself.
+         */
+        assertTrue(
+            DetectedFaultUtils.getDetectedFaultCategories(reported.individuals.first())
+                .contains(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY),
+            "the no-reply fault was not reported, so the fault branch is not what was named"
+        )
 
         assertEquals(listOf("test_0_publishOnBessjGetsNoReply"), withoutOracles)
         assertEquals(withoutOracles, withOracles)
