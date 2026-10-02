@@ -17,38 +17,18 @@ import java.nio.file.Path
  * Writes a test for an AsyncAPI service.
  *
  * Unlike REST, there is no universal client to call: a message goes out over whichever broker
- * the contract names, so the lines that publish it and read the reply are the driver's, rendered
- * while the search ran and pasted here. This follows RPC, whose driver renders an invocation the
- * same way, and it is what keeps a generated test standing on its own: it talks to the broker
- * with an ordinary client of that transport, and needs no EvoMaster driver at run time.
+ * the contract names. For Kafka the contract says enough -- the server, the topics and the
+ * header the correlation id rides in -- so the lines that publish and await are written here
+ * from it. For a transport it does not describe, the driver renders those lines while the search
+ * runs and they are pasted verbatim, which is how RPC does it. Either way the generated test
+ * stands on its own: it talks to the broker with an ordinary client of that transport, and needs
+ * no EvoMaster driver at run time.
  *
  * What the core adds around those lines is what only it knows: which outcome the action had,
  * which of the declared reply messages the reply was recognised as, and that a reply promised by
  * the contract did arrive.
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
-
-    override fun handleTestInitialization(
-        lines: Lines,
-        baseUrlOfSut: String,
-        ind: EvaluatedIndividual<*>,
-        sqlInsertionVars: MutableList<Pair<String, String>>,
-        mongoInsertionVars: MutableList<Pair<String, String>>,
-        redisInsertionVars: MutableList<Pair<String, String>>,
-        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
-        testName: String
-    ) {
-        super.handleTestInitialization(
-            lines,
-            baseUrlOfSut,
-            ind,
-            sqlInsertionVars,
-            mongoInsertionVars,
-            redisInsertionVars,
-            dynamoDbInsertionVars,
-            testName
-        )
-    }
 
     override fun handleActionCalls(
         lines: Lines,
@@ -105,7 +85,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                 not describe well enough gets written: one whose correlation id rides inside the
                 service's own message layout, or one nothing here knows at all.
              */
-            script.isNotEmpty() -> script.forEach { lines.add(it) }
+            script.any { it.isNotBlank() } -> script.forEach { lines.add(it) }
 
             /*
                 Kafka is written from the contract, as REST writes its RestAssured calls: the
@@ -147,8 +127,12 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         val variable = res.getReplyVariableName() ?: return
 
-        lines.add("assertNotNull($variable)")
-        lines.appendSemicolon()
+        if (format.isPython()) {
+            lines.add("assert $variable is not None")
+        } else {
+            lines.add("assertNotNull($variable)")
+            lines.appendSemicolon()
+        }
 
         res.getReplyMessage()?.let {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
@@ -196,10 +180,14 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      */
     override fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {
 
-        val kafkaResults = solution.individuals
-            .flatMap { it.evaluatedMainActions() }
-            .mapNotNull { it.result as? AsyncApiCallResult }
-            .filter { it.getTestScript().isEmpty() && KafkaTestClientEmitter.canEmit(it) }
+        val kafkaResults = KafkaTestClientEmitter.resultsIn(solution)
+
+        /*
+            Before anything may return: one writer writes every suite of a run, so what the last
+            one found must not be left behind for the next, which would assign to a field it
+            never declared.
+         */
+        servers.clear()
 
         if (kafkaResults.isEmpty()) {
             return
@@ -207,13 +195,23 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         KafkaTestClientEmitter.emitHelper(lines, format)
 
-        if (!hasDriver()) {
+        if (!canAskDriver()) {
             return
         }
 
-        servers.clear()
         kafkaResults.forEach { r ->
-            val name = r.getServerName() ?: return@forEach
+            val name = r.getServerName()
+            if (name.isNullOrBlank()) {
+                return@forEach
+            }
+            /*
+                Two names that differ only where a variable cannot, say "a-b" and "a.b", would be
+                declared twice under one identifier. The first keeps the variable; the rest fall
+                back to the address the document gave them.
+             */
+            if (servers.keys.any { it != name && variableFor(it) == variableFor(name) }) {
+                return@forEach
+            }
             servers.putIfAbsent(name, r.getBroker() ?: "")
         }
 
@@ -234,7 +232,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         servers.forEach { (name, declared) ->
             val variable = variableFor(name)
-            val ask = "${TestSuiteWriter.controller}.getAsyncApiServerAddress(\"$name\")"
+            val ask = "${TestSuiteWriter.controller}.getAsyncApiServerAddress(" +
+                    KafkaTestClientEmitter.brokerLiteral(name, format) + ")"
             val fallback = KafkaTestClientEmitter.brokerLiteral(declared, format)
 
             when {
@@ -263,7 +262,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         val name = result.getServerName()
 
-        if (hasDriver() && name != null && servers.containsKey(name)) {
+        if (canAskDriver() && name != null && servers.containsKey(name)) {
             return variableFor(name)
         }
 
@@ -280,10 +279,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
 
     /**
-     * Whether the generated suite has a driver in it at all. A black-box suite does not, so
-     * there is nothing to ask and the document's address is all there is.
+     * Whether the generated suite can ask a driver where a server is.
+     *
+     * It needs one in it at all, which a black-box suite has not, and it needs to be written in
+     * a language that can hold the driver: the controller is only declared for Java and Kotlin.
+     * Otherwise the document's address is all there is.
      */
-    private fun hasDriver() = !config.blackBox || config.bbExperiments
+    private fun canAskDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 

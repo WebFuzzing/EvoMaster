@@ -12,8 +12,9 @@ import org.evomaster.core.output.OutputFormat
  * These are regression assertions, the same kind the REST writer makes on a response body: they
  * say what came back, not what should. They honour the same rules, because the reasons are the
  * same ones. A field that changes between runs makes a test flaky whatever the protocol, so the
- * fields REST skips are skipped here; a collection is asserted only to the configured depth; a
- * value that cannot be printed safely becomes a comment.
+ * fields REST skips are skipped here; only the first few elements of a collection are asserted,
+ * as maxAssertionForDataInCollection says; a value that cannot be printed safely becomes a
+ * comment, and a whole payload that cannot becomes one too.
  *
  * The reply is text, not a response object, so unlike REST there is no fluent client to hang the
  * assertions off. They are made against the tree it parses into.
@@ -55,7 +56,9 @@ object AsyncApiReplyAssertions {
 
         if (payload.isNullOrBlank()) {
             //an acknowledgement, or a transport that answers in metadata
-            assertion(lines, "$variable.isNullOrEmpty()", "$variable == null || $variable.isEmpty()", format)
+            val java = "$variable == null || $variable.isEmpty()"
+            val kotlin = if (format.isPython()) "$variable is None or len($variable) == 0" else "$variable.isNullOrEmpty()"
+            assertion(lines, kotlin, java, format)
             return
         }
 
@@ -77,6 +80,10 @@ object AsyncApiReplyAssertions {
             //not JSON: all that can be said is what it contained
             if (printable(payload)) {
                 contains(lines, variable, payload.trim(), format)
+            } else {
+                lines.addSingleCommentLine(
+                    "the reply is not asserted on, as its value is not stable between runs"
+                )
             }
             return
         }
@@ -210,7 +217,20 @@ object AsyncApiReplyAssertions {
                 A double is compared within a tolerance, as the REST writer does: the same
                 computation can land a bit apart once it has been through text.
              */
-            node.isNumber -> delta(lines, node.asDouble().toString(), value(path, "asDouble()", format), format)
+            node.isNumber -> {
+                val v = node.asDouble()
+                /*
+                    A JSON number out of a double's range parses as an infinity, which no target
+                    language writes that way. Nothing true can be said of it in a literal.
+                 */
+                if (v.isFinite()) {
+                    delta(lines, v.toString(), value(path, "asDouble()", format), format)
+                } else {
+                    lines.addSingleCommentLine(
+                        "$fieldPath is not asserted on, as it is outside the range of a double"
+                    )
+                }
+            }
 
             node.isTextual -> {
                 val text = node.asText()
@@ -249,12 +269,18 @@ object AsyncApiReplyAssertions {
     }
 
     private fun has(lines: Lines, path: String, field: String, format: OutputFormat) {
-        val expr = if (format.isPython()) "\"$field\" in $path" else "$path.has(\"$field\")"
+        val name = quoted(field, format)
+        val expr = if (format.isPython()) "$name in $path" else "$path.has($name)"
         assertion(lines, expr, expr, format)
     }
 
+    /*
+        A field name is a literal of the target language as much as a value is, and a document
+        can call a field anything JSON allows: a name holding a quote, or one starting with '$',
+        which Kotlin would otherwise read as the start of a template.
+     */
     private fun child(path: String, name: String, format: OutputFormat) =
-        if (format.isPython()) "$path[\"$name\"]" else "$path.get(\"$name\")"
+        if (format.isPython()) "$path[${quoted(name, format)}]" else "$path.get(${quoted(name, format)})"
 
     private fun index(path: String, i: Int, format: OutputFormat) =
         if (format.isPython()) "$path[$i]" else "$path.get($i)"

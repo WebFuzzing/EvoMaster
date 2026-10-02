@@ -601,8 +601,14 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
 
-            if (config.problemType == EMConfig.ProblemType.ASYNCAPI) {
-                //what the helper that publishes and awaits a reply uses
+            /*
+                What the helper that publishes and awaits a reply uses, and only when something
+                in this suite calls it. Python cannot name a type without importing it, so a
+                suite that publishes over another transport would otherwise be made to carry a
+                Kafka dependency it never uses.
+             */
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                    && KafkaTestClientEmitter.resultsIn(solution).isNotEmpty()) {
                 lines.add("import time")
                 lines.add("import uuid")
                 lines.add("import kafka")

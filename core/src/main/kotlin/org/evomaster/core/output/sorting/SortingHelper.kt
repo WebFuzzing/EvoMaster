@@ -111,14 +111,16 @@ class SortingHelper {
 
     /**
      * Groups the tests of one operation together, then orders them by what publishing did: a
-     * reply that was recognised comes before silence, which is the AsyncAPI stand-in for
-     * ordering REST by status code.
+     * reply that arrived comes before silence, and within that by the declared message it was
+     * recognised as. This is the AsyncAPI stand-in for ordering REST by status code.
      */
     private val asyncApiComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         (ind.evaluatedMainActions().last().action as AsyncApiAction).operationId
     }
         .thenBy { ind ->
-            (ind.evaluatedMainActions().last().result as AsyncApiCallResult).getOutcome()?.ordinal ?: 0
+            //an action with no outcome recorded never ran, so it belongs after the ones that did
+            (ind.evaluatedMainActions().last().result as AsyncApiCallResult).getOutcome()?.ordinal
+                ?: Int.MAX_VALUE
         }
         .thenBy { ind ->
             (ind.evaluatedMainActions().last().result as AsyncApiCallResult).getReplyMessage() ?: ""
