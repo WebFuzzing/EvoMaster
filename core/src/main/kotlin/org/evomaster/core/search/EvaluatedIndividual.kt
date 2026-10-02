@@ -607,7 +607,8 @@ class EvaluatedIndividual<T>(
                     actionIndex = gc.position,
                     localId = gc.actionLocalId,
                     fixedIndexedAction = !gc.isDynamicAction,
-                    fromInitialization = isInit
+                    fromInitialization = isInit,
+                    absoluteInitializationIndex = isInit
                 )
                     ?: throw IllegalArgumentException("mismatched impact info")
 
