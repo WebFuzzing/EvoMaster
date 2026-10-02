@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.service.OracleApplicability
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -74,6 +75,9 @@ class Statistics : SearchListener {
 
     @Inject(optional = true)
     private lateinit var callGraphService: CallGraphService
+
+    @Inject
+    private lateinit var oracleApplicability: OracleApplicability
 
     /**
      * How often test executions did timeout
@@ -713,6 +717,8 @@ class Statistics : SearchListener {
             add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
 
             add(Pair("timeSpentChoosingTestNamesMs", "$timeSpentChoosingTestNamesMs"))
+
+            add(Pair("oracleApplicability", oracleApplicability.exportStatsAsSingleString()))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
