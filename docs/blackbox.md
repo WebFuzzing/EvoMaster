@@ -32,9 +32,9 @@ The command is doing the following:
   or [built from source](build.md) (in which case it will end up under the `core/target/` folder of the cloned repository).
    Alternatively, you can just run `evomaster` if it was installed via `pip`. 
 * `--blackBox true`: technically, a redundant parameter, as black-box testing is the default mode since version 6.0.0. It can be omitted.
-Note that AsyncAPI services still need an [_EvoMaster Driver_](write_driver.md) in this mode: there is no universal
-client for a message broker to publish through while the search runs. The generated tests do not need one, as they
-publish with a client of the transport themselves.
+  Note that AsyncAPI services still need an [_EvoMaster Driver_](write_driver.md) in this mode: there is no
+  universal client for a message broker to publish through while the search runs. The generated tests do not
+  need one, as they publish with a client of the transport themselves.
 * `--schema ...`: URL of where the OpenAPI/Swagger schema is. The location of the API will be inferred from this schema (e.g., from `host` and `servers` tags). If such info is missing, then the API is assumed to be on same host as the schema. If needed, the API host location can be changed with the optional `--base` (which overrides what specified in the schema).   
 * `--outputFormat JAVA_JUNIT_4`: must specify how the tests will be generated, e.g., in Java
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related

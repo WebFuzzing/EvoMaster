@@ -85,7 +85,7 @@ than through the _EvoMaster Driver_, so that client library is needed as well. F
 <dependency>
    <groupId>org.apache.kafka</groupId>
    <artifactId>kafka-clients</artifactId>
-   <version>USE_LATEST_VERSION</version>
+   <version>LATEST</version>
    <scope>test</scope>
 </dependency>
 ```
@@ -122,6 +122,11 @@ rfc3986==2.0.0
 urllib3==1.26.5
 requests==2.25.1
 timeout-decorator==0.5.0
+```
+When fuzzing an **AsyncAPI** service over Kafka, the generated tests publish with `kafka-python`, so that
+is needed as well:
+```
+kafka-python==2.0.2
 ```
 These can then be saved in a `requirements.txt` file, and installed with:
 
