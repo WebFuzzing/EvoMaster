@@ -346,9 +346,13 @@ object HttpSemanticsOracle {
             return null
         }
 
-        val wipedFields = computeWipedFields(allPutSchemaFields - sentFields, schema, get)
+        val getSchemaFields = extractGetSchemaFields(schema, get)
+        val comparableSentFields = if (getSchemaFields.isEmpty()) sentFields else sentFields intersect getSchemaFields
+        val wipedFields = if (getSchemaFields.isEmpty()) emptySet() else (allPutSchemaFields - sentFields) intersect getSchemaFields
 
-        val mismatches = mismatchedPutFields(putBody ?: "", getBody, sentFields, wipedFields, bodyParam)
+        if (comparableSentFields.isEmpty() && wipedFields.isEmpty()) return null
+
+        val mismatches = mismatchedPutFields(putBody ?: "", getBody, comparableSentFields, wipedFields, bodyParam)
         if(mismatches.isEmpty()){
             return null
         }
@@ -391,21 +395,18 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Wiped candidates are restricted to fields the GET schema actually exposes, otherwise
+     * Sent and wiped candidates are restricted to fields the GET schema actually exposes, otherwise
      * write-only fields (e.g. passwords) would cause false positives.
      */
-    private fun computeWipedFields(
-        candidates: Set<String>,
+    private fun extractGetSchemaFields(
         schema: RestSchema?,
         get: RestCallAction
     ): Set<String> {
-        if (candidates.isEmpty() || schema == null) return emptySet()
-        val getSchemaFields = SchemaUtils.extractResponseSchemaFields(
+        if (schema == null) return emptySet()
+        return SchemaUtils.extractResponseSchemaFields(
             schema, get.path.toString(), HttpVerb.GET,
             statusMatcher = SchemaUtils.statusGroupMatcher(StatusGroup.G_2xx)
         )
-        if (getSchemaFields.isEmpty()) return emptySet()
-        return candidates intersect getSchemaFields
     }
 
     internal fun mismatchedPutFields(

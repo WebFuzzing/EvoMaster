@@ -810,4 +810,35 @@ internal class EMConfigTest{
                 "--problemType", "ASYNCAPI", "--createTests", "false", "--seedTestCases", "true", "--seedTestCasesPath", "seeds.json"))
         }
     }
+
+
+    @Test
+    fun testSetFalseOnDependsOn(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val cfg = EMConfig()
+        cfg.blackBox = false
+        //generateNeo4jData depends on true for extractNeo4jExecutionInfo
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "false"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(false, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        assertThrows<ConfigProblemException> {
+            cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "false"))
+        }
+    }
 }
