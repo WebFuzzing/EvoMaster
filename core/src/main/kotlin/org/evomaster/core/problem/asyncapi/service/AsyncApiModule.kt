@@ -25,8 +25,8 @@ import org.evomaster.core.search.service.mutator.StructureMutator
  * it is what holds the connection to the broker, so it takes part either way (see
  * [org.evomaster.core.EMConfig.usesDriver]).
  *
- * No test cases are written yet, which [org.evomaster.core.EMConfig] enforces by requiring
- * `--createTests false`.
+ * The tests a run writes are the [org.evomaster.core.output.service.AsyncApiTestCaseWriter]'s,
+ * which publishes with a client of the transport rather than through the driver.
  */
 class AsyncApiModule : EnterpriseModule() {
 

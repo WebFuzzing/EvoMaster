@@ -100,19 +100,23 @@ public class AsyncApiActionDto {
     public Long replyTimeoutMs;
 
     /**
-     * The language to render {@link AsyncApiReplyDto#testScript} in, or null when the core is
-     * not generating tests and the driver should not spend time rendering anything.
+     * The language to render {@link AsyncApiReplyDto#testScript} in, or null when no script is
+     * wanted: either the core is not generating tests, or it is generating a format this enum
+     * cannot name, which is what a Python run is.
      *
      * A generated test talks to the broker with an ordinary client of the transport rather than
      * through the driver, so the lines that publish and await have to come from the one side
-     * that knows the transport. Only Java and Kotlin are asked for.
+     * that knows the transport. Only Java and Kotlin are ever asked for.
      */
     public SutInfoDto.OutputFormat outputFormat;
 
     /**
      * The name the rendered lines must leave the reply payload in, as text, when a reply is
-     * expected. Named by the core so that two actions in one test cannot collide. Null when no
-     * script was asked for.
+     * expected. Named by the core so that two actions in one test cannot collide.
+     *
+     * Set whenever tests are being generated, whether or not a script was asked for: the core
+     * owns the name, whoever ends up writing the lines that assign to it. Null when no tests
+     * are being generated.
      */
     public String replyVariable;
 }

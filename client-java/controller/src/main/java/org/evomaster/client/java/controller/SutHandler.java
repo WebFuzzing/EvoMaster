@@ -154,9 +154,12 @@ public interface SutHandler {
      *
      * The document gives an address, but it is written for the deployment the author had in
      * mind. A system started for testing is often somewhere else: a broker in a container binds
-     * a port chosen when it starts, and a different one on the next run. A generated test asks
-     * this rather than carrying an address that was only ever true once, in the same way it
-     * takes the base URL of a REST system from {@link #startSut()}.
+     * a port chosen when it starts, and a different one on the next run.
+     *
+     * A generated suite that carries the driver asks this when it starts, rather than holding an
+     * address that was only ever true once, in the same way it takes the base URL of a REST
+     * system from {@link #startSut()}. A plain black-box suite has no driver in it, so it
+     * publishes to the address the document declares, as it does when this returns null.
      *
      * @param serverName the key of the server in the document
      * @return where to reach it, or null to fall back to what the document says

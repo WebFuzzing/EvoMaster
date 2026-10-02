@@ -236,7 +236,8 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         reply.waitedMs?.let { result.setWaitedMs(it) }
 
         //what the generated test will publish with, when the driver rendered it
-        reply.testScript?.takeIf { it.isNotEmpty() }?.let { result.setTestScript(it) }
+        //lines that are all blank are no script: the writer would publish nothing and assert on it
+        reply.testScript?.takeIf { lines -> lines.any { it.isNotBlank() } }?.let { result.setTestScript(it) }
 
         if (outcome == AsyncApiOutcome.REPLIED) {
             reply.replyPayload?.let { result.setReplyPayload(it) }
@@ -393,15 +394,13 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         if (config.createTests) {
             /*
-                A generated test publishes with a client of the transport, which only the driver
-                has, so it renders those lines while the search runs. Not asked for when no test
-                will be written, so a driver need not spend time on it.
-             */
-            /*
-                Only when the driver could render that language at all. It is Java, so it knows
-                nothing of the formats a JVM driver cannot produce, and asking would fail. The
-                variable is still named here either way: the core owns that name, whoever writes
-                the lines that assign to it.
+                A transport the contract cannot describe is published by lines the driver renders
+                while the search runs, so it is told which language to render them in. Not asked
+                for when no test will be written, so a driver need not spend time on it.
+
+                SutInfoDto.OutputFormat is the driver's own enum and has no Python, so a Python
+                run asks for no script at all. The reply variable is named here either way: the
+                core owns that name, whoever writes the lines that assign to it.
              */
             dto.outputFormat = SutInfoDto.OutputFormat.values()
                 .firstOrNull { it.name == config.outputFormat.name }
@@ -429,14 +428,6 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         return dto
     }
 
-    /**
-     * The headers to publish alongside the body: key is the header name as the document declares
-     * it, value is what to send under it, as text.
-     *
-     * They are read back from the gene's own JSON printing, which is what knows which optional
-     * headers are on. A header whose value prints as JSON null is left out rather than sent as
-     * the text "null".
-     */
     /**
      * Keep on the result what a generated test needs to publish this message again, so that the
      * writer does not resolve the document a second time. Only when a test will be written.
@@ -477,6 +468,14 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             ?: DEFAULT_CORRELATION_HEADER
     }
 
+    /**
+     * The headers to publish alongside the body: key is the header name as the document declares
+     * it, value is what to send under it, as text.
+     *
+     * They are read back from the gene's own JSON printing, which is what knows which optional
+     * headers are on. A header whose value prints as JSON null is left out rather than sent as
+     * the text "null".
+     */
     private fun buildHeaders(action: AsyncApiAction): Map<String, String> {
 
         val headers = LinkedHashMap<String, String>()

@@ -883,14 +883,7 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (problemType == ProblemType.ASYNCAPI
-                && createTests
-                && outputFormat != OutputFormat.DEFAULT
-                && !outputFormat.isJavaOrKotlin() && !outputFormat.isPython()) {
-            throw ConfigProblemException("Tests for an AsyncAPI service publish with a client of the transport," +
-                    " and one is written only for Java, Kotlin and Python so far, so outputFormat supports" +
-                    " only those")
-        }
+        checkOutputFormatIsWritable()
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
@@ -1124,6 +1117,25 @@ class EMConfig {
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
     fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+
+    /**
+     * Whether a test can be written at all in the chosen format.
+     *
+     * Checked here with the rest of the options, and again once a DEFAULT has been resolved from
+     * the driver, which happens after every check here has run. An AsyncAPI run in black-box
+     * mode takes that road as well, so this is the only place that sees what it ended up with.
+     */
+    fun checkOutputFormatIsWritable() {
+
+        if (problemType == ProblemType.ASYNCAPI
+                && createTests
+                && outputFormat != OutputFormat.DEFAULT
+                && !outputFormat.isJavaOrKotlin() && !outputFormat.isPython()) {
+            throw ConfigProblemException("Tests for an AsyncAPI service publish with a client of the transport," +
+                    " and one is written only for Java, Kotlin and Python so far, so outputFormat supports" +
+                    " only those. Was: $outputFormat")
+        }
+    }
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1627,7 +1639,8 @@ class EMConfig {
             " If left to DEFAULT, the type will be inferred from the EM Driver." +
             " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
             " then this field must be set with a specific type." +
-            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " This is also the case for Black-Box testing, where there is usually no EM Driver" +
+            " (AsyncAPI is the exception: see outputFormat)." +
             " In this latter case, the system defaults to handle REST APIs.")
     var problemType = ProblemType.DEFAULT
 
