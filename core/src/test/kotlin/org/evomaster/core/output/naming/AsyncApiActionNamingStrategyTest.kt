@@ -33,8 +33,6 @@ import org.junit.jupiter.api.Test
 class AsyncApiActionNamingStrategyTest {
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
-
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
 
         private val outputFormat = OutputFormat.KOTLIN_JUNIT_5
@@ -127,7 +125,7 @@ class AsyncApiActionNamingStrategyTest {
         options: Array<out String> = arrayOf()
     ): Solution<AsyncApiIndividual> {
 
-        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS)), answer)
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS)), answer)
         val injector = AsyncApiTestInjector.create(driver, "--blackBox=false", *options)
 
         val sampler = injector.getInstance(AsyncApiSampler::class.java)

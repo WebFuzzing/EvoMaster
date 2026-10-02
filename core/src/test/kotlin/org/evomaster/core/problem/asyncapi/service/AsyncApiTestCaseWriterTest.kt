@@ -36,8 +36,6 @@ import org.junit.jupiter.api.Test
 class AsyncApiTestCaseWriterTest {
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
-
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
 
         /**
@@ -118,7 +116,7 @@ class AsyncApiTestCaseWriterTest {
     }
 
     private fun start(answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) {
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS)), answer)
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS)), answer)
         injector = AsyncApiTestInjector.create(
             driver,
             "--blackBox=false",
@@ -247,7 +245,7 @@ class AsyncApiTestCaseWriterTest {
             that what comes out parses: indentation is part of the language, so a helper written
             as text can break it in a way no JVM format can.
          */
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS))) {
             FakeAsyncApiDriver.replied(DOUBLE_RESULT)
         }
         injector = AsyncApiTestInjector.create(
@@ -365,7 +363,7 @@ class AsyncApiTestCaseWriterTest {
             A driver that works the address out, rather than keeping one, would then do that
             work twice every time a suite starts.
          */
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS))) {
             FakeAsyncApiDriver.replied(DOUBLE_RESULT)
         }
         injector = AsyncApiTestInjector.create(

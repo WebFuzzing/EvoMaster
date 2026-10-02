@@ -15,7 +15,6 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.output.service.AsyncApiTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.FlakinessDetector
@@ -154,7 +153,7 @@ class AsyncApiModuleTest {
         injector.getInstance(TestSuiteWriter::class.java)
         injector.getInstance(RemoteController::class.java)
 
-        //the writer that pastes the driver's own publish-and-await lines
+        //the writer that writes the publish-and-await lines, from the contract or from the driver
         assertTrue(injector.getInstance(TestCaseWriter::class.java) is AsyncApiTestCaseWriter)
     }
 }

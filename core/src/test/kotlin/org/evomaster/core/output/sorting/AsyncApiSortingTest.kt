@@ -29,8 +29,6 @@ import org.junit.jupiter.api.Test
 class AsyncApiSortingTest {
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
-
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
 
         private const val ERROR = """{"code": 400, "message": "no"}"""
@@ -80,7 +78,7 @@ class AsyncApiSortingTest {
         answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
     ): EvaluatedIndividual<AsyncApiIndividual> {
 
-        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS)), answer)
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS)), answer)
         val injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
 
         val sampler = injector.getInstance(AsyncApiSampler::class.java)
