@@ -363,7 +363,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val oldDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+        val oldCassandraDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
         val addedCassandraDbInsertions = handleFailedCql(ind, failedQueries, mutatedGenes, sampler)
 
@@ -372,7 +372,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
-                oldDbActions,
+                oldCassandraDbActions,
                 addedCassandraDbInsertions,
                 ImpactsOfIndividual.CASSANDRADB_ACTION_KEY,
                 config
