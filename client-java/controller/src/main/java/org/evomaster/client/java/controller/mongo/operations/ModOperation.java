@@ -4,7 +4,7 @@ package org.evomaster.client.java.controller.mongo.operations;
  * Represent $mod operation.
  * Select documents where the value of a field divided by a divisor has the specified remainder.
  */
-public class ModOperation extends QueryOperationWithField {
+public class ModOperation extends QueryOperationWithFieldPath {
     private final Long divisor;
     private final Long remainder;
 

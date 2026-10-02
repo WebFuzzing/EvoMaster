@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
@@ -95,6 +96,10 @@ where T : Individual {
 
     fun hasAnyCassandraAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is CassandraDbAction}}
+    }
+
+    fun hasAnyNeo4jAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a -> a is Neo4jDbAction } }
     }
 
     /**

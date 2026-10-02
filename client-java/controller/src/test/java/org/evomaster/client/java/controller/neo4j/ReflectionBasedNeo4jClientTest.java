@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db.neo4j;
+package org.evomaster.client.java.controller.neo4j;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +46,6 @@ class ReflectionBasedNeo4jClientTest {
 
     @Test
     void testRunsAParameterisedQueryAndPassesTheValuesAlong() {
-        // The values must travel as a parameter map, not interpolated into the query text.
         FakeDriver driver = new FakeDriver();
         ReflectionBasedNeo4jClient client = new ReflectionBasedNeo4jClient(driver);
         Map<String, Object> params = new LinkedHashMap<>();
@@ -83,8 +82,6 @@ class ReflectionBasedNeo4jClientTest {
 
     @Test
     void testAMissingDriverMethodFailsWithAClearMessage() {
-        // A driver whose API does not match: the failure has to name the method, not surface a bare
-        // NoSuchMethodException from somewhere inside the reflection.
         ReflectionBasedNeo4jClient client = new ReflectionBasedNeo4jClient(new Object());
 
         RuntimeException e = assertThrows(RuntimeException.class, client::session);

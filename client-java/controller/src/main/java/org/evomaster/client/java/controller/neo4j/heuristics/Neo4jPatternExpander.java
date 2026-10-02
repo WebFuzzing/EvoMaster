@@ -39,8 +39,10 @@ import java.util.Set;
 public class Neo4jPatternExpander {
 
     public static final class ExpandedQuery {
-        final MatchPattern pattern;
-        final List<CypherCondition> conditions;
+        /** The pattern with every quantified path and variable-length edge unrolled into plain nodes and edges. */
+        public final MatchPattern pattern;
+        /** The conditions, renamed to the variables of the unrolled pattern. */
+        public final List<CypherCondition> conditions;
 
         ExpandedQuery(MatchPattern pattern, List<CypherCondition> conditions) {
             this.pattern = pattern;

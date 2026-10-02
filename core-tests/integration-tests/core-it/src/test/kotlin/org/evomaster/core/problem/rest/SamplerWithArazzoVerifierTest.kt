@@ -198,6 +198,10 @@ class SamplerWithArazzoVerifierTest {
             return null
         }
 
+        override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+            return null
+        }
+
         override fun getSutInfo(): SutInfoDto? {
             return sutInfoDto
         }

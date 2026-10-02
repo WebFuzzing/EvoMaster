@@ -7,6 +7,8 @@ import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.cassandra.CassandraDbActionResult
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.database.redis.RedisDbAction
@@ -53,6 +55,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
         dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -81,6 +84,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         val initializingCassandraResults = (ind.seeResults(initializingCassandraActions))
         if (initializingCassandraResults.any { (it as? CassandraDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as CassandraDbActionResults")
+
+        val initializingNeo4jActions = ind.individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>()
+        val initializingNeo4jResults = ind.seeResults(initializingNeo4jActions)
+        initializingNeo4jResults.firstOrNull { it !is Neo4jDbActionResult }?.let {
+            throw IllegalStateException("the type of results are expected as Neo4jDbActionResults, but got ${it::class.java.name}")
+        }
 
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
@@ -144,6 +153,17 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 lines,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingNeo4jActions.isNotEmpty()) {
+            Neo4jWriter.handleNeo4jDbInitialization(
+                format,
+                initializingNeo4jActions.indices.map {
+                    EvaluatedNeo4jDbAction(initializingNeo4jActions[it], initializingNeo4jResults[it] as Neo4jDbActionResult)
+                },
+                lines,
+                neo4jInsertionVars = neo4jInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingHostnameResolutionActions.isNotEmpty()) {
