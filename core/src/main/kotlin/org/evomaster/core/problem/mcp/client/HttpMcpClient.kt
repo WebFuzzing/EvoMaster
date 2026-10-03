@@ -60,7 +60,7 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         } else {
             arrayOf(MediaType.APPLICATION_JSON)
         }
-        
+
         var builder = client.target(baseUrl).request(*acceptTypes)
         sessionId?.let { builder = builder.header(McpConst.SESSION_ID_HEADER, it) }
 
@@ -111,11 +111,31 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         }
     }
 
-    /** Send a JSON-RPC request and parse the response. */
+    /**
+     * Send a JSON-RPC request and return the parsed top-level response map (which may carry
+     * either a "result" or a JSON-RPC "error" object). Returns null only when no body could be
+     * read/parsed at all (e.g. a truly unsupported method with an empty response).
+     */
     private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
         val response = sendJsonRpc(method, params, nextId(), acceptEventStream = true)
         val responseBody = response.readEntity(String::class.java)
-        return mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
+        if (responseBody.isBlank()) {
+            return null
+        }
+        return try {
+            mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
+        } catch (error: Exception) {
+            log.warn("Failed to deserialize MCP notification response for '$method'", error)
+            null
+        }
+    }
+
+    /** Extract a JSON-RPC "error" object from a parsed response map, if present. */
+    private fun extractProtocolError(response: Map<String, Any?>): McpProtocolError? {
+        val error = response["error"] as? Map<String, Any?> ?: return null
+        val code = (error["code"] as? Number)?.toInt() ?: 0
+        val message = error["message"] as? String ?: ""
+        return McpProtocolError(code, message)
     }
 
     /**
@@ -205,8 +225,9 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         return fetchPaginatedList(McpConst.METHOD_TOOLS_LIST, "tools", { tool ->
             McpToolDefinition(
                 name = tool["name"] as String,
-                description = tool["description"] as String,
-                inputSchema = mapper.valueToTree(tool["inputSchema"])
+                description = tool["description"] as? String ?: "",
+                inputSchema = mapper.valueToTree(tool["inputSchema"]),
+                outputSchema = tool["outputSchema"]?.let(mapper::valueToTree)
             )
         })
     }
@@ -235,9 +256,13 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
         val response = post(McpConst.METHOD_TOOLS_CALL, mapOf("name" to name, "arguments" to arguments))
             ?: return McpToolResult(isError = true)
+        val protocolError = extractProtocolError(response)
+        if (protocolError != null) {
+            return McpToolResult(isError = true, protocolError = protocolError)
+        }
         val result = response["result"] as? Map<String, Any?> ?: return McpToolResult(isError = true)
         val content = getToolResponseContent(name, result)
-        val structuredContent = result["structuredContent"] as? Map<String, Any?>
+        val structuredContent = result["structuredContent"]?.let { mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(it) }
         return McpToolResult(
             content = content,
             structuredContent = structuredContent,
@@ -248,6 +273,10 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
     override fun readResource(uri: String): McpResourceResult {
         val response = post(McpConst.METHOD_RESOURCES_READ, mapOf("uri" to uri))
             ?: return McpResourceResult()
+        val protocolError = extractProtocolError(response)
+        if (protocolError != null) {
+            return McpResourceResult(protocolError = protocolError)
+        }
         val result = response["result"] as? Map<String, Any?> ?: return McpResourceResult()
         val contents = getResourceResponseContent(result)
         return McpResourceResult(contents = contents)
