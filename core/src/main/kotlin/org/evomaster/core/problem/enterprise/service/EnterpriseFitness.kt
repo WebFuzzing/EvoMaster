@@ -26,6 +26,7 @@ import org.evomaster.core.database.neo4j.Neo4jDbActionResult
 import org.evomaster.core.database.neo4j.Neo4jDbActionTransformer
 import org.evomaster.core.database.neo4j.Neo4jExecution
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
+import org.evomaster.core.extra.logcollector.LogCollector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.FitnessValue
@@ -65,8 +66,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     @PostConstruct
     private fun initialize(){
-
         //TODO populate additionalTargetCollectors based on config
+        if (config.enableLogCollector) {
+            additionalTargetCollectors.add(LogCollector())
+        }
     }
 
     fun goingToStartExecutingNewTest(){
