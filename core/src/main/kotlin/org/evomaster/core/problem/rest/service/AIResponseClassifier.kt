@@ -112,8 +112,7 @@ class AIResponseClassifier : AIModel {
 
         return metrics.precision400 <= weaknessThreshold||
                 metrics.sensitivity400 <= weaknessThreshold ||
-                metrics.specificity <= weaknessThreshold ||
-                metrics.npv <= weaknessThreshold
+                metrics.specificity <= weaknessThreshold
     }
 
     /**
@@ -137,8 +136,7 @@ class AIResponseClassifier : AIModel {
             val metrics = listOf(
                 m.precision400,
                 m.sensitivity400,
-                m.specificity,
-                m.npv
+                m.specificity
             )
 
             when (config.aIEnsembleBestModelSelectionStrategy) {

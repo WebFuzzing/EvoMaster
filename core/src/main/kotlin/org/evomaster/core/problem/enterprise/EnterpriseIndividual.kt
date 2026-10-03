@@ -1,22 +1,27 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
-import org.evomaster.core.search.*
+import org.evomaster.core.search.ChildGroup
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
-import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -78,11 +83,13 @@ abstract class EnterpriseIndividual(
             sizeScheduleTasks: Int,
             sizeCleanUp: Int,
             sizeDynamoDb: Int = 0,
+            sizeCassandra: Int = 0,
+            sizeNeo4j: Int = 0,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDynamoDb + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
+            if(children.size != sizeSQL + sizeMongo + sizeRedis + sizeDynamoDb + sizeCassandra + sizeNeo4j + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain, sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dynamodb=$sizeDynamoDb, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
+                        " got main=$sizeMain, sql=$sizeSQL, mongo=$sizeMongo, redis=$sizeRedis, dynamodb=$sizeDynamoDb, cassandra=$sizeCassandra, neo4j=$sizeNeo4j, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
@@ -95,6 +102,12 @@ abstract class EnterpriseIndividual(
             }
             if(sizeDynamoDb < 0){
                 throw IllegalArgumentException("Negative size for sizeDynamoDb: $sizeDynamoDb")
+            }
+            if(sizeCassandra < 0){
+                throw IllegalArgumentException("Negative size for sizeCassandra: $sizeCassandra")
+            }
+            if(sizeNeo4j < 0){
+                throw IllegalArgumentException("Negative size for sizeNeo4j: $sizeNeo4j")
             }
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
@@ -139,6 +152,18 @@ abstract class EnterpriseIndividual(
                 if (sizeDynamoDb == 0) -1 else startIndexDynamoDb, if (sizeDynamoDb == 0) -1 else endIndexDynamoDb
             )
 
+            val startIndexCassandra = children.indexOfFirst { a -> a is CassandraDbAction }
+            val endIndexCassandra = children.indexOfLast { a -> a is CassandraDbAction }
+            val cassandradb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_CASSANDRA,{ e -> e is ActionComponent && e.flatten().all { a -> a is CassandraDbAction }},
+                if (sizeCassandra == 0) -1 else startIndexCassandra, if (sizeCassandra == 0) -1 else endIndexCassandra
+            )
+
+            val startIndexNeo4j = children.indexOfFirst { a -> a is Neo4jDbAction }
+            val endIndexNeo4j = children.indexOfLast { a -> a is Neo4jDbAction }
+            val neo4jdb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_NEO4J,{ e -> e is ActionComponent && e.flatten().all { a -> a is Neo4jDbAction }},
+                if (sizeNeo4j == 0) -1 else startIndexNeo4j, if (sizeNeo4j == 0) -1 else endIndexNeo4j
+            )
+
             val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
             val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
             val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
@@ -151,7 +176,7 @@ abstract class EnterpriseIndividual(
                 if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDynamoDb+sizeDNS+sizeScheduleTasks
+            val initSize = sizeSQL+sizeMongo+sizeRedis+sizeDynamoDb+sizeCassandra+sizeNeo4j+sizeDNS+sizeScheduleTasks
             val startIndexMain = initSize
             val endIndexMain =  initSize + sizeMain - 1
 
@@ -161,7 +186,7 @@ abstract class EnterpriseIndividual(
             val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
                 if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dynamodb, dns, schedule, main, cleanup))
+            return GroupsOfChildren(children, listOf(db, mongodb, redisdb, dynamodb, cassandradb, neo4jdb, dns, schedule, main, cleanup))
         }
     }
 
@@ -261,6 +286,8 @@ abstract class EnterpriseIndividual(
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_REDIS).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_DYNAMODB).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_NEO4J).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()} + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
@@ -269,9 +296,11 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
             ActionFilter.ONLY_REDIS -> seeAllActions().filterIsInstance<RedisDbAction>()
             ActionFilter.ONLY_DYNAMODB -> seeAllActions().filterIsInstance<DynamoDbAction>()
+            ActionFilter.ONLY_CASSANDRA -> seeAllActions().filterIsInstance<CassandraDbAction>()
+            ActionFilter.ONLY_NEO4J -> seeAllActions().filterIsInstance<Neo4jDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
-            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction || it is DynamoDbAction }
-            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction }
+            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction || it is RedisDbAction || it is DynamoDbAction || it is CassandraDbAction || it is Neo4jDbAction }
+            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction && it !is CassandraDbAction && it !is Neo4jDbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
@@ -341,6 +370,10 @@ abstract class EnterpriseIndividual(
     fun seeRedisDbActions() : List<RedisDbAction> = seeActions(ActionFilter.ONLY_REDIS) as List<RedisDbAction>
 
     fun seeDynamoDbActions() : List<DynamoDbAction> = seeActions(ActionFilter.ONLY_DYNAMODB) as List<DynamoDbAction>
+
+    fun seeCassandraDbActions() : List<CassandraDbAction> = seeActions(ActionFilter.ONLY_CASSANDRA) as List<CassandraDbAction>
+
+    fun seeNeo4jDbActions() : List<Neo4jDbAction> = seeActions(ActionFilter.ONLY_NEO4J) as List<Neo4jDbAction>
 
     fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
 
@@ -414,6 +447,12 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfDynamoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DYNAMODB)
 
+    private fun getLastIndexOfCassandraDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_CASSANDRA)
+
+    private fun getLastIndexOfNeo4jDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_NEO4J)
+
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
@@ -432,6 +471,12 @@ abstract class EnterpriseIndividual(
     private fun getFirstIndexOfDynamoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DYNAMODB)
 
+    private fun getFirstIndexOfCassandraDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_CASSANDRA)
+
+    private fun getFirstIndexOfNeo4jDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_NEO4J)
+
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
@@ -448,7 +493,7 @@ abstract class EnterpriseIndividual(
      */
     fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
-        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction && it !is HostnameResolutionAction }
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is RedisDbAction && it !is DynamoDbAction && it !is CassandraDbAction && it !is Neo4jDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
             throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
@@ -460,6 +505,8 @@ abstract class EnterpriseIndividual(
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
         addInitializingRedisDbActions(actions = actions.filterIsInstance<RedisDbAction>())
         addInitializingDynamoDbActions(actions = actions.filterIsInstance<DynamoDbAction>())
+        addInitializingCassandraDbActions(actions = actions.filterIsInstance<CassandraDbAction>())
+        addInitializingNeo4jDbActions(actions = actions.filterIsInstance<Neo4jDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
         //we don't need duplicates in hostname actions
@@ -547,6 +594,22 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfDynamoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
         } else {
             addChildrenToGroup(getFirstIndexOfDynamoDbActionToAdd() + relativePosition, actions, GroupsOfChildren.INITIALIZATION_DYNAMODB)
+        }
+    }
+
+    fun addInitializingCassandraDbActions(relativePosition: Int = -1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfCassandraDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_CASSANDRA)
+        } else {
+            addChildrenToGroup(getFirstIndexOfCassandraDbActionToAdd() + relativePosition, actions, GroupsOfChildren.INITIALIZATION_CASSANDRA)
+        }
+    }
+
+    fun addInitializingNeo4jDbActions(relativePosition: Int = -1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfNeo4jDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_NEO4J)
+        } else {
+            addChildrenToGroup(getFirstIndexOfNeo4jDbActionToAdd() + relativePosition, actions, GroupsOfChildren.INITIALIZATION_NEO4J)
         }
     }
 

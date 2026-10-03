@@ -20,7 +20,11 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.IntegralNumberGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
+import kotlin.math.abs
+import kotlin.math.ln
+import kotlin.math.sign
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
 
@@ -50,7 +54,8 @@ class InputEncoderUtilWrapper(
         ArrayGene::class,
         DateGene::class,
         TimeGene::class,
-        DateTimeGene::class
+        DateTimeGene::class,
+        RegexGene::class
     )
 
     /**
@@ -91,7 +96,7 @@ class InputEncoderUtilWrapper(
         }
 
         val path = names.reversed()
-        
+
         return if (path.size > 1)
             path.dropLast(1).joinToString("/") //ignore the last name, which is the repetition of gene itself as its own parent
         else
@@ -164,29 +169,71 @@ class InputEncoderUtilWrapper(
     }
 
     /**
+     * Encodes a string into a single numeric value using a bitmask-style representation.
+     *
+     * Each string property contributes a unique value:
+     * - 1: the string is non-blank
+     * - 2: the string contains at least one digit
+     * - 4: the string contains at least one letter
+     * - 8: the string contains at least one non-alphanumeric character
+     *
+     * The final encoded value is the sum of the active properties, giving a unique
+     * representation for each possible combination.
+     *
+     * Examples:
+     * - "123"     -> 1 + 2 = 3
+     * - "abc"     -> 1 + 4 = 5
+     * - "abc123"  -> 1 + 2 + 4 = 7
+     * - "abc-123" -> 1 + 2 + 4 + 8 = 15
+     *
+     * If the input string is blank, [sentinel] (e.g., -1e3) is returned.
+     */
+    private fun encodeString(value: String, sentinel: Double): Double {
+
+        if (value.isBlank()) {
+            return sentinel
+        }
+
+        var encoded = 1 // non-blank
+
+        if (value.any { it.isDigit() }) {
+            encoded += 2
+        }
+
+        if (value.any { it.isLetter() }) {
+            encoded += 4
+        }
+
+        if (value.any { !it.isLetterOrDigit() }) {
+            encoded += 8
+        }
+
+        return encoded.toDouble()
+    }
+
+
+    /**
      * Encodes the current endpoint's gene values into a numeric feature vector suitable for
      * machine-learning or classification tasks.
      *
-     *  - A sentinel value (-1e6) is used for missing or null-like cases
-     *  - A neutral value (0.0) is used for unsupported genes
+     *  - A sentinel value (-1e3) is used for missing, invalid, or null-like cases.
+     *    This value is outside the approximate signed-log numeric range [-710, +710].
+     *  - A neutral value (0.0) is used for unsupported genes.
      *
      * Each gene is converted to a Double according to its type:
-     *  - Numeric genes (e.g., IntegerGene, DoubleGene, FloatGene, LongGene) → their numeric value as Double
-     *  - StringGene → sentinel if blank, otherwise 1.0 (presence indicator)
+     *  - Numeric genes → signed logarithmic scaling: sign(x) * ln(1 + abs(x))
+     *  - StringGene → encoded using character-type bitmask
+     *  - RegexGene → encoded from its generated string using the same bitmask
      *  - BooleanGene → 1.0 for true, 0.0 for false
-     *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"), or sentinel if not found
+     *  - EnumGene → index of the chosen enum value, excluding "EVOMASTER"
      *  - ArrayGene → number of non-null and non-empty elements in the array
-     *  - DateGene → encoded as epoch day (days since 1970-01-01)
-     *  - TimeGene → encoded as a fraction of a day (e.g., noon ≈ 0.5)
-     *  - DateTimeGene → encoded as epoch day plus fractional day component
+     *  - DateGene → epoch days divided by 100,000
+     *  - TimeGene → fraction of a day in [0, 1)
+     *  - DateTimeGene → epoch days plus fractional day, divided by 100,000
      *
-     * Unsupported genes are encoded using neutral value.
-     * This approach allows inputs with partially supported genes to still contribute useful
-     * information to the classification process without breaking the model’s expected input dimensionality.
-     *
-     * @return a list of doubles representing the encoded feature vector
+     * Unsupported genes are encoded using the neutral value.
      */
-    fun encode(sentinel: Double = -1e6, neutral: Double = 0.0): List<Double> {
+    fun encode(sentinel: Double = -1e3, neutral: Double = 0.0): List<Double> {
         val listGenes = endPointToGeneList().map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 
@@ -204,19 +251,39 @@ class InputEncoderUtilWrapper(
 
             val leaf = g.getLeafGene()
             when (leaf) {
-                /** Handle numeric gene types by converting their value to Double */
+                /**
+                 * Handle numeric gene types by converting their value to Double and applying
+                 * signed logarithmic scaling.
+                 * This prevents very large numeric values from dominating the encoded feature
+                 * space while preserving the sign and relative magnitude of the original value.
+                 * Non-finite values are encoded as 0.0.
+                 */
                 is IntegerGene, is DoubleGene, is FloatGene, is LongGene,
                 is BigDecimalGene, is BigIntegerGene, is IntegralNumberGene<*>,
                 is FloatingPointNumberGene<*>, is NumberGene<*> -> {
-                    rawEncodedFeatures.add((leaf as NumberGene<*>).value.toDouble())
+
+                    val value = leaf.value.toDouble()
+
+                    val encodedValue =
+                        if (value.isFinite()) {
+                            sign(value) * ln(1.0 + abs(value))
+                        } else {
+                            sentinel
+                        }
+
+                    rawEncodedFeatures.add(encodedValue)
                 }
-                /**
-                 * Encode a StringGene as a binary presence indicator:
-                 * - 1.0 if the string is non-blank
-                 * - sentinel if the string is blank (treated as missing)
-                 */
+                /** Encode based on [encodeString] function*/
                 is StringGene -> {
-                    rawEncodedFeatures.add(if (leaf.value.isBlank()) sentinel else 1.0)
+                    rawEncodedFeatures.add(
+                        encodeString(leaf.value, sentinel)
+                    )
+                }
+                /** Encode based on [encodeString] function*/
+                is RegexGene -> {
+                    rawEncodedFeatures.add(
+                        encodeString(leaf.getValueAsRawString(), sentinel)
+                    )
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)
@@ -249,8 +316,9 @@ class InputEncoderUtilWrapper(
                     }
                     rawEncodedFeatures.add(count.toDouble())
                 }
-
-                /** Date gene as epoch days */
+                /**
+                 * Date gene encoded as scaled epoch days.
+                 */
                 is DateGene -> {
                     try {
                         val epochDays = java.time.LocalDate.of(
@@ -258,26 +326,32 @@ class InputEncoderUtilWrapper(
                             leaf.month.value.coerceIn(1, 12),
                             leaf.day.value.coerceIn(1, 28)
                         ).toEpochDay()
-                        rawEncodedFeatures.add(epochDays.toDouble())
+
+                        rawEncodedFeatures.add(epochDays / 100_000.0)
                     } catch (ex: Exception) {
                         rawEncodedFeatures.add(sentinel)
                     }
                 }
 
-                /** Time gene as fractional day */
+                /**
+                 * Time gene encoded as a fraction of a day in [0, 1).
+                 */
                 is TimeGene -> {
                     try {
                         val fractionOfDay =
                             (leaf.hour.value.coerceIn(0, 23) / 24.0) +
                                     (leaf.minute.value.coerceIn(0, 59) / (24.0 * 60.0)) +
                                     (leaf.second.value.coerceIn(0, 59) / (24.0 * 3600.0))
+
                         rawEncodedFeatures.add(fractionOfDay)
                     } catch (ex: Exception) {
                         rawEncodedFeatures.add(sentinel)
                     }
                 }
 
-                /** DateTime gene as epoch days + fractional part */
+                /**
+                 * DateTime gene encoded as scaled epoch days plus the fractional-day component.
+                 */
                 is DateTimeGene -> {
                     try {
                         val epochDays = java.time.LocalDate.of(
@@ -291,7 +365,9 @@ class InputEncoderUtilWrapper(
                                     (leaf.time.minute.value.coerceIn(0, 59) / (24.0 * 60.0)) +
                                     (leaf.time.second.value.coerceIn(0, 59) / (24.0 * 3600.0))
 
-                        rawEncodedFeatures.add(epochDays.toDouble() + fractionOfDay)
+                        rawEncodedFeatures.add(
+                            epochDays / 100_000.0 + fractionOfDay
+                        )
                     } catch (ex: Exception) {
                         rawEncodedFeatures.add(sentinel)
                     }

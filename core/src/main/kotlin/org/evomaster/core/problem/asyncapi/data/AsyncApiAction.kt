@@ -49,7 +49,7 @@ class AsyncApiAction(
      */
     val replyTemplate: AsyncApiReply? = null,
 
-    override var auth: AuthenticationInfo = AsyncApiNoAuth()
+    var auth: AuthenticationInfo = AsyncApiNoAuth()
 
 ) : ApiWsAction(auth, false, inputParameters) {
 

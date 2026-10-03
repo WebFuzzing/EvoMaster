@@ -5,22 +5,28 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
-import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
+import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
+import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
+import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.glassfish.jersey.internal.util.Producer;
 
@@ -236,6 +242,13 @@ public class EMController {
                 SimpleLogger.error(msg, e);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
+        } else if (info instanceof AsyncApiProblem) {
+            AsyncApiProblem p = (AsyncApiProblem) info;
+            dto.asyncApiProblem = new AsyncApiProblemDto();
+            dto.asyncApiProblem.schemaLocation = p.getSchemaLocation();
+            dto.asyncApiProblem.schemaText = p.getSchemaText();
+            dto.asyncApiProblem.servicesToNotMock = servicesToNotMock;
+
         } else if(info instanceof WebProblem){
             WebProblem p = (WebProblem) info;
             dto.webProblem = new WebProblemDto();
@@ -391,6 +404,7 @@ public class EMController {
                         noKillSwitch(() -> sutController.initOpenSearchHandler());
                         noKillSwitch(() -> sutController.initRedisHandler());
                         noKillSwitch(() -> sutController.initDynamoDbHandler());
+                        noKillSwitch(() -> sutController.initCassandraHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
@@ -831,6 +845,28 @@ public class EMController {
                 }
 
             }
+
+            if (dto.asyncApiCall != null) {
+
+                AsyncApiReplyDto replyDto = new AsyncApiReplyDto();
+                replyDto.index = index;
+
+                try {
+                    sutController.executeAsyncApiAction(dto.asyncApiCall, replyDto);
+                    return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
+                } catch (Exception e) {
+                    /*
+                        Failing to publish is not a finding about the service, it is a broken
+                        setup, so it is reported as such rather than as silence in answer to a
+                        promised reply.
+                     */
+                    String msg = "Thrown exception when publishing a message: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    replyDto.published = false;
+                    replyDto.errorMessage = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(replyDto)).build();
+                }
+            }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
@@ -1107,6 +1143,122 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitDynamoDb(false);
+        }
+    }
+
+    /**
+     * Executes Cassandra initialisation insertions.
+     *
+     * @param dto insertion commands
+     * @param httpServletRequest request metadata
+     * @return insertion results, stating for each insertion whether it executed successfully
+     */
+    @Path(ControllerConstants.CASSANDRA_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeCassandraInsertion(
+            CassandraDatabaseCommandDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+             sutController.setExecutingInitCassandra(true);
+
+            Object connection = noKillSwitch(sutController::getCassandraConnection);
+
+            if (connection == null) {
+                String msg = "No active Cassandra connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto == null || dto.insertions == null || dto.insertions.isEmpty()) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            CassandraInsertionResultsDto results;
+            try {
+                results = CassandraScriptRunner.executeInsert(connection, dto.insertions);
+            } catch (Exception e) {
+                String msg = "Failed to execute Cassandra insertions: " + e.getMessage();
+                SimpleLogger.warn(msg, e);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            /*
+                A failed insertion is reported as such in the results, and does not invalidate the
+                insertions that follow it, as Cassandra has no references between rows. As such, and
+                like for SQL, a partially failed batch is still a 200, with one result per insertion.
+             */
+            return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500)
+                    .entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitCassandra(false);
+        }
+    }
+
+    @Path(ControllerConstants.NEO4J_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeNeo4jInsertion(
+            Neo4jDatabaseCommandsDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+            sutController.setExecutingInitNeo4j(true);
+
+            ReflectionBasedNeo4jClient connection =
+                    noKillSwitch(sutController::getNeo4jConnection);
+
+            if (connection == null) {
+                String msg = "No active Neo4j connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            boolean noNodes = dto.nodes == null || dto.nodes.isEmpty();
+            boolean noEdges = dto.edges == null || dto.edges.isEmpty();
+            if (noNodes && noEdges) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            Neo4jInsertionResultsDto neo4jResultsDto;
+            try {
+                neo4jResultsDto = Neo4jScriptRunner.executeInsert(connection, dto);
+            } catch (Exception e) {
+                String msg = "Failed to execute Neo4j insertion: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            return Response.status(200)
+                    .entity(WrappedResponseDto.withData(neo4jResultsDto)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500)
+                    .entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitNeo4j(false);
         }
     }
 }

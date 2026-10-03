@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.cassandra;
 
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.CassandraExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.CassandraFailedQuery;
 import org.evomaster.client.java.controller.cassandra.calculator.CassandraHeuristicsCalculator;
@@ -43,13 +45,6 @@ public class CassandraHandler {
     private static final String METHOD_GET_NAME = "getName";
     private static final String METHOD_AS_INTERNAL = "asInternal";
     private static final String METHOD_GET_OBJECT = "getObject";
-
-    /*
-        Constants used during schema description
-     */
-    private static final String PARTITION_KEY_COLUMN_SUFFIX = " PARTITION KEY";
-    private static final String CLUSTERING_COLUMN_SUFFIX = " CLUSTERING";
-    private static final char COLUMN_NAME_TYPE_SEPARATOR = ' ';
 
     private static final String SELECT_ALL_PREFIX = "SELECT * FROM ";
     private static final char KEYSPACE_TABLE_SEPARATOR = '.';
@@ -185,32 +180,27 @@ public class CassandraHandler {
 
     private CassandraFailedQuery extractRelevantInfo(ExecutedCqlCommand info) {
         CassandraTableMetadata schema = tableSchemas.get(new TableKey(info.getKeyspaceName(), info.getTableName()));
-        String tableSchema = schema != null ? describeTableSchema(schema) : null;
+        CassandraTableSchemaDto tableSchema = schema != null ? toDto(schema) : null;
 
         return new CassandraFailedQuery(info.getKeyspaceName(), info.getTableName(), tableSchema);
     }
 
     /**
-     * Renders a table's columns as {@code name type [PARTITION KEY|CLUSTERING]} entries, so the
-     * schema can be attached to a {@link CassandraFailedQuery} (a plain string, to keep
+     * Converts a captured table schema into the DTO it is reported with, which is what keeps
      * controller-api free of a dependency on the instrumentation module's
-     * {@link CassandraTableMetadata}).
+     * {@link CassandraTableMetadata}.
      */
-    private static String describeTableSchema(CassandraTableMetadata schema) {
-        return schema.getColumns().stream()
-                .map(CassandraHandler::describeColumn)
-                .collect(Collectors.joining(", "));
+    private static CassandraTableSchemaDto toDto(CassandraTableMetadata schema) {
+        List<CassandraColumnDto> columns = schema.getColumns().stream()
+                .map(CassandraHandler::toDto)
+                .collect(Collectors.toList());
+
+        return new CassandraTableSchemaDto(schema.getKeyspaceName(), schema.getTableName(), columns);
     }
 
-    private static String describeColumn(CassandraColumnMetadata column) {
-        StringBuilder description = new StringBuilder(column.getName()).append(COLUMN_NAME_TYPE_SEPARATOR).append(column.getCqlType());
-        if (column.isPartitionKey()) {
-            description.append(PARTITION_KEY_COLUMN_SUFFIX);
-        }
-        if (column.isClusteringColumn()) {
-            description.append(CLUSTERING_COLUMN_SUFFIX);
-        }
-        return description.toString();
+    private static CassandraColumnDto toDto(CassandraColumnMetadata column) {
+        return new CassandraColumnDto(column.getName(), column.getCqlType(),
+                column.isPartitionKey(), column.isClusteringColumn());
     }
 
     private CqlDistanceWithMetrics computeQueryDistance(ExecutedCqlCommand info) {

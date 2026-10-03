@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller.internal.db.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.CassandraExecutionsDto;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
@@ -79,6 +81,23 @@ public class CassandraHandlerTest {
     private static CassandraTableMetadata tableSchema(String tableName) {
         return new CassandraTableMetadata(KEYSPACE, tableName,
                 Collections.singletonList(new CassandraColumnMetadata("id", "int", true, false)));
+    }
+
+    /**
+     * Asserts that the reported schema is the one {@link #tableSchema(String)} captured, ie that
+     * every part of the captured metadata reached the DTO.
+     */
+    private void assertReportedSchemaOfTable(CassandraTableSchemaDto reported) {
+        assertNotNull(reported);
+        assertEquals(KEYSPACE, reported.getKeyspaceName());
+        assertEquals(TABLE, reported.getTableName());
+        assertEquals(1, reported.getColumns().size());
+
+        CassandraColumnDto column = reported.getColumns().get(0);
+        assertEquals("id", column.getName());
+        assertEquals("int", column.getCqlType());
+        assertTrue(column.isPartitionKey());
+        assertFalse(column.isClusteringColumn());
     }
 
     @Test
@@ -168,7 +187,7 @@ public class CassandraHandlerTest {
         assertEquals(1, dto.failedQueries.size());
         assertEquals(KEYSPACE, dto.failedQueries.get(0).getKeyspaceName());
         assertEquals(TABLE, dto.failedQueries.get(0).getTableName());
-        assertEquals("id int PARTITION KEY", dto.failedQueries.get(0).getTableSchema());
+        assertReportedSchemaOfTable(dto.failedQueries.get(0).getTableSchema());
     }
 
     /**
@@ -226,7 +245,7 @@ public class CassandraHandlerTest {
         CassandraExecutionsDto dto = handler.getExecutionDto();
         assertEquals(1, dto.failedQueries.size());
         // schema was captured before reset() and must still be attached afterwards
-        assertEquals("id int PARTITION KEY", dto.failedQueries.get(0).getTableSchema());
+        assertReportedSchemaOfTable(dto.failedQueries.get(0).getTableSchema());
     }
 
     @Test

@@ -4,7 +4,7 @@ package org.evomaster.client.java.controller.mongo.operations;
  * Represent $size operation.
  * Matches any array with the number of elements specified by the argument.
  */
-public class SizeOperation extends QueryOperationWithField {
+public class SizeOperation extends QueryOperationWithFieldPath {
     private final Integer value;
 
     public SizeOperation(String fieldName, Integer value) {

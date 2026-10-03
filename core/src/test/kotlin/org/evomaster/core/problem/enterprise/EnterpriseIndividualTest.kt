@@ -1,11 +1,15 @@
 package org.evomaster.core.problem.enterprise
 
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.database.cassandra.CassandraColumn
+import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -51,11 +55,58 @@ class EnterpriseIndividualTest {
         individual.addInitializingDbActions(actions = listOf(existingSqlAction))
 
         val tableNames = individual.getInsertTableNames()
-        
+
         assertEquals(1, tableNames.size)
         val resultTableId = tableNames[0]
         assertEquals(tableName, resultTableId.name)
         assertEquals(sealedName, resultTableId.sealedGroupName)
         assertEquals(openName, resultTableId.openGroupName)
+    }
+
+    private fun cassandraAction(table: String = "person") = CassandraDbAction(
+        keyspace = "ks",
+        table = table,
+        columns = listOf(CassandraColumn("id", "int", isPartitionKey = true))
+    )
+
+    @Test
+    fun testCassandraActionsAreInTheirOwnGroup() {
+        val actions = listOf(cassandraAction("a"), cassandraAction("b"))
+
+        val groups = EnterpriseIndividual.getEnterpriseTopGroups(actions, 0, 0, 0, 0, 0, 0, 0, 0, actions.size)
+
+        assertEquals(actions.size, groups.sizeOfGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA))
+        assertEquals(actions, groups.getAllInGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA))
+    }
+
+    @Test
+    fun testMissingCassandraSizeIsRejected() {
+        val actions = listOf(cassandraAction())
+
+        //the size of the Cassandra group is not given, so the total does not add up
+        assertThrows(IllegalArgumentException::class.java) {
+            EnterpriseIndividual.getEnterpriseTopGroups(actions, 0, 0, 0, 0, 0, 0, 0)
+        }
+    }
+
+    @Test
+    fun testAddInitializingActionsDispatchesCassandraActions() {
+        val individual = TestIndividual()
+
+        individual.addInitializingActions(listOf(cassandraAction()))
+
+        assertEquals(1, individual.seeCassandraDbActions().size)
+        assertEquals(1, individual.groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_CASSANDRA))
+        assertEquals(1, individual.seeActions(ActionFilter.INIT).size)
+    }
+
+    @Test
+    fun testCassandraActionsAreSeenAsDatabaseActions() {
+        val individual = TestIndividual()
+        individual.addInitializingCassandraDbActions(actions = listOf(cassandraAction()))
+
+        assertEquals(1, individual.seeActions(ActionFilter.ONLY_CASSANDRA).size)
+        assertEquals(1, individual.seeActions(ActionFilter.ONLY_DB).size)
+        assertTrue(individual.seeActions(ActionFilter.NO_DB).isEmpty())
     }
 }

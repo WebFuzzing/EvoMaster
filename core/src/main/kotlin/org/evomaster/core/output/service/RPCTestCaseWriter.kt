@@ -59,6 +59,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         sqlInsertionVars: MutableList<Pair<String, String>>,
         mongoInsertionVars: MutableList<Pair<String, String>>,
         redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
         super.handleTestInitialization(lines,
@@ -67,6 +69,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
             sqlInsertionVars,
             mongoInsertionVars,
             redisInsertionVars,
+            dynamoDbInsertionVars,
+            neo4jInsertionVars,
             testName)
 
 
@@ -85,6 +89,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
             sqlInsertionVars: MutableList<Pair<String, String>>,
             mongoInsertionVars: MutableList<Pair<String, String>>,
             redisInsertionVars: MutableList<Pair<String, String>>,
+            dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+            neo4jInsertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
             testSuitePath: Path?
     ) {

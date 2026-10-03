@@ -1,6 +1,7 @@
 package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.core.scheduletask.ScheduleTaskExecutor
@@ -50,6 +51,17 @@ interface RemoteController : DatabaseExecutor, ScheduleTaskExecutor {
     ): TestResultsDto?
 
     fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?
+
+    /**
+     * Have the driver publish the message in [ActionDto.asyncApiCall] and, when one is
+     * expected, wait for its reply. Null when the driver could not be reached, or refused.
+     *
+     * Only a driver for an AsyncAPI service can do this, which is why the default throws
+     * rather than every other controller having to say it cannot.
+     */
+    fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto) : AsyncApiReplyDto? {
+        throw IllegalStateException("This controller does not publish AsyncAPI messages")
+    }
 
     fun postSearchAction(postSearchActionDto: PostSearchActionDto) : Boolean
 

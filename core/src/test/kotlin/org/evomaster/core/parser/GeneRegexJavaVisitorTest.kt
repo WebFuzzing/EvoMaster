@@ -78,6 +78,26 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testCharClassRangeEscapes(){
+        checkSameAsJava("""^[a\--z]$""")
+        checkSameAsJava("""^[\00-a]$""")
+        checkSameAsJava("""^[a-\0377]$""")
+        checkSameAsJava("""^[\00-\0377]$""")
+        checkSameAsJava("""^[\00-\0400]$""") // 0-0x40 and literal 0
+        checkSameAsJava("""^[\a-\t]$""")
+        checkSameAsJava("""^[\ca-\cz]$""")
+        checkSameAsJava("""^[\x{0}-\x{23}\x{2fc3}]$""")
+        checkSameAsJava("""^[\.-\[]$""")
+        checkSameAsJava("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$")
+        checkSameAsJava("""^[0\x41-z]$""")
+        checkSameAsJava("""^[0\cA-\cZ]$""")
+        checkSameAsJava("""^[0\x{41}-\x{7a}]$""")
+        assertThrows<IllegalArgumentException> { checkSameAsJava("""[z-\x41]""") } // 0x41 > z.code
+        assertThrows<IllegalArgumentException> { checkSameAsJava("""[a-\d]""") }
+        assertThrows<IllegalArgumentException> { checkSameAsJava("""[0a-\w]""") }
+    }
+
+    @Test
     fun testJavaHexEscape(){
         checkSameAsJava("""x{3}\x{0}\x{FFFf}\x{0FFFf}\x{01FFFf}\x{10FFFf}""")
     }

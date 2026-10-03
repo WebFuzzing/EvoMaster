@@ -2,8 +2,12 @@ package org.evomaster.core.problem.rest.service.fitness
 
 
 import com.google.inject.Inject
-import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -15,12 +19,11 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.problem.rest.service.ResourceManageService
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.NewCookie
@@ -85,6 +88,12 @@ class ResourceRestFitness : AbstractRestFitness() {
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         doRedisDbCalls(individual.seeInitializingActions().filterIsInstance<RedisDbAction>(), actionResults)
+
+        doDynamoDbCalls(individual.seeInitializingActions().filterIsInstance<DynamoDbAction>(), actionResults)
+
+        doCassandraDbCalls(individual.seeInitializingActions().filterIsInstance<CassandraDbAction>(), actionResults)
+
+        doNeo4jDbCalls(individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>(), actionResults)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()

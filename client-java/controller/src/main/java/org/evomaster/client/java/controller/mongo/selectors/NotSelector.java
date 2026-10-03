@@ -22,14 +22,12 @@ public class NotSelector extends SingleConditionQuerySelector {
     protected QueryOperation parseValue(String fieldName, Object value) {
         if (isBsonDocument(value)) {
             // A $not cannot contain $and, $or, $nor, etc. (logical operators at field level)
-            // or other $not
             Set<String> keys = documentKeys(value);
             if (keys == null || keys.isEmpty() || keys.stream().anyMatch(key -> !key.startsWith("$"))) {
                 return null;
             }
             String innerOp = keys.iterator().next();
-            if (innerOp.equals(NOT_OPERATOR)
-                    || innerOp.equals(AND_OPERATOR)
+            if (innerOp.equals(AND_OPERATOR)
                     || innerOp.equals(OR_OPERATOR)
                     || innerOp.equals(NOR_OPERATOR)) {
                 return null;
@@ -41,12 +39,20 @@ public class NotSelector extends SingleConditionQuerySelector {
             appendToDocument(docWithRemovedNot, fieldName, value);
             QueryOperation condition = new QueryParser().parse(docWithRemovedNot);
 
-            if (condition == null || condition instanceof AndOperation) {
-                // If it parsed as AndOperation (because of ImplicitSelector), it's probably wrong here
-                // or if it failed to parse.
+            if (condition == null) {
+                // If it failed to parse.
                 return null;
             } else {
                 return new NotOperation(fieldName, condition);
+            }
+        } else if (isBsonRegularExpression(value)) {
+            String pattern = bsonRegexGetPattern(value);
+            String options = bsonRegexGetOptions(value);
+            RegexOperation regexOperation = RegexSelector.buildRegexOperation(fieldName, pattern, options);
+            if (regexOperation == null) {
+                return null;
+            } else {
+                return new NotOperation(fieldName, regexOperation);
             }
         } else {
             return null;
