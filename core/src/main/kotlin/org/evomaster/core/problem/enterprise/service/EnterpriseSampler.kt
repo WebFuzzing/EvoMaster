@@ -13,6 +13,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.WarningsAggregator
+import org.evomaster.core.database.neo4j.Neo4jSchema
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.database.sql.schema.TableId
@@ -35,6 +36,12 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     protected val derivedParamHandler = DerivedParamHandler()
 
     var sqlInsertBuilder: SqlInsertBuilder? = null
+
+    /**
+     * What the SUT's entity classes declare about its Neo4j nodes, if it has any. Null before the SUT
+     * info is read.
+     */
+    var neo4jSchema: Neo4jSchema? = null
         protected set
 
     var existingSqlData : List<SqlAction> = listOf()
@@ -145,6 +152,11 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
+    }
+
+    open fun initNeo4jInfo(infoDto: SutInfoDto) {
+        val entities = infoDto.unitsInfoDto?.neo4jEntities ?: emptyList()
+        neo4jSchema = if (entities.isEmpty()) null else Neo4jSchema(entities)
     }
 
     fun extractFkTables(tables: Set<TableId>): Set<TableId> {

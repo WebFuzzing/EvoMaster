@@ -21,6 +21,7 @@ import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
+import org.evomaster.core.database.neo4j.Neo4jSchema
 import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
@@ -331,7 +332,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldNeo4jDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries)
+        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema)
             .let { if (it.isEmpty()) emptyList() else listOf(it) }
 
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
@@ -640,7 +641,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     private fun <T : ApiWsIndividual> handleFailedNeo4jQueries(
         ind: T,
-        failedQueries: List<Neo4jFailedQueryDto>
+        failedQueries: List<Neo4jFailedQueryDto>,
+        schema: Neo4jSchema?
     ): List<EnvironmentAction> {
 
         val existingKeys = ind.seeInitializingActions()
@@ -648,11 +650,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             .map { it.insertionKey() }
             .toSet()
 
-        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys)
+        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys, schema)
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)
             addedActions.forEach { action ->
+                action.seeSchemaGenes().forEach { gene -> gene.randomize(randomness, false) }
                 action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
             }
         }
