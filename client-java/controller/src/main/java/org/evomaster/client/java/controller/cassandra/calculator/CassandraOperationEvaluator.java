@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.cassandra.parser.CqlDurationLiteralP
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.net.InetAddress;
 import java.time.*;
@@ -52,6 +53,19 @@ public class CassandraOperationEvaluator {
     };
 
     private static final DateTimeFormatter DATE_WITH_OFFSET = DateTimeFormatter.ofPattern("yyyy-MM-ddXX");
+
+    /**
+     * Receives every string equality evaluated by {@link #compareString}; {@code null} disables reporting.
+     */
+    private final TaintHandler taintHandler;
+
+    public CassandraOperationEvaluator() {
+        this(null);
+    }
+
+    public CassandraOperationEvaluator(TaintHandler taintHandler) {
+        this.taintHandler = taintHandler;
+    }
 
     /**
      * Recursively evaluates a {@link CqlQueryOperation} against a row, dispatching to the
@@ -199,7 +213,21 @@ public class CassandraOperationEvaluator {
                 : (String) rowValue;
         String b = (String) literalValue;
 
+        /*
+         * Reached for '=', IN, CONTAINS and CONTAINS KEY
+         */
+        taintStringEquals(a, b);
+
         return TruthnessUtils.getStringEqualityTruthness(a, b);
+    }
+
+    /**
+     * Feeds a string equality to the taint handler (no-op if there is no handler or no tainted input).
+     */
+    private void taintStringEquals(String a, String b) {
+        if (taintHandler != null && a != null && b != null) {
+            taintHandler.handleTaintForStringEquals(a, b, false);
+        }
     }
 
     private Truthness compareBoolean(Object rowValue, Object literalValue, ComparisonType comparisonType) {
