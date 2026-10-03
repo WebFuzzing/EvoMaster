@@ -14,8 +14,10 @@ public final class DynamoDbOperationsData {
     public static final String SCENARIO_ATTRIBUTE = "scenario";
     public static final String SHIRT_NUMBER_ATTRIBUTE = "shirtNumber";
     public static final String PLAYER_NAME_ATTRIBUTE = "playerName";
+    public static final String FIFA_ID_ATTRIBUTE = "fifaId";
     public static final int MISSING_SHIRT_NUMBER = 9;
     public static final int TARGET_SHIRT_NUMBER = 10;
+    public static final int TARGET_FIFA_ID = 158023;
 
     private DynamoDbOperationsData() {
     }
@@ -78,6 +80,7 @@ public final class DynamoDbOperationsData {
     public static Map<String, AttributeValue> item(ClientMode clientMode, Operation operation) {
         Map<String, AttributeValue> item = key(clientMode, operation, TARGET_SHIRT_NUMBER);
         item.put(PLAYER_NAME_ATTRIBUTE, AttributeValue.builder().s("Lionel Messi").build());
+        item.put(FIFA_ID_ATTRIBUTE, AttributeValue.builder().n(Integer.toString(TARGET_FIFA_ID)).build());
         item.put("country", AttributeValue.builder().s("Argentina").build());
         return item;
     }

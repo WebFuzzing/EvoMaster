@@ -29,7 +29,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DynamoDbClassReplacementTest {
 
@@ -133,6 +135,30 @@ public class DynamoDbClassReplacementTest {
 
         assertNotNull(result);
         verifyInterception(Collections.singletonList(TABLE_NAME), DynamoDbOperationNames.PUT_ITEM, request);
+    }
+
+    @Test
+    public void testFailedConditionalPutItemIsIntercepted() {
+        Map<String, AttributeValue> item = Collections.singletonMap(
+                "id", AttributeValue.builder().s("conditional-player").build());
+        syncClient.putItem(PutItemRequest.builder().tableName(TABLE_NAME).item(item).build());
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .item(item)
+                .conditionExpression("attribute_not_exists(id)")
+                .build();
+
+        assertThrows(RuntimeException.class,
+                () -> DynamoDbClassReplacement.Sync.putItem(syncClient, request));
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+        Set<DynamoDbCommand> commands = additionalInfoList.get(0).getDynamoDbInfoData();
+        assertEquals(1, commands.size());
+        DynamoDbCommand command = commands.iterator().next();
+        assertEquals(DynamoDbOperationNames.PUT_ITEM, command.getOperationName());
+        assertEquals(request, command.getDdbRequest());
+        assertFalse(command.isSuccessfullyExecuted());
     }
 
     @Test
