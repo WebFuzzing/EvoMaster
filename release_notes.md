@@ -5,6 +5,9 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 - #711: What are the type of faults that can be detected with this tool?  
 
+### Fixed Bugs
+- Fixed issue for gzip-compressed responses with empty bodies leading to resource leakage.
+
 # Version 6.2.0
 
 ### New Features

@@ -8,7 +8,6 @@ import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HttpPartialUpdatePutFPEMTest : SpringTestBase(){
@@ -21,8 +20,6 @@ class HttpPartialUpdatePutFPEMTest : SpringTestBase(){
         }
     }
 
-    //FIXME: fails due to missing "hidden" not ignored as not defined in schema of GET
-    @Disabled("Currently failing, as revealing a bug in the code")
     @Test
     fun testRunEM() {
 
