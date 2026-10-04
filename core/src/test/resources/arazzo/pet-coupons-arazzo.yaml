@@ -207,7 +207,7 @@ workflows:
           - name: pet_id
             value: $steps.find-pet.outputs.my_pet_id
           - name: coupon_code
-            value: $steps.find-coupons.outputs.my_coupon_code
+            value: "SUMMERSALE"
         successCriteria:
           - condition: $statusCode == 200
         outputs:
@@ -229,6 +229,8 @@ workflows:
             value: $inputs.my_pet_tags
         successCriteria:
           - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
         onSuccess:
           - name: jump-to-buy-available-pet
             type: goto
@@ -250,7 +252,7 @@ workflows:
         outputs:
           my_coupon_code: $response.body#/couponCode
     outputs:
-      apply_coupon_pet_order: $steps.my_coupon_code
+      apply_coupon_pet_order: $steps.find-coupons.outputs.my_coupon_code
   - workflowId: branch-success-and-failure
     description:
       Simulates a workflow that jumps to another workflow when the `onSuccess` condition is met, 
@@ -267,6 +269,8 @@ workflows:
             value: $inputs.my_pet_tags
         successCriteria:
           - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
         onSuccess:
           - name: jump-to-place-order
             type: goto
@@ -277,7 +281,7 @@ workflows:
         outputs:
           my_pet_id: $response.body#/0/id
     outputs:
-      response_pet_id: $steps.find-pet.my_pet_id
+      response_pet_id: $steps.find-pet.outputs.my_pet_id
   - workflowId: branch-multiple-on-success
     description:
       Simulate a workflow that has multiple onSuccess.
@@ -293,6 +297,8 @@ workflows:
             value: $inputs.my_pet_tags
         successCriteria:
           - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
         onSuccess:
           - name: jump-to-place-order
             type: goto
