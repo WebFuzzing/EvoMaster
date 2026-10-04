@@ -135,6 +135,42 @@ class SamplerWithArazzoVerifierTest {
         assertEquals(listOf("/pet/findByTags", "/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
     }
 
+    @Test
+    fun testBranchingWorkflowCoversSuccessAndFailurePaths() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["branch-success-and-failure"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "placeOrder"))) // onSuccess goto
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags")))               // onFailure end
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)
+    }
+
+    @Test
+    fun testBranchingWorkflowCoversMultipleOnSuccess() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["branch-multiple-on-success"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "placeOrder"))) // jump-to-place-order
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"))) //jump-to-buy-available-pet
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)
+    }
+
     private fun buildIndividualFromWorkflow(context: TestContext, arazzoWorkflow: ArazzoWorkflow): RestIndividual {
         return context.arazzoService.buildIndividualFromWorkflow(arazzoWorkflow)
     }

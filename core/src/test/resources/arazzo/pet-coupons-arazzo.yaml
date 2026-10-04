@@ -251,6 +251,56 @@ workflows:
           my_coupon_code: $response.body#/couponCode
     outputs:
       apply_coupon_pet_order: $steps.my_coupon_code
+  - workflowId: branch-success-and-failure
+    description:
+      Simulates a workflow that jumps to another workflow when the `onSuccess` condition is met, 
+      or terminates if `onFailure` is met.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: jump-to-place-order
+            type: goto
+            workflowId: place-order
+        onFailure:
+          - name: finish-workflow
+            type: end
+        outputs:
+          my_pet_id: $response.body#/0/id
+    outputs:
+      response_pet_id: $steps.find-pet.my_pet_id
+  - workflowId: branch-multiple-on-success
+    description:
+      Simulate a workflow that has multiple onSuccess.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: jump-to-place-order
+            type: goto
+            workflowId: place-order
+          - name: jump-to-buy-available-pet
+            type: goto
+            workflowId: buy-available-pet
+
 components:
   inputs:
     apply_coupon_input:

@@ -159,7 +159,7 @@ class ArazzoWorkflowsService {
 
                 when (pathway) {
                     PathWay.SUCCESS -> {
-                        val successAction = step.onSuccess.random()
+                        val successAction = randomness.choose(step.onSuccess)
                         if (applyPathwayAction(stack, currentFrame, successAction.type, successAction.stepId, successAction.workflowId))
                             continue@outer
                         else
@@ -167,7 +167,7 @@ class ArazzoWorkflowsService {
 
                     }
                     PathWay.FAILURE -> {
-                        val failureAction = step.onFailure.random()
+                        val failureAction = randomness.choose(step.onFailure)
                         if (applyPathwayAction(stack, currentFrame, failureAction.type, failureAction.stepId, failureAction.workflowId))
                             continue@outer
                         else
