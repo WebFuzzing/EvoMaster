@@ -72,6 +72,14 @@
             <artifactId>kafka</artifactId>
         </dependency>
         <dependency>
+            <!--
+                Not used by any source in this module, but the test suites EvoMaster generates
+                import org.hamcrest.Matchers, and they are compiled against this classpath.
+            -->
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
