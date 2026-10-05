@@ -19,5 +19,6 @@
         <module>solver</module>
         <module>arazzo-parser</module>
         <module>asyncapi-parser</module>
+        <module>networknt-schema-validator</module>
     </modules>
 </project>

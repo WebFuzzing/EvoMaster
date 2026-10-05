@@ -77,6 +77,7 @@ There are 3 types of options:
 |`aiEndpointSnapshotStatisticsFile`| __String__. Where per-endpoint AI metric snapshots are written in CSV format when writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive. *Default value*: `ai-endpoint-snapshots.csv`.|
 |`aiEndpointStatisticsFile`| __String__. Where per-endpoint AI model metrics are written in CSV format when writeAIEndpointStatistics and AI response classification are enabled. *Default value*: `ai-endpoint-statistics.csv`.|
 |`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS, CRO`. *Default value*: `DEFAULT`.|
+|`allowExternalSchemaReferences`| __Boolean__. Allow JSON Schema references to load external resources. Disabled by default to prevent JSON schemas compilation from performing network requests. *Default value*: `false`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `archive.csv`.|

@@ -41,14 +41,19 @@ class HttpMcpClientTest {
     @Test
     fun testListToolsParsesDefinitionsCorrectly() {
         stubPost(
-            """{"jsonrpc":"2.0","result":{"tools":[{"name":"foo","description":"bar","inputSchema":{}}]},"id":1}"""
+            """{"jsonrpc":"2.0","result":{"tools":[{"name":"foo","description":"bar","inputSchema":{},"outputSchema":{"type":"object","properties":{"value":{"type":"integer"}},"required":["value"]}},{"name":"no-description","inputSchema":{}}]},"id":1}"""
         )
 
         val tools = client.listTools()
 
-        assertEquals(1, tools.size)
+        assertEquals(2, tools.size)
         assertEquals("foo", tools[0].name)
         assertEquals("bar", tools[0].description)
+        assertEquals("object", tools[0].outputSchema!!["type"].asText())
+        assertEquals("integer", tools[0].outputSchema!!["properties"]!!["value"]!!["type"].asText())
+        assertEquals("value", tools[0].outputSchema!!["required"]!![0].asText())
+        assertNull(tools[1].outputSchema)
+        assertEquals("", tools[1].description)
     }
 
     @Test
@@ -211,9 +216,9 @@ class HttpMcpClientTest {
         assertFalse(result.isError)
         assertNotNull(result.structuredContent)
         val structured = result.structuredContent!!
-        assertEquals(22.5, structured["temperature"])
-        assertEquals("Partly cloudy", structured["conditions"])
-        assertEquals(65, structured["humidity"])
+        assertEquals(22.5, structured["temperature"].asDouble())
+        assertEquals("Partly cloudy", structured["conditions"].asText())
+        assertEquals(65, structured["humidity"].asInt())
         // The unstructured text block should still be present alongside the structured content
         assertEquals(1, result.content.size)
         assertEquals("text", result.content[0].type)

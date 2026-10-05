@@ -181,6 +181,11 @@
             <groupId>com.atlassian.oai</groupId>
             <artifactId>swagger-request-validator-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>networknt-schema-validator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>javax.el</groupId>
