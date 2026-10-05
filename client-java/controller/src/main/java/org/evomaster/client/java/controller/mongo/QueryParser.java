@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
 import org.evomaster.client.java.controller.mongo.operations.QueryOperationWithFieldPath;
 import org.evomaster.client.java.controller.mongo.selectors.*;
+import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,23 +58,36 @@ public class QueryParser {
             new ImplicitSelector()
     );
 
-    public QueryOperation parse(Object bsonDocument) {
-        if (bsonDocument == null) {
+    /**
+     * Parses the given document and produces a corresponding {@link QueryOperation} if applicable.
+     * This method normalizes and processes the input document to strip non-semantic operators,
+     * validate the content, and match it against registered selectors to construct a query operation.
+     *
+     * @param document the input document to be parsed. An instance of org.bson.Document.
+     *                 May be {@code null}.
+     * @return a {@link QueryOperation} derived from the input document, or {@code null}
+     *         if the document is invalid, contains only non-semantic noise, or does not
+     *         match any recognized query pattern.
+     */
+    public QueryOperation parse(Object document) {
+        if (document == null || !BsonHelper.isDocument(document)) {
             return null;
         }
 
+
         // A document made up entirely of "$comments" noise, with nothing else to query on,
         // does not represent any real condition.
-        if (isOnlyNoiseComments(bsonDocument)) {
+        if (isOnlyNoiseComments(document)) {
             return null;
         }
+
 
         // "$comments" is noise and gets stripped wherever it appears, however deeply nested,
         // since it never carries query semantics. "$comment" is the real MongoDB operator: it
         // only has meaning as a predicate-level key (this document's own keys), so it is
         // stripped shallowly here and left untouched inside field values/literals (e.g. under
         // an explicit $eq, or as the entire value of a field), where it must be compared as-is.
-        Object normalizedWithoutComments = removeTopLevelCommentOperator(removeCommentsOperators(bsonDocument));
+        Object normalizedWithoutComments = removeTopLevelCommentOperator(removeCommentsOperators(document));
 
         QueryOperation operation = parseWithSelectors(normalizedWithoutComments);
         if (operation != null && !usesOperatorAsFieldName(operation)) {
@@ -88,7 +102,7 @@ public class QueryParser {
     }
 
     private boolean isOnlyNoiseComments(Object bsonDocument) {
-        if (!isBsonDocument(bsonDocument)) {
+        if (!isDocument(bsonDocument)) {
             return false;
         }
         Set<String> keys = documentKeys(bsonDocument);
@@ -96,27 +110,27 @@ public class QueryParser {
     }
 
     private Object removeTopLevelCommentOperator(Object bsonValue) {
-        if (!isBsonDocument(bsonValue)) {
+        if (!isDocument(bsonValue)) {
             return bsonValue;
         }
-        Object normalized = newDocument(bsonValue);
+        Object normalized = documentNewDocument(bsonValue);
         for (String key : documentKeys(bsonValue)) {
             if (key.equals(COMMENT_OPERATOR)) {
                 continue;
             }
-            appendToDocument(normalized, key, getValue(bsonValue, key));
+            appendToDocument(normalized, key, documentGetValue(bsonValue, key));
         }
         return normalized;
     }
 
     private Object removeCommentsOperators(Object bsonValue) {
-        if (isBsonDocument(bsonValue)) {
-            Object normalized = newDocument(bsonValue);
+        if (isDocument(bsonValue)) {
+            Object normalized = documentNewDocument(bsonValue);
             for (String key : documentKeys(bsonValue)) {
                 if (COMMENTS_OPERATORS.contains(key)) {
                     continue;
                 }
-                appendToDocument(normalized, key, removeCommentsOperators(getValue(bsonValue, key)));
+                appendToDocument(normalized, key, removeCommentsOperators(documentGetValue(bsonValue, key)));
             }
             return normalized;
         }
@@ -172,7 +186,7 @@ public class QueryParser {
     }
 
     private Object normalizeTopLevelValueOperatorQuery(Object bsonDocument) {
-        if (!(bsonDocument instanceof Map) || !isBsonDocument(bsonDocument)) {
+        if (!(bsonDocument instanceof Map) || !isDocument(bsonDocument)) {
             return bsonDocument;
         }
 
@@ -182,10 +196,10 @@ public class QueryParser {
             return bsonDocument;
         }
 
-        Object normalized = newDocument(bsonDocument);
-        Object inner = newDocument(bsonDocument);
+        Object normalized = documentNewDocument(bsonDocument);
+        Object inner = documentNewDocument(bsonDocument);
         for (String operator : keys) {
-            appendToDocument(inner, operator, getValue(bsonDocument, operator));
+            appendToDocument(inner, operator, documentGetValue(bsonDocument, operator));
         }
         appendToDocument(normalized, SYNTHETIC_FIELD_NAME, inner);
         return normalized;

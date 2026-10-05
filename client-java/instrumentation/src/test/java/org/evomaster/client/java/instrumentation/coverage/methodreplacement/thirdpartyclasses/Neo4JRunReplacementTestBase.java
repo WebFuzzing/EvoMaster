@@ -116,7 +116,7 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(query, command.getQuery());
-            assertNull(command.getParameters());
+            assertTrue(command.getParameters().isEmpty());
             assertTrue(command.getSuccessfullyExecuted());
             assertTrue(command.getExecutionTime() >= 0);
         });
@@ -137,8 +137,7 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(queryText, command.getQuery());
-            Value capturedParams = (Value) command.getParameters();
-            assertTrue(capturedParams.isEmpty());
+            assertTrue(command.getParameters().isEmpty());
             assertTrue(command.getSuccessfullyExecuted());
             assertTrue(command.getExecutionTime() >= 0);
         });
@@ -163,7 +162,7 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(MATCH_PERSON_BY_NAME_QUERY, command.getQuery());
-            Map<String, Object> capturedParams = (Map<String, Object>) command.getParameters();
+            Map<String, Object> capturedParams = command.getParameters();
             assertEquals(1, capturedParams.size());
             assertEquals(personName, capturedParams.get(PARAM_NAME));
             assertTrue(command.getSuccessfullyExecuted());
@@ -191,9 +190,9 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(MATCH_PERSON_BY_NAME_QUERY, command.getQuery());
-            Value capturedParams = (Value) command.getParameters();
+            Map<String, Object> capturedParams = command.getParameters();
             assertEquals(1, capturedParams.size());
-            assertEquals(personName, capturedParams.get(PARAM_NAME).asString());
+            assertEquals(personName, capturedParams.get(PARAM_NAME));
             assertTrue(command.getSuccessfullyExecuted());
             assertTrue(command.getExecutionTime() >= 0);
         });
@@ -217,9 +216,9 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(MATCH_PERSON_BY_NAME_QUERY, command.getQuery());
-            Value capturedParams = (Value) command.getParameters();
+            Map<String, Object> capturedParams = command.getParameters();
             assertEquals(1, capturedParams.size());
-            assertEquals(personName, capturedParams.get(PARAM_NAME).asString());
+            assertEquals(personName, capturedParams.get(PARAM_NAME));
             assertTrue(command.getSuccessfullyExecuted());
             assertTrue(command.getExecutionTime() >= 0);
         });
@@ -246,9 +245,9 @@ public abstract class Neo4JRunReplacementTestBase {
 
             Neo4JRunCommand command = singleTrackedCommand();
             assertEquals(MATCH_PERSON_BY_NAME_QUERY, command.getQuery());
-            Record capturedParams = (Record) command.getParameters();
+            Map<String, Object> capturedParams = command.getParameters();
             assertEquals(1, capturedParams.size());
-            assertEquals(personName, capturedParams.get(PARAM_NAME).asString());
+            assertEquals(personName, capturedParams.get(PARAM_NAME));
             assertTrue(command.getSuccessfullyExecuted());
             assertTrue(command.getExecutionTime() >= 0);
         });

@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.mongo.selectors;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.utils.BsonHelper;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.BigDecimalParam;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -43,10 +42,10 @@ public class ExistsSelector extends SingleConditionQuerySelector {
 
         if (v instanceof Number && BsonHelper.isDecimal128(v)) {
             // NaN and Infinity are non-zero, so truthy
-            if (BsonHelper.isNaN(v) || BsonHelper.isInfinite(v)) {
+            if (BsonHelper.decimal128IsNaN(v) || BsonHelper.decimal128IsInfinite(v)) {
                 return true;
             }
-            BigDecimal d = BsonHelper.getBigDecimalValue((Number) v);
+            BigDecimal d = BsonHelper.decimal128GetBigDecimalValue((Number) v);
             return d.signum() != 0;
         }
 

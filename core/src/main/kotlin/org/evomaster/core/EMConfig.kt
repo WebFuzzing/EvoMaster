@@ -1877,7 +1877,6 @@ class EMConfig {
             "indicates a server-side error with status code 5xx.")
     var skipAIModelUpdateWhenResponseIs5xx = false
 
-    @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
     var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
@@ -3110,7 +3109,7 @@ class EMConfig {
     @Experimental
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
-    var enableStaticFlakyInference = true
+    var enableStaticFlakyInference = false
 
     @Experimental
     @Min(0.0)
@@ -3704,7 +3703,7 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS_INJECTION && (!xss || !security)){
             return false
         }
 

@@ -1,9 +1,9 @@
 package org.evomaster.e2etests.spring.rest.cassandra;
 
-import com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.foo.cassandra.findbyage.CassandraFindByAgeApp;
+import com.foo.cassandra.findbyagereadonly.CassandraFindByAgeReadOnlyApp;
 import com.foo.cassandra.findbydayrange.CassandraFindByDayRangeApp;
 import com.foo.cassandra.findbytag.CassandraFindByTagApp;
 import com.foo.cassandra.findbyuuid.CassandraFindByUuidApp;
