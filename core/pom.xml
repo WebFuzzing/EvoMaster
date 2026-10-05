@@ -182,8 +182,9 @@
             <artifactId>swagger-request-validator-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>json-schema-validator</artifactId>
+            <groupId>org.evomaster</groupId>
+            <artifactId>networknt-schema-validator</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

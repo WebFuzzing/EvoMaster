@@ -5,6 +5,7 @@ import com.networknt.schema.Schema
 import com.networknt.schema.SchemaRegistry
 import com.networknt.schema.SchemaRegistryConfig
 import com.networknt.schema.SpecificationVersion
+import com.networknt.schema.i18n.ResourceBundleMessageSource
 import com.networknt.schema.path.PathType
 
 /**
@@ -18,6 +19,7 @@ class JsonSchemaValidator(allowExternalReferences: Boolean = false) {
                 .failFast(false)
                 .typeLoose(false)
                 .formatAssertionsEnabled(false)
+                .messageSource(ResourceBundleMessageSource("org.evomaster.networknt.messages.jsv-messages"))
                 .pathType(PathType.JSON_POINTER)
                 .preloadSchema(true)
                 .build()
