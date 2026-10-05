@@ -29,6 +29,20 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
 
     private var existingSQLData = 0
 
+    /**
+     * Maps a position in all initialization actions to the position within this action type,
+     * including SQL actions representing existing data.
+     */
+    private val absolutePositions = mutableMapOf<Int, Int>()
+
+    fun syncAbsolutePositions(positions: List<Int>) {
+        require(positions.size == getOriginalSize()) { "inconsistent size of initialization positions and impacts" }
+        absolutePositions.clear()
+        positions.forEachIndexed { relativeIndex, absoluteIndex ->
+            absolutePositions[absoluteIndex] = relativeIndex
+        }
+    }
+
     private fun getGroupedSequence() : List<List<ImpactsOfAction>>{
         if (indexMap.size != completeSequence.size)
             throw IllegalStateException("indexMap is out of sync ${indexMap.size} vs. ${completeSequence.size}")
@@ -256,6 +270,7 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
         new.completeSequence.addAll(completeSequence.map { it.copy() })
         new.template.putAll(template.mapValues { it.value.map { v -> v.copy() } })
         new.indexMap.addAll(indexMap.map { Pair(it.first, it.second) })
+        new.absolutePositions.putAll(absolutePositions)
         if (enableImpactOnDuplicatedTimes)
             new.templateDuplicateTimes.putAll(templateDuplicateTimes.mapValues { it.value.copy() })
 
@@ -269,6 +284,7 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
         new.completeSequence.addAll(completeSequence.map { it.clone() })
         new.template.putAll(template.mapValues { it.value.map { v -> v.clone() } })
         new.indexMap.addAll(indexMap.map { Pair(it.first, it.second) })
+        new.absolutePositions.putAll(absolutePositions)
 
         if (enableImpactOnDuplicatedTimes)
             new.templateDuplicateTimes.putAll(templateDuplicateTimes.mapValues { it.value.clone() })
@@ -286,6 +302,7 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
         completeSequence.addAll(other.completeSequence.map { it.clone() })
         template.putAll(other.template.mapValues { it.value.map { v -> v.clone() } })
         indexMap.addAll(other.indexMap.map { Pair(it.first, it.second) })
+        absolutePositions.putAll(other.absolutePositions)
         if (enableImpactOnDuplicatedTimes != other.enableImpactOnDuplicatedTimes)
             throw IllegalStateException("different setting on enableImpactOnDuplicatedTimes")
         if (enableImpactOnDuplicatedTimes)
@@ -298,15 +315,20 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
         indexMap.clear()
         templateDuplicateTimes.clear()
         existingSQLData = 0
+        absolutePositions.clear()
     }
 
     /**
      * @return impact of action by [actionName] or [actionIndex]
      * @param actionName is a name of action
-     * @param actionIndex index of action in a test
+     * @param actionIndex position within this action type, including existing SQL data,
+     * or within all initialization actions when [absoluteIndex] is true
+     * @param absoluteIndex whether [actionIndex] refers to all initialization actions
      */
-    fun getImpactOfAction(actionName: String?, actionIndex: Int): ImpactsOfAction? {
-        val mIndex = actionIndex - existingSQLData
+    fun getImpactOfAction(actionName: String?, actionIndex: Int, absoluteIndex: Boolean = false): ImpactsOfAction? {
+        val relativeIndex = if (absoluteIndex) absolutePositions[actionIndex] ?: return null else actionIndex
+        val mIndex = relativeIndex - existingSQLData
+        if (mIndex < 0) return null // Existing SQL data has no gene impacts.
         if (mIndex >= completeSequence.size)
             throw IllegalArgumentException("exceed the boundary of impacts regarding actions, i.e., size of actions is ${completeSequence.size}, but asking index is $actionIndex")
         val name = completeSequence[mIndex].actionName
