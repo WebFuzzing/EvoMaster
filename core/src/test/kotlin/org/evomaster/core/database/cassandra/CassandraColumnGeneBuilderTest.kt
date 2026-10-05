@@ -28,6 +28,12 @@ class CassandraColumnGeneBuilderTest {
     private fun buildFor(cqlType: String): Gene =
         CassandraColumnGeneBuilder.buildGene(CassandraColumn("aColumn", cqlType))
 
+    private fun buildForPartitionKey(cqlType: String): Gene =
+        CassandraColumnGeneBuilder.buildGene(CassandraColumn("aColumn", cqlType, isPartitionKey = true))
+
+    private fun buildForClusteringColumn(cqlType: String): Gene =
+        CassandraColumnGeneBuilder.buildGene(CassandraColumn("aColumn", cqlType, isClusteringColumn = true))
+
     @Test
     fun testTextTypes() {
         listOf("ascii", "text", "varchar").forEach {
@@ -179,5 +185,54 @@ class CassandraColumnGeneBuilderTest {
         listOf("text", "int", "uuid", "timestamp", "boolean", "inet", "list<int>", "map<text, int>").forEach {
             assertTrue(CassandraColumnGeneBuilder.isSupported(CassandraColumn("aColumn", it)), "$it should be supported")
         }
+    }
+
+    /**
+     * Cassandra rejects an insertion giving an empty value for a column composing the partition key,
+     * as characterized by CassandraScriptRunnerTest in the client module, so the gene of such a
+     * column is not allowed to generate one.
+     */
+    @Test
+    fun testTextPartitionKeyIsNotGeneratedEmpty() {
+        listOf("ascii", "text", "varchar").forEach {
+            val gene = buildForPartitionKey(it) as StringGene
+            assertEquals(1, gene.minLength, "unexpected minimum length for $it")
+        }
+    }
+
+    /**
+     * The constraint belongs to the partition key alone: a clustering column does accept an empty
+     * value, and so does any other text column.
+     */
+    @Test
+    fun testTextIsGeneratedEmptyOutsideThePartitionKey() {
+        listOf("ascii", "text", "varchar").forEach {
+            assertEquals(0, (buildFor(it) as StringGene).minLength, "unexpected minimum length for $it")
+            assertEquals(0, (buildForClusteringColumn(it) as StringGene).minLength, "unexpected minimum length for $it")
+        }
+    }
+
+    /**
+     * No type other than the text ones can produce an empty value among the ones handled here, so
+     * being in the partition key does not change the gene built for them.
+     */
+    @Test
+    fun testGeneOfANonTextPartitionKeyIsUnchanged() {
+        assertTrue(buildForPartitionKey("int") is IntegerGene)
+        assertTrue(buildForPartitionKey("uuid") is UUIDGene)
+        assertTrue(buildForPartitionKey("timestamp") is DateTimeGene)
+        assertTrue(buildForPartitionKey("inet") is InetGene)
+        assertTrue(buildForPartitionKey("duration") is CqlDurationGene)
+    }
+
+    /**
+     * An element of a collection is not itself a partition key, so it keeps generating empty values
+     * even when the column holding the collection composes one.
+     */
+    @Test
+    fun testElementsOfACollectionInThePartitionKeyAreUnconstrained() {
+        val gene = buildForPartitionKey("frozen<list<text>>") as ArrayGene<*>
+
+        assertEquals(0, (gene.template as StringGene).minLength)
     }
 }
