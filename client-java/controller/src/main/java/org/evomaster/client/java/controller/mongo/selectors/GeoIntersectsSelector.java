@@ -22,11 +22,11 @@ public class GeoIntersectsSelector extends SingleConditionQuerySelector {
 
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (value == null || !isBsonDocument(value)
+        if (value == null || !isDocument(value)
                 || !documentKeys(value).equals(Collections.singleton("$geometry"))) {
             return null;
         }
-        GeoJsonGeometry geometry = parseGeometry(getValue(value, "$geometry"));
+        GeoJsonGeometry geometry = parseGeometry(documentGetValue(value, "$geometry"));
         if (geometry == null) {
             return null;
         }
