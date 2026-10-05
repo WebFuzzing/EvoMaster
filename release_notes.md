@@ -7,6 +7,8 @@ Under development in `master` branch.
 
 ### Fixed Bugs
 - Fixed issue for gzip-compressed responses with empty bodies leading to resource leakage.
+- Fixed instrumentation bug in JDK 25.
+- Fixed experimental configurations that were wrongly on by default.
 
 # Version 6.2.0
 
