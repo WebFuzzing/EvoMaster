@@ -24,6 +24,14 @@ internal class EMConfigTest{
 
 
     @Test
+    fun testNoExperimentalInDefaultConfigs(){
+
+        val config = EMConfig()
+        val activeExperimentals = config.activatedExperimentalFeatures()
+        assertEquals(0, activeExperimentals.size, "Activated: ${activeExperimentals.joinToString(", ")}")
+    }
+
+    @Test
     fun testChangeSetEnum(){
 
         val parser = EMConfig.getOptionParser()
