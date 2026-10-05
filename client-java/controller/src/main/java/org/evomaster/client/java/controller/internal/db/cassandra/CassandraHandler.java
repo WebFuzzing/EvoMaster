@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.parser.CqlParser;
 import org.evomaster.client.java.controller.cassandra.parser.CqlParserUtils;
+import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraColumnMetadata;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
@@ -81,7 +82,8 @@ public class CassandraHandler {
 
     private volatile boolean calculateHeuristics = true;
 
-    private final CassandraHeuristicsCalculator calculator = new CassandraHeuristicsCalculator();
+    private final CassandraHeuristicsCalculator calculator =
+            new CassandraHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
     /**
      * Clears the CQL commands and empty-table queries buffered for the current test, along with
