@@ -1,6 +1,7 @@
 package org.evomaster.core.database.redis
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.wrapper.SelectableWrapperGene
 
 /**
  * One HSET-able field of a document generated to satisfy a failed FT.SEARCH/FT.AGGREGATE command.
@@ -22,6 +23,14 @@ class RedisQueryField(
             "RedisQueryField must have exactly one of constantValue or valueGene"
         }
     }
+
+    /**
+     * A field wrapped in an inactive optional gene (as for non-required properties of an entity
+     * schema) must be left out of the hash: writing it as an empty string is not equivalent, since
+     * a reader can turn that into null for a primitive field and fail, or never see the field as
+     * missing.
+     */
+    fun isPresent(): Boolean = valueGene == null || (valueGene as? SelectableWrapperGene)?.isActive != false
 
     /**
      * The current value of this field, as a plain string suitable for a Redis HSET, regardless of

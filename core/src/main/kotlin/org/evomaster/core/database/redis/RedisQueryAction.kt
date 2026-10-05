@@ -27,7 +27,7 @@ class RedisQueryAction(
 
     override fun getTargetKey() = key
 
-    override fun insertionsCount(): Int = fields.size
+    override fun insertionsCount(): Int = fields.count { it.isPresent() }
 
     override fun seeTopGenes(): List<Gene> = fields.mapNotNull { it.valueGene }
 

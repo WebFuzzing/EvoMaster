@@ -3,6 +3,8 @@ package org.evomaster.core.redis
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto
+import org.evomaster.client.java.instrumentation.`object`.ClassToSchema
+import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisHsetAction
 import org.evomaster.core.database.redis.RedisInsertBuilder
 import org.evomaster.core.database.redis.RedisQueryAction
@@ -14,6 +16,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -69,6 +72,49 @@ class RedisInsertBuilderTest {
         assertEquals(1, actions.size)
         val action = actions[0] as RedisHsetAction
         assertEquals("user:1", action.key)
+        assertEquals("field", action.field)
+    }
+
+    @Test
+    fun testHgetallWithEntityTypeBuildsQueryActionWithOnePerProperty() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashTestEntity::class.java)
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("entities:1", entityType = schema)), emptySet()
+        )
+
+        assertEquals(1, actions.size)
+        val action = actions[0] as RedisQueryAction
+        assertEquals("entities:1", action.key)
+        assertEquals(setOf("id", "name", "age", "address"), action.fields.map { it.name }.toSet())
+    }
+
+    @Test
+    fun testHgetallInactiveOptionalFieldIsLeftOutOfTheHash() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashTestEntity::class.java)
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("entities:1", entityType = schema)), emptySet()
+        )
+        val action = actions[0] as RedisQueryAction
+
+        val allFields = RedisDbActionTransformer.transform(actions).insertions.map { it.field }.toSet()
+        assertEquals(setOf("id", "name", "age", "address"), allFields)
+
+        (action.fields.first { it.name == "address" }.valueGene as OptionalGene).isActive = false
+        (action.fields.first { it.name == "age" }.valueGene as OptionalGene).isActive = false
+
+        val remaining = RedisDbActionTransformer.transform(actions).insertions.map { it.field }.toSet()
+        assertEquals(setOf("id", "name"), remaining)
+        assertEquals(remaining.size, action.insertionsCount())
+    }
+
+    @Test
+    fun testHgetallWithUnparsableEntityTypeFallsBackToPlaceholderField() {
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("user:1", entityType = "not a valid schema")), emptySet()
+        )
+
+        assertEquals(1, actions.size)
+        val action = actions[0] as RedisHsetAction
         assertEquals("field", action.field)
     }
 
@@ -178,9 +224,10 @@ class RedisInsertBuilderTest {
         it.command = "HGET"
     }
 
-    private fun hgetallCommand(key: String) = RedisFailedCommand().also {
+    private fun hgetallCommand(key: String, entityType: String? = null) = RedisFailedCommand().also {
         it.keys = listOf(key)
         it.command = "HGETALL"
+        it.entityType = entityType
     }
 
     private fun keysCommand(pattern: String) = RedisFailedCommand().also {
@@ -379,4 +426,16 @@ class RedisInsertBuilderTest {
 
         assertEquals("title", (actions[0] as RedisQueryAction).fields[0].name)
     }
+}
+
+/**
+ * Stands in for a `@RedisHash`-annotated class, as used by [RedisInsertBuilderTest] to derive a
+ * schema the same way [org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.BasicRedisPersistentEntityClassReplacement]
+ * would for a real one.
+ */
+class RedisHashTestEntity {
+    var id: String? = null
+    var name: String? = null
+    var age: Int = 0
+    var address: String? = null
 }

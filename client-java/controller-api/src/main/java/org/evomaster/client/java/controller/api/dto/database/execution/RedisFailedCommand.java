@@ -32,6 +32,15 @@ public class RedisFailedCommand {
     public String field;
 
     /**
+     * GET/HGET/HGETALL/SMEMBERS/SINTER only: the schema of the Java type the key's value is
+     * expected to be deserialized into (e.g. by a Spring Data Redis {@code @RedisHash} repository),
+     * if one was ever observed for the key's keyspace (the part of the key before its first ":").
+     * Null if no such type was observed, in which case only a single placeholder field/value can
+     * be generated for it.
+     */
+    public String entityType;
+
+    /**
      * FT.SEARCH/FT.AGGREGATE only: the name of the queried index. Its existence (with a HASH
      * key_type) is a precondition for these commands to be actionable, so a failed command is
      * only ever produced for an index that was found via FT.INFO.
@@ -74,10 +83,22 @@ public class RedisFailedCommand {
      * @param field   the hash field involved. Only for HGET, null otherwise
      */
     public RedisFailedCommand(String command, List<String> keys, String pattern, String field) {
+        this(command, keys, pattern, field, null);
+    }
+
+    /**
+     * Same as {@link #RedisFailedCommand(String, List, String, String)}, additionally carrying the
+     * entity type for the key's keyspace, see {@link #entityType}.
+     *
+     * @param entityType the schema of the Java type expected for the key, see {@link #entityType}.
+     *                    Null if none was observed for the key's keyspace.
+     */
+    public RedisFailedCommand(String command, List<String> keys, String pattern, String field, String entityType) {
         this.command = command;
         this.keys =  new ArrayList<>(keys);
         this.pattern = pattern;
         this.field = field;
+        this.entityType = entityType;
     }
 
     /**
