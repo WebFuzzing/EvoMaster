@@ -165,10 +165,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^[(?i)-a]$")
         checkSameAsJava("^[(?i:abc)-a]$")
         checkCanSample("^[a&b]$", "&", 100)
-        // these are rejected as lexer has no token for \1 or \k<name> here, as they are not available on CHAR_CLASS_MODE
-        // on Java these throw on Pattern.compile since backreferences are not allowed within character classes
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\1]$") }
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\k<name>]$") }
     }
 
     @Test

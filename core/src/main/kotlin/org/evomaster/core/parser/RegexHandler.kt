@@ -268,7 +268,9 @@ object RegexHandler {
         // for example, on our Java grammar [\1] is a lexer error since \1 has no token within that context
         // org.antlr.v4.runtime.BaseErrorListener.syntaxError declares this parameter as Object, which is nullable
         // org.antlr.v4.runtime.Lexer.notifyListeners calls this method with offendingSymbol as null
-        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException) {
+        // similar idea for e, it can be null so we use RecognitionException? here to avoid NPE, for more info see:
+        // https://www.antlr.org/api/Java/org/antlr/v4/runtime/BaseErrorListener.html#:~:text=public%C2%A0void%C2%A0syntaxError
+        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException?) {
             throw ParseCancellationException("line $line:$charPositionInLine $msg")
         }
     }
