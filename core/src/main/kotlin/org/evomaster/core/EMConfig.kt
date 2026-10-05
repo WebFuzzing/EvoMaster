@@ -3704,7 +3704,7 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS_INJECTION && (!xss || !security)){
             return false
         }
 
