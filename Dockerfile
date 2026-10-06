@@ -2,9 +2,12 @@ FROM amazoncorretto:21-alpine-jdk
 
 COPY core/target/evomaster.jar .
 
+# Default 25% of memory is too limited for an image running just a java program.
+# Speciying -Xmx would ignore the constraints set on Docker image, so could lead to crashes.
+
 ENTRYPOINT [  \
     "java", \
-    "-Xmx4G", \
+    "-XX:MaxRAMPercentage=75.0", \
     "-jar", "evomaster.jar", \
     "--runningInDocker", "true" \
 ]

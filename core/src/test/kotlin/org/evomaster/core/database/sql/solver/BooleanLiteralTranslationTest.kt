@@ -17,9 +17,9 @@ import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
  * constant, which Z3 rejects outright — and that rejection costs a full round-trip to the container,
  * so it is both wrong and expensive. On one system under test, 24 of 77 solver calls failed this way.
  *
- * The spelling asserted below is the one the CHECK-constraint path already uses and the one
- * `SMTLibZ3DbConstraintSolver.toBoolean` reads back, so the value survives the round trip into a
- * `BooleanGene`.
+ * The spelling asserted below must be the lowercase one the generator constrains every BOOLEAN
+ * column to: SMT strings are case-sensitive, so `"True"` would make `WHERE active = true`
+ * unsatisfiable. `BooleanColumnSolvingTest` checks the same thing end to end against Z3.
  */
 class BooleanLiteralTranslationTest {
 
@@ -38,7 +38,7 @@ class BooleanLiteralTranslationTest {
     fun `a true literal is encoded as a boolean value, not as a column reference`() {
         val smt = generate("SELECT ID FROM ACCOUNT WHERE ACTIVE = true")
 
-        assertTrue(smt.contains("\"True\"")) { "expected the boolean encoding in:\n$smt" }
+        assertTrue(smt.contains("\"true\"")) { "expected the boolean encoding in:\n$smt" }
         assertFalse(Regex("""\(\s*[Tt][Rr][Uu][Ee]\s+\w""").containsMatchIn(smt)) {
             "'true' was emitted as a field selector over a row constant, which Z3 rejects:\n$smt"
         }
@@ -48,7 +48,7 @@ class BooleanLiteralTranslationTest {
     fun `a false literal is encoded as a boolean value`() {
         val smt = generate("SELECT ID FROM ACCOUNT WHERE ACTIVE = false")
 
-        assertTrue(smt.contains("\"False\"")) { "expected the boolean encoding in:\n$smt" }
+        assertTrue(smt.contains("\"false\"")) { "expected the boolean encoding in:\n$smt" }
         assertFalse(Regex("""\(\s*[Ff][Aa][Ll][Ss][Ee]\s+\w""").containsMatchIn(smt)) {
             "'false' was emitted as a field selector over a row constant:\n$smt"
         }
@@ -58,7 +58,7 @@ class BooleanLiteralTranslationTest {
     fun `the literal is recognised whatever its case`() {
         listOf("TRUE", "True", "true").forEach { spelling ->
             val smt = generate("SELECT ID FROM ACCOUNT WHERE ACTIVE = $spelling")
-            assertTrue(smt.contains("\"True\"")) { "'$spelling' was not recognised as a literal" }
+            assertTrue(smt.contains("\"true\"")) { "'$spelling' was not recognised as a literal" }
         }
     }
 
@@ -70,7 +70,7 @@ class BooleanLiteralTranslationTest {
     fun `ordinary columns are still translated as columns`() {
         val smt = generate("SELECT ID FROM ACCOUNT a WHERE a.ACTIVE = true AND a.ID > 0")
 
-        assertTrue(smt.contains("\"True\"")) { "the literal should still be encoded:\n$smt" }
+        assertTrue(smt.contains("\"true\"")) { "the literal should still be encoded:\n$smt" }
         // Matching the selector applied to a row constant, whose name ends in "__<index>". A looser
         // pattern would also match the datatype declaration, "(ID Int)", and so would hold even if
         // the reference had been dropped entirely.

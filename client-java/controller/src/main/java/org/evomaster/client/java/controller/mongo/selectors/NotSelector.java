@@ -20,7 +20,7 @@ public class NotSelector extends SingleConditionQuerySelector {
 
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (isBsonDocument(value)) {
+        if (isDocument(value)) {
             // A $not cannot contain $and, $or, $nor, etc. (logical operators at field level)
             Set<String> keys = documentKeys(value);
             if (keys == null || keys.isEmpty() || keys.stream().anyMatch(key -> !key.startsWith("$"))) {
@@ -35,7 +35,7 @@ public class NotSelector extends SingleConditionQuerySelector {
 
             // This is necessary for query parser to work correctly as the syntax for not is different
             // The field is at the beginning instead
-            Object docWithRemovedNot = newDocument(value);
+            Object docWithRemovedNot = documentNewDocument(value);
             appendToDocument(docWithRemovedNot, fieldName, value);
             QueryOperation condition = new QueryParser().parse(docWithRemovedNot);
 
@@ -46,8 +46,8 @@ public class NotSelector extends SingleConditionQuerySelector {
                 return new NotOperation(fieldName, condition);
             }
         } else if (isBsonRegularExpression(value)) {
-            String pattern = bsonRegexGetPattern(value);
-            String options = bsonRegexGetOptions(value);
+            String pattern = regexGetPattern(value);
+            String options = regexGetOptions(value);
             RegexOperation regexOperation = RegexSelector.buildRegexOperation(fieldName, pattern, options);
             if (regexOperation == null) {
                 return null;

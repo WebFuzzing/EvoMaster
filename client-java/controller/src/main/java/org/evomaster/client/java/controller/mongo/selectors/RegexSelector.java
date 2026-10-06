@@ -52,7 +52,7 @@ public class RegexSelector extends QuerySelector {
 
     @Override
     public QueryOperation getOperation(Object query) {
-        if (!isBsonDocument(query)) {
+        if (!isDocument(query)) {
             return null;
         }
 
@@ -62,20 +62,20 @@ public class RegexSelector extends QuerySelector {
         }
 
         String fieldName = fields.iterator().next();
-        Object innerDocument = getValue(query, fieldName);
+        Object innerDocument = documentGetValue(query, fieldName);
         Object regexValue;
         Object explicitOptions = null;
         if (isBsonRegularExpression(innerDocument)) {
             // Mongo's Java driver serializes Filters.regex(...) as { field: /pattern/options }.
             regexValue = innerDocument;
-        } else if (isBsonDocument(innerDocument) && documentContainsField(innerDocument, REGEX_OPERATOR)) {
+        } else if (isDocument(innerDocument) && documentContainsField(innerDocument, REGEX_OPERATOR)) {
             Set<String> operators = documentKeys(innerDocument);
             if (operators == null || operators.stream()
                     .anyMatch(key -> !REGEX_OPERATOR.equals(key) && !OPTIONS_OPERATOR.equals(key))) {
                 return null;
             }
-            regexValue = getValue(innerDocument, REGEX_OPERATOR);
-            explicitOptions = getValue(innerDocument, OPTIONS_OPERATOR);
+            regexValue = documentGetValue(innerDocument, REGEX_OPERATOR);
+            explicitOptions = documentGetValue(innerDocument, OPTIONS_OPERATOR);
         } else {
             return null;
         }
@@ -94,9 +94,9 @@ public class RegexSelector extends QuerySelector {
             pattern = javaPattern.pattern();
             options = explicitOptions == null ? optionsFromFlags(javaPattern.flags()) : (String) explicitOptions;
         } else if (isBsonRegularExpression(regexValue)) {
-            pattern = bsonRegexGetPattern(regexValue);
+            pattern = regexGetPattern(regexValue);
             options = explicitOptions == null
-                    ? bsonRegexGetOptions(regexValue)
+                    ? regexGetOptions(regexValue)
                     : (String) explicitOptions;
         } else {
             return null;
@@ -149,16 +149,16 @@ public class RegexSelector extends QuerySelector {
 
     @Override
     protected String extractOperator(Object query) {
-        if (!isBsonDocument(query)) {
+        if (!isDocument(query)) {
             return null;
         }
         Set<String> fields = documentKeys(query);
         if (fields == null || fields.size() != 1) {
             return null;
         }
-        Object innerDocument = getValue(query, fields.iterator().next());
+        Object innerDocument = documentGetValue(query, fields.iterator().next());
         return isBsonRegularExpression(innerDocument)
-                || isBsonDocument(innerDocument) && documentContainsField(innerDocument, REGEX_OPERATOR)
+                || isDocument(innerDocument) && documentContainsField(innerDocument, REGEX_OPERATOR)
                 ? REGEX_OPERATOR
                 : null;
     }

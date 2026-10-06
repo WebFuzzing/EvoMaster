@@ -346,8 +346,8 @@ class EMConfig {
 
         val modifiedOptions = modifiedOptions(options, cff)
 
-        checkForExperimentalSettings(modifiedOptions)
-        checkForInternalSettings(modifiedOptions)
+        checkForExperimentalSettings(modifiedOptions.keys)
+        checkForInternalSettings(modifiedOptions.keys)
 
         checkDependsOn(modifiedOptions)
     }
@@ -356,7 +356,16 @@ class EMConfig {
      * Can only be called on BOOLEAN options.
      * Calling on something else would be a bug in EM.
      */
-    private fun isOptionTrue(fieldName: String) : Boolean{
+    private fun isOptionTrue(fieldName: String, modifiedOptions: Map<String,String>) : Boolean{
+
+        if(modifiedOptions.containsKey(fieldName)) {
+            //the option is going to be modified. so ignore current state, and look at modification
+            return try{
+                parseBooleanStrict(modifiedOptions[fieldName])
+            }catch (e: Exception){
+                throw IllegalArgumentException("The modification for property '$fieldName' does not contain a boolean value.", e)
+            }
+        }
 
         val field = getConfigurationProperties().find { it.name == fieldName }
             ?: throw IllegalArgumentException("The property called '$fieldName' does not exist")
@@ -369,7 +378,15 @@ class EMConfig {
         }
     }
 
-    private fun checkDependsOn(modifiedOptions: Set<String>) {
+    private fun checkDependsOn(modifiedOptions: Map<String,String>) {
+
+        /*
+            If we have "A depends -> B", deactivating "B" would not trigger a configuration error.
+            However, explicitly setting A on, while B is off or going to be put off, that would trigger an error.
+
+            The idea is that we can deactivate features like B without having to worry about others that depend on them.
+            However, if we explicitly ask for any of those latter, then B must be on.
+         */
 
         val properties = getConfigurationProperties()
         val allNames = properties.map { it.name }
@@ -381,12 +398,29 @@ class EMConfig {
                     throw IllegalStateException("Invalid @DependsOnTrueFor definition for ${p.name}." +
                             " The target '$target' does not exist.")
                 }
-                //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && !isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                //has this option been modified manually by the user? if not, there is nothing to check.
+                if(modifiedOptions.contains(p.name)){
+                    //however, if boolean, putting it explicitly to false should not trigger any check
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+
+                    if(!isOptionTrue(target, modifiedOptions)){
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
                             " which depends on '$target' being 'true', which is not currently.")
+                    }
                 }
             }
+
             p.annotations.filterIsInstance<DependsOnFalseFor>().forEach { a ->
                 val target = a.otherFieldName
                 if(!allNames.contains(target)){
@@ -394,9 +428,23 @@ class EMConfig {
                             " The target '$target' does not exist.")
                 }
                 //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
-                            " which depends on '$target' being 'false', which is not currently.")
+                if(modifiedOptions.contains(p.name)){
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+                    if( isOptionTrue(target, modifiedOptions)) {
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                                    " which depends on '$target' being 'false', which is not currently.")
+                    }
                 }
             }
         }
@@ -448,18 +496,19 @@ class EMConfig {
         }
     }
 
-    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Set<String>{
+    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Map<String,String>{
 
         val detected  = OptionSet::class.java.getDeclaredField("detectedOptions")
             .apply { setAccessible(true) }
             .get(options) as Map<String,AbstractOptionSpec<*>>
 
-        val names = detected.filter { it.value !is NonOptionArgumentSpec }.keys
+        val modified = detected.filter { it.value !is NonOptionArgumentSpec }
+            .mapValues { (key, value) -> value.value(options).toString()}
 
         return if(cff == null) {
-            names.toSet()
+            modified
         } else {
-            names.toMutableSet().plus(cff.configs.keys)
+            modified.toMutableMap().plus(cff.configs)
         }
     }
 
@@ -790,6 +839,16 @@ class EMConfig {
                     "'extractDynamoDbExecutionInfo'")
         }
 
+        if (shouldGenerateCassandraData() && !heuristicsForCassandra) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "collecting heuristics with 'heuristicsForCassandra'")
+        }
+
+        if (shouldGenerateCassandraData() && !extractCassandraExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "extracting Cassandra execution info with 'extractCassandraExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -1031,12 +1090,15 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
-    fun shouldGenerateMongoData() = generateMongoData
+    fun shouldGenerateMongoData() =  isUsingAdvancedTechniques() && generateMongoData
 
-    fun shouldGenerateRedisData() = generateRedisData
+    fun shouldGenerateRedisData() = isUsingAdvancedTechniques() && generateRedisData
 
-    fun shouldGenerateDynamoDbData() = generateDynamoDbData
-    fun shouldGenerateNeo4jData() = generateNeo4jData
+    fun shouldGenerateDynamoDbData() = isUsingAdvancedTechniques() && generateDynamoDbData
+
+    fun shouldGenerateNeo4jData() = isUsingAdvancedTechniques() && generateNeo4jData
+
+    fun shouldGenerateCassandraData() = isUsingAdvancedTechniques() && generateCassandraData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
@@ -1815,7 +1877,6 @@ class EMConfig {
             "indicates a server-side error with status code 5xx.")
     var skipAIModelUpdateWhenResponseIs5xx = false
 
-    @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
     var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
@@ -2046,6 +2107,12 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForNeo4j = false
 
+    @Experimental
+    @Cfg("Tracking of Cassandra commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var heuristicsForCassandra = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -2068,6 +2135,11 @@ class EMConfig {
     @Cfg("Enable extracting Neo4j execution info")
     @DependsOnFalseFor("blackBox")
     var extractNeo4jExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Cassandra execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractCassandraExecutionInfo = false
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
@@ -2139,6 +2211,12 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     @DependsOnTrueFor("extractNeo4jExecutionInfo")
     var generateNeo4jData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -3031,7 +3109,7 @@ class EMConfig {
     @Experimental
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
-    var enableStaticFlakyInference = true
+    var enableStaticFlakyInference = false
 
     @Experimental
     @Min(0.0)
@@ -3625,7 +3703,7 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.SECURITY_XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS_INJECTION && (!xss || !security)){
             return false
         }
 

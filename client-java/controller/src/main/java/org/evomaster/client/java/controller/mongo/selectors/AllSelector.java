@@ -9,8 +9,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.documentKeys;
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getValue;
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isBsonDocument;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.documentGetValue;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isDocument;
 
 /**
  * Represents a selector for the MongoDB `$all` operator.
@@ -46,7 +46,7 @@ public class AllSelector extends SingleConditionQuerySelector {
     }
 
     private Object parseElement(String fieldName, Object element) {
-        if (!isBsonDocument(element)) {
+        if (!isDocument(element)) {
             return element;
         }
 
@@ -55,8 +55,8 @@ public class AllSelector extends SingleConditionQuerySelector {
             return element;
         }
 
-        Object innerQuery = getValue(element, ELEM_MATCH_OPERATOR);
-        if (!isBsonDocument(innerQuery)) {
+        Object innerQuery = documentGetValue(element, ELEM_MATCH_OPERATOR);
+        if (!isDocument(innerQuery)) {
             return element;
         }
 

@@ -150,7 +150,7 @@ class SMTConditionVisitor(
                  */
                 val name = sqlCondition.columnName
                 if (sqlCondition.tableName == null && isBooleanLiteral(name) && !isAColumn(name)) {
-                    return if (name.equals("true", ignoreCase = true)) "\"True\"" else "\"False\""
+                    return booleanLiteral(name.equals("true", ignoreCase = true))
                 }
 
                 val tableName = sqlCondition.tableName?.let {
@@ -219,11 +219,7 @@ class SMTConditionVisitor(
             }
 
             is SqlBooleanLiteralValue -> {
-                if (sqlCondition.toString().equals("TRUE", ignoreCase = true) ) {
-                    "\"True\""
-                } else {
-                    "\"False\""
-                }
+                booleanLiteral(sqlCondition.toString().equals("TRUE", ignoreCase = true))
             }
 
             else -> {
@@ -258,6 +254,13 @@ class SMTConditionVisitor(
             table.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
         }
     }
+
+    /**
+     * Encodes a SQL boolean literal as the SMT string a BOOLEAN column is constrained to, so that the
+     * comparison can be satisfied by the values SmtLibGenerator allows for that column.
+     */
+    private fun booleanLiteral(value: Boolean): String =
+        "\"${if (value) SmtLibGenerator.BOOLEAN_TRUE else SmtLibGenerator.BOOLEAN_FALSE}\""
 
     /**
      * Maps SQL comparison operators to SMT-LIB comparators.

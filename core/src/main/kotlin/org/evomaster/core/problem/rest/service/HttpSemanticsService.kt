@@ -6,11 +6,13 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.service.OracleApplicability
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -65,6 +67,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     @Inject
     private lateinit var callGraphService: CallGraphService
+
+    @Inject
+    private lateinit var oracleApplicability: OracleApplicability
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -155,6 +160,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val actions = actionDefinitions.distinctBy { it.path }
 
+        var potentialTotal = actions.size
+        var verifiableTotal = actions.size
+
         for (a in actions) {
 
             if (hasPhaseTimedOut()) return
@@ -190,6 +198,8 @@ class HttpSemanticsService : TimeBoxedPhase{
                 break
             }
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.SCHEMA_INVALID_ALLOW, potentialTotal, verifiableTotal)
     }
 
     /**
@@ -203,9 +213,14 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         putOperations.forEach { put ->
 
             if(hasPhaseTimedOut()) return
+
+            potentialTotal++
 
             val creates = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -223,8 +238,11 @@ class HttpSemanticsService : TimeBoxedPhase{
             copy.resetLocalIdRecursively()
             ind.addMainActionInEmptyEnterpriseGroup(-1, copy)
 
+            verifiableTotal++
             prepareEvaluateAndSave(ind)
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, potentialTotal, verifiableTotal)
     }
 
     private fun evaluate(ind: RestIndividual): EvaluatedIndividual<RestIndividual>? {
@@ -256,9 +274,18 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val deleteOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.DELETE)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         deleteOperations.forEach { del ->
 
             if(hasPhaseTimedOut()) return
+
+            if(actionDefinitions.none { it.verb == HttpVerb.GET && it.path == del.path }){
+                // we have a DELETE but no GET on this endpoint?
+                return@forEach
+            }
+            potentialTotal++
 
             val successDelete = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
@@ -288,7 +315,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             val previous = if(!hasPreviousGet){
                 val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == del.path }
-                    ?: return@forEach // we have a DELETE but no GET on this endpoint?
+                    ?: return@forEach //shouldn't be possible at this point
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
                 getOp.forceNewTaints()
@@ -307,8 +334,11 @@ class HttpSemanticsService : TimeBoxedPhase{
             after.resetLocalIdRecursively()
             okDelete.addMainActionInEmptyEnterpriseGroup(-1, after)
 
+            verifiableTotal++
             prepareEvaluateAndSave(okDelete)
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_NONWORKING_DELETE, potentialTotal, verifiableTotal)
     }
 
 
@@ -325,6 +355,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val verbs = listOf(HttpVerb.PUT, HttpVerb.PATCH)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         for (verb in verbs) {
 
             val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
@@ -335,6 +368,8 @@ class HttpSemanticsService : TimeBoxedPhase{
 
                 val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
                     ?: return@forEach
+
+                potentialTotal++
 
                 val failedModifyEvals = RestIndividualSelectorUtils.findIndividuals(
                     individualsInSolution,
@@ -355,14 +390,21 @@ class HttpSemanticsService : TimeBoxedPhase{
                     }
                 }.distinct()
 
+                var applicableAtLeastOnce = false
                 for (k in distinctCodes) {
-                    when (k) {
+                    val applied = when (k) {
                         404  -> handle404SideEffect(verb, modOp.path, getDef)
                         else -> handleSideEffectOfFailedModification(verb, k, modOp.path, getDef)
                     }
+                    applicableAtLeastOnce = applicableAtLeastOnce || applied
+                }
+                if(applicableAtLeastOnce) {
+                    verifiableTotal++
                 }
             }
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, potentialTotal, verifiableTotal)
     }
 
     /**
@@ -373,10 +415,10 @@ class HttpSemanticsService : TimeBoxedPhase{
      *   PUT|PATCH /path  → 404
      *   GET       /path  → ???  (oracle: must still be 404)
      */
-    private fun handle404SideEffect(verb: HttpVerb, path: RestPath, getDef: RestCallAction) {
+    private fun handle404SideEffect(verb: HttpVerb, path: RestPath, getDef: RestCallAction): Boolean {
 
         val kEval = RestIndividualSelectorUtils.findIndividuals(individualsInSolution, verb, path, status = 404)
-            .minByOrNull { it.individual.size() } ?: return
+            .minByOrNull { it.individual.size() } ?: return false
 
         val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(kEval, verb, path, status = 404)
 
@@ -392,6 +434,7 @@ class HttpSemanticsService : TimeBoxedPhase{
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)
+        return true
     }
 
     /**
@@ -408,12 +451,12 @@ class HttpSemanticsService : TimeBoxedPhase{
      * - K==403     → a different authenticated user
      * - otherwise  → same auth as the GET (failure is due to body content, not access rights)
      */
-    private fun handleSideEffectOfFailedModification(verb: HttpVerb, k: Int, path: RestPath, getDef: RestCallAction) {
+    private fun handleSideEffectOfFailedModification(verb: HttpVerb, k: Int, path: RestPath, getDef: RestCallAction): Boolean {
 
         // T: smallest individual ending with GET 2xx on the same path
         val T = RestIndividualSelectorUtils.findAndSlice(
             individualsInSolution, HttpVerb.GET, path, statusGroup = StatusGroup.G_2xx
-        ).minByOrNull { it.size() } ?: return
+        ).minByOrNull { it.size() } ?: return false
 
         val actionTemplate = when {
             k == 401 || k == 403 ->
@@ -445,7 +488,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                             ?.takeIf { it.verb == verb && it.path.isEquivalent(path) }
                     }
                 }.firstOrNull()
-        } ?: return
+        } ?: return false
 
         val ind = T.copy() as RestIndividual
         val getAction = ind.seeMainExecutableActions().last().copy() as RestCallAction
@@ -465,7 +508,7 @@ class HttpSemanticsService : TimeBoxedPhase{
                 } else {
                     val otherAuths = sampler.authentications
                         .getAllOthers(getAction.auth.name, HttpWsAuthenticationInfo::class.java)
-                    if (otherAuths.isEmpty()) return
+                    if (otherAuths.isEmpty()) return false
                     modifyCopy.auth = otherAuths.first()
                 }
             }
@@ -487,6 +530,7 @@ class HttpSemanticsService : TimeBoxedPhase{
         Lazy.assert { ind.verifyValidity(); true }
 
         prepareEvaluateAndSave(ind)
+        return true
     }
 
     /**
@@ -505,10 +549,15 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         putOperations.forEach { putOp ->
 
             val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
                 ?: return@forEach
+
+            potentialTotal++
 
             val ind = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
@@ -519,8 +568,10 @@ class HttpSemanticsService : TimeBoxedPhase{
             DynamicPathUtils.forceSameQueryParams(getAfter, last)
             ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
+            verifiableTotal++
             prepareEvaluateAndSave(ind)
         }
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT, potentialTotal, verifiableTotal)
     }
 
     /**
@@ -533,6 +584,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val patchOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PATCH)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         patchOperations.forEach { patchOp ->
 
             if (hasPhaseTimedOut()) return
@@ -540,10 +594,14 @@ class HttpSemanticsService : TimeBoxedPhase{
             val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == patchOp.path }
                 ?: return@forEach
 
+            potentialTotal++
+
             val successPatches = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution, HttpVerb.PATCH, patchOp.path, statusGroup = StatusGroup.G_2xx, excludedStatusCodes = setOf(202)
             )
             if (successPatches.isEmpty()) return@forEach
+
+            verifiableTotal++
 
             for (candidate in successPatches.sortedBy { it.individual.size() }) {
 
@@ -581,6 +639,8 @@ class HttpSemanticsService : TimeBoxedPhase{
                 }
             }
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH, potentialTotal, verifiableTotal)
     }
 
 
@@ -601,7 +661,16 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         putOperations.forEach { putOp ->
+
+            if(actionDefinitions.none { it.verb == HttpVerb.GET && it.path == putOp.path  }) {
+                return@forEach
+            }
+
+            potentialTotal++
 
             if (hasPhaseTimedOut()) return
 
@@ -633,8 +702,11 @@ class HttpSemanticsService : TimeBoxedPhase{
             DynamicPathUtils.bindToSamePathResolution(putAction, getAction)
             ind.addMainActionInEmptyEnterpriseGroup(-1, putAction)
 
+            verifiableTotal++
             prepareEvaluateAndSave(ind)
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT, potentialTotal, verifiableTotal)
     }
 
     /**
@@ -660,6 +732,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
         val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
 
+        var potentialTotal = 0
+        var verifiableTotal = 0
+
         putOperations.forEach { putOp ->
 
             if (hasPhaseTimedOut()) return
@@ -670,6 +745,8 @@ class HttpSemanticsService : TimeBoxedPhase{
                     .filter { it.verb == HttpVerb.GET && it.path.isSameOrAncestorOf(putOp.path) }
                     .maxByOrNull { it.path.levels() }
                 ?: return@forEach
+
+            potentialTotal++
 
             // T: smallest individual ending with PUT 2xx on this path
             val ind = RestIndividualSelectorUtils.findAndSlice(
@@ -694,15 +771,18 @@ class HttpSemanticsService : TimeBoxedPhase{
             ind.addMainActionInEmptyEnterpriseGroup(-1, secondPut)
             ind.addMainActionInEmptyEnterpriseGroup(-1, get2)
 
+            verifiableTotal++
             prepareEvaluateAndSave(ind)
         }
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT, potentialTotal, verifiableTotal)
     }
 
 
     /**
      * HTTP_INVALID_LOCATION oracle: any response carrying a Location header must point
      * to a resource that actually exists — a follow-up GET on that Location must not
-     * return 404.
+     * return 404 (if schema has GET, otherwise try other declared verbs).
      *
      * Sequence built:
      *   [...]
@@ -757,10 +837,15 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     private fun invalidLocation() {
 
+        var potentialTotal = actionDefinitions.size
+        var verifiableTotal = 0
+        val verifiableEndpoints: MutableSet<Endpoint> = mutableSetOf()
+
         val candidates = individualsInSolution.asSequence()
             .flatMap { ei -> locationCandidatesIn(ei) }
             .groupBy {
                 val source = it.individual.individual.seeMainExecutableActions()[it.sourceIndex]
+                verifiableEndpoints.add(source.endpoint)
                 source.verb to source.path
             }
             .values
@@ -807,5 +892,9 @@ class HttpSemanticsService : TimeBoxedPhase{
 
             prepareEvaluateAndSave(ind)
         }
+
+        verifiableTotal = verifiableEndpoints.filter { callGraphService.isInUse(it.verb, it.path) }.size
+
+        oracleApplicability.reportStats(DefinedFaultCategory.HTTP_INVALID_LOCATION, potentialTotal, verifiableTotal)
     }
 }

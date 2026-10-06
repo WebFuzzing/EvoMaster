@@ -361,7 +361,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun toSqlActionList(schemaDto: DbInfoDto, solution: Z3Solution): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
 
-        for (row in solution.assignments) {
+        for (row in inInsertionOrder(schemaDto, solution.assignments)) {
             val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
@@ -407,6 +407,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 if (dbColumn != null && dbColumn.primaryKey) {
                     gene = SqlPrimaryKeyGene(dbColumnName, table.id, gene, actionId)
                 }
+                /*
+                    TODO: a foreign key column is returned as a plain value gene, not as a
+                    SqlForeignKeyGene bound to the action of the referenced row. Z3 makes the value
+                    match that row's primary key, but once the search mutates either gene the
+                    reference can break, and FK repair does not see this column as a foreign key.
+                 */
                 gene.markAllAsInitialized()
                 genes.add(gene)
             }
@@ -416,6 +422,51 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         }
 
         return actions
+    }
+
+    /**
+     * Orders the rows of a solution so that each one comes after the rows it references through a
+     * foreign key, and rows of the same table by their index.
+     *
+     * The parser returns the rows in a hash map, so their order is arbitrary. Inserting a row before
+     * the row its foreign key points to makes the database reject it.
+     */
+    private fun inInsertionOrder(
+        schemaDto: DbInfoDto,
+        rows: Map<String, SMTLibValue>
+    ): List<Map.Entry<String, SMTLibValue>> {
+        val tableRank = tablesInDependencyOrder(schemaDto)
+            .withIndex()
+            .associate { (rank, table) -> convertToAscii(table.id.name).lowercase() to rank }
+
+        return rows.entries.sortedWith(
+            compareBy<Map.Entry<String, SMTLibValue>>(
+                { tableRank[getTableName(it.key).lowercase()] ?: Int.MAX_VALUE },
+                { it.key.substringAfterLast(SmtLibGenerator.ROW_INDEX_SEPARATOR).toIntOrNull() ?: 0 }
+            )
+        )
+    }
+
+    /**
+     * The tables of the schema, each one after the tables its foreign keys reference. Self references
+     * and cycles are ignored, as no order can satisfy them.
+     */
+    private fun tablesInDependencyOrder(schemaDto: DbInfoDto): List<TableDto> {
+        val byName = schemaDto.tables.associateBy { it.id.name.lowercase() }
+        val ordered = LinkedHashMap<String, TableDto>()
+        val visiting = mutableSetOf<String>()
+
+        fun visit(table: TableDto) {
+            val name = table.id.name.lowercase()
+            if (name in ordered || !visiting.add(name)) return
+            for (foreignKey in table.foreignKeys) {
+                byName[foreignKey.targetTable.lowercase()]?.let { visit(it) }
+            }
+            ordered[name] = table
+        }
+
+        schemaDto.tables.forEach { visit(it) }
+        return ordered.values.toList()
     }
 
     private fun toBoolean(value: String?): Boolean {
@@ -487,12 +538,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Finds a table by its name from the schema and constructs a Table object.
      *
+     * The name comes from a row constant, so it is the ASCII-folded SMT name of the table (see
+     * [org.evomaster.core.database.sql.solver.SmtTable.smtName]), not the name in the schema. The
+     * schema names are folded the same way before comparing, as is already done for column names in
+     * [toSqlActionList]; comparing against the original names would miss any table whose name contains
+     * non-ASCII characters (e.g. "categoria" for "Categoría") and discard the whole solution.
+     *
      * @param schema The database schema.
-     * @param tableName The name of the table to find.
+     * @param tableName The SMT name of the table to find.
      * @return The Table object.
      */
     private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
-        val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
+        val tableDto = schema.tables.find { convertToAscii(it.id.name).equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
