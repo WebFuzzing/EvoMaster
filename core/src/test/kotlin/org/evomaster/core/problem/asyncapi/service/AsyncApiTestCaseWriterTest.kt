@@ -272,6 +272,13 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(members.contains("kafka.KafkaProducer"), members)
         assertTrue(members.contains("seek_to_end"), members)
 
+        /*
+            Seeking to the end is lazy in every client written so far: without asking for the
+            position, it takes effect on the first poll, by which time the reply is behind it and
+            is never seen. A suite that only has to parse cannot catch that.
+         */
+        assertTrue(members.contains("consumer.position(partitions[0])"), members)
+
         //there is no driver in a Python suite, so nothing is declared to ask one
         assertFalse(members.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), members)
         assertFalse(body.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), body)
