@@ -487,12 +487,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Finds a table by its name from the schema and constructs a Table object.
      *
+     * The name comes from a row constant, so it is the ASCII-folded SMT name of the table (see
+     * [org.evomaster.core.database.sql.solver.SmtTable.smtName]), not the name in the schema. The
+     * schema names are folded the same way before comparing, as is already done for column names in
+     * [toSqlActionList]; comparing against the original names would miss any table whose name contains
+     * non-ASCII characters (e.g. "categoria" for "Categoría") and discard the whole solution.
+     *
      * @param schema The database schema.
-     * @param tableName The name of the table to find.
+     * @param tableName The SMT name of the table to find.
      * @return The Table object.
      */
     private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
-        val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
+        val tableDto = schema.tables.find { convertToAscii(it.id.name).equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
