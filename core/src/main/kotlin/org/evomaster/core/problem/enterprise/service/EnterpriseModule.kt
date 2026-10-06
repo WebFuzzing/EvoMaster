@@ -19,5 +19,8 @@ abstract class EnterpriseModule : AbstractModule() {
 
         bind(HttpCallbackVerifier::class.java)
             .asEagerSingleton()
+
+        bind(OracleApplicability::class.java)
+            .asEagerSingleton()
     }
 }

@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
+import org.evomaster.client.java.instrumentation.cassandra.CqlBindMarkerInterpolator;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
@@ -63,18 +64,21 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
-    public static Object execute(Object cqlSession, String query, Object... values) {
-        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, cqlSession, query, query, values);
+    public static Object execute(Object cqlSession, String parameterisedQuery, Object... parameterValues) {
+        String interpolatedQuery = CqlBindMarkerInterpolator.forPositionalValues(cqlSession, parameterisedQuery, parameterValues);
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_POSITIONAL_VALUES_SYNC, cqlSession, interpolatedQuery, parameterisedQuery, parameterValues);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
-    public static Object execute(Object cqlSession, String query, Map<String, Object> values) {
-        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, cqlSession, query, query, values);
+    public static Object execute(Object cqlSession, String parameterisedQuery, Map<String, Object> parameterValues) {
+        String interpolatedQuery = CqlBindMarkerInterpolator.forNamedValues(cqlSession, parameterisedQuery, parameterValues);
+        return handleCqlExecute(CASSANDRA_EXECUTE_STRING_NAMED_VALUES_SYNC, cqlSession, interpolatedQuery, parameterisedQuery, parameterValues);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = CASSANDRA_EXECUTE_STATEMENT_SYNC, usageFilter = UsageFilter.ANY, category = ReplacementCategory.CASSANDRA, castTo = RESULT_SET_CLASS)
     public static Object execute(Object cqlSession, @ThirdPartyCast(actualType = STATEMENT_CLASS) Object statement) {
-        return handleCqlExecute(CASSANDRA_EXECUTE_STATEMENT_SYNC, cqlSession, extractQueryText(statement), statement);
+        String interpolatedQuery = CqlBindMarkerInterpolator.forStatement(cqlSession, statement, extractQueryText(statement));
+        return handleCqlExecute(CASSANDRA_EXECUTE_STATEMENT_SYNC, cqlSession, interpolatedQuery, statement);
     }
 
     private static Object handleCqlExecute(String id, Object cqlSession, String queryForTracking, Object... invokeArgs) {
@@ -176,6 +180,9 @@ public class CqlSessionClassReplacement extends ThirdPartyMethodReplacementClass
     /**
      * Statement is a generic driver type; only SimpleStatement exposes the original
      * CQL text directly, while BoundStatement requires going through its PreparedStatement.
+     * <p>
+     * Either way the text returned here still carries its bind markers; the values bound to them
+     * are substituted in afterwards by {@link CqlBindMarkerInterpolator}.
      */
     private static String extractQueryText(Object statement) {
         try {

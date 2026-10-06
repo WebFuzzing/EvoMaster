@@ -143,8 +143,8 @@ public class MongoCollectionClassReplacementTest {
         assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
         assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
         assertNotNull(mongoFindCommand.getQuery());
-        Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-        assertEquals(30, retrievedQuery.getInteger("age"));
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
@@ -232,8 +232,8 @@ public class MongoCollectionClassReplacementTest {
         assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
         assertNotNull(mongoFindCommand.getQuery());
 
-        Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-        assertEquals(17, retrievedQuery.getInteger("age"));
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertEquals(17, retrievedQuery.getInt32("age").getValue());
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
@@ -265,8 +265,8 @@ public class MongoCollectionClassReplacementTest {
             assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
             assertNotNull(mongoFindCommand.getQuery());
 
-            Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-            assertEquals(23, retrievedQuery.getInteger("age"));
+            BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
 
 
             String documentType = mongoFindCommand.getDocumentsType();
@@ -300,8 +300,8 @@ public class MongoCollectionClassReplacementTest {
             assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
             assertNotNull(mongoFindCommand.getQuery());
 
-            Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-            assertEquals(23, retrievedQuery.getInteger("age"));
+            BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
 
 
             String documentType = mongoFindCommand.getDocumentsType();
@@ -341,9 +341,9 @@ public class MongoCollectionClassReplacementTest {
         assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
         assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
         assertNotNull(mongoFindCommand.getQuery());
-        Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-        assertTrue(retrievedQuery.get("tags") instanceof Document);
-        assertEquals(-1, ((Document) retrievedQuery.get("tags")).get("$size"));
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertTrue(retrievedQuery.get("tags") instanceof BsonDocument);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
 
         assertEquals(false, mongoFindCommand.isSuccessfullyExecuted());
 

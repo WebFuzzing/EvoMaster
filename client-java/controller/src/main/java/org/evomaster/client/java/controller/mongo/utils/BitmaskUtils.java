@@ -53,7 +53,7 @@ public abstract class BitmaskUtils {
             return toBitMaskValue0(bytes);
         }
         if (BsonHelper.isBsonBinary(value)) {
-            byte[] bytes = BsonHelper.getBinaryData(value);
+            byte[] bytes = BsonHelper.binaryGetBinaryData(value);
             return toBitMaskValue0(bytes);
         }
         return OptionalLong.empty();
@@ -80,7 +80,7 @@ public abstract class BitmaskUtils {
         }
 
         if (BsonHelper.isDecimal128(n)) {
-            BigDecimal bigDecimal = BsonHelper.getBigDecimalValue(n);
+            BigDecimal bigDecimal = BsonHelper.decimal128GetBigDecimalValue(n);
             return bigDecimal.stripTrailingZeros().scale() > 0;
         }
 
