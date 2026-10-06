@@ -86,8 +86,12 @@ class SmtLibGenerator(
          * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
          * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
          * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
+         * SMTConditionVisitor encodes SQL boolean literals with these same constants: any other
+         * spelling (e.g. "True") is a different SMT string, so `WHERE active = true` would be UNSAT.
          */
-        private val BOOLEAN_LITERALS = listOf("true", "false")
+        const val BOOLEAN_TRUE = "true"
+        const val BOOLEAN_FALSE = "false"
+        private val BOOLEAN_LITERALS = listOf(BOOLEAN_TRUE, BOOLEAN_FALSE)
 
         /**
          * Builds the SMT row-constant name for a table's SMT name and a 1-based row index,
