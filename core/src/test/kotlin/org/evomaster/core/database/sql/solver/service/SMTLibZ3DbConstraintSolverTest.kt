@@ -57,7 +57,9 @@ class SMTLibZ3DbConstraintSolverTest {
 
         assertEquals(2, newActions.size)
 
-        val genesInsert1: List<Gene> = newActions[0].seeTopGenes()
+        // Rows come back ordered by row index: users__1 first, then users__2. The first block of
+        // expectations below is for users__2, the second for users__1.
+        val genesInsert1: List<Gene> = newActions[1].seeTopGenes()
 
         assertEquals(6, genesInsert1.size)
 
@@ -98,7 +100,7 @@ class SMTLibZ3DbConstraintSolverTest {
             }
         }
 
-        val genesInsert2: List<Gene> = newActions[1].seeTopGenes()
+        val genesInsert2: List<Gene> = newActions[0].seeTopGenes()
 
         assertEquals(6, genesInsert2.size)
 
