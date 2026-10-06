@@ -843,7 +843,25 @@ class SmtLibGenerator(
             }
         }
 
-        // Only add GetValueSMTNode for the mentioned tables
+        /*
+            The formula asserts every foreign key of the schema, so each row of a mentioned table is
+            forced to reference a row of the table its foreign key points to. Those rows must be
+            requested as well: otherwise they are never inserted, and the database rejects the
+            INSERT of the row that references them. The closure is transitive, since a referenced
+            row may in turn reference another table.
+         */
+        val pending = ArrayDeque(tablesMentioned)
+        while (pending.isNotEmpty()) {
+            val smtTable = smtTableByOriginalName[pending.removeFirst()] ?: continue
+            for (foreignKey in smtTable.dto.foreignKeys) {
+                val referenced = smtTableByOriginalName[foreignKey.targetTable.lowercase()] ?: continue
+                if (tablesMentioned.add(referenced.originalName)) {
+                    pending.add(referenced.originalName)
+                }
+            }
+        }
+
+        // Only add GetValueSMTNode for the mentioned tables and the tables they reference
         for (smtTable in smtTables) {
             if (tablesMentioned.contains(smtTable.originalName)) {
                 for (i in 1..numberOfRows) {
