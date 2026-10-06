@@ -79,6 +79,27 @@ class RegexGene(
      */
     private var javaPostfix : String = ""
 
+    /**
+     * The value of each capture group (the key being its group number) as of the last time the tree was rendered.
+     * Backreferences read the value of their group from here, see [BackReferenceRxGene].
+     */
+    private val capturedValues = mutableMapOf<Int, String>()
+
+    /**
+     * Called by the capture group with the given number when it is rendered. Groups are rendered in the order
+     * they appear in the regex, so the last value recorded is the one of the last repetition in which
+     * the group took part. This is what a backreference sees.
+     */
+    internal fun recordCapturedValue(groupIndex: Int, value: String) {
+        capturedValues[groupIndex] = value
+    }
+
+    /**
+     * The value of the capture group with the given number, or null if it has not yet appeared since the
+     * tree was last rendered from the top, for example because it is in a branch of a disjunction that is not active.
+     */
+    internal fun getCapturedValue(groupIndex: Int): String? = capturedValues[groupIndex]
+
     override fun copyContent(): Gene {
         val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
         copy.javaPrefix=javaPrefix
@@ -226,6 +247,9 @@ class RegexGene(
         if(usingFixedValue && fixedValue != null){
             return fixedValue!!
         }
+
+        // rendering from the regex gene tree root, so we clear the previous captured values
+        capturedValues.clear()
 
         return if(requiresAssertionHandling){
             javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
