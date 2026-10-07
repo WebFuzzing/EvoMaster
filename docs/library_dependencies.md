@@ -79,7 +79,8 @@ as explained in the documentation for writing [white-box drivers](write_driver.m
 
 
 When fuzzing an **AsyncAPI** service, the generated tests publish with a client of the transport rather
-than through the _EvoMaster Driver_, so that client library is needed as well. For Kafka that is:
+than through the _EvoMaster Driver_. That client is the one thing to add, since which one is needed
+depends on the transport the service speaks. For Kafka:
 
 ```
 <dependency>
@@ -90,9 +91,8 @@ than through the _EvoMaster Driver_, so that client library is needed as well. F
 </dependency>
 ```
 
-The assertions those tests make on a reply read it as JSON, so `jackson-databind` is needed too. It is
-already part of `evomaster-client-java-dependencies`, whereas the transport client is not, since which one
-is needed depends on the transport the service speaks.
+Nothing else. The assertions those tests make read the reply as JSON with `jackson-databind`, which
+`evomaster-client-java-dependencies` already brings in.
 
 ## NodeJS (e.g., JavaScript)
 

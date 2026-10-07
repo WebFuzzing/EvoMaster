@@ -226,11 +226,9 @@ object AsyncApiReplyAssertions {
     }
 
     /**
-     * Whether a value can be asserted on without making the test flaky. The REST writer's rule:
-     * something that says it was logged, an HTML entity, or what looks like a host and port has
-     * a good chance of differing on the next run or on another machine.
+     * Whether a value can be asserted on without making the test flaky: REST's rule, shared
+     * rather than restated, since a copy of it here had already drifted from it.
      */
-    //the rule REST asserts by, shared rather than restated: a copy of it had already drifted
     private fun printable(content: String) = TestWriterUtils.isSuitableToPrint(content)
 
     private fun skip(fieldName: String, config: EMConfig): Boolean {
