@@ -4,8 +4,11 @@ import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.delete.Delete
 import net.sf.jsqlparser.statement.select.FromItem
+import net.sf.jsqlparser.statement.select.ParenthesedSelect
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
+import net.sf.jsqlparser.statement.select.SetOperationList
+import net.sf.jsqlparser.statement.select.UnionOp
 import net.sf.jsqlparser.statement.update.Update
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -546,8 +549,8 @@ class SmtLibGenerator(
 
         val (where, defaultTable) = when (sqlQuery) {
             is Select -> {
-                val plainSelect = sqlQuery.selectBody as PlainSelect
-                Pair(plainSelect.where, TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull())
+                val plainSelect = translatedSelect(sqlQuery)
+                Pair(plainSelect.where, TablesNamesFinder().getTables(plainSelect as Statement).firstOrNull())
             }
             is Delete -> Pair(sqlQuery.where, sqlQuery.table.getName())
             is Update -> Pair(sqlQuery.where, sqlQuery.table.getName())
@@ -645,7 +648,7 @@ class SmtLibGenerator(
         columnScope: SMTConditionVisitor.ColumnScope
     ) {
         if (sqlQuery is Select) { // TODO: Handle other queries
-            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val plainSelect = translatedSelect(sqlQuery)
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
@@ -656,7 +659,7 @@ class SmtLibGenerator(
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            val tableFromQuery = TablesNamesFinder().getTables(plainSelect as Statement).first()
                             // TODO: the ON condition is translated with the SAME row index on
                             // both sides ("diagonal pairing"): row i of one table is matched only with row i
                             // of the other. This is sufficient at the default numberOfRows=1 to force a
@@ -738,6 +741,26 @@ class SmtLibGenerator(
     )
 
     /**
+     * The plain `SELECT` whose clauses are translated.
+     *
+     * A `UNION` returns rows as soon as any one of its branches does, so generating data for its first
+     * branch is enough; the branch is translated as if it were the whole query. `INTERSECT` and
+     * `EXCEPT` constrain every branch, which this translation cannot express, so they are rejected
+     * and the query is recorded as untranslatable.
+     */
+    private fun translatedSelect(select: Select): PlainSelect = when (select) {
+        is PlainSelect -> select
+        is ParenthesedSelect -> translatedSelect(select.select)
+        is SetOperationList ->
+            if (select.operations.all { it is UnionOp }) {
+                translatedSelect(select.selects.first())
+            } else {
+                throw RuntimeException("Unsupported set operation, only UNION can be translated: $select")
+            }
+        else -> throw RuntimeException("Unsupported SELECT form ${select.javaClass.simpleName}: $select")
+    }
+
+    /**
      * Reads the aliases a query declares.
      *
      * A FROM item with no schema table behind it is a derived table. Its alias is recorded rather
@@ -750,7 +773,7 @@ class SmtLibGenerator(
 
         when (sqlQuery) {
             is Select -> {
-                val plainSelect = sqlQuery.selectBody as PlainSelect
+                val plainSelect = translatedSelect(sqlQuery)
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
@@ -830,7 +853,7 @@ class SmtLibGenerator(
 
         // Add tables from JOINs and WHERE clause if they exist
         if (sqlQuery is Select) {
-            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val plainSelect = translatedSelect(sqlQuery)
 
             // Add tables from JOINs
             plainSelect.joins?.forEach { join ->
