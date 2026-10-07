@@ -108,11 +108,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
 
         /**
-         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. The canonical one is
-         * taken from the generator rather than repeated, so the two cannot drift apart; consolidating
-         * all three type vocabularies into one source of truth remains future work.
+         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. Taken from the
+         * generator rather than repeated, so the domain constraint and the gene reconstruction cannot
+         * drift apart; consolidating all three type vocabularies into one source of truth remains
+         * future work.
          */
-        private val BOOLEAN_SPELLINGS = setOf(SmtLibGenerator.BOOLEAN_TYPE, "BOOL")
+        private val BOOLEAN_SPELLINGS = SmtLibGenerator.BOOLEAN_TYPES
     }
 
     @Inject
