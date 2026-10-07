@@ -36,11 +36,8 @@ class UntranslatableQueryCacheTest {
         private lateinit var schemaDto: DbInfoDto
 
         /**
-         * A second schema, identical but for one column of a type the generator does not map.
-         *
-         * It has to be a separate schema: table declarations are emitted for *every* table before any
-         * query-specific work, so a single unmapped column makes generation fail for every query
-         * against that schema, not only for queries touching the offending table.
+         * A second schema, with one column of a type the generator does not map. A query reading that
+         * table fails while generating SMT-LIB; queries on other tables are unaffected.
          */
         private lateinit var schemaWithUnsupportedType: DbInfoDto
         private lateinit var unsupportedConnection: Connection
