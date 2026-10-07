@@ -86,8 +86,12 @@ class SmtLibGenerator(
          * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
          * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
          * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
+         * SMTConditionVisitor encodes SQL boolean literals with these same constants: any other
+         * spelling (e.g. "True") is a different SMT string, so `WHERE active = true` would be UNSAT.
          */
-        private val BOOLEAN_LITERALS = listOf("true", "false")
+        const val BOOLEAN_TRUE = "true"
+        const val BOOLEAN_FALSE = "false"
+        private val BOOLEAN_LITERALS = listOf(BOOLEAN_TRUE, BOOLEAN_FALSE)
 
         /**
          * Builds the SMT row-constant name for a table's SMT name and a 1-based row index,
@@ -843,7 +847,25 @@ class SmtLibGenerator(
             }
         }
 
-        // Only add GetValueSMTNode for the mentioned tables
+        /*
+            The formula asserts every foreign key of the schema, so each row of a mentioned table is
+            forced to reference a row of the table its foreign key points to. Those rows must be
+            requested as well: otherwise they are never inserted, and the database rejects the
+            INSERT of the row that references them. The closure is transitive, since a referenced
+            row may in turn reference another table.
+         */
+        val pending = ArrayDeque(tablesMentioned)
+        while (pending.isNotEmpty()) {
+            val smtTable = smtTableByOriginalName[pending.removeFirst()] ?: continue
+            for (foreignKey in smtTable.dto.foreignKeys) {
+                val referenced = smtTableByOriginalName[foreignKey.targetTable.lowercase()] ?: continue
+                if (tablesMentioned.add(referenced.originalName)) {
+                    pending.add(referenced.originalName)
+                }
+            }
+        }
+
+        // Only add GetValueSMTNode for the mentioned tables and the tables they reference
         for (smtTable in smtTables) {
             if (tablesMentioned.contains(smtTable.originalName)) {
                 for (i in 1..numberOfRows) {

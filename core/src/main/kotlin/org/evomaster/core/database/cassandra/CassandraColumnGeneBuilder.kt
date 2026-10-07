@@ -55,14 +55,27 @@ object CassandraColumnGeneBuilder {
     private const val ELEMENT_GENE_NAME = "element"
 
     /**
+     * The shortest text length Cassandra accepts in a partition key: an empty one is rejected with
+     * "Key may not be empty", so a text column composing the partition key cannot be left free to
+     * generate the empty string that any other text column may.
+     */
+    private const val MIN_LENGTH_OF_PARTITION_KEY_TEXT = 1
+
+    /**
+     * The single place a gene for a CQL text type is built, so that the constraint applied to a
+     * partition key in [constrainToNonEmpty] cannot drift from the unconstrained case.
+     */
+    private fun textGene(name: String, minLength: Int = 0) = StringGene(name, minLength = minLength)
+
+    /**
      * How the gene generating the value of a column is built, for each of the CQL types handled
      * here, keyed by the normalized name of the type. Being the single place where such types are
      * enumerated, it is also what [isSupported] answers from, so that the two cannot disagree.
      */
     private val GENE_BUILDERS: Map<String, (String) -> Gene> = mapOf(
-        ASCII_TYPE to { name -> StringGene(name) },
-        TEXT_TYPE to { name -> StringGene(name) },
-        VARCHAR_TYPE to { name -> StringGene(name) },
+        ASCII_TYPE to { name -> textGene(name) },
+        TEXT_TYPE to { name -> textGene(name) },
+        VARCHAR_TYPE to { name -> textGene(name) },
         TINYINT_TYPE to { name -> IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt()) },
         SMALLINT_TYPE to { name -> IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt()) },
         INT_TYPE to { name -> IntegerGene(name) },
@@ -98,7 +111,23 @@ object CassandraColumnGeneBuilder {
      * @throws IllegalArgumentException if the CQL type of [column] is not handled, as verifiable
      * beforehand with [isSupported]
      */
-    fun buildGene(column: CassandraColumn): Gene = buildGene(column.name, normalize(column.cqlType))
+    fun buildGene(column: CassandraColumn): Gene {
+
+        val gene = buildGene(column.name, normalize(column.cqlType))
+
+        return if (column.isPartitionKey) constrainToNonEmpty(gene) else gene
+    }
+
+    /**
+     * Constrains a gene so that it cannot generate an empty value, for a column composing the
+     * partition key. Only the text types can produce one among the types handled here, so a gene of
+     * any other type is returned untouched.
+     */
+    private fun constrainToNonEmpty(gene: Gene): Gene =
+        when (gene) {
+            is StringGene -> textGene(gene.name, MIN_LENGTH_OF_PARTITION_KEY_TEXT)
+            else -> gene
+        }
 
     private fun isSupported(cqlType: String): Boolean {
 
