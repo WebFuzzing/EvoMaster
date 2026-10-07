@@ -432,6 +432,11 @@
                 <artifactId>extra-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>extra-log-collector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.webfuzzing</groupId>
