@@ -15,17 +15,18 @@ import org.evomaster.core.remote.service.RemoteController
 object AsyncApiTestInjector {
 
     /**
-     * The NCS document, the corpus fixture these suites drive most of their cases from.
+     * The document most tests here drive a search from.
      */
     const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
 
     /**
-     * The operations NCS declares, all of them publishable.
+     * Every operation NCS declares.
      */
     val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
 
     /**
-     * What a driver declares for a service whose document it hands over as text.
+     * What a driver says about the service it started. The format it declares matters: for this
+     * problem type that is usually where the output format comes from.
      */
     fun sutInfo(
         schemaText: String,
@@ -36,19 +37,8 @@ object AsyncApiTestInjector {
     }
 
     /**
-     * The options every test over an AsyncAPI service wants, with what one of them asked for
-     * instead.
-     *
-     * An option a caller passes **replaces** the default of the same name rather than joining
-     * it: EMConfig refuses an option given twice, so appending both would fail to parse rather
-     * than let the later one win. Which is how a test about what gets written turns createTests
-     * on where the rest of them want it off.
-     *
-     * Either spelling counts as the same option, `--name=value` and `--name value`, because
-     * both are used in this module and the parser takes either.
-     *
-     * Here rather than in each test class so that a default added later reaches all of them;
-     * the module graph and the fake controller stay each test's own, as they differ on purpose.
+     * The options these tests run under. One a caller passes replaces the default of that name,
+     * in either spelling, since EMConfig refuses an option given twice.
      */
     fun argsWith(vararg options: String): Array<String> {
 
@@ -61,8 +51,7 @@ object AsyncApiTestInjector {
     }
 
     /**
-     * An injector for a search driven by [driver], over the real module with the driver
-     * swapped, under [argsWith]'s options.
+     * The real module, with [driver] bound in place of the controller.
      */
     fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
 
