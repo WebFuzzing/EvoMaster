@@ -152,17 +152,13 @@ public interface SutHandler {
      * Where the AsyncAPI server called {@code serverName} can actually be reached, now.
      * </p>
      *
-     * The document gives an address, but it is written for the deployment the author had in
-     * mind. A system started for testing is often somewhere else: a broker in a container binds
-     * a port chosen when it starts, and a different one on the next run.
-     *
-     * A generated suite that carries the driver asks this when it starts, rather than holding an
-     * address that was only ever true once, in the same way it takes the base URL of a REST
-     * system from {@link #startSut()}. A plain black-box suite has no driver in it, so it
-     * publishes to the address the document declares, as it does when this returns null.
+     * The address in the document is where the service was deployed, not where a system started
+     * for testing is: a broker in a container binds a port chosen at start-up. A generated suite
+     * that carries the driver asks this when it starts, as it takes the base URL of a REST
+     * system from {@link #startSut()}.
      *
      * @param serverName the key of the server in the document
-     * @return where to reach it, or null to fall back to what the document says
+     * @return where to reach it, or null to use the address the document declares
      */
     default String getAsyncApiServerAddress(String serverName) {return null;}
 

@@ -68,15 +68,11 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val DEFAULT_CORRELATION_HEADER = "correlationId"
 
         /**
-         * What the variable holding a reply is called in a generated test, before the action's
-         * index, which keeps two actions in one test from colliding. The same `res_0` every
-         * other problem type writes, as this is the same thing: what came back.
+         * What the variable holding a reply is called, before the action's index. The same
+         * `res_0` every other problem type writes.
          *
-         * Named here rather than by the writer, which mints its own from a counter it resets per
-         * test, because the name has to be settled while the search runs: it is part of what a
-         * driver is asked to render against. RPC settles it in the same place, for the same
-         * reason. The action's index is the only number in hand there, and it is unique within
-         * the test being executed.
+         * Named here rather than by the writer because it is part of what a driver is asked to
+         * render against, so it has to be settled while the search runs. RPC does the same.
          */
         private const val REPLY_VARIABLE_PREFIX = "res_"
 

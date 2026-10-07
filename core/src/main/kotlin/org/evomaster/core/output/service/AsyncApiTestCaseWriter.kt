@@ -18,17 +18,14 @@ import java.nio.file.Path
 /**
  * Writes a test for an AsyncAPI service.
  *
- * Unlike REST, there is no universal client to call: a message goes out over whichever broker
- * the contract names. For Kafka the contract says enough -- the server, the topics and the
- * header the correlation id rides in -- so the lines that publish and await are written here
- * from it. For a transport it does not describe, the driver renders those lines while the search
- * runs and they are pasted verbatim, which is how RPC does it. Either way the generated test
- * stands on its own: it talks to the broker with an ordinary client of that transport, and needs
- * no EvoMaster driver at run time.
+ * Unlike REST there is no universal client to call. For Kafka the contract names the server,
+ * the topics and the header the correlation id rides in, so the lines that publish and await are
+ * written here from it; for a transport it does not describe, the driver renders them while the
+ * search runs and they are pasted verbatim, as RPC does. Either way the test needs no EvoMaster
+ * driver at run time.
  *
- * What the core adds around those lines is what only it knows: which outcome the action had,
- * which of the declared reply messages the reply was recognised as, and that a reply promised by
- * the contract did arrive.
+ * What the core adds around them is what only it knows: the outcome, which declared message a
+ * reply was recognised as, and that a promised reply arrived.
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
@@ -163,22 +160,19 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
 
     /**
-     * The servers this suite publishes to, by the name the document gives them, each with the
-     * address the document declares. Filled in while the class members are written, and read
-     * again when the init statements are, which run after them.
+     * The servers this suite publishes to, each with the address the document declares. Filled
+     * in while the class members are written and read when the init statements are, which the
+     * suite writer runs after them.
      */
     private val servers = LinkedHashMap<String, String>()
 
     /**
      * The helper the Kafka tests call, written once and only when something in the suite calls
-     * it: a suite that publishes over another transport must not be made to carry a Kafka
-     * dependency it never uses.
+     * it: a suite publishing over another transport must not be made to carry a Kafka dependency
+     * it never uses.
      *
-     * The address of each server is written here too, when the suite has a driver to ask. The
-     * document's address is where the author deployed it, which is not where a system started
-     * for testing is: a broker in a container answers on a port chosen at start-up. This is the
-     * same reason the base URL of a REST system is taken from the driver rather than the
-     * document.
+     * A variable per server goes here too, when there is a driver to ask where it is -- see
+     * [org.evomaster.client.java.controller.SutHandler.getAsyncApiServerAddress].
      */
     override fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {
 
@@ -281,11 +275,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
 
     /**
-     * Whether the generated suite can ask a driver where a server is.
-     *
-     * It needs one in it at all, which a black-box suite has not, and it needs to be written in
-     * a language that can hold the driver: the controller is only declared for Java and Kotlin.
-     * Otherwise the document's address is all there is.
+     * Whether the generated suite can ask a driver where a server is: it needs one in it, which
+     * a black-box suite has not, and the controller is only declared for Java and Kotlin.
      */
     private fun canAskDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
 
