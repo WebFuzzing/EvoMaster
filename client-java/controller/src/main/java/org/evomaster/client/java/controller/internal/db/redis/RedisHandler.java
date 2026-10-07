@@ -96,9 +96,18 @@ public class RedisHandler {
         operations.stream()
             .filter(command -> command.getType().shouldCalculateHeuristic())
             .forEach(redisCommand -> {
-                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
-                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
-                registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+                try {
+                    RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                    evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
+                    registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+                } catch (Exception e) {
+                    // A single command must never take down the whole test evaluation: this is
+                    // reported here (rather than left to computeDistance's own catch) because it
+                    // also covers registerFailedCommand/createFailedCommand, which parse whatever
+                    // query string the SUT happened to build, including malformed ones no grammar
+                    // here accounts for.
+                    SimpleLogger.warn("Could not evaluate Redis command " + redisCommand + ": " + e, e);
+                }
             });
         operations.clear();
 
