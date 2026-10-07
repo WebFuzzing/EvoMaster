@@ -35,14 +35,24 @@ object AsyncApiTestInjector {
         defaultOutputFormat = declaredFormat
     }
 
+    /**
+     * An injector for a search driven by [driver], under the options every test here wants
+     * unless it asks for something else.
+     *
+     * An option a caller passes **replaces** the default of the same name rather than joining
+     * it: EMConfig refuses an option given twice, so appending both would fail to parse rather
+     * than let the later one win. Which is how a test about what gets written turns createTests
+     * on where the rest of them want it off.
+     *
+     * Either spelling counts as the same option, `--name=value` and `--name value`, because
+     * both are used in this module and the parser takes either.
+     */
     fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
 
-        /*
-            Most suites here search without writing tests, but one is about what gets written,
-            and the option cannot be given twice.
-         */
+        val named = options.map { it.removePrefix("--").substringBefore('=') }.toSet()
+
         val defaults = listOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false")
-            .filterNot { d -> options.any { it.substringBefore('=') == d.substringBefore('=') } }
+            .filterNot { it.removePrefix("--").substringBefore('=') in named }
 
         val args = (defaults + options).toTypedArray()
 

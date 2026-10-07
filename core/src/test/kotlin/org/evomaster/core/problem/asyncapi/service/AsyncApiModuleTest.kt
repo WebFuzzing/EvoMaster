@@ -6,6 +6,7 @@ import com.google.inject.TypeLiteral
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
@@ -155,5 +156,25 @@ class AsyncApiModuleTest {
 
         //the writer that writes the publish-and-await lines, from the contract or from the driver
         assertTrue(injector.getInstance(TestCaseWriter::class.java) is AsyncApiTestCaseWriter)
+    }
+
+    @Test
+    fun testAnOptionACallerGivesReplacesTheDefaultOfThatName() {
+
+        /*
+            The parser refuses an option given twice, so a default has to step aside rather than
+            be appended beside what a test asked for. Both spellings name the same option.
+         */
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+            replied("""{"resultAsDouble": 1.5}""")
+        }
+
+        listOf(
+            arrayOf("--createTests=true"),
+            arrayOf("--createTests", "true")
+        ).forEach { options ->
+            val config = AsyncApiTestInjector.create(driver, *options).getInstance(EMConfig::class.java)
+            assertTrue(config.createTests, "for ${options.toList()}")
+        }
     }
 }
