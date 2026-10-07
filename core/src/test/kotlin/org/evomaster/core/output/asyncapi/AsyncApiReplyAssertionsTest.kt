@@ -205,6 +205,21 @@ class AsyncApiReplyAssertionsTest {
     }
 
     @Test
+    fun testACollectionLimitOfZeroAssertsOnlyTheSize() {
+
+        /*
+            The option's way of asking for quieter tests. The size is still asserted, so a run
+            that returned five elements says so; nothing is said about what they were.
+         */
+        val config = EMConfig().apply { maxAssertionForDataInCollection = 0 }
+        val emitted = emit("""{"xs": [1, 2, 3]}""", OutputFormat.KOTLIN_JUNIT_5, config)
+
+        assertTrue(emitted.contains("""assertEquals(3, body_0.get("xs").size())"""), emitted)
+        assertFalse(emitted.contains("get(0)"), emitted)
+        assertTrue(emitted.contains("the remaining 3 elements are not asserted on"), emitted)
+    }
+
+    @Test
     fun testANegativeCollectionLimitAssertsTheWholeCollection() {
 
         //the option's way of saying "no limit", which must not truncate to nothing
