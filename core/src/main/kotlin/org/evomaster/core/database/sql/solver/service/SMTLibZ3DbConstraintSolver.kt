@@ -57,6 +57,13 @@ import kotlin.io.path.exists
 import kotlin.text.equals
 
 /**
+ * A row already turned into an action, kept so that later rows can bind their foreign keys to it.
+ *
+ * @param values the value Z3 assigned to each column, keyed by the uppercase column name.
+ */
+private class InsertedRow(val tableId: TableId, val actionId: Long, val values: Map<String, String?>)
+
+/**
  * An SMT solver implementation using Z3 in a Docker container.
  * It generates the SMT problem from the database schema and the SQL query,
  * then executes Z3 to get values and returns the necessary list of SqlActions
@@ -405,13 +412,6 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * A row already turned into an action, kept so that later rows can bind their foreign keys to it.
-     *
-     * @param values the value Z3 assigned to each column, keyed by the uppercase column name.
-     */
-    private class InsertedRow(val tableId: TableId, val actionId: Long, val values: Map<String, String?>)
-
-    /**
      * Builds a [SqlForeignKeyGene] for each foreign key column of a row, bound to the action of the row
      * it references.
      *
@@ -737,7 +737,6 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         }
     }
 
-    // TODO: Implement this method
     /**
      * Rebuilds the foreign keys of a table from the schema, in the same way as
      * [org.evomaster.core.database.sql.SqlInsertBuilder]: when the schema does not name the target
