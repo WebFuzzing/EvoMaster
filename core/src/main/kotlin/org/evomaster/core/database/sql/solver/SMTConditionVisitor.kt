@@ -301,13 +301,26 @@ class SMTConditionVisitor(
      * is kept. A double quote is written as "", the SMT-LIB escape; left as is, it would end the
      * literal early and Z3 would reject the whole formula. A value wrapped in double quotes, as in
      * '"x"', is still read as x.
+     *
+     * A character outside printable ASCII is written as the SMT-LIB escape \u{X}, with X its code
+     * point in hex. Z3 reads a string literal byte by byte, so written as is, the UTF-8 encoding of
+     * 'ORDINÆR' became a different, longer string, and a row satisfying it broke the very CHECK it
+     * came from. A backslash is escaped too, since followed by "u{" it would start an escape.
      */
     private fun stringLiteral(literal: SqlStringLiteralValue): String {
         var value = literal.stringValue
         if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
             value = value.substring(1, value.length - 1)
         }
-        return "\"${value.replace("\"", "\"\"")}\""
+        val escaped = StringBuilder()
+        value.codePoints().forEach { cp ->
+            when {
+                cp == '"'.code -> escaped.append("\"\"")
+                cp == '\\'.code || cp < 0x20 || cp > 0x7E -> escaped.append("\\u{").append(Integer.toHexString(cp)).append('}')
+                else -> escaped.appendCodePoint(cp)
+            }
+        }
+        return "\"$escaped\""
     }
 
     private fun asLiteral(expression: SqlCondition?): String {

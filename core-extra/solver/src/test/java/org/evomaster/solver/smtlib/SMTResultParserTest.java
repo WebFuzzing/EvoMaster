@@ -244,4 +244,14 @@ public class SMTResultParserTest {
         StructValue t1 = (StructValue) result.get("t__1");
         assertEquals("say \"hi\" O'Brien", ((StringValue) t1.getField("TXT")).getValue());
     }
+
+    @Test
+    public void testParseComposedTypeWithUnicodeEscapes() {
+        // Z3 writes every character outside printable ASCII as a unicode escape
+        String response = "sat\n((t__1 (id-txt 0 \"ORDIN\\u{c6}R E\\u{d8}S \\u{1f600} a\\u{5c}b\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals("ORDIN\u00c6R E\u00d8S \ud83d\ude00 a\\b", ((StringValue) t1.getField("TXT")).getValue());
+    }
 }
