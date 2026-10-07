@@ -83,6 +83,13 @@ class SmtLibGenerator(
         const val TIMESTAMP_TYPE = "TIMESTAMP"
 
         /**
+         * Spellings of [BOOLEAN_TYPE] that [TYPE_MAP] treats as the same type (PostgreSQL reports a
+         * boolean column as "bool"). Every check for a boolean column must use this set: a column
+         * that is encoded as an SMT String but misses the boolean handling gets an arbitrary string.
+         */
+        val BOOLEAN_TYPES = setOf(BOOLEAN_TYPE, "BOOL")
+
+        /**
          * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
          * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
          * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
@@ -309,7 +316,7 @@ class SmtLibGenerator(
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
             for (column in smtTable.dto.columns) {
-                if (column.type.equals(BOOLEAN_TYPE, ignoreCase = true)) {
+                if (column.type.uppercase() in BOOLEAN_TYPES) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
                     for (i in 1..numberOfRows) {
                         smt.addNode(
