@@ -3,6 +3,7 @@ package org.evomaster.core.database.sql.solver
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
+import org.evomaster.dbconstraint.parser.jsql.JSqlVisitor
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
 import org.evomaster.solver.smtlib.SMTNode
@@ -110,8 +111,8 @@ class SMTConditionVisitor(
         if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
             return EmptySMTNode() // TODO: Change this when we add support for nullable columns in the db schema
         }
-        val left = getVariableAndLiteral(condition.leftOperand)
-        val right = getVariableAndLiteral(condition.rightOperand)
+        val left = operandAgainst(condition.leftOperand, condition.rightOperand)
+        val right = operandAgainst(condition.rightOperand, condition.leftOperand)
 
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
@@ -249,6 +250,42 @@ class SMTConditionVisitor(
      * It also avoids comparing a folded table name against the schema's own spelling, which is how the
      * scoped version would have to identify the tables in scope.
      */
+    /**
+     * Translates one side of a comparison, given the other side.
+     *
+     * A DATE or TIMESTAMP column is encoded as epoch seconds (an SMT Int), and a typed literal such as
+     * `DATE '2024-01-01'` already arrives as one. A plain string literal, `'2024-01-01'`, does not:
+     * written as an SMT string, it made Z3 compare an Int with a String and reject the formula, so the
+     * query got no data. It is read as a date or timestamp instead; if it is neither, the
+     * DateTimeParseException drops the condition like any other untranslatable one.
+     */
+    private fun operandAgainst(operand: SqlCondition, other: SqlCondition): String =
+        if (operand is SqlStringLiteralValue && other is SqlColumn && isTemporalColumn(other)) {
+            temporalLiteral(operand)
+        } else {
+            getVariableAndLiteral(operand)
+        }
+
+    private fun temporalLiteral(literal: SqlStringLiteralValue): String {
+        val epochSeconds = JSqlVisitor.toEpochSeconds(literal.stringValue)
+        // SMT-LIB has no negative numerals: a date before 1970 is written as a negation
+        return if (epochSeconds < 0) "(- ${-epochSeconds})" else epochSeconds.toString()
+    }
+
+    /**
+     * Whether a column reference is to a DATE or TIMESTAMP column of the schema.
+     */
+    private fun isTemporalColumn(column: SqlColumn): Boolean {
+        val tableName = column.tableName?.let { tableAliases[it] ?: it } ?: defaultTableName
+        val type = tables
+            .firstOrNull { convertToAscii(it.id.name).equals(convertToAscii(tableName), ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(column.columnName, ignoreCase = true) }
+            ?.type
+            ?: return false
+        return type.equals(SmtLibGenerator.DATE_TYPE, ignoreCase = true) ||
+            type.equals(SmtLibGenerator.TIMESTAMP_TYPE, ignoreCase = true)
+    }
+
     private fun isAColumn(operand: String): Boolean {
         return tables.any { table ->
             table.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
@@ -282,9 +319,11 @@ class SMTConditionVisitor(
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
         val left = getVariableAndLiteral(condition.sqlColumn)
+        val temporal = isTemporalColumn(condition.sqlColumn)
         val conditions = condition.literalList.sqlConditionExpressions
             .map {
-                AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
+                val literal = if (temporal && it is SqlStringLiteralValue) temporalLiteral(it) else asLiteral(it)
+                AssertSMTNode(EqualsAssertion(listOf(left, literal)))
             }
         return if (conditions.size == 1) {
             conditions[0]
