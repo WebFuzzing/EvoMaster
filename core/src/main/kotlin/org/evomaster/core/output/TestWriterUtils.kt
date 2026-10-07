@@ -10,6 +10,28 @@ import org.evomaster.core.search.gene.utils.GeneUtils
  */
 object TestWriterUtils {
 
+    /*
+        HTML entities may be decoded differently by clients/servers, making exact string assertions flaky.
+        as this relates to asseration not sut, we fix it in the test generation instead of flakiness handling
+     */
+    val HTML_ENTITY_REGEX = Regex("&(?:#[0-9]+|#x[0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]+);")
+
+    private val HOST_AND_PORT_REGEX = Regex("""\w+:\d{4,5}""")
+
+    /**
+     * Whether a value observed from the SUT can be asserted on without making the test flaky.
+     *
+     * Here rather than on one writer because the answer does not depend on the protocol: a value
+     * that differs on the next run or on another machine does so whatever carried it.
+     */
+    fun isSuitableToPrint(printableContent: String): Boolean {
+        return printableContent != "null" //TODO not so sure about this one... need to double-check
+                && !printableContent.contains("logged")
+                && !HTML_ENTITY_REGEX.containsMatchIn(printableContent)
+                // is this for IP host:port addresses?
+                && !HOST_AND_PORT_REGEX.containsMatchIn(printableContent)
+    }
+
     fun formatJsonWithEscapes(json: String, outputFormat: OutputFormat, extraSpace: String = " "): List<String> {
         val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
             OutputFormatter.JSON_FORMATTER.getFormatted(json)

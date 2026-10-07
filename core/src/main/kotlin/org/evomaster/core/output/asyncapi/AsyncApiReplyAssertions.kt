@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
 
 /**
  * Writes assertions over the reply a message drew, from the reply the search actually saw.
@@ -24,10 +25,6 @@ object AsyncApiReplyAssertions {
      * The fields REST skips, for the same reason: their value usually differs on the next run.
      */
     private val ALWAYS_SKIPPED = listOf("id", "timestamp", "self")
-
-    private val HTML_ENTITY = "&[a-zA-Z]+;|&#\\d+;".toRegex()
-
-    private val HOST_AND_PORT = """\w+:\d{4,5}""".toRegex()
 
     /**
      * Write what can be said about [payload], into [variable] as the test holds it.
@@ -233,11 +230,8 @@ object AsyncApiReplyAssertions {
      * something that says it was logged, an HTML entity, or what looks like a host and port has
      * a good chance of differing on the next run or on another machine.
      */
-    private fun printable(content: String) =
-        content != "null"
-                && !content.contains("logged")
-                && !HTML_ENTITY.containsMatchIn(content)
-                && !HOST_AND_PORT.containsMatchIn(content)
+    //the rule REST asserts by, shared rather than restated: a copy of it had already drifted
+    private fun printable(content: String) = TestWriterUtils.isSuitableToPrint(content)
 
     private fun skip(fieldName: String, config: EMConfig): Boolean {
 

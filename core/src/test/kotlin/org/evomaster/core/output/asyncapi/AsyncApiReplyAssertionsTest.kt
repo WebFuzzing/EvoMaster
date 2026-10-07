@@ -165,6 +165,21 @@ class AsyncApiReplyAssertionsTest {
     }
 
     @Test
+    fun testAnHtmlEntityIsNotAssertedOnInAnyOfItsSpellings() {
+
+        /*
+            Whether the value reaches the test as the entity or as the character it stands for
+            depends on who decoded it on the way, so asserting the text would be flaky. The rule
+            is REST's; a copy of it here once missed the hex and the digit-bearing spellings.
+         */
+        listOf("&amp;", "&#39;", "&#x27;", "&frac12;", "&sup2;").forEach { entity ->
+            val emitted = emit("""{"text": "a $entity b"}""", OutputFormat.KOTLIN_JUNIT_5)
+            assertFalse(emitted.contains(entity), "$entity was asserted on:\n$emitted")
+            assertTrue(emitted.contains("not asserted on"), "$entity:\n$emitted")
+        }
+    }
+
+    @Test
     fun testAReplyThatCannotBePrintedSaysSoRatherThanAssertingNothing() {
 
         //an address with a port is the REST writer's own example of what is not stable
