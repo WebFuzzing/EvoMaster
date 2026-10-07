@@ -1,4 +1,4 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output.asyncapi
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines

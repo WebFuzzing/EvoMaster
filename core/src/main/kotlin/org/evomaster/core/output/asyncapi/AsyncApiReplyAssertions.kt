@@ -1,4 +1,4 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output.asyncapi
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper

@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter

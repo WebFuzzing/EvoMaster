@@ -1,5 +1,7 @@
 package org.evomaster.core.output.service
 
+import org.evomaster.core.output.asyncapi.AsyncApiReplyAssertions
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestCase

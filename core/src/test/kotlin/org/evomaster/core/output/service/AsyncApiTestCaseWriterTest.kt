@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.asyncapi.service
+package org.evomaster.core.output.service
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -7,17 +7,18 @@ import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
-import org.evomaster.core.output.service.KafkaTestClientEmitter
 import org.evomaster.core.search.Solution
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.problem.asyncapi.service.AsyncApiSampler
+import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector
+import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.enterprise.SampleType
