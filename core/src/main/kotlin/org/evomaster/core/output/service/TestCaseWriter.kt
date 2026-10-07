@@ -83,8 +83,7 @@ abstract class TestCaseWriter {
     protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
 
     /**
-     * The faults found in a test, as a line of its comment block. Here rather than in one writer
-     * because a fault is a fault whatever the protocol was, and is worth saying the same way.
+     * The faults found in a test, as a line of its comment block.
      */
     protected fun addFaultsCommentLine(lines: Lines, test: TestCase) {
 
@@ -374,11 +373,9 @@ abstract class TestCaseWriter {
     open fun addExtraInitStatement(lines: Lines) {}
 
     /**
-     * Add members to the test class that a problem type needs, such as a helper the tests call.
-     *
-     * Unlike [addExtraStaticVariables] this is given the whole solution, so that a member is
-     * written only when something in the suite actually uses it, and a suite that does not is
-     * left without the dependency it would carry.
+     * Members the test class needs, such as a helper the tests call. Unlike
+     * [addExtraStaticVariables] it is given the whole solution, so a member can be written only
+     * when something in the suite uses it.
      */
     open fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {}
 
