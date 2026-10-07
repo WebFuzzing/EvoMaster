@@ -306,6 +306,38 @@ workflows:
           - name: jump-to-buy-available-pet
             type: goto
             workflowId: buy-available-pet
+  - workflowId: workflow-success-inherit-and-override
+    description:
+      Workflow-level successActions apply to every step; step onSuccess overrides by name.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    successActions:
+      - name: alt-checkout
+        type: goto
+        workflowId: place-order
+      - name: stop
+        type: end
+    failureActions:
+      - name: stop-on-fail
+        type: end
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: alt-checkout
+            type: goto
+            workflowId: buy-available-pet
+        outputs:
+          my_pet_id: $response.body#/0/id
+    outputs:
+      response_pet_id: $steps.find-pet.outputs.my_pet_id
 
 components:
   inputs:

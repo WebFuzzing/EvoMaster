@@ -171,6 +171,23 @@ class SamplerWithArazzoVerifierTest {
         assertEquals(2, instancesWorkflow.size)
     }
 
+    @Test
+    fun testWorkflowLevelSuccessActionsMergedWithStepOnSuccess() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["workflow-success-inherit-and-override"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"))) // overridden alt-checkout
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags"))) // workflow stop
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)    }
+
     private fun buildIndividualFromWorkflow(context: TestContext, arazzoWorkflow: ArazzoWorkflow): RestIndividual {
         return context.arazzoService.buildIndividualFromWorkflow(arazzoWorkflow)
     }

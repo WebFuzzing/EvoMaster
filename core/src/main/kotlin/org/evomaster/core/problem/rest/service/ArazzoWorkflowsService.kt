@@ -155,11 +155,13 @@ class ArazzoWorkflowsService {
                     currentFrame.pausedBranch = false
                 }
 
-                val pathway = choosePathway(step.onSuccess ?: emptyList(), step.onFailure ?: emptyList())
+                val onSuccess = mergeSuccessActions(currentFrame.workflow.successActions, step.onSuccess)
+                val onFailure = mergeFailureActions(currentFrame.workflow.failureActions, step.onFailure)
+                val pathway = choosePathway(onSuccess, onFailure)
 
                 when (pathway) {
                     PathWay.SUCCESS -> {
-                        val successAction = randomness.choose(step.onSuccess)
+                        val successAction = randomness.choose(onSuccess)
                         if (applyPathwayAction(stack, currentFrame, successAction.type, successAction.stepId, successAction.workflowId))
                             continue@outer
                         else
@@ -167,7 +169,7 @@ class ArazzoWorkflowsService {
 
                     }
                     PathWay.FAILURE -> {
-                        val failureAction = randomness.choose(step.onFailure)
+                        val failureAction = randomness.choose(onFailure)
                         if (applyPathwayAction(stack, currentFrame, failureAction.type, failureAction.stepId, failureAction.workflowId))
                             continue@outer
                         else
@@ -183,6 +185,40 @@ class ArazzoWorkflowsService {
 
        return actions
 
+    }
+
+    /**
+     * Merges workflow-level [successActions] with step-level [onSuccess].
+     * Step actions with the same [SuccessAction.name] override workflow actions
+     */
+    private fun mergeSuccessActions(workflowActions: List<SuccessAction>?, stepActions: List<SuccessAction>?): List<SuccessAction> {
+        val byName = LinkedHashMap<String, SuccessAction>()
+        for (action in workflowActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: workflow successAction requires a name")
+            byName[name] = action
+        }
+        for (action in stepActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: step onSuccess action requires a name")
+            byName[name] = action
+        }
+        return byName.values.toList()
+    }
+
+    /**
+     * Merges workflow-level [failureActions] with step-level [onFailure].
+     * Step actions with the same [FailureAction.name] override workflow actions
+     */
+    private fun mergeFailureActions(workflowActions: List<FailureAction>?, stepActions: List<FailureAction>?): List<FailureAction> {
+        val byName = LinkedHashMap<String, FailureAction>()
+        for (action in workflowActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: workflow failureAction requires a name")
+            byName[name] = action
+        }
+        for (action in stepActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: step onFailure action requires a name")
+            byName[name] = action
+        }
+        return byName.values.toList()
     }
 
     /**
