@@ -186,8 +186,8 @@ public class SMTResultParser {
             value = value.substring(0, value.length() - 1).trim(); // Remove parentheses
         }
         if (value.startsWith("\"") && value.endsWith("\"")) {
-            // If it is a string
-            return new StringValue(value.substring(1, value.length() - 1)); // Remove quotes
+            // If it is a string: remove the quotes and undo the SMT-LIB escape of " as ""
+            return new StringValue(value.substring(1, value.length() - 1).replace("\"\"", "\""));
         }
         try {
             if (value.matches("- \\d+")) {

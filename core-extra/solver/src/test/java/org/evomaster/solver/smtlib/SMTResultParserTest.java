@@ -234,4 +234,14 @@ public class SMTResultParserTest {
         StructValue t2 = (StructValue) result.get("t__2");
         assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
     }
+
+    @Test
+    public void testParseComposedTypeWithEscapedQuoteInString() {
+        // SMT-LIB writes a double quote inside a string as two double quotes
+        String response = "sat\n((t__1 (id-txt 0 \"say \"\"hi\"\" O'Brien\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals("say \"hi\" O'Brien", ((StringValue) t1.getField("TXT")).getValue());
+    }
 }
