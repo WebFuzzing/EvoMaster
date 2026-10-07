@@ -29,6 +29,19 @@ import java.nio.file.Path
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
+    /**
+     * The servers this suite publishes to, each with the address the document declares. Filled
+     * in while the class members are written and read when the init statements are, which the
+     * suite writer runs after them.
+     */
+    private val servers = LinkedHashMap<String, String>()
+
+    /**
+     * What the parsed reply is called in a generated test, before the index of the reply it
+     * was parsed from.
+     */
+    private val bodyVariablePrefix = "body_"
+
     override fun handleActionCalls(
         lines: Lines,
         baseUrlOfSut: String,
@@ -160,13 +173,6 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
 
     /**
-     * The servers this suite publishes to, each with the address the document declares. Filled
-     * in while the class members are written and read when the init statements are, which the
-     * suite writer runs after them.
-     */
-    private val servers = LinkedHashMap<String, String>()
-
-    /**
      * The helper the Kafka tests call, written once and only when something in the suite calls
      * it: a suite publishing over another transport must not be made to carry a Kafka dependency
      * it never uses.
@@ -269,7 +275,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      * What the parsed reply is called, beside the reply it was parsed from.
      */
     private fun bodyVariableFor(replyVariable: String) =
-        "body_" + replyVariable.substringAfterLast('_')
+        bodyVariablePrefix + replyVariable.substringAfterLast('_')
 
     private fun variableFor(serverName: String) =
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
