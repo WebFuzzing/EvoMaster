@@ -282,6 +282,16 @@ class SMTConditionVisitor(
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
         val left = getVariableAndLiteral(condition.sqlColumn)
+        if (condition.isNegated) {
+            // NOT IN: the column must differ from every value in the list
+            val conditions = condition.literalList.sqlConditionExpressions
+                .map { DistinctAssertion(listOf(left, asLiteral(it))) }
+            return if (conditions.size == 1) {
+                AssertSMTNode(conditions[0])
+            } else {
+                AssertSMTNode(AndAssertion(conditions))
+            }
+        }
         val conditions = condition.literalList.sqlConditionExpressions
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
