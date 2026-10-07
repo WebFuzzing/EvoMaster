@@ -541,13 +541,14 @@ class SmtLibGenerator(
         val fromScope = extractFromScope(sqlQuery)
         val tableAliases = fromScope.tableAliases
         val columnScope = columnScopeOf(fromScope.derivedAliases)
+        val queryTables = TablesNamesFinder().getTables(sqlQuery)
 
-        appendJoinConstraints(smt, sqlQuery, tableAliases, columnScope)
+        appendJoinConstraints(smt, sqlQuery, tableAliases, columnScope, queryTables)
 
         val (where, defaultTable) = when (sqlQuery) {
             is Select -> {
                 val plainSelect = sqlQuery.selectBody as PlainSelect
-                Pair(plainSelect.where, TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull())
+                Pair(plainSelect.where, defaultTableOf(sqlQuery, plainSelect))
             }
             is Delete -> Pair(sqlQuery.where, sqlQuery.table.getName())
             is Update -> Pair(sqlQuery.where, sqlQuery.table.getName())
@@ -566,7 +567,7 @@ class SmtLibGenerator(
 
             if (condition != null) {
                 appendConjuncts(smt, condition, "WHERE clause") { conjunct, i ->
-                    parseQueryCondition(tableAliases, defaultTable, conjunct, i, columnScope)
+                    parseQueryCondition(tableAliases, defaultTable, conjunct, i, columnScope, queryTables)
                 }
             }
         }
@@ -642,7 +643,8 @@ class SmtLibGenerator(
         smt: SMTLib,
         sqlQuery: Statement,
         tableAliases: Map<String, String>,
-        columnScope: SMTConditionVisitor.ColumnScope
+        columnScope: SMTConditionVisitor.ColumnScope,
+        queryTables: Collection<String>
     ) {
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
@@ -656,7 +658,7 @@ class SmtLibGenerator(
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            val tableFromQuery = defaultTableOf(sqlQuery, plainSelect)!!
                             // TODO: the ON condition is translated with the SAME row index on
                             // both sides ("diagonal pairing"): row i of one table is matched only with row i
                             // of the other. This is sufficient at the default numberOfRows=1 to force a
@@ -664,7 +666,7 @@ class SmtLibGenerator(
                             // numberOfRows>=2 it never explores mismatched-index pairs (e.g. users2 with
                             // products1). Matching arbitrary row combinations is future work.
                             appendConjuncts(smt, condition, "JOIN ON clause") { conjunct, i ->
-                                parseQueryCondition(tableAliases, tableFromQuery, conjunct, i, columnScope)
+                                parseQueryCondition(tableAliases, tableFromQuery, conjunct, i, columnScope, queryTables)
                             }
                         } catch (e: RuntimeException) {
                             skippedQueryConstraints++
@@ -690,13 +692,28 @@ class SmtLibGenerator(
         defaultTableName: String,
         condition: SqlCondition,
         index: Int,
-        columnScope: SMTConditionVisitor.ColumnScope
+        columnScope: SMTConditionVisitor.ColumnScope,
+        queryTables: Collection<String>
     ): SMTNode {
         val smtDefaultTableName = smtTableByOriginalName[defaultTableName.lowercase()]?.smtName
             ?: convertToAscii(defaultTableName)
-        val visitor = SMTConditionVisitor(smtDefaultTableName, tableAliases, schema.tables, index, columnScope)
+        val smtQueryTables = queryTables.associateWith {
+            smtTableByOriginalName[it.lowercase()]?.smtName ?: convertToAscii(it)
+        }
+        val visitor = SMTConditionVisitor(
+            smtDefaultTableName, tableAliases, schema.tables, index, columnScope, smtQueryTables
+        )
         return condition.accept(visitor, null) as SMTNode
     }
+
+    /**
+     * The table an unqualified column falls back to when no single query table declares it: the
+     * table in `FROM`. [TablesNamesFinder] returns its tables in a hash set, so its first element is
+     * not necessarily that table — in `FROM products p JOIN users u` it is `users`.
+     */
+    private fun defaultTableOf(sqlQuery: Select, plainSelect: PlainSelect): String? =
+        (plainSelect.fromItem as? Table)?.name
+            ?: TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull()
 
     /**
      * Builds the [SMTConditionVisitor.ColumnScope] for one query from the aliases its `FROM` and
