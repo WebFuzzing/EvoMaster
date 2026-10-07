@@ -83,6 +83,13 @@ class SmtLibGenerator(
         const val TIMESTAMP_TYPE = "TIMESTAMP"
 
         /**
+         * Encoded as SMT Strings with no constraint on their form, so the value Z3 assigns need not be
+         * a valid UUID or JSON document; SMTLibZ3DbConstraintSolver turns it into one.
+         */
+        const val UUID_TYPE = "UUID"
+        const val JSONB_TYPE = "JSONB"
+
+        /**
          * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
          * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
          * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
@@ -143,8 +150,8 @@ class SmtLibGenerator(
             "CHARACTER LARGE OBJECT" to SMT_STRING,
             BOOLEAN_TYPE to SMT_STRING,
             "BOOL" to SMT_STRING,
-            "UUID" to SMT_STRING,
-            "JSONB" to SMT_STRING,
+            UUID_TYPE to SMT_STRING,
+            JSONB_TYPE to SMT_STRING,
             "BYTEA" to SMT_STRING,
         )
     }
