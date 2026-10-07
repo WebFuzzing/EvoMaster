@@ -151,12 +151,54 @@ class AsyncApiReplyAssertionsTest {
     }
 
     @Test
-    fun testAReplyThatIsNotJsonIsAssertedOnAsText() {
+    fun testAReplyThatIsNotJsonIsAssertedOnAsTextInEveryLanguage() {
 
-        val emitted = emit("just text", OutputFormat.KOTLIN_JUNIT_5)
+        //a plain-text reply is ordinary for a transport that carries no JSON
+        assertTrue(emit("just text", OutputFormat.KOTLIN_JUNIT_5)
+            .contains("""assertTrue(res_0!!.contains("just text"))"""))
+        assertTrue(emit("just text", OutputFormat.JAVA_JUNIT_5)
+            .contains("""assertTrue(res_0.contains("just text"));"""))
+        assertTrue(emit("just text", OutputFormat.PYTHON_UNITTEST)
+            .contains("""assert "just text" in res_0"""))
 
-        assertTrue(emitted.contains("just text"), emitted)
-        assertFalse(emitted.contains("readTree"), emitted)
+        assertFalse(emit("just text", OutputFormat.KOTLIN_JUNIT_5).contains("readTree"))
+    }
+
+    @Test
+    fun testAReplyThatCannotBePrintedSaysSoRatherThanAssertingNothing() {
+
+        //an address with a port is the REST writer's own example of what is not stable
+        val emitted = emit("listening on localhost:12345", OutputFormat.KOTLIN_JUNIT_5)
+
+        assertFalse(emitted.contains("localhost:12345"), emitted)
+        assertTrue(emitted.contains("not asserted on"), emitted)
+    }
+
+    @Test
+    fun testANumberTooLargeForAnIntCarriesJavasSuffix() {
+
+        /*
+            Java picks assertEquals(long, long) by widening within an int's range, but a literal
+            outside it is not an int at all and does not compile without the suffix.
+         */
+        val big = """{"n": 5000000000}"""
+
+        assertTrue(emit(big, OutputFormat.JAVA_JUNIT_5).contains("assertEquals(5000000000L,"), emit(big, OutputFormat.JAVA_JUNIT_5))
+        //Kotlin types the literal itself, so a suffix there would be noise
+        assertTrue(emit(big, OutputFormat.KOTLIN_JUNIT_5).contains("assertEquals(5000000000,"), emit(big, OutputFormat.KOTLIN_JUNIT_5))
+        assertTrue(emit(big, OutputFormat.PYTHON_UNITTEST).contains("== 5000000000"), emit(big, OutputFormat.PYTHON_UNITTEST))
+    }
+
+    @Test
+    fun testANegativeCollectionLimitAssertsTheWholeCollection() {
+
+        //the option's way of saying "no limit", which must not truncate to nothing
+        val config = EMConfig().apply { maxAssertionForDataInCollection = -1 }
+        val emitted = emit("""{"xs": [1, 2, 3]}""", OutputFormat.KOTLIN_JUNIT_5, config)
+
+        assertTrue(emitted.contains("get(0)"), emitted)
+        assertTrue(emitted.contains("get(1)"), emitted)
+        assertTrue(emitted.contains("get(2)"), emitted)
     }
 
     @Test

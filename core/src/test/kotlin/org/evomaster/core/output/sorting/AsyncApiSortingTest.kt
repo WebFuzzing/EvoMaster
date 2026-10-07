@@ -31,7 +31,8 @@ class AsyncApiSortingTest {
     companion object {
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
 
-        private const val ERROR = """{"code": 400, "message": "no"}"""
+        //as the document declares it: the fields sit under "error", not at the top level
+        private const val ERROR = """{"error": {"code": 400, "message": "no"}}"""
     }
 
     @BeforeEach
@@ -61,13 +62,23 @@ class AsyncApiSortingTest {
     }
 
     @Test
-    fun testSortingASingleTestDoesNotThrow() {
+    fun testRepliesToOneOperationAreOrderedByTheMessageTheyWereRecognisedAs() {
 
-        val tests = mutableListOf(evaluate("bessj") { FakeAsyncApiDriver.replied(DOUBLE_RESULT) })
+        /*
+            The third key, which the operation and the outcome cannot separate: two tests of one
+            operation that both got a reply, telling them apart by which declared message it
+            was. A comparator of two keys leaves these in whatever order they arrived.
+         */
+        val error = evaluate("expint") { FakeAsyncApiDriver.replied(ERROR) }
+        val result = evaluate("expint") { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
+
+        val tests = mutableListOf(result, error)
 
         SortingHelper().sort(tests, SortingStrategy.TARGET_INCREMENTAL)
 
-        assertEquals(1, tests.size)
+        //"doubleResult" before "error", as the comparator orders them by the message's own name
+        assertEquals(result, tests[0])
+        assertEquals(error, tests[1])
     }
 
     private fun operationOf(evaluated: EvaluatedIndividual<*>) =

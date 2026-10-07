@@ -64,6 +64,18 @@ class AsyncApiActionNamingStrategyTest {
     }
 
     @Test
+    fun testAReplyMatchingNoDeclaredMessageIsNamedAfterThat() {
+
+        /*
+            The one outcome whose name has to read like the fault it is: a reply arrived, it
+            correlated, and it still matches none of the messages the document declares.
+         */
+        val names = namesOf({ FakeAsyncApiDriver.replied("""{"nothingTheContractDeclares": 1}""") }, "bessj")
+
+        assertEquals(listOf("test_0_publishOnBessjRepliesWithUndeclaredMessage"), names)
+    }
+
+    @Test
     fun testSilenceIsNamedTheSameWhetherOrNotItIsReportedAsAFault() {
 
         /*

@@ -8,9 +8,11 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.output.service.KafkaTestClientEmitter
 import org.evomaster.core.search.Solution
 import org.evomaster.core.EMConfig
@@ -37,6 +39,84 @@ class AsyncApiTestCaseWriterTest {
 
     companion object {
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
+
+        /**
+         * A document that reaches what the shared one cannot.
+         *
+         * NCS answers every operation and names its correlation header exactly what the default
+         * is, so three of the arguments a call carries are never seen as anything else: a
+         * message with no reply at all, a header named something of the service's own choosing,
+         * and headers of the message itself.
+         */
+        private val VARIANTS = """
+            asyncapi: 3.0.0
+            info:
+              title: Variants
+              version: 1.0.0
+            servers:
+              broker:
+                host: broker.local:19092
+                protocol: kafka
+            channels:
+              askRequest:
+                address: ask.request
+                servers:
+                  - ${'$'}ref: '#/servers/broker'
+                messages:
+                  askRequest:
+                    correlationId:
+                      location: '${'$'}message.header#/x-corr-id'
+                    headers:
+                      type: object
+                      required: [tenant]
+                      properties:
+                        tenant:
+                          type: string
+                          const: acme
+                    payload:
+                      type: object
+                      required: [value]
+                      properties:
+                        value:
+                          type: integer
+              askReply:
+                address: ask.reply
+                servers:
+                  - ${'$'}ref: '#/servers/broker'
+                messages:
+                  answer:
+                    payload:
+                      type: object
+                      required: [answer]
+                      properties:
+                        answer:
+                          type: integer
+              tellRequest:
+                address: tell.request
+                servers:
+                  - ${'$'}ref: '#/servers/broker'
+                messages:
+                  tellRequest:
+                    payload:
+                      type: object
+                      required: [note]
+                      properties:
+                        note:
+                          type: string
+                          const: hello
+            operations:
+              ask:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/askRequest'
+                reply:
+                  channel:
+                    ${'$'}ref: '#/channels/askReply'
+              tell:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/tellRequest'
+        """.trimIndent()
 
         /**
          * Every line any other suite opens with, taken verbatim from what the writer produces
@@ -115,15 +195,29 @@ class AsyncApiTestCaseWriterTest {
         RestActionBuilderV3.cleanCache()
     }
 
-    private fun start(answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) {
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS)), answer)
-        injector = AsyncApiTestInjector.create(
-            driver,
+    private fun start(vararg options: String, answer: (AsyncApiActionDto) -> AsyncApiReplyDto?) {
+        startWith(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS), *options, answer = answer)
+    }
+
+    /**
+     * The same, over a document written for one test rather than the shared one.
+     */
+    private fun startWith(
+        document: String,
+        vararg options: String,
+        answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
+    ) {
+        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(document), answer)
+
+        //what a test did not ask for, so that asking for it does not pass the option twice
+        val defaults = listOf(
             "--blackBox=false",
             //the core only asks a driver to render lines when a test will be written
             "--createTests=true",
             "--outputFormat=KOTLIN_JUNIT_5"
-        )
+        ).filterNot { d -> options.any { it.substringBefore('=') == d.substringBefore('=') } }
+
+        injector = AsyncApiTestInjector.create(driver, *(defaults + options).toTypedArray())
         sampler = injector.getInstance(AsyncApiSampler::class.java)
         fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
     }
@@ -150,6 +244,62 @@ class AsyncApiTestCaseWriterTest {
         val lines = Lines(injector.getInstance(EMConfig::class.java).outputFormat)
         writer.addExtraClassMembers(lines, solution)
         return lines.toString()
+    }
+
+    /**
+     * Both halves, in the order the suite writer produces them: the members first, as that is
+     * what tells the writer which servers the suite has. Asking for a body first would write one
+     * that publishes to the document's address even where a driver could have been asked.
+     */
+    private fun membersAndBodyOf(evaluated: EvaluatedIndividual<AsyncApiIndividual>): Pair<String, String> {
+        val members = membersOf(evaluated)
+        return members to bodyOf(evaluated)
+    }
+
+    /**
+     * Whether what was emitted is a program at all.
+     *
+     * The suite as written calls a Kafka client, which core does not depend on and must not: the
+     * dependency belongs to the generated suite, not to the fuzzer. So the helper is replaced by
+     * a declaration of the same shape, and what is compiled is everything the writer decided --
+     * the call, its arguments, the escaping of the payload, the literals and the assertions.
+     */
+    private fun compiles(members: String, body: String, format: OutputFormat, name: String) {
+
+        val servers = Regex("${KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX}\\w+")
+            .findAll(members + body)
+            .map { it.value }
+            .toSet()
+
+        val indented = body.trimEnd().lines().joinToString("\n") { "    $it" }
+
+        val code = if (format.isJava()) {
+            buildString {
+                append("import org.junit.jupiter.api.Test;\n")
+                append("import org.junit.jupiter.api.Timeout;\n")
+                append("import static org.junit.jupiter.api.Assertions.*;\n\n")
+                append("public class $name {\n")
+                servers.forEach { append("    private String $it = \"localhost:9092\";\n") }
+                append("    private String ${KafkaTestClientEmitter.HELPER_NAME}(String broker, String topic,")
+                append(" String replyTopic, String payload, String correlationHeader, long timeoutMs,")
+                append(" String... headerPairs) throws Exception { return null; }\n")
+                append(indented).append("\n}\n")
+            }
+        } else {
+            buildString {
+                append("import org.junit.jupiter.api.Test\n")
+                append("import org.junit.jupiter.api.Timeout\n")
+                append("import org.junit.jupiter.api.Assertions.*\n\n")
+                append("internal class $name {\n")
+                servers.forEach { append("    private val $it: String = \"localhost:9092\"\n") }
+                append("    private fun ${KafkaTestClientEmitter.HELPER_NAME}(broker: String, topic: String,")
+                append(" replyTopic: String?, payload: String?, correlationHeader: String?, timeoutMs: Long,")
+                append(" vararg headerPairs: String): String? = null\n")
+                append(indented).append("\n}\n")
+            }
+        }
+
+        CompilerForTestGenerated.compile(format, code, name)
     }
 
     /**
@@ -222,6 +372,18 @@ class AsyncApiTestCaseWriterTest {
         //a reply older than the test is not an answer to it, and each run stamps its own id
         assertTrue(members.contains("seekToEnd"), members)
         assertTrue(members.contains("UUID.randomUUID()"), members)
+
+        /*
+            Seeking to the end is lazy in every client written so far: it takes effect on the
+            first poll, by which time the reply is behind it. Asking for the position is what
+            prevents that, and it is the one line a real broker was needed to find missing.
+         */
+        assertTrue(members.contains("c.position(parts[0])"), members)
+
+        //and the clients are closed however the call ends, not only when it succeeds
+        assertTrue(members.contains("} finally {"), members)
+        assertTrue(members.contains("producer?.close()"), members)
+        assertTrue(members.contains("consumer?.close()"), members)
         assertTrue(members.contains("asyncApiServer_kafka"), members)
 
         val body = bodyOf(evaluated)
@@ -236,61 +398,87 @@ class AsyncApiTestCaseWriterTest {
         assertFalse(body.contains("\"localhost:9092\""), body)
     }
 
+    /**
+     * A whole suite, written to disk by the shared suite writer and read back, which is the
+     * only way to reach what it puts around the tests: the class, its lifecycle, and whether
+     * there is a driver in it at all.
+     */
+    private fun writeSuite(extension: String, vararg options: String): String {
+
+        val folder = java.nio.file.Files.createTempDirectory("asyncapi_suite").toFile()
+        folder.deleteOnExit()
+
+        startWith(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS), *options) {
+            FakeAsyncApiDriver.replied(DOUBLE_RESULT)
+        }
+
+        val config = injector.getInstance(EMConfig::class.java)
+        config.outputFolder = folder.absolutePath
+        config.outputFilePrefix = "AsyncApiSuite"
+        config.outputFileSuffix = ""
+
+        val evaluated = evaluate("bessj")
+        val solution = Solution(mutableListOf(evaluated), "AsyncApiSuite", "", Termination.NONE, listOf(), listOf())
+
+        injector.getInstance(TestSuiteWriter::class.java)
+            .writeTests(solution, FakeAsyncApiDriver::class.qualifiedName!!, null)
+
+        //by the prefix too: a Python suite is written beside the utilities it imports
+        return folder.walkTopDown()
+            .first { it.isFile && it.name == "AsyncApiSuite$extension" }
+            .readText()
+    }
+
     @Test
     fun testThePythonSuiteIsValidPython() {
 
         /*
             A Python suite has no driver to ask where the broker is, since the controller is
             Java, so it publishes to the address the document declares. What matters here is
-            that what comes out parses: indentation is part of the language, so a helper written
-            as text can break it in a way no JVM format can.
-         */
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS))) {
-            FakeAsyncApiDriver.replied(DOUBLE_RESULT)
-        }
-        injector = AsyncApiTestInjector.create(
-            driver,
-            //Python output is for black-box only, which is also why its suite has no driver to ask
-            "--blackBox=true",
-            "--createTests=true",
-            "--outputFormat=PYTHON_UNITTEST"
-        )
-        sampler = injector.getInstance(AsyncApiSampler::class.java)
-        fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
+            that the file the run writes parses: indentation is part of the language, so a
+            helper written as text can break it in a way no JVM format can.
 
-        val evaluated = evaluate("bessj")
-        val body = bodyOf(evaluated)
-        val members = membersOf(evaluated)
+            The whole suite is written and checked, imports included, rather than a module
+            assembled here: whether those imports are emitted at all is itself a decision the
+            writer makes, and one this would otherwise be making for it.
+         */
+        val written = writeSuite(".py", "--blackBox=true", "--outputFormat=PYTHON_UNITTEST")
 
         //the call, and the reply read as a dict rather than a tree of nodes
-        assertTrue(body.contains("${KafkaTestClientEmitter.HELPER_NAME}("), body)
-        assertTrue(body.contains("json.loads(res_0)"), body)
-        assertTrue(body.contains("\"resultAsDouble\" in body_0"), body)
-        assertTrue(body.contains("assert "), body)
+        assertTrue(written.contains("${KafkaTestClientEmitter.HELPER_NAME}("), written)
+        assertTrue(written.contains("json.loads(res_0)"), written)
+        assertTrue(written.contains("\"resultAsDouble\" in body_0"), written)
 
-        //and the helper it calls
-        assertTrue(members.contains("kafka.KafkaProducer"), members)
-        assertTrue(members.contains("seek_to_end"), members)
+        //the helper it calls, and the imports that helper needs
+        assertTrue(written.contains("kafka.KafkaProducer"), written)
+        assertTrue(written.contains("import kafka"), written)
+        assertTrue(written.contains("import uuid"), written)
+        assertTrue(written.contains("seek_to_end"), written)
 
         /*
-            Seeking to the end is lazy in every client written so far: without asking for the
-            position, it takes effect on the first poll, by which time the reply is behind it and
-            is never seen. A suite that only has to parse cannot catch that.
+            Seeking to the end is lazy in every client written so far: it takes effect on the
+            first poll, by which time the reply is behind it and is never seen. A suite that
+            only has to parse cannot catch that.
          */
-        assertTrue(members.contains("consumer.position(partitions[0])"), members)
+        assertTrue(written.contains("consumer.position(partitions[0])"), written)
 
         //there is no driver in a Python suite, so nothing is declared to ask one
-        assertFalse(members.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), members)
-        assertFalse(body.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), body)
+        assertFalse(written.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), written)
 
         //and the driver was asked for no script, as its own enum cannot name Python
         assertNull(driver.published.last().outputFormat)
 
-        //what comes out has to be parseable Python, indentation included
-        val module = (members.trimEnd().lines() + body.trimEnd().lines())
-            .joinToString("\n") { "    " + it }
+        parsesAsPython(written)
+    }
+
+    /**
+     * Whether python3 can read the file the run wrote. Skipped, visibly, where there is none.
+     */
+    private fun parsesAsPython(suite: String) {
+
         val file = java.io.File.createTempFile("asyncapi_suite", ".py")
-        file.writeText("import json\nimport time\nimport uuid\nimport kafka\n\n\nclass Suite:\n$module\n")
+        file.deleteOnExit()
+        file.writeText(suite)
 
         try {
             val process = try {
@@ -305,41 +493,10 @@ class AsyncApiTestCaseWriterTest {
             val output = process.inputStream.bufferedReader().readText()
             val code = process.waitFor()
 
-            assertEquals(0, code, "the generated Python does not parse:\n$output\n\n$module")
+            assertEquals(0, code, "the generated Python does not parse:\n$output\n\n$suite")
         } finally {
             file.delete()
         }
-    }
-
-    /**
-     * A whole suite, written to disk by the shared suite writer and read back, which is the
-     * only way to reach what it puts around the tests: the class, its lifecycle, and whether
-     * there is a driver in it at all.
-     */
-    private fun writeSuite(extension: String, vararg options: String): String {
-
-        val folder = java.nio.file.Files.createTempDirectory("asyncapi_suite").toFile()
-        folder.deleteOnExit()
-
-        driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS))) {
-            FakeAsyncApiDriver.replied(DOUBLE_RESULT)
-        }
-        injector = AsyncApiTestInjector.create(driver, "--createTests=true", *options)
-        sampler = injector.getInstance(AsyncApiSampler::class.java)
-        fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
-
-        val config = injector.getInstance(EMConfig::class.java)
-        config.outputFolder = folder.absolutePath
-        config.outputFilePrefix = "AsyncApiSuite"
-        config.outputFileSuffix = ""
-
-        val evaluated = evaluate("bessj")
-        val solution = Solution(mutableListOf(evaluated), "AsyncApiSuite", "", Termination.NONE, listOf(), listOf())
-
-        injector.getInstance(TestSuiteWriter::class.java)
-            .writeTests(solution, FakeAsyncApiDriver::class.qualifiedName!!, null)
-
-        return folder.walkTopDown().first { it.isFile && it.name.endsWith(extension) }.readText()
     }
 
     @Test
@@ -353,8 +510,12 @@ class AsyncApiTestCaseWriterTest {
          */
         val written = writeSuite(".kt", "--blackBox=true", "--outputFormat=KOTLIN_JUNIT_5")
 
-        //nothing of the driver: no field holding it, and nothing started or stopped
-        assertFalse(written.contains("SutHandler = "), written)
+        /*
+            Nothing of the driver: no field holding it, and nothing started or stopped. The type
+            is still imported, as it is in every suite the shared writer produces, so what says
+            there is no driver is that no line both names it and assigns one.
+         */
+        assertFalse(written.lines().any { it.contains("SutHandler") && it.contains("=") }, written)
         assertFalse(written.contains("controller.startSut()"), written)
         assertFalse(written.contains("controller.stopSut()"), written)
         assertFalse(written.contains("getAsyncApiServerAddress"), written)
@@ -379,7 +540,7 @@ class AsyncApiTestCaseWriterTest {
         //the same, in the other language a JVM suite can be written in
         val written = writeSuite(".java", "--blackBox=true", "--outputFormat=JAVA_JUNIT_5")
 
-        assertFalse(written.contains("SutHandler "), written)
+        assertFalse(written.lines().any { it.contains("SutHandler") && it.contains("=") }, written)
         assertFalse(written.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), written)
         assertTrue(
             written.contains("${KafkaTestClientEmitter.HELPER_NAME}(\"localhost:9092\", \"ncs.bessj.request\""),
@@ -432,8 +593,15 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(actual.contains("internal class AsyncApiSuite {"), written)
         assertTrue(actual.any { it.startsWith("        private val controller : SutHandler = ") }, written)
 
-        //and ours on top of it, not instead of it
-        assertTrue(written.contains("asyncApiServer_kafka = controller.getAsyncApiServerAddress"), written)
+        /*
+            And ours on top of it, not instead of it. Pinned whole: through a prefix, dropping
+            the fallback would still pass, and a lateinit var assigned null fails every test in
+            the suite at initClass.
+         */
+        assertTrue(
+            actual.contains("            asyncApiServer_kafka = controller.getAsyncApiServerAddress(\"kafka\") ?: \"localhost:9092\""),
+            written
+        )
         assertTrue(written.contains("publishOnBessj"), written)
 
         folder.deleteRecursively()
@@ -479,6 +647,231 @@ class AsyncApiTestCaseWriterTest {
                     "}",
             init.trimEnd()
         )
+    }
+
+    @Test
+    fun testTheCallIsWrittenWholeAndCompiles() {
+
+        /*
+            The one line every generated test runs on. Asserted whole rather than by substrings:
+            the arguments are all strings, so swapping the topic it publishes to with the one it
+            waits on would leave every substring assertion passing and every generated test
+            waiting on the wrong destination.
+         */
+        //the JUnit 4 forms differ only in the annotation the shared writer puts above the method
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startWith(VARIANTS, "--outputFormat=${format.name}") { FakeAsyncApiDriver.replied("""{"answer": 2}""") }
+
+            val (members, body) = membersAndBodyOf(evaluate("ask"))
+
+            val call = "${KafkaTestClientEmitter.HELPER_NAME}(asyncApiServer_broker, \"ask.request\"," +
+                    " \"ask.reply\", \"{\\\"value\\\":"
+
+            assertTrue(body.contains(call), "for $format:\n$body")
+
+            //the header the id rides in is the document's, not whatever the default happens to be
+            assertTrue(body.contains("\"x-corr-id\""), "for $format:\n$body")
+
+            //the deadline, without which a test polls once and finds nothing
+            assertTrue(body.contains("5000L"), "for $format:\n$body")
+
+            //and the message's own headers, flattened onto the end of the call
+            assertTrue(body.contains("\"tenant\", \"acme\""), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiCall${format.name}")
+        }
+    }
+
+    @Test
+    fun testAMessageWithNoReplyPassesNothingWhereTheReplyWouldGo() {
+
+        /*
+            A fire-and-forget operation: no reply destination, so no deadline and nothing to
+            correlate. Each language spells an absent argument its own way, and Python spelling
+            it "null" would parse and then fail with a NameError, which is how three of these
+            have gone wrong before.
+         */
+        val expected = mapOf(
+            OutputFormat.KOTLIN_JUNIT_5 to "\"tell.request\", null, ",
+            OutputFormat.JAVA_JUNIT_5 to "\"tell.request\", null, ",
+            OutputFormat.PYTHON_UNITTEST to "\"tell.request\", None, "
+        )
+
+        expected.forEach { (format, fragment) ->
+
+            val blackBox = if (format.isPython()) arrayOf("--blackBox=true") else arrayOf()
+            startWith(VARIANTS, "--outputFormat=${format.name}", *blackBox) { FakeAsyncApiDriver.fireAndForget() }
+
+            val (members, body) = membersAndBodyOf(evaluate("tell"))
+
+            assertTrue(body.contains(fragment), "for $format:\n$body")
+            //nothing came back, so nothing is asserted on
+            assertFalse(body.contains("assertNotNull"), "for $format:\n$body")
+
+            if (format.isJavaOrKotlin()) {
+                compiles(members, body, format, "AsyncApiNoReply${format.name}")
+            }
+        }
+    }
+
+    @Test
+    fun testWhatOneSuiteFoundIsNotLeftBehindForTheNext() {
+
+        /*
+            One writer writes every suite of a run, and a run splits its tests into several. A
+            suite with nothing to publish over Kafka must come back with no members at all: if
+            the servers the last one found were still there, it would assign to a field it never
+            declared, and the suite would not compile.
+         */
+        start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
+
+        val kafka = membersOf(evaluate("bessj"))
+        assertTrue(kafka.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), kafka)
+
+        //the second suite publishes through lines the driver rendered, so nothing is written
+        start { FakeAsyncApiDriver.replied(DOUBLE_RESULT).apply { testScript = listOf("publishSomehow()") } }
+
+        val driverRendered = membersOf(evaluate("bessj"))
+
+        assertFalse(driverRendered.contains(KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX), driverRendered)
+        assertFalse(driverRendered.contains("KafkaProducer"), driverRendered)
+
+        //and the init statements follow the members, so there is nothing to assign either
+        val writer = injector.getInstance(TestCaseWriter::class.java)
+        val init = Lines(OutputFormat.KOTLIN_JUNIT_5)
+        writer.addExtraInitStatement(init)
+        assertEquals("", init.toString().trim())
+    }
+
+    @Test
+    fun testTwoServersThatWouldShareOneVariableAreNotDeclaredTwice() {
+
+        /*
+            A document may name its servers anything; an identifier may not. Two names that
+            differ only where a variable cannot would be declared twice under one name, and the
+            suite would not compile. The first keeps the variable, and the rest publish to the
+            address the document gave them.
+         */
+        val collidingServers = """
+            asyncapi: 3.0.0
+            info:
+              title: Colliding
+              version: 1.0.0
+            servers:
+              a-b:
+                host: one.local:9092
+                protocol: kafka
+              a.b:
+                host: two.local:9092
+                protocol: kafka
+            channels:
+              first:
+                address: first.request
+                servers:
+                  - ${'$'}ref: '#/servers/a-b'
+                messages:
+                  firstRequest:
+                    payload:
+                      type: object
+                      properties:
+                        value:
+                          type: integer
+              second:
+                address: second.request
+                servers:
+                  - ${'$'}ref: '#/servers/a.b'
+                messages:
+                  secondRequest:
+                    payload:
+                      type: object
+                      properties:
+                        value:
+                          type: integer
+            operations:
+              askFirst:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/first'
+              askSecond:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/second'
+        """.trimIndent()
+
+        startWith(collidingServers) { FakeAsyncApiDriver.fireAndForget() }
+
+        val members = membersOf(evaluate("askFirst", "askSecond"))
+
+        //one declaration under that name, not two
+        assertEquals(1, members.split("asyncApiServer_a_b").size - 1, members)
+
+        //and the one that lost it publishes to the address the document gave it
+        val body = bodyOf(evaluate("askFirst", "askSecond"))
+        assertTrue(body.contains("asyncApiServer_a_b"), body)
+        assertTrue(body.contains("\"two.local:9092\""), body)
+    }
+
+    @Test
+    fun testAFormatNoTestCanBeWrittenInIsRefusedWhenTheDriverNamesIt() {
+
+        /*
+            For this problem type the format is ordinarily left to the driver, in black-box mode
+            as well, so it arrives after every option has already been checked. A driver naming
+            a language no client is written for has to be refused there rather than reaching the
+            writer, which would otherwise emit a call with no client and assertions around it.
+         */
+        driver = FakeAsyncApiDriver(
+            AsyncApiTestInjector.sutInfo(
+                AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS),
+                SutInfoDto.OutputFormat.JS_JEST
+            )
+        ) { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
+
+        /*
+            The sampler is what asks the driver, and it is initialised as the injector is built,
+            so the refusal surfaces from there rather than from a later lookup.
+         */
+        val error = assertThrows(Throwable::class.java) {
+            AsyncApiTestInjector.create(driver, "--blackBox=false", "--createTests=true")
+                .getInstance(AsyncApiSampler::class.java)
+        }
+
+        val reasons = generateSequence(error as Throwable?) { it.cause }.mapNotNull { it.message }.toList()
+
+        assertTrue(
+            reasons.any { it.contains("outputFormat") },
+            "the format the driver named was not refused: $reasons"
+        )
+    }
+
+    @Test
+    fun testASuiteIsSplitByWhetherPublishingWentWell() {
+
+        /*
+            Which file a test lands in, which is what a run with --testSuiteSplitType shows the
+            user. There is no status code to read here, so the outcome is what says whether the
+            message went out and was answered.
+         */
+        start("--useExperimentalOracles=true") { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
+        val answered = evaluate("bessj")
+
+        start("--useExperimentalOracles=true") { FakeAsyncApiDriver.silence() }
+        val unanswered = evaluate("bessj")
+
+        val config = injector.getInstance(EMConfig::class.java)
+        config.testSuiteSplitType = EMConfig.TestSuiteSplitType.FAULTS
+
+        val solution = Solution(
+            mutableListOf(answered, unanswered), "Prefix", "Suffix", Termination.NONE, listOf(), listOf()
+        )
+
+        val split = TestSuiteSplitter.split(solution, config)
+        val byIndividual = split.splitOutcome.flatMap { s -> s.individuals.map { it to s.termination } }
+
+        //the one that was answered is a success; the one that was not is not
+        assertEquals(Termination.SUCCESSES, byIndividual.first { it.first == answered }.second)
+        assertNotEquals(Termination.SUCCESSES, byIndividual.first { it.first == unanswered }.second)
     }
 
     @Test

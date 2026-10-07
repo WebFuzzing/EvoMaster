@@ -27,9 +27,12 @@ object AsyncApiTestInjector {
     /**
      * What a driver declares for a service whose document it hands over as text.
      */
-    fun sutInfo(schemaText: String): SutInfoDto = SutInfoDto().apply {
+    fun sutInfo(
+        schemaText: String,
+        declaredFormat: SutInfoDto.OutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
+    ): SutInfoDto = SutInfoDto().apply {
         asyncApiProblem = AsyncApiProblemDto().apply { this.schemaText = schemaText }
-        defaultOutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
+        defaultOutputFormat = declaredFormat
     }
 
     fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
