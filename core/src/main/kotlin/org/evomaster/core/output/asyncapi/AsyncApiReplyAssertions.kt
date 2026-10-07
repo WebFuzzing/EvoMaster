@@ -10,29 +10,21 @@ import org.evomaster.core.output.OutputFormat
  * Writes assertions over the reply a message drew, from the reply the search actually saw.
  *
  * These are regression assertions, the same kind the REST writer makes on a response body: they
- * say what came back, not what should. They honour the same rules, because the reasons are the
- * same ones. A field that changes between runs makes a test flaky whatever the protocol, so the
- * fields REST skips are skipped here; only the first few elements of a collection are asserted,
- * as maxAssertionForDataInCollection says; a value that cannot be printed safely becomes a
- * comment, and a whole payload that cannot becomes one too.
+ * say what came back, not what should, and they honour the same rules about what is too unstable
+ * to assert on, because a flaky test is flaky whatever the protocol.
  *
- * The reply is text, not a response object, so unlike REST there is no fluent client to hang the
- * assertions off. They are made against the tree it parses into.
+ * The reply is text rather than a response object, so there is no fluent client to hang them
+ * off. They are made against the tree it parses into.
  */
 object AsyncApiReplyAssertions {
 
     private val mapper = ObjectMapper()
 
     /**
-     * Fields whose value is usually different on the next run, so asserting them would make the
-     * test flaky. The same list the REST writer keeps, for the same reason.
+     * The fields REST skips, for the same reason: their value usually differs on the next run.
      */
     private val ALWAYS_SKIPPED = listOf("id", "timestamp", "self")
 
-    /**
-     * Content that must not be asserted on even when its field is fine: it carries something
-     * that differs between runs or environments.
-     */
     private val HTML_ENTITY = "&[a-zA-Z]+;|&#\\d+;".toRegex()
 
     private val HOST_AND_PORT = """\w+:\d{4,5}""".toRegex()
@@ -141,11 +133,8 @@ object AsyncApiReplyAssertions {
             val child = node.get(name)
             val here = if (fieldPath.isEmpty()) name else "$fieldPath.$name"
 
-            /*
-                The field is still asserted to be there even when its value is not asserted:
-                that it is present is stable, which is what tells one declared message from
-                another, and it is the value that changes between runs.
-             */
+            //that the field is there is stable, and is what tells one declared message from
+            //another; only its value changes between runs
             has(lines, path, name, format)
 
             if (skip(name, config)) {
@@ -213,16 +202,10 @@ object AsyncApiReplyAssertions {
                 equals(lines, "$v$suffix", value(path, "asLong()", format), format)
             }
 
-            /*
-                A double is compared within a tolerance, as the REST writer does: the same
-                computation can land a bit apart once it has been through text.
-             */
+            //within a tolerance, as REST does: the same computation lands a bit apart through text
             node.isNumber -> {
                 val v = node.asDouble()
-                /*
-                    A JSON number out of a double's range parses as an infinity, which no target
-                    language writes that way. Nothing true can be said of it in a literal.
-                 */
+                //out of range it parses as an infinity, which no target language writes as one
                 if (v.isFinite()) {
                     delta(lines, v.toString(), value(path, "asDouble()", format), format)
                 } else {
@@ -274,11 +257,8 @@ object AsyncApiReplyAssertions {
         assertion(lines, expr, expr, format)
     }
 
-    /*
-        A field name is a literal of the target language as much as a value is, and a document
-        can call a field anything JSON allows: a name holding a quote, or one starting with '$',
-        which Kotlin would otherwise read as the start of a template.
-     */
+    //a field name is a literal too, and JSON allows ones holding a quote, or starting with '$',
+    //which Kotlin would otherwise read as the start of a template
     private fun child(path: String, name: String, format: OutputFormat) =
         if (format.isPython()) "$path[${quoted(name, format)}]" else "$path.get(${quoted(name, format)})"
 
