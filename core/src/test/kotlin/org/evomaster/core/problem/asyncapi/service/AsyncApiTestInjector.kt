@@ -36,8 +36,8 @@ object AsyncApiTestInjector {
     }
 
     /**
-     * An injector for a search driven by [driver], under the options every test here wants
-     * unless it asks for something else.
+     * The options every test over an AsyncAPI service wants, with what one of them asked for
+     * instead.
      *
      * An option a caller passes **replaces** the default of the same name rather than joining
      * it: EMConfig refuses an option given twice, so appending both would fail to parse rather
@@ -46,15 +46,27 @@ object AsyncApiTestInjector {
      *
      * Either spelling counts as the same option, `--name=value` and `--name value`, because
      * both are used in this module and the parser takes either.
+     *
+     * Here rather than in each test class so that a default added later reaches all of them;
+     * the module graph and the fake controller stay each test's own, as they differ on purpose.
      */
-    fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
+    fun argsWith(vararg options: String): Array<String> {
 
         val named = options.map { it.removePrefix("--").substringBefore('=') }.toSet()
 
         val defaults = listOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false")
             .filterNot { it.removePrefix("--").substringBefore('=') in named }
 
-        val args = (defaults + options).toTypedArray()
+        return (defaults + options).toTypedArray()
+    }
+
+    /**
+     * An injector for a search driven by [driver], over the real module with the driver
+     * swapped, under [argsWith]'s options.
+     */
+    fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
+
+        val args = argsWith(*options)
 
         val fake = object : AbstractModule() {
             override fun configure() {
