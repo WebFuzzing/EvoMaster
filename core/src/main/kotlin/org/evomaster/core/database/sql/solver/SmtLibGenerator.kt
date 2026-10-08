@@ -663,8 +663,10 @@ class SmtLibGenerator(
                 for (join in joins) {
                     val onExpressions = join.onExpressions
                     if (onExpressions.isNotEmpty()) {
-                        // TODO: only the first ON expression is used; a composite ON
-                        // (e.g. "a = b AND c = d") drops all but the first conjunct.
+                        // TODO: only the first ON expression is used. A join has more than one only in
+                        // the nested form "a JOIN b JOIN c ON b.x = c.x ON a.x = b.x", where every ON after
+                        // the first is dropped. A composite ON such as "a = b AND c = d" is a single
+                        // expression, and each of its conjuncts is translated.
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
