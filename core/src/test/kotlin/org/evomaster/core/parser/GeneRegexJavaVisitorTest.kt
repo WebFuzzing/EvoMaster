@@ -165,10 +165,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^[(?i)-a]$")
         checkSameAsJava("^[(?i:abc)-a]$")
         checkCanSample("^[a&b]$", "&", 100)
-        // these are rejected as lexer has no token for \1 or \k<name> here, as they are not available on CHAR_CLASS_MODE
-        // on Java these throw on Pattern.compile since backreferences are not allowed within character classes
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\1]$") }
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\k<name>]$") }
     }
 
     @Test
@@ -313,6 +309,24 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testBackreferenceGroupCounts(){
+        // non-capturing groups do not get a group number
+        checkSameAsJava("""^(?:abc)([d-j]+)\1$""")
+        checkSameAsJava("""^(?:a)(?:b)(c)\1$""")
+        checkSameAsJava("""^(?:x(a|b))(?:y(c|d))\2\1$""")
+        checkSameAsJava("""^(p)(?:q(r))\2\1$""")
+        checkSameAsJava("""^(?:(?:e)(f))\1$""")
+        checkSameAsJava("""^(?i:x)(?:y)(?<foo>[d-f])\1\k<foo>$""")
+        // flag groups do not get a group number either
+        checkSameAsJava("""^(?i:a)(b)\1$""")
+        checkSameAsJava("""^(?s:(c))\1$""")
+        checkSameAsJava("""^(?i:x)(?<foo>[d-f])\1\k<foo>$""")
+        // only 2 groups exist, so \12 is \1 followed by the digit 2
+        checkSameAsJava("""^(?:a)(b)(?:c)(d)\12$""")
+        checkCanSample("""^(?:a)(b)(?:c)(d)\12$""", "abcdb2", 100)
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
@@ -382,6 +396,66 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("((\\1|\\2)*)")
         checkSameAsJava("(\\12)*")
         assertThrows<IllegalStateException> { checkSameAsJava("\\12*") }
+    }
+
+    @Test
+    fun testBackreferenceToQuantifiedGroup() {
+        // the group is the template of the quantifier, what gets rendered are the copies of it
+        checkSameAsJava("""^([a-z]){3}\1$""")
+        checkSameAsJava("""^(?:([a-z])\.)+\1$""")
+    }
+
+    @Test
+    fun testBackreferenceTakesValueOfLastRepetition() {
+        checkSameAsJava("""^(?:([a-z])X){1,3}\1$""")
+        // the last of the 2 repetitions is the one that counts
+        checkCanSample("""^(?:(a|b)x){2}\1$""", listOf("axaxa", "axbxb", "bxaxa", "bxbxb"), 1000)
+    }
+
+    @Test
+    fun testBackreferenceToGroupInDisjunction() {
+        // when the group is not in the active branch, its value from a previous sample must not be used
+        checkSameAsJava("""^(?:([a-z])|(\d))\1?$""")
+        checkCanSample("""^(?:(a)|b)\1?$""", listOf("a", "aa", "b"), 1000)
+    }
+
+    @Test
+    fun testNamedBackreferences() {
+        checkSameAsJava("""(?<n>[a-z])\k<n>""")
+        checkSameAsJava("""(?<a>[a-z])(?<b>[a-z])\k<b>\k<a>""")
+        // each named group has a number too, which counts the same as the one of a numbered group
+        checkSameAsJava("""(?:x)([a-z])(?<n>[a-z])\2\k<n>\1""")
+        checkSameAsJava("""^(?<n>[a-z])\1\k<n>$""")
+        checkSameAsJava("""^(?<n>[a-z]){3}\k<n>$""")
+        checkSameAsJava("""^(?<n>[a-z])(?:-(?<m>\d))+\k<m>\k<n>$""")
+        checkSameAsJava("""^(?i:x)(?:y)(?<n>[a-z]{2})\k<n>\1$""")
+    }
+
+    @Test
+    fun testBackreferencesToGroupsThatCannotMatch() {
+        // the group is unsatisfiable, and so is the branch with the backreference to it
+        checkCanSample("""^(?:([a&&b])\1|c)$""", listOf("c"), 100)
+        checkCanSample("""^(?:(?<n>[a&&b])\k<n>|c)$""", listOf("c"), 100)
+        // a group can not match what it refers to from inside itself
+        checkCanSample("""^(?:(a\1)|b)$""", listOf("b"), 100)
+        // or before it is there
+        checkCanSample("""^(?:\1(a)|b)$""", listOf("b"), 100)
+        // there is no group 2
+        checkCanSample("""^(?:(a)\2|b)$""", listOf("b"), 100)
+    }
+
+    @Test
+    fun testBackreferenceToGroupInLookahead() {
+        checkSameAsJava("""^(?=([a-z]{2}))[a-z]{2}\1$""")
+        checkSameAsJava("""^(?=(?<n>[a-z]{2}))[a-z]{2}\k<n>$""")
+    }
+
+    @Test
+    fun testBackreferenceToQuantifiedGroupInLookahead() {
+        checkSameAsJava("""^(?=([a-z])*)[a-z]\1$""")
+        checkSameAsJava("""^(?=([a-z])+)[a-z]\1$""")
+        checkSameAsJava("""^(?=([a-z]){2})[a-z]{2}\1$""")
+        checkSameAsJava("""^(?=(?:([a-z])|\d)*)[a-z]\1$""")
     }
 
     @Test
