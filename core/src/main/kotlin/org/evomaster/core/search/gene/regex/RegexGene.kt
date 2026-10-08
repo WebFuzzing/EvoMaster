@@ -82,6 +82,12 @@ class RegexGene(
     /**
      * The value of each capture group (the key being its group number) as of the last time the tree was rendered.
      * Backreferences read the value of their group from here, see [BackReferenceRxGene].
+     *
+     * A capture group is a parenthesized part of the regex whose match is remembered, so that a backreference can
+     * refer to it later. Groups are numbered from 1 by the position of their opening parenthesis, so in
+     * `(a(b))(c)` group 1 is `a(b)`, group 2 is `b` and group 3 is `c`. A group can also be named, `(?<name>X)`,
+     * and then it can be referred to by its name as well as its number. Non-capturing groups, `(?:X)` and flag
+     * groups like `(?i:X)`, are not numbered and never recorded here.
      */
     private val capturedValues = mutableMapOf<Int, String>()
 

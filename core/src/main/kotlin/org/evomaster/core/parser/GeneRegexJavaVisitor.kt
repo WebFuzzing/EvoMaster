@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
@@ -57,6 +58,25 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
      * [captureGroupUnsatisfiable].
      */
     private val namedCaptureGroups = mutableMapOf<String, Int>()
+
+    /**
+     * [captureGroupUnsatisfiable] and [namedCaptureGroups] are two structures that must stay aligned: the values of
+     * the latter are group numbers (1-based), which are positions (plus one) in the former. This lazily checks the
+     * invariants between them.
+     *
+     * Note that every named group is a capturing group, but not the other way around.
+     */
+    private fun checkCaptureGroupInvariants() {
+        val numberOfCaptureGroups = captureGroupUnsatisfiable.size
+        val namedGroupNumbers = namedCaptureGroups.values
+
+        // named capture groups are a subset of capture groups
+        Lazy.assert { namedCaptureGroups.size <= numberOfCaptureGroups }
+        // two names can never point to the same group, as each group has at most one name
+        Lazy.assert { namedGroupNumbers.toSet().size == namedGroupNumbers.size }
+        // group numbers start at 1, so the group number n is at index n-1 of captureGroupUnsatisfiable
+        Lazy.assert { namedGroupNumbers.all { it in 1..numberOfCaptureGroups } }
+    }
 
     /**
      * Tracks the flags active in the current lexical scope.
@@ -183,6 +203,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
+
+        checkCaptureGroupInvariants()
 
         val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
