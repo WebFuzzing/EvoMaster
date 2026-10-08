@@ -29,11 +29,14 @@ public class Z3Result {
     private final Z3Solution solution;
     /** Non-null only when status == ERROR. */
     private final String errorMessage;
+    /** True only for an ERROR that the same input will always reproduce. */
+    private final boolean deterministicError;
 
-    private Z3Result(Status status, Z3Solution solution, String errorMessage) {
+    private Z3Result(Status status, Z3Solution solution, String errorMessage, boolean deterministicError) {
         this.status = status;
         this.solution = solution;
         this.errorMessage = errorMessage;
+        this.deterministicError = deterministicError;
     }
 
     public Status getStatus() {
@@ -54,19 +57,38 @@ public class Z3Result {
         return errorMessage;
     }
 
+    /**
+     * @return true when {@link #getStatus()} is ERROR and the error comes from the input itself (Z3
+     * rejected the formula, or its output could not be parsed), so solving the same file again would
+     * fail the same way. False for errors that may be transient, such as a container or I/O failure.
+     */
+    public boolean isDeterministicError() {
+        return deterministicError;
+    }
+
     public static Z3Result sat(Z3Solution solution) {
-        return new Z3Result(Status.SAT, solution, null);
+        return new Z3Result(Status.SAT, solution, null, false);
     }
 
     public static Z3Result unsat() {
-        return new Z3Result(Status.UNSAT, null, null);
+        return new Z3Result(Status.UNSAT, null, null, false);
     }
 
     public static Z3Result unknown() {
-        return new Z3Result(Status.UNKNOWN, null, null);
+        return new Z3Result(Status.UNKNOWN, null, null, false);
     }
 
+    /**
+     * An error that may be transient, e.g. a container or I/O failure.
+     */
     public static Z3Result error(String message) {
-        return new Z3Result(Status.ERROR, null, message);
+        return new Z3Result(Status.ERROR, null, message, false);
+    }
+
+    /**
+     * An error that the same input always reproduces, see {@link #isDeterministicError()}.
+     */
+    public static Z3Result deterministicError(String message) {
+        return new Z3Result(Status.ERROR, null, message, true);
     }
 }
